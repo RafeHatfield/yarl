@@ -3,3 +3,18 @@ venv/
 *.pyc
 __pycache__/
 .direnv/
+
+# Tools
+.pytest_cache/
+.mypy_cache/
+.coverage
+.cache/
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.build/
+dist/
