@@ -51,6 +51,8 @@ class Entity:
                     get_blocking_entities_at_location(entities, self.x + dx, self.y + dy)):
             self.move(dx, dy)
 
+    def distance(self, x, y):
+        return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
     def move_astar(self, target, entities, game_map):
         # Create a FOV map that has the dimensions of the map
