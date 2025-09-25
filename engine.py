@@ -1,4 +1,4 @@
-import libtcodpy as libtcod
+import tcod.libtcodpy as libtcod
 
 from components.fighter import Fighter
 from components.inventory import Inventory
