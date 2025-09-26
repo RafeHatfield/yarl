@@ -7,6 +7,7 @@ import pytest
 from unittest.mock import Mock, patch
 import math
 from entity import Entity, get_blocking_entities_at_location
+from components.ai import BasicMonster, ConfusedMonster
 from components.fighter import Fighter
 from components.inventory import Inventory
 from render_functions import RenderOrder
@@ -432,3 +433,236 @@ class TestEntityEdgeCases:
         assert entity.inventory is None
         assert entity.ai is None
         assert entity.item is None
+
+
+class TestBasicMonsterAI:
+    """Test BasicMonster AI behavior."""
+    
+    def test_basic_monster_creation(self, mock_libtcod):
+        """Test basic monster AI creation."""
+        # Act
+        ai = BasicMonster()
+        
+        # Assert
+        assert ai is not None
+        # Note: BasicMonster doesn't have owner attribute until assigned
+
+    def test_basic_monster_out_of_fov_no_action(self, mock_libtcod):
+        """Test basic monster does nothing when target is out of FOV."""
+        # Arrange
+        ai = BasicMonster()
+        monster = Entity(10, 10, 'o', mock_libtcod.red, 'Orc', ai=ai)
+        target = Entity(20, 20, '@', mock_libtcod.white, 'Player')
+        mock_fov_map = Mock()
+        mock_game_map = Mock()
+        entities = []
+        
+        # Mock FOV check to return False (monster can't see target)
+        with patch('components.ai.libtcod') as mock_tcod:
+            mock_tcod.map_is_in_fov.return_value = False
+            
+            # Act
+            results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        
+        # Assert
+        assert len(results) == 0
+        mock_tcod.map_is_in_fov.assert_called_once_with(mock_fov_map, 10, 10)
+
+    @patch('entity.libtcod')
+    def test_basic_monster_moves_when_far_from_target(self, mock_tcod, mock_libtcod):
+        """Test basic monster moves towards target when distance >= 2."""
+        # Arrange
+        ai = BasicMonster()
+        fighter = Fighter(hp=10, defense=0, power=3)
+        monster = Entity(10, 10, 'o', mock_libtcod.red, 'Orc', ai=ai, fighter=fighter)
+        target = Entity(15, 15, '@', mock_libtcod.white, 'Player')
+        mock_fov_map = Mock()
+        mock_game_map = Mock()
+        mock_game_map.width = 80
+        mock_game_map.height = 50
+        
+        # Create proper mock tiles structure for A* pathfinding
+        mock_tile = Mock()
+        mock_tile.block_sight = False
+        mock_tile.blocked = False
+        mock_game_map.tiles = [[mock_tile for _ in range(50)] for _ in range(80)]
+        entities = []
+        
+        # Mock FOV and pathfinding
+        mock_tcod.map_is_in_fov.return_value = True
+        mock_path = Mock()
+        mock_tcod.map_new.return_value = Mock()
+        mock_tcod.map_set_properties.return_value = None
+        mock_tcod.path_new_using_map.return_value = mock_path
+        mock_tcod.path_compute.return_value = None
+        mock_tcod.path_is_empty.return_value = False
+        mock_tcod.path_size.return_value = 5
+        mock_tcod.path_walk.return_value = (11, 11)
+        mock_tcod.path_delete.return_value = None
+        
+        # Act
+        results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        
+        # Assert
+        assert len(results) == 0  # No attack, just movement
+        assert monster.x == 11  # Monster moved via A*
+        assert monster.y == 11
+
+    def test_basic_monster_attacks_when_adjacent(self, mock_libtcod):
+        """Test basic monster attacks when adjacent to target."""
+        # Arrange
+        ai = BasicMonster()
+        monster_fighter = Fighter(hp=10, defense=0, power=5)
+        monster = Entity(10, 10, 'o', mock_libtcod.red, 'Orc', ai=ai, fighter=monster_fighter)
+        
+        target_fighter = Fighter(hp=20, defense=1, power=3)
+        target = Entity(11, 10, '@', mock_libtcod.white, 'Player', fighter=target_fighter)
+        
+        mock_fov_map = Mock()
+        mock_game_map = Mock()
+        entities = []
+        
+        # Mock FOV check
+        with patch('components.ai.libtcod') as mock_tcod:
+            mock_tcod.map_is_in_fov.return_value = True
+            mock_tcod.white = mock_libtcod.white
+            
+            # Act
+            results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        
+        # Assert
+        assert len(results) >= 1  # Should have attack result
+        assert target.fighter.hp < 20  # Target should take damage
+
+
+class TestConfusedMonsterAI:
+    """Test ConfusedMonster AI behavior."""
+    
+    def test_confused_monster_creation(self, mock_libtcod):
+        """Test confused monster AI creation."""
+        # Arrange
+        previous_ai = BasicMonster()
+        
+        # Act
+        confused_ai = ConfusedMonster(previous_ai, number_of_turns=5)
+        
+        # Assert
+        assert confused_ai.previous_ai == previous_ai
+        assert confused_ai.number_of_turns == 5
+
+    def test_confused_monster_default_turns(self, mock_libtcod):
+        """Test confused monster AI with default number of turns."""
+        # Arrange
+        previous_ai = BasicMonster()
+        
+        # Act
+        confused_ai = ConfusedMonster(previous_ai)
+        
+        # Assert
+        assert confused_ai.number_of_turns == 10
+
+    @patch('components.ai.randint')
+    @patch('entity.libtcod')
+    def test_confused_monster_random_movement(self, mock_tcod, mock_randint, mock_libtcod):
+        """Test confused monster moves randomly."""
+        # Arrange
+        previous_ai = BasicMonster()
+        confused_ai = ConfusedMonster(previous_ai, number_of_turns=3)
+        monster = Entity(10, 10, 'o', mock_libtcod.red, 'Confused Orc', ai=confused_ai)
+        target = Entity(15, 15, '@', mock_libtcod.white, 'Player')
+        mock_fov_map = Mock()
+        mock_game_map = Mock()
+        mock_game_map.is_blocked = Mock(return_value=False)
+        entities = []
+        
+        # Mock random movement: randint(0, 2) returns 0, 1, 2
+        # So random_x = 10 + 0 - 1 = 9, random_y = 10 + 2 - 1 = 11 (different from current)
+        mock_randint.side_effect = [0, 2]  # First call returns 0, second returns 2
+        
+        # Act
+        results = confused_ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        
+        # Assert
+        assert len(results) == 0  # No messages during confusion
+        assert confused_ai.number_of_turns == 2  # Decremented
+        # Should attempt to move (mock_game_map.is_blocked would be called)
+        mock_game_map.is_blocked.assert_called()
+
+    @patch('components.ai.randint')
+    def test_confused_monster_no_movement_same_position(self, mock_randint, mock_libtcod):
+        """Test confused monster doesn't move when random position equals current position."""
+        # Arrange
+        previous_ai = BasicMonster()
+        confused_ai = ConfusedMonster(previous_ai, number_of_turns=3)
+        monster = Entity(10, 10, 'o', mock_libtcod.red, 'Confused Orc', ai=confused_ai)
+        target = Entity(15, 15, '@', mock_libtcod.white, 'Player')
+        mock_fov_map = Mock()
+        mock_game_map = Mock()
+        mock_game_map.is_blocked = Mock(return_value=False)
+        entities = []
+        
+        # Mock random to return same position: randint(0, 2) - 1 = 0
+        mock_randint.side_effect = [1, 1]  # random_x = 10, random_y = 10 (same as current)
+        
+        # Act
+        results = confused_ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        
+        # Assert
+        assert len(results) == 0
+        assert confused_ai.number_of_turns == 2
+        # Should NOT call is_blocked since no movement attempted
+        mock_game_map.is_blocked.assert_not_called()
+
+    def test_confused_monster_recovery(self, mock_libtcod):
+        """Test confused monster recovers after turns expire."""
+        # Arrange
+        previous_ai = BasicMonster()
+        confused_ai = ConfusedMonster(previous_ai, number_of_turns=1)
+        monster = Entity(10, 10, 'o', mock_libtcod.red, 'Confused Orc', ai=confused_ai)
+        target = Entity(15, 15, '@', mock_libtcod.white, 'Player')
+        mock_fov_map = Mock()
+        mock_game_map = Mock()
+        entities = []
+        
+        # Mock the color for message
+        with patch('components.ai.libtcod') as mock_tcod:
+            mock_tcod.red = mock_libtcod.red
+            
+            # Act - first turn should still be confused
+            results1 = confused_ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+            
+            # Act - second turn should recover
+            results2 = confused_ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        
+        # Assert
+        assert len(results1) == 0  # No recovery message yet
+        assert confused_ai.number_of_turns == 0  # Decremented to 0
+        
+        assert len(results2) == 1  # Recovery message
+        assert 'message' in results2[0]
+        assert 'no longer confused' in results2[0]['message'].text
+        assert monster.ai == previous_ai  # AI restored
+
+    def test_confused_monster_zero_turns_immediate_recovery(self, mock_libtcod):
+        """Test confused monster with 0 turns recovers immediately."""
+        # Arrange
+        previous_ai = BasicMonster()
+        confused_ai = ConfusedMonster(previous_ai, number_of_turns=0)
+        monster = Entity(10, 10, 'o', mock_libtcod.red, 'Confused Orc', ai=confused_ai)
+        target = Entity(15, 15, '@', mock_libtcod.white, 'Player')
+        mock_fov_map = Mock()
+        mock_game_map = Mock()
+        entities = []
+        
+        # Mock the color for message
+        with patch('components.ai.libtcod') as mock_tcod:
+            mock_tcod.red = mock_libtcod.red
+            
+            # Act
+            results = confused_ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        
+        # Assert
+        assert len(results) == 1  # Recovery message
+        assert 'message' in results[0]
+        assert 'no longer confused' in results[0]['message'].text
+        assert monster.ai == previous_ai  # AI restored immediately

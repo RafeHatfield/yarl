@@ -5,7 +5,8 @@ Tests all item functions with various inputs and edge cases.
 """
 import pytest
 from unittest.mock import Mock, patch
-from item_functions import heal, cast_lightning, cast_fireball
+from item_functions import heal, cast_lightning, cast_fireball, cast_confuse
+from components.ai import BasicMonster, ConfusedMonster
 from game_messages import Message
 from components.fighter import Fighter
 from entity import Entity
@@ -395,3 +396,240 @@ class TestItemFunctionEdgeCases:
         # Fireball with None entities  
         results = cast_fireball(player_entity, entities=None, fov_map=mock_fov_map, damage=10, radius=3, target_x=10, target_y=10)
         assert len(results) >= 1
+
+
+class TestCastConfuse:
+    """Test cast_confuse function behavior."""
+    
+    def test_confuse_valid_target_in_fov(self, player_entity, enemy_entity, mock_fov_map, mock_libtcod):
+        """Test confuse spell with valid target coordinates in FOV."""
+        # Arrange
+        entities = [player_entity, enemy_entity]
+        target_x, target_y = 15, 15
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is True
+        assert 'message' in results[0]
+        assert 'look vacant' in results[0]['message'].text
+        assert isinstance(enemy_entity.ai, ConfusedMonster)
+        assert enemy_entity.ai.number_of_turns == 10
+
+    def test_confuse_target_outside_fov(self, player_entity, enemy_entity, mock_libtcod):
+        """Test confuse spell with target outside FOV."""
+        # Arrange
+        entities = [player_entity, enemy_entity]
+        target_x, target_y = 15, 15
+        mock_fov_map = Mock()
+        
+        # Mock FOV check to return False (outside FOV)
+        with patch('item_functions.libtcod') as mock_tcod:
+            mock_tcod.map_is_in_fov.return_value = False
+            mock_tcod.yellow = mock_libtcod.yellow
+            
+            # Act
+            results = cast_confuse(
+                entities=entities,
+                fov_map=mock_fov_map,
+                target_x=target_x,
+                target_y=target_y
+            )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is False
+        assert 'outside your field of view' in results[0]['message'].text
+
+    def test_confuse_no_enemy_at_target_location(self, player_entity, mock_fov_map, mock_libtcod):
+        """Test confuse spell when no enemy exists at target location."""
+        # Arrange
+        entities = [player_entity]  # Only player, no enemy at target
+        target_x, target_y = 20, 20
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is False
+        assert 'no targetable enemy' in results[0]['message'].text
+
+    def test_confuse_target_without_ai(self, player_entity, mock_fov_map, mock_libtcod):
+        """Test confuse spell on entity without AI component."""
+        # Arrange
+        # Create an entity without AI (like an item)
+        item_entity = Entity(15, 15, '!', mock_libtcod.violet, 'Potion')
+        entities = [player_entity, item_entity]
+        target_x, target_y = 15, 15
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is False
+        assert 'no targetable enemy' in results[0]['message'].text
+
+    def test_confuse_preserves_previous_ai(self, player_entity, mock_fov_map, mock_libtcod):
+        """Test confuse spell preserves the original AI."""
+        # Arrange
+        original_ai = BasicMonster()
+        enemy_entity = Entity(15, 15, 'o', mock_libtcod.red, 'Orc', ai=original_ai)
+        entities = [player_entity, enemy_entity]
+        target_x, target_y = 15, 15
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is True
+        confused_ai = enemy_entity.ai
+        assert isinstance(confused_ai, ConfusedMonster)
+        assert confused_ai.previous_ai == original_ai
+        assert confused_ai.owner == enemy_entity
+
+    def test_confuse_multiple_entities_at_same_location(self, player_entity, mock_fov_map, mock_libtcod):
+        """Test confuse spell when multiple entities are at target location."""
+        # Arrange
+        enemy1 = Entity(15, 15, 'o', mock_libtcod.red, 'Orc1', ai=BasicMonster())
+        enemy2 = Entity(15, 15, 'g', mock_libtcod.green, 'Goblin', ai=BasicMonster())
+        entities = [player_entity, enemy1, enemy2]
+        target_x, target_y = 15, 15
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is True
+        # Should confuse the first enemy found (enemy1)
+        assert isinstance(enemy1.ai, ConfusedMonster)
+        # Second enemy should remain unchanged
+        assert isinstance(enemy2.ai, BasicMonster)
+
+    def test_confuse_already_confused_monster(self, player_entity, mock_fov_map, mock_libtcod):
+        """Test confuse spell on already confused monster."""
+        # Arrange
+        original_ai = BasicMonster()
+        confused_ai = ConfusedMonster(original_ai, number_of_turns=5)
+        enemy_entity = Entity(15, 15, 'o', mock_libtcod.red, 'Confused Orc', ai=confused_ai)
+        entities = [player_entity, enemy_entity]
+        target_x, target_y = 15, 15
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is True
+        # Should create a NEW confused AI, replacing the old one
+        new_confused_ai = enemy_entity.ai
+        assert isinstance(new_confused_ai, ConfusedMonster)
+        assert new_confused_ai != confused_ai  # Different instance
+        assert new_confused_ai.number_of_turns == 10  # Fresh confusion
+
+    def test_confuse_with_none_coordinates(self, player_entity, enemy_entity, mock_libtcod):
+        """Test confuse spell with None coordinates."""
+        # Arrange
+        entities = [player_entity, enemy_entity]
+        mock_fov_map = Mock()
+        
+        # Mock FOV to handle None coordinates gracefully
+        with patch('item_functions.libtcod') as mock_tcod:
+            mock_tcod.map_is_in_fov.return_value = False
+            mock_tcod.yellow = mock_libtcod.yellow
+            
+            # Act
+            results = cast_confuse(
+                entities=entities,
+                fov_map=mock_fov_map,
+                target_x=None,
+                target_y=None
+            )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is False
+
+    def test_confuse_empty_entities_list(self, mock_fov_map, mock_libtcod):
+        """Test confuse spell with empty entities list."""
+        # Arrange
+        entities = []
+        target_x, target_y = 15, 15
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is False
+        assert 'no targetable enemy' in results[0]['message'].text
+
+    def test_confuse_with_missing_kwargs(self, mock_libtcod):
+        """Test confuse spell with missing required parameters."""
+        # Act - Missing entities causes TypeError in actual code
+        with pytest.raises(TypeError):
+            cast_confuse(fov_map=Mock(), target_x=10, target_y=10)
+
+    def test_confuse_message_content(self, player_entity, mock_fov_map, mock_libtcod):
+        """Test confuse spell produces correct message content."""
+        # Arrange
+        enemy_entity = Entity(15, 15, 'o', mock_libtcod.red, 'TestOrc', ai=BasicMonster())
+        entities = [player_entity, enemy_entity]
+        target_x, target_y = 15, 15
+        
+        # Act
+        results = cast_confuse(
+            entities=entities,
+            fov_map=mock_fov_map,
+            target_x=target_x,
+            target_y=target_y
+        )
+        
+        # Assert
+        assert len(results) == 1
+        assert results[0]['consumed'] is True
+        message = results[0]['message']
+        assert 'TestOrc' in message.text
+        assert 'eyes' in message.text
+        assert 'vacant' in message.text
+        assert 'stumble' in message.text

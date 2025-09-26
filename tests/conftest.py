@@ -55,6 +55,7 @@ def mock_libtcod(mocker):
     mocker.patch('tcod.libtcodpy', mock_tcod)
     mocker.patch('item_functions.libtcod', mock_tcod)
     mocker.patch('components.fighter.libtcod', mock_tcod)
+    mocker.patch('components.ai.libtcod', mock_tcod)
     mocker.patch('entity.libtcod', mock_tcod)
     mocker.patch('fov_functions.libtcod', mock_tcod)
     mocker.patch('render_functions.libtcod', mock_tcod)
@@ -93,7 +94,9 @@ def player_entity(basic_fighter, basic_inventory, mock_libtcod):
 @pytest.fixture
 def enemy_entity(mock_libtcod):
     """Create a basic enemy entity for testing."""
+    from components.ai import BasicMonster
     fighter = Fighter(hp=20, defense=1, power=3)
+    ai = BasicMonster()
     return Entity(
         x=15, y=15,
         char='o',
@@ -101,7 +104,8 @@ def enemy_entity(mock_libtcod):
         name='Orc',
         blocks=True,
         render_order=RenderOrder.ACTOR,
-        fighter=fighter
+        fighter=fighter,
+        ai=ai
     )
 
 
