@@ -30,6 +30,10 @@ def cast_lightning(*args, **kwargs):
     target = None
     closest_distance = maximum_range + 1
 
+    # Handle None entities list
+    if entities is None:
+        entities = []
+
     for entity in entities:
         if entity.fighter and entity != caster and libtcod.map_is_in_fov(fov_map, entity.x, entity.y):
             distance = caster.distance_to(entity)
@@ -57,9 +61,9 @@ def cast_fireball(*args, **kwargs):
 
     results = []
 
-    # target_x = int(target_x) if target_x is not None else 0
-    # target_y = int(target_y) if target_y is not None else 0
-
+    # Handle None entities list
+    if entities is None:
+        entities = []
 
     if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
         results.append({'consumed': False, 'message': Message('You cannot target a tile outside your field of view.', libtcod.yellow)})

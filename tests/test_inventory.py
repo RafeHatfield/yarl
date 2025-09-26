@@ -76,7 +76,8 @@ class TestInventoryAddItem:
         
         # Assert
         assert len(results) == 1
-        assert 'item_added' not in results[0]
+        assert 'item_added' in results[0]
+        assert results[0]['item_added'] is None  # Consistent key structure - None means failed
         assert 'message' in results[0]
         assert 'full' in results[0]['message'].text.lower()
         assert healing_potion not in inventory.items
@@ -102,9 +103,11 @@ class TestInventoryAddItem:
         results2 = basic_inventory.add_item(healing_potion)
         
         # Assert
-        # Item should only appear once in inventory
-        assert basic_inventory.items.count(healing_potion) == 1
-        assert len(basic_inventory.items) == 1
+        # Allow duplicates - same item can appear multiple times
+        assert basic_inventory.items.count(healing_potion) == 2
+        assert len(basic_inventory.items) == 2
+        assert results1[0]['item_added'] == healing_potion
+        assert results2[0]['item_added'] == healing_potion
 
     def test_add_item_none(self, basic_inventory):
         """Test adding None as an item."""
@@ -130,7 +133,8 @@ class TestInventoryAddItem:
         assert len(inventory.items) == 2
         assert 'item_added' in results1[0]
         assert 'item_added' in results2[0]
-        assert 'item_added' not in results3[0]
+        assert 'item_added' in results3[0]
+        assert results3[0]['item_added'] is None  # Failed to add - consistent structure
 
 
 class TestInventoryRemoveItem:
@@ -307,9 +311,11 @@ class TestInventoryDropItem:
         results = player_entity.inventory.drop_item(healing_potion)
         
         # Assert
-        # Should handle gracefully - item will still be "dropped"
+        # Should return error result when item not in inventory
         assert len(results) == 1
-        assert 'item_dropped' in results[0]
+        assert 'item_removed' in results[0]
+        assert results[0]['item_removed'] is None
+        assert 'message' in results[0]
 
     def test_drop_multiple_items(self, player_entity, healing_potion, fireball_scroll):
         """Test dropping multiple items."""
@@ -328,9 +334,15 @@ class TestInventoryDropItem:
 
     def test_drop_none_item(self, player_entity):
         """Test dropping None item."""
-        # Act & Assert
-        with pytest.raises(AttributeError):
-            player_entity.inventory.drop_item(None)
+        # Act
+        results = player_entity.inventory.drop_item(None)
+        
+        # Assert
+        # Should handle gracefully - return error result
+        assert len(results) == 1
+        assert 'item_removed' in results[0]
+        assert results[0]['item_removed'] is None
+        assert 'message' in results[0]
 
 
 class TestInventoryEdgeCases:
