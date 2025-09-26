@@ -5,6 +5,12 @@ source/
 __pycache__/
 .direnv/
 
+# Save files (user-specific game saves)
+savegame.dat*
+saves/
+*.sav
+*.save
+
 # Tools
 .pytest_cache/
 .mypy_cache/
