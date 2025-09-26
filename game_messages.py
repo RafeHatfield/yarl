@@ -8,6 +8,16 @@ class Message:
         self.text = text
         self.color = color
 
+    def __eq__(self, other):
+        """Compare messages based on text and color."""
+        if not isinstance(other, Message):
+            return False
+        return self.text == other.text and self.color == other.color
+
+    def __repr__(self):
+        """String representation for debugging."""
+        return f"Message('{self.text}', {self.color})"
+
 
 class MessageLog:
     def __init__(self, x, width, height):
