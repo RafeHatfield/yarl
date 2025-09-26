@@ -41,23 +41,46 @@ class Inventory:
 
                 for item_use_result in item_use_results:
                     if item_use_result.get('consumed'):
-                        self.remove_item(item_entity)
+                        remove_results = self.remove_item(item_entity)
+                        # If removal failed, add the error to results
+                        if not remove_results[0].get('item_removed'):
+                            results.extend(remove_results)
 
                 results.extend(item_use_results)
 
         return results
 
     def remove_item(self, item):
-        self.items.remove(item)
+        """Remove item from inventory. Returns results instead of raising errors."""
+        results = []
+        
+        if item and item in self.items:
+            self.items.remove(item)
+            results.append({'item_removed': item})
+        else:
+            item_name = item.name if item and hasattr(item, 'name') else 'Unknown item'
+            results.append({
+                'item_removed': None,
+                'message': Message('Cannot remove {0}: not in inventory'.format(item_name), libtcod.yellow)
+            })
+        
+        return results
 
     def drop_item(self, item):
+        """Drop item from inventory."""
         results = []
-
-        item.x = self.owner.x
-        item.y = self.owner.y
-
-        self.remove_item(item)
-        results.append({'item_dropped': item, 'message': Message('You dropped the {0}'.format(item.name),
-                                                                 libtcod.yellow)})
-
+        
+        remove_results = self.remove_item(item)
+        if remove_results[0].get('item_removed'):
+            # Item was successfully removed
+            item.x = self.owner.x
+            item.y = self.owner.y
+            results.append({
+                'item_dropped': item, 
+                'message': Message('You dropped the {0}'.format(item.name), libtcod.yellow)
+            })
+        else:
+            # Item removal failed, pass through the error
+            results.extend(remove_results)
+        
         return results
