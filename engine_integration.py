@@ -10,6 +10,7 @@ from engine import GameEngine
 from engine.systems import RenderSystem, InputSystem, AISystem, PerformanceSystem
 from engine.systems.optimized_render_system import OptimizedRenderSystem
 from fov_functions import initialize_fov
+from game_messages import Message
 from game_states import GameStates
 from input_handlers import handle_keys, handle_mouse
 
@@ -120,6 +121,7 @@ def play_game_with_engine(
     # Game state tracking
     previous_game_state = game_state
     targeting_item = None
+    first_frame = True
 
     # Main game loop
     while not libtcod.console_is_window_closed():
@@ -133,6 +135,11 @@ def play_game_with_engine(
 
         # Clear console
         libtcod.console_clear(con)
+
+        # Ensure FOV is recomputed on first frame
+        if first_frame:
+            engine.state_manager.request_fov_recompute()
+            first_frame = False
 
         # Update all systems (including input and rendering)
         engine.update()
@@ -261,9 +268,31 @@ def _process_game_actions(
                 if target:
                     # Combat would be handled by a CombatSystem
                     if player.fighter and target.fighter:
-                        player.fighter.attack(target)
-                        if target.fighter.hp <= 0:
-                            state_manager.request_fov_recompute()
+                        attack_results = player.fighter.attack(target)
+                        
+                        # Process attack results (messages, death, etc.)
+                        for result in attack_results:
+                            message = result.get("message")
+                            if message:
+                                state_manager.state.message_log.add_message(message)
+                            
+                            dead_entity = result.get("dead")
+                            if dead_entity:
+                                if dead_entity == player:
+                                    # Player died - would handle game over
+                                    pass
+                                else:
+                                    # Monster died - remove from entities and request FOV recompute
+                                    if dead_entity in state_manager.state.entities:
+                                        state_manager.state.entities.remove(dead_entity)
+                                    state_manager.request_fov_recompute()
+                                    
+                                    # Add death message
+                                    death_message = Message(
+                                        f"{dead_entity.name.capitalize()} is dead!",
+                                        (255, 30, 30)
+                                    )
+                                    state_manager.state.message_log.add_message(death_message)
                 else:
                     # Move player
                     player.move(dx, dy)
