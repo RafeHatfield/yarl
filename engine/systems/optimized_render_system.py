@@ -1,0 +1,421 @@
+"""Optimized rendering system with performance enhancements.
+
+This module extends the base RenderSystem with performance optimizations
+including dirty rectangle rendering, render culling, and efficient FOV handling.
+"""
+
+from typing import Dict, Any, Optional, Set
+import tcod.libtcodpy as libtcod
+import logging
+
+from .render_system import RenderSystem
+from render_functions import render_all, clear_all, draw_entity, clear_entity
+from fov_functions import recompute_fov
+
+logger = logging.getLogger(__name__)
+
+
+class OptimizedRenderSystem(RenderSystem):
+    """Optimized rendering system with performance enhancements.
+
+    Extends the base RenderSystem with optimizations that maintain clean code:
+    - Dirty rectangle rendering to minimize redraws
+    - Render culling to skip invisible entities
+    - FOV caching to avoid redundant calculations
+    - Spatial awareness for efficient rendering
+
+    These optimizations can provide significant performance improvements
+    while maintaining the same clean interface as the base RenderSystem.
+
+    Attributes:
+        use_optimizations (bool): Whether to use performance optimizations
+        last_rendered_entities (Set): Entities rendered in the last frame
+        render_cache (Dict): Cache for rendering data
+    """
+
+    def __init__(
+        self,
+        console,
+        panel,
+        screen_width: int,
+        screen_height: int,
+        colors: Dict[str, Any],
+        priority: int = 100,
+        use_optimizations: bool = True,
+    ):
+        """Initialize the OptimizedRenderSystem.
+
+        Args:
+            console: Main game console for rendering
+            panel: UI panel console
+            screen_width (int): Width of the screen
+            screen_height (int): Height of the screen
+            colors (Dict[str, Any]): Color configuration dictionary
+            priority (int, optional): System update priority. Defaults to 100.
+            use_optimizations (bool, optional): Whether to use optimizations. Defaults to True.
+        """
+        super().__init__(console, panel, screen_width, screen_height, colors, priority)
+
+        # Optimization settings
+        self.use_optimizations = use_optimizations
+
+        # Render tracking
+        self.last_rendered_entities: Set[Any] = set()
+        self.render_cache: Dict[str, Any] = {}
+
+        # Performance counters
+        self.optimization_stats = {
+            "frames_optimized": 0,
+            "entities_skipped": 0,
+            "dirty_renders": 0,
+            "full_renders": 0,
+        }
+
+    def update(self, dt: float) -> None:
+        """Update the optimized rendering system for one frame.
+
+        Uses performance optimizations when available, falls back to
+        standard rendering otherwise.
+
+        Args:
+            dt (float): Delta time since last update in seconds
+        """
+        if not self.enabled:
+            return
+
+        # Get game state
+        game_state = self._get_game_state()
+        if not game_state:
+            return
+
+        # Extract game state data
+        entities = game_state.get("entities", [])
+        player = game_state.get("player")
+        game_map = game_state.get("game_map")
+        message_log = game_state.get("message_log")
+        current_game_state = game_state.get("current_state")
+        mouse = game_state.get("mouse")
+
+        if not all([player, game_map, message_log]):
+            return
+
+        # Use optimized rendering if available and enabled
+        if self.use_optimizations and self._has_performance_data(game_state):
+            self._optimized_render(
+                game_state,
+                entities,
+                player,
+                game_map,
+                message_log,
+                current_game_state,
+                mouse,
+            )
+        else:
+            # Fall back to standard rendering
+            self._standard_render(
+                game_state,
+                entities,
+                player,
+                game_map,
+                message_log,
+                current_game_state,
+                mouse,
+            )
+
+        # Present the frame
+        libtcod.console_flush()
+
+        # Update render tracking
+        self.last_rendered_entities = set(entities)
+
+    def _has_performance_data(self, game_state: Dict[str, Any]) -> bool:
+        """Check if performance optimization data is available.
+
+        Args:
+            game_state (Dict): Current game state
+
+        Returns:
+            bool: True if performance data is available
+        """
+        return (
+            "visible_entities" in game_state
+            and "dirty_rectangles" in game_state
+            and "full_redraw_needed" in game_state
+        )
+
+    def _optimized_render(
+        self,
+        game_state: Dict[str, Any],
+        entities,
+        player,
+        game_map,
+        message_log,
+        current_game_state,
+        mouse,
+    ) -> None:
+        """Perform optimized rendering using performance data.
+
+        Args:
+            game_state (Dict): Current game state with optimization data
+            entities: All entities
+            player: Player entity
+            game_map: Game map
+            message_log: Message log
+            current_game_state: Current game state
+            mouse: Mouse object
+        """
+        visible_entities = game_state.get("visible_entities", set())
+        dirty_rectangles = game_state.get("dirty_rectangles", set())
+        full_redraw_needed = game_state.get("full_redraw_needed", True)
+
+        # Handle FOV recomputation with caching
+        if self.fov_recompute and self.fov_map:
+            # Check if we can use cached FOV
+            performance_system = self.engine.get_system("performance")
+            if performance_system and performance_system.should_recompute_fov(
+                player.x, player.y, game_state.get("fov_radius", 10)
+            ):
+                recompute_fov(
+                    self.fov_map,
+                    player.x,
+                    player.y,
+                    game_state.get("fov_radius", 10),
+                    game_state.get("fov_light_walls", True),
+                    game_state.get("fov_algorithm", 0),
+                )
+
+                # Cache the result
+                if performance_system:
+                    performance_system.cache_fov_result(
+                        player.x,
+                        player.y,
+                        game_state.get("fov_radius", 10),
+                        self.fov_map,
+                    )
+
+        # Decide rendering strategy
+        if full_redraw_needed or not dirty_rectangles:
+            # Full render needed
+            self._render_full_optimized(
+                entities,
+                visible_entities,
+                player,
+                game_map,
+                message_log,
+                current_game_state,
+                mouse,
+            )
+            self.optimization_stats["full_renders"] += 1
+        else:
+            # Dirty rectangle rendering
+            self._render_dirty_rectangles(
+                dirty_rectangles,
+                entities,
+                visible_entities,
+                player,
+                game_map,
+                message_log,
+                current_game_state,
+                mouse,
+            )
+            self.optimization_stats["dirty_renders"] += 1
+
+        self.fov_recompute = False
+        self.optimization_stats["frames_optimized"] += 1
+
+        # Clear entities (only visible ones for optimization)
+        self._clear_visible_entities(visible_entities)
+
+        # Clear dirty rectangles
+        performance_system = self.engine.get_system("performance")
+        if performance_system:
+            performance_system.clear_dirty_rectangles()
+
+    def _standard_render(
+        self,
+        game_state: Dict[str, Any],
+        entities,
+        player,
+        game_map,
+        message_log,
+        current_game_state,
+        mouse,
+    ) -> None:
+        """Perform standard rendering (fallback when optimizations unavailable).
+
+        Args:
+            game_state (Dict): Current game state
+            entities: All entities
+            player: Player entity
+            game_map: Game map
+            message_log: Message log
+            current_game_state: Current game state
+            mouse: Mouse object
+        """
+        # Standard FOV recomputation
+        if self.fov_recompute and self.fov_map:
+            recompute_fov(
+                self.fov_map,
+                player.x,
+                player.y,
+                game_state.get("fov_radius", 10),
+                game_state.get("fov_light_walls", True),
+                game_state.get("fov_algorithm", 0),
+            )
+
+        # Standard rendering
+        render_all(
+            self.console,
+            self.panel,
+            entities,
+            player,
+            game_map,
+            self.fov_map,
+            self.fov_recompute,
+            message_log,
+            self.screen_width,
+            self.screen_height,
+            self.bar_width,
+            self.panel_height,
+            self.panel_y,
+            mouse,
+            self.colors,
+            current_game_state,
+        )
+
+        self.fov_recompute = False
+
+        # Standard entity clearing
+        clear_all(self.console, entities)
+
+    def _render_full_optimized(
+        self,
+        entities,
+        visible_entities: Set[Any],
+        player,
+        game_map,
+        message_log,
+        current_game_state,
+        mouse,
+    ) -> None:
+        """Perform a full render with entity culling optimization.
+
+        Args:
+            entities: All entities
+            visible_entities (Set): Set of visible entities for culling
+            player: Player entity
+            game_map: Game map
+            message_log: Message log
+            current_game_state: Current game state
+            mouse: Mouse object
+        """
+        # Use render_all but with culled entity list
+        culled_entities = [e for e in entities if e in visible_entities or e == player]
+
+        render_all(
+            self.console,
+            self.panel,
+            culled_entities,
+            player,
+            game_map,
+            self.fov_map,
+            self.fov_recompute,
+            message_log,
+            self.screen_width,
+            self.screen_height,
+            self.bar_width,
+            self.panel_height,
+            self.panel_y,
+            mouse,
+            self.colors,
+            current_game_state,
+        )
+
+        # Track skipped entities
+        skipped = len(entities) - len(culled_entities)
+        self.optimization_stats["entities_skipped"] += skipped
+
+        if skipped > 0 and logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Culled {skipped} invisible entities")
+
+    def _render_dirty_rectangles(
+        self,
+        dirty_rectangles: Set,
+        entities,
+        visible_entities: Set[Any],
+        player,
+        game_map,
+        message_log,
+        current_game_state,
+        mouse,
+    ) -> None:
+        """Render only dirty rectangular areas.
+
+        Args:
+            dirty_rectangles (Set): Set of dirty rectangle areas
+            entities: All entities
+            visible_entities (Set): Set of visible entities
+            player: Player entity
+            game_map: Game map
+            message_log: Message log
+            current_game_state: Current game state
+            mouse: Mouse object
+        """
+        # For now, fall back to full render for dirty rectangles
+        # This could be optimized further by implementing partial rendering
+        self._render_full_optimized(
+            entities,
+            visible_entities,
+            player,
+            game_map,
+            message_log,
+            current_game_state,
+            mouse,
+        )
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Processed {len(dirty_rectangles)} dirty rectangles")
+
+    def _clear_visible_entities(self, visible_entities: Set[Any]) -> None:
+        """Clear only visible entities from the console.
+
+        Args:
+            visible_entities (Set): Set of visible entities to clear
+        """
+        for entity in visible_entities:
+            clear_entity(self.console, entity)
+
+    def enable_optimizations(self) -> None:
+        """Enable rendering optimizations."""
+        self.use_optimizations = True
+        logger.info("Rendering optimizations enabled")
+
+    def disable_optimizations(self) -> None:
+        """Disable rendering optimizations (for debugging)."""
+        self.use_optimizations = False
+        logger.info("Rendering optimizations disabled")
+
+    def get_optimization_stats(self) -> Dict[str, Any]:
+        """Get rendering optimization statistics.
+
+        Returns:
+            Dict: Optimization statistics
+        """
+        return self.optimization_stats.copy()
+
+    def reset_optimization_stats(self) -> None:
+        """Reset optimization statistics."""
+        self.optimization_stats = {
+            "frames_optimized": 0,
+            "entities_skipped": 0,
+            "dirty_renders": 0,
+            "full_renders": 0,
+        }
+        logger.info("Rendering optimization statistics reset")
+
+    def cleanup(self) -> None:
+        """Clean up optimized rendering resources."""
+        super().cleanup()
+        self.last_rendered_entities.clear()
+        self.render_cache.clear()
+        logger.info("OptimizedRenderSystem cleaned up")

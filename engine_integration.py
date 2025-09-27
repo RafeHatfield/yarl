@@ -7,7 +7,8 @@ architecture and the existing game loop, allowing for gradual migration.
 import tcod.libtcodpy as libtcod
 
 from engine import GameEngine
-from engine.systems import RenderSystem, InputSystem, AISystem
+from engine.systems import RenderSystem, InputSystem, AISystem, PerformanceSystem
+from engine.systems.optimized_render_system import OptimizedRenderSystem
 from fov_functions import initialize_fov
 from game_states import GameStates
 from input_handlers import handle_keys, handle_mouse
@@ -27,6 +28,10 @@ def create_game_engine(constants, con, panel):
     # Create the engine
     engine = GameEngine(target_fps=60)  # Could be configurable
 
+    # Create and register the performance system (very early priority)
+    performance_system = PerformanceSystem(priority=5)
+    engine.register_system(performance_system)
+
     # Create and register the input system (early priority)
     input_system = InputSystem(priority=10)
     engine.register_system(input_system)
@@ -35,14 +40,15 @@ def create_game_engine(constants, con, panel):
     ai_system = AISystem(priority=50)
     engine.register_system(ai_system)
 
-    # Create and register the render system (late priority)
-    render_system = RenderSystem(
+    # Create and register the optimized render system (late priority)
+    render_system = OptimizedRenderSystem(
         console=con,
         panel=panel,
         screen_width=constants["screen_width"],
         screen_height=constants["screen_height"],
         colors=constants["colors"],
         priority=100,  # Render last
+        use_optimizations=True,  # Enable performance optimizations
     )
     engine.register_system(render_system)
 

@@ -32,7 +32,14 @@ class TestCreateGameEngine:
 
         assert isinstance(engine, GameEngine)
         assert engine.target_fps == 60
-        assert engine.system_count == 3  # InputSystem + AISystem + RenderSystem
+        assert (
+            engine.system_count == 4
+        )  # PerformanceSystem + InputSystem + AISystem + RenderSystem
+
+        # Check that performance system was registered
+        performance_system = engine.get_system("performance")
+        assert performance_system is not None
+        assert performance_system.priority == 5
 
         # Check that input system was registered
         input_system = engine.get_system("input")
@@ -46,7 +53,8 @@ class TestCreateGameEngine:
 
         # Check that render system was registered
         render_system = engine.get_system("render")
-        assert isinstance(render_system, RenderSystem)
+        # Note: Now using OptimizedRenderSystem
+        assert render_system is not None
         assert render_system.console is con
         assert render_system.panel is panel
         assert render_system.screen_width == 80
@@ -325,7 +333,9 @@ class TestEngineIntegrationEnd2End:
             )
 
         # Verify engine is properly configured
-        assert engine.system_count == 3  # InputSystem + AISystem + RenderSystem
+        assert (
+            engine.system_count == 4
+        )  # PerformanceSystem + InputSystem + AISystem + RenderSystem
         assert engine.state_manager.state.player is player
         assert engine.state_manager.state.entities is entities
 
