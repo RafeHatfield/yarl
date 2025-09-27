@@ -102,6 +102,9 @@ class OptimizedRenderSystem(RenderSystem):
         # Update our fov_recompute flag from game state
         # This ensures we use the game state's flag, not our own stale flag
         self.fov_recompute = game_state.get("fov_recompute", False)
+        
+        # Store the original fov_recompute value for render_all
+        original_fov_recompute = self.fov_recompute
 
         # Use optimized rendering if available and enabled
         if self.use_optimizations and self._has_performance_data(game_state):
@@ -113,6 +116,7 @@ class OptimizedRenderSystem(RenderSystem):
                 message_log,
                 current_game_state,
                 mouse,
+                original_fov_recompute,
             )
         else:
             # Fall back to standard rendering
@@ -124,6 +128,7 @@ class OptimizedRenderSystem(RenderSystem):
                 message_log,
                 current_game_state,
                 mouse,
+                original_fov_recompute,
             )
 
         # Present the frame
@@ -156,6 +161,7 @@ class OptimizedRenderSystem(RenderSystem):
         message_log,
         current_game_state,
         mouse,
+        original_fov_recompute: bool,
     ) -> None:
         """Perform optimized rendering using performance data.
 
@@ -205,7 +211,9 @@ class OptimizedRenderSystem(RenderSystem):
                     )
 
         # Decide rendering strategy
-        if full_redraw_needed or not dirty_rectangles:
+        # Force full redraw when FOV was recomputed (map tiles need to be redrawn)
+        fov_was_recomputed = self.fov_recompute
+        if full_redraw_needed or not dirty_rectangles or fov_was_recomputed:
             # Full render needed
             self._render_full_optimized(
                 entities,
@@ -215,6 +223,7 @@ class OptimizedRenderSystem(RenderSystem):
                 message_log,
                 current_game_state,
                 mouse,
+                original_fov_recompute,
             )
             self.optimization_stats["full_renders"] += 1
         else:
@@ -255,6 +264,7 @@ class OptimizedRenderSystem(RenderSystem):
         message_log,
         current_game_state,
         mouse,
+        original_fov_recompute: bool,
     ) -> None:
         """Perform standard rendering (fallback when optimizations unavailable).
 
@@ -286,7 +296,7 @@ class OptimizedRenderSystem(RenderSystem):
             player,
             game_map,
             self.fov_map,
-            self.fov_recompute,
+            original_fov_recompute,
             message_log,
             self.screen_width,
             self.screen_height,
@@ -316,6 +326,7 @@ class OptimizedRenderSystem(RenderSystem):
         message_log,
         current_game_state,
         mouse,
+        original_fov_recompute: bool,
     ) -> None:
         """Perform a full render with entity culling optimization.
 
@@ -338,7 +349,7 @@ class OptimizedRenderSystem(RenderSystem):
             player,
             game_map,
             self.fov_map,
-            self.fov_recompute,
+            original_fov_recompute,
             message_log,
             self.screen_width,
             self.screen_height,
