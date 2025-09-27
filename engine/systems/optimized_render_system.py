@@ -169,12 +169,19 @@ class OptimizedRenderSystem(RenderSystem):
         full_redraw_needed = game_state.get("full_redraw_needed", True)
 
         # Handle FOV recomputation with caching
-        if self.fov_recompute and self.fov_map:
-            # Check if we can use cached FOV
+        if self.fov_map:
             performance_system = self.engine.get_system("performance")
-            if performance_system and performance_system.should_recompute_fov(
-                player.x, player.y, game_state.get("fov_radius", 10)
-            ):
+            
+            # Check if we should recompute based on position (for caching optimization)
+            should_recompute_for_position = (
+                not performance_system or 
+                performance_system.should_recompute_fov(
+                    player.x, player.y, game_state.get("fov_radius", 10)
+                )
+            )
+            
+            # Always recompute when fov_recompute=True, or when position changed
+            if self.fov_recompute or should_recompute_for_position:
                 recompute_fov(
                     self.fov_map,
                     player.x,
