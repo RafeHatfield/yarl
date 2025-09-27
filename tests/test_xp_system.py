@@ -26,9 +26,9 @@ class TestFighterXPRewards:
         fighter = Fighter(hp=20, defense=2, power=3, xp=50)
         
         assert fighter.hp == 20
-        assert fighter.max_hp == 20
-        assert fighter.defense == 2
-        assert fighter.power == 3
+        assert fighter.base_max_hp == 20
+        assert fighter.base_defense == 2
+        assert fighter.base_power == 3
         assert fighter.xp == 50
 
     def test_fighter_initialization_default_xp(self):
@@ -51,7 +51,12 @@ class TestFighterXPRewards:
 
     def test_fighter_xp_is_preserved(self):
         """Test that Fighter XP value is preserved through operations."""
+        from components.equipment import Equipment
+        from entity import Entity
+        
         fighter = Fighter(hp=25, defense=3, power=4, xp=75)
+        equipment = Equipment()
+        entity = Entity(0, 0, '@', (255, 255, 255), 'Test', fighter=fighter, equipment=equipment)
         
         # Perform various operations
         fighter.heal(5)

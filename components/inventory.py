@@ -31,7 +31,12 @@ class Inventory:
         item_component = item_entity.item
 
         if item_component.use_function is None:
-            results.append({'message': Message('The {0} cannot be used'.format(item_entity.name), libtcod.yellow)})
+            equippable_component = item_entity.equippable
+
+            if equippable_component:
+                results.append({'equip': item_entity})
+            else:
+                results.append({'message': Message('The {0} cannot be used'.format(item_entity.name), libtcod.yellow)})
         else:            
             if item_component.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
                 results.append({'targeting': item_entity})
@@ -70,6 +75,10 @@ class Inventory:
         """Drop item from inventory."""
         results = []
         
+        # Check if item is equipped and unequip it
+        if item and self.owner.equipment and (self.owner.equipment.main_hand == item or self.owner.equipment.off_hand == item):
+            self.owner.equipment.toggle_equip(item)
+            
         remove_results = self.remove_item(item)
         if remove_results[0].get('item_removed'):
             # Item was successfully removed

@@ -19,11 +19,11 @@ class TestFighterBasics:
         # Act
         fighter = Fighter(hp=30, defense=2, power=5)
         
-        # Assert
-        assert fighter.max_hp == 30
+        # Assert - use base stats since no equipment
+        assert fighter.base_max_hp == 30
         assert fighter.hp == 30
-        assert fighter.defense == 2
-        assert fighter.power == 5
+        assert fighter.base_defense == 2
+        assert fighter.base_power == 5
         # Note: Fighter doesn't have owner attribute until assigned to entity
 
     def test_fighter_with_owner(self, mock_libtcod):
@@ -40,22 +40,22 @@ class TestFighterBasics:
         # Act
         fighter = Fighter(hp=0, defense=0, power=0)
         
-        # Assert
-        assert fighter.max_hp == 0
+        # Assert - use base stats since no equipment
+        assert fighter.base_max_hp == 0
         assert fighter.hp == 0
-        assert fighter.defense == 0
-        assert fighter.power == 0
+        assert fighter.base_defense == 0
+        assert fighter.base_power == 0
 
     def test_fighter_negative_stats(self):
         """Test fighter with negative stats."""
         # Act
         fighter = Fighter(hp=-5, defense=-2, power=-1)
         
-        # Assert
-        assert fighter.max_hp == -5
+        # Assert - use base stats since no equipment
+        assert fighter.base_max_hp == -5
         assert fighter.hp == -5
-        assert fighter.defense == -2
-        assert fighter.power == -1
+        assert fighter.base_defense == -2
+        assert fighter.base_power == -1
 
 
 class TestFighterTakeDamage:
@@ -388,11 +388,11 @@ class TestFighterEdgeCases:
         # Act
         fighter = Fighter(hp=999999, defense=999999, power=999999)
         
-        # Assert
-        assert fighter.max_hp == 999999
+        # Assert - use base stats since no equipment
+        assert fighter.base_max_hp == 999999
         assert fighter.hp == 999999
-        assert fighter.defense == 999999
-        assert fighter.power == 999999
+        assert fighter.base_defense == 999999
+        assert fighter.base_power == 999999
 
     def test_fighter_without_owner_attack(self):
         """Test fighter attacking without being assigned to an entity."""

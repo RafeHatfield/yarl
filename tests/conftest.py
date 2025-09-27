@@ -79,6 +79,8 @@ def basic_inventory():
 @pytest.fixture
 def player_entity(basic_fighter, basic_inventory, mock_libtcod):
     """Create a basic player entity for testing."""
+    from components.equipment import Equipment
+    equipment = Equipment()
     return Entity(
         x=10, y=10, 
         char='@', 
@@ -87,7 +89,8 @@ def player_entity(basic_fighter, basic_inventory, mock_libtcod):
         blocks=True,
         render_order=RenderOrder.ACTOR,
         fighter=basic_fighter,
-        inventory=basic_inventory
+        inventory=basic_inventory,
+        equipment=equipment
     )
 
 
@@ -95,8 +98,10 @@ def player_entity(basic_fighter, basic_inventory, mock_libtcod):
 def enemy_entity(mock_libtcod):
     """Create a basic enemy entity for testing."""
     from components.ai import BasicMonster
+    from components.equipment import Equipment
     fighter = Fighter(hp=20, defense=1, power=3)
     ai = BasicMonster()
+    equipment = Equipment()
     return Entity(
         x=15, y=15,
         char='o',
@@ -105,7 +110,8 @@ def enemy_entity(mock_libtcod):
         blocks=True,
         render_order=RenderOrder.ACTOR,
         fighter=fighter,
-        ai=ai
+        ai=ai,
+        equipment=equipment
     )
 
 
