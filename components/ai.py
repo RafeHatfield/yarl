@@ -1,6 +1,7 @@
 from random import randint
 
 import tcod as libtcod
+import tcod.libtcodpy as libtcodpy
 
 from game_messages import Message
 
@@ -34,7 +35,7 @@ class BasicMonster:
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
-        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+        if libtcodpy.map_is_in_fov(fov_map, monster.x, monster.y):
 
             if monster.distance_to(target) >= 2:
                 # monster.move_towards(target.x, target.y, game_map, entities)

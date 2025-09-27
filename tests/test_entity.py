@@ -472,7 +472,7 @@ class TestBasicMonsterAI:
         entities = []
 
         # Mock FOV check to return False (monster can't see target)
-        with patch("components.ai.libtcod") as mock_tcod:
+        with patch("components.ai.libtcodpy") as mock_tcod:
             mock_tcod.map_is_in_fov.return_value = False
 
             # Act
@@ -503,7 +503,6 @@ class TestBasicMonsterAI:
         entities = []
 
         # Mock FOV and pathfinding
-        mock_tcod.map_is_in_fov.return_value = True
         mock_path = Mock()
         mock_tcod.map_new.return_value = Mock()
         mock_tcod.map_set_properties.return_value = None
@@ -514,13 +513,17 @@ class TestBasicMonsterAI:
         mock_tcod.path_walk.return_value = (11, 11)
         mock_tcod.path_delete.return_value = None
 
-        # Act
-        results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+        # Mock the AI FOV check separately
+        with patch("components.ai.libtcodpy") as mock_ai_tcod:
+            mock_ai_tcod.map_is_in_fov.return_value = True
 
-        # Assert
-        assert len(results) == 0  # No attack, just movement
-        assert monster.x == 11  # Monster moved via A*
-        assert monster.y == 11
+            # Act
+            results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+
+            # Assert
+            assert len(results) == 0  # No attack, just movement
+            assert monster.x == 11  # Monster moved via A*
+            assert monster.y == 11
 
     def test_basic_monster_attacks_when_adjacent(self, mock_libtcod):
         """Test basic monster attacks when adjacent to target."""
@@ -541,7 +544,7 @@ class TestBasicMonsterAI:
         entities = []
 
         # Mock FOV check
-        with patch("components.ai.libtcod") as mock_tcod:
+        with patch("components.ai.libtcodpy") as mock_tcod:
             mock_tcod.map_is_in_fov.return_value = True
             mock_tcod.white = mock_libtcod.white
 
@@ -650,7 +653,7 @@ class TestConfusedMonsterAI:
         entities = []
 
         # Mock the color for message
-        with patch("components.ai.libtcod") as mock_tcod:
+        with patch("components.ai.libtcodpy") as mock_tcod:
             mock_tcod.red = mock_libtcod.red
 
             # Act - first turn should still be confused
@@ -684,7 +687,7 @@ class TestConfusedMonsterAI:
         entities = []
 
         # Mock the color for message
-        with patch("components.ai.libtcod") as mock_tcod:
+        with patch("components.ai.libtcodpy") as mock_tcod:
             mock_tcod.red = mock_libtcod.red
 
             # Act

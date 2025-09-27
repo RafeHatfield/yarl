@@ -6,6 +6,7 @@ and line-of-sight mechanics.
 """
 
 import tcod as libtcod
+import tcod.libtcodpy as libtcodpy
 
 
 def initialize_fov(game_map):
@@ -19,11 +20,11 @@ def initialize_fov(game_map):
     Returns:
         FOV map: tcod FOV map object for visibility calculations
     """
-    fov_map = libtcod.map_new(game_map.width, game_map.height)
+    fov_map = libtcodpy.map_new(game_map.width, game_map.height)
 
     for y in range(game_map.height):
         for x in range(game_map.width):
-            libtcod.map_set_properties(
+            libtcodpy.map_set_properties(
                 fov_map,
                 x,
                 y,
@@ -45,4 +46,4 @@ def recompute_fov(fov_map, x, y, radius, light_walls=True, algorithm=0):
         light_walls (bool, optional): Whether walls are lit. Defaults to True.
         algorithm (int, optional): FOV algorithm to use. Defaults to 0.
     """
-    libtcod.map_compute_fov(fov_map, x, y, radius, light_walls, algorithm)
+    libtcodpy.map_compute_fov(fov_map, x, y, radius, light_walls, algorithm)
