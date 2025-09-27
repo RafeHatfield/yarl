@@ -1,3 +1,10 @@
+"""Menu and UI screen functions.
+
+This module provides functions for displaying various game menus
+including inventory, main menu, level up, character screen, and
+message boxes. All menus are rendered as centered overlays.
+"""
+
 import tcod as libtcod
 
 
@@ -52,6 +59,18 @@ def menu(con, header, options, width, screen_width, screen_height):
 
 
 def inventory_menu(con, header, player, inventory_width, screen_width, screen_height):
+    """Display the player's inventory as a selectable menu.
+
+    Shows each item in the inventory with equipment status indicators.
+
+    Args:
+        con: Console to draw on
+        header (str): Menu header text
+        player (Entity): Player entity with inventory component
+        inventory_width (int): Width of the inventory menu
+        screen_width (int): Screen width for centering
+        screen_height (int): Screen height for centering
+    """
     # show a menu with each item of the inventory as an option
     if len(player.inventory.items) == 0:
         options = ["Inventory is empty."]
@@ -70,6 +89,14 @@ def inventory_menu(con, header, player, inventory_width, screen_width, screen_he
 
 
 def main_menu(con, background_image, screen_width, screen_height):
+    """Display the main menu screen.
+
+    Args:
+        con: Console to draw on
+        background_image: Background image for the menu
+        screen_width (int): Screen width
+        screen_height (int): Screen height
+    """
     libtcod.image_blit_2x(background_image, 0, 0, 0)
 
     libtcod.console_set_default_foreground(0, libtcod.light_yellow)
@@ -101,6 +128,16 @@ def main_menu(con, background_image, screen_width, screen_height):
 
 
 def level_up_menu(con, header, player, menu_width, screen_width, screen_height):
+    """Display the level up menu for stat selection.
+
+    Args:
+        con: Console to draw on
+        header (str): Menu header text
+        player (Entity): Player entity with level component
+        menu_width (int): Width of the menu
+        screen_width (int): Screen width for centering
+        screen_height (int): Screen height for centering
+    """
     options = [
         "Constitution (+20 HP, from {0})".format(player.fighter.max_hp),
         "Strength (+1 attack, from {0})".format(player.fighter.power),
@@ -111,12 +148,35 @@ def level_up_menu(con, header, player, menu_width, screen_width, screen_height):
 
 
 def message_box(con, header, width, screen_width, screen_height):
+    """Display a simple message box.
+
+    Args:
+        con: Console to draw on
+        header (str): Message to display
+        width (int): Width of the message box
+        screen_width (int): Screen width for centering
+        screen_height (int): Screen height for centering
+    """
     menu(con, header, [], width, screen_width, screen_height)
 
 
 def character_screen(
     player, character_screen_width, character_screen_height, screen_width, screen_height
 ):
+    """Display the character information screen.
+
+    Shows player stats, level, and equipment information.
+
+    Args:
+        player (Entity): Player entity with stats
+        character_screen_width (int): Width of the character screen
+        character_screen_height (int): Height of the character screen
+        screen_width (int): Screen width for centering
+        screen_height (int): Screen height for centering
+
+    Returns:
+        Console: The character screen console
+    """
     window = libtcod.console_new(character_screen_width, character_screen_height)
 
     libtcod.console_set_default_foreground(window, (255, 255, 255))

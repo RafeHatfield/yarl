@@ -1,4 +1,9 @@
-"""Holds 2d array of tiles and methods for setting up and interacting"""
+"""Game map generation and management.
+
+This module contains the GameMap class which handles dungeon generation,
+tile management, entity placement, and map navigation. It uses BSP-style
+room generation with connecting tunnels.
+"""
 
 from random import randint
 
@@ -18,9 +23,26 @@ from stairs import Stairs
 
 
 class GameMap:
-    """Class for handling the map and tiles"""
+    """Manages the game map including tiles, rooms, and entity placement.
+
+    Handles dungeon generation using rectangular rooms connected by tunnels,
+    entity spawning based on dungeon level, and map navigation.
+
+    Attributes:
+        width (int): Map width in tiles
+        height (int): Map height in tiles
+        tiles (list): 2D array of Tile objects
+        dungeon_level (int): Current dungeon level for scaling difficulty
+    """
 
     def __init__(self, width, height, dungeon_level=1):
+        """Initialize a new GameMap.
+
+        Args:
+            width (int): Width of the map in tiles
+            height (int): Height of the map in tiles
+            dungeon_level (int, optional): Dungeon level for difficulty scaling. Defaults to 1.
+        """
         self.width = width
         self.height = height
         self.tiles = self.initialize_tiles()
@@ -28,6 +50,11 @@ class GameMap:
         self.dungeon_level = dungeon_level
 
     def initialize_tiles(self):
+        """Initialize the map with blocked wall tiles.
+
+        Returns:
+            list: 2D array of Tile objects, all initially blocked
+        """
         """Function initializing the tiles in the map"""
         tiles = [[Tile(True) for y in range(self.height)] for x in range(self.width)]
 
@@ -43,6 +70,21 @@ class GameMap:
         player,
         entities,
     ):
+        """Generate a new dungeon map with rooms and tunnels.
+
+        Uses BSP-style generation to create rectangular rooms connected
+        by horizontal and vertical tunnels. Places the player in the first
+        room and stairs in the last room.
+
+        Args:
+            max_rooms (int): Maximum number of rooms to generate
+            room_min_size (int): Minimum room dimension
+            room_max_size (int): Maximum room dimension
+            map_width (int): Map width in tiles
+            map_height (int): Map height in tiles
+            player (Entity): Player entity to place
+            entities (list): List to populate with generated entities
+        """
         # Create two rooms for demonstration purposes
         # room1 = Rect(20, 15, 10, 15)
         # room2 = Rect(35, 15, 10, 15)
@@ -125,6 +167,11 @@ class GameMap:
         entities.append(down_stairs)
 
     def create_room(self, room):
+        """Create a room by making tiles passable.
+
+        Args:
+            room (Rect): Rectangle defining the room boundaries
+        """
         """Function to make a room on the map"""
         # go through the tiles in the rectangle and make them passable
         for x in range(room.x1 + 1, room.x2):
@@ -133,16 +180,39 @@ class GameMap:
                 self.tiles[x][y].block_sight = False
 
     def create_h_tunnel(self, x1, x2, y):
+        """Create a horizontal tunnel between two x coordinates.
+
+        Args:
+            x1 (int): Starting x coordinate
+            x2 (int): Ending x coordinate
+            y (int): Y coordinate of the tunnel
+        """
         for x in range(min(x1, x2), max(x1, x2) + 1):
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
     def create_v_tunnel(self, y1, y2, x):
+        """Create a vertical tunnel between two y coordinates.
+
+        Args:
+            y1 (int): Starting y coordinate
+            y2 (int): Ending y coordinate
+            x (int): X coordinate of the tunnel
+        """
         for y in range(min(y1, y2), max(y1, y2) + 1):
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
     def place_entities(self, room, entities):
+        """Place monsters and items in a room based on dungeon level.
+
+        Uses probability tables that scale with dungeon level to determine
+        what entities to spawn and where to place them.
+
+        Args:
+            room (Rect): Room to place entities in
+            entities (list): List to add new entities to
+        """
         max_monsters_per_room = from_dungeon_level(
             [[2, 1], [3, 4], [5, 6]], self.dungeon_level
         )
@@ -308,6 +378,15 @@ class GameMap:
                 entities.append(item)
 
     def is_blocked(self, x, y):
+        """Check if a tile is blocked for movement.
+
+        Args:
+            x (int): X coordinate to check
+            y (int): Y coordinate to check
+
+        Returns:
+            bool: True if the tile is blocked, False otherwise
+        """
         """Function to determine if a tile is blocked"""
         if self.tiles[x][y].blocked:
             return True
@@ -315,6 +394,18 @@ class GameMap:
         return False
 
     def next_floor(self, player, message_log, constants):
+        """Generate the next dungeon floor.
+
+        Increases dungeon level, heals the player, and generates a new map.
+
+        Args:
+            player (Entity): Player entity
+            message_log (MessageLog): Game message log
+            constants (dict): Game configuration constants
+
+        Returns:
+            list: New entities list for the floor
+        """
         self.dungeon_level += 1
         entities = [player]
 

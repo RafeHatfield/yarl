@@ -1,3 +1,9 @@
+"""Game initialization functions and constants.
+
+This module handles the creation of new games, setting up initial
+game state, player character, and game world configuration.
+"""
+
 from tcod import libtcodpy
 
 from components.equipment import Equipment
@@ -14,6 +20,12 @@ from render_functions import RenderOrder
 
 
 def get_constants():
+    """Get game configuration constants.
+
+    Returns:
+        dict: Dictionary containing all game configuration values including
+              screen dimensions, UI layout, colors, and game parameters
+    """
     window_title = "Roguelike Tutorial Revised"
 
     screen_width = 80
@@ -75,6 +87,16 @@ def get_constants():
 
 
 def get_game_variables(constants):
+    """Initialize all game variables for a new game.
+
+    Creates the player character, game world, entities, and initial game state.
+
+    Args:
+        constants (dict): Game configuration constants from get_constants()
+
+    Returns:
+        tuple: (player, entities, game_map, message_log, game_state) for new game
+    """
     # fighter_component = Fighter(hp=100, defense=1, power=4)
     fighter_component = Fighter(hp=100, defense=1, power=2)
     inventory_component = Inventory(26)

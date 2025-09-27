@@ -1,9 +1,25 @@
+"""Input handling functions for keyboard and mouse events.
+
+This module processes player input and translates it into game actions
+based on the current game state. Different states have different input
+handlers for context-appropriate controls.
+"""
+
 import tcod.libtcodpy as libtcod
 
 from game_states import GameStates
 
 
 def handle_keys(key, game_state):
+    """Route key input to the appropriate handler based on game state.
+
+    Args:
+        key: tcod Key object containing key press information
+        game_state (GameStates): Current game state
+
+    Returns:
+        dict: Dictionary of actions to perform based on the key press
+    """
     if game_state == GameStates.PLAYERS_TURN:
         return handle_player_turn_keys(key)
     elif game_state == GameStates.PLAYER_DEAD:
@@ -21,6 +37,14 @@ def handle_keys(key, game_state):
 
 
 def handle_targeting_keys(key):
+    """Handle input during targeting mode (for spells).
+
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with 'exit' key if targeting should be cancelled
+    """
     if key.vk == libtcod.KEY_ESCAPE:
         return {"exit": True}
 
@@ -28,6 +52,14 @@ def handle_targeting_keys(key):
 
 
 def handle_inventory_keys(key):
+    """Handle input in inventory menus (show/drop inventory).
+
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with 'inventory_index', 'fullscreen', or 'exit' keys
+    """
     index = key.c - ord("a")
 
     if index >= 0:
@@ -44,6 +76,16 @@ def handle_inventory_keys(key):
 
 
 def handle_player_turn_keys(key):
+    """Handle input during the player's turn (main gameplay).
+
+    Processes movement, actions, and menu commands during normal gameplay.
+
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with action keys like 'move', 'pickup', 'show_inventory', etc.
+    """
     key_char = chr(key.c)
 
     # Movement keys
@@ -89,6 +131,14 @@ def handle_player_turn_keys(key):
 
 
 def handle_player_dead_keys(key):
+    """Handle input when the player is dead (game over screen).
+
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with 'fullscreen' or 'exit' keys
+    """
     key_char = chr(key.c)
 
     if key_char == "i":
@@ -105,6 +155,14 @@ def handle_player_dead_keys(key):
 
 
 def handle_mouse(mouse):
+    """Handle mouse input events.
+
+    Args:
+        mouse: tcod Mouse object containing mouse state information
+
+    Returns:
+        dict: Dictionary with mouse action keys
+    """
     (x, y) = (int(mouse.cx), int(mouse.cy))
 
     if mouse.lbutton_pressed:
@@ -116,6 +174,14 @@ def handle_mouse(mouse):
 
 
 def handle_main_menu(key):
+    """Handle input in the main menu.
+
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with 'new_game', 'load_game', 'fullscreen', or 'exit' keys
+    """
     key_char = chr(key.c)
 
     if key_char == "a":
@@ -129,6 +195,14 @@ def handle_main_menu(key):
 
 
 def handle_level_up_menu(key):
+    """Handle input in the level up menu.
+
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with 'level_up' key containing the chosen stat
+    """
     if key:
         key_char = chr(key.c)
 
@@ -143,6 +217,14 @@ def handle_level_up_menu(key):
 
 
 def handle_character_screen(key):
+    """Handle input in the character screen.
+
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with 'exit' key to close the character screen
+    """
     if key.vk == libtcod.KEY_ESCAPE:
         return {"exit": True}
 
