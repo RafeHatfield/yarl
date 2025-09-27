@@ -50,22 +50,22 @@ class Equipment:
         if slot == EquipmentSlots.MAIN_HAND:
             if self.main_hand == equippable_entity:
                 self.main_hand = None
-                results.append({'dequipped': equippable_entity})
+                results.append({"dequipped": equippable_entity})
             else:
                 if self.main_hand:
-                    results.append({'dequipped': self.main_hand})
+                    results.append({"dequipped": self.main_hand})
 
                 self.main_hand = equippable_entity
-                results.append({'equipped': equippable_entity})
+                results.append({"equipped": equippable_entity})
         elif slot == EquipmentSlots.OFF_HAND:
             if self.off_hand == equippable_entity:
                 self.off_hand = None
-                results.append({'dequipped': equippable_entity})
+                results.append({"dequipped": equippable_entity})
             else:
                 if self.off_hand:
-                    results.append({'dequipped': self.off_hand})
+                    results.append({"dequipped": self.off_hand})
 
                 self.off_hand = equippable_entity
-                results.append({'equipped': equippable_entity})
+                results.append({"equipped": equippable_entity})
 
         return results

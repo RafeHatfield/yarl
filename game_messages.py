@@ -1,5 +1,3 @@
-import tcod as libtcod
-
 import textwrap
 
 
