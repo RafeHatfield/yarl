@@ -149,9 +149,7 @@ class TestNextFloorMechanics:
                 self.constants['map_width'],
                 self.constants['map_height'],
                 self.player,
-                entities,  # Should be [player] only
-                self.constants['max_monsters_per_room'],
-                self.constants['max_items_per_room']
+                entities  # Should be [player] only
             )
 
     def test_next_floor_heals_player(self):
