@@ -32,7 +32,12 @@ class TestCreateGameEngine:
 
         assert isinstance(engine, GameEngine)
         assert engine.target_fps == 60
-        assert engine.system_count == 1
+        assert engine.system_count == 2  # InputSystem + RenderSystem
+
+        # Check that input system was registered
+        input_system = engine.get_system("input")
+        assert input_system is not None
+        assert input_system.priority == 10
 
         # Check that render system was registered
         render_system = engine.get_system("render")
@@ -315,7 +320,7 @@ class TestEngineIntegrationEnd2End:
             )
 
         # Verify engine is properly configured
-        assert engine.system_count == 1
+        assert engine.system_count == 2  # InputSystem + RenderSystem
         assert engine.state_manager.state.player is player
         assert engine.state_manager.state.entities is entities
 

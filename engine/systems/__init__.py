@@ -5,5 +5,6 @@ that inherit from the base System class.
 """
 
 from .render_system import RenderSystem
+from .input_system import InputSystem
 
-__all__ = ["RenderSystem"]
+__all__ = ["RenderSystem", "InputSystem"]

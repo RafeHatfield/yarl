@@ -7,7 +7,7 @@ architecture and the existing game loop, allowing for gradual migration.
 import tcod.libtcodpy as libtcod
 
 from engine import GameEngine
-from engine.systems import RenderSystem
+from engine.systems import RenderSystem, InputSystem
 from fov_functions import initialize_fov
 from game_states import GameStates
 from input_handlers import handle_keys, handle_mouse
@@ -27,7 +27,11 @@ def create_game_engine(constants, con, panel):
     # Create the engine
     engine = GameEngine(target_fps=60)  # Could be configurable
 
-    # Create and register the render system
+    # Create and register the input system (early priority)
+    input_system = InputSystem(priority=10)
+    engine.register_system(input_system)
+
+    # Create and register the render system (late priority)
     render_system = RenderSystem(
         console=con,
         panel=panel,
@@ -36,7 +40,6 @@ def create_game_engine(constants, con, panel):
         colors=constants["colors"],
         priority=100,  # Render last
     )
-
     engine.register_system(render_system)
 
     return engine
@@ -121,12 +124,12 @@ def play_game_with_engine(
         # Clear console
         libtcod.console_clear(con)
 
-        # Update all systems (including rendering)
+        # Update all systems (including input and rendering)
         engine.update()
 
-        # Handle input actions (this part still uses the old system for now)
-        action = handle_keys(key, engine.state_manager.state.current_state)
-        mouse_action = handle_mouse(mouse)
+        # Get actions from the input system
+        action = engine.state_manager.get_extra_data("keyboard_actions", {})
+        mouse_action = engine.state_manager.get_extra_data("mouse_actions", {})
 
         # Process actions (keeping existing logic for now)
         if _should_exit_game(
