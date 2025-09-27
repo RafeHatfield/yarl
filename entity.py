@@ -1,14 +1,54 @@
-import tcod as libtcod
 import math
+
+import tcod as libtcod
+
 from components.item import Item
 from render_functions import RenderOrder
 
+
 class Entity:
+    """A generic object to represent players, enemies, items, etc.
+    
+    This is the base class for all game objects including the player,
+    monsters, items, stairs, and other interactive elements. It provides
+    basic functionality for positioning, rendering, movement, and pathfinding.
+    
+    Attributes:
+        x (int): X coordinate on the game map
+        y (int): Y coordinate on the game map
+        char (str): Character to display for this entity
+        color (tuple): RGB color tuple for rendering
+        name (str): Display name of the entity
+        blocks (bool): Whether this entity blocks movement
+        render_order (RenderOrder): Rendering priority order
+        fighter (Fighter): Combat component (optional)
+        ai (AI): AI behavior component (optional)
+        item (Item): Item component (optional)
+        inventory (Inventory): Inventory component (optional)
+        stairs (Stairs): Stairs component (optional)
+        level (Level): Level/XP component (optional)
+        equipment (Equipment): Equipment component (optional)
+        equippable (Equippable): Equippable component (optional)
     """
-    A generic object to represent players, enemies, items, etc.
-    """
-    def __init__(self, x, y, char, color, name, blocks=False, render_order=RenderOrder.CORPSE, fighter=None, ai=None,
-                 item=None, inventory=None, stairs=None, level=None, equipment=None, equippable=None):
+
+    def __init__(
+        self,
+        x,
+        y,
+        char,
+        color,
+        name,
+        blocks=False,
+        render_order=RenderOrder.CORPSE,
+        fighter=None,
+        ai=None,
+        item=None,
+        inventory=None,
+        stairs=None,
+        level=None,
+        equipment=None,
+        equippable=None,
+    ):
         self.x = x
         self.y = y
         self.char = char
@@ -55,39 +95,70 @@ class Entity:
                 self.item.owner = self
 
     def move(self, dx, dy):
-        # Move the entity by a given amount
+        """Move the entity by a given amount.
+        
+        Args:
+            dx (int): Change in x coordinate
+            dy (int): Change in y coordinate
+        """
         self.x += dx
         self.y += dy
 
-
     def move_towards(self, target_x, target_y, game_map, entities):
+        """Move towards a target position, avoiding obstacles.
+        
+        Args:
+            target_x (int): Target x coordinate
+            target_y (int): Target y coordinate
+            game_map (GameMap): The game map for collision detection
+            entities (list): List of entities to avoid
+        """
         dx = target_x - self.x
         dy = target_y - self.y
-        distance = math.sqrt(dx ** 2 + dy ** 2)
+        distance = math.sqrt(dx**2 + dy**2)
 
         dx = int(round(dx / distance))
         dy = int(round(dy / distance))
 
-        if not (game_map.is_blocked(self.x + dx, self.y + dy) or
-                    get_blocking_entities_at_location(entities, self.x + dx, self.y + dy)):
+        if not (
+            game_map.is_blocked(self.x + dx, self.y + dy)
+            or get_blocking_entities_at_location(entities, self.x + dx, self.y + dy)
+        ):
             self.move(dx, dy)
 
     def distance(self, x, y):
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
     def move_astar(self, target, entities, game_map):
+        """Move towards target using A* pathfinding algorithm.
+        
+        Uses A* pathfinding to find the optimal route to the target,
+        taking into account obstacles and other entities.
+        
+        Args:
+            target (Entity): The target entity to move towards
+            entities (list): List of entities that block movement
+            game_map (GameMap): The game map for pathfinding
+        """
         # Create a FOV map that has the dimensions of the map
         fov = libtcod.map_new(game_map.width, game_map.height)
 
         # Scan the current map each turn and set all the walls as unwalkable
         for y1 in range(game_map.height):
             for x1 in range(game_map.width):
-                libtcod.map_set_properties(fov, x1, y1, not game_map.tiles[x1][y1].block_sight,
-                                           not game_map.tiles[x1][y1].blocked)
+                libtcod.map_set_properties(
+                    fov,
+                    x1,
+                    y1,
+                    not game_map.tiles[x1][y1].block_sight,
+                    not game_map.tiles[x1][y1].blocked,
+                )
 
-        # Scan all the objects to see if there are objects that must be navigated around
-        # Check also that the object isn't self or the target (so that the start and the end points are free)
-        # The AI class handles the situation if self is next to the target so it will not use this A* function anyway
+        # Scan all the objects to see if there are objects that must be
+        # navigated around. Check also that the object isn't self or the target
+        # (so that the start and the end points are free). The AI class handles
+        # the situation if self is next to the target so it will not use this
+        # A* function anyway
         for entity in entities:
             if entity.blocks and entity != self and entity != target:
                 # Set the tile as a wall so it must be navigated around
@@ -100,9 +171,12 @@ class Entity:
         # Compute the path between self's coordinates and the target's coordinates
         libtcod.path_compute(my_path, self.x, self.y, target.x, target.y)
 
-        # Check if the path exists, and in this case, also the path is shorter than 25 tiles
-        # The path size matters if you want the monster to use alternative longer paths (for example through other rooms) if for example the player is in a corridor
-        # It makes sense to keep path size relatively low to keep the monsters from running around the map if there's an alternative path really far away
+        # Check if the path exists, and in this case, also the path is shorter
+        # than 25 tiles. The path size matters if you want the monster to use
+        # alternative longer paths (for example through other rooms) if for
+        # example the player is in a corridor. It makes sense to keep path size
+        # relatively low to keep the monsters from running around the map if
+        # there's an alternative path really far away
         if not libtcod.path_is_empty(my_path) and libtcod.path_size(my_path) < 25:
             # Find the next coordinates in the computed full path
             x, y = libtcod.path_walk(my_path, True)
@@ -111,18 +185,26 @@ class Entity:
                 self.x = x
                 self.y = y
         else:
-            # Keep the old move function as a backup so that if there are no paths (for example another monster blocks a corridor)
-            # it will still try to move towards the player (closer to the corridor opening)
+            # Keep the old move function as a backup so that if there are no
+            # paths (for example another monster blocks a corridor) it will
+            # still try to move towards the player (closer to the corridor opening)
             self.move_towards(target.x, target.y, game_map, entities)
 
             # Delete the path to free memory
         libtcod.path_delete(my_path)
 
-
     def distance_to(self, other):
+        """Calculate the distance to another entity.
+        
+        Args:
+            other (Entity): The other entity
+            
+        Returns:
+            float: The Euclidean distance to the other entity
+        """
         dx = other.x - self.x
         dy = other.y - self.y
-        return math.sqrt(dx ** 2 + dy ** 2)
+        return math.sqrt(dx**2 + dy**2)
 
 
 def get_blocking_entities_at_location(entities, destination_x, destination_y):

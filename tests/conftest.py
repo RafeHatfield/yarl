@@ -54,12 +54,10 @@ def mock_libtcod(mocker):
     # Apply the mock at multiple levels to catch all imports
     mocker.patch('tcod.libtcodpy', mock_tcod)
     mocker.patch('item_functions.libtcod', mock_tcod)
-    mocker.patch('components.fighter.libtcod', mock_tcod)
     mocker.patch('components.ai.libtcod', mock_tcod)
     mocker.patch('entity.libtcod', mock_tcod)
     mocker.patch('fov_functions.libtcod', mock_tcod)
     mocker.patch('render_functions.libtcod', mock_tcod)
-    mocker.patch('game_messages.libtcod', mock_tcod)
     
     return mock_tcod
 

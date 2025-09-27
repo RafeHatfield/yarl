@@ -1,0 +1,55 @@
+# .bash_profile - Optimized for fast startup
+
+# Set PATH for Python 3.12
+PATH="/Library/Frameworks/Python.framework/Versions/3.12/bin:${PATH}"
+export PATH
+
+# Homebrew environment setup (fast)
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# Add Python 3.12 packages path
+export PATH="$PATH:/Users/rafehatfield/Library/Python/3.12/bin"
+
+# Pyenv initialization (fast)
+eval "$(pyenv init --path)"
+
+# Enable direnv (fast)
+eval "$(direnv hook bash)"
+
+# LAZY LOADING: Only load virtualenvwrapper when needed
+# This function will load virtualenvwrapper on first use
+load_virtualenvwrapper() {
+    if [ -z "$VIRTUALENVWRAPPER_LOADED" ]; then
+        export WORKON_HOME=$HOME/.virtualenvs
+        export VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3
+        source /Library/Frameworks/Python.framework/Versions/3.12/bin/virtualenvwrapper.sh
+        export VIRTUALENVWRAPPER_LOADED=1
+    fi
+}
+
+# Create aliases that will load virtualenvwrapper when first used
+workon() {
+    load_virtualenvwrapper
+    workon "$@"
+}
+
+mkvirtualenv() {
+    load_virtualenvwrapper
+    mkvirtualenv "$@"
+}
+
+rmvirtualenv() {
+    load_virtualenvwrapper
+    rmvirtualenv "$@"
+}
+
+deactivate() {
+    load_virtualenvwrapper
+    deactivate "$@"
+}
+
+# Source .bashrc for interactive shell settings
+if [ -f ~/.bashrc ]; then
+    source ~/.bashrc
+fi
+

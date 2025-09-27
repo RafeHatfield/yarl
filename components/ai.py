@@ -1,8 +1,9 @@
-import tcod as libtcod
-
 from random import randint
 
+import tcod as libtcod
+
 from game_messages import Message
+
 
 class BasicMonster:
     def take_turn(self, target, fov_map, game_map, entities):
@@ -16,12 +17,13 @@ class BasicMonster:
                 # monster.move_towards(target.x, target.y, game_map, entities)
                 monster.move_astar(target, entities, game_map)
             elif target.fighter.hp > 0:
-                # print('The {0} insults you! E-MO-TIONAL DAMAGE!!'.format(monster.name))
+                # print('The {0} insults you!'.format(monster.name))
                 # monster.fighter.attack(target)
                 attack_results = monster.fighter.attack(target)
                 results.extend(attack_results)
 
         return results
+
 
 class ConfusedMonster:
     def __init__(self, previous_ai, number_of_turns=10):
@@ -41,6 +43,13 @@ class ConfusedMonster:
             self.number_of_turns -= 1
         else:
             self.owner.ai = self.previous_ai
-            results.append({'message': Message('The {0} is no longer confused!'.format(self.owner.name), (255, 0, 0))})
+            results.append(
+                {
+                    "message": Message(
+                        "The {0} is no longer confused!".format(self.owner.name),
+                        (255, 0, 0),
+                    )
+                }
+            )
 
         return results
