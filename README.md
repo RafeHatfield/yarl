@@ -2,35 +2,47 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-135%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-291%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 
-A classic roguelike game built in Python using the TCOD library. Features turn-based combat, procedural dungeon generation, spell casting, and AI-driven monsters with various behaviors including confusion mechanics.
+A feature-rich roguelike game built in Python using the TCOD library. Features turn-based combat, procedural dungeon generation with progressive difficulty scaling, spell casting, character progression, save/load system, and AI-driven monsters with various behaviors.
 
 ## 🎮 Features
 
 ### Core Gameplay
 - **Turn-based combat** with attack/defense mechanics
 - **Procedural dungeon generation** with rooms and corridors
+- **Progressive difficulty scaling** - Challenge increases with dungeon depth
+- **Multi-level dungeons** with stairs and level progression
+- **Character progression** - XP, leveling, and stat increases
+- **Save/Load system** - Persistent game state across sessions
 - **Field of view (FOV)** and line-of-sight calculations
 - **Inventory management** with item usage and dropping
 - **Health and damage system** with healing mechanics
 
 ### Spells & Combat
-- **🔥 Fireball** - Area-of-effect damage with targeting
-- **⚡ Lightning** - Single-target high damage to closest enemy
-- **😵 Confusion** - Causes enemies to move randomly for several turns
-- **💚 Healing Potions** - Restore health when injured
+- **🔥 Fireball** - Area-of-effect damage with targeting (unlocks at level 6)
+- **⚡ Lightning** - Single-target high damage to closest enemy (unlocks at level 4)
+- **😵 Confusion** - Causes enemies to move randomly for several turns (unlocks at level 2)
+- **💚 Healing Potions** - Restore health when injured (available from start)
+- **🎯 Progressive item availability** - Better items unlock as you go deeper
 
 ### AI & Monsters
 - **BasicMonster AI** - Tracks and attacks the player using A* pathfinding
 - **ConfusedMonster AI** - Random movement with automatic recovery
 - **Dynamic AI switching** - Spells can temporarily alter monster behavior
+- **Progressive monster scaling** - More and stronger monsters on deeper levels
+- **🧌 Orcs** - Basic enemies available from level 1
+- **👹 Trolls** - Stronger enemies that become more common on deeper levels (15% → 30% → 60%)
 
 ### Technical Features
 - **Entity-Component-System (ECS)** architecture
 - **A* pathfinding** for intelligent monster movement
+- **Dynamic difficulty scaling** with configurable progression curves
+- **Weighted random selection** for balanced item/monster distribution
+- **Save/Load system** using Python's shelve with comprehensive validation
 - **Message logging system** for game events
+- **Character screen** with level and stat display
 - **Robust error handling** throughout the codebase
 
 ## 🚀 Quick Start
@@ -71,6 +83,10 @@ A classic roguelike game built in Python using the TCOD library. Features turn-b
 - **g** - Pick up items
 - **i** - Open inventory
 - **d** - Drop items
+- **Enter** - Take stairs to next level
+- **c** - Open character screen (view level, XP, stats)
+- **s** - Save game
+- **l** - Load game
 - **Escape** - Exit menus/game
 
 ### Gameplay Tips
@@ -78,6 +94,10 @@ A classic roguelike game built in Python using the TCOD library. Features turn-b
 - **Use spells wisely** - Fireball affects multiple enemies, confusion disables threats
 - **Manage inventory** - Limited carrying capacity, drop items you don't need
 - **Tactical positioning** - Use corridors to fight enemies one-at-a-time
+- **Progress deeper** - Better items and more XP on lower levels, but more dangerous
+- **Level up strategically** - Choose HP, strength, or defense based on your playstyle
+- **Save frequently** - Game saves automatically on exit, but manual saves are recommended
+- **Explore thoroughly** - Each level has stairs to the next, usually in the last room
 
 ## 🧪 Testing
 
@@ -89,28 +109,37 @@ This project maintains **100% test coverage** with a comprehensive test suite co
 # Install test dependencies
 pip install -r requirements-dev.txt
 
-# Run all tests (135 tests)
+# Run all tests (291 tests)
 pytest
 
 # Run with coverage reporting
 pytest --cov=. --cov-report=term-missing
 
 # Run specific test categories
-pytest tests/test_entity.py -v        # Entity and AI systems
-pytest tests/test_item_functions.py -v # Spells and items
-pytest tests/test_inventory.py -v      # Inventory management
-pytest tests/test_fighter.py -v       # Combat system
-pytest tests/test_game_messages.py -v # Message logging
+pytest tests/test_entity.py -v                # Entity and AI systems
+pytest tests/test_item_functions.py -v        # Spells and items
+pytest tests/test_inventory.py -v             # Inventory management
+pytest tests/test_fighter.py -v               # Combat system
+pytest tests/test_game_messages.py -v         # Message logging
+pytest tests/test_difficulty_scaling.py -v    # Difficulty scaling system
+pytest tests/test_random_utils.py -v          # Weighted selection utilities
+pytest tests/test_save_load_basic.py -v       # Save/load functionality
+pytest tests/test_level.py -v                 # XP and leveling system
+pytest tests/test_dungeon_levels.py -v        # Multi-level dungeons
 ```
 
 ### Test Coverage
-- **135 tests** with **100% pass rate**
+- **291 tests** with **100% pass rate**
 - **Entity System** - Movement, pathfinding, A* algorithm
-- **Combat System** - Attack, defense, healing, death mechanics
+- **Combat System** - Attack, defense, healing, death mechanics, XP rewards
 - **Inventory System** - Item management, capacity limits, error handling
-- **Spell System** - All spells including new confusion mechanics
+- **Spell System** - All spells including confusion mechanics and targeting
 - **AI System** - BasicMonster and ConfusedMonster behavior
 - **Message System** - Game event logging and display
+- **Difficulty Scaling** - Progressive monster/item scaling, weighted selection
+- **Save/Load System** - Game state persistence, validation, error handling
+- **Character Progression** - XP system, leveling, stat increases
+- **Dungeon Levels** - Multi-floor generation, stairs, level transitions
 
 ## 🏗️ Architecture
 
@@ -119,14 +148,18 @@ pytest tests/test_game_messages.py -v # Message logging
 rlike/
 ├── components/          # ECS Components
 │   ├── ai.py           # AI behaviors (BasicMonster, ConfusedMonster)
-│   ├── fighter.py      # Combat stats and methods
+│   ├── fighter.py      # Combat stats and methods with XP rewards
 │   ├── inventory.py    # Item storage and management
-│   └── item.py         # Item component definition
+│   ├── item.py         # Item component definition
+│   └── level.py        # XP and leveling system
+├── loader_functions/   # Game initialization and save/load
+│   ├── initialize_new_game.py  # New game setup
+│   └── data_loaders.py         # Save/load functionality
 ├── map_objects/        # Map generation and tiles
-│   ├── game_map.py     # Dungeon generation and entity placement
+│   ├── game_map.py     # Dungeon generation with difficulty scaling
 │   ├── rectangle.py    # Room generation utilities
 │   └── tile.py         # Tile properties (walkable, transparent)
-├── tests/              # Comprehensive test suite
+├── tests/              # Comprehensive test suite (291 tests)
 │   ├── conftest.py     # Test fixtures and mocking
 │   ├── test_*.py       # Test modules for each component
 │   └── __init__.py
@@ -137,14 +170,19 @@ rlike/
 ├── render_functions.py # Display and rendering logic
 ├── game_messages.py    # Message logging system
 ├── game_states.py      # Game state management
+├── random_utils.py     # Weighted selection and difficulty scaling
+├── stairs.py           # Stairs component for level transitions
+├── menus.py            # UI menus (inventory, character screen, etc.)
 └── requirements.txt    # Project dependencies
 ```
 
 ### Key Design Patterns
 - **Entity-Component-System (ECS)** - Flexible entity composition
 - **Command Pattern** - Input handling and game actions
-- **State Machine** - Game state management (playing, inventory, targeting)
+- **State Machine** - Game state management (playing, inventory, targeting, leveling)
 - **Strategy Pattern** - AI behavior switching (normal → confused → normal)
+- **Table-Driven Design** - Difficulty scaling with configurable progression tables
+- **Serialization Pattern** - Save/load system with validation and error handling
 
 ## 🔧 Development
 
@@ -195,14 +233,22 @@ These are tracked for future improvement when confident in test coverage.
 
 ## 🚧 Roadmap
 
-- [ ] **Save/Load System** - Persistent game state
-- [ ] **Multiple Dungeon Levels** - Stairs and level progression
+### ✅ Completed Features
+- [x] **Save/Load System** - Persistent game state with validation
+- [x] **Multiple Dungeon Levels** - Stairs and level progression
+- [x] **Experience/Leveling** - Character progression with stat choices
+- [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
+- [x] **Comprehensive Testing** - 291 tests with 100% coverage
+
+### 🔮 Future Enhancements
 - [ ] **More Spells** - Teleport, invisibility, more tactical options
 - [ ] **Equipment System** - Weapons and armor with stat bonuses
-- [ ] **Experience/Leveling** - Character progression
 - [ ] **More Monster Types** - Varied AI behaviors and abilities
+- [ ] **Boss Encounters** - Special monsters on certain levels
+- [ ] **Environmental Hazards** - Traps and obstacles
 - [ ] **Sound Effects** - Audio feedback for actions
 - [ ] **Configuration System** - Customizable controls and settings
+- [ ] **Mobile Distribution** - iOS/Android compatibility exploration
 
 ## 📖 Learning Resources
 
