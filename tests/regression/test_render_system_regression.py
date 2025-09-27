@@ -114,15 +114,15 @@ class TestRenderSystemRegressions:
             with patch("engine.systems.optimized_render_system.render_all"):
                 with patch("engine.systems.optimized_render_system.clear_all"):
                     with patch("tcod.libtcodpy.console_flush"):
-                        # First frame with fov_recompute=True
-                        self.render_system.fov_recompute = True
+                        # First frame with game state fov_recompute=True
+                        self.mock_engine.state_manager.request_fov_recompute()
                         self.render_system.update(0.016)
 
                         # Should have recomputed
                         assert mock_recompute.call_count == 1
 
-                        # Second frame with fov_recompute=True again (same position)
-                        self.render_system.fov_recompute = True
+                        # Second frame with game state fov_recompute=True again (same position)
+                        self.mock_engine.state_manager.request_fov_recompute()
                         self.render_system.update(0.016)
 
                         # Should have recomputed again, despite same position
@@ -140,15 +140,15 @@ class TestRenderSystemRegressions:
             with patch("engine.systems.optimized_render_system.render_all"):
                 with patch("engine.systems.optimized_render_system.clear_all"):
                     with patch("tcod.libtcodpy.console_flush"):
-                        # First frame with fov_recompute=False, same position
-                        self.render_system.fov_recompute = False
+                        # First frame with game state fov_recompute=False, same position
+                        self.mock_engine.state_manager.state.fov_recompute = False
                         self.render_system.update(0.016)
 
                         # Should not recompute when flag is False
                         mock_recompute.assert_not_called()
 
                         # Second frame, still False, same position
-                        self.render_system.fov_recompute = False
+                        self.mock_engine.state_manager.state.fov_recompute = False
                         self.render_system.update(0.016)
 
                         # Still should not recompute
@@ -207,6 +207,238 @@ class TestRenderSystemRegressions:
 
 class TestRenderSystemInterfaceContract:
     """Tests to ensure render system interface contracts are maintained."""
+
+    def test_map_tiles_rendered_when_fov_recomputed_regression(self):
+        """Regression test: Ensure map tiles are rendered when FOV is recomputed.
+
+        Bug: OptimizedRenderSystem was using self.fov_recompute instead of
+        game_state.fov_recompute, causing map tiles to never be drawn (black screen).
+
+        The render_all function only draws map tiles when fov_recompute=True,
+        so the optimized system must use the game state's flag, not its own.
+        """
+        # Create optimized render system for this test
+        render_system = OptimizedRenderSystem(
+            console=Mock(),
+            panel=Mock(),
+            screen_width=80,
+            screen_height=50,
+            colors={"light_wall": (130, 110, 50)},
+            priority=100,
+            use_optimizations=True,
+        )
+
+        # Create mock engine and state manager
+        mock_engine = Mock()
+        state_manager = GameStateManager()
+        mock_engine.state_manager = state_manager
+        mock_engine.get_system = Mock(return_value=PerformanceSystem())
+
+        # Initialize render system
+        render_system.initialize(mock_engine)
+
+        # Set up basic game state
+        player = Mock()
+        player.x = 5
+        player.y = 5
+
+        game_map = Mock()
+        message_log = Mock()
+        entities = [player]
+
+        # Initialize game state
+        state_manager.initialize_game(
+            player=player,
+            entities=entities,
+            game_map=game_map,
+            message_log=message_log,
+            game_state=Mock(),
+            constants={"fov_radius": 10, "fov_light_walls": True, "fov_algorithm": 0},
+        )
+
+        # Set up FOV map
+        fov_map = Mock()
+        render_system.set_fov_map(fov_map)
+
+        # THE KEY TEST: Set game state fov_recompute=True but render system flag=False
+        # This simulates the bug where game requests FOV recompute but render system
+        # uses its own stale flag instead of the game state flag
+        state_manager.request_fov_recompute()  # Sets game state flag to True
+        render_system.fov_recompute = False  # Render system flag is False
+
+        # Mock render_all to verify it gets called with fov_recompute=True
+        with patch(
+            "engine.systems.optimized_render_system.render_all"
+        ) as mock_render_all:
+            with patch("engine.systems.optimized_render_system.recompute_fov"):
+                with patch("engine.systems.optimized_render_system.clear_all"):
+                    with patch("tcod.libtcodpy.console_flush"):
+                        # Update the render system
+                        render_system.update(0.016)
+
+                        # render_all should have been called with fov_recompute=True
+                        # because the system should use game_state.fov_recompute, not self.fov_recompute
+                        mock_render_all.assert_called_once()
+                        call_args = mock_render_all.call_args[0]
+                        fov_recompute_arg = call_args[
+                            6
+                        ]  # 7th argument is fov_recompute
+
+                        # This should be True so map tiles get rendered
+                        assert fov_recompute_arg is True, (
+                            f"render_all called with fov_recompute={fov_recompute_arg}, "
+                            f"expected True for map tiles to be rendered. "
+                            f"OptimizedRenderSystem should use game_state.fov_recompute, "
+                            f"not self.fov_recompute"
+                        )
+
+    def test_game_state_fov_flag_takes_precedence_regression(self):
+        """Regression test: Game state fov_recompute flag takes precedence.
+
+        Bug: OptimizedRenderSystem was ignoring the game state's fov_recompute flag
+        and using its own internal flag, causing desync between game logic and rendering.
+
+        This test ensures the render system always uses the authoritative game state flag.
+        """
+        # Create optimized render system
+        render_system = OptimizedRenderSystem(
+            console=Mock(),
+            panel=Mock(),
+            screen_width=80,
+            screen_height=50,
+            colors={"light_wall": (130, 110, 50)},
+            priority=100,
+            use_optimizations=False,  # Use standard rendering for this test
+        )
+
+        # Create mock engine and state manager
+        mock_engine = Mock()
+        state_manager = GameStateManager()
+        mock_engine.state_manager = state_manager
+
+        # Initialize render system
+        render_system.initialize(mock_engine)
+
+        # Set up basic game state
+        player = Mock()
+        player.x = 5
+        player.y = 5
+
+        game_map = Mock()
+        message_log = Mock()
+        entities = [player]
+
+        # Initialize game state
+        state_manager.initialize_game(
+            player=player,
+            entities=entities,
+            game_map=game_map,
+            message_log=message_log,
+            game_state=Mock(),
+            constants={"fov_radius": 10},
+        )
+
+        # Set up FOV map
+        fov_map = Mock()
+        render_system.set_fov_map(fov_map)
+
+        # Test scenario 1: Game state says True, render system says False
+        state_manager.request_fov_recompute()  # Game state: True
+        render_system.fov_recompute = False  # Render system: False
+
+        # The render system should update its flag from game state
+        with patch(
+            "engine.systems.optimized_render_system.render_all"
+        ) as mock_render_all:
+            with patch("engine.systems.optimized_render_system.recompute_fov"):
+                with patch("engine.systems.optimized_render_system.clear_all"):
+                    with patch("tcod.libtcodpy.console_flush"):
+                        render_system.update(0.016)
+
+                        # Should use game state flag (True), not render system flag (False)
+                        call_args = mock_render_all.call_args[0]
+                        fov_recompute_arg = call_args[6]
+                        assert fov_recompute_arg is True
+
+        # Test scenario 2: Game state says False, render system says True
+        state_manager.state.fov_recompute = False  # Game state: False
+        render_system.fov_recompute = True  # Render system: True
+
+        with patch(
+            "engine.systems.optimized_render_system.render_all"
+        ) as mock_render_all:
+            with patch("engine.systems.optimized_render_system.recompute_fov"):
+                with patch("engine.systems.optimized_render_system.clear_all"):
+                    with patch("tcod.libtcodpy.console_flush"):
+                        render_system.update(0.016)
+
+                        # Should use game state flag (False), not render system flag (True)
+                        call_args = mock_render_all.call_args[0]
+                        fov_recompute_arg = call_args[6]
+                        assert fov_recompute_arg is False
+
+    def test_game_state_fov_flag_reset_after_render_regression(self):
+        """Regression test: Game state fov_recompute flag is reset after rendering.
+
+        Bug: If the game state's fov_recompute flag isn't reset after rendering,
+        it would cause map tiles to be redrawn every frame, negating performance optimizations.
+
+        This test ensures the flag is properly reset after rendering.
+        """
+        # Create optimized render system
+        render_system = OptimizedRenderSystem(
+            console=Mock(),
+            panel=Mock(),
+            screen_width=80,
+            screen_height=50,
+            colors={"light_wall": (130, 110, 50)},
+            priority=100,
+            use_optimizations=False,
+        )
+
+        # Create mock engine and state manager
+        mock_engine = Mock()
+        state_manager = GameStateManager()
+        mock_engine.state_manager = state_manager
+
+        # Initialize render system
+        render_system.initialize(mock_engine)
+
+        # Set up basic game state
+        player = Mock()
+        game_map = Mock()
+        message_log = Mock()
+        entities = [player]
+
+        state_manager.initialize_game(
+            player=player,
+            entities=entities,
+            game_map=game_map,
+            message_log=message_log,
+            game_state=Mock(),
+            constants={"fov_radius": 10},
+        )
+
+        # Set up FOV map and request recompute
+        fov_map = Mock()
+        render_system.set_fov_map(fov_map)
+        state_manager.request_fov_recompute()
+
+        # Verify flag is initially True
+        assert state_manager.state.fov_recompute is True
+
+        # Render one frame
+        with patch("engine.systems.optimized_render_system.render_all"):
+            with patch("engine.systems.optimized_render_system.recompute_fov"):
+                with patch("engine.systems.optimized_render_system.clear_all"):
+                    with patch("tcod.libtcodpy.console_flush"):
+                        render_system.update(0.016)
+
+        # Flag should be reset to False after rendering
+        assert state_manager.state.fov_recompute is False, (
+            "Game state fov_recompute flag should be reset to False after rendering "
+            "to prevent unnecessary map tile redraws on subsequent frames"
+        )
 
     def test_optimized_render_system_behaves_like_base_system(self):
         """Ensure OptimizedRenderSystem behaves identically to base RenderSystem.

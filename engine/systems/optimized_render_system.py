@@ -99,6 +99,10 @@ class OptimizedRenderSystem(RenderSystem):
         if not all([player, game_map, message_log]):
             return
 
+        # Update our fov_recompute flag from game state
+        # This ensures we use the game state's flag, not our own stale flag
+        self.fov_recompute = game_state.get("fov_recompute", False)
+
         # Use optimized rendering if available and enabled
         if self.use_optimizations and self._has_performance_data(game_state):
             self._optimized_render(
@@ -230,6 +234,10 @@ class OptimizedRenderSystem(RenderSystem):
         self.fov_recompute = False
         self.optimization_stats["frames_optimized"] += 1
 
+        # Reset the game state's fov_recompute flag
+        if self.engine and hasattr(self.engine, "state_manager"):
+            self.engine.state_manager.state.fov_recompute = False
+
         # Clear entities (only visible ones for optimization)
         self._clear_visible_entities(visible_entities)
 
@@ -291,6 +299,10 @@ class OptimizedRenderSystem(RenderSystem):
         )
 
         self.fov_recompute = False
+
+        # Reset the game state's fov_recompute flag
+        if self.engine and hasattr(self.engine, "state_manager"):
+            self.engine.state_manager.state.fov_recompute = False
 
         # Standard entity clearing
         clear_all(self.console, entities)
