@@ -1,3 +1,10 @@
+"""Item use functions and spell effects.
+
+This module contains functions that are called when items are used,
+including healing potions, spell scrolls, and other consumable items.
+Each function implements the specific effect of using that item type.
+"""
+
 import tcod as libtcod
 
 from components.ai import ConfusedMonster
@@ -5,6 +12,15 @@ from game_messages import Message
 
 
 def heal(*args, **kwargs):
+    """Heal the target entity by a specified amount.
+
+    Args:
+        *args: First argument should be the entity to heal
+        **kwargs: Should contain 'amount' key with healing value
+
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
     entity = args[0]
     amount = kwargs.get("amount")
 
@@ -30,6 +46,15 @@ def heal(*args, **kwargs):
 
 
 def cast_lightning(*args, **kwargs):
+    """Cast a lightning spell that targets the closest enemy.
+
+    Args:
+        *args: First argument should be the caster entity
+        **kwargs: Should contain 'entities', 'fov_map', 'damage', and 'maximum_range'
+
+    Returns:
+        list: List of result dictionaries with consumption, targeting, and message info
+    """
     caster = args[0]
     entities = kwargs.get("entities")
     fov_map = kwargs.get("fov_map")
@@ -83,6 +108,16 @@ def cast_lightning(*args, **kwargs):
 
 
 def cast_fireball(*args, **kwargs):
+    """Cast a fireball spell that damages all entities in a radius.
+
+    Args:
+        *args: First argument should be the caster entity
+        **kwargs: Should contain 'entities', 'fov_map', 'damage', 'radius',
+                 'target_x', and 'target_y'
+
+    Returns:
+        list: List of result dictionaries with consumption and damage results
+    """
     entities = kwargs.get("entities")
     fov_map = kwargs.get("fov_map")
     damage = kwargs.get("damage")
@@ -138,6 +173,15 @@ def cast_fireball(*args, **kwargs):
 
 
 def cast_confuse(*args, **kwargs):
+    """Cast a confusion spell on a target entity.
+
+    Args:
+        *args: First argument should be the caster entity
+        **kwargs: Should contain 'entities', 'fov_map', 'target_x', and 'target_y'
+
+    Returns:
+        list: List of result dictionaries with consumption and confusion results
+    """
     entities = kwargs.get("entities")
     fov_map = kwargs.get("fov_map")
     target_x = kwargs.get("target_x")

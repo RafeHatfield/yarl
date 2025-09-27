@@ -1,3 +1,10 @@
+"""Rendering functions and utilities for the game display.
+
+This module handles all rendering operations including entity drawing,
+UI panels, menus, and screen management. It defines render orders and
+provides functions for drawing the game world and interface.
+"""
+
 from enum import Enum, auto
 
 import tcod.libtcodpy as libtcod
@@ -7,6 +14,12 @@ from menus import character_screen, inventory_menu, level_up_menu
 
 
 class RenderOrder(Enum):
+    """Enumeration defining the order in which entities are rendered.
+
+    Lower values are rendered first (behind), higher values last (in front).
+    This ensures proper layering of game objects.
+    """
+
     STAIRS = auto()
     CORPSE = auto()
     ITEM = auto()
@@ -18,6 +31,16 @@ class RenderOrder(Enum):
 
 
 def get_names_under_mouse(mouse, entities, fov_map):
+    """Get the names of all visible entities under the mouse cursor.
+
+    Args:
+        mouse: Mouse object with cursor coordinates
+        entities (list): List of all entities to check
+        fov_map: Field of view map for visibility checking
+
+    Returns:
+        str: Comma-separated string of entity names under the cursor
+    """
     (x, y) = (mouse.cx, mouse.cy)
 
     names = [
@@ -33,6 +56,19 @@ def get_names_under_mouse(mouse, entities, fov_map):
 
 
 def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_color):
+    """Render a status bar (like health or XP) on the UI panel.
+
+    Args:
+        panel: Console panel to draw on
+        x (int): X position of the bar
+        y (int): Y position of the bar
+        total_width (int): Total width of the bar in characters
+        name (str): Name/label for the bar
+        value (int): Current value (filled portion)
+        maximum (int): Maximum value (total bar length)
+        bar_color (tuple): RGB color for the filled portion
+        back_color (tuple): RGB color for the background
+    """
     bar_width = int(float(value) / maximum * total_width)
 
     libtcod.console_set_default_background(panel, back_color)
@@ -71,6 +107,29 @@ def render_all(
     colors,
     game_state,
 ):
+    """Render the entire game screen including map, entities, and UI.
+
+    This is the main rendering function that draws everything visible
+    on the screen including the game map, entities, UI panels, and menus.
+
+    Args:
+        con: Main game console
+        panel: UI panel console
+        entities (list): All entities to potentially render
+        player (Entity): The player entity
+        game_map (GameMap): The game map to render
+        fov_map: Field of view map
+        fov_recompute (bool): Whether to recompute field of view
+        message_log (MessageLog): Game message log
+        screen_width (int): Width of the screen
+        screen_height (int): Height of the screen
+        bar_width (int): Width of status bars
+        panel_height (int): Height of the UI panel
+        panel_y (int): Y position of the UI panel
+        mouse: Mouse object for cursor information
+        colors (dict): Color configuration dictionary
+        game_state (GameStates): Current game state
+    """
     if fov_recompute:
         for y in range(game_map.height):
             for x in range(game_map.width):
@@ -182,6 +241,12 @@ def render_all(
 
 
 def clear_all(con, entities):
+    """Clear all entities from the console.
+
+    Args:
+        con: Console to clear entities from
+        entities (list): List of entities to clear
+    """
     for entity in entities:
         clear_entity(con, entity)
 
@@ -192,6 +257,14 @@ def clear_all(con, entities):
 
 
 def draw_entity(con, entity, fov_map, game_map):
+    """Draw a single entity on the console if it's visible.
+
+    Args:
+        con: Console to draw on
+        entity (Entity): Entity to draw
+        fov_map: Field of view map for visibility checking
+        game_map (GameMap): Game map for tile information
+    """
     # Check if entity has stairs attribute (for backwards compatibility with saves)
     has_stairs = hasattr(entity, "stairs") and entity.stairs
     if libtcod.map_is_in_fov(fov_map, entity.x, entity.y) or (
@@ -204,5 +277,11 @@ def draw_entity(con, entity, fov_map, game_map):
 
 
 def clear_entity(con, entity):
+    """Clear a single entity from the console.
+
+    Args:
+        con: Console to clear from
+        entity (Entity): Entity to clear
+    """
     # erase the character that represents this object
     libtcod.console_put_char(con, entity.x, entity.y, " ", libtcod.BKGND_NONE)
