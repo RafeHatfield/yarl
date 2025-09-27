@@ -268,8 +268,8 @@ class TestNextFloorMechanics:
         # Add some messages to log
         from game_messages import Message
         import tcod as libtcod
-        self.message_log.add_message(Message("Test message 1", libtcod.white))
-        self.message_log.add_message(Message("Test message 2", libtcod.white))
+        self.message_log.add_message(Message("Test message 1", (255, 255, 255)))
+        self.message_log.add_message(Message("Test message 2", (255, 255, 255)))
         initial_message_count = len(self.message_log.messages)
         
         with patch.object(game_map, 'make_map'):

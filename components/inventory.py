@@ -13,12 +13,12 @@ class Inventory:
         if len(self.items) >= self.capacity:
             results.append({
                 'item_added': None,
-                'message': Message('You cannot carry any more, your inventory is full', libtcod.yellow)
+                'message': Message('You cannot carry any more, your inventory is full', (255, 255, 0))
             })
         else:
             results.append({
                 'item_added': item,
-                'message': Message('You pick up the {0}!'.format(item.name), libtcod.blue)
+                'message': Message('You pick up the {0}!'.format(item.name), (0, 0, 255))
             })
 
             self.items.append(item)
@@ -36,7 +36,7 @@ class Inventory:
             if equippable_component:
                 results.append({'equip': item_entity})
             else:
-                results.append({'message': Message('The {0} cannot be used'.format(item_entity.name), libtcod.yellow)})
+                results.append({'message': Message('The {0} cannot be used'.format(item_entity.name), (255, 255, 0))})
         else:            
             if item_component.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
                 results.append({'targeting': item_entity})
@@ -66,7 +66,7 @@ class Inventory:
             item_name = item.name if item and hasattr(item, 'name') else 'Unknown item'
             results.append({
                 'item_removed': None,
-                'message': Message('Cannot remove {0}: not in inventory'.format(item_name), libtcod.yellow)
+                'message': Message('Cannot remove {0}: not in inventory'.format(item_name), (255, 255, 0))
             })
         
         return results
@@ -86,7 +86,7 @@ class Inventory:
             item.y = self.owner.y
             results.append({
                 'item_dropped': item, 
-                'message': Message('You dropped the {0}'.format(item.name), libtcod.yellow)
+                'message': Message('You dropped the {0}'.format(item.name), (255, 255, 0))
             })
         else:
             # Item removal failed, pass through the error

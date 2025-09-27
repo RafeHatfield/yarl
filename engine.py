@@ -161,7 +161,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 
                     break
             else:
-                message_log.add_message(Message('There is nothing here to pick up.', libtcod.yellow))
+                message_log.add_message(Message('There is nothing here to pick up.', (255, 255, 0)))
 
         if show_inventory:
             previous_game_state = game_state
@@ -190,7 +190,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
 
                     break
             else:
-                message_log.add_message(Message('There are no stairs here.', libtcod.yellow))
+                message_log.add_message(Message('There are no stairs here.', (255, 255, 0)))
 
         if level_up:
             if level_up == 'hp':
@@ -305,7 +305,7 @@ def play_game(player, entities, game_map, message_log, game_state, con, panel, c
                 if leveled_up:
                     message_log.add_message(Message(
                         'Your battle skills grow stronger! You reached level {0}'.format(
-                            player.level.current_level) + '!', libtcod.yellow))
+                            player.level.current_level) + '!', (255, 255, 0)))
                     previous_game_state = game_state
                     game_state = GameStates.LEVEL_UP
 

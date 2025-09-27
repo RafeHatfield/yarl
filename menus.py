@@ -12,7 +12,7 @@ def menu(con, header, options, width, screen_width, screen_height):
     window = libtcod.console_new(width, height)
 
     # print the header, with auto-wrap
-    libtcod.console_set_default_foreground(window, libtcod.white)
+    libtcod.console_set_default_foreground(window, (255, 255, 255))
     libtcod.console_print_rect_ex(window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
 
     # print all the options
@@ -71,7 +71,7 @@ def message_box(con, header, width, screen_width, screen_height):
 def character_screen(player, character_screen_width, character_screen_height, screen_width, screen_height):
     window = libtcod.console_new(character_screen_width, character_screen_height)
 
-    libtcod.console_set_default_foreground(window, libtcod.white)
+    libtcod.console_set_default_foreground(window, (255, 255, 255))
 
     libtcod.console_print_rect_ex(window, 0, 1, character_screen_width, character_screen_height, libtcod.BKGND_NONE,
                                   libtcod.LEFT, 'Character Information')
