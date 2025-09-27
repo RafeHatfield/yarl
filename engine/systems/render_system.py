@@ -174,14 +174,11 @@ class RenderSystem(System):
     def _get_game_state(self) -> Optional[Dict[str, Any]]:
         """Get current game state from the engine.
 
-        This is a temporary method until we implement proper
-        game state management in the engine.
-
         Returns:
             Dict[str, Any] or None: Current game state data
         """
-        # TODO: Implement proper game state management
-        # For now, return None to indicate no state available
+        if self.engine and hasattr(self.engine, "state_manager"):
+            return self.engine.state_manager.get_state_data()
         return None
 
     def cleanup(self) -> None:

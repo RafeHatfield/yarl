@@ -19,6 +19,7 @@ from loader_functions.data_loaders import load_game, save_game
 from loader_functions.initialize_new_game import get_constants, get_game_variables
 from menus import main_menu, message_box
 from render_functions import clear_all, render_all
+from engine_integration import play_game_with_engine
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -110,16 +111,33 @@ def main():
 
         else:
             libtcod.console_clear(con)
-            play_game(
-                player,
-                entities,
-                game_map,
-                message_log,
-                game_state,
-                con,
-                panel,
-                constants,
-            )
+            
+            # Use the new engine architecture
+            # TODO: Add a configuration option to choose between old and new
+            use_new_engine = True  # For now, always use new engine
+            
+            if use_new_engine:
+                play_game_with_engine(
+                    player,
+                    entities,
+                    game_map,
+                    message_log,
+                    game_state,
+                    con,
+                    panel,
+                    constants
+                )
+            else:
+                play_game(
+                    player,
+                    entities,
+                    game_map,
+                    message_log,
+                    game_state,
+                    con,
+                    panel,
+                    constants,
+                )
 
             show_main_menu = True
 
