@@ -1,3 +1,10 @@
+"""Main game engine and entry point.
+
+This module contains the main game loop, event handling, and core
+game logic coordination. It manages the game state, rendering,
+and player input processing.
+"""
+
 import logging
 
 import tcod.libtcodpy as libtcod
@@ -18,6 +25,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
 def main():
+    """Main entry point for the game.
+
+    Initializes the game window, loads or creates a new game,
+    and runs the main game loop until the player quits.
+    """
     constants = get_constants()
 
     libtcod.console_set_custom_font(

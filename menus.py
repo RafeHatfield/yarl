@@ -3,10 +3,10 @@ import tcod as libtcod
 
 def menu(con, header, options, width, screen_width, screen_height):
     """Display a menu with options for the player to choose from.
-    
+
     Creates a centered menu window with a header and lettered options.
     Supports up to 26 options (a-z).
-    
+
     Args:
         con: The console to draw on
         header (str): Header text for the menu
@@ -14,7 +14,7 @@ def menu(con, header, options, width, screen_width, screen_height):
         width (int): Width of the menu window
         screen_width (int): Width of the screen for centering
         screen_height (int): Height of the screen for centering
-        
+
     Raises:
         ValueError: If more than 26 options are provided
     """

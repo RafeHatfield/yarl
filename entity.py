@@ -8,11 +8,11 @@ from render_functions import RenderOrder
 
 class Entity:
     """A generic object to represent players, enemies, items, etc.
-    
+
     This is the base class for all game objects including the player,
     monsters, items, stairs, and other interactive elements. It provides
     basic functionality for positioning, rendering, movement, and pathfinding.
-    
+
     Attributes:
         x (int): X coordinate on the game map
         y (int): Y coordinate on the game map
@@ -96,7 +96,7 @@ class Entity:
 
     def move(self, dx, dy):
         """Move the entity by a given amount.
-        
+
         Args:
             dx (int): Change in x coordinate
             dy (int): Change in y coordinate
@@ -106,7 +106,7 @@ class Entity:
 
     def move_towards(self, target_x, target_y, game_map, entities):
         """Move towards a target position, avoiding obstacles.
-        
+
         Args:
             target_x (int): Target x coordinate
             target_y (int): Target y coordinate
@@ -131,10 +131,10 @@ class Entity:
 
     def move_astar(self, target, entities, game_map):
         """Move towards target using A* pathfinding algorithm.
-        
+
         Uses A* pathfinding to find the optimal route to the target,
         taking into account obstacles and other entities.
-        
+
         Args:
             target (Entity): The target entity to move towards
             entities (list): List of entities that block movement
@@ -195,10 +195,10 @@ class Entity:
 
     def distance_to(self, other):
         """Calculate the distance to another entity.
-        
+
         Args:
             other (Entity): The other entity
-            
+
         Returns:
             float: The Euclidean distance to the other entity
         """

@@ -2,12 +2,35 @@ from equipment_slots import EquipmentSlots
 
 
 class Equipment:
+    """Component that manages equipped items and their stat bonuses.
+
+    This component handles equipment slots (main hand and off hand) and
+    calculates the total stat bonuses provided by all equipped items.
+    It supports equipping, unequipping, and replacing items.
+
+    Attributes:
+        main_hand (Entity): Item equipped in the main hand slot
+        off_hand (Entity): Item equipped in the off hand slot
+        owner (Entity): The entity that owns this equipment component
+    """
+
     def __init__(self, main_hand=None, off_hand=None):
+        """Initialize the Equipment component.
+
+        Args:
+            main_hand (Entity, optional): Initial main hand equipment
+            off_hand (Entity, optional): Initial off hand equipment
+        """
         self.main_hand = main_hand
         self.off_hand = off_hand
 
     @property
     def max_hp_bonus(self):
+        """Calculate total max HP bonus from all equipped items.
+
+        Returns:
+            int: Total maximum HP bonus from equipped items
+        """
         bonus = 0
 
         if self.main_hand and self.main_hand.equippable:
@@ -20,6 +43,11 @@ class Equipment:
 
     @property
     def power_bonus(self):
+        """Calculate total power bonus from all equipped items.
+
+        Returns:
+            int: Total attack power bonus from equipped items
+        """
         bonus = 0
 
         if self.main_hand and self.main_hand.equippable:
@@ -32,6 +60,11 @@ class Equipment:
 
     @property
     def defense_bonus(self):
+        """Calculate total defense bonus from all equipped items.
+
+        Returns:
+            int: Total defense bonus from equipped items
+        """
         bonus = 0
 
         if self.main_hand and self.main_hand.equippable:
@@ -43,6 +76,18 @@ class Equipment:
         return bonus
 
     def toggle_equip(self, equippable_entity):
+        """Equip, unequip, or replace an item in the appropriate slot.
+
+        If the item is already equipped, it will be unequipped.
+        If the slot is empty, the item will be equipped.
+        If the slot has a different item, it will be replaced.
+
+        Args:
+            equippable_entity (Entity): The entity with an equippable component
+
+        Returns:
+            list: List of result dictionaries with 'equipped' or 'dequipped' keys
+        """
         results = []
 
         slot = equippable_entity.equippable.slot

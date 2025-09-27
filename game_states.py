@@ -1,7 +1,19 @@
+"""Game state enumeration for managing different game modes.
+
+This module defines the various states the game can be in,
+which determines how input is handled and what is displayed.
+"""
+
 from enum import Enum
 
 
 class GameStates(Enum):
+    """Enumeration of possible game states.
+
+    Each state represents a different mode of gameplay or UI interaction
+    that affects how the game processes input and renders the screen.
+    """
+
     PLAYERS_TURN = 1
     ENEMY_TURN = 2
     PLAYER_DEAD = 3

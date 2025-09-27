@@ -2,11 +2,39 @@ from game_messages import Message
 
 
 class Inventory:
+    """Component that manages an entity's item storage and usage.
+
+    This component handles adding, removing, using, and dropping items.
+    It enforces capacity limits and integrates with the equipment system
+    for equippable items.
+
+    Attributes:
+        capacity (int): Maximum number of items that can be stored
+        items (list): List of Entity objects representing stored items
+        owner (Entity): The entity that owns this inventory component
+    """
+
     def __init__(self, capacity):
+        """Initialize an Inventory component.
+
+        Args:
+            capacity (int): Maximum number of items this inventory can hold
+        """
         self.capacity = capacity
         self.items = []
 
     def add_item(self, item):
+        """Add an item to the inventory.
+
+        Attempts to add an item to the inventory if there's space available.
+        Returns appropriate messages for success or failure.
+
+        Args:
+            item (Entity): The item entity to add to inventory
+
+        Returns:
+            list: List of result dictionaries with 'item_added' and 'message' keys
+        """
         results = []
 
         if len(self.items) >= self.capacity:
@@ -34,6 +62,18 @@ class Inventory:
         return results
 
     def use(self, item_entity, **kwargs):
+        """Use an item from the inventory.
+
+        Attempts to use an item, either by calling its use function (for consumables)
+        or by equipping it (for equippable items). Handles both cases appropriately.
+
+        Args:
+            item_entity (Entity): The item entity to use
+            **kwargs: Additional arguments passed to item use functions
+
+        Returns:
+            list: List of result dictionaries with usage results and messages
+        """
         results = []
 
         item_component = item_entity.item
@@ -73,6 +113,17 @@ class Inventory:
         return results
 
     def remove_item(self, item):
+        """Remove an item from the inventory.
+
+        Removes the specified item from the inventory if it exists.
+        Returns appropriate success or error messages.
+
+        Args:
+            item (Entity): The item entity to remove
+
+        Returns:
+            list: List of result dictionaries with removal results and messages
+        """
         """Remove item from inventory. Returns results instead of raising errors."""
         results = []
 
@@ -94,6 +145,17 @@ class Inventory:
         return results
 
     def drop_item(self, item):
+        """Drop an item from the inventory onto the ground.
+
+        Removes an item from inventory and places it at the owner's location.
+        Automatically unequips the item if it was equipped.
+
+        Args:
+            item (Entity): The item entity to drop
+
+        Returns:
+            list: List of result dictionaries with drop results and messages
+        """
         """Drop item from inventory."""
         results = []
 

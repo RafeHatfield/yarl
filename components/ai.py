@@ -6,7 +6,30 @@ from game_messages import Message
 
 
 class BasicMonster:
+    """Basic AI component for hostile monsters.
+
+    This AI makes monsters move towards and attack the player when they
+    can see them. Uses A* pathfinding for intelligent movement around obstacles.
+
+    Attributes:
+        owner (Entity): The entity that owns this AI component
+    """
+
     def take_turn(self, target, fov_map, game_map, entities):
+        """Execute one turn of AI behavior.
+
+        If the monster can see the target, it will either move towards them
+        (if far away) or attack them (if adjacent).
+
+        Args:
+            target (Entity): The target entity (usually the player)
+            fov_map: Field of view map for visibility checks
+            game_map (GameMap): The game map for pathfinding
+            entities (list): List of all entities for collision detection
+
+        Returns:
+            list: List of result dictionaries with AI actions and effects
+        """
         results = []
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
@@ -26,11 +49,42 @@ class BasicMonster:
 
 
 class ConfusedMonster:
+    """Temporary AI component for confused monsters.
+
+    This AI makes monsters move randomly for a limited number of turns,
+    then restores their previous AI behavior. Used by confusion spells.
+
+    Attributes:
+        previous_ai: The AI component to restore after confusion ends
+        number_of_turns (int): Remaining turns of confusion
+        owner (Entity): The entity that owns this AI component
+    """
+
     def __init__(self, previous_ai, number_of_turns=10):
+        """Initialize a ConfusedMonster AI.
+
+        Args:
+            previous_ai: The AI component to restore when confusion ends
+            number_of_turns (int, optional): Duration of confusion. Defaults to 10.
+        """
         self.previous_ai = previous_ai
         self.number_of_turns = number_of_turns
 
     def take_turn(self, target, fov_map, game_map, entities):
+        """Execute one turn of confused AI behavior.
+
+        Makes the monster move randomly. Decrements confusion duration
+        and restores previous AI when confusion ends.
+
+        Args:
+            target (Entity): The target entity (ignored during confusion)
+            fov_map: Field of view map (ignored during confusion)
+            game_map (GameMap): The game map for movement
+            entities (list): List of all entities for collision detection
+
+        Returns:
+            list: List of result dictionaries with AI actions and messages
+        """
         results = []
 
         if self.number_of_turns > 0:

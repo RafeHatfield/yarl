@@ -3,11 +3,11 @@ from game_messages import Message
 
 class Fighter:
     """Component that handles combat statistics and actions.
-    
+
     This component manages health points, attack power, defense, and experience
     points for entities that can engage in combat. It also handles equipment
     bonuses that modify base stats.
-    
+
     Attributes:
         base_max_hp (int): Base maximum health points
         hp (int): Current health points
@@ -16,10 +16,10 @@ class Fighter:
         xp (int): Experience points earned
         owner (Entity): The entity that owns this component
     """
-    
+
     def __init__(self, hp, defense, power, xp=0):
         """Initialize a Fighter component.
-        
+
         Args:
             hp (int): Maximum health points
             defense (int): Defense value
@@ -35,7 +35,7 @@ class Fighter:
     @property
     def max_hp(self):
         """Get maximum HP including equipment bonuses.
-        
+
         Returns:
             int: Maximum health points including equipment bonuses
         """
@@ -49,7 +49,7 @@ class Fighter:
     @property
     def power(self):
         """Get attack power including equipment bonuses.
-        
+
         Returns:
             int: Attack power including equipment bonuses
         """
@@ -63,7 +63,7 @@ class Fighter:
     @property
     def defense(self):
         """Get defense value including equipment bonuses.
-        
+
         Returns:
             int: Defense value including equipment bonuses
         """
@@ -75,6 +75,17 @@ class Fighter:
         return self.base_defense + bonus
 
     def take_damage(self, amount):
+        """Apply damage to this fighter.
+
+        Reduces current HP by the damage amount. If HP drops to 0 or below,
+        marks the fighter as dead and returns XP reward information.
+
+        Args:
+            amount (int): Amount of damage to apply
+
+        Returns:
+            list: List of result dictionaries, may include 'dead' and 'xp' keys
+        """
         results = []
 
         self.hp -= amount
@@ -85,12 +96,30 @@ class Fighter:
         return results
 
     def heal(self, amount):
+        """Restore health points to this fighter.
+
+        Increases current HP by the heal amount, capped at maximum HP.
+
+        Args:
+            amount (int): Amount of health to restore
+        """
         self.hp += amount
 
         if self.hp > self.max_hp:
             self.hp = self.max_hp
 
     def attack(self, target):
+        """Perform an attack against a target entity.
+
+        Calculates damage based on attacker's power vs target's defense.
+        Generates combat messages and applies damage to the target.
+
+        Args:
+            target (Entity): The target entity to attack
+
+        Returns:
+            list: List of result dictionaries with combat messages and effects
+        """
         results = []
 
         damage = self.power - target.fighter.defense
