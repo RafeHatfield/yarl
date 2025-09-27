@@ -1,11 +1,11 @@
-# RLike - A Python Roguelike Game
+# Catacombs of Yarl - A Python Roguelike Game
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-291%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-506%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 
-A feature-rich roguelike game built in Python using the TCOD library. Features turn-based combat, procedural dungeon generation with progressive difficulty scaling, spell casting, character progression, save/load system, and AI-driven monsters with various behaviors.
+**Catacombs of Yarl** (Yarl for short) is a feature-rich roguelike game built in Python using a professional game engine architecture. Explore the mysterious catacombs beneath the ancient city of Yarl, featuring turn-based combat, procedural dungeon generation, spell casting, character progression, and AI-driven monsters with various behaviors.
 
 ## 🎮 Features
 

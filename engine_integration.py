@@ -7,7 +7,7 @@ architecture and the existing game loop, allowing for gradual migration.
 import tcod.libtcodpy as libtcod
 
 from engine import GameEngine
-from engine.systems import RenderSystem, InputSystem
+from engine.systems import RenderSystem, InputSystem, AISystem
 from fov_functions import initialize_fov
 from game_states import GameStates
 from input_handlers import handle_keys, handle_mouse
@@ -30,6 +30,10 @@ def create_game_engine(constants, con, panel):
     # Create and register the input system (early priority)
     input_system = InputSystem(priority=10)
     engine.register_system(input_system)
+
+    # Create and register the AI system (middle priority)
+    ai_system = AISystem(priority=50)
+    engine.register_system(ai_system)
 
     # Create and register the render system (late priority)
     render_system = RenderSystem(
@@ -262,30 +266,4 @@ def _process_game_actions(
                 # Switch to enemy turn
                 state_manager.set_game_state(GameStates.ENEMY_TURN)
 
-    # Handle enemy turns (would eventually be an AISystem)
-    if current_state == GameStates.ENEMY_TURN:
-        _process_enemy_turns(state_manager)
-        state_manager.set_game_state(GameStates.PLAYERS_TURN)
-
-
-def _process_enemy_turns(state_manager):
-    """Process enemy AI turns.
-
-    This is a simplified version that would eventually be replaced
-    by a dedicated AISystem.
-
-    Args:
-        state_manager: Game state manager
-    """
-    player = state_manager.state.player
-    entities = state_manager.state.entities
-    game_map = state_manager.state.game_map
-
-    for entity in entities:
-        if entity.ai and entity != player:
-            if entity.fighter and entity.fighter.hp > 0:
-                # Simple AI processing (would be in AISystem)
-                entity.ai.take_turn(player, game_map, entities)
-
-                if entity.fighter.hp <= 0:
-                    state_manager.request_fov_recompute()
+    # Enemy turns are now handled by the AISystem automatically
