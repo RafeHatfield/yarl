@@ -1,8 +1,27 @@
+"""Game messaging system.
+
+This module handles game messages and the message log display.
+Provides classes for individual messages and the scrolling message log.
+"""
+
 import textwrap
 
 
 class Message:
+    """A single game message with text and color.
+
+    Attributes:
+        text (str): The message text
+        color (tuple): RGB color tuple for display
+    """
+
     def __init__(self, text, color=(255, 255, 255)):
+        """Initialize a Message.
+
+        Args:
+            text (str): The message text
+            color (tuple, optional): RGB color tuple. Defaults to white.
+        """
         self.text = text
         self.color = color
 

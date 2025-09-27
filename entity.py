@@ -1,3 +1,10 @@
+"""Entity system for game objects.
+
+This module defines the Entity class which represents all game objects
+including players, monsters, items, and interactive elements. Uses a
+component-based architecture for flexible object composition.
+"""
+
 import math
 
 import tcod as libtcod
@@ -49,6 +56,25 @@ class Entity:
         equipment=None,
         equippable=None,
     ):
+        """Initialize an Entity.
+
+        Args:
+            x (int): X coordinate on the game map
+            y (int): Y coordinate on the game map
+            char (str): Character to display for this entity
+            color (tuple): RGB color tuple for rendering
+            name (str): Display name of the entity
+            blocks (bool, optional): Whether this entity blocks movement. Defaults to False.
+            render_order (RenderOrder, optional): Rendering priority. Defaults to RenderOrder.CORPSE.
+            fighter (Fighter, optional): Combat component. Defaults to None.
+            ai (AI, optional): AI behavior component. Defaults to None.
+            item (Item, optional): Item component. Defaults to None.
+            inventory (Inventory, optional): Inventory component. Defaults to None.
+            stairs (Stairs, optional): Stairs component. Defaults to None.
+            level (Level, optional): Level/XP component. Defaults to None.
+            equipment (Equipment, optional): Equipment component. Defaults to None.
+            equippable (Equippable, optional): Equippable component. Defaults to None.
+        """
         self.x = x
         self.y = y
         self.char = char
@@ -127,6 +153,15 @@ class Entity:
             self.move(dx, dy)
 
     def distance(self, x, y):
+        """Calculate the distance to a specific coordinate.
+
+        Args:
+            x (int): Target x coordinate
+            y (int): Target y coordinate
+
+        Returns:
+            float: The Euclidean distance to the target coordinates
+        """
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
     def move_astar(self, target, entities, game_map):

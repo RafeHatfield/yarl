@@ -1,3 +1,9 @@
+"""Equipment management component.
+
+This module defines the Equipment component which manages equipped items
+and calculates total stat bonuses from all equipped gear.
+"""
+
 from equipment_slots import EquipmentSlots
 
 

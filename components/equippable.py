@@ -1,3 +1,10 @@
+"""Equippable item component.
+
+This module defines the Equippable component which makes items
+equippable and defines their stat bonuses and equipment slot.
+"""
+
+
 class Equippable:
     """Component that makes an entity equippable with stat bonuses.
 
