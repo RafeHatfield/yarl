@@ -174,7 +174,7 @@ class AISystem(System):
             else:
                 # Use default AI behavior
                 entity.ai.take_turn(
-                    game_state.player, game_state.game_map, game_state.entities
+                    game_state.player, game_state.fov_map, game_state.game_map, game_state.entities
                 )
 
             # Update turn statistics

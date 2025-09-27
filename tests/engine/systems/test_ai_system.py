@@ -256,6 +256,7 @@ class TestAISystemTurnProcessing:
         ]
         self.mock_game_state.player = self.mock_player
         self.mock_game_state.game_map = Mock()
+        self.mock_game_state.fov_map = Mock()
 
     def test_get_ai_entities(self):
         """Test getting AI entities that should take turns."""
@@ -339,6 +340,7 @@ class TestAISystemTurnProcessing:
             # Should call the entity's AI take_turn method
             self.mock_ai_entity.ai.take_turn.assert_called_once_with(
                 self.mock_game_state.player,
+                self.mock_game_state.fov_map,
                 self.mock_game_state.game_map,
                 self.mock_game_state.entities,
             )
