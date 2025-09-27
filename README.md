@@ -27,6 +27,14 @@ A feature-rich roguelike game built in Python using the TCOD library. Features t
 - **💚 Healing Potions** - Restore health when injured (available from start)
 - **🎯 Progressive item availability** - Better items unlock as you go deeper
 
+### Equipment System
+- **⚔️ Weapons** - Swords and daggers that increase attack power
+- **🛡️ Armor** - Shields that provide defense bonuses
+- **📊 Stat Bonuses** - Equipment modifies power, defense, and max HP
+- **🔄 Equipment Slots** - Main hand and off hand equipment management
+- **🎒 Inventory Integration** - Seamless equip/unequip from inventory
+- **📈 Progressive Equipment** - Better gear unlocks on deeper levels
+
 ### AI & Monsters
 - **BasicMonster AI** - Tracks and attacks the player using A* pathfinding
 - **ConfusedMonster AI** - Random movement with automatic recovery
@@ -38,6 +46,7 @@ A feature-rich roguelike game built in Python using the TCOD library. Features t
 ### Technical Features
 - **Entity-Component-System (ECS)** architecture
 - **A* pathfinding** for intelligent monster movement
+- **Equipment system** with stat bonuses and slot management
 - **Dynamic difficulty scaling** with configurable progression curves
 - **Weighted random selection** for balanced item/monster distribution
 - **Save/Load system** using Python's shelve with comprehensive validation
@@ -129,10 +138,11 @@ pytest tests/test_dungeon_levels.py -v        # Multi-level dungeons
 ```
 
 ### Test Coverage
-- **291 tests** with **100% pass rate**
+- **380 tests** with **100% pass rate**
 - **Entity System** - Movement, pathfinding, A* algorithm
 - **Combat System** - Attack, defense, healing, death mechanics, XP rewards
-- **Inventory System** - Item management, capacity limits, error handling
+- **Equipment System** - Equipment slots, stat bonuses, equip/unequip mechanics
+- **Inventory System** - Item management, capacity limits, equipment integration
 - **Spell System** - All spells including confusion mechanics and targeting
 - **AI System** - BasicMonster and ConfusedMonster behavior
 - **Message System** - Game event logging and display
@@ -148,8 +158,10 @@ pytest tests/test_dungeon_levels.py -v        # Multi-level dungeons
 rlike/
 ├── components/          # ECS Components
 │   ├── ai.py           # AI behaviors (BasicMonster, ConfusedMonster)
+│   ├── equipment.py    # Equipment slot management and stat bonuses
+│   ├── equippable.py   # Equippable item component with bonuses
 │   ├── fighter.py      # Combat stats and methods with XP rewards
-│   ├── inventory.py    # Item storage and management
+│   ├── inventory.py    # Item storage and equipment management
 │   ├── item.py         # Item component definition
 │   └── level.py        # XP and leveling system
 ├── loader_functions/   # Game initialization and save/load
@@ -172,6 +184,7 @@ rlike/
 ├── game_states.py      # Game state management
 ├── random_utils.py     # Weighted selection and difficulty scaling
 ├── stairs.py           # Stairs component for level transitions
+├── equipment_slots.py  # Equipment slot enumeration (MAIN_HAND, OFF_HAND)
 ├── menus.py            # UI menus (inventory, character screen, etc.)
 └── requirements.txt    # Project dependencies
 ```
@@ -238,14 +251,17 @@ These are tracked for future improvement when confident in test coverage.
 - [x] **Multiple Dungeon Levels** - Stairs and level progression
 - [x] **Experience/Leveling** - Character progression with stat choices
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
-- [x] **Comprehensive Testing** - 291 tests with 100% coverage
+- [x] **Equipment System** - Weapons and armor with stat bonuses
+- [x] **Comprehensive Testing** - 380 tests with 100% coverage
 
 ### 🔮 Future Enhancements
 - [ ] **More Spells** - Teleport, invisibility, more tactical options
-- [ ] **Equipment System** - Weapons and armor with stat bonuses
+- [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets
+- [ ] **Equipment Sets** - Bonuses for wearing matching equipment pieces
 - [ ] **More Monster Types** - Varied AI behaviors and abilities
 - [ ] **Boss Encounters** - Special monsters on certain levels
 - [ ] **Environmental Hazards** - Traps and obstacles
+- [ ] **Equipment Crafting** - Player-created equipment and upgrades
 - [ ] **Sound Effects** - Audio feedback for actions
 - [ ] **Configuration System** - Customizable controls and settings
 - [ ] **Mobile Distribution** - iOS/Android compatibility exploration
