@@ -70,8 +70,9 @@ class TestPlayerDeathDuringEnemyTurn(unittest.TestCase):
             self.assertLessEqual(self.player.fighter.hp, 0,
                            "Player should have HP <= 0 after monster attack")
             
-            # TODO: AI system should detect player death and change game state
-            # For now, we need to implement this detection in the AI system
+            # Verify AI system detected player death and changed game state
+            self.assertEqual(self.state_manager.state.current_state, GameStates.PLAYER_DEAD,
+                           "AI system should change game state to PLAYER_DEAD when player dies")
 
 
 class TestDeathDetectionIntegration(unittest.TestCase):
