@@ -66,6 +66,7 @@ class OptimizedTileRenderer:
         self.frame_counter = 0
         self.map_width = 0
         self.map_height = 0
+        self.first_render = True  # Force full redraw on first render
         
         # Performance statistics
         self.optimization_stats = {
@@ -113,9 +114,11 @@ class OptimizedTileRenderer:
             self.optimization_stats['fov_changes'] += 1
             force_full_redraw = True
         
-        if force_full_redraw:
+        # Force full redraw on first render or when explicitly requested
+        if force_full_redraw or self.first_render:
             self.optimization_stats['full_redraws'] += 1
             self._render_all_tiles(con, game_map, fov_map, colors)
+            self.first_render = False  # Clear first render flag
         else:
             self._render_dirty_tiles(con, game_map, fov_map, colors)
         
@@ -353,6 +356,15 @@ def get_tile_optimization_stats():
 def reset_tile_optimization_stats():
     """Reset tile rendering optimization statistics."""
     _global_tile_renderer.reset_stats()
+
+
+def reset_tile_renderer():
+    """Reset the global tile renderer to initial state.
+    
+    This is useful for testing to ensure a clean state between tests.
+    """
+    global _global_tile_renderer
+    _global_tile_renderer = OptimizedTileRenderer()
 
 
 def mark_tile_dirty(x, y):
