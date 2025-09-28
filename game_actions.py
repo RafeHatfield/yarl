@@ -10,6 +10,7 @@ import logging
 from game_messages import Message
 from game_states import GameStates
 from config.game_constants import get_constants
+from entity_sorting_cache import invalidate_entity_cache
 
 logger = logging.getLogger(__name__)
 
@@ -207,6 +208,8 @@ class ActionProcessor:
             if remove_from_entities:
                 if dead_entity in self.state_manager.state.entities:
                     self.state_manager.state.entities.remove(dead_entity)
+                    # Invalidate entity sorting cache when entities are removed
+                    invalidate_entity_cache("entity_removed_combat")
             
             self.state_manager.request_fov_recompute()
     

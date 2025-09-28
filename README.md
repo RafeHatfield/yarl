@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-690%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-729%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 [![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
 
@@ -48,6 +48,7 @@
 - **Entity-Component-System (ECS)** architecture
 - **A* pathfinding** for intelligent monster movement
 - **Equipment system** with stat bonuses and slot management
+- **Entity sorting cache** for optimized rendering performance
 - **Dynamic difficulty scaling** with configurable progression curves
 - **Weighted random selection** for balanced item/monster distribution
 - **Save/Load system** using Python's shelve with comprehensive validation
@@ -212,7 +213,7 @@ rlike/
 │   ├── game_map.py     # Dungeon generation with difficulty scaling
 │   ├── rectangle.py    # Room generation utilities
 │   └── tile.py         # Tile properties (walkable, transparent)
-├── tests/              # Comprehensive test suite (690 tests)
+├── tests/              # Comprehensive test suite (729 tests)
 │   ├── comprehensive/  # End-to-end integration tests
 │   ├── integration/    # System interaction tests
 │   ├── regression/     # Critical bug prevention tests
@@ -223,6 +224,7 @@ rlike/
 ├── engine.py           # Main game loop and entry point
 ├── test_startup.py     # Quick game startup verification script
 ├── entity.py           # Base entity class with movement/pathfinding
+├── entity_sorting_cache.py  # Performance optimization for entity rendering
 ├── game_actions.py     # Modular action processing system
 ├── item_functions.py   # Spell implementations (heal, fireball, etc.)
 ├── input_handlers.py   # Keyboard and mouse input processing
@@ -293,6 +295,34 @@ processor.process_actions(action, mouse_action)
 - **Centralized error handling** with logging
 - **State-aware processing** that respects current game state
 - **Extensible design** for adding new action types
+
+### Entity Sorting Cache System
+
+The game includes an optimized entity sorting cache in `entity_sorting_cache.py`:
+
+```python
+from entity_sorting_cache import get_sorted_entities, get_entity_cache_stats
+
+# Get entities sorted by render order (cached when possible)
+sorted_entities = get_sorted_entities(entities)
+
+# Check cache performance
+stats = get_entity_cache_stats()
+print(f"Cache hit rate: {stats['hit_rate_percent']:.1f}%")
+```
+
+**Key Features:**
+- **Automatic caching** of entity sorting operations
+- **Smart invalidation** when entities are added, removed, or moved
+- **Performance monitoring** with detailed statistics
+- **Transparent integration** with existing rendering code
+- **High hit rates** in typical gameplay scenarios (90%+ when entities are stable)
+
+**Cache Invalidation Triggers:**
+- Entity addition (monster spawning, item drops)
+- Entity removal (monster death, item pickup)
+- Entity position changes (movement)
+- Entity render order changes (state transitions)
 
 ## 🔧 Development
 

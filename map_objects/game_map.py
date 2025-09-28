@@ -12,6 +12,7 @@ from components.equippable import Equippable
 from components.fighter import Fighter
 from components.item import Item
 from entity import Entity
+from entity_sorting_cache import invalidate_entity_cache
 from equipment_slots import EquipmentSlots
 from game_messages import Message
 from item_functions import cast_confuse, cast_fireball, cast_lightning, heal
@@ -289,6 +290,8 @@ class GameMap:
                     )
 
                 entities.append(monster)
+                # Invalidate entity sorting cache when new entities are added
+                invalidate_entity_cache("entity_added_monster")
 
         for i in range(number_of_items):
             x = randint(room.x1 + 1, room.x2 - 1)
@@ -387,6 +390,8 @@ class GameMap:
                     )
 
                 entities.append(item)
+                # Invalidate entity sorting cache when new entities are added
+                invalidate_entity_cache("entity_added_item")
 
     def is_blocked(self, x, y):
         """Check if a tile is blocked for movement.

@@ -11,6 +11,7 @@ import logging
 
 from ..system import System
 from game_states import GameStates
+from entity_sorting_cache import invalidate_entity_cache
 
 logger = logging.getLogger(__name__)
 
@@ -239,6 +240,8 @@ class AISystem(System):
                     # Monster died - remove from entities
                     if dead_entity in game_state.entities:
                         game_state.entities.remove(dead_entity)
+                        # Invalidate entity sorting cache when entities are removed
+                        invalidate_entity_cache("entity_removed_ai")
                         logger.debug(f"Removed dead entity: {dead_entity.name}")
 
     def _handle_entity_death(self, entity: Any, game_state) -> None:

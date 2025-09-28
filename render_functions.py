@@ -13,6 +13,7 @@ from game_states import GameStates
 from menus import character_screen, inventory_menu, level_up_menu
 from fov_functions import map_is_in_fov
 from render_optimization import render_tiles_optimized
+from entity_sorting_cache import get_sorted_entities
 
 
 class RenderOrder(Enum):
@@ -142,7 +143,8 @@ def render_all(
         # Original tile rendering logic (kept for compatibility/debugging)
         _render_tiles_original(con, game_map, fov_map, colors)
 
-    entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
+    # Use cached entity sorting for performance optimization
+    entities_in_render_order = get_sorted_entities(entities)
 
     # Draw all entities in the list
     # for entity in entities:
