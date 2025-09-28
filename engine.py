@@ -5,7 +5,9 @@ game logic coordination. It manages the game state, rendering,
 and player input processing.
 """
 
+import argparse
 import logging
+import os
 
 import tcod.libtcodpy as libtcod
 
@@ -20,9 +22,36 @@ from loader_functions.initialize_new_game import get_constants, get_game_variabl
 from menus import main_menu, message_box
 from render_functions import clear_all, render_all
 from engine_integration import play_game_with_engine
+from config.testing_config import set_testing_mode
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+
+def parse_arguments():
+    """Parse command line arguments.
+    
+    Returns:
+        argparse.Namespace: Parsed arguments
+    """
+    parser = argparse.ArgumentParser(
+        description='Yarl (Catacombs of Yarl) - A roguelike adventure game',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python engine.py                    # Normal gameplay
+  python engine.py --testing          # Enable testing mode (more items)
+  python engine.py -t                 # Short form of testing mode
+        """
+    )
+    
+    parser.add_argument(
+        '--testing', '-t',
+        action='store_true',
+        help='Enable testing mode with increased item spawn rates for easier testing'
+    )
+    
+    return parser.parse_args()
 
 
 def main():
@@ -31,6 +60,18 @@ def main():
     Initializes the game window, loads or creates a new game,
     and runs the main game loop until the player quits.
     """
+    # Parse command line arguments
+    args = parse_arguments()
+    
+    # Set testing mode if requested
+    if args.testing:
+        set_testing_mode(True)
+        print("🧪 TESTING MODE ENABLED: Increased item spawn rates for testing")
+    
+    # Also check environment variable as fallback
+    if os.environ.get('YARL_TESTING_MODE', '').lower() in ('true', '1', 'yes', 'on'):
+        set_testing_mode(True)
+        print("🧪 TESTING MODE ENABLED: Via environment variable YARL_TESTING_MODE")
     constants = get_constants()
 
     libtcod.console_set_custom_font(

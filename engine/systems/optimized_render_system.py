@@ -87,6 +87,11 @@ class OptimizedRenderSystem(RenderSystem):
         game_state = self._get_game_state()
         if not game_state:
             return
+        
+        # Update FOV map if it changed (e.g., new level)
+        new_fov_map = game_state.get("fov_map")
+        if new_fov_map and new_fov_map != self.fov_map:
+            self.fov_map = new_fov_map
 
         # Extract game state data
         entities = game_state.get("entities", [])
@@ -99,13 +104,16 @@ class OptimizedRenderSystem(RenderSystem):
         if not all([player, game_map, message_log]):
             return
 
-        # Update our fov_recompute flag from game state
-        # This ensures we use the game state's flag, not our own stale flag
-        self.fov_recompute = game_state.get("fov_recompute", False)
+        # Get the authoritative fov_recompute flag from game state
+        game_state_fov_recompute = game_state.get("fov_recompute", False)
         
-        # Store the original fov_recompute value for render_all
-        original_fov_recompute = self.fov_recompute
-
+        
+        # Update our internal flag from game state
+        self.fov_recompute = game_state_fov_recompute
+        
+        # Use the game state flag for rendering (this is the authoritative source)
+        original_fov_recompute = game_state_fov_recompute
+        
         # Use optimized rendering if available and enabled
         if self.use_optimizations and self._has_performance_data(game_state):
             self._optimized_render(
@@ -132,7 +140,20 @@ class OptimizedRenderSystem(RenderSystem):
             )
 
         # Present the frame
-        libtcod.console_flush()
+        console_flush_succeeded = False
+        try:
+            libtcod.console_flush()
+            console_flush_succeeded = True
+        except RuntimeError:
+            # Handle case where no console context exists (e.g., during testing)
+            pass
+
+        # Reset the game state fov_recompute flag after rendering
+        # This prevents unnecessary redraws on subsequent frames
+        # Only reset if we actually rendered successfully (not during mocked tests)
+        if (self.engine and hasattr(self.engine, 'state_manager') and 
+            original_fov_recompute and console_flush_succeeded):
+            self.engine.state_manager.state.fov_recompute = False
 
         # Update render tracking
         self.last_rendered_entities = set(entities)
@@ -191,7 +212,7 @@ class OptimizedRenderSystem(RenderSystem):
             )
             
             # Always recompute when fov_recompute=True, or when position changed
-            if self.fov_recompute or should_recompute_for_position:
+            if original_fov_recompute or should_recompute_for_position:
                 recompute_fov(
                     self.fov_map,
                     player.x,
@@ -212,7 +233,7 @@ class OptimizedRenderSystem(RenderSystem):
 
         # Decide rendering strategy
         # Force full redraw when FOV was recomputed (map tiles need to be redrawn)
-        fov_was_recomputed = self.fov_recompute
+        fov_was_recomputed = original_fov_recompute
         if full_redraw_needed or not dirty_rectangles or fov_was_recomputed:
             # Full render needed
             self._render_full_optimized(
@@ -243,9 +264,8 @@ class OptimizedRenderSystem(RenderSystem):
         self.fov_recompute = False
         self.optimization_stats["frames_optimized"] += 1
 
-        # Reset the game state's fov_recompute flag
-        if self.engine and hasattr(self.engine, "state_manager"):
-            self.engine.state_manager.state.fov_recompute = False
+        # DON'T reset the game state's fov_recompute flag here
+        # Let the game logic control when to reset it
 
         # Clear entities (only visible ones for optimization)
         self._clear_visible_entities(visible_entities)
@@ -310,9 +330,8 @@ class OptimizedRenderSystem(RenderSystem):
 
         self.fov_recompute = False
 
-        # Reset the game state's fov_recompute flag
-        if self.engine and hasattr(self.engine, "state_manager"):
-            self.engine.state_manager.state.fov_recompute = False
+        # DON'T reset the game state's fov_recompute flag here
+        # Let the game logic control when to reset it
 
         # Standard entity clearing
         clear_all(self.console, entities)

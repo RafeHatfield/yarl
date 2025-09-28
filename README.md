@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-506%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-659%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 
 **Catacombs of Yarl** (Yarl for short) is a feature-rich roguelike game built in Python using a professional game engine architecture. Explore the mysterious catacombs beneath the ancient city of Yarl, featuring turn-based combat, procedural dungeon generation, spell casting, character progression, and AI-driven monsters with various behaviors.
@@ -81,7 +81,13 @@
 
 4. **Run the game**
    ```bash
+   # Normal gameplay
    python engine.py
+   
+   # Testing mode (increased item spawns for easier testing)
+   python engine.py --testing
+   # or use the convenience script
+   python test_game.py
    ```
 
 ## 🎯 How to Play
@@ -108,7 +114,31 @@
 - **Save frequently** - Game saves automatically on exit, but manual saves are recommended
 - **Explore thoroughly** - Each level has stairs to the next, usually in the last room
 
-## 🧪 Testing
+## 🧪 Testing & Development
+
+### Testing Mode
+
+For easier testing of game mechanics, Yarl includes a special testing mode that dramatically increases item spawn rates:
+
+```bash
+# Enable testing mode via command line
+python engine.py --testing
+
+# Or use the convenience script
+python test_game.py
+
+# Or set environment variable
+export YARL_TESTING_MODE=true
+python engine.py
+```
+
+**Testing Mode Features:**
+- **10-20 items per room** (vs 1-2 in normal mode)
+- **All scrolls and equipment available from level 1** (vs progressive unlocking)
+- **Higher spawn chances** for rare items (30-50% vs 5-25%)
+- **Perfect for testing** inventory, targeting, equipment, and spell mechanics
+
+### Test Suite
 
 This project maintains **100% test coverage** with a comprehensive test suite covering all game systems.
 
@@ -118,7 +148,7 @@ This project maintains **100% test coverage** with a comprehensive test suite co
 # Install test dependencies
 pip install -r requirements-dev.txt
 
-# Run all tests (291 tests)
+# Run all tests (659 tests)
 pytest
 
 # Run with coverage reporting
@@ -135,10 +165,13 @@ pytest tests/test_random_utils.py -v          # Weighted selection utilities
 pytest tests/test_save_load_basic.py -v       # Save/load functionality
 pytest tests/test_level.py -v                 # XP and leveling system
 pytest tests/test_dungeon_levels.py -v        # Multi-level dungeons
+pytest tests/regression/ -v                  # Regression tests for critical bugs
+pytest tests/integration/ -v                 # Integration tests for system interactions
+pytest tests/comprehensive/ -v               # Comprehensive end-to-end tests
 ```
 
 ### Test Coverage
-- **380 tests** with **100% pass rate**
+- **659 tests** with **100% pass rate**
 - **Entity System** - Movement, pathfinding, A* algorithm
 - **Combat System** - Attack, defense, healing, death mechanics, XP rewards
 - **Equipment System** - Equipment slots, stat bonuses, equip/unequip mechanics
@@ -150,6 +183,10 @@ pytest tests/test_dungeon_levels.py -v        # Multi-level dungeons
 - **Save/Load System** - Game state persistence, validation, error handling
 - **Character Progression** - XP system, leveling, stat increases
 - **Dungeon Levels** - Multi-floor generation, stairs, level transitions
+- **FOV & Rendering System** - Field of view calculations, map rendering, visual regression prevention
+- **Game Engine Integration** - System coordination, state management, performance optimization
+- **Regression Testing** - Automated prevention of critical bugs (FOV, combat, death system)
+- **Integration Testing** - End-to-end system interaction validation
 
 ## 🏗️ Architecture
 
@@ -171,7 +208,10 @@ rlike/
 │   ├── game_map.py     # Dungeon generation with difficulty scaling
 │   ├── rectangle.py    # Room generation utilities
 │   └── tile.py         # Tile properties (walkable, transparent)
-├── tests/              # Comprehensive test suite (291 tests)
+├── tests/              # Comprehensive test suite (659 tests)
+│   ├── comprehensive/  # End-to-end integration tests
+│   ├── integration/    # System interaction tests
+│   ├── regression/     # Critical bug prevention tests
 │   ├── conftest.py     # Test fixtures and mocking
 │   ├── test_*.py       # Test modules for each component
 │   └── __init__.py
@@ -252,7 +292,8 @@ These are tracked for future improvement when confident in test coverage.
 - [x] **Experience/Leveling** - Character progression with stat choices
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
 - [x] **Equipment System** - Weapons and armor with stat bonuses
-- [x] **Comprehensive Testing** - 380 tests with 100% coverage
+- [x] **Comprehensive Testing** - 659 tests with 100% coverage
+- [x] **FOV Rendering System** - Robust field-of-view with regression testing
 
 ### 🔮 Future Enhancements
 - [ ] **More Spells** - Teleport, invisibility, more tactical options

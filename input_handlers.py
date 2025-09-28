@@ -133,22 +133,27 @@ def handle_player_turn_keys(key):
 def handle_player_dead_keys(key):
     """Handle input when the player is dead (game over screen).
 
+    When the player is dead, they should only be able to:
+    - Press any key to return to the main menu
+    - Toggle fullscreen
+    - Exit the game
+    
+    No other actions (movement, inventory, etc.) should be allowed.
+
     Args:
         key: tcod Key object containing key press information
 
     Returns:
         dict: Dictionary with 'fullscreen' or 'exit' keys
     """
-    key_char = chr(key.c)
-
-    if key_char == "i":
-        return {"show_inventory": True}
-
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle full screen
         return {"fullscreen": True}
     elif key.vk == libtcod.KEY_ESCAPE:
-        # Exit the menu
+        # Exit the game completely
+        return {"exit": True}
+    elif key.vk != libtcod.KEY_NONE:
+        # Any other key press returns to main menu
         return {"exit": True}
 
     return {}

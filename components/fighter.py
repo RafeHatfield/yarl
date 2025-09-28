@@ -92,6 +92,8 @@ class Fighter:
 
         if self.hp <= 0:
             results.append({"dead": self.owner, "xp": self.xp})
+            # Note: HP can go negative for XP calculation purposes, but should be
+            # displayed as 0 in UI. The UI layer should handle the display clamping.
 
         return results
 

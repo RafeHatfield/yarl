@@ -110,6 +110,7 @@ class InputSystem(System):
         self.current_key = game_state.key
         self.current_mouse = game_state.mouse
 
+
         if not self.current_key:
             return
 

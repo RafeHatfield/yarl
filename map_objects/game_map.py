@@ -20,6 +20,7 @@ from map_objects.tile import Tile
 from random_utils import from_dungeon_level, random_choice_from_dict
 from render_functions import RenderOrder
 from stairs import Stairs
+from config.testing_config import get_testing_config
 
 
 class GameMap:
@@ -207,17 +208,24 @@ class GameMap:
         """Place monsters and items in a room based on dungeon level.
 
         Uses probability tables that scale with dungeon level to determine
-        what entities to spawn and where to place them.
+        what entities to spawn and where to place them. Spawn rates can be
+        modified by testing configuration.
 
         Args:
             room (Rect): Room to place entities in
             entities (list): List to add new entities to
         """
+        config = get_testing_config()
+        
+        # Get spawn limits from configuration
         max_monsters_per_room = from_dungeon_level(
-            [[2, 1], [3, 4], [5, 6]], self.dungeon_level
+            config.get_max_monsters_per_room(self.dungeon_level), self.dungeon_level
         )
-        max_items_per_room = from_dungeon_level([[1, 1], [2, 4]], self.dungeon_level)
-        # Get a random number of monsters
+        max_items_per_room = from_dungeon_level(
+            config.get_max_items_per_room(self.dungeon_level), self.dungeon_level
+        )
+        
+        # Get a random number of monsters and items
         number_of_monsters = randint(0, max_monsters_per_room)
         number_of_items = randint(0, max_items_per_room)
 
@@ -228,14 +236,17 @@ class GameMap:
             ),
         }
 
-        item_chances = {
-            "healing_potion": 35,
-            "sword": from_dungeon_level([[5, 4]], self.dungeon_level),
-            "shield": from_dungeon_level([[15, 8]], self.dungeon_level),
-            "lightning_scroll": from_dungeon_level([[25, 4]], self.dungeon_level),
-            "fireball_scroll": from_dungeon_level([[25, 6]], self.dungeon_level),
-            "confusion_scroll": from_dungeon_level([[10, 2]], self.dungeon_level),
-        }
+        # Get item spawn chances from configuration (normal or testing mode)
+        item_spawn_config = config.get_item_spawn_chances(self.dungeon_level)
+        item_chances = {}
+        
+        for item_name, chance_config in item_spawn_config.items():
+            if isinstance(chance_config, int):
+                # Simple percentage chance
+                item_chances[item_name] = chance_config
+            else:
+                # Dungeon level-based progression
+                item_chances[item_name] = from_dungeon_level(chance_config, self.dungeon_level)
 
         for i in range(number_of_monsters):
             # Choose a random location in the room

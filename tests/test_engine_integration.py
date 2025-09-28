@@ -12,6 +12,7 @@ from engine_integration import (
 )
 from engine import GameEngine
 from engine.systems import RenderSystem
+from engine.systems.input_system import InputSystem
 from game_states import GameStates
 
 
@@ -269,6 +270,16 @@ class TestPlayGameWithEngineIntegration:
         """Test basic game loop with engine."""
         # Set up mocks
         mock_engine = Mock()
+        mock_input_system = Mock(spec=InputSystem)  # Make it pass isinstance check
+        mock_input_system.update = Mock()  # Mock the update method
+        mock_engine.systems = [mock_input_system]  # Make systems iterable
+        mock_engine.update = Mock()  # Mock the engine update method
+        
+        # Mock state manager methods
+        mock_state_manager = Mock()
+        mock_state_manager.get_extra_data.return_value = {}
+        mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
+        mock_engine.state_manager = mock_state_manager
         mock_create.return_value = mock_engine
         mock_window_closed.side_effect = [False, True]  # Run once then exit
         mock_handle_keys.return_value = {"exit": True}

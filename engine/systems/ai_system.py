@@ -89,6 +89,10 @@ class AISystem(System):
 
         game_state = state_manager.state
 
+        # CRITICAL: Don't process AI if player is dead
+        if game_state.current_state == GameStates.PLAYER_DEAD:
+            return
+
         # Only process AI during enemy turn
         if game_state.current_state != GameStates.ENEMY_TURN:
             return
@@ -96,9 +100,11 @@ class AISystem(System):
         # Process AI turns
         self._process_ai_turns(game_state)
 
-        # Switch back to player turn when done
+        # Switch back to player turn when done (unless player died)
         if not self.turn_processing:
-            state_manager.set_game_state(GameStates.PLAYERS_TURN)
+            # Check again if player died during AI processing
+            if state_manager.state.current_state != GameStates.PLAYER_DEAD:
+                state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
         """Process all AI entity turns.
@@ -172,10 +178,13 @@ class AISystem(System):
                     entity, game_state.player, game_state.game_map, game_state.entities
                 )
             else:
-                # Use default AI behavior
-                entity.ai.take_turn(
+                # Use default AI behavior and process results
+                ai_results = entity.ai.take_turn(
                     game_state.player, game_state.fov_map, game_state.game_map, game_state.entities
                 )
+                
+                # Process AI turn results (combat, death, etc.)
+                self._process_ai_results(ai_results, game_state)
 
             # Update turn statistics
             turn_time = time.time() - turn_start_time
@@ -191,6 +200,46 @@ class AISystem(System):
             # Notify turn end callbacks
             self._notify_callbacks("turn_end", entity)
             self.current_turn_entity = None
+
+    def _process_ai_results(self, results: List[Dict[str, Any]], game_state) -> None:
+        """Process results from AI actions (combat, movement, etc.).
+        
+        Args:
+            results: List of result dictionaries from AI actions
+            game_state: Current game state
+        """
+        if not results:
+            return
+            
+        from game_messages import Message
+        
+        for result in results:
+            # Handle messages
+            message = result.get("message")
+            if message and game_state.message_log:
+                game_state.message_log.add_message(message)
+            
+            # Handle death (critical for player death detection)
+            dead_entity = result.get("dead")
+            if dead_entity:
+                if dead_entity == game_state.player:
+                    # CRITICAL: Player died during AI turn
+                    if self.engine and hasattr(self.engine, "state_manager"):
+                        self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)
+                        
+                        # Add death message
+                        death_message = Message(
+                            "You died! Press any key to return to the main menu.",
+                            (255, 30, 30)
+                        )
+                        game_state.message_log.add_message(death_message)
+                        
+                        logger.info(f"Player killed by {self.current_turn_entity.name if self.current_turn_entity else 'unknown'}")
+                else:
+                    # Monster died - remove from entities
+                    if dead_entity in game_state.entities:
+                        game_state.entities.remove(dead_entity)
+                        logger.debug(f"Removed dead entity: {dead_entity.name}")
 
     def _handle_entity_death(self, entity: Any, game_state) -> None:
         """Handle an entity's death during AI processing.
