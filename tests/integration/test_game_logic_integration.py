@@ -177,13 +177,16 @@ class TestGameLogicIntegration(unittest.TestCase):
                 action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
             )
             
-            # Verify monster was removed from entities
-            self.assertNotIn(self.monster, self.state_manager.state.entities,
-                           "Dead monster should be removed from entities")
-            
-            # Verify death message was added
-            self.assertTrue(self.message_log.add_message.called,
-                          "Monster death should generate messages")
+        # Verify monster was transformed into a corpse (remains in entities)
+        self.assertIn(self.monster, self.state_manager.state.entities,
+                     "Dead monster should remain as corpse in entities")
+        self.assertFalse(self.monster.blocks, "Corpse should not block movement")
+        self.assertEqual(self.monster.char, '%', "Corpse should have % character")
+        self.assertIsNone(self.monster.fighter, "Corpse should have no fighter component")
+        
+        # Verify death message was added
+        self.assertTrue(self.message_log.add_message.called,
+                      "Monster death should generate messages")
 
     def test_inventory_full_integration(self):
         """Test pickup when inventory is full."""

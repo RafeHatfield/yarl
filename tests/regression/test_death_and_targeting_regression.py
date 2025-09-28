@@ -140,9 +140,12 @@ class TestPlayerDeathRegression(unittest.TestCase):
             self.assertEqual(self.state_manager.state.current_state, GameStates.ENEMY_TURN,
                            "Should transition to enemy turn after killing monster")
             
-            # Monster should be removed
-            self.assertNotIn(weak_monster, self.state_manager.state.entities,
-                           "Dead monster should be removed from entities")
+            # Monster should be transformed into a corpse (remains in entities)
+            self.assertIn(weak_monster, self.state_manager.state.entities,
+                         "Dead monster should remain as corpse in entities")
+            self.assertFalse(weak_monster.blocks, "Corpse should not block movement")
+            self.assertEqual(weak_monster.char, '%', "Corpse should have % character")
+            self.assertIsNone(weak_monster.fighter, "Corpse should have no fighter component")
 
 
 class TestTargetingFlowRegression(unittest.TestCase):

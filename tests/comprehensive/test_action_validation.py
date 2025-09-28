@@ -169,9 +169,12 @@ class TestActionValidation(unittest.TestCase):
                 action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
             )
             
-            # Verify monster was removed when it died
-            self.assertNotIn(self.monster, self.state_manager.state.entities,
-                           "Dead monster should be removed from entities")
+            # Verify monster was transformed into a corpse (remains in entities)
+            self.assertIn(self.monster, self.state_manager.state.entities,
+                         "Dead monster should remain as corpse in entities")
+            self.assertFalse(self.monster.blocks, "Corpse should not block movement")
+            self.assertEqual(self.monster.char, '%', "Corpse should have % character")
+            self.assertIsNone(self.monster.fighter, "Corpse should have no fighter component")
             
             # Verify death message was added
             self.assertTrue(self.state_manager.state.message_log.add_message.called,

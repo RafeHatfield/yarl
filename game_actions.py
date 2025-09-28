@@ -177,8 +177,8 @@ class ActionProcessor:
             
             dead_entity = result.get("dead")
             if dead_entity:
-                # Combat deaths should remove entities from the list
-                self._handle_entity_death(dead_entity, remove_from_entities=True)
+                # Combat deaths should transform to corpses (keep in entities list)
+                self._handle_entity_death(dead_entity, remove_from_entities=False)
     
     def _handle_entity_death(self, dead_entity, remove_from_entities=False) -> None:
         """Handle entity death.
