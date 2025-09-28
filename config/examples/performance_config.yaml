@@ -1,0 +1,48 @@
+# High-performance configuration for the rlike game
+# This configuration optimizes for performance over visual quality
+
+pathfinding:
+  DIAGONAL_MOVE_COST: 1.41
+  MAX_PATH_LENGTH: 15  # Reduced for faster pathfinding
+  MAX_COORDINATE: 9999
+
+performance:
+  SPATIAL_GRID_SIZE: 16  # Larger grid for fewer spatial lookups
+  FOV_CACHE_SIZE: 200   # More caching for better performance
+  TARGET_FPS: 120       # Higher FPS target
+  MAX_DIRTY_RECTANGLES: 25  # Force more full redraws for consistency
+
+combat:
+  DEFAULT_DEFENSE: 0
+  DEFAULT_POWER: 1
+  DEFAULT_HP: 1
+  DEFAULT_XP: 0
+  MIN_DAMAGE: 0
+  DEFAULT_LEVEL_UP_BASE: 150  # Faster leveling
+  DEFAULT_LEVEL_UP_FACTOR: 100
+
+inventory:
+  DEFAULT_INVENTORY_CAPACITY: 30  # Larger inventory
+  MAX_INVENTORY_CAPACITY: 60
+  ITEM_STACK_SIZE: 5  # Allow item stacking
+
+rendering:
+  SCREEN_WIDTH: 100   # Larger screen
+  SCREEN_HEIGHT: 60
+  MAP_WIDTH: 100
+  MAP_HEIGHT: 50
+  PANEL_HEIGHT: 10
+  PANEL_Y: 50
+  MESSAGE_X: 25
+  MESSAGE_WIDTH: 50
+  MESSAGE_HEIGHT: 8
+  BAR_WIDTH: 25
+  ROOM_MAX_SIZE: 12
+  ROOM_MIN_SIZE: 8
+  MAX_ROOMS: 40       # More rooms
+  MAX_MONSTERS_PER_ROOM: 4
+  MAX_ITEMS_PER_ROOM: 3
+
+gameplay:
+  DUNGEON_LEVELS: 15  # More levels
+  SAVE_GAME_FILENAME: "performance_save.dat"

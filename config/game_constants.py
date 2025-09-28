@@ -4,9 +4,20 @@ This module contains all game constants, magic numbers, and configuration
 values in one place for easy maintenance and tuning.
 """
 
-from dataclasses import dataclass
-from typing import Dict, Any
+from dataclasses import dataclass, asdict
+from typing import Dict, Any, Optional, Union
 import os
+import json
+import logging
+
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+    yaml = None
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -133,18 +144,153 @@ class GameConstants:
     def load_from_file(cls, config_path: str = None) -> 'GameConstants':
         """Load configuration from a file.
         
+        Supports JSON and YAML formats. File format is determined by extension.
+        
         Args:
             config_path: Path to configuration file. If None, uses default values.
             
         Returns:
             GameConstants instance with loaded or default values.
+            
+        Raises:
+            FileNotFoundError: If config_path is provided but file doesn't exist
+            ValueError: If file format is unsupported or invalid
         """
-        # For now, return defaults. Future enhancement could load from JSON/YAML
-        if config_path and os.path.exists(config_path):
-            # TODO: Implement file loading (JSON/YAML)
-            pass
+        if not config_path:
+            return cls()
         
-        return cls()
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                file_ext = os.path.splitext(config_path)[1].lower()
+                
+                if file_ext == '.json':
+                    config_data = json.load(f)
+                elif file_ext in ('.yaml', '.yml'):
+                    if not YAML_AVAILABLE:
+                        raise ValueError("YAML support not available. Install PyYAML: pip install PyYAML")
+                    config_data = yaml.safe_load(f)
+                else:
+                    raise ValueError(f"Unsupported configuration file format: {file_ext}. "
+                                   "Supported formats: .json, .yaml, .yml")
+            
+            return cls._from_dict(config_data)
+            
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid configuration file format: {e}")
+        except Exception as e:
+            logger.error(f"Error loading configuration from {config_path}: {e}")
+            raise
+    
+    @classmethod
+    def _from_dict(cls, config_data: Dict[str, Any]) -> 'GameConstants':
+        """Create GameConstants from dictionary data.
+        
+        Args:
+            config_data: Dictionary containing configuration values
+            
+        Returns:
+            GameConstants instance with values from dictionary
+        """
+        instance = cls()
+        
+        # Update pathfinding config
+        if 'pathfinding' in config_data:
+            pathfinding_data = config_data['pathfinding']
+            if isinstance(pathfinding_data, dict):
+                for key, value in pathfinding_data.items():
+                    if hasattr(instance.pathfinding, key):
+                        setattr(instance.pathfinding, key, value)
+        
+        # Update performance config
+        if 'performance' in config_data:
+            performance_data = config_data['performance']
+            if isinstance(performance_data, dict):
+                for key, value in performance_data.items():
+                    if hasattr(instance.performance, key):
+                        setattr(instance.performance, key, value)
+        
+        # Update combat config
+        if 'combat' in config_data:
+            combat_data = config_data['combat']
+            if isinstance(combat_data, dict):
+                for key, value in combat_data.items():
+                    if hasattr(instance.combat, key):
+                        setattr(instance.combat, key, value)
+        
+        # Update inventory config
+        if 'inventory' in config_data:
+            inventory_data = config_data['inventory']
+            if isinstance(inventory_data, dict):
+                for key, value in inventory_data.items():
+                    if hasattr(instance.inventory, key):
+                        setattr(instance.inventory, key, value)
+        
+        # Update rendering config
+        if 'rendering' in config_data:
+            rendering_data = config_data['rendering']
+            if isinstance(rendering_data, dict):
+                for key, value in rendering_data.items():
+                    if hasattr(instance.rendering, key):
+                        setattr(instance.rendering, key, value)
+        
+        # Update gameplay config
+        if 'gameplay' in config_data:
+            gameplay_data = config_data['gameplay']
+            if isinstance(gameplay_data, dict):
+                for key, value in gameplay_data.items():
+                    if hasattr(instance.gameplay, key):
+                        setattr(instance.gameplay, key, value)
+        
+        logger.info(f"Loaded configuration with {len(config_data)} sections")
+        return instance
+    
+    def save_to_file(self, config_path: str, format: str = 'json') -> None:
+        """Save configuration to a file.
+        
+        Args:
+            config_path: Path where to save the configuration file
+            format: File format ('json' or 'yaml')
+            
+        Raises:
+            ValueError: If format is unsupported
+            IOError: If file cannot be written
+        """
+        config_data = self.to_dict()
+        
+        try:
+            with open(config_path, 'w', encoding='utf-8') as f:
+                if format.lower() == 'json':
+                    json.dump(config_data, f, indent=2, ensure_ascii=False)
+                elif format.lower() in ('yaml', 'yml'):
+                    if not YAML_AVAILABLE:
+                        raise ValueError("YAML support not available. Install PyYAML: pip install PyYAML")
+                    yaml.dump(config_data, f, default_flow_style=False, allow_unicode=True)
+                else:
+                    raise ValueError(f"Unsupported format: {format}. Supported: 'json', 'yaml'")
+            
+            logger.info(f"Configuration saved to {config_path} in {format} format")
+            
+        except Exception as e:
+            logger.error(f"Error saving configuration to {config_path}: {e}")
+            raise
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary.
+        
+        Returns:
+            Dictionary representation of the configuration
+        """
+        return {
+            'pathfinding': asdict(self.pathfinding),
+            'performance': asdict(self.performance),
+            'combat': asdict(self.combat),
+            'inventory': asdict(self.inventory),
+            'rendering': asdict(self.rendering),
+            'gameplay': asdict(self.gameplay),
+        }
     
     def to_legacy_constants(self) -> Dict[str, Any]:
         """Convert to the legacy constants dictionary format.
