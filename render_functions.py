@@ -12,6 +12,7 @@ import tcod.libtcodpy as libtcod
 from game_states import GameStates
 from menus import character_screen, inventory_menu, level_up_menu
 from fov_functions import map_is_in_fov
+from render_optimization import render_tiles_optimized
 
 
 class RenderOrder(Enum):
@@ -107,6 +108,7 @@ def render_all(
     mouse,
     colors,
     game_state,
+    use_optimization=True,
 ):
     """Render the entire game screen including map, entities, and UI.
 
@@ -130,33 +132,15 @@ def render_all(
         mouse: Mouse object for cursor information
         colors (dict): Color configuration dictionary
         game_state (GameStates): Current game state
+        use_optimization (bool): Whether to use optimized tile rendering
     """
-    # Always render the map tiles (fov_recompute only controls FOV calculation, not rendering)
-    for y in range(game_map.height):
-        for x in range(game_map.width):
-            visible = map_is_in_fov(fov_map, x, y)
-            wall = game_map.tiles[x][y].block_sight
-
-            if visible:
-                if wall:
-                    libtcod.console_set_char_background(
-                        con, x, y, colors.get("light_wall"), libtcod.BKGND_SET
-                    )
-                else:
-                    libtcod.console_set_char_background(
-                        con, x, y, colors.get("light_ground"), libtcod.BKGND_SET
-                    )
-
-                game_map.tiles[x][y].explored = True
-            elif game_map.tiles[x][y].explored:
-                if wall:
-                    libtcod.console_set_char_background(
-                        con, x, y, colors.get("dark_wall"), libtcod.BKGND_SET
-                    )
-                else:
-                    libtcod.console_set_char_background(
-                        con, x, y, colors.get("dark_ground"), libtcod.BKGND_SET
-                    )
+    # Render map tiles with optional optimization
+    if use_optimization:
+        # Use optimized tile rendering with caching
+        render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=fov_recompute)
+    else:
+        # Original tile rendering logic (kept for compatibility/debugging)
+        _render_tiles_original(con, game_map, fov_map, colors)
 
     entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
 
@@ -239,6 +223,46 @@ def render_all(
 
     elif game_state == GameStates.CHARACTER_SCREEN:
         character_screen(player, 50, 40, screen_width, screen_height)
+
+
+def _render_tiles_original(con, game_map, fov_map, colors):
+    """Original tile rendering logic (kept for compatibility/debugging).
+    
+    This function contains the original tile rendering code that processes
+    every tile on every frame. It's kept for compatibility and performance
+    comparison purposes.
+    
+    Args:
+        con: Console to render to
+        game_map: Game map containing tile data
+        fov_map: Field of view map for visibility checks
+        colors: Color configuration dictionary
+    """
+    for y in range(game_map.height):
+        for x in range(game_map.width):
+            visible = map_is_in_fov(fov_map, x, y)
+            wall = game_map.tiles[x][y].block_sight
+
+            if visible:
+                if wall:
+                    libtcod.console_set_char_background(
+                        con, x, y, colors.get("light_wall"), libtcod.BKGND_SET
+                    )
+                else:
+                    libtcod.console_set_char_background(
+                        con, x, y, colors.get("light_ground"), libtcod.BKGND_SET
+                    )
+
+                game_map.tiles[x][y].explored = True
+            elif game_map.tiles[x][y].explored:
+                if wall:
+                    libtcod.console_set_char_background(
+                        con, x, y, colors.get("dark_wall"), libtcod.BKGND_SET
+                    )
+                else:
+                    libtcod.console_set_char_background(
+                        con, x, y, colors.get("dark_ground"), libtcod.BKGND_SET
+                    )
 
 
 def clear_all(con, entities):
