@@ -404,8 +404,13 @@ class InputStateManager:
         
         # Update position
         if event.event_type == InputEventType.MOUSE_MOVE:
-            self.mouse_state.delta_x = event.x - self.mouse_state.x
-            self.mouse_state.delta_y = event.y - self.mouse_state.y
+            # Use delta from event if provided, otherwise calculate
+            if event.delta_x != 0 or event.delta_y != 0:
+                self.mouse_state.delta_x = event.delta_x
+                self.mouse_state.delta_y = event.delta_y
+            else:
+                self.mouse_state.delta_x = event.x - self.mouse_state.x
+                self.mouse_state.delta_y = event.y - self.mouse_state.y
             self.mouse_state.x = event.x
             self.mouse_state.y = event.y
         

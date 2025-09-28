@@ -157,7 +157,7 @@ def render_all(
 
     libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
 
-    libtcod.console_set_default_background(panel, libtcod.black)
+    libtcod.console_set_default_background(panel, (0, 0, 0))
     libtcod.console_clear(panel)
 
     # Print the game messages, one line at a time
@@ -177,8 +177,8 @@ def render_all(
         "HP",
         max(0, player.fighter.hp),  # Clamp HP display to 0 minimum
         player.fighter.max_hp,
-        libtcod.light_red,
-        libtcod.darker_red,
+        (255, 63, 63),
+        (127, 0, 0),
     )
     libtcod.console_print_ex(
         panel,
@@ -189,7 +189,7 @@ def render_all(
         "Dungeon level: {0}".format(game_map.dungeon_level),
     )
 
-    libtcod.console_set_default_foreground(panel, libtcod.light_gray)
+    libtcod.console_set_default_foreground(panel, (159, 159, 159))
     libtcod.console_print_ex(
         panel,
         1,

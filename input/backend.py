@@ -213,6 +213,9 @@ class InputBackend(ABC):
         Returns:
             bool: True if backend has the capability
         """
+        # Special case for NONE - check if backend has no capabilities
+        if capability == InputCapabilities.NONE:
+            return self.capabilities == InputCapabilities.NONE
         return bool(self.capabilities & capability)
     
     def get_device(self, device_id: str) -> Optional[InputDevice]:

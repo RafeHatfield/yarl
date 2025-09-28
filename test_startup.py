@@ -48,15 +48,17 @@ def test_game_startup():
         print("✅ Game engine initialized")
         
         print("\n🎉 Game startup test PASSED - All systems ready!")
-        return True
         
     except Exception as e:
         print(f"\n❌ Game startup test FAILED: {e}")
         import traceback
         traceback.print_exc()
-        return False
+        raise AssertionError(f"Game startup failed: {e}")
 
 
 if __name__ == "__main__":
-    success = test_game_startup()
-    sys.exit(0 if success else 1)
+    try:
+        test_game_startup()
+        sys.exit(0)
+    except Exception:
+        sys.exit(1)
