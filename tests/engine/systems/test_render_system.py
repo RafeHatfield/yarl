@@ -232,6 +232,7 @@ class TestRenderSystemUpdate:
             mouse,
             self.colors,
             current_state,
+            use_optimization=False,
         )
 
         # Verify screen presentation

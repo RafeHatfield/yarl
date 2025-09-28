@@ -312,7 +312,7 @@ class OptimizedRenderSystem(RenderSystem):
                 game_state.get("fov_algorithm", 12),
             )
 
-        # Standard rendering
+        # Standard rendering (use original tile rendering, not optimization)
         render_all(
             self.console,
             self.panel,
@@ -330,6 +330,7 @@ class OptimizedRenderSystem(RenderSystem):
             mouse,
             self.colors,
             current_game_state,
+            use_optimization=False,
         )
 
         self.fov_recompute = False
@@ -382,6 +383,7 @@ class OptimizedRenderSystem(RenderSystem):
             mouse,
             self.colors,
             current_game_state,
+            use_optimization=False,
         )
 
         # Track skipped entities

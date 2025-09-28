@@ -108,7 +108,7 @@ class RenderSystem(System):
                 game_state.get("fov_algorithm", 12),
             )
 
-        # Render everything
+        # Render everything (use original tile rendering for base system)
         render_all(
             self.console,
             self.panel,
@@ -126,6 +126,7 @@ class RenderSystem(System):
             mouse,
             self.colors,
             current_game_state,
+            use_optimization=False,
         )
 
         self.fov_recompute = False
