@@ -4,6 +4,7 @@ import tcod as libtcod
 import tcod.libtcodpy as libtcodpy
 
 from game_messages import Message
+from fov_functions import map_is_in_fov
 
 
 class BasicMonster:
@@ -15,6 +16,10 @@ class BasicMonster:
     Attributes:
         owner (Entity): The entity that owns this AI component
     """
+    
+    def __init__(self):
+        """Initialize a BasicMonster AI."""
+        self.owner = None  # Will be set by Entity when component is registered
 
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of AI behavior.
@@ -35,7 +40,7 @@ class BasicMonster:
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
-        if libtcodpy.map_is_in_fov(fov_map, monster.x, monster.y):
+        if map_is_in_fov(fov_map, monster.x, monster.y):
 
             if monster.distance_to(target) >= 2:
                 # monster.move_towards(target.x, target.y, game_map, entities)
@@ -70,6 +75,7 @@ class ConfusedMonster:
         """
         self.previous_ai = previous_ai
         self.number_of_turns = number_of_turns
+        self.owner = None  # Will be set by Entity when component is registered
 
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of confused AI behavior.

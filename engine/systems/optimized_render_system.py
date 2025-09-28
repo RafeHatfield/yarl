@@ -142,7 +142,11 @@ class OptimizedRenderSystem(RenderSystem):
         # Present the frame
         console_flush_succeeded = False
         try:
-            libtcod.console_flush()
+            import warnings
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning, 
+                                      message="This function is not supported if contexts are being used")
+                libtcod.console_flush()
             console_flush_succeeded = True
         except RuntimeError:
             # Handle case where no console context exists (e.g., during testing)
@@ -219,7 +223,7 @@ class OptimizedRenderSystem(RenderSystem):
                     player.y,
                     game_state.get("fov_radius", 10),
                     game_state.get("fov_light_walls", True),
-                    game_state.get("fov_algorithm", 0),
+                    game_state.get("fov_algorithm", 12),
                 )
 
                 # Cache the result
@@ -305,7 +309,7 @@ class OptimizedRenderSystem(RenderSystem):
                 player.y,
                 game_state.get("fov_radius", 10),
                 game_state.get("fov_light_walls", True),
-                game_state.get("fov_algorithm", 0),
+                game_state.get("fov_algorithm", 12),
             )
 
         # Standard rendering

@@ -6,12 +6,24 @@ component-based architecture for flexible object composition.
 """
 
 import math
+from typing import Optional, Tuple, List, Any, TYPE_CHECKING
 
 import tcod
 import tcod.libtcodpy as libtcodpy
 
 from components.item import Item
+from config.game_constants import get_pathfinding_config
 from render_functions import RenderOrder
+
+# Avoid circular imports
+if TYPE_CHECKING:
+    from components.fighter import Fighter
+    from components.ai import BasicMonster, ConfusedMonster
+    from components.inventory import Inventory
+    from components.level import Level
+    from components.equipment import Equipment
+    from components.equippable import Equippable
+    from map_objects.game_map import GameMap
 
 
 class Entity:
@@ -25,39 +37,49 @@ class Entity:
         x (int): X coordinate on the game map
         y (int): Y coordinate on the game map
         char (str): Character to display for this entity
-        color (tuple): RGB color tuple for rendering
+        color (Tuple[int, int, int]): RGB color tuple for rendering
         name (str): Display name of the entity
         blocks (bool): Whether this entity blocks movement
         render_order (RenderOrder): Rendering priority order
-        fighter (Fighter): Combat component (optional)
-        ai (AI): AI behavior component (optional)
-        item (Item): Item component (optional)
-        inventory (Inventory): Inventory component (optional)
-        stairs (Stairs): Stairs component (optional)
-        level (Level): Level/XP component (optional)
-        equipment (Equipment): Equipment component (optional)
-        equippable (Equippable): Equippable component (optional)
+        fighter (Optional[Fighter]): Combat component
+        ai (Optional[Any]): AI behavior component
+        item (Optional[Item]): Item component
+        inventory (Optional[Inventory]): Inventory component
+        stairs (Optional[Any]): Stairs component
+        level (Optional[Level]): Level/XP component
+        equipment (Optional[Equipment]): Equipment component
+        equippable (Optional[Equippable]): Equippable component
     """
+    
+    # Type annotations for attributes
+    x: int
+    y: int
+    char: str
+    color: Tuple[int, int, int]
+    name: str
+    blocks: bool
+    render_order: RenderOrder
+    fighter: Optional['Fighter']
+    ai: Optional[Any]  # Could be BasicMonster, ConfusedMonster, or custom AI
+    item: Optional[Item]
+    inventory: Optional['Inventory']
+    stairs: Optional[Any]  # Stairs component not yet typed
+    level: Optional['Level']
+    equipment: Optional['Equipment']
+    equippable: Optional['Equippable']
 
     def __init__(
         self,
-        x,
-        y,
-        char,
-        color,
-        name,
-        blocks=False,
-        render_order=RenderOrder.CORPSE,
-        fighter=None,
-        ai=None,
-        item=None,
-        inventory=None,
-        stairs=None,
-        level=None,
-        equipment=None,
-        equippable=None,
-    ):
-        """Initialize an Entity.
+        x: int,
+        y: int,
+        char: str,
+        color: Tuple[int, int, int],
+        name: str,
+        blocks: bool = False,
+        render_order: RenderOrder = RenderOrder.CORPSE,
+        **components: Any
+    ) -> None:
+        """Initialize an Entity with automatic component management.
 
         Args:
             x (int): X coordinate on the game map
@@ -67,15 +89,9 @@ class Entity:
             name (str): Display name of the entity
             blocks (bool, optional): Whether this entity blocks movement. Defaults to False.
             render_order (RenderOrder, optional): Rendering priority. Defaults to RenderOrder.CORPSE.
-            fighter (Fighter, optional): Combat component. Defaults to None.
-            ai (AI, optional): AI behavior component. Defaults to None.
-            item (Item, optional): Item component. Defaults to None.
-            inventory (Inventory, optional): Inventory component. Defaults to None.
-            stairs (Stairs, optional): Stairs component. Defaults to None.
-            level (Level, optional): Level/XP component. Defaults to None.
-            equipment (Equipment, optional): Equipment component. Defaults to None.
-            equippable (Equippable, optional): Equippable component. Defaults to None.
+            **components: Component instances (fighter, ai, item, inventory, stairs, level, equipment, equippable)
         """
+        # Set basic properties
         self.x = x
         self.y = y
         self.char = char
@@ -83,62 +99,135 @@ class Entity:
         self.name = name
         self.blocks = blocks
         self.render_order = render_order
-        self.fighter = fighter
-        self.ai = ai
-        self.item = item
-        self.inventory = inventory
-        self.stairs = stairs
-        self.level = level
-        self.equipment = equipment
-        self.equippable = equippable
-
-        if self.stairs:
-            self.stairs.owner = self
-
-        if self.fighter:
-            self.fighter.owner = self
-
-        if self.ai:
-            self.ai.owner = self
-
-        if self.item:
+        
+        # Initialize all components to None first
+        self.fighter = None
+        self.ai = None
+        self.item = None
+        self.inventory = None
+        self.stairs = None
+        self.level = None
+        self.equipment = None
+        self.equippable = None
+        
+        # Set components and establish ownership automatically
+        self._register_components(components)
+        
+        # Special handling: equippable items automatically get an item component
+        if self.equippable and not self.item:
+            self.item = Item()
             self.item.owner = self
+    
+    def _register_components(self, components: dict[str, Any]) -> None:
+        """Register components and establish ownership relationships.
+        
+        Args:
+            components: Dictionary of component_name -> component_instance
+        """
+        # Valid component names that can be registered
+        valid_components = {
+            'fighter', 'ai', 'item', 'inventory', 'stairs', 
+            'level', 'equipment', 'equippable'
+        }
+        
+        for component_name, component in components.items():
+            if component_name not in valid_components:
+                raise ValueError(f"Unknown component: {component_name}")
+            
+            # Set the component on this entity
+            setattr(self, component_name, component)
+            
+            # Establish ownership if the component supports it
+            if component and hasattr(component, 'owner'):
+                component.owner = self
+    
+    @classmethod
+    def create_player(cls, x, y, fighter, inventory, level, equipment):
+        """Create a player entity with standard components.
+        
+        Args:
+            x (int): Starting x coordinate
+            y (int): Starting y coordinate
+            fighter (Fighter): Combat component
+            inventory (Inventory): Inventory component
+            level (Level): Level/XP component
+            equipment (Equipment): Equipment component
+            
+        Returns:
+            Entity: Configured player entity
+        """
+        return cls(
+            x=x, y=y, char='@', color=(255, 255, 255), name='Player',
+            blocks=True, render_order=RenderOrder.ACTOR,
+            fighter=fighter, inventory=inventory, level=level, equipment=equipment
+        )
+    
+    @classmethod
+    def create_monster(cls, x, y, char, color, name, fighter, ai):
+        """Create a monster entity with standard components.
+        
+        Args:
+            x (int): Starting x coordinate
+            y (int): Starting y coordinate
+            char (str): Display character
+            color (tuple): RGB color
+            name (str): Monster name
+            fighter (Fighter): Combat component
+            ai (AI): AI behavior component
+            
+        Returns:
+            Entity: Configured monster entity
+        """
+        return cls(
+            x=x, y=y, char=char, color=color, name=name,
+            blocks=True, render_order=RenderOrder.ACTOR,
+            fighter=fighter, ai=ai
+        )
+    
+    @classmethod
+    def create_item(cls, x, y, char, color, name, item_component, equippable=None):
+        """Create an item entity with standard components.
+        
+        Args:
+            x (int): Starting x coordinate
+            y (int): Starting y coordinate
+            char (str): Display character
+            color (tuple): RGB color
+            name (str): Item name
+            item_component (Item): Item component
+            equippable (Equippable, optional): Equippable component for equipment
+            
+        Returns:
+            Entity: Configured item entity
+        """
+        components = {'item': item_component}
+        if equippable:
+            components['equippable'] = equippable
+            
+        return cls(
+            x=x, y=y, char=char, color=color, name=name,
+            blocks=False, render_order=RenderOrder.ITEM,
+            **components
+        )
 
-        if self.inventory:
-            self.inventory.owner = self
-
-        if self.level:
-            self.level.owner = self
-
-        if self.equipment:
-            self.equipment.owner = self
-
-        if self.equippable:
-            self.equippable.owner = self
-
-            if not self.item:
-                item = Item()
-                self.item = item
-                self.item.owner = self
-
-    def move(self, dx, dy):
+    def move(self, dx: int, dy: int) -> None:
         """Move the entity by a given amount.
 
         Args:
-            dx (int): Change in x coordinate
-            dy (int): Change in y coordinate
+            dx: Change in x coordinate
+            dy: Change in y coordinate
         """
         self.x += dx
         self.y += dy
 
-    def move_towards(self, target_x, target_y, game_map, entities):
+    def move_towards(self, target_x: int, target_y: int, game_map: 'GameMap', entities: List['Entity']) -> None:
         """Move towards a target position, avoiding obstacles.
 
         Args:
-            target_x (int): Target x coordinate
-            target_y (int): Target y coordinate
-            game_map (GameMap): The game map for collision detection
-            entities (list): List of entities to avoid
+            target_x: Target x coordinate
+            target_y: Target y coordinate
+            game_map: The game map for collision detection
+            entities: List of entities to avoid
         """
         dx = target_x - self.x
         dy = target_y - self.y
@@ -153,28 +242,28 @@ class Entity:
         ):
             self.move(dx, dy)
 
-    def distance(self, x, y):
+    def distance(self, x: int, y: int) -> float:
         """Calculate the distance to a specific coordinate.
 
         Args:
-            x (int): Target x coordinate
-            y (int): Target y coordinate
+            x: Target x coordinate
+            y: Target y coordinate
 
         Returns:
-            float: The Euclidean distance to the target coordinates
+            The Euclidean distance to the target coordinates
         """
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
-    def move_astar(self, target, entities, game_map):
+    def move_astar(self, target: 'Entity', entities: List['Entity'], game_map: 'GameMap') -> None:
         """Move towards target using A* pathfinding algorithm.
 
         Uses A* pathfinding to find the optimal route to the target,
         taking into account obstacles and other entities.
 
         Args:
-            target (Entity): The target entity to move towards
-            entities (list): List of entities that block movement
-            game_map (GameMap): The game map for pathfinding
+            target: The target entity to move towards
+            entities: List of entities that block movement
+            game_map: The game map for pathfinding
         """
         # Create a FOV map that has the dimensions of the map
         fov = tcod.map.Map(game_map.width, game_map.height)
@@ -196,20 +285,23 @@ class Entity:
                 fov.transparent[entity.y, entity.x] = True
                 fov.walkable[entity.y, entity.x] = False
 
+        # Get pathfinding configuration
+        pathfinding_config = get_pathfinding_config()
+        
         # Allocate a A* path
-        # The 1.41 is the normal diagonal cost of moving, it can be set as 0.0 if diagonal moves are prohibited
-        my_path = libtcodpy.path_new_using_map(fov, 1.41)
+        # Use configured diagonal cost for movement
+        my_path = libtcodpy.path_new_using_map(fov, pathfinding_config.DIAGONAL_MOVE_COST)
 
         # Compute the path between self's coordinates and the target's coordinates
         libtcodpy.path_compute(my_path, self.x, self.y, target.x, target.y)
 
         # Check if the path exists, and in this case, also the path is shorter
-        # than 25 tiles. The path size matters if you want the monster to use
+        # than the configured maximum. The path size matters if you want the monster to use
         # alternative longer paths (for example through other rooms) if for
         # example the player is in a corridor. It makes sense to keep path size
         # relatively low to keep the monsters from running around the map if
         # there's an alternative path really far away
-        if not libtcodpy.path_is_empty(my_path) and libtcodpy.path_size(my_path) < 25:
+        if not libtcodpy.path_is_empty(my_path) and libtcodpy.path_size(my_path) < pathfinding_config.MAX_PATH_LENGTH:
             # Find the next coordinates in the computed full path
             x, y = libtcodpy.path_walk(my_path, True)
             if x or y:
@@ -225,21 +317,31 @@ class Entity:
             # Delete the path to free memory
         libtcodpy.path_delete(my_path)
 
-    def distance_to(self, other):
+    def distance_to(self, other: 'Entity') -> float:
         """Calculate the distance to another entity.
 
         Args:
-            other (Entity): The other entity
+            other: The other entity
 
         Returns:
-            float: The Euclidean distance to the other entity
+            The Euclidean distance to the other entity
         """
         dx = other.x - self.x
         dy = other.y - self.y
         return math.sqrt(dx**2 + dy**2)
 
 
-def get_blocking_entities_at_location(entities, destination_x, destination_y):
+def get_blocking_entities_at_location(entities: List[Entity], destination_x: int, destination_y: int) -> Optional[Entity]:
+    """Find a blocking entity at the specified location.
+    
+    Args:
+        entities: List of entities to search
+        destination_x: X coordinate to check
+        destination_y: Y coordinate to check
+        
+    Returns:
+        The blocking entity at the location, or None if no blocking entity found
+    """
     for entity in entities:
         if entity.blocks and entity.x == destination_x and entity.y == destination_y:
             return entity

@@ -10,6 +10,7 @@ import tcod.libtcodpy as libtcodpy
 
 from components.ai import ConfusedMonster
 from game_messages import Message
+from fov_functions import map_is_in_fov
 
 
 def heal(*args, **kwargs):
@@ -75,7 +76,7 @@ def cast_lightning(*args, **kwargs):
         if (
             entity.fighter
             and entity != caster
-            and libtcodpy.map_is_in_fov(fov_map, entity.x, entity.y)
+            and map_is_in_fov(fov_map, entity.x, entity.y)
         ):
             distance = caster.distance_to(entity)
 
@@ -132,7 +133,7 @@ def cast_fireball(*args, **kwargs):
     if entities is None:
         entities = []
 
-    if not libtcodpy.map_is_in_fov(fov_map, target_x, target_y):
+    if not map_is_in_fov(fov_map, target_x, target_y):
         results.append(
             {
                 "consumed": False,
@@ -190,7 +191,7 @@ def cast_confuse(*args, **kwargs):
 
     results = []
 
-    if not libtcodpy.map_is_in_fov(fov_map, target_x, target_y):
+    if not map_is_in_fov(fov_map, target_x, target_y):
         results.append(
             {
                 "consumed": False,
@@ -216,7 +217,7 @@ def cast_confuse(*args, **kwargs):
                         "The eyes of the {0} look vacant, as he starts to stumble around!".format(
                             entity.name
                         ),
-                        libtcod.light_green,
+                        (63, 255, 63),  # light_green RGB
                     ),
                 }
             )

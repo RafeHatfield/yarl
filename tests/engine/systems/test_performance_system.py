@@ -312,7 +312,7 @@ class TestPerformanceSystemUpdate:
         # Should not raise any exceptions
         self.perf_system.update(0.016)
 
-    @patch("tcod.libtcodpy.map_is_in_fov")
+    @patch("fov_functions.map_is_in_fov")
     def test_update_with_valid_state(self, mock_is_in_fov):
         """Test update with valid game state."""
         mock_is_in_fov.return_value = True

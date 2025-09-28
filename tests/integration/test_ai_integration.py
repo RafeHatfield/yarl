@@ -88,7 +88,7 @@ class TestAISystemIntegration:
         because it uses real AI classes with their actual method signatures.
         """
         # Set monster in FOV so it will act
-        with patch("tcod.libtcodpy.map_is_in_fov", return_value=True):
+        with patch("components.ai.map_is_in_fov", return_value=True):
             # Mock movement methods to avoid complex pathfinding
             with patch.object(self.monster, "move_astar") as mock_move:
                 with patch.object(self.monster, "distance_to", return_value=5):
@@ -118,7 +118,7 @@ class TestAISystemIntegration:
     def test_ai_system_handles_monster_death_during_turn(self):
         """Test AI system handles monster death during turn processing."""
         # Set monster in FOV and adjacent to player for attack
-        with patch("tcod.libtcodpy.map_is_in_fov", return_value=True):
+        with patch("components.ai.map_is_in_fov", return_value=True):
             with patch.object(self.monster, "distance_to", return_value=1):
                 # Mock attack to kill the monster
                 def kill_monster(target):
@@ -158,7 +158,7 @@ class TestAISystemIntegration:
         self.state_manager.state.entities = self.entities
 
         # Both monsters should be processed
-        with patch("tcod.libtcodpy.map_is_in_fov", return_value=True):
+        with patch("components.ai.map_is_in_fov", return_value=True):
             with patch.object(self.monster, "move_astar") as mock_move1:
                 with patch.object(monster2, "move_astar") as mock_move2:
                     with patch.object(self.monster, "distance_to", return_value=5):
@@ -183,7 +183,7 @@ class TestAISystemIntegration:
         # Switch to enemy turn
         self.state_manager.set_game_state(GameStates.ENEMY_TURN)
 
-        with patch("tcod.libtcodpy.map_is_in_fov", return_value=True):
+        with patch("components.ai.map_is_in_fov", return_value=True):
             with patch.object(self.monster, "move_astar") as mock_move:
                 with patch.object(self.monster, "distance_to", return_value=5):
                     self.ai_system.update(0.016)
@@ -196,7 +196,7 @@ class TestAISystemIntegration:
         # Start in enemy turn
         assert self.state_manager.state.current_state == GameStates.ENEMY_TURN
 
-        with patch("tcod.libtcodpy.map_is_in_fov", return_value=True):
+        with patch("components.ai.map_is_in_fov", return_value=True):
             with patch.object(self.monster, "move_astar"):
                 with patch.object(self.monster, "distance_to", return_value=5):
                     self.ai_system.update(0.016)

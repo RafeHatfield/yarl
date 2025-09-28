@@ -11,6 +11,7 @@ import tcod.libtcodpy as libtcod
 
 from game_states import GameStates
 from menus import character_screen, inventory_menu, level_up_menu
+from fov_functions import map_is_in_fov
 
 
 class RenderOrder(Enum):
@@ -48,7 +49,7 @@ def get_names_under_mouse(mouse, entities, fov_map):
         for entity in entities
         if entity.x == x
         and entity.y == y
-        and libtcod.map_is_in_fov(fov_map, entity.x, entity.y)
+        and map_is_in_fov(fov_map, entity.x, entity.y)
     ]
     names = ", ".join(names)
 
@@ -133,7 +134,7 @@ def render_all(
     # Always render the map tiles (fov_recompute only controls FOV calculation, not rendering)
     for y in range(game_map.height):
         for x in range(game_map.width):
-            visible = libtcod.map_is_in_fov(fov_map, x, y)
+            visible = map_is_in_fov(fov_map, x, y)
             wall = game_map.tiles[x][y].block_sight
 
             if visible:
@@ -267,7 +268,7 @@ def draw_entity(con, entity, fov_map, game_map):
     """
     # Check if entity has stairs attribute (for backwards compatibility with saves)
     has_stairs = hasattr(entity, "stairs") and entity.stairs
-    if libtcod.map_is_in_fov(fov_map, entity.x, entity.y) or (
+    if map_is_in_fov(fov_map, entity.x, entity.y) or (
         has_stairs and game_map.tiles[entity.x][entity.y].explored
     ):
         libtcod.console_set_default_foreground(con, entity.color)

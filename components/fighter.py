@@ -31,6 +31,7 @@ class Fighter:
         self.base_defense = defense
         self.base_power = power
         self.xp = xp
+        self.owner = None  # Will be set by Entity when component is registered
 
     @property
     def max_hp(self):

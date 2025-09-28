@@ -18,6 +18,8 @@ from components.equippable import Equippable
 from components.item import Item
 from equipment_slots import EquipmentSlots
 from item_functions import cast_lightning, cast_fireball
+from map_objects.game_map import GameMap
+from fov_functions import initialize_fov, recompute_fov
 from engine_integration import _process_game_actions
 from game_messages import Message
 from components.ai import BasicMonster
@@ -45,15 +47,25 @@ class TestInventoryBugsRegression(unittest.TestCase):
             blocks=True
         )
         
-        # Set up game state
-        self.mock_fov_map = Mock()
+        # Set up game state with real FOV map
+        self.game_map = GameMap(30, 30)  # Create a real game map
+        
+        # Create a simple floor area for testing (clear walls around player and monster)
+        for x in range(5, 25):
+            for y in range(5, 25):
+                self.game_map.tiles[x][y].blocked = False
+                self.game_map.tiles[x][y].block_sight = False
+        
+        self.fov_map = initialize_fov(self.game_map)  # Create a real FOV map
+        recompute_fov(self.fov_map, self.player.x, self.player.y, 10)  # Compute FOV
+        
         self.state_manager.update_state(
             player=self.player,
             entities=[self.player, self.monster],
-            game_map=Mock(),
+            game_map=self.game_map,
             message_log=Mock(),
             current_state=GameStates.SHOW_INVENTORY,
-            fov_map=self.mock_fov_map,
+            fov_map=self.fov_map,
         )
 
     def test_lightning_scroll_fov_map_regression(self):
@@ -72,7 +84,7 @@ class TestInventoryBugsRegression(unittest.TestCase):
         self.player.inventory.add_item(lightning_scroll)
         
         # Mock fov_map to return True for monster visibility
-        with patch('tcod.libtcodpy.map_is_in_fov', return_value=True):
+        with patch('components.ai.map_is_in_fov', return_value=True):
             # Try to use the lightning scroll (inventory index 0)
             action = {"inventory_index": 0}
             
@@ -231,7 +243,7 @@ class TestInventoryBugsRegression(unittest.TestCase):
         self.assertIsNotNone(monster.ai, "Monster should have AI component")
         
         # Mock FOV to allow targeting
-        with patch('tcod.libtcodpy.map_is_in_fov', return_value=True):
+        with patch('components.ai.map_is_in_fov', return_value=True):
             # Simulate left-clicking on the monster's position (fireball targeting)
             mouse_action = {"left_click": (monster.x, monster.y)}
             
@@ -290,7 +302,7 @@ class TestInventoryBugsRegression(unittest.TestCase):
         self.assertIsNotNone(monster.ai, "Monster should have AI component")
         
         # Mock FOV to allow lightning to see the monster
-        with patch('tcod.libtcodpy.map_is_in_fov', return_value=True):
+        with patch('components.ai.map_is_in_fov', return_value=True):
             # Use lightning scroll from inventory (index 0)
             action = {"inventory_index": 0}
             

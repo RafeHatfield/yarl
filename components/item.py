@@ -29,3 +29,4 @@ class Item:
         self.targeting = targeting
         self.targeting_message = targeting_message
         self.function_kwargs = kwargs
+        self.owner = None  # Will be set by Entity when component is registered

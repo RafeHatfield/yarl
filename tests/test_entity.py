@@ -472,15 +472,13 @@ class TestBasicMonsterAI:
         entities = []
 
         # Mock FOV check to return False (monster can't see target)
-        with patch("components.ai.libtcodpy") as mock_tcod:
-            mock_tcod.map_is_in_fov.return_value = False
-
+        with patch("components.ai.map_is_in_fov", return_value=False) as mock_fov:
             # Act
             results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
 
         # Assert
         assert len(results) == 0
-        mock_tcod.map_is_in_fov.assert_called_once_with(mock_fov_map, 10, 10)
+        mock_fov.assert_called_once_with(mock_fov_map, 10, 10)
 
     @patch("entity.libtcodpy")
     def test_basic_monster_moves_when_far_from_target(self, mock_tcod, mock_libtcod):

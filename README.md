@@ -2,8 +2,9 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-659%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-690%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
+[![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
 
 **Catacombs of Yarl** (Yarl for short) is a feature-rich roguelike game built in Python using a professional game engine architecture. Explore the mysterious catacombs beneath the ancient city of Yarl, featuring turn-based combat, procedural dungeon generation, spell casting, character progression, and AI-driven monsters with various behaviors.
 
@@ -201,6 +202,9 @@ rlike/
 │   ├── inventory.py    # Item storage and equipment management
 │   ├── item.py         # Item component definition
 │   └── level.py        # XP and leveling system
+├── config/             # Centralized configuration system
+│   ├── game_constants.py    # All game constants and configuration
+│   └── testing_config.py    # Testing mode configuration
 ├── loader_functions/   # Game initialization and save/load
 │   ├── initialize_new_game.py  # New game setup
 │   └── data_loaders.py         # Save/load functionality
@@ -208,15 +212,18 @@ rlike/
 │   ├── game_map.py     # Dungeon generation with difficulty scaling
 │   ├── rectangle.py    # Room generation utilities
 │   └── tile.py         # Tile properties (walkable, transparent)
-├── tests/              # Comprehensive test suite (659 tests)
+├── tests/              # Comprehensive test suite (690 tests)
 │   ├── comprehensive/  # End-to-end integration tests
 │   ├── integration/    # System interaction tests
 │   ├── regression/     # Critical bug prevention tests
+│   ├── smoke/          # Automated startup and core system tests
 │   ├── conftest.py     # Test fixtures and mocking
 │   ├── test_*.py       # Test modules for each component
 │   └── __init__.py
 ├── engine.py           # Main game loop and entry point
+├── test_startup.py     # Quick game startup verification script
 ├── entity.py           # Base entity class with movement/pathfinding
+├── game_actions.py     # Modular action processing system
 ├── item_functions.py   # Spell implementations (heal, fireball, etc.)
 ├── input_handlers.py   # Keyboard and mouse input processing
 ├── render_functions.py # Display and rendering logic
@@ -236,6 +243,56 @@ rlike/
 - **Strategy Pattern** - AI behavior switching (normal → confused → normal)
 - **Table-Driven Design** - Difficulty scaling with configurable progression tables
 - **Serialization Pattern** - Save/load system with validation and error handling
+- **Configuration Pattern** - Centralized constants and settings management
+
+### Configuration System
+
+The game uses a centralized configuration system in `config/game_constants.py`:
+
+```python
+from config.game_constants import (
+    get_constants,          # Legacy format for compatibility
+    get_combat_config,      # Combat stats and progression
+    get_inventory_config,   # Inventory capacity and limits
+    get_rendering_config,   # Screen dimensions and FOV settings
+    get_gameplay_config,    # Map generation and entity spawning
+    get_pathfinding_config, # A* pathfinding parameters
+    get_performance_config  # Optimization and caching settings
+)
+
+# Example usage
+combat = get_combat_config()
+player_hp = combat.DEFAULT_HP
+inventory_size = get_inventory_config().DEFAULT_INVENTORY_CAPACITY
+```
+
+**Benefits:**
+- **Single source of truth** for all game constants
+- **Easy tuning** without hunting through code
+- **Type safety** with dataclass configurations
+- **Backward compatibility** with legacy dictionary format
+
+### Action Processing System
+
+The game uses a modular action processing system in `game_actions.py`:
+
+```python
+from game_actions import ActionProcessor
+
+# Create processor with game state manager
+processor = ActionProcessor(state_manager)
+
+# Process player actions
+action = {"move": (1, 0)}  # Move right
+mouse_action = {"left_click": (10, 15)}  # Click at coordinates
+processor.process_actions(action, mouse_action)
+```
+
+**Key Features:**
+- **Modular handlers** for each action type (movement, combat, inventory)
+- **Centralized error handling** with logging
+- **State-aware processing** that respects current game state
+- **Extensible design** for adding new action types
 
 ## 🔧 Development
 
@@ -251,15 +308,59 @@ rlike/
 - **Comprehensive docstrings** for public methods
 - **Error handling** - Return results rather than raising exceptions
 
+## 🧪 Automated Testing & Quality Assurance
+
+Yarl includes comprehensive automated testing to ensure code quality and prevent regressions:
+
+### Quick Startup Verification
+For rapid development feedback, use the quick startup test:
+```bash
+python test_startup.py
+```
+This verifies that all core systems can initialize correctly without running the full test suite.
+
+### Comprehensive Test Suite
+Run the full test suite with 690+ tests:
+```bash
+# Run all tests
+pytest
+
+# Run specific test categories
+pytest tests/smoke/           # Startup and core system tests
+pytest tests/integration/     # System interaction tests  
+pytest tests/regression/      # Critical bug prevention tests
+pytest tests/comprehensive/   # End-to-end integration tests
+
+# Run with coverage reporting
+pytest --cov=. --cov-report=html
+```
+
+### Test Categories
+- **🚀 Smoke Tests** (`tests/smoke/`) - Automated startup verification and core system validation
+- **🔗 Integration Tests** (`tests/integration/`) - Multi-system interaction testing
+- **🛡️ Regression Tests** (`tests/regression/`) - Prevention of critical bug reoccurrence  
+- **🎯 Comprehensive Tests** (`tests/comprehensive/`) - End-to-end gameplay scenarios
+- **⚙️ Unit Tests** (`tests/test_*.py`) - Individual component validation
+
+### Continuous Integration
+The automated test suite prevents runtime regressions by validating:
+- ✅ Game engine initialization
+- ✅ FOV system functionality  
+- ✅ Configuration system integrity
+- ✅ Action processing pipeline
+- ✅ Core gameplay mechanics
+- ✅ Save/load functionality
+
 ### Contributing
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Write tests for your changes
 4. Make your changes
-5. Ensure all tests pass (`pytest`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+5. Verify game still starts (`python test_startup.py`)
+6. Ensure all tests pass (`pytest`)
+7. Commit your changes (`git commit -m 'Add amazing feature'`)
+8. Push to the branch (`git push origin feature/amazing-feature`)
+9. Open a Pull Request
 
 ## 📚 Dependencies
 

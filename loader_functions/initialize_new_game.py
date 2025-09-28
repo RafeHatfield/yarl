@@ -10,7 +10,9 @@ from components.equipment import Equipment
 from components.equippable import Equippable
 from components.fighter import Fighter
 from components.inventory import Inventory
+from components.item import Item
 from components.level import Level
+from config.game_constants import get_constants as get_new_constants, get_combat_config, get_inventory_config
 from entity import Entity
 from equipment_slots import EquipmentSlots
 from game_messages import MessageLog
@@ -26,63 +28,27 @@ def get_constants():
         dict: Dictionary containing all game configuration values including
               screen dimensions, UI layout, colors, and game parameters
     """
-    window_title = "Roguelike Tutorial Revised"
-
-    screen_width = 80
-    screen_height = 50
-
-    bar_width = 20
-    panel_height = 7
-    panel_y = screen_height - panel_height
-
-    message_x = bar_width + 2
-    message_width = screen_width - bar_width - 2
-    message_height = panel_height - 1
-
-    map_width = 80
-    map_height = 43
-
-    room_max_size = 10
-    room_min_size = 6
-    max_rooms = 30
-
-    fov_algorithm = 0
-    fov_light_walls = True
-    fov_radius = 10
-
-    max_monsters_per_room = 3
-    max_items_per_room = 2
-
-    colors = {
-        "dark_wall": libtcodpy.Color(0, 0, 100),
-        "dark_ground": libtcodpy.Color(50, 50, 150),
-        "light_wall": libtcodpy.Color(130, 110, 50),
-        "light_ground": libtcodpy.Color(200, 180, 50),
-    }
-
-    constants = {
-        "window_title": window_title,
-        "screen_width": screen_width,
-        "screen_height": screen_height,
-        "bar_width": bar_width,
-        "panel_height": panel_height,
-        "panel_y": panel_y,
-        "message_x": message_x,
-        "message_width": message_width,
-        "message_height": message_height,
-        "map_width": map_width,
-        "map_height": map_height,
-        "room_max_size": room_max_size,
-        "room_min_size": room_min_size,
-        "max_rooms": max_rooms,
-        "fov_algorithm": fov_algorithm,
-        "fov_light_walls": fov_light_walls,
-        "fov_radius": fov_radius,
-        "max_monsters_per_room": max_monsters_per_room,
-        "max_items_per_room": max_items_per_room,
-        "colors": colors,
-    }
-
+    # Use the new centralized constants system
+    constants = get_new_constants()
+    
+    # Add legacy-specific values that aren't in the new system yet
+    constants.update({
+        "window_title": "Yarl (Catacombs of Yarl)",  # Updated title
+        "message_x": constants["bar_width"] + 2,
+        "message_width": constants["screen_width"] - constants["bar_width"] - 2,
+        "message_height": constants["panel_height"] - 1,
+    })
+    
+    # Convert colors to libtcod format for backward compatibility
+    libtcod_colors = {}
+    for color_name, rgb in constants["colors"].items():
+        if isinstance(rgb, tuple) and len(rgb) == 3:
+            libtcod_colors[color_name] = libtcodpy.Color(rgb[0], rgb[1], rgb[2])
+        else:
+            libtcod_colors[color_name] = rgb  # Already in correct format
+    
+    constants["colors"] = libtcod_colors
+    
     return constants
 
 
@@ -97,30 +63,40 @@ def get_game_variables(constants):
     Returns:
         tuple: (player, entities, game_map, message_log, game_state) for new game
     """
-    # fighter_component = Fighter(hp=100, defense=1, power=4)
-    fighter_component = Fighter(hp=100, defense=1, power=2)
-    inventory_component = Inventory(26)
-    level_component = Level()
+    # Get configuration objects for cleaner code
+    combat_config = get_combat_config()
+    inventory_config = get_inventory_config()
+    
+    # Create player components using constants
+    fighter_component = Fighter(
+        hp=100,  # Player starts with more HP than default
+        defense=combat_config.DEFAULT_DEFENSE + 1,  # Slightly better than default
+        power=combat_config.DEFAULT_POWER + 1  # Slightly better than default
+    )
+    inventory_component = Inventory(inventory_config.DEFAULT_INVENTORY_CAPACITY)
+    level_component = Level(
+        level_up_base=combat_config.DEFAULT_LEVEL_UP_BASE,
+        level_up_factor=combat_config.DEFAULT_LEVEL_UP_FACTOR
+    )
     equipment_component = Equipment()
     equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
 
-    player = Entity(
-        0,
-        0,
-        "@",
-        (255, 255, 255),
-        "Player",
-        blocks=True,
-        render_order=RenderOrder.ACTOR,
+    # Use the new Entity.create_player method for cleaner code
+    player = Entity.create_player(
+        x=0, y=0,
         fighter=fighter_component,
         inventory=inventory_component,
         level=level_component,
-        equipment=equipment_component,
+        equipment=equipment_component
     )
     entities = [player]
 
-    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
-    dagger = Entity(0, 0, "-", (0, 191, 255), "Dagger", equippable=equippable_component)
+    # Create starting dagger using the new Entity.create_item method
+    dagger_equippable = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
+    dagger = Entity.create_item(
+        x=0, y=0, char="-", color=(0, 191, 255), name="Dagger",
+        item_component=Item(), equippable=dagger_equippable
+    )
     player.inventory.add_item(dagger)
     player.equipment.toggle_equip(dagger)
 

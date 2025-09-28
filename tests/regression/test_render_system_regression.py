@@ -99,7 +99,7 @@ class TestRenderSystemRegressions:
                             self.player.y,
                             10,  # fov_radius
                             True,  # fov_light_walls
-                            0,  # fov_algorithm
+                            12,  # fov_algorithm (updated to modern default)
                         )
 
     def test_fov_recompute_multiple_frames_regression(self):

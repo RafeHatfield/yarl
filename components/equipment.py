@@ -29,6 +29,7 @@ class Equipment:
         """
         self.main_hand = main_hand
         self.off_hand = off_hand
+        self.owner = None  # Will be set by Entity when component is registered
 
     @property
     def max_hp_bonus(self):

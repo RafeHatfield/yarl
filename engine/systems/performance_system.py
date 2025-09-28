@@ -10,6 +10,7 @@ import logging
 from collections import defaultdict
 
 from ..system import System
+from config.game_constants import get_performance_config
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +36,15 @@ class PerformanceSystem(System):
     """
 
     def __init__(self, priority: int = 5):
-        """Initialize the PerformanceSystem.
+        """Initialize the PerformanceSystem with configurable settings.
 
         Args:
             priority (int, optional): System update priority. Defaults to 5 (very early).
         """
         super().__init__("performance", priority)
+        
+        # Get performance configuration
+        perf_config = get_performance_config()
 
         # Dirty rectangle tracking
         self.dirty_rectangles: Set[Tuple[int, int, int, int]] = set()
@@ -48,10 +52,11 @@ class PerformanceSystem(System):
 
         # Spatial indexing for entities
         self.spatial_index: Dict[Tuple[int, int], List[Any]] = defaultdict(list)
-        self.spatial_grid_size = 8  # Grid cell size for spatial indexing
+        self.spatial_grid_size = perf_config.SPATIAL_GRID_SIZE
 
         # FOV caching
         self.fov_cache: Dict[Tuple[int, int, int], Any] = {}
+        self.fov_cache_size_limit = perf_config.FOV_CACHE_SIZE
         self.last_fov_position = None
         self.last_fov_radius = None
 
@@ -146,9 +151,9 @@ class PerformanceSystem(System):
         for entity in game_state.entities:
             if hasattr(entity, "x") and hasattr(entity, "y"):
                 # Check if entity is in FOV or is stairs on explored tile
-                import tcod.libtcodpy as libtcod
+                from fov_functions import map_is_in_fov
 
-                in_fov = libtcod.map_is_in_fov(game_state.fov_map, entity.x, entity.y)
+                in_fov = map_is_in_fov(game_state.fov_map, entity.x, entity.y)
                 is_stairs_on_explored = (
                     hasattr(entity, "stairs")
                     and entity.stairs

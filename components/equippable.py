@@ -32,3 +32,4 @@ class Equippable:
         self.power_bonus = power_bonus
         self.defense_bonus = defense_bonus
         self.max_hp_bonus = max_hp_bonus
+        self.owner = None  # Will be set by Entity when component is registered

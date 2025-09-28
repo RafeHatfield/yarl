@@ -66,6 +66,7 @@ class TestActionValidation(unittest.TestCase):
         
         # Mock game map
         self.state_manager.state.game_map.is_blocked.return_value = False
+        
 
     def test_wait_action_complete(self):
         """Test wait action transitions to enemy turn."""
@@ -87,7 +88,7 @@ class TestActionValidation(unittest.TestCase):
         original_hp = self.player.fighter.hp
         
         _process_game_actions(
-            action, {}, self.state_manager, None, GameStates.SHOW_INVENTORY, {}
+            action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
         )
         
         # Verify healing occurred

@@ -22,6 +22,7 @@ class Inventory:
         """
         self.capacity = capacity
         self.items = []
+        self.owner = None  # Will be set by Entity when component is registered
 
     def add_item(self, item):
         """Add an item to the inventory.

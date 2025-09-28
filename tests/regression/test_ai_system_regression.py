@@ -198,7 +198,7 @@ class TestAISystemRegressions:
         entity.ai = basic_ai
 
         # Set up FOV map to return True (entity can see player)
-        with patch("tcod.libtcodpy.map_is_in_fov", return_value=True):
+        with patch("components.ai.map_is_in_fov", return_value=True):
             # This should execute without errors
             result = self.ai_system._process_entity_turn(entity, self.mock_game_state)
 

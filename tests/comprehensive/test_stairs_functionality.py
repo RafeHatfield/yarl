@@ -53,14 +53,9 @@ class TestStairsFunctionality(unittest.TestCase):
             current_state=GameStates.PLAYERS_TURN,
         )
         
-        # Mock constants
-        self.constants = {
-            "max_rooms": 30,
-            "room_min_size": 6,
-            "room_max_size": 10,
-            "map_width": 80,
-            "map_height": 50,
-        }
+        # Use actual constants from the new system
+        from config.game_constants import get_constants
+        self.constants = get_constants()
 
     def test_stairs_level_progression(self):
         """Test that taking stairs generates new level."""

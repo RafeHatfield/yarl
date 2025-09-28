@@ -149,19 +149,19 @@ class TestCastLightning:
     ):
         """Test lightning bolt with target out of field of view."""
         # Arrange
-        mock_libtcod.map_is_in_fov.return_value = False
         enemy_entity.x = 12
         enemy_entity.y = 12
         entities = [player_entity, enemy_entity]
 
         # Act
-        results = cast_lightning(
-            player_entity,
-            entities=entities,
-            fov_map=mock_fov_map,
-            damage=10,
-            maximum_range=5,
-        )
+        with patch("item_functions.map_is_in_fov", return_value=False):
+            results = cast_lightning(
+                player_entity,
+                entities=entities,
+                fov_map=mock_fov_map,
+                damage=10,
+                maximum_range=5,
+            )
 
         # Assert
         assert len(results) == 1
@@ -247,20 +247,20 @@ class TestCastFireball:
     ):
         """Test fireball with target outside field of view."""
         # Arrange
-        mock_libtcod.map_is_in_fov.return_value = False
         entities = [player_entity, enemy_entity]
         target_x, target_y = 20, 20
 
         # Act
-        results = cast_fireball(
-            player_entity,
-            entities=entities,
-            fov_map=mock_fov_map,
-            damage=12,
-            radius=3,
-            target_x=target_x,
-            target_y=target_y,
-        )
+        with patch("item_functions.map_is_in_fov", return_value=False):
+            results = cast_fireball(
+                player_entity,
+                entities=entities,
+                fov_map=mock_fov_map,
+                damage=12,
+                radius=3,
+                target_x=target_x,
+                target_y=target_y,
+            )
 
         # Assert
         assert len(results) == 1
@@ -504,10 +504,7 @@ class TestCastConfuse:
         mock_fov_map = Mock()
 
         # Mock FOV check to return False (outside FOV)
-        with patch("item_functions.libtcodpy") as mock_tcod:
-            mock_tcod.map_is_in_fov.return_value = False
-            mock_tcod.yellow = mock_libtcod.yellow
-
+        with patch("item_functions.map_is_in_fov", return_value=False):
             # Act
             results = cast_confuse(
                 entities=entities,

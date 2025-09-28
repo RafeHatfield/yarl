@@ -105,7 +105,7 @@ class RenderSystem(System):
                 player.y,
                 game_state.get("fov_radius", 10),
                 game_state.get("fov_light_walls", True),
-                game_state.get("fov_algorithm", 0),
+                game_state.get("fov_algorithm", 12),
             )
 
         # Render everything
@@ -131,7 +131,11 @@ class RenderSystem(System):
         self.fov_recompute = False
 
         # Present the frame
-        libtcod.console_flush()
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning, 
+                                  message="This function is not supported if contexts are being used")
+            libtcod.console_flush()
 
         # Clear entities for next frame
         clear_all(self.console, entities)
