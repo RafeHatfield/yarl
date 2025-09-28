@@ -164,7 +164,7 @@ class TestEntityDistance:
 class TestEntityPathfinding:
     """Test Entity pathfinding and movement towards targets."""
 
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_move_towards_adjacent_target(self, mock_tcod, mock_libtcod):
         """Test moving towards an adjacent target."""
         # Arrange
@@ -182,7 +182,7 @@ class TestEntityPathfinding:
         assert entity.y == 10
         mock_game_map.is_blocked.assert_called()
 
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_move_towards_diagonal_target(self, mock_tcod, mock_libtcod):
         """Test moving towards a diagonal target."""
         # Arrange
@@ -205,7 +205,7 @@ class TestEntityPathfinding:
         assert new_distance < original_distance
         mock_game_map.is_blocked.assert_called()
 
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_move_towards_same_position(self, mock_tcod, mock_libtcod):
         """Test moving towards same position causes division by zero error."""
         # Arrange
@@ -218,7 +218,7 @@ class TestEntityPathfinding:
         with pytest.raises(ZeroDivisionError):
             entity.move_towards(target_x, target_y, mock_game_map, entities)
 
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_move_astar_pathfinding(self, mock_tcod, mock_libtcod):
         """Test A* pathfinding functionality."""
         # Arrange
@@ -258,7 +258,7 @@ class TestEntityPathfinding:
         mock_tcod.path_walk.assert_called()
         mock_tcod.path_delete.assert_called()
 
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_move_astar_no_path(self, mock_tcod, mock_libtcod):
         """Test A* pathfinding when no path exists (falls back to move_towards)."""
         # Arrange
@@ -294,7 +294,7 @@ class TestEntityPathfinding:
         assert entity.y in [10, 11]
         mock_game_map.is_blocked.assert_called()
 
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_move_astar_path_too_long(self, mock_tcod, mock_libtcod):
         """Test A* pathfinding when path is too long (falls back to move_towards)."""
         # Arrange
@@ -482,7 +482,7 @@ class TestBasicMonsterAI:
         assert len(results) == 0
         mock_tcod.map_is_in_fov.assert_called_once_with(mock_fov_map, 10, 10)
 
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_basic_monster_moves_when_far_from_target(self, mock_tcod, mock_libtcod):
         """Test basic monster moves towards target when distance >= 2."""
         # Arrange
@@ -583,7 +583,7 @@ class TestConfusedMonsterAI:
         assert confused_ai.number_of_turns == 10
 
     @patch("components.ai.randint")
-    @patch("entity.libtcod")
+    @patch("entity.libtcodpy")
     def test_confused_monster_random_movement(
         self, mock_tcod, mock_randint, mock_libtcod
     ):

@@ -209,7 +209,7 @@ class TestTargetingFlowRegression(unittest.TestCase):
         # Complete targeting with left click
         mouse_action = {"left_click": (15, 10)}  # Click on monster
         
-        with patch('item_functions.libtcod.map_is_in_fov') as mock_fov:
+        with patch('item_functions.libtcodpy.map_is_in_fov') as mock_fov:
             mock_fov.return_value = True
             
             _process_game_actions(
@@ -278,7 +278,7 @@ class TestTargetingFlowRegression(unittest.TestCase):
         
         # Complete targeting
         mouse_action = {"left_click": (15, 10)}
-        with patch('item_functions.libtcod.map_is_in_fov') as mock_fov:
+        with patch('item_functions.libtcodpy.map_is_in_fov') as mock_fov:
             mock_fov.return_value = True
             _process_game_actions(
                 {}, mouse_action, self.state_manager, None, GameStates.TARGETING, {}
@@ -334,7 +334,7 @@ class TestGameLogicFlowRegression(unittest.TestCase):
         
         # Step 3: Complete targeting
         mouse_action = {"left_click": (15, 10)}
-        with patch('item_functions.libtcod.map_is_in_fov') as mock_fov:
+        with patch('item_functions.libtcodpy.map_is_in_fov') as mock_fov:
             mock_fov.return_value = True
             _process_game_actions({}, mouse_action, state_manager, None, GameStates.TARGETING, {})
         

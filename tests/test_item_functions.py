@@ -504,7 +504,7 @@ class TestCastConfuse:
         mock_fov_map = Mock()
 
         # Mock FOV check to return False (outside FOV)
-        with patch("item_functions.libtcod") as mock_tcod:
+        with patch("item_functions.libtcodpy") as mock_tcod:
             mock_tcod.map_is_in_fov.return_value = False
             mock_tcod.yellow = mock_libtcod.yellow
 

@@ -188,7 +188,7 @@ class TestTargetingSystemRegression(unittest.TestCase):
         # Simulate left click on monster
         mouse_action = {"left_click": (15, 10)}  # Monster position
         
-        with patch('item_functions.libtcod.map_is_in_fov') as mock_fov:
+        with patch('item_functions.libtcodpy.map_is_in_fov') as mock_fov:
             mock_fov.return_value = True
             
             _process_game_actions(

@@ -36,6 +36,13 @@ def mock_libtcod(mocker):
     # Create a proper mock FOV map that behaves like the real thing
     mock_fov_map = MagicMock()
     mock_fov_map.map_c = MagicMock()  # Required for tcod internal calls
+    mock_fov_map.transparent = MagicMock()
+    mock_fov_map.walkable = MagicMock()
+    mock_fov_map.compute_fov = MagicMock()
+
+    # Mock the tcod.map module
+    mock_tcod.map = MagicMock()
+    mock_tcod.map.Map.return_value = mock_fov_map
 
     # Mock FOV functions to return predictable results
     mock_tcod.map_is_in_fov.return_value = True
@@ -54,10 +61,10 @@ def mock_libtcod(mocker):
 
     # Apply the mock at multiple levels to catch all imports
     mocker.patch("tcod.libtcodpy", mock_tcod)
-    mocker.patch("item_functions.libtcod", mock_tcod)
+    mocker.patch("item_functions.libtcodpy", mock_tcod)
     mocker.patch("components.ai.libtcod", mock_tcod)
-    mocker.patch("entity.libtcod", mock_tcod)
-    mocker.patch("fov_functions.libtcod", mock_tcod)
+    mocker.patch("entity.libtcodpy", mock_tcod)
+    mocker.patch("entity.tcod", mock_tcod)
     mocker.patch("render_functions.libtcod", mock_tcod)
 
     return mock_tcod

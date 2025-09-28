@@ -6,6 +6,7 @@ Each function implements the specific effect of using that item type.
 """
 
 import tcod as libtcod
+import tcod.libtcodpy as libtcodpy
 
 from components.ai import ConfusedMonster
 from game_messages import Message
@@ -74,7 +75,7 @@ def cast_lightning(*args, **kwargs):
         if (
             entity.fighter
             and entity != caster
-            and libtcod.map_is_in_fov(fov_map, entity.x, entity.y)
+            and libtcodpy.map_is_in_fov(fov_map, entity.x, entity.y)
         ):
             distance = caster.distance_to(entity)
 
@@ -131,7 +132,7 @@ def cast_fireball(*args, **kwargs):
     if entities is None:
         entities = []
 
-    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+    if not libtcodpy.map_is_in_fov(fov_map, target_x, target_y):
         results.append(
             {
                 "consumed": False,
@@ -189,7 +190,7 @@ def cast_confuse(*args, **kwargs):
 
     results = []
 
-    if not libtcod.map_is_in_fov(fov_map, target_x, target_y):
+    if not libtcodpy.map_is_in_fov(fov_map, target_x, target_y):
         results.append(
             {
                 "consumed": False,

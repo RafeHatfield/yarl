@@ -45,7 +45,7 @@ class TestAISystemIntegration:
         # Create player entity
         fighter_component = Fighter(hp=30, defense=2, power=5)
         self.player = Entity(
-            5, 5, "@", libtcod.white, "Player", blocks=True, fighter=fighter_component
+            5, 5, "@", (255, 255, 255), "Player", blocks=True, fighter=fighter_component
         )
 
         # Create monster entity with real AI
@@ -54,7 +54,7 @@ class TestAISystemIntegration:
             8,
             8,
             "o",
-            libtcod.desaturated_green,
+            (63, 127, 63),
             "Orc",
             blocks=True,
             fighter=monster_fighter,
@@ -142,7 +142,7 @@ class TestAISystemIntegration:
             10,
             10,
             "g",
-            libtcod.darker_green,
+            (0, 127, 0),
             "Goblin",
             blocks=True,
             fighter=monster2_fighter,
