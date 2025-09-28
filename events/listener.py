@@ -319,8 +319,7 @@ class EventListenerRegistry:
         if listener.listener_id in self.listeners:
             raise EventListenerError(
                 listener.listener_id, 
-                operation="register",
-                reason="Listener already registered"
+                operation="register"
             )
         
         self.listeners[listener.listener_id] = listener
