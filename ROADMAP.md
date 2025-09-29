@@ -14,8 +14,11 @@ These features build on existing systems and provide immediate gameplay improvem
 
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
-| **Variable Damage** | 1 week | 🔥 High | Makes combat more exciting and unpredictable | Simple RNG modification to existing combat system |
-| **Variable Defense** | 1 week | 🔥 High | Complements variable damage for dynamic combat | Similar implementation to variable damage |
+| **Variable Damage** | ✅ Complete | 🔥 High | Makes combat more exciting and unpredictable | Simple RNG modification to existing combat system |
+| **Variable Defense** | ✅ Complete | 🔥 High | Complements variable damage for dynamic combat | Similar implementation to variable damage |
+| **Variable Monster Damage** | 1 week | 🔥 High | Monsters use damage ranges like players do | Extend monster creation with damage ranges |
+| **Monster Equipment & Loot** | 1-2 weeks | 🔥 High | Monsters can wield weapons/armor and drop them | Equipment system for monsters, loot drops |
+| **General Loot Drops** | 1 week | 🔥 High | All monsters drop items when defeated | Death event handling, loot table system |
 | **Chance to Hit/Dodge** | 1 week | 🔥 High | Adds tactical depth and tension to every attack | RNG checks in combat calculations |
 | **More Spells** | 1-2 weeks | 🔥 High | Teleport, invisibility = immediate tactical options | Framework exists, just add spell functions |
 
@@ -127,20 +130,23 @@ These features require significant architectural changes but provide transformat
 ### **🚀 Immediate High-Impact Wins (Next 4-6 weeks)**
 
 **Priority Order:**
-1. **Variable Damage** (1 week) - Instant combat excitement
-2. **Variable Defense** (1 week) - Completes the dynamic combat system  
-3. **Chance to Hit/Dodge** (1 week) - Adds tactical tension
-4. **More Spells** (1-2 weeks) - Teleport and invisibility for tactical depth
+1. ✅ **Variable Damage** (Complete) - Instant combat excitement
+2. ✅ **Variable Defense** (Complete) - Completes the dynamic combat system  
+3. **Variable Monster Damage** (1 week) - Monsters get exciting damage ranges too
+4. **Monster Equipment & Loot** (1-2 weeks) - Monsters drop their weapons/armor
+5. **General Loot Drops** (1 week) - All monsters drop items when defeated
+6. **Chance to Hit/Dodge** (1 week) - Adds tactical tension
+7. **More Spells** (1-2 weeks) - Teleport and invisibility for tactical depth
 
-**Why This Order:** Each feature builds on the previous, creating a cohesive combat overhaul that makes every encounter more engaging.
+**Why This Order:** Building on the variable damage foundation, adding monster equipment and loot drops creates a complete dynamic combat and reward system.
 
 ### **🎮 Medium-Term Game Changers (Next 2-3 months)**
 
 **Priority Order:**
-5. **Player Classes** (4-6 weeks) - Massive replayability boost
-6. **Ranged Weapons** (2-3 weeks) - New combat dimension
-7. **Pet System** (3-4 weeks) - Companions add emotional attachment
-8. **More Equipment Slots** (2-3 weeks) - Deeper equipment strategy
+8. **Player Classes** (4-6 weeks) - Massive replayability boost
+9. **Ranged Weapons** (2-3 weeks) - New combat dimension
+10. **Pet System** (3-4 weeks) - Companions add emotional attachment
+11. **More Equipment Slots** (2-3 weeks) - Deeper equipment strategy
 
 **Why This Order:** Player classes provide the biggest replayability impact, while ranged weapons and pets add new gameplay dimensions.
 
@@ -156,7 +162,10 @@ These features require significant architectural changes but provide transformat
 ## 📊 **Impact vs Effort Matrix**
 
 ### **High Impact, Low Effort (Do First)**
-- Variable Damage/Defense
+- ✅ Variable Damage/Defense (Complete)
+- Variable Monster Damage
+- Monster Equipment & Loot Drops
+- General Loot Drops
 - Chance to Hit/Dodge
 - More Spells
 - Extended Equipment
@@ -212,13 +221,15 @@ This roadmap should be updated:
 
 ### **✅ Recently Completed**
 - **Mouse Movement System** (v1.8.0) - Complete click-to-move with pathfinding
-- **Comprehensive Testing** - 1,070+ tests with 100% coverage
+- **Variable Damage System** (v1.9.0) - Weapons with damage ranges, enhancement scrolls
+- **Variable Defense System** (v1.9.0) - Armor with defense ranges, dynamic protection
+- **Comprehensive Testing** - 1,096+ tests with 100% coverage
 - **Modern Architecture** - ECS, state machines, performance optimization
 
 ### **🎯 Next Up**
-- **Variable Damage** - Ready to implement, high impact
-- **Variable Defense** - Natural follow-up to variable damage
-- **Chance to Hit/Dodge** - Complete the combat overhaul trilogy
+- **Variable Monster Damage** - Extend damage ranges to monsters
+- **Monster Equipment & Loot** - Monsters wield and drop weapons/armor
+- **General Loot Drops** - All monsters drop items when defeated
 
 ---
 
