@@ -54,7 +54,7 @@ monsters:
 weapons:
   # Starting weapon
   dagger:
-    power_bonus: 2
+    power_bonus: 0
     damage_min: 1
     damage_max: 3
     slot: "main_hand"
@@ -63,7 +63,7 @@ weapons:
 
   # Mid-tier weapon
   sword:
-    power_bonus: 3
+    power_bonus: 0
     damage_min: 2
     damage_max: 5
     slot: "main_hand"
@@ -74,7 +74,7 @@ weapons:
 armor:
   # Basic shield
   shield:
-    defense_bonus: 1
+    defense_bonus: 0
     defense_min: 1
     defense_max: 3
     slot: "off_hand"
