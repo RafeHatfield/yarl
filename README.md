@@ -447,18 +447,28 @@ These are tracked for future improvement when confident in test coverage.
 #### 🟢 **Phase 1: Core Gameplay Enhancements** (Easy - 1-2 weeks each)
 - [ ] **More Spells** - Teleport, invisibility, more tactical options
 - [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets
+- [ ] **Variable Damage** - Weapons deal damage ranges (e.g. sword: 2-5 damage)
+- [ ] **Variable Defense** - Armor provides defense ranges for more variety
 - [ ] **More Stats on Equipment** - Additional bonuses and properties
 - [ ] **More Monster Types** - Varied AI behaviors and abilities
 - [ ] **Chance to Hit/Dodge** - Enhanced combat mechanics with RNG
+- [ ] **Stat Boosting Potions** - Temporary and permanent stat enhancement items
 - [ ] **JSON Save/Load** - Replace shelve with JSON serialization
+- [ ] **Movement Speed Configuration** - Adjustable mouse movement animation speed
 
 #### 🟡 **Phase 2: Advanced Systems** (Medium - 2-4 weeks each)
 - [ ] **Ranged Weapons** - Bows, crossbows with projectile mechanics
 - [ ] **More Equipment Slots** - Rings, amulets, boots, helmets
 - [ ] **Equipment Sets** - Bonuses for wearing matching equipment pieces
-- [ ] **More Player Stats** - Expanded character attributes and progression
+- [ ] **Complex Leveling System** - Feats, skill trees, and character specialization
+- [ ] **Player Classes** - Warrior, Mage, Rogue with unique abilities and progression
+- [ ] **Pet System** - Companions that follow and assist the player
+- [ ] **Lockable Treasure Chests** - Containers requiring keys or lockpicking
+- [ ] **Trap System** - Hidden dangers with detection and disarmament mechanics
+- [ ] **Skill System** - Lockpicking, trap detection, stealth, and other abilities
+- [ ] **Skill Scrolls** - Consumable items that teach or enhance abilities
 - [ ] **Boss Encounters** - Special monsters with unique mechanics
-- [ ] **Environmental Hazards** - Traps, poison gas, lava, ice
+- [ ] **Environmental Hazards** - Poison gas, lava, ice, pressure plates
 - [ ] **PC/Mac Distribution** - Packaging and build system setup
 
 #### 🔴 **Phase 3: Major Overhauls** (Hard - 1-3 months each)
@@ -474,14 +484,24 @@ These are tracked for future improvement when confident in test coverage.
 |---------|------------|---------------|---------|
 | More Spells | 🟢 Easy | 1-2 weeks | Framework exists, just add functions |
 | Extended Equipment | 🟢 Easy | 1-2 weeks | System designed for expansion |
+| Variable Damage | 🟢 Easy | 1 week | Simple RNG modification to combat |
+| Variable Defense | 🟢 Easy | 1 week | Similar to variable damage implementation |
 | Chance to Hit/Dodge | 🟢 Easy | 1 week | Simple RNG in combat calculations |
-| Mouse Movement | 🟢 Easy | 1 week | Pathfinding exists, add click handling |
+| Stat Boosting Potions | 🟢 Easy | 1-2 weeks | Extend existing item system |
+| Movement Speed Config | 🟢 Easy | 1 week | Add animation timing to pathfinding |
+| Mouse Movement | ✅ Complete | 1 week | Pathfinding exists, add click handling |
 | JSON Save/Load | 🟢 Easy | 1-2 weeks | Replace existing serialization |
 | More Stats | 🟢 Easy | 1 week | Add to existing stat system |
 | More Monster Types | 🟢 Easy | 1-2 weeks | AI system supports expansion |
 | Ranged Weapons | 🟡 Medium | 2-3 weeks | Need targeting system extension |
 | More Equipment Slots | 🟡 Medium | 2-3 weeks | UI updates, component changes |
 | Equipment Sets | 🟡 Medium | 2-3 weeks | Set detection and bonus logic |
+| Complex Leveling | 🟡 Medium | 3-4 weeks | Feats and skill trees system |
+| Player Classes | 🟡 Medium | 4-6 weeks | Class-specific abilities and progression |
+| Pet System | 🟡 Medium | 3-4 weeks | AI companions with follow behavior |
+| Lockable Chests | 🟡 Medium | 2-3 weeks | Key/lockpicking mechanics |
+| Trap System | 🟡 Medium | 3-4 weeks | Detection, disarmament, and damage |
+| Skill System | 🟡 Medium | 3-5 weeks | Multiple abilities with progression |
 | Boss Encounters | 🟡 Medium | 3-4 weeks | Special AI behaviors needed |
 | Environmental Hazards | 🟡 Medium | 2-4 weeks | New tile types and mechanics |
 | PC/Mac Distribution | 🟡 Medium | 2-3 weeks | Packaging and build setup |
