@@ -115,7 +115,7 @@ class Fighter:
         """Perform an attack against a target entity.
 
         Calculates damage based on attacker's power vs target's defense,
-        including variable damage from equipped weapons.
+        including variable damage from equipped weapons and variable defense from armor.
 
         Args:
             target (Entity): The target entity to attack
@@ -125,38 +125,57 @@ class Fighter:
         """
         results = []
 
-        # Calculate base damage from power vs defense
-        base_damage = self.power - target.fighter.defense
+        # Calculate base damage from attacker's power
+        base_damage = self.power
         
         # Add variable weapon damage if equipped
         weapon_damage = self._get_weapon_damage()
-        total_damage = base_damage + weapon_damage
+        total_attack = base_damage + weapon_damage
+        
+        # Get variable armor defense from target
+        armor_defense = target.fighter._get_armor_defense()
+        
+        # Apply defense (including base defense, equipment defense_bonus, and variable armor)
+        total_defense = target.fighter.defense + armor_defense
+        final_damage = max(0, total_attack - total_defense)
 
-        if total_damage > 0:
+        if final_damage > 0:
+            # Create detailed combat message
             weapon_text = f" (+{weapon_damage} weapon)" if weapon_damage > 0 else ""
-            results.append(
-                {
+            armor_text = f" ({armor_defense} absorbed by armor)" if armor_defense > 0 else ""
+            
+            message_text = "{0} attacks {1} for {2} hit points{3}{4}.".format(
+                self.owner.name.capitalize(), 
+                target.name, 
+                str(final_damage),
+                weapon_text,
+                armor_text
+            )
+            
+            results.append({
+                "message": Message(message_text, (255, 255, 255))
+            })
+            results.extend(target.fighter.take_damage(final_damage))
+        else:
+            # Attack was completely blocked
+            if armor_defense > 0:
+                results.append({
                     "message": Message(
-                        "{0} attacks {1} for {2} hit points{3}.".format(
-                            self.owner.name.capitalize(), target.name, 
-                            str(total_damage), weapon_text
+                        "{0} attacks {1} but the attack is completely blocked by armor.".format(
+                            self.owner.name.capitalize(), target.name
                         ),
                         (255, 255, 255),
                     )
-                }
-            )
-            results.extend(target.fighter.take_damage(total_damage))
-        else:
-            results.append(
-                {
+                })
+            else:
+                results.append({
                     "message": Message(
                         "{0} attacks {1} but does no damage.".format(
                             self.owner.name.capitalize(), target.name
                         ),
                         (255, 255, 255),
                     )
-                }
-            )
+                })
 
         return results
     
@@ -170,4 +189,20 @@ class Fighter:
             self.owner.equipment.main_hand and 
             self.owner.equipment.main_hand.equippable):
             return self.owner.equipment.main_hand.equippable.roll_damage()
+        return 0
+    
+    def _get_armor_defense(self) -> int:
+        """Get variable defense from equipped armor.
+        
+        Returns:
+            int: Random defense from equipped armor, or 0 if no armor
+        """
+        try:
+            if (hasattr(self.owner, 'equipment') and self.owner.equipment and
+                hasattr(self.owner.equipment, 'off_hand') and self.owner.equipment.off_hand and 
+                hasattr(self.owner.equipment.off_hand, 'equippable') and
+                self.owner.equipment.off_hand.equippable):
+                return self.owner.equipment.off_hand.equippable.roll_defense()
+        except (AttributeError, TypeError):
+            pass
         return 0

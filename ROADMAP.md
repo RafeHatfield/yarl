@@ -73,6 +73,7 @@ These features build on existing systems and provide immediate gameplay improvem
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
 | **Movement Speed Config** | 1 week | 🔥 High | Makes mouse movement feel perfect for each player | Add animation timing to pathfinding |
+| **Player Naming** | 1 week | 🔥 High | Allow players to enter custom names for personalization | Add name input dialog at game start |
 | **More Monster Types** | 1-2 weeks | 🔥 High | Keeps exploration fresh and challenging | AI system supports easy expansion |
 | **JSON Save/Load** | 1-2 weeks | 🔶 Medium | Human-readable saves, easier debugging | Replace existing shelve serialization |
 

@@ -257,6 +257,7 @@ class TestFighterEquipmentCombat:
         armor.equippable.defense_bonus = 3
         armor.equippable.max_hp_bonus = 0
         armor.equippable.slot = EquipmentSlots.OFF_HAND
+        armor.equippable.roll_defense.return_value = 0  # No variable defense, just static bonus
 
         self.target_equipment.toggle_equip(armor)
 
@@ -287,6 +288,7 @@ class TestFighterEquipmentCombat:
         armor.equippable.defense_bonus = 2
         armor.equippable.max_hp_bonus = 0
         armor.equippable.slot = EquipmentSlots.OFF_HAND
+        armor.equippable.roll_defense.return_value = 0  # No variable defense, just static bonus
 
         self.target_equipment.toggle_equip(armor)
 
