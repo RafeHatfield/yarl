@@ -73,7 +73,9 @@ class EntityFactory:
                 hp=monster_def.stats.hp,
                 defense=monster_def.stats.defense,
                 power=monster_def.stats.power,
-                xp=monster_def.stats.xp
+                xp=monster_def.stats.xp,
+                damage_min=monster_def.stats.damage_min or 0,
+                damage_max=monster_def.stats.damage_max or 0
             )
 
             # Create AI component based on ai_type

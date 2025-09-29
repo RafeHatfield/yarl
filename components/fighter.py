@@ -23,7 +23,7 @@ class Fighter:
         owner (Entity): The entity that owns this component
     """
 
-    def __init__(self, hp, defense, power, xp=0):
+    def __init__(self, hp, defense, power, xp=0, damage_min=0, damage_max=0):
         """Initialize a Fighter component.
 
         Args:
@@ -31,12 +31,16 @@ class Fighter:
             defense (int): Defense value
             power (int): Attack power
             xp (int, optional): Starting experience points. Defaults to 0.
+            damage_min (int, optional): Minimum variable damage for monsters. Defaults to 0.
+            damage_max (int, optional): Maximum variable damage for monsters. Defaults to 0.
         """
         self.base_max_hp = hp
         self.hp = hp
         self.base_defense = defense
         self.base_power = power
         self.xp = xp
+        self.damage_min = damage_min
+        self.damage_max = damage_max
         self.owner = None  # Will be set by Entity when component is registered
 
     @property
@@ -134,9 +138,10 @@ class Fighter:
         # Calculate base damage from attacker's power
         base_damage = self.power
         
-        # Add variable weapon damage if equipped
+        # Add variable damage (from weapons for players, natural for monsters)
         weapon_damage = self._get_weapon_damage()
-        total_attack = base_damage + weapon_damage
+        monster_damage = self._get_monster_variable_damage()
+        total_attack = base_damage + weapon_damage + monster_damage
         
         # Get variable armor defense from target
         armor_defense = target.fighter._get_armor_defense()
@@ -147,14 +152,19 @@ class Fighter:
 
         if final_damage > 0:
             # Create detailed combat message
-            weapon_text = f" (+{weapon_damage} weapon)" if weapon_damage > 0 else ""
+            variable_damage_text = ""
+            if weapon_damage > 0:
+                variable_damage_text = f" (+{weapon_damage} weapon)"
+            elif monster_damage > 0:
+                variable_damage_text = f" (+{monster_damage} natural)"
+            
             armor_text = f" ({armor_defense} absorbed by armor)" if armor_defense > 0 else ""
             
             message_text = "{0} attacks {1} for {2} hit points{3}{4}.".format(
                 self.owner.name.capitalize(), 
                 target.name, 
                 str(final_damage),
-                weapon_text,
+                variable_damage_text,
                 armor_text
             )
             
@@ -164,7 +174,7 @@ class Fighter:
             
             # Log detailed combat breakdown in testing mode
             if is_testing_mode():
-                self._log_combat_debug(target, total_attack, weapon_damage, total_defense, armor_defense, final_damage)
+                self._log_combat_debug(target, total_attack, weapon_damage, monster_damage, total_defense, armor_defense, final_damage)
             
             results.extend(target.fighter.take_damage(final_damage))
         else:
@@ -190,29 +200,33 @@ class Fighter:
             
             # Log detailed combat breakdown for blocked attacks in testing mode
             if is_testing_mode():
-                self._log_combat_debug(target, total_attack, weapon_damage, total_defense, armor_defense, final_damage)
+                self._log_combat_debug(target, total_attack, weapon_damage, monster_damage, total_defense, armor_defense, final_damage)
 
         return results
     
     def _log_combat_debug(self, target, total_attack: int, weapon_damage: int, 
-                         total_defense: int, armor_defense: int, final_damage: int) -> None:
+                         monster_damage: int, total_defense: int, armor_defense: int, final_damage: int) -> None:
         """Log detailed combat breakdown for debugging in testing mode.
         
         Args:
             target: Target entity being attacked
-            total_attack: Total attack value (power + weapon damage)
+            total_attack: Total attack value (power + weapon/monster damage)
             weapon_damage: Variable weapon damage rolled
+            monster_damage: Variable monster natural damage rolled
             total_defense: Total defense value (defense + armor)
             armor_defense: Variable armor defense rolled
             final_damage: Final damage after calculations
         """
-        # Get weapon and armor range info for display
-        weapon_range = ""
+        # Get weapon/monster damage range info for display
+        damage_range = ""
         if (hasattr(self.owner, 'equipment') and self.owner.equipment and
             self.owner.equipment.main_hand and self.owner.equipment.main_hand.equippable):
             equip = self.owner.equipment.main_hand.equippable
             if equip.damage_min > 0 and equip.damage_max > 0:
-                weapon_range = f" ({equip.damage_min}-{equip.damage_max} dmg)"
+                damage_range = f" ({equip.damage_min}-{equip.damage_max} dmg)"
+        elif self.damage_min > 0 and self.damage_max > 0:
+            # Monster natural damage range
+            damage_range = f" ({self.damage_min}-{self.damage_max} dmg)"
         
         armor_range = ""
         if (hasattr(target, 'equipment') and target.equipment and
@@ -225,8 +239,9 @@ class Fighter:
         attacker_name = self.owner.name.capitalize()
         target_name = target.name
         
-        debug_text = (f"{attacker_name} [power:{self.base_power}+{self.power-self.base_power}]{weapon_range} attacks for {total_attack} "
-                     f"({self.power} power + {weapon_damage} rolled), "
+        variable_damage_rolled = weapon_damage if weapon_damage > 0 else monster_damage
+        debug_text = (f"{attacker_name} [power:{self.base_power}+{self.power-self.base_power}]{damage_range} attacks for {total_attack} "
+                     f"({self.power} power + {variable_damage_rolled} rolled), "
                      f"{target_name} [def:{target.fighter.base_defense}+{target.fighter.defense-target.fighter.base_defense}]{armor_range} blocks {total_defense} "
                      f"({target.fighter.defense} defense + {armor_defense} rolled) "
                      f"= {final_damage} total damage")
@@ -243,6 +258,17 @@ class Fighter:
             self.owner.equipment.main_hand and 
             self.owner.equipment.main_hand.equippable):
             return self.owner.equipment.main_hand.equippable.roll_damage()
+        return 0
+    
+    def _get_monster_variable_damage(self) -> int:
+        """Get variable damage for monsters (natural weapons like claws, fangs, etc.).
+        
+        Returns:
+            int: Random damage within the monster's damage range, or 0 if no range set
+        """
+        if self.damage_min > 0 and self.damage_max > 0:
+            import random
+            return random.randint(self.damage_min, self.damage_max)
         return 0
     
     def _get_armor_defense(self) -> int:
