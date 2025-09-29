@@ -1,4 +1,10 @@
+import logging
 from game_messages import Message
+from config.testing_config import is_testing_mode
+
+# Set up combat debug logger
+combat_logger = logging.getLogger('combat_debug')
+combat_logger.setLevel(logging.DEBUG)
 
 
 class Fighter:
@@ -155,6 +161,11 @@ class Fighter:
             results.append({
                 "message": Message(message_text, (255, 255, 255))
             })
+            
+            # Log detailed combat breakdown in testing mode
+            if is_testing_mode():
+                self._log_combat_debug(target, total_attack, weapon_damage, total_defense, armor_defense, final_damage)
+            
             results.extend(target.fighter.take_damage(final_damage))
         else:
             # Attack was completely blocked
@@ -176,8 +187,51 @@ class Fighter:
                         (255, 255, 255),
                     )
                 })
+            
+            # Log detailed combat breakdown for blocked attacks in testing mode
+            if is_testing_mode():
+                self._log_combat_debug(target, total_attack, weapon_damage, total_defense, armor_defense, final_damage)
 
         return results
+    
+    def _log_combat_debug(self, target, total_attack: int, weapon_damage: int, 
+                         total_defense: int, armor_defense: int, final_damage: int) -> None:
+        """Log detailed combat breakdown for debugging in testing mode.
+        
+        Args:
+            target: Target entity being attacked
+            total_attack: Total attack value (power + weapon damage)
+            weapon_damage: Variable weapon damage rolled
+            total_defense: Total defense value (defense + armor)
+            armor_defense: Variable armor defense rolled
+            final_damage: Final damage after calculations
+        """
+        # Get weapon and armor range info for display
+        weapon_range = ""
+        if (hasattr(self.owner, 'equipment') and self.owner.equipment and
+            self.owner.equipment.main_hand and self.owner.equipment.main_hand.equippable):
+            equip = self.owner.equipment.main_hand.equippable
+            if equip.damage_min > 0 and equip.damage_max > 0:
+                weapon_range = f" ({equip.damage_min}-{equip.damage_max} dmg)"
+        
+        armor_range = ""
+        if (hasattr(target, 'equipment') and target.equipment and
+            target.equipment.off_hand and target.equipment.off_hand.equippable):
+            equip = target.equipment.off_hand.equippable
+            if equip.defense_min > 0 and equip.defense_max > 0:
+                armor_range = f" ({equip.defense_min}-{equip.defense_max} def)"
+        
+        # Build and log debug information
+        attacker_name = self.owner.name.capitalize()
+        target_name = target.name
+        
+        debug_text = (f"{attacker_name}{weapon_range} attacks for {total_attack} "
+                     f"({self.power} base + {weapon_damage} weapon), "
+                     f"{target_name}{armor_range} blocks {total_defense} "
+                     f"({target.fighter.defense} static + {armor_defense} armor) "
+                     f"= {final_damage} total damage")
+        
+        combat_logger.debug(debug_text)
     
     def _get_weapon_damage(self) -> int:
         """Get variable damage from equipped weapon.

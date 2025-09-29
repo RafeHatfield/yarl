@@ -6,6 +6,7 @@ message boxes. All menus are rendered as centered overlays.
 """
 
 import tcod as libtcod
+from tcod import libtcodpy
 
 
 def menu(con, header, options, width, screen_width, screen_height):
@@ -39,8 +40,8 @@ def menu(con, header, options, width, screen_width, screen_height):
 
     # print the header, with auto-wrap
     libtcod.console_set_default_foreground(window, (255, 255, 255))
-    libtcod.console_print_rect_ex(
-        window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header
+    libtcodpy.console_print_rect_ex(
+        window, 0, 0, width, height, libtcodpy.BKGND_NONE, libtcodpy.LEFT, header
     )
 
     # print all the options
@@ -48,7 +49,7 @@ def menu(con, header, options, width, screen_width, screen_height):
     letter_index = ord("a")
     for option_text in options:
         text = "(" + chr(letter_index) + ") " + option_text
-        libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
+        libtcodpy.console_print_ex(window, 0, y, libtcodpy.BKGND_NONE, libtcodpy.LEFT, text)
         y += 1
         letter_index += 1
 
@@ -105,7 +106,7 @@ def main_menu(con, background_image, screen_width, screen_height):
         0,
         int(screen_width / 2),
         int(screen_height / 2) - 4,
-        libtcod.BKGND_NONE,
+        libtcodpy.BKGND_NONE,
         libtcod.CENTER,
         "CATACOMBS OF YARL",
     )
@@ -113,7 +114,7 @@ def main_menu(con, background_image, screen_width, screen_height):
         0,
         int(screen_width / 2),
         int(screen_height - 2),
-        libtcod.BKGND_NONE,
+        libtcodpy.BKGND_NONE,
         libtcod.CENTER,
         "By Rastaphibian",
     )
@@ -182,79 +183,79 @@ def character_screen(
 
     libtcod.console_set_default_foreground(window, (255, 255, 255))
 
-    libtcod.console_print_rect_ex(
+    libtcodpy.console_print_rect_ex(
         window,
         0,
         1,
         character_screen_width,
         character_screen_height,
-        libtcod.BKGND_NONE,
-        libtcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         "Character Information",
     )
-    libtcod.console_print_rect_ex(
+    libtcodpy.console_print_rect_ex(
         window,
         0,
         2,
         character_screen_width,
         character_screen_height,
-        libtcod.BKGND_NONE,
-        libtcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         "Level: {0}".format(player.level.current_level),
     )
-    libtcod.console_print_rect_ex(
+    libtcodpy.console_print_rect_ex(
         window,
         0,
         3,
         character_screen_width,
         character_screen_height,
-        libtcod.BKGND_NONE,
-        libtcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         "Experience: {0}".format(player.level.current_xp),
     )
-    libtcod.console_print_rect_ex(
+    libtcodpy.console_print_rect_ex(
         window,
         0,
         4,
         character_screen_width,
         character_screen_height,
-        libtcod.BKGND_NONE,
-        libtcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         "Experience to Level: {0}".format(player.level.experience_to_next_level),
     )
-    libtcod.console_print_rect_ex(
+    libtcodpy.console_print_rect_ex(
         window,
         0,
         6,
         character_screen_width,
         character_screen_height,
-        libtcod.BKGND_NONE,
-        libtcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         "Maximum HP: {0}".format(player.fighter.max_hp),
     )
     # Get attack info with weapon damage range
     attack_text = _get_attack_display_text(player)
-    libtcod.console_print_rect_ex(
+    libtcodpy.console_print_rect_ex(
         window,
         0,
         7,
         character_screen_width,
         character_screen_height,
-        libtcod.BKGND_NONE,
-        libtcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         attack_text,
     )
     
     # Get defense info with armor defense range
     defense_text = _get_defense_display_text(player)
-    libtcod.console_print_rect_ex(
+    libtcodpy.console_print_rect_ex(
         window,
         0,
         8,
         character_screen_width,
         character_screen_height,
-        libtcod.BKGND_NONE,
-        libtcod.LEFT,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.LEFT,
         defense_text,
     )
 

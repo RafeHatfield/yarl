@@ -6,6 +6,7 @@ to easily modify game parameters for testing purposes without changing core game
 """
 
 import os
+import logging
 from typing import Dict, List, Tuple, Any
 
 
@@ -102,13 +103,33 @@ def get_testing_config() -> TestingConfig:
 
 
 def set_testing_mode(enabled: bool) -> None:
-    """Enable or disable testing mode.
+    """Enable or disable testing mode and configure combat debug logging.
     
     Args:
         enabled: Whether to enable testing mode
     """
     global _testing_config
     _testing_config = TestingConfig(testing_mode=enabled)
+    
+    # Configure combat debug logging
+    combat_logger = logging.getLogger('combat_debug')
+    if enabled:
+        # Set up file handler for combat logs in testing mode
+        if not combat_logger.handlers:
+            handler = logging.FileHandler('combat_debug.log', mode='w')
+            formatter = logging.Formatter('%(asctime)s - COMBAT: %(message)s', 
+                                        datefmt='%H:%M:%S')
+            handler.setFormatter(formatter)
+            combat_logger.addHandler(handler)
+            combat_logger.setLevel(logging.DEBUG)
+        print("🔍 Combat debug logging enabled: combat_debug.log")
+    else:
+        # Disable combat logging
+        combat_logger.setLevel(logging.CRITICAL)
+        # Remove handlers to stop logging
+        for handler in combat_logger.handlers[:]:
+            combat_logger.removeHandler(handler)
+            handler.close()
 
 
 def is_testing_mode() -> bool:
