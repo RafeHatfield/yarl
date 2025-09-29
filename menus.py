@@ -232,6 +232,8 @@ def character_screen(
         libtcod.LEFT,
         "Maximum HP: {0}".format(player.fighter.max_hp),
     )
+    # Get attack info with weapon damage range
+    attack_text = _get_attack_display_text(player)
     libtcod.console_print_rect_ex(
         window,
         0,
@@ -240,8 +242,11 @@ def character_screen(
         character_screen_height,
         libtcod.BKGND_NONE,
         libtcod.LEFT,
-        "Attack: {0}".format(player.fighter.power),
+        attack_text,
     )
+    
+    # Get defense info with armor defense range
+    defense_text = _get_defense_display_text(player)
     libtcod.console_print_rect_ex(
         window,
         0,
@@ -250,7 +255,7 @@ def character_screen(
         character_screen_height,
         libtcod.BKGND_NONE,
         libtcod.LEFT,
-        "Defense: {0}".format(player.fighter.defense),
+        defense_text,
     )
 
     x = screen_width // 2 - character_screen_width // 2
@@ -258,3 +263,81 @@ def character_screen(
     libtcod.console_blit(
         window, 0, 0, character_screen_width, character_screen_height, 0, x, y, 1.0, 0.7
     )
+
+
+def _get_attack_display_text(player):
+    """Get attack display text with weapon damage range.
+    
+    Args:
+        player (Entity): Player entity with fighter and equipment components
+        
+    Returns:
+        str: Attack display text with weapon damage range if applicable
+    """
+    # Get base power without equipment bonuses
+    base_power = player.fighter.base_power
+    
+    # Check for equipped weapon with damage range
+    if (hasattr(player, 'equipment') and player.equipment and
+        player.equipment.main_hand and 
+        player.equipment.main_hand.equippable):
+        
+        weapon = player.equipment.main_hand
+        equippable = weapon.equippable
+        
+        # If weapon has meaningful damage range, show it
+        if hasattr(equippable, 'damage_min') and hasattr(equippable, 'damage_max'):
+            if (equippable.damage_min is not None and equippable.damage_max is not None and
+                equippable.damage_max > 0):
+                weapon_range = f"{equippable.damage_min}-{equippable.damage_max}"
+                total_min = base_power + equippable.damage_min
+                total_max = base_power + equippable.damage_max
+                return f"Attack: {base_power} + {weapon_range} = {total_min}-{total_max}"
+        
+        # Fallback to power bonus if no damage range
+        power_bonus = getattr(equippable, 'power_bonus', 0)
+        if power_bonus > 0:
+            total_power = base_power + power_bonus
+            return f"Attack: {base_power} + {power_bonus} = {total_power}"
+    
+    # No weapon or no bonus
+    return f"Attack: {base_power}"
+
+
+def _get_defense_display_text(player):
+    """Get defense display text with armor defense range.
+    
+    Args:
+        player (Entity): Player entity with fighter and equipment components
+        
+    Returns:
+        str: Defense display text with armor defense range if applicable
+    """
+    # Get base defense without equipment bonuses
+    base_defense = player.fighter.base_defense
+    
+    # Check for equipped armor with defense range
+    if (hasattr(player, 'equipment') and player.equipment and
+        player.equipment.off_hand and 
+        player.equipment.off_hand.equippable):
+        
+        armor = player.equipment.off_hand
+        equippable = armor.equippable
+        
+        # If armor has meaningful defense range, show it
+        if hasattr(equippable, 'defense_min') and hasattr(equippable, 'defense_max'):
+            if (equippable.defense_min is not None and equippable.defense_max is not None and
+                equippable.defense_max > 0):
+                armor_range = f"{equippable.defense_min}-{equippable.defense_max}"
+                total_min = base_defense + equippable.defense_min
+                total_max = base_defense + equippable.defense_max
+                return f"Defense: {base_defense} + {armor_range} = {total_min}-{total_max}"
+        
+        # Fallback to defense bonus if no defense range
+        defense_bonus = getattr(equippable, 'defense_bonus', 0)
+        if defense_bonus > 0:
+            total_defense = base_defense + defense_bonus
+            return f"Defense: {base_defense} + {defense_bonus} = {total_defense}"
+    
+    # No armor or no bonus
+    return f"Defense: {base_defense}"

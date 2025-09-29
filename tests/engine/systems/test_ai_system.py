@@ -178,6 +178,13 @@ class TestAISystemUpdate:
         self.mock_engine.state_manager = self.mock_state_manager
         self.mock_state_manager.state = self.mock_game_state
         self.mock_game_state.current_state = GameStates.ENEMY_TURN
+        
+        # Mock player with pathfinding component
+        mock_pathfinding = Mock()
+        mock_pathfinding.is_path_active.return_value = False
+        self.mock_game_state.player = Mock()
+        self.mock_game_state.player.pathfinding = mock_pathfinding
+        self.mock_game_state.entities = []
 
         self.ai_system.initialize(self.mock_engine)
 
@@ -215,7 +222,12 @@ class TestAISystemUpdate:
 
         # Mock the entities to avoid iteration error
         self.mock_game_state.entities = []
+        
+        # Mock player with pathfinding component that's not active
+        mock_pathfinding = Mock()
+        mock_pathfinding.is_path_active.return_value = False
         self.mock_game_state.player = Mock()
+        self.mock_game_state.player.pathfinding = mock_pathfinding
 
         self.ai_system.update(0.016)
 

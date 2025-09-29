@@ -236,14 +236,16 @@ class TestFighterEquipmentCombat:
         weapon.equippable.defense_bonus = 0
         weapon.equippable.max_hp_bonus = 0
         weapon.equippable.slot = EquipmentSlots.MAIN_HAND
+        weapon.equippable.roll_damage.return_value = 3  # Return weapon damage as integer
 
         self.attacker_equipment.toggle_equip(weapon)
 
         # Attack should use enhanced power
         results = self.attacker_fighter.attack(self.target)
 
-        # Damage = (5 base + 3 weapon) - 2 defense = 6
-        expected_damage = 6
+        # Damage = ((5 base + 3 power_bonus) - 2 defense) + 3 weapon_damage = 9
+        # Base damage: (5 + 3) - 2 = 6, Weapon damage: 3, Total: 6 + 3 = 9
+        expected_damage = 9
         assert self.target_fighter.hp == 50 - expected_damage
 
     def test_combat_with_armor_bonus(self):
@@ -274,6 +276,7 @@ class TestFighterEquipmentCombat:
         weapon.equippable.defense_bonus = 0
         weapon.equippable.max_hp_bonus = 0
         weapon.equippable.slot = EquipmentSlots.MAIN_HAND
+        weapon.equippable.roll_damage.return_value = 4  # Return weapon damage as integer
 
         self.attacker_equipment.toggle_equip(weapon)
 
@@ -290,8 +293,9 @@ class TestFighterEquipmentCombat:
         # Attack with both bonuses
         results = self.attacker_fighter.attack(self.target)
 
-        # Damage = (5 + 4) - (2 + 2) = 5
-        expected_damage = 5
+        # Damage = ((5 base + 4 power_bonus) - (2 base + 2 defense_bonus)) + 4 weapon_damage = 9
+        # Base damage: (5 + 4) - (2 + 2) = 5, Weapon damage: 4, Total: 5 + 4 = 9
+        expected_damage = 9
         assert self.target_fighter.hp == 50 - expected_damage
 
     def test_healing_with_hp_bonus_equipment(self):
