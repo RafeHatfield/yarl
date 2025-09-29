@@ -1,0 +1,124 @@
+# Entity Configuration for Catacombs of Yarl
+# This file defines all entities in the game including monsters, weapons, armor, and spells.
+#
+# Format:
+#   - All entities support inheritance via 'extends' keyword
+#   - Colors are RGB tuples [r, g, b] where values are 0-255
+#   - Stats include hp, power, defense, xp, and optional damage/defense ranges
+#   - Characters are single ASCII characters for rendering
+
+version: "1.0"
+
+# Player starting statistics
+player:
+  hp: 100
+  power: 2
+  defense: 1
+  xp: 0
+
+# Monster definitions
+monsters:
+  # Basic orc enemy
+  orc:
+    stats:
+      hp: 20
+      power: 4
+      defense: 0
+      xp: 35
+      # Future: Add variable damage when monster damage system is implemented
+      # damage_min: 2
+      # damage_max: 6
+    char: "o"
+    color: [63, 127, 63]  # Dark green
+    ai_type: "basic"
+    render_order: "actor"
+    blocks: true
+
+  # Stronger troll enemy  
+  troll:
+    stats:
+      hp: 30
+      power: 8
+      defense: 2
+      xp: 100
+      # Future: Add variable damage when monster damage system is implemented
+      # damage_min: 5
+      # damage_max: 12
+    char: "T"
+    color: [0, 127, 0]  # Green
+    ai_type: "basic"
+    render_order: "actor"
+    blocks: true
+
+# Weapon definitions
+weapons:
+  # Starting weapon
+  dagger:
+    power_bonus: 2
+    damage_min: 1
+    damage_max: 3
+    slot: "main_hand"
+    char: "-"
+    color: [139, 69, 19]  # Brown
+
+  # Mid-tier weapon
+  sword:
+    power_bonus: 3
+    damage_min: 2
+    damage_max: 5
+    slot: "main_hand"
+    char: "/"
+    color: [192, 192, 192]  # Silver
+
+# Armor definitions  
+armor:
+  # Basic shield
+  shield:
+    defense_bonus: 1
+    defense_min: 1
+    defense_max: 3
+    slot: "off_hand"
+    char: "["
+    color: [139, 69, 19]  # Brown
+
+# Spell and consumable definitions
+spells:
+  # Healing item
+  healing_potion:
+    spell_type: "heal"
+    heal_amount: 40
+    char: "!"
+    color: [127, 0, 255]  # Purple
+
+  # Damage spell with range
+  lightning_scroll:
+    spell_type: "damage"
+    damage: 40
+    maximum_range: 5
+    char: "~"
+    color: [255, 255, 0]  # Yellow
+
+  # Area damage spell
+  fireball_scroll:
+    spell_type: "damage"
+    damage: 25
+    radius: 3
+    char: "~"
+    color: [255, 0, 0]  # Red
+
+  # Confusion utility spell
+  confusion_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [207, 63, 255]  # Pink
+
+  # Equipment enhancement scrolls
+  enhance_weapon_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 127, 0]  # Orange
+
+  enhance_armor_scroll:
+    spell_type: "utility" 
+    char: "~"
+    color: [0, 255, 127]  # Cyan

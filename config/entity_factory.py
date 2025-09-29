@@ -1,0 +1,429 @@
+"""Entity factory for creating game entities from configuration.
+
+This module provides factory methods for creating entities based on
+definitions loaded from the EntityRegistry. It bridges the gap between
+configuration data and actual game entities.
+"""
+
+import logging
+from typing import Optional
+
+from entity import Entity
+from components.fighter import Fighter
+from components.ai import BasicMonster
+from components.item import Item
+from components.equippable import Equippable
+from equipment_slots import EquipmentSlots
+from render_functions import RenderOrder
+from config.entity_registry import (
+    get_entity_registry,
+    MonsterDefinition,
+    WeaponDefinition,
+    ArmorDefinition,
+    SpellDefinition,
+    EntityStats
+)
+
+logger = logging.getLogger(__name__)
+
+
+class EntityFactory:
+    """Factory for creating entities from configuration definitions.
+    
+    This factory provides clean methods for creating all types of entities
+    based on their configuration definitions. It handles the conversion
+    from configuration data to actual game entity instances.
+    
+    The factory supports:
+    - Monster creation with AI and fighter components
+    - Weapon creation with equippable components
+    - Armor creation with equippable components
+    - Spell/item creation with appropriate functions
+    - Player stat retrieval for character creation
+    - Fallback behavior for missing definitions
+    """
+
+    def __init__(self, entity_registry=None):
+        """Initialize the entity factory.
+        
+        Args:
+            entity_registry: EntityRegistry instance. If None, uses global registry.
+        """
+        self.registry = entity_registry or get_entity_registry()
+
+    def create_monster(self, monster_type: str, x: int, y: int) -> Optional[Entity]:
+        """Create a monster entity from configuration.
+        
+        Args:
+            monster_type: The type of monster to create (e.g., "orc", "troll")
+            x: X coordinate for the monster
+            y: Y coordinate for the monster
+            
+        Returns:
+            Entity instance if monster type exists, None otherwise
+        """
+        monster_def = self.registry.get_monster(monster_type)
+        if not monster_def:
+            logger.warning(f"Unknown monster type: {monster_type}")
+            return self._create_fallback_monster(monster_type, x, y)
+
+        try:
+            # Create fighter component from stats
+            fighter_component = Fighter(
+                hp=monster_def.stats.hp,
+                defense=monster_def.stats.defense,
+                power=monster_def.stats.power,
+                xp=monster_def.stats.xp
+            )
+
+            # Create AI component based on ai_type
+            ai_component = self._create_ai_component(monster_def.ai_type)
+
+            # Create entity
+            monster = Entity(
+                x=x,
+                y=y,
+                char=monster_def.char,
+                color=monster_def.color,
+                name=monster_def.name,
+                blocks=monster_def.blocks,
+                render_order=self._get_render_order(monster_def.render_order),
+                fighter=fighter_component,
+                ai=ai_component
+            )
+
+            logger.debug(f"Created monster: {monster_def.name} at ({x}, {y})")
+            return monster
+
+        except Exception as e:
+            logger.error(f"Error creating monster {monster_type}: {e}")
+            return self._create_fallback_monster(monster_type, x, y)
+
+    def create_weapon(self, weapon_type: str, x: int, y: int) -> Optional[Entity]:
+        """Create a weapon entity from configuration.
+        
+        Args:
+            weapon_type: The type of weapon to create (e.g., "sword", "dagger")
+            x: X coordinate for the weapon
+            y: Y coordinate for the weapon
+            
+        Returns:
+            Entity instance if weapon type exists, None otherwise
+        """
+        weapon_def = self.registry.get_weapon(weapon_type)
+        if not weapon_def:
+            logger.warning(f"Unknown weapon type: {weapon_type}")
+            return self._create_fallback_weapon(weapon_type, x, y)
+
+        try:
+            # Create equippable component
+            equippable_component = Equippable(
+                slot=self._get_equipment_slot(weapon_def.slot),
+                power_bonus=weapon_def.power_bonus,
+                damage_min=weapon_def.damage_min,
+                damage_max=weapon_def.damage_max
+            )
+
+            # Create entity
+            weapon = Entity(
+                x=x,
+                y=y,
+                char=weapon_def.char,
+                color=weapon_def.color,
+                name=weapon_def.name,
+                equippable=equippable_component
+            )
+
+            logger.debug(f"Created weapon: {weapon_def.name} at ({x}, {y})")
+            return weapon
+
+        except Exception as e:
+            logger.error(f"Error creating weapon {weapon_type}: {e}")
+            return self._create_fallback_weapon(weapon_type, x, y)
+
+    def create_armor(self, armor_type: str, x: int, y: int) -> Optional[Entity]:
+        """Create an armor entity from configuration.
+        
+        Args:
+            armor_type: The type of armor to create (e.g., "shield")
+            x: X coordinate for the armor
+            y: Y coordinate for the armor
+            
+        Returns:
+            Entity instance if armor type exists, None otherwise
+        """
+        armor_def = self.registry.get_armor(armor_type)
+        if not armor_def:
+            logger.warning(f"Unknown armor type: {armor_type}")
+            return self._create_fallback_armor(armor_type, x, y)
+
+        try:
+            # Create equippable component
+            equippable_component = Equippable(
+                slot=self._get_equipment_slot(armor_def.slot),
+                defense_bonus=armor_def.defense_bonus,
+                defense_min=armor_def.defense_min,
+                defense_max=armor_def.defense_max
+            )
+
+            # Create entity
+            armor = Entity(
+                x=x,
+                y=y,
+                char=armor_def.char,
+                color=armor_def.color,
+                name=armor_def.name,
+                equippable=equippable_component
+            )
+
+            logger.debug(f"Created armor: {armor_def.name} at ({x}, {y})")
+            return armor
+
+        except Exception as e:
+            logger.error(f"Error creating armor {armor_type}: {e}")
+            return self._create_fallback_armor(armor_type, x, y)
+
+    def create_spell_item(self, spell_type: str, x: int, y: int) -> Optional[Entity]:
+        """Create a spell/consumable item entity from configuration.
+        
+        Args:
+            spell_type: The type of spell to create (e.g., "healing_potion")
+            x: X coordinate for the spell item
+            y: Y coordinate for the spell item
+            
+        Returns:
+            Entity instance if spell type exists, None otherwise
+        """
+        spell_def = self.registry.get_spell(spell_type)
+        if not spell_def:
+            logger.warning(f"Unknown spell type: {spell_type}")
+            return self._create_fallback_spell(spell_type, x, y)
+
+        try:
+            # Create item component with appropriate function
+            item_component = self._create_item_component(spell_def)
+
+            # Create entity
+            spell_item = Entity(
+                x=x,
+                y=y,
+                char=spell_def.char,
+                color=spell_def.color,
+                name=spell_def.name,
+                item=item_component
+            )
+
+            logger.debug(f"Created spell item: {spell_def.name} at ({x}, {y})")
+            return spell_item
+
+        except Exception as e:
+            logger.error(f"Error creating spell {spell_type}: {e}")
+            return self._create_fallback_spell(spell_type, x, y)
+
+    def get_player_stats(self) -> Optional[EntityStats]:
+        """Get player starting stats from configuration.
+        
+        Returns:
+            EntityStats for player if configured, None otherwise
+        """
+        stats = self.registry.get_player_stats()
+        if not stats:
+            logger.warning("No player stats configured, using fallback values")
+            return EntityStats(hp=100, power=2, defense=1, xp=0)
+        
+        return stats
+
+    def _create_ai_component(self, ai_type: str):
+        """Create an AI component based on type.
+        
+        Args:
+            ai_type: The type of AI to create
+            
+        Returns:
+            AI component instance
+        """
+        # For now, we only support basic AI
+        # This can be extended to support different AI types
+        if ai_type == "basic":
+            return BasicMonster()
+        else:
+            logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
+            return BasicMonster()
+
+    def _get_render_order(self, render_order_str: str):
+        """Convert render order string to RenderOrder enum.
+        
+        Args:
+            render_order_str: String representation of render order
+            
+        Returns:
+            RenderOrder enum value
+        """
+        try:
+            return getattr(RenderOrder, render_order_str.upper())
+        except AttributeError:
+            logger.warning(f"Unknown render order: {render_order_str}, using ACTOR")
+            return RenderOrder.ACTOR
+
+    def _get_equipment_slot(self, slot_str: str):
+        """Convert equipment slot string to EquipmentSlots enum.
+        
+        Args:
+            slot_str: String representation of equipment slot
+            
+        Returns:
+            EquipmentSlots enum value
+        """
+        if slot_str == "main_hand":
+            return EquipmentSlots.MAIN_HAND
+        elif slot_str == "off_hand":
+            return EquipmentSlots.OFF_HAND
+        else:
+            logger.warning(f"Unknown equipment slot: {slot_str}, using MAIN_HAND")
+            return EquipmentSlots.MAIN_HAND
+
+    def _create_item_component(self, spell_def: SpellDefinition):
+        """Create an item component with appropriate use function.
+        
+        Args:
+            spell_def: Spell definition
+            
+        Returns:
+            Item component with appropriate use function
+        """
+        # Import item functions dynamically to avoid circular imports
+        from item_functions import (
+            heal, cast_lightning, cast_fireball, cast_confuse,
+            enhance_weapon, enhance_armor
+        )
+
+        # Map spell types to functions and parameters
+        if spell_def.name.lower().replace(' ', '_') == "healing_potion":
+            return Item(use_function=heal, heal_amount=spell_def.heal_amount)
+        elif spell_def.name.lower().replace(' ', '_') == "lightning_scroll":
+            return Item(
+                use_function=cast_lightning,
+                damage=spell_def.damage,
+                maximum_range=spell_def.maximum_range
+            )
+        elif spell_def.name.lower().replace(' ', '_') == "fireball_scroll":
+            return Item(
+                use_function=cast_fireball,
+                damage=spell_def.damage,
+                radius=spell_def.radius
+            )
+        elif spell_def.name.lower().replace(' ', '_') == "confusion_scroll":
+            return Item(use_function=cast_confuse)
+        elif spell_def.name.lower().replace(' ', '_') == "enhance_weapon_scroll":
+            return Item(use_function=enhance_weapon)
+        elif spell_def.name.lower().replace(' ', '_') == "enhance_armor_scroll":
+            return Item(use_function=enhance_armor)
+        else:
+            logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
+            return Item()
+
+    def _create_fallback_monster(self, monster_type: str, x: int, y: int) -> Entity:
+        """Create a fallback monster when definition is missing.
+        
+        Args:
+            monster_type: The requested monster type
+            x: X coordinate
+            y: Y coordinate
+            
+        Returns:
+            Basic monster entity with default stats
+        """
+        fighter_component = Fighter(hp=10, defense=0, power=2, xp=10)
+        ai_component = BasicMonster()
+        
+        return Entity(
+            x=x, y=y, char='?', color=(255, 0, 255), name=f"Unknown {monster_type}",
+            blocks=True, render_order=RenderOrder.ACTOR,
+            fighter=fighter_component, ai=ai_component
+        )
+
+    def _create_fallback_weapon(self, weapon_type: str, x: int, y: int) -> Entity:
+        """Create a fallback weapon when definition is missing.
+        
+        Args:
+            weapon_type: The requested weapon type
+            x: X coordinate
+            y: Y coordinate
+            
+        Returns:
+            Basic weapon entity with default stats
+        """
+        equippable_component = Equippable(
+            slot=EquipmentSlots.MAIN_HAND,
+            power_bonus=1
+        )
+        
+        return Entity(
+            x=x, y=y, char='?', color=(255, 0, 255), name=f"Unknown {weapon_type}",
+            equippable=equippable_component
+        )
+
+    def _create_fallback_armor(self, armor_type: str, x: int, y: int) -> Entity:
+        """Create a fallback armor when definition is missing.
+        
+        Args:
+            armor_type: The requested armor type
+            x: X coordinate
+            y: Y coordinate
+            
+        Returns:
+            Basic armor entity with default stats
+        """
+        equippable_component = Equippable(
+            slot=EquipmentSlots.OFF_HAND,
+            defense_bonus=1
+        )
+        
+        return Entity(
+            x=x, y=y, char='?', color=(255, 0, 255), name=f"Unknown {armor_type}",
+            equippable=equippable_component
+        )
+
+    def _create_fallback_spell(self, spell_type: str, x: int, y: int) -> Entity:
+        """Create a fallback spell when definition is missing.
+        
+        Args:
+            spell_type: The requested spell type
+            x: X coordinate
+            y: Y coordinate
+            
+        Returns:
+            Basic spell entity
+        """
+        item_component = Item()
+        
+        return Entity(
+            x=x, y=y, char='?', color=(255, 0, 255), name=f"Unknown {spell_type}",
+            item=item_component
+        )
+
+
+# Global factory instance
+_entity_factory = None
+
+
+def get_entity_factory() -> EntityFactory:
+    """Get the global entity factory instance.
+    
+    Returns:
+        The global EntityFactory instance
+    """
+    global _entity_factory
+    if _entity_factory is None:
+        _entity_factory = EntityFactory()
+    return _entity_factory
+
+
+def set_entity_factory(factory: EntityFactory) -> None:
+    """Set the global entity factory instance.
+    
+    Args:
+        factory: EntityFactory instance to use globally
+    """
+    global _entity_factory
+    _entity_factory = factory
