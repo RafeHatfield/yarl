@@ -462,11 +462,17 @@ def load_entity_config(config_path: str = None) -> None:
     """Load entity configuration from file.
     
     Args:
-        config_path: Path to configuration file. If None, uses default path.
+        config_path: Path to configuration file. If None, uses path from GameConstants.
     """
     if config_path is None:
-        # Default path relative to this module
-        config_dir = Path(__file__).parent
-        config_path = config_dir / "entities.yaml"
+        # Get path from GameConstants
+        from config.game_constants import get_entity_config
+        entity_config = get_entity_config()
+        config_path = entity_config.ENTITIES_CONFIG_PATH
+        
+        # Make path relative to project root if it's not absolute
+        if not os.path.isabs(config_path):
+            config_dir = Path(__file__).parent.parent  # Go up to project root
+            config_path = config_dir / config_path
     
     _entity_registry.load_from_file(str(config_path))

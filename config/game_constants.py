@@ -97,6 +97,27 @@ class RenderingConfig:
 
 
 @dataclass
+class EntityConfig:
+    """Configuration for entity system and data loading."""
+    
+    # Entity configuration file paths
+    ENTITIES_CONFIG_PATH: str = "config/entities.yaml"
+    FALLBACK_ENTITIES_CONFIG_PATH: str = "config/entities_fallback.yaml"
+    
+    # Entity validation settings
+    VALIDATE_ENTITY_STATS: bool = True
+    ALLOW_MISSING_ENTITIES: bool = True  # Use fallback entities when definitions missing
+    
+    # Entity inheritance settings
+    MAX_INHERITANCE_DEPTH: int = 5  # Prevent infinite inheritance loops
+    ENABLE_ENTITY_INHERITANCE: bool = True
+    
+    # Logging settings for entity system
+    LOG_ENTITY_CREATION: bool = False  # Enable for debugging entity creation
+    LOG_MISSING_ENTITIES: bool = True  # Log when entities are missing from config
+
+
+@dataclass
 class GameplayConfig:
     """Configuration for core gameplay mechanics."""
     
@@ -124,6 +145,7 @@ class GameConstants:
     inventory: InventoryConfig = None
     rendering: RenderingConfig = None
     gameplay: GameplayConfig = None
+    entities: EntityConfig = None
     
     def __post_init__(self):
         """Initialize default values after dataclass creation."""
@@ -139,6 +161,8 @@ class GameConstants:
             self.rendering = RenderingConfig()
         if self.gameplay is None:
             self.gameplay = GameplayConfig()
+        if self.entities is None:
+            self.entities = EntityConfig()
     
     @classmethod
     def load_from_file(cls, config_path: str = None) -> 'GameConstants':
@@ -243,6 +267,14 @@ class GameConstants:
                 for key, value in gameplay_data.items():
                     if hasattr(instance.gameplay, key):
                         setattr(instance.gameplay, key, value)
+        
+        # Update entities config
+        if 'entities' in config_data:
+            entities_data = config_data['entities']
+            if isinstance(entities_data, dict):
+                for key, value in entities_data.items():
+                    if hasattr(instance.entities, key):
+                        setattr(instance.entities, key, value)
         
         logger.info(f"Loaded configuration with {len(config_data)} sections")
         return instance
@@ -426,3 +458,13 @@ def get_gameplay_config() -> GameplayConfig:
             including map generation and entity spawning parameters.
     """
     return GAME_CONSTANTS.gameplay
+
+
+def get_entity_config() -> EntityConfig:
+    """Get entity configuration.
+    
+    Returns:
+        EntityConfig: Configuration object containing entity system settings
+            including file paths, validation options, and inheritance settings.
+    """
+    return GAME_CONSTANTS.entities

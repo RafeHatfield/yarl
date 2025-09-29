@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1103%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1200%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 [![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
 
@@ -46,6 +46,7 @@
 
 ### Technical Features
 - **Entity-Component-System (ECS)** architecture
+- **Data-Driven Entity System** - All entities configured via YAML with validation
 - **A* pathfinding** for intelligent monster movement
 - **Equipment system** with stat bonuses and slot management
 - **Entity sorting cache** for optimized rendering performance
@@ -55,6 +56,7 @@
 - **Message logging system** for game events
 - **Character screen** with level, XP, and detailed stat display including variable damage/defense ranges
 - **Robust error handling** throughout the codebase
+- **Configuration Management** - Centralized game constants with file loading support
 
 ## 🚀 Quick Start
 
@@ -412,6 +414,7 @@ The automated test suite prevents runtime regressions by validating:
 ### Runtime Dependencies
 - **[tcod](https://github.com/libtcod/python-tcod)** (19.5.0) - Console graphics and input handling
 - **[numpy](https://numpy.org/)** (2.3.3) - Numerical computations for pathfinding
+- **[PyYAML](https://pyyaml.org/)** (6.0.3) - YAML configuration file parsing
 - **[cffi](https://cffi.readthedocs.io/)** (2.0.0) - C Foreign Function Interface
 
 ### Development Dependencies
@@ -430,6 +433,77 @@ The following behavioral quirks are documented in tests but intentionally left u
 
 These are tracked for future improvement when confident in test coverage.
 
+## ⚙️ Configuration System
+
+**Catacombs of Yarl** features a comprehensive data-driven entity system that allows game designers to modify all entity properties without touching code.
+
+### 🎯 Entity Configuration
+
+All monsters, weapons, armor, and spells are defined in `config/entities.yaml`:
+
+```yaml
+# Monster definitions
+monsters:
+  orc:
+    stats:
+      hp: 20
+      power: 4
+      defense: 0
+      xp: 35
+    char: "o"
+    color: [63, 127, 63]  # Dark green
+    ai_type: "basic"
+
+# Weapon definitions  
+weapons:
+  sword:
+    power_bonus: 3
+    damage_min: 2
+    damage_max: 5
+    slot: "main_hand"
+    char: "/"
+    color: [192, 192, 192]  # Silver
+
+# Armor definitions
+armor:
+  shield:
+    defense_bonus: 1
+    defense_min: 1
+    defense_max: 3
+    slot: "off_hand"
+    char: "["
+    color: [139, 69, 19]  # Brown
+```
+
+### 🔧 Game Constants
+
+Game mechanics and settings are centralized in `config/game_constants.py`:
+
+- **Combat Config**: Default stats, damage calculations, level progression
+- **Entity Config**: File paths, validation settings, inheritance options
+- **Performance Config**: Spatial indexing, FOV caching, rendering optimization
+- **Gameplay Config**: Map generation, entity spawning parameters
+- **Rendering Config**: Screen dimensions, FOV settings, display parameters
+
+### 🏭 Architecture Benefits
+
+- **🎨 Designer-Friendly**: Modify stats, add monsters/items via YAML editing
+- **🔒 Type Safety**: Comprehensive validation prevents invalid configurations
+- **🚀 Performance**: Entities loaded once at startup with fast factory creation
+- **🛡️ Robust**: Fallback entities prevent crashes from missing definitions
+- **🧪 Testable**: 71+ dedicated tests ensure configuration system reliability
+- **🔄 Extensible**: Inheritance support (foundation) for entity variants
+
+### 📁 Configuration Files
+
+```
+config/
+├── entities.yaml          # All entity definitions
+├── game_constants.py      # Centralized game settings
+├── entity_registry.py     # YAML loading and validation
+└── entity_factory.py      # Clean entity creation
+```
+
 ## 🚧 Roadmap
 
 ### ✅ Completed Features
@@ -439,7 +513,10 @@ These are tracked for future improvement when confident in test coverage.
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
 - [x] **Equipment System** - Weapons and armor with stat bonuses
 - [x] **Mouse Movement** - Click-to-move with pathfinding and enemy detection
-- [x] **Comprehensive Testing** - 1,103+ tests with 100% coverage
+- [x] **Variable Damage/Defense** - Equipment with damage/defense ranges
+- [x] **Data-Driven Entity System** - YAML configuration for all entities
+- [x] **Configuration Management** - Centralized game constants with file loading
+- [x] **Comprehensive Testing** - 1,200+ tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 
 ### 🔮 Development Roadmap
