@@ -116,7 +116,7 @@ def set_testing_mode(enabled: bool) -> None:
     if enabled:
         # Set up file handler for combat logs in testing mode
         if not combat_logger.handlers:
-            handler = logging.FileHandler('combat_debug.log', mode='w')
+            handler = logging.FileHandler('combat_debug.log', mode='a')
             formatter = logging.Formatter('%(asctime)s - COMBAT: %(message)s', 
                                         datefmt='%H:%M:%S')
             handler.setFormatter(formatter)
