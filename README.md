@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1200%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1257%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 [![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
 
@@ -29,20 +29,22 @@
 - **🎯 Progressive item availability** - Better items unlock as you go deeper
 
 ### Equipment System
-- **⚔️ Weapons** - Swords and daggers that increase attack power
-- **🛡️ Armor** - Shields that provide defense bonuses
-- **📊 Stat Bonuses** - Equipment modifies power, defense, and max HP
+- **⚔️ Variable Damage Weapons** - Swords (2-5 dmg) and daggers (1-3 dmg) with exciting damage ranges
+- **🛡️ Variable Defense Armor** - Shields (1-3 def) that provide dynamic protection
+- **🎲 Dual-Stat System** - Weapons combine base power + variable damage for unpredictable combat
+- **📊 Enhancement Scrolls** - Improve weapon damage and armor defense ranges
 - **🔄 Equipment Slots** - Main hand and off hand equipment management
-- **🎒 Inventory Integration** - Seamless equip/unequip from inventory
+- **🎒 Inventory Integration** - Seamless equip/unequip with detailed damage/defense displays
 - **📈 Progressive Equipment** - Better gear unlocks on deeper levels
 
 ### AI & Monsters
+- **🎲 Variable Monster Damage** - Orcs (3 power + 1-3 natural) and Trolls (6 power + 2-6 natural) for dynamic combat
 - **BasicMonster AI** - Tracks and attacks the player using A* pathfinding
 - **ConfusedMonster AI** - Random movement with automatic recovery
 - **Dynamic AI switching** - Spells can temporarily alter monster behavior
 - **Progressive monster scaling** - More and stronger monsters on deeper levels
-- **🧌 Orcs** - Basic enemies available from level 1
-- **👹 Trolls** - Stronger enemies that become more common on deeper levels (15% → 30% → 60%)
+- **🧌 Orcs** - Basic enemies with balanced variable damage (total range: 4-6)
+- **👹 Trolls** - Stronger enemies with high variable damage (total range: 8-12)
 
 ### Technical Features
 - **Entity-Component-System (ECS)** architecture
@@ -513,21 +515,22 @@ config/
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
 - [x] **Equipment System** - Weapons and armor with stat bonuses
 - [x] **Mouse Movement** - Click-to-move with pathfinding and enemy detection
-- [x] **Variable Damage/Defense** - Equipment with damage/defense ranges
+- [x] **Variable Damage/Defense** - Equipment and monsters with damage/defense ranges
+- [x] **Variable Monster Damage** - Dynamic monster combat with natural damage ranges
 - [x] **Data-Driven Entity System** - YAML configuration for all entities
 - [x] **Configuration Management** - Centralized game constants with file loading
-- [x] **Comprehensive Testing** - 1,200+ tests with 100% coverage
+- [x] **Clean Console Output** - TCOD deprecation warnings suppressed
+- [x] **Comprehensive Testing** - 1,257+ tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 
 ### 🔮 Development Roadmap
 
 #### 🟢 **Phase 1: Core Gameplay Enhancements** (Easy - 1-2 weeks each)
+- [ ] **Monster Equipment & Loot** - Monsters can wield weapons/armor and drop them
+- [ ] **General Loot Drops** - All monsters drop items when defeated  
+- [ ] **Player Naming** - Allow players to enter custom names for personalization
 - [ ] **More Spells** - Teleport, invisibility, more tactical options
 - [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets
-- [ ] **Variable Damage** - Weapons deal damage ranges (e.g. sword: 2-5 damage)
-- [ ] **Variable Defense** - Armor provides defense ranges for more variety
-- [ ] **More Stats on Equipment** - Additional bonuses and properties
-- [ ] **More Monster Types** - Varied AI behaviors and abilities
 - [ ] **Chance to Hit/Dodge** - Enhanced combat mechanics with RNG
 - [ ] **Stat Boosting Potions** - Temporary and permanent stat enhancement items
 - [ ] **JSON Save/Load** - Replace shelve with JSON serialization
