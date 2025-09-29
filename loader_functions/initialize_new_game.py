@@ -88,7 +88,6 @@ def get_game_variables(constants):
         level_up_factor=combat_config.DEFAULT_LEVEL_UP_FACTOR
     )
     equipment_component = Equipment()
-    equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
 
     # Create pathfinding component for mouse movement
     from components.player_pathfinding import PlayerPathfinding
