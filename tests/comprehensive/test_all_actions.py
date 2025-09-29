@@ -565,6 +565,9 @@ class TestActionImplementations(unittest.TestCase):
         # Switch to inventory state
         self.state_manager.update_state(current_state=GameStates.SHOW_INVENTORY)
         
+        # Damage player so healing potion will have an effect
+        self.player.fighter.hp = 10  # Reduce from 20 to 10
+        
         action = {"inventory_index": 0}  # Use healing potion
         
         original_hp = self.player.fighter.hp
