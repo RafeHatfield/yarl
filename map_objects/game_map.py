@@ -11,6 +11,7 @@ from components.ai import BasicMonster
 from components.equippable import Equippable
 from components.fighter import Fighter
 from components.item import Item
+from config.entity_factory import get_entity_factory
 from entity import Entity
 from entity_sorting_cache import invalidate_entity_cache
 from equipment_slots import EquipmentSlots
@@ -258,40 +259,15 @@ class GameMap:
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
                 monster_choice = random_choice_from_dict(monster_chances)
-                # base stats for monsters
-                if monster_choice == "orc":
-                    fighter_component = Fighter(hp=20, defense=0, power=4, xp=35)
-                    ai_component = BasicMonster()
-                    monster = Entity(
-                        x,
-                        y,
-                        "o",
-                        (63, 127, 63),
-                        "Orc",
-                        blocks=True,
-                        render_order=RenderOrder.ACTOR,
-                        fighter=fighter_component,
-                        ai=ai_component,
-                    )
-
-                else:
-                    fighter_component = Fighter(hp=30, defense=2, power=8, xp=100)
-                    ai_component = BasicMonster()
-                    monster = Entity(
-                        x,
-                        y,
-                        "T",
-                        (0, 127, 0),
-                        "Troll",
-                        blocks=True,
-                        fighter=fighter_component,
-                        render_order=RenderOrder.ACTOR,
-                        ai=ai_component,
-                    )
-
-                entities.append(monster)
-                # Invalidate entity sorting cache when new entities are added
-                invalidate_entity_cache("entity_added_monster")
+                
+                # Create monster using EntityFactory
+                entity_factory = get_entity_factory()
+                monster = entity_factory.create_monster(monster_choice, x, y)
+                
+                if monster:
+                    entities.append(monster)
+                    # Invalidate entity sorting cache when new entities are added
+                    invalidate_entity_cache("entity_added_monster")
 
         for i in range(number_of_items):
             x = randint(room.x1 + 1, room.x2 - 1)

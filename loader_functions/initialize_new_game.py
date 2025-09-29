@@ -13,6 +13,7 @@ from components.inventory import Inventory
 from components.item import Item
 from components.level import Level
 from config.game_constants import get_constants as get_new_constants, get_combat_config, get_inventory_config
+from config.entity_registry import load_entity_config
 from entity import Entity
 from equipment_slots import EquipmentSlots
 from game_messages import MessageLog
@@ -63,6 +64,9 @@ def get_game_variables(constants):
     Returns:
         tuple: (player, entities, game_map, message_log, game_state) for new game
     """
+    # Load entity configuration from YAML files
+    load_entity_config()
+    
     # Get configuration objects for cleaner code
     combat_config = get_combat_config()
     inventory_config = get_inventory_config()
