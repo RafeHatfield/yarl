@@ -519,6 +519,16 @@ class ActionProcessor:
                 # Switch to enemy turn to begin pathfinding movement
                 self.state_manager.set_game_state(GameStates.ENEMY_TURN)
             
+            # Handle pathfinding to enemy
+            if result.get("pathfind_to_enemy"):
+                target_x, target_y = result["pathfind_to_enemy"]
+                if player.pathfinding.set_destination(target_x, target_y, game_map, entities):
+                    # Successfully set path to enemy
+                    self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+                else:
+                    # Could not find path to enemy
+                    message_log.add_message(Message("Cannot reach that enemy.", (255, 255, 0)))
+            
             # Handle immediate enemy turn (for attacks)
             if result.get("enemy_turn"):
                 self.state_manager.set_game_state(GameStates.ENEMY_TURN)

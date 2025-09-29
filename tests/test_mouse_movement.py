@@ -338,7 +338,7 @@ class TestMouseMovementHandling(unittest.TestCase):
     
     @patch('mouse_movement.get_blocking_entities_at_location')
     def test_click_on_distant_enemy(self, mock_get_blocking):
-        """Test clicking on distant enemy (too far to attack)."""
+        """Test clicking on distant enemy (should pathfind toward enemy)."""
         mock_get_blocking.return_value = self.enemy
         
         # Mock distance calculation (enemy is far away)
@@ -348,9 +348,12 @@ class TestMouseMovementHandling(unittest.TestCase):
         
         results = result["results"]
         messages = [r for r in results if "message" in r]
+        pathfind_signals = [r for r in results if "pathfind_to_enemy" in r]
         
         self.assertEqual(len(messages), 1)
-        self.assertIn("too far away", messages[0]["message"].text.lower())
+        self.assertIn("moving toward", messages[0]["message"].text.lower())
+        self.assertEqual(len(pathfind_signals), 1)
+        self.assertEqual(pathfind_signals[0]["pathfind_to_enemy"], (10, 10))
     
     def test_click_without_pathfinding_component(self):
         """Test clicking when player lacks pathfinding component."""
@@ -364,6 +367,29 @@ class TestMouseMovementHandling(unittest.TestCase):
         
         self.assertEqual(len(messages), 1)
         self.assertIn("pathfinding not available", messages[0]["message"].text.lower())
+    
+    @patch('mouse_movement.get_blocking_entities_at_location')
+    def test_pathfind_to_enemy_integration(self, mock_get_blocking):
+        """Test that clicking distant enemy creates pathfind_to_enemy signal."""
+        # Position enemy far from player
+        self.enemy.x = 15
+        self.enemy.y = 15
+        mock_get_blocking.return_value = self.enemy
+        
+        # Mock distance calculation (enemy is far away)
+        self.player.distance_to = Mock(return_value=10.0)
+        
+        result = handle_mouse_click(15, 15, self.player, self.entities, self.game_map)
+        
+        results = result["results"]
+        pathfind_signals = [r for r in results if "pathfind_to_enemy" in r]
+        messages = [r for r in results if "message" in r]
+        
+        # Should have pathfind signal and appropriate message
+        self.assertEqual(len(pathfind_signals), 1)
+        self.assertEqual(pathfind_signals[0]["pathfind_to_enemy"], (15, 15))
+        self.assertEqual(len(messages), 1)
+        self.assertIn("moving toward", messages[0]["message"].text.lower())
 
 
 class TestPathfindingMovementProcessing(unittest.TestCase):
@@ -407,13 +433,16 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.assertEqual(result["results"], [])
     
     @patch('mouse_movement._check_for_enemies_in_fov')
-    def test_enemy_spotted_interruption(self, mock_check_enemies):
-        """Test movement interruption when enemy is spotted."""
+    @patch('mouse_movement.get_blocking_entities_at_location')
+    def test_enemy_spotted_interruption(self, mock_get_blocking, mock_check_enemies):
+        """Test movement interruption when enemy is spotted AFTER moving."""
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5), (7, 5)]
         self.player.pathfinding.is_moving = True
+        self.player.pathfinding.path_index = 0
         
-        # Mock enemy detection
+        # Mock no blocking entities but enemy detection after move
+        mock_get_blocking.return_value = None
         mock_check_enemies.return_value = True
         
         result = process_pathfinding_movement(
@@ -422,9 +451,17 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         
         results = result["results"]
         messages = [r for r in results if "message" in r]
+        fov_signals = [r for r in results if "fov_recompute" in r]
         
+        # Should have moved first, then detected enemy
         self.assertEqual(len(messages), 1)
         self.assertIn("enemy spotted", messages[0]["message"].text.lower())
+        self.assertEqual(len(fov_signals), 1)  # FOV recompute should happen
+        
+        # Verify player moved before detection
+        self.player.move.assert_called_once_with(1, 0)  # (6,5) - (5,5) = (1,0)
+        
+        # Movement should be interrupted
         self.assertFalse(self.player.pathfinding.is_moving)
         self.assertTrue(self.player.pathfinding.movement_interrupted)
     

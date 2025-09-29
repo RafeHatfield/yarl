@@ -85,9 +85,14 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
                 "message": Message("You cannot attack.", (255, 255, 0))
             })
     else:
-        # Too far to attack
+        # Too far to attack - pathfind toward the enemy instead
         results.append({
-            "message": Message(f"The {target.name} is too far away to attack.", (255, 255, 0))
+            "message": Message(f"Moving toward the {target.name}...", (255, 255, 0))
+        })
+        # Set pathfinding destination to the enemy's location
+        # This will be handled by the movement system
+        results.append({
+            "pathfind_to_enemy": (target.x, target.y)
         })
     
     return {"results": results}
@@ -183,14 +188,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     if not pathfinding.is_path_active():
         return {"results": results}
     
-    # Check for enemies in FOV before moving
-    if _check_for_enemies_in_fov(player, entities, fov_map):
-        pathfinding.interrupt_movement("Enemy spotted")
-        results.append({
-            "message": Message("Movement stopped - enemy spotted!", (255, 255, 0))
-        })
-        return {"results": results}
-    
     # Get next move
     next_pos = pathfinding.get_next_move()
     if next_pos is None:
@@ -219,13 +216,22 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         })
         return {"results": results}
     
-    # Move player
+    # Move player first
     player.move(next_x - player.x, next_y - player.y)
     
-    # Request FOV recompute for next check
+    # Request FOV recompute for enemy detection
     results.append({
         "fov_recompute": True
     })
+    
+    # Check for enemies in FOV AFTER moving
+    if _check_for_enemies_in_fov(player, entities, fov_map):
+        pathfinding.interrupt_movement("Enemy spotted")
+        results.append({
+            "message": Message("Movement stopped - enemy spotted!", (255, 255, 0))
+        })
+        # Still end turn even though movement was interrupted
+        return {"results": results}
     
     # Continue movement if path is still active
     if pathfinding.is_path_active():
