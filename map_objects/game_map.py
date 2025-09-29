@@ -277,6 +277,10 @@ class GameMap:
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
                 item_choice = random_choice_from_dict(item_chances)
+                
+                # Get entity factory for equipment creation
+                entity_factory = get_entity_factory()
+                
                 # base stats for items
                 if item_choice == "healing_potion":
                     item_component = Item(use_function=heal, amount=40)
@@ -290,31 +294,9 @@ class GameMap:
                         item=item_component,
                     )
                 elif item_choice == "sword":
-                    equippable_component = Equippable(
-                        EquipmentSlots.MAIN_HAND, power_bonus=3,
-                        damage_min=2, damage_max=5
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "/",
-                        (0, 191, 255),
-                        "Sword",
-                        equippable=equippable_component,
-                    )
+                    item = entity_factory.create_weapon("sword", x, y)
                 elif item_choice == "shield":
-                    equippable_component = Equippable(
-                        EquipmentSlots.OFF_HAND, defense_bonus=1,
-                        defense_min=1, defense_max=3
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "[",
-                        (127, 63, 0),
-                        "Shield",
-                        equippable=equippable_component,
-                    )
+                    item = entity_factory.create_armor("shield", x, y)
                 elif item_choice == "fireball_scroll":
                     item_component = Item(
                         use_function=cast_fireball,

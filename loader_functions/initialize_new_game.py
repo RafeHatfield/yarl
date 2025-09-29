@@ -108,13 +108,8 @@ def get_game_variables(constants):
     pathfinding_component.owner = player
     entities = [player]
 
-    # Create starting dagger using the new Entity.create_item method
-    dagger_equippable = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2,
-                                  damage_min=1, damage_max=3)
-    dagger = Entity.create_item(
-        x=0, y=0, char="-", color=(0, 191, 255), name="Dagger",
-        item_component=Item(), equippable=dagger_equippable
-    )
+    # Create starting dagger using EntityFactory
+    dagger = entity_factory.create_weapon("dagger", 0, 0)
     player.inventory.add_item(dagger)
     player.equipment.toggle_equip(dagger)
 
