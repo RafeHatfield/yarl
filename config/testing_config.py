@@ -54,6 +54,8 @@ class TestingConfig:
                 "lightning_scroll": [[30, 1], [45, 4]],  # Available from level 1
                 "fireball_scroll": [[30, 1], [45, 6]],  # Available from level 1
                 "confusion_scroll": [[30, 1], [45, 2]],  # Available from level 1
+                "enhance_weapon_scroll": [[20, 1], [35, 3]],  # Enhancement scrolls for testing
+                "enhance_armor_scroll": [[20, 1], [35, 3]],
             }
         else:
             # NORMAL: Balanced gameplay progression
@@ -64,6 +66,8 @@ class TestingConfig:
                 "lightning_scroll": [[25, 4]],
                 "fireball_scroll": [[25, 6]],
                 "confusion_scroll": [[10, 2]],
+                "enhance_weapon_scroll": [[10, 5]],  # Rare enhancement scrolls
+                "enhance_armor_scroll": [[10, 6]],
             }
     
     def get_max_monsters_per_room(self, dungeon_level: int) -> List[List[int]]:

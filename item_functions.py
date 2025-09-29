@@ -234,3 +234,111 @@ def cast_confuse(*args, **kwargs):
         )
 
     return results
+
+
+def enhance_weapon(*args, **kwargs):
+    """Enhance the equipped weapon's damage range.
+    
+    Args:
+        *args: First argument should be the entity using the scroll
+        **kwargs: Should contain 'min_bonus' and 'max_bonus' for damage enhancement
+        
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    entity = args[0]
+    min_bonus = kwargs.get("min_bonus", 1)
+    max_bonus = kwargs.get("max_bonus", 2)
+    
+    results = []
+    
+    # Check if player has equipment and a weapon equipped
+    if (hasattr(entity, 'equipment') and entity.equipment and 
+        entity.equipment.main_hand and entity.equipment.main_hand.equippable):
+        
+        weapon = entity.equipment.main_hand
+        old_min = weapon.equippable.damage_min
+        old_max = weapon.equippable.damage_max
+        
+        # Only enhance weapons that have damage ranges
+        if old_min > 0 and old_max > 0:
+            weapon.equippable.modify_damage_range(min_bonus, max_bonus)
+            
+            results.append({
+                "consumed": True,
+                "message": Message(
+                    f"Your {weapon.name} glows briefly! Damage enhanced from "
+                    f"({old_min}-{old_max}) to ({weapon.equippable.damage_min}-{weapon.equippable.damage_max}).",
+                    (0, 255, 0)
+                )
+            })
+        else:
+            results.append({
+                "consumed": False,
+                "message": Message(
+                    f"The {weapon.name} cannot be enhanced further.", (255, 255, 0)
+                )
+            })
+    else:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "You must have a weapon equipped to use this scroll.", (255, 255, 0)
+            )
+        })
+    
+    return results
+
+
+def enhance_armor(*args, **kwargs):
+    """Enhance the equipped armor's defense range.
+    
+    Args:
+        *args: First argument should be the entity using the scroll
+        **kwargs: Should contain 'min_bonus' and 'max_bonus' for defense enhancement
+        
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    entity = args[0]
+    min_bonus = kwargs.get("min_bonus", 1)
+    max_bonus = kwargs.get("max_bonus", 1)
+    
+    results = []
+    
+    # Check if player has equipment and armor equipped
+    if (hasattr(entity, 'equipment') and entity.equipment and 
+        entity.equipment.off_hand and entity.equipment.off_hand.equippable):
+        
+        armor = entity.equipment.off_hand
+        old_min = armor.equippable.defense_min
+        old_max = armor.equippable.defense_max
+        
+        # Only enhance armor that has defense ranges
+        if old_min > 0 and old_max > 0:
+            armor.equippable.modify_defense_range(min_bonus, max_bonus)
+            
+            results.append({
+                "consumed": True,
+                "message": Message(
+                    f"Your {armor.name} shimmers! Defense enhanced from "
+                    f"({old_min}-{old_max}) to ({armor.equippable.defense_min}-{armor.equippable.defense_max}).",
+                    (0, 255, 0)
+                )
+            })
+        else:
+            results.append({
+                "consumed": False,
+                "message": Message(
+                    f"The {armor.name} cannot be enhanced further.", (255, 255, 0)
+                )
+            })
+    else:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "You must have armor equipped to use this scroll.", (255, 255, 0)
+            )
+        })
+    
+    return results

@@ -114,8 +114,8 @@ class Fighter:
     def attack(self, target):
         """Perform an attack against a target entity.
 
-        Calculates damage based on attacker's power vs target's defense.
-        Generates combat messages and applies damage to the target.
+        Calculates damage based on attacker's power vs target's defense,
+        including variable damage from equipped weapons.
 
         Args:
             target (Entity): The target entity to attack
@@ -125,20 +125,27 @@ class Fighter:
         """
         results = []
 
-        damage = self.power - target.fighter.defense
+        # Calculate base damage from power vs defense
+        base_damage = self.power - target.fighter.defense
+        
+        # Add variable weapon damage if equipped
+        weapon_damage = self._get_weapon_damage()
+        total_damage = base_damage + weapon_damage
 
-        if damage > 0:
+        if total_damage > 0:
+            weapon_text = f" (+{weapon_damage} weapon)" if weapon_damage > 0 else ""
             results.append(
                 {
                     "message": Message(
-                        "{0} attacks {1} for {2} hit points.".format(
-                            self.owner.name.capitalize(), target.name, str(damage)
+                        "{0} attacks {1} for {2} hit points{3}.".format(
+                            self.owner.name.capitalize(), target.name, 
+                            str(total_damage), weapon_text
                         ),
                         (255, 255, 255),
                     )
                 }
             )
-            results.extend(target.fighter.take_damage(damage))
+            results.extend(target.fighter.take_damage(total_damage))
         else:
             results.append(
                 {
@@ -152,3 +159,15 @@ class Fighter:
             )
 
         return results
+    
+    def _get_weapon_damage(self) -> int:
+        """Get variable damage from equipped weapon.
+        
+        Returns:
+            int: Random damage from equipped weapon, or 0 if no weapon
+        """
+        if (hasattr(self.owner, 'equipment') and self.owner.equipment and
+            self.owner.equipment.main_hand and 
+            self.owner.equipment.main_hand.equippable):
+            return self.owner.equipment.main_hand.equippable.roll_damage()
+        return 0

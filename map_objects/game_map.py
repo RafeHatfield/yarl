@@ -15,7 +15,7 @@ from entity import Entity
 from entity_sorting_cache import invalidate_entity_cache
 from equipment_slots import EquipmentSlots
 from game_messages import Message
-from item_functions import cast_confuse, cast_fireball, cast_lightning, heal
+from item_functions import cast_confuse, cast_fireball, cast_lightning, heal, enhance_weapon, enhance_armor
 from map_objects.rectangle import Rect
 from map_objects.tile import Tile
 from random_utils import from_dungeon_level, random_choice_from_dict
@@ -315,7 +315,8 @@ class GameMap:
                     )
                 elif item_choice == "sword":
                     equippable_component = Equippable(
-                        EquipmentSlots.MAIN_HAND, power_bonus=3
+                        EquipmentSlots.MAIN_HAND, power_bonus=3,
+                        damage_min=2, damage_max=5
                     )
                     item = Entity(
                         x,
@@ -327,7 +328,8 @@ class GameMap:
                     )
                 elif item_choice == "shield":
                     equippable_component = Equippable(
-                        EquipmentSlots.OFF_HAND, defense_bonus=1
+                        EquipmentSlots.OFF_HAND, defense_bonus=1,
+                        defense_min=1, defense_max=3
                     )
                     item = Entity(
                         x,
@@ -372,6 +374,32 @@ class GameMap:
                         "#",
                         (255, 63, 159),
                         "Confusion Scroll",
+                        render_order=RenderOrder.ITEM,
+                        item=item_component,
+                    )
+                elif item_choice == "enhance_weapon_scroll":
+                    item_component = Item(
+                        use_function=enhance_weapon, min_bonus=1, max_bonus=2
+                    )
+                    item = Entity(
+                        x,
+                        y,
+                        "#",
+                        (255, 127, 0),
+                        "Weapon Enhancement Scroll",
+                        render_order=RenderOrder.ITEM,
+                        item=item_component,
+                    )
+                elif item_choice == "enhance_armor_scroll":
+                    item_component = Item(
+                        use_function=enhance_armor, min_bonus=1, max_bonus=1
+                    )
+                    item = Entity(
+                        x,
+                        y,
+                        "#",
+                        (127, 127, 255),
+                        "Armor Enhancement Scroll",
                         render_order=RenderOrder.ITEM,
                         item=item_component,
                     )

@@ -329,6 +329,27 @@ class Entity:
         dx = other.x - self.x
         dy = other.y - self.y
         return math.sqrt(dx**2 + dy**2)
+    
+    def get_display_name(self) -> str:
+        """Get the display name with damage/defense ranges if applicable.
+        
+        Returns:
+            str: Display name with damage/defense info in brackets
+        """
+        display_name = self.name
+        
+        if self.equippable:
+            # Add damage range for weapons
+            damage_text = self.equippable.get_damage_range_text()
+            if damage_text:
+                display_name += f" {damage_text}"
+            
+            # Add defense range for armor
+            defense_text = self.equippable.get_defense_range_text()
+            if defense_text:
+                display_name += f" {defense_text}"
+        
+        return display_name
 
 
 def get_blocking_entities_at_location(entities: List[Entity], destination_x: int, destination_y: int) -> Optional[Entity]:
