@@ -162,8 +162,10 @@ class TestCombatDebugLogging:
             # Verify weapon and armor ranges are logged
             assert "(2-4 dmg)" in log_contents  # Weapon damage range
             assert "(1-3 def)" in log_contents  # Armor defense range
-            assert "base + 3 weapon" in log_contents  # Rolled weapon damage
-            assert "static + 2 armor" in log_contents  # Rolled armor defense
+            assert "power + 3 rolled" in log_contents  # Rolled weapon damage
+            assert "defense + 2 rolled" in log_contents  # Rolled armor defense
+            assert "[power:4+2]" in log_contents  # Power breakdown
+            assert "[def:1+1]" in log_contents  # Defense breakdown
 
         finally:
             if os.path.exists(log_file):
@@ -209,7 +211,8 @@ class TestCombatDebugLogging:
 
             # Verify blocked attack is logged with 0 damage
             assert "= 0 total damage" in log_contents
-            assert "static + 4 armor" in log_contents
+            assert "defense + 4 rolled" in log_contents
+            assert "[def:1+2]" in log_contents  # Defense breakdown
 
         finally:
             if os.path.exists(log_file):

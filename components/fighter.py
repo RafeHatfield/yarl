@@ -225,10 +225,10 @@ class Fighter:
         attacker_name = self.owner.name.capitalize()
         target_name = target.name
         
-        debug_text = (f"{attacker_name}{weapon_range} attacks for {total_attack} "
-                     f"({self.power} base + {weapon_damage} weapon), "
-                     f"{target_name}{armor_range} blocks {total_defense} "
-                     f"({target.fighter.defense} static + {armor_defense} armor) "
+        debug_text = (f"{attacker_name} [power:{self.base_power}+{self.power-self.base_power}]{weapon_range} attacks for {total_attack} "
+                     f"({self.power} power + {weapon_damage} rolled), "
+                     f"{target_name} [def:{target.fighter.base_defense}+{target.fighter.defense-target.fighter.base_defense}]{armor_range} blocks {total_defense} "
+                     f"({target.fighter.defense} defense + {armor_defense} rolled) "
                      f"= {final_damage} total damage")
         
         combat_logger.debug(debug_text)
