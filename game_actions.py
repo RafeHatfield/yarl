@@ -47,6 +47,7 @@ class ActionProcessor:
             'pickup': self._handle_pickup,
             'inventory_index': self._handle_inventory_action,
             'take_stairs': self._handle_stairs,
+            'level_up': self._handle_level_up,
         }
         
         # Map mouse actions to their handlers
@@ -400,6 +401,44 @@ class ActionProcessor:
         else:
             message = Message("There are no stairs here.", (255, 255, 0))
             message_log.add_message(message)
+    
+    def _handle_level_up(self, level_up_choice: str) -> None:
+        """Handle level up stat selection.
+        
+        Args:
+            level_up_choice: The stat to increase ('hp', 'str', 'def')
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state != GameStates.LEVEL_UP:
+            return
+        
+        player = self.state_manager.state.player
+        message_log = self.state_manager.state.message_log
+        
+        if not player or not player.fighter or not message_log:
+            return
+        
+        # Apply level up bonuses based on choice
+        if level_up_choice == "hp":
+            player.fighter.base_max_hp += 20
+            player.fighter.hp += 20
+            message = Message("Your health increases!", (0, 255, 0))
+        elif level_up_choice == "str":
+            player.fighter.base_power += 1
+            message = Message("You feel stronger!", (0, 255, 0))
+        elif level_up_choice == "def":
+            player.fighter.base_defense += 1
+            message = Message("Your movements are getting swifter!", (0, 255, 0))
+        else:
+            # Invalid choice, don't apply any bonuses
+            message = Message("Invalid level up choice.", (255, 255, 0))
+            message_log.add_message(message)
+            return
+        
+        message_log.add_message(message)
+        
+        # Return to player turn
+        self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
     def _handle_left_click(self, click_pos: Tuple[int, int]) -> None:
         """Handle left mouse click.

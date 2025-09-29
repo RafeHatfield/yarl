@@ -441,17 +441,23 @@ class TestGameLogicCompleteness(unittest.TestCase):
 
     def test_level_up_actions_implemented(self):
         """Test level up menu actions."""
-        # TODO: Test level up action handling
+        # Level up action handling is implemented in ActionProcessor._handle_level_up
         self.state_manager.update_state(current_state=GameStates.LEVEL_UP)
         
-        action = {"level_up": "hp"}  # Example level up choice
+        # Test HP increase
+        original_hp = self.player.fighter.hp
+        original_max_hp = self.player.fighter.base_max_hp
         
-        try:
-            _process_game_actions(
-                action, {}, self.state_manager, None, GameStates.LEVEL_UP, {}
-            )
-        except Exception as e:
-            self.fail(f"Level up action crashed: {e}")
+        action = {"level_up": "hp"}
+        _process_game_actions(
+            action, {}, self.state_manager, None, GameStates.LEVEL_UP, {}
+        )
+        
+        # Verify HP increase and state transition
+        self.assertGreater(self.player.fighter.hp, original_hp, "HP should increase")
+        self.assertGreater(self.player.fighter.base_max_hp, original_max_hp, "Max HP should increase")
+        self.assertEqual(self.state_manager.state.current_state, GameStates.PLAYERS_TURN,
+                        "Should return to player turn after level up")
 
 
 class TestActionHandlerInputOutput(unittest.TestCase):
@@ -512,8 +518,8 @@ class TestActionHandlerInputOutput(unittest.TestCase):
                                f"Key {chr(ord('a') + i)} should select inventory slot {i}")
 
 
-class TestMissingActionImplementations(unittest.TestCase):
-    """Identify and test missing action implementations."""
+class TestActionImplementations(unittest.TestCase):
+    """Test action implementations and verify they work correctly."""
 
     def setUp(self):
         """Set up test fixtures."""
@@ -542,8 +548,8 @@ class TestMissingActionImplementations(unittest.TestCase):
             current_state=GameStates.PLAYERS_TURN,
         )
 
-    def test_missing_wait_implementation(self):
-        """Test that wait action needs implementation."""
+    def test_wait_implementation(self):
+        """Test that wait action works correctly."""
         action = {"wait": True}
         
         # This should switch to enemy turn but currently doesn't
@@ -551,11 +557,11 @@ class TestMissingActionImplementations(unittest.TestCase):
             action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
         )
         
-        # TODO: Should transition to ENEMY_TURN
-        # self.assertEqual(self.state_manager.state.current_state, GameStates.ENEMY_TURN)
+        # Should transition to ENEMY_TURN (wait action is implemented)
+        self.assertEqual(self.state_manager.state.current_state, GameStates.ENEMY_TURN)
 
-    def test_missing_inventory_usage_implementation(self):
-        """Test that inventory item usage needs implementation."""
+    def test_inventory_usage_implementation(self):
+        """Test that inventory item usage works correctly."""
         # Switch to inventory state
         self.state_manager.update_state(current_state=GameStates.SHOW_INVENTORY)
         
@@ -567,12 +573,12 @@ class TestMissingActionImplementations(unittest.TestCase):
             action, {}, self.state_manager, None, GameStates.SHOW_INVENTORY, {}
         )
         
-        # TODO: Should heal player and remove item
-        # self.assertGreater(self.player.fighter.hp, original_hp, "Should heal player")
-        # self.assertNotIn(self.healing_potion, self.player.inventory.items, "Should remove used item")
+        # Should heal player and remove item (inventory usage is implemented)
+        self.assertGreater(self.player.fighter.hp, original_hp, "Should heal player")
+        self.assertNotIn(self.healing_potion, self.player.inventory.items, "Should remove used item")
 
-    def test_missing_drop_implementation(self):
-        """Test that item dropping needs implementation."""
+    def test_drop_implementation(self):
+        """Test that item dropping works correctly."""
         # Switch to drop inventory state
         self.state_manager.update_state(current_state=GameStates.DROP_INVENTORY)
         
@@ -582,12 +588,12 @@ class TestMissingActionImplementations(unittest.TestCase):
             action, {}, self.state_manager, None, GameStates.DROP_INVENTORY, {}
         )
         
-        # TODO: Should remove item from inventory and place on map
-        # self.assertNotIn(self.healing_potion, self.player.inventory.items, "Should remove from inventory")
-        # self.assertIn(self.healing_potion, self.state_manager.state.entities, "Should place on map")
+        # Should remove item from inventory and place on map (drop is implemented)
+        self.assertNotIn(self.healing_potion, self.player.inventory.items, "Should remove from inventory")
+        self.assertIn(self.healing_potion, self.state_manager.state.entities, "Should place on map")
 
-    def test_missing_stairs_implementation(self):
-        """Test that stairs functionality needs implementation."""
+    def test_stairs_implementation(self):
+        """Test that stairs functionality works correctly."""
         # Add stairs at player position
         stairs = Entity(x=10, y=10, char='>', color=(255, 255, 255), name='Stairs')
         self.state_manager.state.entities.append(stairs)
