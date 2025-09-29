@@ -153,6 +153,10 @@ class TestMonsterSpawning:
 
     def setup_method(self):
         """Set up test fixtures."""
+        # Load entity configuration for monster spawning
+        from config.entity_registry import load_entity_config
+        load_entity_config()
+        
         self.game_map = GameMap(width=80, height=43, dungeon_level=5)
 
     def test_orc_spawning_stats(self):
@@ -176,7 +180,7 @@ class TestMonsterSpawning:
             assert orc.char == "o"
             assert orc.fighter.hp == 20
             assert orc.fighter.defense == 0
-            assert orc.fighter.power == 4
+            assert orc.fighter.power == 3  # Reduced from 4 to balance variable damage
             assert orc.fighter.xp == 35
             assert orc.ai is not None
 
@@ -201,7 +205,7 @@ class TestMonsterSpawning:
             assert troll.char == "T"
             assert troll.fighter.hp == 30
             assert troll.fighter.defense == 2
-            assert troll.fighter.power == 8
+            assert troll.fighter.power == 6  # Reduced from 8 to balance variable damage
             assert troll.fighter.xp == 100
             assert troll.ai is not None
 

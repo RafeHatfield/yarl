@@ -211,7 +211,7 @@ class TestEquipmentSpawning:
         assert sword.char == "/"
         assert sword.equippable is not None
         assert sword.equippable.slot == EquipmentSlots.MAIN_HAND
-        assert sword.equippable.power_bonus == 3
+        assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
 
     @patch("map_objects.game_map.random_choice_from_dict")
     @patch("map_objects.game_map.randint")
@@ -239,7 +239,7 @@ class TestEquipmentSpawning:
         assert shield.char == "["
         assert shield.equippable is not None
         assert shield.equippable.slot == EquipmentSlots.OFF_HAND
-        assert shield.equippable.defense_bonus == 1
+        assert shield.equippable.defense_bonus == 0  # Basic armor no longer has magic bonuses
 
     def test_equipment_spawn_level_requirements(self):
         """Test equipment spawn level requirements."""

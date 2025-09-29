@@ -452,31 +452,31 @@ class TestEntityRegistryIntegration:
             # Verify orc stats match hardcoded values
             orc = registry.get_monster("orc")
             assert orc.stats.hp == 20
-            assert orc.stats.power == 4
+            assert orc.stats.power == 3  # Updated for variable damage balance
             assert orc.stats.defense == 0
             assert orc.stats.xp == 35
             
             # Verify troll stats match hardcoded values
             troll = registry.get_monster("troll")
             assert troll.stats.hp == 30
-            assert troll.stats.power == 8
+            assert troll.stats.power == 6  # Updated for variable damage balance
             assert troll.stats.defense == 2
             assert troll.stats.xp == 100
             
             # Verify weapon stats match hardcoded values
             dagger = registry.get_weapon("dagger")
-            assert dagger.power_bonus == 2
+            assert dagger.power_bonus == 0  # Basic weapons no longer have magic bonuses
             assert dagger.damage_min == 1
             assert dagger.damage_max == 3
             
             sword = registry.get_weapon("sword")
-            assert sword.power_bonus == 3
+            assert sword.power_bonus == 0  # Basic weapons no longer have magic bonuses
             assert sword.damage_min == 2
             assert sword.damage_max == 5
             
             # Verify armor stats match hardcoded values
             shield = registry.get_armor("shield")
-            assert shield.defense_bonus == 1
+            assert shield.defense_bonus == 0  # Basic armor no longer has magic bonuses
             assert shield.defense_min == 1
             assert shield.defense_max == 3
 

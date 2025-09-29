@@ -68,7 +68,7 @@ class TestMonsterMigrationCompatibility:
         # Verify fighter component matches hardcoded values
         assert monster.fighter is not None
         assert monster.fighter.base_max_hp == 20
-        assert monster.fighter.base_power == 4
+        assert monster.fighter.base_power == 3  # Reduced from 4 to balance variable damage
         assert monster.fighter.base_defense == 0
         assert monster.fighter.xp == 35
         
@@ -102,7 +102,7 @@ class TestMonsterMigrationCompatibility:
         # Verify fighter component matches hardcoded values
         assert monster.fighter is not None
         assert monster.fighter.base_max_hp == 30
-        assert monster.fighter.base_power == 8
+        assert monster.fighter.base_power == 6  # Reduced from 8 to balance variable damage
         assert monster.fighter.base_defense == 2
         assert monster.fighter.xp == 100
         
@@ -188,14 +188,14 @@ class TestMonsterMigrationIntegration:
         # Verify orc stats
         orc = registry.get_monster("orc")
         assert orc.stats.hp == 20
-        assert orc.stats.power == 4
+        assert orc.stats.power == 3  # Updated for variable damage balance
         assert orc.stats.defense == 0
         assert orc.stats.xp == 35
         
         # Verify troll stats
         troll = registry.get_monster("troll")
         assert troll.stats.hp == 30
-        assert troll.stats.power == 8
+        assert troll.stats.power == 6  # Updated for variable damage balance
         assert troll.stats.defense == 2
         assert troll.stats.xp == 100
 
@@ -263,7 +263,7 @@ class TestBackwardCompatibility:
         orc = registry.get_monster("orc")
         assert orc.stats.hp == 20
         assert orc.stats.defense == 0
-        assert orc.stats.power == 4
+        assert orc.stats.power == 3  # Updated for variable damage balance
         assert orc.stats.xp == 35
         assert orc.char == "o"
         assert orc.color == (63, 127, 63)
@@ -274,7 +274,7 @@ class TestBackwardCompatibility:
         troll = registry.get_monster("troll")
         assert troll.stats.hp == 30
         assert troll.stats.defense == 2
-        assert troll.stats.power == 8
+        assert troll.stats.power == 6  # Updated for variable damage balance
         assert troll.stats.xp == 100
         assert troll.char == "T"
         assert troll.color == (0, 127, 0)
@@ -294,7 +294,7 @@ class TestBackwardCompatibility:
         from entity import Entity
         from render_functions import RenderOrder
         
-        old_fighter = Fighter(hp=20, defense=0, power=4, xp=35)
+        old_fighter = Fighter(hp=20, defense=0, power=3, xp=35)  # Updated: balanced power for variable damage
         old_ai = BasicMonster()
         old_orc = Entity(
             5, 5, "o", (63, 127, 63), "Orc",

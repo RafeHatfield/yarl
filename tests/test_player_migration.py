@@ -123,7 +123,7 @@ class TestPlayerMigrationCompatibility:
         
         # Verify dagger properties
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 2
+        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert dagger.equippable.damage_min == 1
         assert dagger.equippable.damage_max == 3
         

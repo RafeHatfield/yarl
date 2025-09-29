@@ -41,7 +41,7 @@ class TestEquipmentMigrationCompatibility:
         # Verify equippable component matches hardcoded values
         assert dagger.equippable is not None
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
-        assert dagger.equippable.power_bonus == 2
+        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert dagger.equippable.damage_min == 1
         assert dagger.equippable.damage_max == 3
 
@@ -61,7 +61,7 @@ class TestEquipmentMigrationCompatibility:
         # Verify equippable component matches hardcoded values
         assert sword.equippable is not None
         assert sword.equippable.slot == EquipmentSlots.MAIN_HAND
-        assert sword.equippable.power_bonus == 3
+        assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert sword.equippable.damage_min == 2
         assert sword.equippable.damage_max == 5
 
@@ -81,7 +81,7 @@ class TestEquipmentMigrationCompatibility:
         # Verify equippable component matches hardcoded values
         assert shield.equippable is not None
         assert shield.equippable.slot == EquipmentSlots.OFF_HAND
-        assert shield.equippable.defense_bonus == 1
+        assert shield.equippable.defense_bonus == 0  # Basic armor no longer has magic bonuses
         assert shield.equippable.defense_min == 1
         assert shield.equippable.defense_max == 3
 
@@ -98,7 +98,7 @@ class TestEquipmentMigrationCompatibility:
         
         # Verify dagger properties
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 2
+        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert dagger.equippable.damage_min == 1
         assert dagger.equippable.damage_max == 3
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
@@ -156,7 +156,7 @@ class TestEquipmentGameMapIntegration:
         assert sword.color == (192, 192, 192)
         assert sword.x == 7
         assert sword.y == 7
-        assert sword.equippable.power_bonus == 3
+        assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert sword.equippable.damage_min == 2
         assert sword.equippable.damage_max == 5
 
@@ -173,7 +173,7 @@ class TestEquipmentGameMapIntegration:
         assert shield.color == (139, 69, 19)
         assert shield.x == 8
         assert shield.y == 8
-        assert shield.equippable.defense_bonus == 1
+        assert shield.equippable.defense_bonus == 0  # Basic armor no longer has magic bonuses
         assert shield.equippable.defense_min == 1
         assert shield.equippable.defense_max == 3
 
@@ -208,20 +208,20 @@ class TestEquipmentMigrationIntegration:
         # Check weapons
         dagger = registry.get_weapon("dagger")
         assert dagger is not None
-        assert dagger.power_bonus == 2
+        assert dagger.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert dagger.damage_min == 1
         assert dagger.damage_max == 3
         
         sword = registry.get_weapon("sword")
         assert sword is not None
-        assert sword.power_bonus == 3
+        assert sword.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert sword.damage_min == 2
         assert sword.damage_max == 5
         
         # Check armor
         shield = registry.get_armor("shield")
         assert shield is not None
-        assert shield.defense_bonus == 1
+        assert shield.defense_bonus == 0  # Basic armor no longer has magic bonuses
         assert shield.defense_min == 1
         assert shield.defense_max == 3
 
@@ -233,18 +233,18 @@ class TestEquipmentMigrationIntegration:
         dagger = factory.create_weapon("dagger", 0, 0)
         assert dagger is not None
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 2
+        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         
         sword = factory.create_weapon("sword", 0, 0)
         assert sword is not None
         assert sword.name == "Sword"
-        assert sword.equippable.power_bonus == 3
+        assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         
         # Test armor creation
         shield = factory.create_armor("shield", 0, 0)
         assert shield is not None
         assert shield.name == "Shield"
-        assert shield.equippable.defense_bonus == 1
+        assert shield.equippable.defense_bonus == 0  # Basic armor no longer has magic bonuses
 
     def test_equipment_creation_end_to_end(self):
         """Test complete equipment creation flow."""
@@ -257,7 +257,7 @@ class TestEquipmentMigrationIntegration:
         assert player.equipment.main_hand is not None
         dagger = player.equipment.main_hand
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 2
+        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert dagger.equippable.damage_min == 1
         assert dagger.equippable.damage_max == 3
 
@@ -277,21 +277,21 @@ class TestBackwardCompatibility:
         # Test dagger matches: Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2, damage_min=1, damage_max=3)
         dagger = factory.create_weapon("dagger", 0, 0)
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
-        assert dagger.equippable.power_bonus == 2
+        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert dagger.equippable.damage_min == 1
         assert dagger.equippable.damage_max == 3
         
         # Test sword matches: Equippable(EquipmentSlots.MAIN_HAND, power_bonus=3, damage_min=2, damage_max=5)
         sword = factory.create_weapon("sword", 0, 0)
         assert sword.equippable.slot == EquipmentSlots.MAIN_HAND
-        assert sword.equippable.power_bonus == 3
+        assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert sword.equippable.damage_min == 2
         assert sword.equippable.damage_max == 5
         
         # Test shield matches: Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1, defense_min=1, defense_max=3)
         shield = factory.create_armor("shield", 0, 0)
         assert shield.equippable.slot == EquipmentSlots.OFF_HAND
-        assert shield.equippable.defense_bonus == 1
+        assert shield.equippable.defense_bonus == 0  # Basic armor no longer has magic bonuses
         assert shield.equippable.defense_min == 1
         assert shield.equippable.defense_max == 3
 
@@ -308,7 +308,7 @@ class TestBackwardCompatibility:
         from equipment_slots import EquipmentSlots
         
         old_equippable = Equippable(
-            EquipmentSlots.MAIN_HAND, power_bonus=3,
+            EquipmentSlots.MAIN_HAND, power_bonus=0,  # Updated: basic weapons no longer have magic bonuses
             damage_min=2, damage_max=5
         )
         old_sword = Entity(
@@ -365,7 +365,7 @@ class TestBackwardCompatibility:
         dagger = player.equipment.main_hand
         assert dagger is not None
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 2
+        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
         assert dagger.equippable.damage_min == 1
         assert dagger.equippable.damage_max == 3
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
