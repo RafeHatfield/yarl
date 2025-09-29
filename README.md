@@ -150,7 +150,7 @@ This project maintains **100% test coverage** with a comprehensive test suite co
 # Install test dependencies
 pip install -r requirements-dev.txt
 
-# Run all tests (659 tests)
+# Run all tests (1,049 tests)
 pytest
 
 # Run with coverage reporting
@@ -173,7 +173,7 @@ pytest tests/comprehensive/ -v               # Comprehensive end-to-end tests
 ```
 
 ### Test Coverage
-- **659 tests** with **100% pass rate**
+- **1,049 tests** with **100% pass rate**
 - **Entity System** - Movement, pathfinding, A* algorithm
 - **Combat System** - Attack, defense, healing, death mechanics, XP rewards
 - **Equipment System** - Equipment slots, stat bonuses, equip/unequip mechanics
@@ -423,20 +423,58 @@ These are tracked for future improvement when confident in test coverage.
 - [x] **Experience/Leveling** - Character progression with stat choices
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
 - [x] **Equipment System** - Weapons and armor with stat bonuses
-- [x] **Comprehensive Testing** - 659 tests with 100% coverage
+- [x] **Comprehensive Testing** - 1,049 tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 
-### 🔮 Future Enhancements
+### 🔮 Development Roadmap
+
+#### 🟢 **Phase 1: Core Gameplay Enhancements** (Easy - 1-2 weeks each)
 - [ ] **More Spells** - Teleport, invisibility, more tactical options
 - [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets
-- [ ] **Equipment Sets** - Bonuses for wearing matching equipment pieces
+- [ ] **More Stats on Equipment** - Additional bonuses and properties
 - [ ] **More Monster Types** - Varied AI behaviors and abilities
-- [ ] **Boss Encounters** - Special monsters on certain levels
-- [ ] **Environmental Hazards** - Traps and obstacles
-- [ ] **Equipment Crafting** - Player-created equipment and upgrades
-- [ ] **Sound Effects** - Audio feedback for actions
-- [ ] **Configuration System** - Customizable controls and settings
-- [ ] **Mobile Distribution** - iOS/Android compatibility exploration
+- [ ] **Chance to Hit/Dodge** - Enhanced combat mechanics with RNG
+- [ ] **Mouse Movement** - Click-to-move with pathfinding integration
+- [ ] **JSON Save/Load** - Replace shelve with JSON serialization
+
+#### 🟡 **Phase 2: Advanced Systems** (Medium - 2-4 weeks each)
+- [ ] **Ranged Weapons** - Bows, crossbows with projectile mechanics
+- [ ] **More Equipment Slots** - Rings, amulets, boots, helmets
+- [ ] **Equipment Sets** - Bonuses for wearing matching equipment pieces
+- [ ] **More Player Stats** - Expanded character attributes and progression
+- [ ] **Boss Encounters** - Special monsters with unique mechanics
+- [ ] **Environmental Hazards** - Traps, poison gas, lava, ice
+- [ ] **PC/Mac Distribution** - Packaging and build system setup
+
+#### 🔴 **Phase 3: Major Overhauls** (Hard - 1-3 months each)
+- [ ] **Better Character UI** - Enhanced inventory and character management
+- [ ] **Sound Effects System** - Audio feedback and atmospheric sounds
+- [ ] **Modern UI Overhaul** - Complete interface redesign
+- [ ] **Sprite-Based Graphics** - Replace ASCII with sprite rendering
+- [ ] **Mobile Distribution** - iOS/Android platform adaptation
+
+#### 📊 **Implementation Difficulty Assessment**
+
+| Feature | Difficulty | Time Estimate | Reason |
+|---------|------------|---------------|---------|
+| More Spells | 🟢 Easy | 1-2 weeks | Framework exists, just add functions |
+| Extended Equipment | 🟢 Easy | 1-2 weeks | System designed for expansion |
+| Chance to Hit/Dodge | 🟢 Easy | 1 week | Simple RNG in combat calculations |
+| Mouse Movement | 🟢 Easy | 1 week | Pathfinding exists, add click handling |
+| JSON Save/Load | 🟢 Easy | 1-2 weeks | Replace existing serialization |
+| More Stats | 🟢 Easy | 1 week | Add to existing stat system |
+| More Monster Types | 🟢 Easy | 1-2 weeks | AI system supports expansion |
+| Ranged Weapons | 🟡 Medium | 2-3 weeks | Need targeting system extension |
+| More Equipment Slots | 🟡 Medium | 2-3 weeks | UI updates, component changes |
+| Equipment Sets | 🟡 Medium | 2-3 weeks | Set detection and bonus logic |
+| Boss Encounters | 🟡 Medium | 3-4 weeks | Special AI behaviors needed |
+| Environmental Hazards | 🟡 Medium | 2-4 weeks | New tile types and mechanics |
+| PC/Mac Distribution | 🟡 Medium | 2-3 weeks | Packaging and build setup |
+| Better Character UI | 🔴 Hard | 4-8 weeks | Major UI redesign required |
+| Sound Effects | 🔴 Hard | 6-12 weeks | New audio system needed |
+| Modern UI Overhaul | 🔴 Very Hard | 2-3 months | Complete interface redesign |
+| Sprite Graphics | 🔴 Very Hard | 3-6 months | Major rendering system changes |
+| Mobile Distribution | 🔴 Very Hard | 3-6 months | Platform-specific adaptations |
 
 ## 📖 Learning Resources
 
