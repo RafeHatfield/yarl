@@ -14,6 +14,7 @@ from components.item import Item
 from components.level import Level
 from config.game_constants import get_constants as get_new_constants, get_combat_config, get_inventory_config
 from config.entity_registry import load_entity_config
+from config.entity_factory import get_entity_factory
 from entity import Entity
 from equipment_slots import EquipmentSlots
 from game_messages import MessageLog
@@ -71,11 +72,15 @@ def get_game_variables(constants):
     combat_config = get_combat_config()
     inventory_config = get_inventory_config()
     
-    # Create player components using constants
+    # Get player stats from configuration
+    entity_factory = get_entity_factory()
+    player_stats = entity_factory.get_player_stats()
+    
+    # Create player components using configuration
     fighter_component = Fighter(
-        hp=100,  # Player starts with more HP than default
-        defense=combat_config.DEFAULT_DEFENSE + 1,  # Slightly better than default
-        power=combat_config.DEFAULT_POWER + 1  # Slightly better than default
+        hp=player_stats.hp,
+        defense=player_stats.defense,
+        power=player_stats.power
     )
     inventory_component = Inventory(inventory_config.DEFAULT_INVENTORY_CAPACITY)
     level_component = Level(
