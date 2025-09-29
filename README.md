@@ -95,11 +95,24 @@
 ## 🎯 How to Play
 
 ### Controls
-- **Arrow Keys** - Move your character (@)
-- **Mouse Click** - Target spells (fireball, confusion)
+
+#### Movement
+- **Arrow Keys** - Move your character (@) one step at a time
+- **Left Mouse Click** - Click-to-move with pathfinding
+  - Click on empty space: Player automatically moves to that location
+  - Click on adjacent enemy: Attack that enemy
+  - Movement stops automatically if enemies are spotted
+- **Right Mouse Click** - Cancel pathfinding movement
+
+#### Spells & Targeting
+- **Mouse Click** - Target spells (fireball, confusion) when in targeting mode
+
+#### Items & Inventory
 - **g** - Pick up items
 - **i** - Open inventory
 - **d** - Drop items
+
+#### Navigation & Menus
 - **Enter** - Take stairs to next level
 - **c** - Open character screen (view level, XP, stats)
 - **s** - Save game
@@ -111,6 +124,8 @@
 - **Use spells wisely** - Fireball affects multiple enemies, confusion disables threats
 - **Manage inventory** - Limited carrying capacity, drop items you don't need
 - **Tactical positioning** - Use corridors to fight enemies one-at-a-time
+- **Mouse movement** - Click-to-move is faster for exploration, but movement stops when enemies appear
+- **Combat awareness** - Use arrow keys for precise positioning in combat situations
 - **Progress deeper** - Better items and more XP on lower levels, but more dangerous
 - **Level up strategically** - Choose HP, strength, or defense based on your playstyle
 - **Save frequently** - Game saves automatically on exit, but manual saves are recommended
@@ -423,7 +438,8 @@ These are tracked for future improvement when confident in test coverage.
 - [x] **Experience/Leveling** - Character progression with stat choices
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
 - [x] **Equipment System** - Weapons and armor with stat bonuses
-- [x] **Comprehensive Testing** - 1,049 tests with 100% coverage
+- [x] **Mouse Movement** - Click-to-move with pathfinding and enemy detection
+- [x] **Comprehensive Testing** - 1,070+ tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 
 ### 🔮 Development Roadmap
@@ -434,7 +450,6 @@ These are tracked for future improvement when confident in test coverage.
 - [ ] **More Stats on Equipment** - Additional bonuses and properties
 - [ ] **More Monster Types** - Varied AI behaviors and abilities
 - [ ] **Chance to Hit/Dodge** - Enhanced combat mechanics with RNG
-- [ ] **Mouse Movement** - Click-to-move with pathfinding integration
 - [ ] **JSON Save/Load** - Replace shelve with JSON serialization
 
 #### 🟡 **Phase 2: Advanced Systems** (Medium - 2-4 weeks each)

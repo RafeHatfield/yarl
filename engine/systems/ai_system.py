@@ -105,7 +105,14 @@ class AISystem(System):
         if not self.turn_processing:
             # Check again if player died during AI processing
             if state_manager.state.current_state != GameStates.PLAYER_DEAD:
-                state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                # Check if player has active pathfinding before switching to player turn
+                player = game_state.player
+                if (hasattr(player, 'pathfinding') and player.pathfinding and 
+                    player.pathfinding.is_path_active()):
+                    # Process pathfinding movement instead of switching to player turn
+                    self._process_pathfinding_turn(state_manager)
+                else:
+                    state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
         """Process all AI entity turns.
@@ -132,6 +139,19 @@ class AISystem(System):
 
         finally:
             self.turn_processing = False
+    
+    def _process_pathfinding_turn(self, state_manager) -> None:
+        """Process pathfinding movement for the player.
+        
+        Args:
+            state_manager: Game state manager
+        """
+        # Import here to avoid circular imports
+        from game_actions import ActionProcessor
+        
+        # Create action processor and process pathfinding
+        action_processor = ActionProcessor(state_manager)
+        action_processor.process_pathfinding_turn()
 
     def _get_ai_entities(self, entities: List[Any], player: Any) -> List[Any]:
         """Get all entities that have AI and should take turns.

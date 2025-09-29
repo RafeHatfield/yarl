@@ -81,6 +81,10 @@ def get_game_variables(constants):
     equipment_component = Equipment()
     equippable_component = Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2)
 
+    # Create pathfinding component for mouse movement
+    from components.player_pathfinding import PlayerPathfinding
+    pathfinding_component = PlayerPathfinding()
+    
     # Use the new Entity.create_player method for cleaner code
     player = Entity.create_player(
         x=0, y=0,
@@ -89,6 +93,10 @@ def get_game_variables(constants):
         level=level_component,
         equipment=equipment_component
     )
+    
+    # Add pathfinding component manually since create_player doesn't support it yet
+    player.pathfinding = pathfinding_component
+    pathfinding_component.owner = player
     entities = [player]
 
     # Create starting dagger using the new Entity.create_item method

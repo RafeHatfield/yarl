@@ -127,7 +127,7 @@ class Entity:
         # Valid component names that can be registered
         valid_components = {
             'fighter', 'ai', 'item', 'inventory', 'stairs', 
-            'level', 'equipment', 'equippable'
+            'level', 'equipment', 'equippable', 'pathfinding'
         }
         
         for component_name, component in components.items():

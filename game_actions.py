@@ -477,6 +477,93 @@ class ActionProcessor:
                     self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
                     self.state_manager.set_extra_data("targeting_item", None)
                     self.state_manager.set_extra_data("previous_state", None)
+        
+        elif current_state == GameStates.PLAYERS_TURN:
+            # Handle mouse movement/combat during player turn
+            self._handle_mouse_movement(click_pos)
+    
+    def _handle_mouse_movement(self, click_pos: Tuple[int, int]) -> None:
+        """Handle mouse click for movement or combat.
+        
+        Args:
+            click_pos: Tuple of (x, y) click coordinates
+        """
+        from mouse_movement import handle_mouse_click
+        
+        player = self.state_manager.state.player
+        entities = self.state_manager.state.entities
+        game_map = self.state_manager.state.game_map
+        message_log = self.state_manager.state.message_log
+        
+        if not all([player, entities is not None, game_map, message_log]):
+            return
+        
+        click_x, click_y = click_pos
+        
+        # Handle the mouse click
+        click_result = handle_mouse_click(click_x, click_y, player, entities, game_map)
+        
+        # Process results
+        for result in click_result.get("results", []):
+            message = result.get("message")
+            if message:
+                message_log.add_message(message)
+            
+            # Handle combat results
+            dead_entity = result.get("dead")
+            if dead_entity:
+                self._handle_entity_death(dead_entity, remove_from_entities=False)
+            
+            # Handle pathfinding start
+            if result.get("start_pathfinding"):
+                # Switch to enemy turn to begin pathfinding movement
+                self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+            
+            # Handle immediate enemy turn (for attacks)
+            if result.get("enemy_turn"):
+                self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+    
+    def process_pathfinding_turn(self) -> None:
+        """Process one step of pathfinding movement during player turn.
+        
+        This should be called when the player is following a pathfinding route.
+        """
+        from mouse_movement import process_pathfinding_movement
+        
+        player = self.state_manager.state.player
+        entities = self.state_manager.state.entities
+        game_map = self.state_manager.state.game_map
+        message_log = self.state_manager.state.message_log
+        fov_map = self.state_manager.state.fov_map
+        
+        if not all([player, entities is not None, game_map, message_log, fov_map]):
+            return
+        
+        # Check if player has pathfinding and is moving
+        if not (hasattr(player, 'pathfinding') and player.pathfinding and 
+                player.pathfinding.is_path_active()):
+            return
+        
+        # Process pathfinding movement
+        movement_result = process_pathfinding_movement(player, entities, game_map, fov_map)
+        
+        # Process results
+        for result in movement_result.get("results", []):
+            message = result.get("message")
+            if message:
+                message_log.add_message(message)
+            
+            # Handle FOV recompute
+            if result.get("fov_recompute"):
+                self.state_manager.request_fov_recompute()
+            
+            # Continue pathfinding or end turn
+            if result.get("continue_pathfinding"):
+                # Continue with enemy turn (which will cycle back to player)
+                self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+            else:
+                # Pathfinding completed or interrupted, stay in player turn
+                self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
     def _handle_right_click(self, _) -> None:
         """Handle right mouse click (usually cancels targeting)."""
@@ -487,3 +574,13 @@ class ActionProcessor:
             self.state_manager.set_game_state(previous_state)
             self.state_manager.set_extra_data("targeting_item", None)
             self.state_manager.set_extra_data("previous_state", None)
+        elif current_state == GameStates.PLAYERS_TURN:
+            # Right click during player turn cancels pathfinding
+            player = self.state_manager.state.player
+            if (hasattr(player, 'pathfinding') and player.pathfinding and 
+                player.pathfinding.is_path_active()):
+                player.pathfinding.cancel_movement()
+                message_log = self.state_manager.state.message_log
+                if message_log:
+                    from game_messages import Message
+                    message_log.add_message(Message("Movement cancelled.", (255, 255, 0)))
