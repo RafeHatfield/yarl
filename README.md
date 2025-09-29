@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-729%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1103%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 [![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
 
@@ -53,7 +53,7 @@
 - **Weighted random selection** for balanced item/monster distribution
 - **Save/Load system** using Python's shelve with comprehensive validation
 - **Message logging system** for game events
-- **Character screen** with level and stat display
+- **Character screen** with level, XP, and detailed stat display including variable damage/defense ranges
 - **Robust error handling** throughout the codebase
 
 ## 🚀 Quick Start
@@ -114,7 +114,7 @@
 
 #### Navigation & Menus
 - **Enter** - Take stairs to next level
-- **c** - Open character screen (view level, XP, stats)
+- **c** - Open character screen (view level, XP, stats with variable damage/defense ranges)
 - **s** - Save game
 - **l** - Load game
 - **Escape** - Exit menus/game
@@ -165,7 +165,7 @@ This project maintains **100% test coverage** with a comprehensive test suite co
 # Install test dependencies
 pip install -r requirements-dev.txt
 
-# Run all tests (1,049 tests)
+# Run all tests (1,103 tests)
 pytest
 
 # Run with coverage reporting
@@ -188,7 +188,7 @@ pytest tests/comprehensive/ -v               # Comprehensive end-to-end tests
 ```
 
 ### Test Coverage
-- **1,049 tests** with **100% pass rate**
+- **1,103 tests** with **100% pass rate**
 - **Entity System** - Movement, pathfinding, A* algorithm
 - **Combat System** - Attack, defense, healing, death mechanics, XP rewards
 - **Equipment System** - Equipment slots, stat bonuses, equip/unequip mechanics
@@ -228,7 +228,7 @@ rlike/
 │   ├── game_map.py     # Dungeon generation with difficulty scaling
 │   ├── rectangle.py    # Room generation utilities
 │   └── tile.py         # Tile properties (walkable, transparent)
-├── tests/              # Comprehensive test suite (729 tests)
+├── tests/              # Comprehensive test suite (1,103 tests)
 │   ├── comprehensive/  # End-to-end integration tests
 │   ├── integration/    # System interaction tests
 │   ├── regression/     # Critical bug prevention tests
@@ -365,7 +365,7 @@ python test_startup.py
 This verifies that all core systems can initialize correctly without running the full test suite.
 
 ### Comprehensive Test Suite
-Run the full test suite with 690+ tests:
+Run the full test suite with 1,103 tests:
 ```bash
 # Run all tests
 pytest
@@ -439,7 +439,7 @@ These are tracked for future improvement when confident in test coverage.
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
 - [x] **Equipment System** - Weapons and armor with stat bonuses
 - [x] **Mouse Movement** - Click-to-move with pathfinding and enemy detection
-- [x] **Comprehensive Testing** - 1,070+ tests with 100% coverage
+- [x] **Comprehensive Testing** - 1,103+ tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 
 ### 🔮 Development Roadmap
