@@ -10,6 +10,7 @@ import logging
 import os
 
 import tcod.libtcodpy as libtcod
+import warnings
 
 from game_states import GameStates
 from input_handlers import handle_main_menu
@@ -57,6 +58,14 @@ def main():
     """
     # Parse command line arguments
     args = parse_arguments()
+    
+    # Suppress specific TCOD deprecation warnings that require major refactoring
+    warnings.filterwarnings("ignore", message=".*Use the tcod.event module.*")
+    warnings.filterwarnings("ignore", message=".*Use tcod.event.get.*")
+    warnings.filterwarnings("ignore", message=".*Call the.*method instead.*")
+    warnings.filterwarnings("ignore", message=".*Create a console using.*")
+    warnings.filterwarnings("ignore", message=".*Soon the.*module will no longer.*")
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="tcod")
     
     # Set testing mode if requested
     if args.testing:

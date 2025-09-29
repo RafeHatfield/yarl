@@ -30,16 +30,16 @@ def menu(con, header, options, width, screen_width, screen_height):
         raise ValueError("Cannot have a menu with more than 26 options.")
 
     # calculate total height for the header (after auto-wrap) and one line per option
-    header_height = libtcod.console_get_height_rect(
+    header_height = libtcodpy.console_get_height_rect(
         con, 0, 0, width, screen_height, header
     )
     height = len(options) + header_height
 
     # create an off-screen console that represents the menu's window
-    window = libtcod.console_new(width, height)
+    window = libtcodpy.console_new(width, height)
 
     # print the header, with auto-wrap
-    libtcod.console_set_default_foreground(window, (255, 255, 255))
+    libtcodpy.console_set_default_foreground(window, (255, 255, 255))
     libtcodpy.console_print_rect_ex(
         window, 0, 0, width, height, libtcodpy.BKGND_NONE, libtcodpy.LEFT, header
     )
@@ -56,7 +56,7 @@ def menu(con, header, options, width, screen_width, screen_height):
     # blit the contents of "window" to the root console
     x = int(screen_width / 2 - width / 2)
     y = int(screen_height / 2 - height / 2)
-    libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
+    libtcodpy.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
 
 def inventory_menu(con, header, player, inventory_width, screen_width, screen_height):
@@ -99,23 +99,23 @@ def main_menu(con, background_image, screen_width, screen_height):
         screen_width (int): Screen width
         screen_height (int): Screen height
     """
-    libtcod.image_blit_2x(background_image, 0, 0, 0)
+    libtcodpy.image_blit_2x(background_image, 0, 0, 0)
 
-    libtcod.console_set_default_foreground(0, libtcod.light_yellow)
-    libtcod.console_print_ex(
+    libtcodpy.console_set_default_foreground(0, libtcodpy.light_yellow)
+    libtcodpy.console_print_ex(
         0,
         int(screen_width / 2),
         int(screen_height / 2) - 4,
         libtcodpy.BKGND_NONE,
-        libtcod.CENTER,
+        libtcodpy.CENTER,
         "CATACOMBS OF YARL",
     )
-    libtcod.console_print_ex(
+    libtcodpy.console_print_ex(
         0,
         int(screen_width / 2),
         int(screen_height - 2),
         libtcodpy.BKGND_NONE,
-        libtcod.CENTER,
+        libtcodpy.CENTER,
         "By Rastaphibian",
     )
 
@@ -179,9 +179,9 @@ def character_screen(
     Returns:
         Console: The character screen console
     """
-    window = libtcod.console_new(character_screen_width, character_screen_height)
+    window = libtcodpy.console_new(character_screen_width, character_screen_height)
 
-    libtcod.console_set_default_foreground(window, (255, 255, 255))
+    libtcodpy.console_set_default_foreground(window, (255, 255, 255))
 
     libtcodpy.console_print_rect_ex(
         window,
@@ -261,7 +261,7 @@ def character_screen(
 
     x = screen_width // 2 - character_screen_width // 2
     y = screen_height // 2 - character_screen_height // 2
-    libtcod.console_blit(
+    libtcodpy.console_blit(
         window, 0, 0, character_screen_width, character_screen_height, 0, x, y, 1.0, 0.7
     )
 
