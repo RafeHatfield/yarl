@@ -205,6 +205,15 @@ class ActionProcessor:
             death_message = kill_monster(dead_entity)
             self.state_manager.state.message_log.add_message(death_message)
             
+            # Handle dropped loot
+            if hasattr(dead_entity, '_dropped_loot') and dead_entity._dropped_loot:
+                # Add dropped items to the entities list
+                self.state_manager.state.entities.extend(dead_entity._dropped_loot)
+                # Clean up the temporary attribute
+                delattr(dead_entity, '_dropped_loot')
+                # Invalidate entity sorting cache when new entities are added
+                invalidate_entity_cache("entity_added_loot")
+            
             # Then handle removal if requested (for combat deaths)
             if remove_from_entities:
                 if dead_entity in self.state_manager.state.entities:

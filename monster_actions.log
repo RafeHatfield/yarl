@@ -1,0 +1,4 @@
+18:50:31 - MONSTER: Orc at (5, 5) attempts item_pickup: attempting to pick up Enhance Armor Scroll
+18:50:31 - MONSTER: Orc at (5, 5) inventory_change SUCCESS: added Enhance Armor Scroll (inventory: 1 items)
+18:50:31 - MONSTER: Orc at (5, 5) item_pickup SUCCESS: picked up Enhance Armor Scroll from (6, 6)
+18:50:31 - MONSTER: Orc at (5, 5) turn complete: item_seeking

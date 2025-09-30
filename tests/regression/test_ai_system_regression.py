@@ -191,6 +191,10 @@ class TestAISystemRegressions:
         entity.fighter.attack = Mock(return_value=[])
         entity.distance_to = Mock(return_value=5)  # Far from player
         entity.move_astar = Mock()
+        
+        # Ensure no item usage or item seeking to avoid interference
+        entity.item_usage = None
+        entity.item_seeking_ai = None
 
         # Create real BasicMonster AI
         basic_ai = BasicMonster()

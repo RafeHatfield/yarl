@@ -6,6 +6,14 @@
 #   - Colors are RGB tuples [r, g, b] where values are 0-255
 #   - Stats include hp, power, defense, xp, and optional damage/defense ranges
 #   - Characters are single ASCII characters for rendering
+#
+# Monster AI Capabilities:
+#   - can_seek_items: Enables item-seeking behavior (monsters pursue dropped loot)
+#   - inventory_size: Maximum items monster can carry (requires can_seek_items: true)
+#   - seek_distance: Maximum range for item detection and pursuit
+#   - Item usage: Monsters with inventories can use scrolls (potions disabled for balance)
+#   - Equipment: All monsters can spawn with and equip weapons/armor
+#   - Failure mechanics: 50% scroll failure rate with interesting failure modes
 
 version: "1.0"
 
@@ -15,6 +23,8 @@ player:
   power: 2
   defense: 1
   xp: 0
+  damage_min: 1  # Fist damage range: 1-2
+  damage_max: 2  # Total unarmed attack: 2 power + 1-2 fist = 3-4
 
 # Monster definitions
 monsters:
@@ -32,6 +42,10 @@ monsters:
     ai_type: "basic"
     render_order: "actor"
     blocks: true
+    # Item-seeking behavior configuration
+    can_seek_items: true      # Whether monster actively seeks items on the ground
+    inventory_size: 5         # Maximum items monster can carry (0 = no inventory)
+    seek_distance: 5          # Maximum distance to detect and pursue items
 
   # Stronger troll enemy  
   troll:
@@ -47,6 +61,10 @@ monsters:
     ai_type: "basic"
     render_order: "actor"
     blocks: true
+    # Item-seeking behavior (trolls are smarter and seek further)
+    can_seek_items: true      # Trolls actively seek items
+    inventory_size: 8         # Larger inventory than orcs (smarter)
+    seek_distance: 7          # Longer detection range than orcs
 
 # Weapon definitions
 weapons:

@@ -128,7 +128,6 @@ def main():
                     constants["screen_height"],
                 )
 
-            import warnings
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=DeprecationWarning, 
                                       message="This function is not supported if contexts are being used")

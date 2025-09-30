@@ -80,6 +80,17 @@ class EntityFactory:
 
             # Create AI component based on ai_type
             ai_component = self._create_ai_component(monster_def.ai_type)
+            
+            # Create equipment component for monsters (needed for equipment system)
+            from components.equipment import Equipment
+            equipment_component = Equipment()
+            
+            # Create inventory component for monsters that can seek items
+            inventory_component = None
+            if monster_def.can_seek_items and monster_def.inventory_size > 0:
+                from components.inventory import Inventory
+                inventory_component = Inventory(capacity=monster_def.inventory_size)
+                logger.debug(f"Created inventory for {monster_def.name} with {monster_def.inventory_size} slots")
 
             # Create entity
             monster = Entity(
@@ -91,8 +102,30 @@ class EntityFactory:
                 blocks=monster_def.blocks,
                 render_order=self._get_render_order(monster_def.render_order),
                 fighter=fighter_component,
-                ai=ai_component
+                ai=ai_component,
+                equipment=equipment_component,
+                inventory=inventory_component
             )
+            
+            # Create item-seeking AI if monster can seek items
+            if monster_def.can_seek_items:
+                from components.item_seeking_ai import create_item_seeking_ai
+                item_seeking_ai = create_item_seeking_ai(monster, monster_def)
+                if item_seeking_ai:
+                    monster.item_seeking_ai = item_seeking_ai
+                    logger.debug(f"Added item-seeking AI to {monster_def.name}")
+                else:
+                    logger.warning(f"Failed to create item-seeking AI for {monster_def.name}")
+            
+            # Create item usage component if monster has inventory
+            if inventory_component:
+                from components.monster_item_usage import create_monster_item_usage
+                item_usage = create_monster_item_usage(monster)
+                if item_usage:
+                    monster.item_usage = item_usage
+                    logger.debug(f"Added item usage capability to {monster_def.name}")
+                else:
+                    logger.warning(f"Failed to create item usage for {monster_def.name}")
 
             logger.debug(f"Created monster: {monster_def.name} at ({x}, {y})")
             return monster

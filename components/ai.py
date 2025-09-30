@@ -5,6 +5,7 @@ import tcod.libtcodpy as libtcodpy
 
 from game_messages import Message
 from fov_functions import map_is_in_fov
+from components.monster_action_logger import MonsterActionLogger
 
 
 class BasicMonster:
@@ -37,20 +38,183 @@ class BasicMonster:
             list: List of result dictionaries with AI actions and effects
         """
         results = []
+        actions_taken = []
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         if map_is_in_fov(fov_map, monster.x, monster.y):
+            # Check for item usage first (scrolls, potions, etc.)
+            item_usage_action = self._try_item_usage(target, game_map, entities)
+            if item_usage_action:
+                MonsterActionLogger.log_action_attempt(monster, "item_usage", 
+                    f"attempting to use {item_usage_action.get('use_item', {}).name if item_usage_action.get('use_item') else 'unknown item'}")
+                results.extend(self._process_item_usage_action(item_usage_action, entities))
+                actions_taken.append("item_usage")
+                MonsterActionLogger.log_turn_summary(monster, actions_taken)
+                return results
+            
+            # Check for item-seeking behavior (if monster has this capability)
+            item_action = self._try_item_seeking(target, game_map, entities)
+            if item_action:
+                if "pickup_item" in item_action:
+                    MonsterActionLogger.log_action_attempt(monster, "item_pickup", 
+                        f"attempting to pick up {item_action['pickup_item'].name}")
+                elif "move" in item_action:
+                    MonsterActionLogger.log_action_attempt(monster, "item_seeking_movement", 
+                        f"moving towards item")
+                results.extend(self._process_item_action(item_action, entities))
+                actions_taken.append("item_seeking")
+                MonsterActionLogger.log_turn_summary(monster, actions_taken)
+                return results
 
             if monster.distance_to(target) >= 2:
                 # monster.move_towards(target.x, target.y, game_map, entities)
+                MonsterActionLogger.log_action_attempt(monster, "movement", f"moving towards {target.name}")
                 monster.move_astar(target, entities, game_map)
+                actions_taken.append("movement")
             elif target.fighter.hp > 0:
                 # print('The {0} insults you!'.format(monster.name))
                 # monster.fighter.attack(target)
+                MonsterActionLogger.log_action_attempt(monster, "combat", f"attacking {target.name}")
                 attack_results = monster.fighter.attack(target)
                 results.extend(attack_results)
+                actions_taken.append("combat")
 
+        MonsterActionLogger.log_turn_summary(monster, actions_taken)
+        return results
+    
+    def _try_item_usage(self, target, game_map, entities):
+        """Try to get an item usage action for this monster.
+        
+        Args:
+            target: The target entity (player)
+            game_map: Current game map
+            entities: List of all entities
+            
+        Returns:
+            dict: Item usage action if available, None otherwise
+        """
+        # Check if monster has item usage capability
+        if not (hasattr(self.owner, 'item_usage') and self.owner.item_usage):
+            return None
+            
+        return self.owner.item_usage.get_item_usage_action(target, game_map, entities)
+    
+    def _process_item_usage_action(self, action, entities):
+        """Process an item usage action.
+        
+        Args:
+            action: Item usage action dictionary
+            entities: List of all entities
+            
+        Returns:
+            list: List of result dictionaries
+        """
+        results = []
+        
+        if "use_item" in action:
+            item = action["use_item"]
+            target = action.get("target")
+            
+            # Use item with failure mechanics
+            if hasattr(self.owner, 'item_usage') and self.owner.item_usage:
+                usage_results = self.owner.item_usage.use_item_with_failure(item, target, entities)
+                results.extend(usage_results)
+            
+        return results
+    
+    def _try_item_seeking(self, target, game_map, entities):
+        """Try to get an item-seeking action for this monster.
+        
+        Args:
+            target: The target entity (player)
+            game_map: Current game map
+            entities: List of all entities
+            
+        Returns:
+            dict: Item action if available, None otherwise
+        """
+        # Check if monster has item-seeking AI capability
+        if not (hasattr(self.owner, 'item_seeking_ai') and self.owner.item_seeking_ai):
+            return None
+            
+        return self.owner.item_seeking_ai.get_item_seeking_action(game_map, entities, target)
+    
+    def _process_item_action(self, action, entities):
+        """Process an item-related action.
+        
+        Args:
+            action: Action dictionary
+            entities: List of all entities
+            
+        Returns:
+            list: List of result dictionaries
+        """
+        results = []
+        
+        if "move" in action:
+            # Move towards item
+            dx, dy = action["move"]
+            self.owner.move(dx, dy)
+            
+        elif "pickup_item" in action:
+            # Pick up item
+            item = action["pickup_item"]
+            results.extend(self._pickup_item(item, entities))
+            
+        return results
+    
+    def _pickup_item(self, item, entities):
+        """Handle picking up an item.
+        
+        Args:
+            item: Item entity to pick up
+            entities: List of all entities
+            
+        Returns:
+            list: List of result dictionaries
+        """
+        results = []
+        
+        # Check if monster has inventory space
+        if not (hasattr(self.owner, 'inventory') and self.owner.inventory):
+            MonsterActionLogger.log_item_pickup(self.owner, item, False, "no inventory")
+            return results
+            
+        if len(self.owner.inventory.items) >= self.owner.inventory.capacity:
+            MonsterActionLogger.log_item_pickup(self.owner, item, False, "inventory full")
+            return results
+            
+        # Add item to monster's inventory
+        self.owner.inventory.add_item(item)
+        MonsterActionLogger.log_inventory_change(self.owner, item, "added")
+        
+        # Remove item from world
+        if item in entities:
+            entities.remove(item)
+            
+        # Try to equip the item if it's equipment
+        equipped = False
+        if hasattr(item, 'equippable') and item.equippable:
+            if hasattr(self.owner, 'equipment') and self.owner.equipment:
+                # Simple equipping logic - equip if slot is empty
+                if item.equippable.slot.value == "main_hand" and not self.owner.equipment.main_hand:
+                    self.owner.equipment.toggle_equip(item)
+                    MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
+                    equipped = True
+                elif item.equippable.slot.value == "off_hand" and not self.owner.equipment.off_hand:
+                    self.owner.equipment.toggle_equip(item)
+                    MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
+                    equipped = True
+        
+        # Log successful pickup
+        pickup_details = f"picked up and {'equipped' if equipped else 'stored'} {item.name}"
+        MonsterActionLogger.log_item_pickup(self.owner, item, True, pickup_details)
+        
+        results.append({
+            "message": Message(f"{self.owner.name.capitalize()} picks up the {item.name}!", (255, 255, 0))
+        })
+        
         return results
 
 

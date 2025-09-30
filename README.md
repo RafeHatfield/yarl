@@ -157,7 +157,90 @@ python engine.py
 - **10-20 items per room** (vs 1-2 in normal mode)
 - **All scrolls and equipment available from level 1** (vs progressive unlocking)
 - **Higher spawn chances** for rare items (30-50% vs 5-25%)
+- **Monster equipment spawning** at 50% rate (vs 10-70% scaling in normal mode)
+- **Enhanced logging** for debugging monster behavior and item tracking
 - **Perfect for testing** inventory, targeting, equipment, and spell mechanics
+
+### Debug Logging
+
+Testing mode automatically enables comprehensive logging to help debug game mechanics and track monster behavior:
+
+#### Available Log Files
+
+```bash
+# Combat debug log - detailed combat calculations
+combat_debug.log
+
+# Monster action log - comprehensive monster behavior tracking
+monster_actions.log
+```
+
+#### Viewing Logs in Real-Time
+
+```bash
+# Monitor combat calculations (damage, defense, variable stats)
+tail -f combat_debug.log
+
+# Monitor monster actions (item usage, pickup, movement, combat)
+tail -f monster_actions.log
+
+# Monitor both logs simultaneously
+tail -f combat_debug.log monster_actions.log
+```
+
+#### Log Content Examples
+
+**Combat Debug Log:**
+```
+18:45:23 - COMBAT: Player [power:2+3] (1-3 dmg) attacks for 8 (5 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 8 total damage
+18:45:24 - COMBAT: Orc [power:4+0] (1-3 dmg) attacks for 6 (4 power + 2 rolled), Player [def:1+2] blocks 2 (1 defense + 1 rolled) = 4 total damage
+```
+
+**Monster Action Log:**
+```
+18:45:25 - MONSTER: Orc at (5, 5) attempts item_pickup: attempting to pick up Enhance Armor Scroll
+18:45:25 - MONSTER: Orc at (5, 5) inventory_change SUCCESS: added Enhance Armor Scroll (inventory: 1 items)
+18:45:25 - MONSTER: Orc at (5, 5) item_pickup SUCCESS: picked up and stored Enhance Armor Scroll
+18:45:26 - MONSTER: Orc at (5, 5) attempts item_usage: attempting to use Lightning Scroll
+18:45:26 - MONSTER: Orc at (5, 5) item_usage FAILED: failed to use Lightning Scroll on Player (failure: fizzle)
+18:45:26 - MONSTER: Orc at (5, 5) inventory_change SUCCESS: removed (used) Lightning Scroll (inventory: 0 items)
+18:45:27 - MONSTER: Orc at (5, 5) loot_drop SUCCESS: dropped Enhance Armor Scroll at (5, 4)
+```
+
+#### What Gets Logged
+
+**Combat Debug Log:**
+- ✅ **Variable damage calculations** - Base power + rolled damage
+- ✅ **Variable defense calculations** - Base defense + rolled defense  
+- ✅ **Final damage calculations** - Attack vs defense with absorption details
+- ✅ **Equipment bonuses** - Weapon power and armor defense contributions
+- ✅ **Natural damage** - Monster base damage ranges (fists, claws, etc.)
+
+**Monster Action Log:**
+- ✅ **Item Usage** - Success/failure with specific failure modes (fizzle, wrong target, equipment damage)
+- ✅ **Item Pickup** - Success/failure with reasons (no inventory, full inventory, etc.)
+- ✅ **Equipment Changes** - When monsters equip/unequip weapons and armor
+- ✅ **Inventory Changes** - Items added/removed with current inventory counts
+- ✅ **Loot Dropping** - Exact positions where items are dropped upon monster death
+- ✅ **Movement & Combat** - Basic AI actions and pathfinding decisions
+- ✅ **Turn Summaries** - Complete overview of each monster's actions per turn
+
+#### Troubleshooting with Logs
+
+**Missing Items:** Check `monster_actions.log` for pickup/usage/drop events
+```bash
+grep "Enhance Armor Scroll" monster_actions.log
+```
+
+**Combat Balance:** Check `combat_debug.log` for damage calculations
+```bash
+grep "attacks for" combat_debug.log | tail -10
+```
+
+**Monster Behavior:** Check `monster_actions.log` for AI decision patterns
+```bash
+grep "turn complete" monster_actions.log | tail -5
+```
 
 ### Test Suite
 
@@ -517,17 +600,18 @@ config/
 - [x] **Mouse Movement** - Click-to-move with pathfinding and enemy detection
 - [x] **Variable Damage/Defense** - Equipment and monsters with damage/defense ranges
 - [x] **Variable Monster Damage** - Dynamic monster combat with natural damage ranges
+- [x] **Monster Equipment & Loot** - Monsters spawn with equipment, seek items, use scrolls, and drop loot
+- [x] **General Loot Drops** - All monsters drop equipped items and inventory contents
 - [x] **Data-Driven Entity System** - YAML configuration for all entities
 - [x] **Configuration Management** - Centralized game constants with file loading
 - [x] **Clean Console Output** - TCOD deprecation warnings suppressed
-- [x] **Comprehensive Testing** - 1,257+ tests with 100% coverage
+- [x] **Comprehensive Testing** - 1,300+ tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
+- [x] **Debug Logging System** - Comprehensive monster action and combat logging
 
 ### 🔮 Development Roadmap
 
 #### 🟢 **Phase 1: Core Gameplay Enhancements** (Easy - 1-2 weeks each)
-- [ ] **Monster Equipment & Loot** - Monsters can wield weapons/armor and drop them
-- [ ] **General Loot Drops** - All monsters drop items when defeated  
 - [ ] **Player Naming** - Allow players to enter custom names for personalization
 - [ ] **More Spells** - Teleport, invisibility, more tactical options
 - [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets

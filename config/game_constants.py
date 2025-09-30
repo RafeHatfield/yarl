@@ -118,6 +118,34 @@ class EntityConfig:
 
 
 @dataclass
+class MonsterEquipmentConfig:
+    """Configuration for monster equipment spawning and behavior."""
+    
+    # Equipment spawn rates (normal mode)
+    NORMAL_BASE_CHANCE: float = 0.1  # 10% base chance
+    NORMAL_LEVEL_MULTIPLIER: float = 1.0  # Multiply by dungeon level
+    NORMAL_MAX_CHANCE: float = 0.7  # 70% maximum chance
+    
+    # Equipment spawn rates (testing mode)
+    TESTING_BASE_CHANCE: float = 0.5  # 50% flat chance
+    TESTING_LEVEL_MULTIPLIER: float = 0.0  # No level scaling in testing
+    TESTING_MAX_CHANCE: float = 0.5  # 50% maximum chance
+    
+    # Equipment types and weights
+    WEAPON_SPAWN_WEIGHT: float = 0.6  # 60% chance for weapons
+    ARMOR_SPAWN_WEIGHT: float = 0.4  # 40% chance for armor
+    
+    # Item seeking behavior
+    ENABLE_ITEM_SEEKING: bool = True
+    ITEM_SEEK_DISTANCE: int = 5  # Maximum distance to seek items
+    ITEM_PRIORITY_OVER_PLAYER: bool = True  # Prioritize items over player pursuit
+    
+    # Scroll usage and failure rates
+    SCROLL_FAILURE_RATE: float = 0.5  # 50% failure rate for monster scroll usage
+    POTION_FAILURE_RATE: float = 0.2  # 20% failure rate for monster potion usage
+
+
+@dataclass
 class GameplayConfig:
     """Configuration for core gameplay mechanics."""
     
@@ -146,6 +174,7 @@ class GameConstants:
     rendering: RenderingConfig = None
     gameplay: GameplayConfig = None
     entities: EntityConfig = None
+    monster_equipment: MonsterEquipmentConfig = None
     
     def __post_init__(self):
         """Initialize default values after dataclass creation."""
@@ -163,6 +192,8 @@ class GameConstants:
             self.gameplay = GameplayConfig()
         if self.entities is None:
             self.entities = EntityConfig()
+        if self.monster_equipment is None:
+            self.monster_equipment = MonsterEquipmentConfig()
     
     @classmethod
     def load_from_file(cls, config_path: str = None) -> 'GameConstants':
@@ -275,6 +306,14 @@ class GameConstants:
                 for key, value in entities_data.items():
                     if hasattr(instance.entities, key):
                         setattr(instance.entities, key, value)
+        
+        # Update monster equipment config
+        if 'monster_equipment' in config_data:
+            monster_equipment_data = config_data['monster_equipment']
+            if isinstance(monster_equipment_data, dict):
+                for key, value in monster_equipment_data.items():
+                    if hasattr(instance.monster_equipment, key):
+                        setattr(instance.monster_equipment, key, value)
         
         logger.info(f"Loaded configuration with {len(config_data)} sections")
         return instance
@@ -468,3 +507,13 @@ def get_entity_config() -> EntityConfig:
             including file paths, validation options, and inheritance settings.
     """
     return GAME_CONSTANTS.entities
+
+
+def get_monster_equipment_config() -> MonsterEquipmentConfig:
+    """Get monster equipment configuration.
+    
+    Returns:
+        MonsterEquipmentConfig: Configuration object containing monster equipment settings
+            including spawn rates, item seeking behavior, and failure rates.
+    """
+    return GAME_CONSTANTS.monster_equipment

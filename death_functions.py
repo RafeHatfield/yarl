@@ -32,7 +32,7 @@ def kill_monster(monster):
     """Handle monster death.
 
     Transforms a monster into a non-blocking corpse, removes its
-    combat and AI components, and returns a death message.
+    combat and AI components, drops any equipped items, and returns a death message.
 
     Args:
         monster (Entity): The monster entity that died
@@ -40,6 +40,17 @@ def kill_monster(monster):
     Returns:
         Message: Death message to display to the player
     """
+    # Drop loot before transforming to corpse
+    from components.monster_equipment import drop_loot_from_monster
+    dropped_items = drop_loot_from_monster(monster, monster.x, monster.y)
+    
+    # Add dropped items to the game world
+    if dropped_items:
+        # We need to add the dropped items to the entities list
+        # This is a bit tricky since we don't have direct access to entities here
+        # We'll store them on the monster temporarily and let the caller handle it
+        monster._dropped_loot = dropped_items
+    
     # death_message = '{0} is dead!'.format(monster.name.capitalize())
     death_message = Message(
         "{0} is dead!".format(monster.name.capitalize()), (255, 127, 0)

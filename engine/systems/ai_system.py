@@ -257,12 +257,22 @@ class AISystem(System):
                         
                         logger.info(f"Player killed by {self.current_turn_entity.name if self.current_turn_entity else 'unknown'}")
                 else:
-                    # Monster died - remove from entities
-                    if dead_entity in game_state.entities:
-                        game_state.entities.remove(dead_entity)
-                        # Invalidate entity sorting cache when entities are removed
-                        invalidate_entity_cache("entity_removed_ai")
-                        logger.debug(f"Removed dead entity: {dead_entity.name}")
+                    # Monster died - transform to corpse and handle loot
+                    from death_functions import kill_monster
+                    death_message = kill_monster(dead_entity)
+                    if game_state.message_log:
+                        game_state.message_log.add_message(death_message)
+                    
+                    # Handle dropped loot
+                    if hasattr(dead_entity, '_dropped_loot') and dead_entity._dropped_loot:
+                        # Add dropped items to the entities list
+                        game_state.entities.extend(dead_entity._dropped_loot)
+                        # Clean up the temporary attribute
+                        delattr(dead_entity, '_dropped_loot')
+                        # Invalidate entity sorting cache when new entities are added
+                        invalidate_entity_cache("entity_added_loot_ai")
+                    
+                    logger.debug(f"Monster {dead_entity.name} died and transformed to corpse")
 
     def _handle_entity_death(self, entity: Any, game_state) -> None:
         """Handle an entity's death during AI processing.

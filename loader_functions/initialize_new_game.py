@@ -80,7 +80,9 @@ def get_game_variables(constants):
     fighter_component = Fighter(
         hp=player_stats.hp,
         defense=player_stats.defense,
-        power=player_stats.power
+        power=player_stats.power,
+        damage_min=getattr(player_stats, 'damage_min', 0),
+        damage_max=getattr(player_stats, 'damage_max', 0)
     )
     inventory_component = Inventory(inventory_config.DEFAULT_INVENTORY_CAPACITY)
     level_component = Level(

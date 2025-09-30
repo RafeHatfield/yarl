@@ -265,6 +265,10 @@ class GameMap:
                 monster = entity_factory.create_monster(monster_choice, x, y)
                 
                 if monster:
+                    # Try to spawn equipment on the monster
+                    from components.monster_equipment import spawn_equipment_on_monster
+                    equipment_list = spawn_equipment_on_monster(monster, self.dungeon_level)
+                    
                     entities.append(monster)
                     # Invalidate entity sorting cache when new entities are added
                     invalidate_entity_cache("entity_added_monster")
