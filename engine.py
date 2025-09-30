@@ -87,6 +87,12 @@ def main():
     if os.environ.get('YARL_TESTING_MODE', '').lower() in ('true', '1', 'yes', 'on'):
         set_testing_mode(True)
         print("🧪 TESTING MODE ENABLED: Via environment variable YARL_TESTING_MODE")
+    
+    # Initialize monster action logging if in testing mode
+    from config.testing_config import is_testing_mode
+    if is_testing_mode():
+        from components.monster_action_logger import MonsterActionLogger
+        MonsterActionLogger.setup_logging()
     constants = get_constants()
 
     libtcod.console_set_custom_font(
