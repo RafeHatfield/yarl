@@ -159,22 +159,25 @@ class Fighter:
         final_damage = max(0, total_attack - total_defense)
 
         if final_damage > 0:
-            # Create detailed combat message
-            variable_damage_text = ""
+            # Create detailed combat message with clearer format
+            # Show: "Attacker attacks Target for X damage (Y attack - Z defense)"
+            attack_breakdown = f"{total_attack} attack"
             if variable_damage > 0:
                 if damage_source == "weapon":
-                    variable_damage_text = f" (+{variable_damage} weapon)"
+                    attack_breakdown = f"{total_attack} attack ({self.power} power + {variable_damage} weapon)"
                 else:
-                    variable_damage_text = f" (+{variable_damage} natural)"
+                    attack_breakdown = f"{total_attack} attack ({self.power} power + {variable_damage} natural)"
             
-            armor_text = f" ({armor_defense} absorbed by armor)" if armor_defense > 0 else ""
+            defense_breakdown = f"{total_defense} defense"
+            if armor_defense > 0:
+                defense_breakdown = f"{total_defense} defense ({target.fighter.defense} base + {armor_defense} armor)"
             
-            message_text = "{0} attacks {1} for {2} hit points{3}{4}.".format(
+            message_text = "{0} attacks {1} for {2} damage ({3} - {4}).".format(
                 self.owner.name.capitalize(), 
                 target.name, 
                 str(final_damage),
-                variable_damage_text,
-                armor_text
+                attack_breakdown,
+                defense_breakdown
             )
             
             results.append({
@@ -186,26 +189,33 @@ class Fighter:
                 self._log_combat_debug(target, total_attack, variable_damage, damage_source, total_defense, armor_defense, final_damage)
             
             results.extend(target.fighter.take_damage(final_damage))
+            
+            # Apply corrosion effects if attacker has corrosion ability
+            corrosion_results = self._apply_corrosion_effects(target, final_damage)
+            results.extend(corrosion_results)
         else:
-            # Attack was completely blocked
+            # Attack was completely blocked - show the same clear breakdown
+            attack_breakdown = f"{total_attack} attack"
+            if variable_damage > 0:
+                if damage_source == "weapon":
+                    attack_breakdown = f"{total_attack} attack ({self.power} power + {variable_damage} weapon)"
+                else:
+                    attack_breakdown = f"{total_attack} attack ({self.power} power + {variable_damage} natural)"
+            
+            defense_breakdown = f"{total_defense} defense"
             if armor_defense > 0:
-                results.append({
-                    "message": Message(
-                        "{0} attacks {1} but the attack is completely blocked by armor.".format(
-                            self.owner.name.capitalize(), target.name
-                        ),
-                        (255, 255, 255),
-                    )
-                })
-            else:
-                results.append({
-                    "message": Message(
-                        "{0} attacks {1} but does no damage.".format(
-                            self.owner.name.capitalize(), target.name
-                        ),
-                        (255, 255, 255),
-                    )
-                })
+                defense_breakdown = f"{total_defense} defense ({target.fighter.defense} base + {armor_defense} armor)"
+            
+            message_text = "{0} attacks {1} for 0 damage ({2} - {3}) - attack blocked!".format(
+                self.owner.name.capitalize(), 
+                target.name,
+                attack_breakdown,
+                defense_breakdown
+            )
+            
+            results.append({
+                "message": Message(message_text, (255, 255, 255))
+            })
             
             # Log detailed combat breakdown for blocked attacks in testing mode
             if is_testing_mode():
@@ -302,3 +312,122 @@ class Fighter:
         except (AttributeError, TypeError):
             pass
         return 0
+    
+    def _apply_corrosion_effects(self, target, damage_dealt):
+        """Apply corrosion effects if attacker has corrosion ability.
+        
+        Args:
+            target: The entity that was attacked
+            damage_dealt: Amount of damage that was dealt
+            
+        Returns:
+            list: List of result dictionaries with corrosion messages
+        """
+        results = []
+        
+        # Only apply corrosion if damage was dealt and attacker has corrosion ability
+        if damage_dealt <= 0:
+            return results
+        
+        # Check if attacker has corrosion ability
+        if not self._has_corrosion_ability():
+            return results
+        
+        # Import here to avoid circular imports
+        import random
+        from game_messages import Message
+        
+        # 5% chance to corrode equipment on successful hit
+        if random.random() < 0.05:
+            # Corrode target's weapon (when slime hits player/monster)
+            weapon_corrosion = self._corrode_weapon(target)
+            results.extend(weapon_corrosion)
+            
+            # Corrode attacker's "armor" (when player/monster hits slime)
+            # Note: This is a bit of a stretch since slimes don't wear armor,
+            # but it represents acid splash-back from hitting the slime
+            armor_corrosion = self._corrode_armor(self.owner)
+            results.extend(armor_corrosion)
+        
+        return results
+    
+    def _has_corrosion_ability(self):
+        """Check if this entity has corrosion ability.
+        
+        Returns:
+            bool: True if entity can corrode equipment
+        """
+        # Check if entity has special_abilities with corrosion
+        if (hasattr(self.owner, 'special_abilities') and 
+            self.owner.special_abilities and 
+            'corrosion' in self.owner.special_abilities):
+            return True
+        
+        # Check faction-based corrosion (slimes)
+        if hasattr(self.owner, 'faction'):
+            from components.faction import Faction
+            return self.owner.faction == Faction.HOSTILE_ALL
+        
+        return False
+    
+    def _corrode_weapon(self, target):
+        """Corrode target's equipped weapon.
+        
+        Args:
+            target: Entity whose weapon to corrode
+            
+        Returns:
+            list: List of result dictionaries with corrosion messages
+        """
+        results = []
+        
+        if (hasattr(target, 'equipment') and target.equipment and 
+            target.equipment.main_hand and target.equipment.main_hand.equippable):
+            
+            weapon = target.equipment.main_hand
+            equippable = weapon.equippable
+            
+            # Only corrode if max damage is greater than min damage
+            if equippable.damage_max > equippable.damage_min:
+                equippable.damage_max -= 1
+                
+                from game_messages import Message
+                results.append({
+                    'message': Message(
+                        f'The {self.owner.name} corrodes {target.name}\'s {weapon.name}!',
+                        color=(255, 165, 0)  # Orange warning
+                    )
+                })
+        
+        return results
+    
+    def _corrode_armor(self, target):
+        """Corrode target's equipped armor.
+        
+        Args:
+            target: Entity whose armor to corrode
+            
+        Returns:
+            list: List of result dictionaries with corrosion messages
+        """
+        results = []
+        
+        if (hasattr(target, 'equipment') and target.equipment and 
+            target.equipment.off_hand and target.equipment.off_hand.equippable):
+            
+            armor = target.equipment.off_hand
+            equippable = armor.equippable
+            
+            # Only corrode if max defense is greater than min defense
+            if equippable.defense_max > equippable.defense_min:
+                equippable.defense_max -= 1
+                
+                from game_messages import Message
+                results.append({
+                    'message': Message(
+                        f'{target.name}\'s {armor.name} is corroded by acid!',
+                        color=(255, 165, 0)  # Orange warning
+                    )
+                })
+        
+        return results

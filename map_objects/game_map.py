@@ -16,7 +16,7 @@ from entity import Entity
 from entity_sorting_cache import invalidate_entity_cache
 from equipment_slots import EquipmentSlots
 from game_messages import Message
-from item_functions import cast_confuse, cast_fireball, cast_lightning, heal, enhance_weapon, enhance_armor
+from item_functions import heal
 from map_objects.rectangle import Rect
 from map_objects.tile import Tile
 from random_utils import from_dungeon_level, random_choice_from_dict
@@ -237,6 +237,23 @@ class GameMap:
                 [[15, 3], [30, 5], [60, 7]], self.dungeon_level
             ),
         }
+        
+        # Add slimes for testing or higher levels
+        from config.testing_config import is_testing_mode
+        if is_testing_mode():
+            # In testing mode, slimes appear early for testing
+            monster_chances["slime"] = 40  # 40% chance on level 1
+            monster_chances["large_slime"] = from_dungeon_level(
+                [[10, 1], [20, 3]], self.dungeon_level  # Small chance from level 1
+            )
+        else:
+            # In normal mode, slimes appear later
+            monster_chances["slime"] = from_dungeon_level(
+                [[20, 2], [40, 4], [60, 6]], self.dungeon_level
+            )
+            monster_chances["large_slime"] = from_dungeon_level(
+                [[5, 3], [15, 5], [25, 7]], self.dungeon_level
+            )
 
         # Get item spawn chances from configuration (normal or testing mode)
         item_spawn_config = config.get_item_spawn_chances(self.dungeon_level)
@@ -302,82 +319,18 @@ class GameMap:
                 elif item_choice == "shield":
                     item = entity_factory.create_armor("shield", x, y)
                 elif item_choice == "fireball_scroll":
-                    item_component = Item(
-                        use_function=cast_fireball,
-                        targeting=True,
-                        targeting_message=Message(
-                            "Left-click a target tile for the fireball, or right-click to cancel.",
-                            (63, 255, 255),
-                        ),
-                        damage=25,
-                        radius=3,
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        (255, 0, 0),
-                        "Fireball Scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
+                    item = entity_factory.create_spell_item("fireball_scroll", x, y)
                 elif item_choice == "confusion_scroll":
-                    item_component = Item(
-                        use_function=cast_confuse,
-                        targeting=True,
-                        targeting_message=Message(
-                            "Left-click an enemy to confuse it, or right-click to cancel.",
-                            (63, 255, 255),
-                        ),
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        (255, 63, 159),
-                        "Confusion Scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
+                    item = entity_factory.create_spell_item("confusion_scroll", x, y)
                 elif item_choice == "enhance_weapon_scroll":
-                    item_component = Item(
-                        use_function=enhance_weapon, min_bonus=1, max_bonus=2
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        (255, 127, 0),
-                        "Weapon Enhancement Scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
+                    item = entity_factory.create_spell_item("enhance_weapon_scroll", x, y)
                 elif item_choice == "enhance_armor_scroll":
-                    item_component = Item(
-                        use_function=enhance_armor, min_bonus=1, max_bonus=1
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        (127, 127, 255),
-                        "Armor Enhancement Scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
+                    item = entity_factory.create_spell_item("enhance_armor_scroll", x, y)
+                elif item_choice == "invisibility_scroll":
+                    item = entity_factory.create_spell_item("invisibility_scroll", x, y)
                 else:
-                    item_component = Item(
-                        use_function=cast_lightning, damage=40, maximum_range=5
-                    )
-                    item = Entity(
-                        x,
-                        y,
-                        "#",
-                        (255, 255, 0),
-                        "Lightning Scroll",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
+                    # Default to lightning scroll
+                    item = entity_factory.create_spell_item("lightning_scroll", x, y)
 
                 entities.append(item)
                 # Invalidate entity sorting cache when new entities are added

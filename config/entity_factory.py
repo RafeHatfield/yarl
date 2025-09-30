@@ -10,9 +10,10 @@ from typing import Optional
 
 from entity import Entity
 from components.fighter import Fighter
-from components.ai import BasicMonster
+from components.ai import BasicMonster, SlimeAI
 from components.item import Item
 from components.equippable import Equippable
+from components.faction import Faction, get_faction_from_string
 from equipment_slots import EquipmentSlots
 from render_functions import RenderOrder
 from config.entity_registry import (
@@ -92,6 +93,9 @@ class EntityFactory:
                 inventory_component = Inventory(capacity=monster_def.inventory_size)
                 logger.debug(f"Created inventory for {monster_def.name} with {monster_def.inventory_size} slots")
 
+            # Get faction from monster definition
+            faction = get_faction_from_string(getattr(monster_def, 'faction', 'neutral'))
+            
             # Create entity
             monster = Entity(
                 x=x,
@@ -101,11 +105,16 @@ class EntityFactory:
                 name=monster_def.name,
                 blocks=monster_def.blocks,
                 render_order=self._get_render_order(monster_def.render_order),
+                faction=faction,
                 fighter=fighter_component,
                 ai=ai_component,
                 equipment=equipment_component,
                 inventory=inventory_component
             )
+            
+            # Set special abilities if defined
+            if hasattr(monster_def, 'special_abilities') and monster_def.special_abilities:
+                monster.special_abilities = monster_def.special_abilities
             
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
@@ -277,10 +286,10 @@ class EntityFactory:
         Returns:
             AI component instance
         """
-        # For now, we only support basic AI
-        # This can be extended to support different AI types
         if ai_type == "basic":
             return BasicMonster()
+        elif ai_type == "slime":
+            return SlimeAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()
@@ -353,6 +362,10 @@ class EntityFactory:
             return Item(use_function=enhance_weapon)
         elif spell_def.name.lower().replace(' ', '_') == "enhance_armor_scroll":
             return Item(use_function=enhance_armor)
+        elif spell_def.name.lower().replace(' ', '_') == "invisibility_scroll":
+            from item_functions import cast_invisibility
+            duration = getattr(spell_def, 'duration', 10)  # Default 10 turns
+            return Item(use_function=cast_invisibility, duration=duration)
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
             return Item()

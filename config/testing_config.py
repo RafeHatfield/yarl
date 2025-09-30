@@ -55,6 +55,7 @@ class TestingConfig:
                 "lightning_scroll": [[30, 1], [45, 4]],  # Available from level 1
                 "fireball_scroll": [[30, 1], [45, 6]],  # Available from level 1
                 "confusion_scroll": [[30, 1], [45, 2]],  # Available from level 1
+                "invisibility_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "enhance_weapon_scroll": [[20, 1], [35, 3]],  # Enhancement scrolls for testing
                 "enhance_armor_scroll": [[20, 1], [35, 3]],
             }
@@ -67,6 +68,7 @@ class TestingConfig:
                 "lightning_scroll": [[25, 4]],
                 "fireball_scroll": [[25, 6]],
                 "confusion_scroll": [[10, 2]],
+                "invisibility_scroll": [[15, 4]],  # Available from level 4 in normal mode
                 "enhance_weapon_scroll": [[10, 5]],  # Rare enhancement scrolls
                 "enhance_armor_scroll": [[10, 6]],
             }

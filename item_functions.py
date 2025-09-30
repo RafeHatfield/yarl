@@ -342,3 +342,50 @@ def enhance_armor(*args, **kwargs):
         })
     
     return results
+
+
+def cast_invisibility(*args, **kwargs):
+    """Cast invisibility on the caster, making them invisible to most monsters.
+    
+    The invisibility effect lasts for a limited number of turns and breaks
+    when the player attacks. This enables tactical gameplay where monsters
+    can be made to fight each other.
+    
+    Args:
+        *args: First argument should be the entity casting invisibility
+        **kwargs: Should contain 'duration' key with number of turns (default 10)
+        
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    entity = args[0]
+    duration = kwargs.get("duration", 10)
+    
+    results = []
+    
+    # Check if already invisible
+    if hasattr(entity, 'invisible') and entity.invisible:
+        results.append({
+            "consumed": False,
+            "message": Message("You are already invisible!", (255, 255, 0))
+        })
+        return results
+    
+    # Apply invisibility effect
+    from components.status_effects import InvisibilityEffect
+    invisibility_effect = InvisibilityEffect(duration=duration, owner=entity)
+    
+    # Add the status effect to the entity
+    effect_results = entity.add_status_effect(invisibility_effect)
+    results.extend(effect_results)
+    
+    # Add success message
+    results.append({
+        "consumed": True,
+        "message": Message(
+            f"{entity.name} becomes invisible for {duration} turns!",
+            (200, 200, 255)  # Light blue
+        )
+    })
+    
+    return results

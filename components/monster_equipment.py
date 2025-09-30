@@ -126,13 +126,14 @@ class MonsterLootDropper:
     """Handles dropping loot when monsters die."""
     
     @staticmethod
-    def drop_monster_loot(monster, x: int, y: int) -> List:
+    def drop_monster_loot(monster, x: int, y: int, game_map=None) -> List:
         """Drop all items from a monster's inventory at the specified location.
         
         Args:
             monster: Monster entity that died
             x: X coordinate where to drop loot
             y: Y coordinate where to drop loot
+            game_map: Game map to check for valid drop locations (optional)
             
         Returns:
             List: List of dropped item entities
@@ -144,7 +145,7 @@ class MonsterLootDropper:
             # Drop main hand weapon
             if monster.equipment.main_hand:
                 weapon = monster.equipment.main_hand
-                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items)
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 weapon.x = drop_x
                 weapon.y = drop_y
                 dropped_items.append(weapon)
@@ -153,7 +154,7 @@ class MonsterLootDropper:
             # Drop off hand armor
             if monster.equipment.off_hand:
                 armor = monster.equipment.off_hand
-                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items)
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 armor.x = drop_x
                 armor.y = drop_y
                 dropped_items.append(armor)
@@ -162,7 +163,7 @@ class MonsterLootDropper:
         # Drop inventory items (if monster has inventory)
         if hasattr(monster, 'inventory') and monster.inventory:
             for item in monster.inventory.items:
-                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items)
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 item.x = drop_x
                 item.y = drop_y
                 dropped_items.append(item)
@@ -178,13 +179,14 @@ class MonsterLootDropper:
         return dropped_items
     
     @staticmethod
-    def _find_drop_location(center_x: int, center_y: int, existing_items: List) -> tuple:
-        """Find a suitable location to drop an item, avoiding stacking.
+    def _find_drop_location(center_x: int, center_y: int, existing_items: List, game_map=None) -> tuple:
+        """Find a suitable location to drop an item, avoiding stacking and walls.
         
         Args:
             center_x: Preferred X coordinate (monster's position)
             center_y: Preferred Y coordinate (monster's position)
             existing_items: Items already dropped (to avoid stacking)
+            game_map: Game map to check for blocked tiles (optional)
             
         Returns:
             tuple: (x, y) coordinates for the drop location
@@ -206,6 +208,15 @@ class MonsterLootDropper:
             drop_x = center_x + dx
             drop_y = center_y + dy
             
+            # Check if position is within map bounds
+            if game_map and (drop_x < 0 or drop_x >= game_map.width or 
+                           drop_y < 0 or drop_y >= game_map.height):
+                continue
+            
+            # Check if tile is blocked (wall)
+            if game_map and game_map.tiles[drop_x][drop_y].blocked:
+                continue
+            
             # Check if this position is already occupied by a dropped item
             position_occupied = any(
                 item.x == drop_x and item.y == drop_y 
@@ -216,6 +227,7 @@ class MonsterLootDropper:
                 return drop_x, drop_y
         
         # Fallback: use the original position if all adjacent spots are taken
+        # This shouldn't happen often, but ensures items don't disappear
         return center_x, center_y
 
 
@@ -234,15 +246,16 @@ def spawn_equipment_on_monster(monster, dungeon_level: int) -> List:
     return spawner.generate_equipment_for_monster(monster, dungeon_level)
 
 
-def drop_loot_from_monster(monster, x: int, y: int) -> List:
+def drop_loot_from_monster(monster, x: int, y: int, game_map=None) -> List:
     """Convenience function to drop loot from a dead monster.
     
     Args:
         monster: Monster entity that died
         x: X coordinate where to drop loot
         y: Y coordinate where to drop loot
+        game_map: Game map to check for valid drop locations (optional)
         
     Returns:
         List: List of dropped item entities
     """
-    return MonsterLootDropper.drop_monster_loot(monster, x, y)
+    return MonsterLootDropper.drop_monster_loot(monster, x, y, game_map)

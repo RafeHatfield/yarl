@@ -1,4 +1,5 @@
 from random import randint
+from typing import List, Optional, Any, Dict
 
 import tcod as libtcod
 import tcod.libtcodpy as libtcodpy
@@ -6,6 +7,7 @@ import tcod.libtcodpy as libtcodpy
 from game_messages import Message
 from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger
+from components.faction import Faction, are_factions_hostile, get_target_priority
 
 
 class BasicMonster:
@@ -278,3 +280,122 @@ class ConfusedMonster:
             )
 
         return results
+
+
+class SlimeAI:
+    """AI component for slimes that can attack multiple factions.
+    
+    Slimes are hostile to all other entities (HOSTILE_ALL faction) and will
+    prioritize the player over other monsters, but will attack any visible
+    hostile target. This enables monster-vs-monster combat scenarios.
+    
+    Attributes:
+        owner (Entity): The entity that owns this AI component
+    """
+    
+    def __init__(self):
+        """Initialize a SlimeAI."""
+        self.owner = None  # Will be set by Entity when component is registered
+    
+    def take_turn(self, target, fov_map, game_map, entities):
+        """Execute one turn of slime AI behavior.
+        
+        Slimes will target the closest hostile entity, prioritizing the player
+        if they are within the same distance as other targets.
+        
+        Args:
+            target (Entity): The primary target entity (usually the player)
+            fov_map: Field of view map for visibility checks
+            game_map (GameMap): The game map for pathfinding
+            entities (list): List of all entities for collision detection
+            
+        Returns:
+            list: List of result dictionaries with AI actions and effects
+        """
+        results = []
+        monster = self.owner
+        
+        if map_is_in_fov(fov_map, monster.x, monster.y):
+            # Find the best target based on faction relationships and distance
+            best_target = self._find_best_target(entities, fov_map)
+            
+            if best_target:
+                # Calculate distance to target
+                distance = monster.distance_to(best_target)
+                
+                if distance >= 2:
+                    # Move towards target using A* pathfinding
+                    monster.move_astar(best_target, entities, game_map)
+                    MonsterActionLogger.log_action_attempt(
+                        monster, "move", f"moving towards {best_target.name}"
+                    )
+                elif best_target.fighter:
+                    # Attack the target
+                    attack_results = monster.fighter.attack(best_target)
+                    results.extend(attack_results)
+                    MonsterActionLogger.log_action_attempt(
+                        monster, "attack", f"attacking {best_target.name}"
+                    )
+        
+        return results
+    
+    def _find_best_target(self, entities, fov_map) -> Optional[Any]:
+        """Find the best target based on faction relationships and proximity.
+        
+        Args:
+            entities: List of all entities to consider
+            fov_map: Field of view map for visibility checks
+            
+        Returns:
+            Entity or None: The best target to attack, or None if no valid targets
+        """
+        visible_targets = []
+        
+        for entity in entities:
+            if (entity != self.owner and 
+                entity.fighter and 
+                self._can_see_target(entity, fov_map) and
+                self._is_hostile_to(entity)):
+                
+                distance = self.owner.distance_to(entity)
+                priority = get_target_priority(self.owner.faction, entity.faction)
+                visible_targets.append((entity, distance, priority))
+        
+        if not visible_targets:
+            return None
+        
+        # Sort by priority (higher first), then by distance (closer first)
+        visible_targets.sort(key=lambda x: (-x[2], x[1]))
+        return visible_targets[0][0]
+    
+    def _can_see_target(self, target, fov_map) -> bool:
+        """Check if this AI can see the target.
+        
+        Args:
+            target: Entity to check visibility for
+            fov_map: Field of view map
+            
+        Returns:
+            bool: True if target is visible
+        """
+        # Check basic FOV
+        if not map_is_in_fov(fov_map, target.x, target.y):
+            return False
+        
+        # Check invisibility
+        if hasattr(target, 'invisible') and target.invisible:
+            # Future: Some monsters might see through invisibility
+            return False
+        
+        return True
+    
+    def _is_hostile_to(self, target) -> bool:
+        """Check if this slime should attack the target based on factions.
+        
+        Args:
+            target: Entity to check hostility against
+            
+        Returns:
+            bool: True if slime should attack the target
+        """
+        return are_factions_hostile(self.owner.faction, target.faction)

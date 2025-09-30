@@ -297,10 +297,26 @@ def draw_entity(con, entity, fov_map, game_map):
     if map_is_in_fov(fov_map, entity.x, entity.y) or (
         has_stairs and game_map.tiles[entity.x][entity.y].explored
     ):
-        libtcod.console_set_default_foreground(con, entity.color)
-        libtcod.console_put_char(
-            con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE
-        )
+        # Check if entity is invisible and modify rendering accordingly
+        if hasattr(entity, 'invisible') and entity.invisible:
+            # Render invisible entities with a translucent/faded appearance
+            # Use a darker, more transparent version of the original color
+            original_color = entity.color
+            invisible_color = (
+                max(0, original_color[0] // 3),  # Reduce red by 2/3
+                max(0, original_color[1] // 3),  # Reduce green by 2/3  
+                max(0, original_color[2] // 3)   # Reduce blue by 2/3
+            )
+            libtcod.console_set_default_foreground(con, invisible_color)
+            # Use a different character to indicate invisibility (optional)
+            char = '?' if entity.name == "Player" else entity.char
+            libtcod.console_put_char(con, entity.x, entity.y, char, libtcod.BKGND_NONE)
+        else:
+            # Normal rendering
+            libtcod.console_set_default_foreground(con, entity.color)
+            libtcod.console_put_char(
+                con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE
+            )
 
 
 def clear_entity(con, entity):

@@ -259,7 +259,7 @@ class AISystem(System):
                 else:
                     # Monster died - transform to corpse and handle loot
                     from death_functions import kill_monster
-                    death_message = kill_monster(dead_entity)
+                    death_message = kill_monster(dead_entity, game_state.game_map)
                     if game_state.message_log:
                         game_state.message_log.add_message(death_message)
                     
@@ -271,6 +271,15 @@ class AISystem(System):
                         delattr(dead_entity, '_dropped_loot')
                         # Invalidate entity sorting cache when new entities are added
                         invalidate_entity_cache("entity_added_loot_ai")
+                    
+                    # Handle spawned entities (e.g., slime splitting)
+                    if hasattr(dead_entity, '_spawned_entities') and dead_entity._spawned_entities:
+                        # Add spawned entities to the entities list
+                        game_state.entities.extend(dead_entity._spawned_entities)
+                        # Clean up the temporary attribute
+                        delattr(dead_entity, '_spawned_entities')
+                        # Invalidate entity sorting cache when new entities are added
+                        invalidate_entity_cache("entity_added_spawned_ai")
                     
                     logger.debug(f"Monster {dead_entity.name} died and transformed to corpse")
 

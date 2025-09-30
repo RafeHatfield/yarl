@@ -130,6 +130,41 @@ monsters:
     # Inherits: damage_min: 8, damage_max: 12, ai_type: "basic", etc.
     # Total damage: 3 power + 8-12 natural = 11-15 (very powerful!)
 
+  # Slime monsters - hostile to all factions
+  slime:
+    stats:
+      hp: 15
+      power: 0  # No magical power
+      defense: 0
+      xp: 25
+      damage_min: 1  # Weak individual attacks: 1-3
+      damage_max: 3  # But dangerous in groups and with corrosion
+    char: "s"
+    color: [0, 255, 0]  # Bright green
+    ai_type: "slime"
+    faction: "hostile_all"  # Attacks everyone including other monsters
+    render_order: "actor"
+    blocks: true
+    # Slimes don't seek items - they're simple creatures
+    can_seek_items: false
+    inventory_size: 0
+    special_abilities: ["corrosion"]  # Can corrode equipment on successful hits
+
+  # Large slime - can split into smaller slimes when defeated
+  large_slime:
+    extends: slime            # Inherit all slime properties
+    stats:
+      hp: 40                  # Override: much more health
+      power: 0                # Same as regular slime
+      defense: 1              # Override: slightly tougher
+      xp: 75                  # Override: more XP reward
+      damage_min: 2           # Override: stronger attacks: 2-5
+      damage_max: 5
+    char: "S"                 # Override: capital S for Large Slime
+    color: [0, 200, 0]        # Override: darker green (more mature)
+    special_abilities: ["corrosion", "splitting"]  # Override: can split + corrode
+    # Inherits: ai_type: "slime", faction: "hostile_all", can_seek_items: false, etc.
+
 # Weapon definitions
 weapons:
   # Starting weapon
@@ -202,3 +237,10 @@ spells:
     spell_type: "utility" 
     char: "~"
     color: [0, 255, 127]  # Cyan
+
+  # Invisibility scroll - makes player invisible to most monsters
+  invisibility_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [200, 200, 255]  # Light blue
+    duration: 10  # Turns of invisibility

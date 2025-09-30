@@ -157,6 +157,9 @@ class ActionProcessor:
             player.move(dx, dy)
             self.state_manager.request_fov_recompute()
         
+        # Process status effects at end of player turn
+        self._process_player_status_effects()
+        
         # Switch to enemy turn
         self.state_manager.set_game_state(GameStates.ENEMY_TURN)
     
@@ -169,6 +172,10 @@ class ActionProcessor:
         """
         if not (attacker.fighter and target.fighter):
             return
+        
+        # Break invisibility if the attacker is attacking
+        if hasattr(attacker, 'invisible') and attacker.invisible:
+            self._break_invisibility(attacker)
         
         attack_results = attacker.fighter.attack(target)
         
@@ -202,7 +209,8 @@ class ActionProcessor:
         else:
             # Monster died - always transform to corpse first
             from death_functions import kill_monster
-            death_message = kill_monster(dead_entity)
+            game_map = self.state_manager.state.game_map
+            death_message = kill_monster(dead_entity, game_map)
             self.state_manager.state.message_log.add_message(death_message)
             
             # Handle dropped loot
@@ -213,6 +221,15 @@ class ActionProcessor:
                 delattr(dead_entity, '_dropped_loot')
                 # Invalidate entity sorting cache when new entities are added
                 invalidate_entity_cache("entity_added_loot")
+            
+            # Handle spawned entities (e.g., slime splitting)
+            if hasattr(dead_entity, '_spawned_entities') and dead_entity._spawned_entities:
+                # Add spawned entities to the entities list
+                self.state_manager.state.entities.extend(dead_entity._spawned_entities)
+                # Clean up the temporary attribute
+                delattr(dead_entity, '_spawned_entities')
+                # Invalidate entity sorting cache when new entities are added
+                invalidate_entity_cache("entity_added_spawned")
             
             # Then handle removal if requested (for combat deaths)
             if remove_from_entities:
@@ -227,6 +244,8 @@ class ActionProcessor:
         """Handle wait action (player skips turn)."""
         current_state = self.state_manager.state.current_state
         if current_state == GameStates.PLAYERS_TURN:
+            # Process status effects at end of player turn
+            self._process_player_status_effects()
             self.state_manager.set_game_state(GameStates.ENEMY_TURN)
     
     def _handle_pickup(self, _) -> None:
@@ -603,3 +622,44 @@ class ActionProcessor:
                 if message_log:
                     from game_messages import Message
                     message_log.add_message(Message("Movement cancelled.", (255, 255, 0)))
+    
+    def _process_player_status_effects(self) -> None:
+        """Process status effects at the end of the player's turn."""
+        player = self.state_manager.state.player
+        message_log = self.state_manager.state.message_log
+        
+        if not player or not message_log:
+            return
+        
+        # Process status effects turn end
+        effect_results = player.process_status_effects_turn_end()
+        
+        # Add any messages from status effects
+        for result in effect_results:
+            message = result.get("message")
+            if message:
+                message_log.add_message(message)
+    
+    def _break_invisibility(self, entity) -> None:
+        """Break invisibility effect on an entity when they attack.
+        
+        Args:
+            entity: The entity whose invisibility should be broken
+        """
+        message_log = self.state_manager.state.message_log
+        
+        if not entity or not message_log:
+            return
+        
+        # Get the invisibility effect and break it
+        status_manager = entity.get_status_effect_manager()
+        if status_manager and status_manager.has_effect("invisibility"):
+            invisibility_effect = status_manager.get_effect("invisibility")
+            if invisibility_effect:
+                break_results = invisibility_effect.break_invisibility()
+                
+                # Add any messages from breaking invisibility
+                for result in break_results:
+                    message = result.get("message")
+                    if message:
+                        message_log.add_message(message)

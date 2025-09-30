@@ -73,10 +73,14 @@ class MonsterDefinition:
     render_order: str = "actor"
     blocks: bool = True
     extends: Optional[str] = None
+    # Faction system
+    faction: str = "neutral"
     # Item-seeking behavior
     can_seek_items: bool = False
     inventory_size: int = 0
     seek_distance: int = 5
+    # Special abilities
+    special_abilities: Optional[List[str]] = None
 
 
 @dataclass  
@@ -277,10 +281,14 @@ class EntityRegistry:
                     render_order=monster_data.get('render_order', 'actor'),
                     blocks=monster_data.get('blocks', True),
                     extends=None,  # Clear extends after resolution
+                    # Faction system
+                    faction=monster_data.get('faction', 'neutral'),
                     # Item-seeking behavior
                     can_seek_items=monster_data.get('can_seek_items', False),
                     inventory_size=monster_data.get('inventory_size', 0),
-                    seek_distance=monster_data.get('seek_distance', 5)
+                    seek_distance=monster_data.get('seek_distance', 5),
+                    # Special abilities
+                    special_abilities=monster_data.get('special_abilities', None)
                 )
                 
                 self.monsters[monster_id] = monster_def

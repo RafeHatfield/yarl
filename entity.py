@@ -12,6 +12,7 @@ import tcod
 import tcod.libtcodpy as libtcodpy
 
 from components.item import Item
+from components.faction import Faction, get_faction_from_string
 from config.game_constants import get_pathfinding_config
 from render_functions import RenderOrder
 
@@ -41,6 +42,10 @@ class Entity:
         name (str): Display name of the entity
         blocks (bool): Whether this entity blocks movement
         render_order (RenderOrder): Rendering priority order
+        faction (Faction): Entity faction for combat relationships
+        invisible (bool): Whether entity is invisible to most AI
+        status_effects (Optional[Any]): Status effect manager
+        special_abilities (Optional[List[str]]): List of special abilities
         fighter (Optional[Fighter]): Combat component
         ai (Optional[Any]): AI behavior component
         item (Optional[Item]): Item component
@@ -59,6 +64,10 @@ class Entity:
     name: str
     blocks: bool
     render_order: RenderOrder
+    faction: Faction
+    invisible: bool
+    status_effects: Optional[Any]  # StatusEffectManager - avoid circular import
+    special_abilities: Optional[List[str]]
     fighter: Optional['Fighter']
     ai: Optional[Any]  # Could be BasicMonster, ConfusedMonster, or custom AI
     item: Optional[Item]
@@ -77,6 +86,7 @@ class Entity:
         name: str,
         blocks: bool = False,
         render_order: RenderOrder = RenderOrder.CORPSE,
+        faction: Optional[Faction] = None,
         **components: Any
     ) -> None:
         """Initialize an Entity with automatic component management.
@@ -89,6 +99,7 @@ class Entity:
             name (str): Display name of the entity
             blocks (bool, optional): Whether this entity blocks movement. Defaults to False.
             render_order (RenderOrder, optional): Rendering priority. Defaults to RenderOrder.CORPSE.
+            faction (Faction, optional): Entity faction for combat relationships. Defaults to NEUTRAL.
             **components: Component instances (fighter, ai, item, inventory, stairs, level, equipment, equippable)
         """
         # Set basic properties
@@ -99,6 +110,16 @@ class Entity:
         self.name = name
         self.blocks = blocks
         self.render_order = render_order
+        
+        # Set faction (default to NEUTRAL for most entities)
+        self.faction = faction if faction is not None else Faction.NEUTRAL
+        
+        # Initialize status effect properties
+        self.invisible = False
+        self.status_effects = None  # Will be initialized when first status effect is added
+        
+        # Initialize special abilities
+        self.special_abilities = None
         
         # Initialize all components to None first
         self.fighter = None
@@ -127,7 +148,7 @@ class Entity:
         # Valid component names that can be registered
         valid_components = {
             'fighter', 'ai', 'item', 'inventory', 'stairs', 
-            'level', 'equipment', 'equippable', 'pathfinding'
+            'level', 'equipment', 'equippable', 'pathfinding', 'status_effects'
         }
         
         for component_name, component in components.items():
@@ -158,7 +179,7 @@ class Entity:
         """
         return cls(
             x=x, y=y, char='@', color=(255, 255, 255), name='Player',
-            blocks=True, render_order=RenderOrder.ACTOR,
+            blocks=True, render_order=RenderOrder.ACTOR, faction=Faction.PLAYER,
             fighter=fighter, inventory=inventory, level=level, equipment=equipment
         )
     
@@ -350,6 +371,62 @@ class Entity:
                 display_name += f" {defense_text}"
         
         return display_name
+    
+    def get_status_effect_manager(self):
+        """Get or create the status effect manager for this entity.
+        
+        Returns:
+            StatusEffectManager: The status effect manager
+        """
+        if self.status_effects is None:
+            from components.status_effects import StatusEffectManager
+            self.status_effects = StatusEffectManager(self)
+        return self.status_effects
+    
+    def add_status_effect(self, effect):
+        """Add a status effect to this entity.
+        
+        Args:
+            effect: StatusEffect instance to add
+            
+        Returns:
+            List of result dictionaries from applying the effect
+        """
+        manager = self.get_status_effect_manager()
+        return manager.add_effect(effect)
+    
+    def has_status_effect(self, name: str) -> bool:
+        """Check if entity has a specific status effect.
+        
+        Args:
+            name: Name of the status effect to check for
+            
+        Returns:
+            True if entity has the effect
+        """
+        if self.status_effects is None:
+            return False
+        return self.status_effects.has_effect(name)
+    
+    def process_status_effects_turn_start(self):
+        """Process status effects at the start of this entity's turn.
+        
+        Returns:
+            List of result dictionaries from effect processing
+        """
+        if self.status_effects is None:
+            return []
+        return self.status_effects.process_turn_start()
+    
+    def process_status_effects_turn_end(self):
+        """Process status effects at the end of this entity's turn.
+        
+        Returns:
+            List of result dictionaries from effect processing
+        """
+        if self.status_effects is None:
+            return []
+        return self.status_effects.process_turn_end()
 
 
 def get_blocking_entities_at_location(entities: List[Entity], destination_x: int, destination_y: int) -> Optional[Entity]:

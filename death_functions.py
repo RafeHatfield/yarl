@@ -4,6 +4,9 @@ This module contains functions that are called when entities die,
 handling the visual and mechanical changes that occur.
 """
 
+import random
+from typing import List, Optional
+
 from game_messages import Message
 from game_states import GameStates
 from render_functions import RenderOrder
@@ -28,7 +31,102 @@ def kill_player(player):
     return Message("You died!", (255, 0, 0)), GameStates.PLAYER_DEAD
 
 
-def kill_monster(monster):
+def _handle_slime_splitting(monster, game_map) -> List:
+    """Handle Large Slime splitting when it dies.
+    
+    Args:
+        monster: The Large Slime that died
+        game_map: Game map for spawning new slimes
+        
+    Returns:
+        List of newly spawned slime entities, or empty list if no splitting
+    """
+    # Check if this monster can split
+    if not _can_monster_split(monster):
+        return []
+    
+    # 60% chance to split
+    if random.random() > 0.6:
+        return []
+    
+    # Spawn 2-3 regular slimes
+    num_slimes = random.randint(2, 3)
+    spawned_slimes = []
+    
+    # Get valid spawn positions around the dead slime
+    spawn_positions = _get_valid_spawn_positions(monster.x, monster.y, game_map, num_slimes)
+    
+    # Create new slimes
+    from config.entity_factory import get_entity_factory
+    entity_factory = get_entity_factory()
+    
+    for i, (x, y) in enumerate(spawn_positions):
+        if i >= num_slimes:
+            break
+            
+        # Create a fresh regular slime (not inheriting from large slime)
+        new_slime = entity_factory.create_monster("slime", x, y)
+        if new_slime:
+            spawned_slimes.append(new_slime)
+    
+    return spawned_slimes
+
+
+def _can_monster_split(monster) -> bool:
+    """Check if a monster has splitting ability.
+    
+    Args:
+        monster: Entity to check
+        
+    Returns:
+        True if monster can split
+    """
+    return (hasattr(monster, 'special_abilities') and 
+            monster.special_abilities and 
+            'splitting' in monster.special_abilities)
+
+
+def _get_valid_spawn_positions(center_x: int, center_y: int, game_map, max_positions: int) -> List[tuple]:
+    """Get valid positions around a center point for spawning entities.
+    
+    Args:
+        center_x: X coordinate of center position
+        center_y: Y coordinate of center position  
+        game_map: Game map to check for valid tiles
+        max_positions: Maximum number of positions to return
+        
+    Returns:
+        List of (x, y) tuples for valid spawn positions
+    """
+    if not game_map:
+        return [(center_x, center_y)]  # Fallback to center if no map
+    
+    valid_positions = []
+    
+    # Check positions in expanding rings around the center
+    for radius in range(1, 4):  # Check up to 3 tiles away
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                # Skip positions not on the current radius ring
+                if abs(dx) != radius and abs(dy) != radius:
+                    continue
+                    
+                x, y = center_x + dx, center_y + dy
+                
+                # Check bounds
+                if (0 <= x < game_map.width and 0 <= y < game_map.height and
+                    not game_map.tiles[x][y].blocked):
+                    valid_positions.append((x, y))
+                    
+                    if len(valid_positions) >= max_positions:
+                        return valid_positions
+    
+    # If we couldn't find enough positions, return what we have
+    # If no valid positions found, fall back to center (shouldn't happen but safety)
+    return valid_positions if valid_positions else [(center_x, center_y)]
+
+
+def kill_monster(monster, game_map=None):
     """Handle monster death.
 
     Transforms a monster into a non-blocking corpse, removes its
@@ -36,13 +134,14 @@ def kill_monster(monster):
 
     Args:
         monster (Entity): The monster entity that died
+        game_map (GameMap, optional): Game map for proper item placement
 
     Returns:
         Message: Death message to display to the player
     """
     # Drop loot before transforming to corpse
     from components.monster_equipment import drop_loot_from_monster
-    dropped_items = drop_loot_from_monster(monster, monster.x, monster.y)
+    dropped_items = drop_loot_from_monster(monster, monster.x, monster.y, game_map)
     
     # Add dropped items to the game world
     if dropped_items:
@@ -51,10 +150,23 @@ def kill_monster(monster):
         # We'll store them on the monster temporarily and let the caller handle it
         monster._dropped_loot = dropped_items
     
-    # death_message = '{0} is dead!'.format(monster.name.capitalize())
-    death_message = Message(
-        "{0} is dead!".format(monster.name.capitalize()), (255, 127, 0)
-    )
+    # Handle slime splitting before transforming to corpse
+    spawned_slimes = _handle_slime_splitting(monster, game_map)
+    if spawned_slimes:
+        # Store spawned slimes on the monster for the caller to handle
+        monster._spawned_entities = spawned_slimes
+        
+        # Create special death message for splitting
+        death_message = Message(
+            "{0} dies and splits into {1} smaller slimes!".format(
+                monster.name.capitalize(), len(spawned_slimes)
+            ), (0, 255, 0)  # Green for special event
+        )
+    else:
+        # Normal death message
+        death_message = Message(
+            "{0} is dead!".format(monster.name.capitalize()), (255, 127, 0)
+        )
 
     monster.char = "%"
     monster.color = (127, 0, 0)
