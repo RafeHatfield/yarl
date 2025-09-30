@@ -269,15 +269,15 @@ def character_screen(
 
 
 def _get_attack_display_text(player):
-    """Get attack display text with weapon damage range.
+    """Get attack display text with weapon damage range and power bonuses.
     
     Args:
         player (Entity): Player entity with fighter and equipment components
         
     Returns:
-        str: Attack display text with weapon damage range if applicable
+        str: Attack display text showing physical damage + magical power
     """
-    # Get base power without equipment bonuses
+    # Get base power (should be 0 for natural, bonuses from equipment/magic)
     base_power = player.fighter.base_power
     
     # Check for equipped weapon with damage range
@@ -288,23 +288,44 @@ def _get_attack_display_text(player):
         weapon = player.equipment.main_hand
         equippable = weapon.equippable
         
-        # If weapon has meaningful damage range, show it
+        # Get weapon damage range
         if hasattr(equippable, 'damage_min') and hasattr(equippable, 'damage_max'):
             if (equippable.damage_min is not None and equippable.damage_max is not None and
                 equippable.damage_max > 0):
                 weapon_range = f"{equippable.damage_min}-{equippable.damage_max}"
-                total_min = base_power + equippable.damage_min
-                total_max = base_power + equippable.damage_max
-                return f"Attack: {base_power} + {weapon_range} = {total_min}-{total_max}"
+                
+                # Get power bonus from weapon
+                power_bonus = getattr(equippable, 'power_bonus', 0)
+                total_power = base_power + power_bonus
+                
+                if total_power > 0:
+                    total_min = equippable.damage_min + total_power
+                    total_max = equippable.damage_max + total_power
+                    return f"Attack: {weapon_range} + {total_power} power = {total_min}-{total_max}"
+                else:
+                    return f"Attack: {weapon_range} (weapon damage)"
         
-        # Fallback to power bonus if no damage range
+        # Fallback to power bonus only if no damage range
         power_bonus = getattr(equippable, 'power_bonus', 0)
         if power_bonus > 0:
             total_power = base_power + power_bonus
-            return f"Attack: {base_power} + {power_bonus} = {total_power}"
+            return f"Attack: {total_power} power"
     
-    # No weapon or no bonus
-    return f"Attack: {base_power}"
+    # No weapon - show natural damage + any base power
+    if hasattr(player.fighter, 'damage_min') and hasattr(player.fighter, 'damage_max'):
+        if (player.fighter.damage_min is not None and player.fighter.damage_max is not None and
+            player.fighter.damage_max > 0):
+            natural_range = f"{player.fighter.damage_min}-{player.fighter.damage_max}"
+            
+            if base_power > 0:
+                total_min = player.fighter.damage_min + base_power
+                total_max = player.fighter.damage_max + base_power
+                return f"Attack: {natural_range} + {base_power} power = {total_min}-{total_max}"
+            else:
+                return f"Attack: {natural_range} (natural)"
+    
+    # Fallback to just power
+    return f"Attack: {base_power} power"
 
 
 def _get_defense_display_text(player):
