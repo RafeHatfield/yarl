@@ -58,9 +58,9 @@ class TestSaveGameRegression(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures."""
         os.chdir(self.original_cwd)
-        # Clean up any save files
+        # Clean up any save files (both JSON and legacy formats)
         for file in os.listdir(self.test_dir):
-            if file.startswith('savegame.dat'):
+            if file.startswith('savegame.'):
                 os.remove(os.path.join(self.test_dir, file))
         os.rmdir(self.test_dir)
 
@@ -74,8 +74,8 @@ class TestSaveGameRegression(unittest.TestCase):
         # First save
         save_game(self.player, self.entities, self.game_map, self.message_log, self.game_state)
         
-        # Verify save file exists
-        self.assertTrue(os.path.exists('savegame.dat.db'), "Save file should exist after first save")
+        # Verify save file exists (now JSON format)
+        self.assertTrue(os.path.exists('savegame.json'), "Save file should exist after first save")
         
         # Load and verify
         loaded_player, loaded_entities, loaded_map, loaded_log, loaded_state = load_game()
@@ -128,10 +128,10 @@ class TestSaveGameRegression(unittest.TestCase):
         """Regression test: Verify shelve flag 'c' behavior works correctly."""
         # First save - should create file
         save_game(self.player, self.entities, self.game_map, self.message_log, self.game_state)
-        self.assertTrue(os.path.exists('savegame.dat.db'), "First save should create file")
+        self.assertTrue(os.path.exists('savegame.json'), "First save should create file")
         
         # Get file modification time
-        first_mtime = os.path.getmtime('savegame.dat.db')
+        first_mtime = os.path.getmtime('savegame.json')
         
         # Wait a bit and save again
         import time
@@ -142,7 +142,7 @@ class TestSaveGameRegression(unittest.TestCase):
         save_game(self.player, self.entities, self.game_map, self.message_log, self.game_state)
         
         # File should be updated, not recreated
-        second_mtime = os.path.getmtime('savegame.dat.db')
+        second_mtime = os.path.getmtime('savegame.json')
         self.assertGreater(second_mtime, first_mtime, "Save file should be updated, not recreated")
         
         # Verify the update worked

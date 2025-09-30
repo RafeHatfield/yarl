@@ -16,7 +16,7 @@
 - **Progressive difficulty scaling** - Challenge increases with dungeon depth
 - **Multi-level dungeons** with stairs and level progression
 - **Character progression** - XP, leveling, and stat increases
-- **Save/Load system** - Persistent game state across sessions
+- **JSON Save/Load system** - Human-readable persistent game state with legacy compatibility
 - **Field of view (FOV)** and line-of-sight calculations
 - **Inventory management** with item usage and dropping
 - **Health and damage system** with healing mechanics
@@ -54,7 +54,7 @@
 - **Entity sorting cache** for optimized rendering performance
 - **Dynamic difficulty scaling** with configurable progression curves
 - **Weighted random selection** for balanced item/monster distribution
-- **Save/Load system** using Python's shelve with comprehensive validation
+- **JSON Save/Load system** with human-readable saves and legacy shelve compatibility
 - **Message logging system** for game events
 - **Character screen** with level, XP, and detailed stat display including variable damage/defense ranges
 - **Robust error handling** throughout the codebase
@@ -284,7 +284,7 @@ pytest tests/comprehensive/ -v               # Comprehensive end-to-end tests
 - **AI System** - BasicMonster and ConfusedMonster behavior
 - **Message System** - Game event logging and display
 - **Difficulty Scaling** - Progressive monster/item scaling, weighted selection
-- **Save/Load System** - Game state persistence, validation, error handling
+- **JSON Save/Load System** - Human-readable saves, legacy compatibility, comprehensive validation
 - **Character Progression** - XP system, leveling, stat increases
 - **Dungeon Levels** - Multi-floor generation, stairs, level transitions
 - **FOV & Rendering System** - Field of view calculations, map rendering, visual regression prevention
@@ -308,7 +308,7 @@ rlike/
 ├── config/             # Centralized configuration system
 │   ├── game_constants.py    # All game constants and configuration
 │   └── testing_config.py    # Testing mode configuration
-├── loader_functions/   # Game initialization and save/load
+├── loader_functions/   # Game initialization and JSON save/load
 │   ├── initialize_new_game.py  # New game setup
 │   └── data_loaders.py         # Save/load functionality
 ├── map_objects/        # Map generation and tiles
@@ -592,7 +592,7 @@ config/
 ## 🚧 Roadmap
 
 ### ✅ Completed Features
-- [x] **Save/Load System** - Persistent game state with validation
+- [x] **JSON Save/Load System** - Human-readable saves with legacy shelve compatibility
 - [x] **Multiple Dungeon Levels** - Stairs and level progression
 - [x] **Experience/Leveling** - Character progression with stat choices
 - [x] **Progressive Difficulty** - Dynamic scaling with dungeon depth
@@ -618,7 +618,7 @@ config/
 - [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets
 - [ ] **Chance to Hit/Dodge** - Enhanced combat mechanics with RNG
 - [ ] **Stat Boosting Potions** - Temporary and permanent stat enhancement items
-- [ ] **JSON Save/Load** - Replace shelve with JSON serialization
+- [x] **JSON Save/Load** - ✅ Complete - Human-readable saves with legacy compatibility
 - [ ] **Movement Speed Configuration** - Adjustable mouse movement animation speed
 
 #### 🟡 **Phase 2: Advanced Systems** (Medium - 2-4 weeks each)
@@ -659,7 +659,7 @@ config/
 | Stat Boosting Potions | 🟢 Easy | 1-2 weeks | Extend existing item system |
 | Movement Speed Config | 🟢 Easy | 1 week | Add animation timing to pathfinding |
 | Mouse Movement | ✅ Complete | 1 week | Pathfinding exists, add click handling |
-| JSON Save/Load | 🟢 Easy | 1-2 weeks | Replace existing serialization |
+| JSON Save/Load | ✅ Complete | 1-2 weeks | Replace existing serialization |
 | More Stats | 🟢 Easy | 1 week | Add to existing stat system |
 | More Monster Types | 🟢 Easy | 1-2 weeks | AI system supports expansion |
 | **Weapon Speed** | 🟢 Easy | 1-2 weeks | Add speed stat to weapons, modify turn order |

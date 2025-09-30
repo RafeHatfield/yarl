@@ -75,7 +75,8 @@ These features build on existing systems and provide immediate gameplay improvem
 | **Movement Speed Config** | 1 week | 🔥 High | Makes mouse movement feel perfect for each player | Add animation timing to pathfinding |
 | **Player Naming** | 1 week | 🔥 High | Allow players to enter custom names for personalization | Add name input dialog at game start |
 | **More Monster Types** | 1-2 weeks | 🔥 High | Keeps exploration fresh and challenging | AI system supports easy expansion |
-| **JSON Save/Load** | 1-2 weeks | 🔶 Medium | Human-readable saves, easier debugging | Replace existing shelve serialization |
+| **Multi-Save Games** | 2-3 weeks | 🔥 High | Multiple save slots with metadata display | Save slot UI, file management, save previews |
+| **JSON Save/Load** | ✅ Complete | 🔶 Medium | Human-readable saves, easier debugging | Replace existing shelve serialization |
 
 **Combined Impact:** Polishes the core experience and improves development workflow.
 
@@ -204,6 +205,7 @@ These features require significant architectural changes but provide transformat
 - Chance to Hit/Dodge
 - More Spells
 - Extended Equipment
+- Multi-Save Games
 
 ### **High Impact, Medium Effort (Do Second)**
 - Player Classes
@@ -218,7 +220,7 @@ These features require significant architectural changes but provide transformat
 
 ### **Medium Impact, Low Effort (Fill-in Work)**
 - Movement Speed Config
-- JSON Save/Load
+- ✅ JSON Save/Load (Complete)
 - More Monster Types
 
 ---
@@ -258,6 +260,7 @@ This roadmap should be updated:
 - **Mouse Movement System** (v1.8.0) - Complete click-to-move with pathfinding
 - **Variable Damage System** (v1.9.0) - Weapons with damage ranges, enhancement scrolls
 - **Variable Defense System** (v1.9.0) - Armor with defense ranges, dynamic protection
+- **JSON Save/Load System** (v2.0.0) - Human-readable saves with legacy compatibility
 - **Comprehensive Testing** - 1,096+ tests with 100% coverage
 - **Modern Architecture** - ECS, state machines, performance optimization
 

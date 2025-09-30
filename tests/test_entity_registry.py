@@ -399,7 +399,7 @@ monsters:
             }
         }
         
-        with pytest.raises(ValueError, match="Invalid monster configuration"):
+        with pytest.raises(ValueError, match="Invalid.*monster configuration"):
             self.registry._process_config_data(invalid_config)
 
 
@@ -443,36 +443,36 @@ class TestEntityRegistryIntegration:
             registry = EntityRegistry()
             registry.load_from_file(str(config_path))
             
-            # Verify player stats match hardcoded values
+            # Verify player stats match current values (updated for new power system)
             player_stats = registry.get_player_stats()
             assert player_stats.hp == 100
-            assert player_stats.power == 2
+            assert player_stats.power == 0  # Updated: new power system baseline
             assert player_stats.defense == 1
             
-            # Verify orc stats match hardcoded values
+            # Verify orc stats match current values (updated for new power system)
             orc = registry.get_monster("orc")
             assert orc.stats.hp == 20
-            assert orc.stats.power == 3  # Updated for variable damage balance
+            assert orc.stats.power == 0  # Updated: new power system baseline
             assert orc.stats.defense == 0
             assert orc.stats.xp == 35
             
-            # Verify troll stats match hardcoded values
+            # Verify troll stats match current values (updated for new power system)
             troll = registry.get_monster("troll")
             assert troll.stats.hp == 30
-            assert troll.stats.power == 6  # Updated for variable damage balance
+            assert troll.stats.power == 0  # Updated: new power system baseline
             assert troll.stats.defense == 2
             assert troll.stats.xp == 100
             
-            # Verify weapon stats match hardcoded values
+            # Verify weapon stats match current values (updated for new power system)
             dagger = registry.get_weapon("dagger")
             assert dagger.power_bonus == 0  # Basic weapons no longer have magic bonuses
-            assert dagger.damage_min == 1
-            assert dagger.damage_max == 3
+            assert dagger.damage_min == 3  # Updated: new damage values
+            assert dagger.damage_max == 5
             
             sword = registry.get_weapon("sword")
             assert sword.power_bonus == 0  # Basic weapons no longer have magic bonuses
-            assert sword.damage_min == 2
-            assert sword.damage_max == 5
+            assert sword.damage_min == 4  # Updated: new damage values
+            assert sword.damage_max == 7
             
             # Verify armor stats match hardcoded values
             shield = registry.get_armor("shield")

@@ -52,7 +52,7 @@ We've been experiencing runtime bugs that should be caught by tests:
 **Examples**:
 - Start game → move → pickup item → attack monster → level up
 - Menu navigation flows
-- Save/load functionality (when implemented)
+- JSON save/load functionality with legacy compatibility (comprehensive coverage)
 
 ## Testing Standards
 

@@ -221,6 +221,9 @@ class EntityRegistry:
         Args:
             config_data: Raw configuration data from YAML file
         """
+        # Store raw config data for inheritance processing
+        self._raw_config_data = config_data
+        
         # Load player stats
         if 'player' in config_data:
             try:
@@ -229,136 +232,409 @@ class EntityRegistry:
                 logger.error(f"Error loading player stats: {e}")
                 raise ValueError(f"Invalid player configuration: {e}")
 
-        # Load monsters
+        # Load monsters - process inheritance-aware
         if 'monsters' in config_data:
-            for monster_id, monster_data in config_data['monsters'].items():
-                try:
-                    # Handle stats sub-object
-                    stats_data = monster_data.get('stats', {})
-                    stats = EntityStats(**stats_data)
-                    
-                    # Create monster definition
-                    monster_def = MonsterDefinition(
-                        name=monster_id.title(),
-                        stats=stats,
-                        char=monster_data.get('char', '?'),
-                        color=tuple(monster_data.get('color', [255, 255, 255])),
-                        ai_type=monster_data.get('ai_type', 'basic'),
-                        render_order=monster_data.get('render_order', 'actor'),
-                        blocks=monster_data.get('blocks', True),
-                        extends=monster_data.get('extends'),
-                        # Item-seeking behavior
-                        can_seek_items=monster_data.get('can_seek_items', False),
-                        inventory_size=monster_data.get('inventory_size', 0),
-                        seek_distance=monster_data.get('seek_distance', 5)
-                    )
-                    
-                    self.monsters[monster_id] = monster_def
-                    
-                except Exception as e:
-                    logger.error(f"Error loading monster '{monster_id}': {e}")
-                    raise ValueError(f"Invalid monster configuration for '{monster_id}': {e}")
+            self._process_monsters_with_inheritance(config_data['monsters'])
 
-        # Load weapons
+        # Load weapons - process inheritance-aware
         if 'weapons' in config_data:
-            for weapon_id, weapon_data in config_data['weapons'].items():
-                try:
-                    weapon_def = WeaponDefinition(
-                        name=weapon_id.title(),
-                        power_bonus=weapon_data.get('power_bonus', 0),
-                        damage_min=weapon_data.get('damage_min', 0),
-                        damage_max=weapon_data.get('damage_max', 0),
-                        slot=weapon_data.get('slot', 'main_hand'),
-                        char=weapon_data.get('char', '/'),
-                        color=tuple(weapon_data.get('color', [139, 69, 19])),
-                        extends=weapon_data.get('extends')
-                    )
-                    
-                    self.weapons[weapon_id] = weapon_def
-                    
-                except Exception as e:
-                    logger.error(f"Error loading weapon '{weapon_id}': {e}")
-                    raise ValueError(f"Invalid weapon configuration for '{weapon_id}': {e}")
+            self._process_weapons_with_inheritance(config_data['weapons'])
 
-        # Load armor
+        # Load armor - process inheritance-aware
         if 'armor' in config_data:
-            for armor_id, armor_data in config_data['armor'].items():
-                try:
-                    armor_def = ArmorDefinition(
-                        name=armor_id.title(),
-                        defense_bonus=armor_data.get('defense_bonus', 0),
-                        defense_min=armor_data.get('defense_min', 0),
-                        defense_max=armor_data.get('defense_max', 0),
-                        slot=armor_data.get('slot', 'off_hand'),
-                        char=armor_data.get('char', '['),
-                        color=tuple(armor_data.get('color', [139, 69, 19])),
-                        extends=armor_data.get('extends')
-                    )
-                    
-                    self.armor[armor_id] = armor_def
-                    
-                except Exception as e:
-                    logger.error(f"Error loading armor '{armor_id}': {e}")
-                    raise ValueError(f"Invalid armor configuration for '{armor_id}': {e}")
+            self._process_armor_with_inheritance(config_data['armor'])
 
-        # Load spells
+        # Load spells - process inheritance-aware
         if 'spells' in config_data:
-            for spell_id, spell_data in config_data['spells'].items():
-                try:
-                    spell_def = SpellDefinition(
-                        name=spell_id.replace('_', ' ').title(),
-                        spell_type=spell_data.get('spell_type', 'utility'),
-                        damage=spell_data.get('damage', 0),
-                        heal_amount=spell_data.get('heal_amount', 0),
-                        maximum_range=spell_data.get('maximum_range', 0),
-                        radius=spell_data.get('radius', 0),
-                        char=spell_data.get('char', '?'),
-                        color=tuple(spell_data.get('color', [255, 255, 0])),
-                        extends=spell_data.get('extends')
-                    )
-                    
-                    self.spells[spell_id] = spell_def
-                    
-                except Exception as e:
-                    logger.error(f"Error loading spell '{spell_id}': {e}")
-                    raise ValueError(f"Invalid spell configuration for '{spell_id}': {e}")
+            self._process_spells_with_inheritance(config_data['spells'])
+
+    def _process_monsters_with_inheritance(self, monsters_data: Dict[str, Any]) -> None:
+        """Process monster data with inheritance-aware creation.
+        
+        This method first resolves inheritance at the raw data level, then creates
+        entity definitions from the fully resolved data.
+        
+        Args:
+            monsters_data: Raw monster configuration data from YAML
+        """
+        # First, resolve inheritance at the raw data level
+        resolved_monsters_data = self._resolve_raw_inheritance(monsters_data, 'monster')
+        
+        # Now create entity definitions from resolved data
+        for monster_id, monster_data in resolved_monsters_data.items():
+            try:
+                # Handle stats sub-object
+                stats_data = monster_data.get('stats', {})
+                stats = EntityStats(**stats_data)
+                
+                # Create monster definition
+                monster_def = MonsterDefinition(
+                    name=monster_id.title(),
+                    stats=stats,
+                    char=monster_data.get('char', '?'),
+                    color=tuple(monster_data.get('color', [255, 255, 255])),
+                    ai_type=monster_data.get('ai_type', 'basic'),
+                    render_order=monster_data.get('render_order', 'actor'),
+                    blocks=monster_data.get('blocks', True),
+                    extends=None,  # Clear extends after resolution
+                    # Item-seeking behavior
+                    can_seek_items=monster_data.get('can_seek_items', False),
+                    inventory_size=monster_data.get('inventory_size', 0),
+                    seek_distance=monster_data.get('seek_distance', 5)
+                )
+                
+                self.monsters[monster_id] = monster_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved monster '{monster_id}': {e}")
+                raise ValueError(f"Invalid resolved monster configuration for '{monster_id}': {e}")
+
+    def _process_weapons_with_inheritance(self, weapons_data: Dict[str, Any]) -> None:
+        """Process weapon data with inheritance-aware creation."""
+        resolved_weapons_data = self._resolve_raw_inheritance(weapons_data, 'weapon')
+        
+        for weapon_id, weapon_data in resolved_weapons_data.items():
+            try:
+                weapon_def = WeaponDefinition(
+                    name=weapon_id.title(),
+                    power_bonus=weapon_data.get('power_bonus', 0),
+                    damage_min=weapon_data.get('damage_min', 0),
+                    damage_max=weapon_data.get('damage_max', 0),
+                    slot=weapon_data.get('slot', 'main_hand'),
+                    char=weapon_data.get('char', '/'),
+                    color=tuple(weapon_data.get('color', [139, 69, 19])),
+                    extends=None  # Clear extends after resolution
+                )
+                
+                self.weapons[weapon_id] = weapon_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved weapon '{weapon_id}': {e}")
+                raise ValueError(f"Invalid resolved weapon configuration for '{weapon_id}': {e}")
+
+    def _process_armor_with_inheritance(self, armor_data: Dict[str, Any]) -> None:
+        """Process armor data with inheritance-aware creation."""
+        resolved_armor_data = self._resolve_raw_inheritance(armor_data, 'armor')
+        
+        for armor_id, armor_data in resolved_armor_data.items():
+            try:
+                armor_def = ArmorDefinition(
+                    name=armor_id.title(),
+                    defense_bonus=armor_data.get('defense_bonus', 0),
+                    defense_min=armor_data.get('defense_min', 0),
+                    defense_max=armor_data.get('defense_max', 0),
+                    slot=armor_data.get('slot', 'off_hand'),
+                    char=armor_data.get('char', '['),
+                    color=tuple(armor_data.get('color', [139, 69, 19])),
+                    extends=None  # Clear extends after resolution
+                )
+                
+                self.armor[armor_id] = armor_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved armor '{armor_id}': {e}")
+                raise ValueError(f"Invalid resolved armor configuration for '{armor_id}': {e}")
+
+    def _process_spells_with_inheritance(self, spells_data: Dict[str, Any]) -> None:
+        """Process spell data with inheritance-aware creation."""
+        resolved_spells_data = self._resolve_raw_inheritance(spells_data, 'spell')
+        
+        for spell_id, spell_data in resolved_spells_data.items():
+            try:
+                spell_def = SpellDefinition(
+                    name=spell_id.replace('_', ' ').title(),
+                    spell_type=spell_data.get('spell_type', 'utility'),
+                    damage=spell_data.get('damage', 0),
+                    heal_amount=spell_data.get('heal_amount', 0),
+                    maximum_range=spell_data.get('maximum_range', 0),
+                    radius=spell_data.get('radius', 0),
+                    char=spell_data.get('char', '?'),
+                    color=tuple(spell_data.get('color', [255, 255, 0])),
+                    extends=None  # Clear extends after resolution
+                )
+                
+                self.spells[spell_id] = spell_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved spell '{spell_id}': {e}")
+                raise ValueError(f"Invalid resolved spell configuration for '{spell_id}': {e}")
+
+    def _resolve_raw_inheritance(self, entities_data: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
+        """Resolve inheritance at the raw data level before entity creation.
+        
+        Args:
+            entities_data: Raw entity data from YAML
+            entity_type: Type of entity for error reporting
+            
+        Returns:
+            Dictionary of fully resolved entity data
+        """
+        try:
+            from config.game_constants import get_entity_config
+            entity_config = get_entity_config()
+        except ImportError:
+            # Fallback for testing
+            entity_config = type('MockConfig', (), {
+                'ENABLE_ENTITY_INHERITANCE': True,
+                'MAX_INHERITANCE_DEPTH': 5
+            })()
+        
+        resolved_data = {}
+        resolving = set()
+        resolved = set()
+        
+        def resolve_entity_data(entity_id: str) -> Dict[str, Any]:
+            """Recursively resolve inheritance for raw entity data."""
+            if entity_id in resolved:
+                return resolved_data[entity_id]
+                
+            if entity_id in resolving:
+                raise ValueError(f"Circular inheritance detected in {entity_type} '{entity_id}'")
+            
+            if entity_id not in entities_data:
+                raise ValueError(f"Unknown {entity_type} '{entity_id}' referenced in inheritance")
+            
+            entity_data = entities_data[entity_id].copy()
+            
+            if not entity_data.get('extends'):
+                # No inheritance, store as-is
+                resolved_data[entity_id] = entity_data
+                resolved.add(entity_id)
+                return entity_data
+            
+            parent_id = entity_data['extends']
+            resolving.add(entity_id)
+            
+            try:
+                # Recursively resolve parent first
+                parent_data = resolve_entity_data(parent_id)
+                
+                # Merge parent data into child data
+                merged_data = self._deep_merge_dicts(parent_data, entity_data)
+                merged_data['extends'] = None  # Clear extends after resolution
+                
+                resolved_data[entity_id] = merged_data
+                resolved.add(entity_id)
+                resolving.remove(entity_id)
+                
+                logger.debug(f"Resolved {entity_type} '{entity_id}' extending '{parent_id}'")
+                return merged_data
+                
+            except Exception as e:
+                resolving.discard(entity_id)
+                raise ValueError(f"Error resolving inheritance for {entity_type} '{entity_id}': {e}")
+        
+        # Resolve all entities
+        for entity_id in entities_data.keys():
+            if entity_id not in resolved:
+                resolve_entity_data(entity_id)
+        
+        return resolved_data
+
+    def _deep_merge_dicts(self, parent_dict: Dict[str, Any], child_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Deep merge two dictionaries, with child values overriding parent values.
+        
+        Args:
+            parent_dict: Parent dictionary (base values)
+            child_dict: Child dictionary (override values)
+            
+        Returns:
+            Merged dictionary with child overrides applied to parent base
+        """
+        import copy
+        
+        # Start with a deep copy of parent
+        merged = copy.deepcopy(parent_dict)
+        
+        # Apply child overrides
+        for key, child_value in child_dict.items():
+            if key == 'extends':
+                continue  # Skip extends field
+                
+            if key in merged and isinstance(merged[key], dict) and isinstance(child_value, dict):
+                # Recursively merge nested dictionaries
+                merged[key] = self._deep_merge_dicts(merged[key], child_value)
+            elif child_value is not None:
+                # Child value overrides parent (only if not None)
+                merged[key] = copy.deepcopy(child_value)
+        
+        return merged
 
     def _resolve_inheritance(self) -> None:
         """Resolve inheritance relationships between entity definitions.
         
         This method processes 'extends' relationships to apply inheritance,
         allowing entities to inherit properties from parent definitions.
+        
+        Note: All entity types are now processed with inheritance-aware methods
+        during initial loading, so this method is no longer needed for the main
+        entity types but is kept for backward compatibility.
         """
-        # Resolve monster inheritance
-        self._resolve_entity_inheritance(self.monsters, 'monster')
+        # All entity types are now processed with inheritance during loading:
+        # - Monsters: _process_monsters_with_inheritance
+        # - Weapons: _process_weapons_with_inheritance  
+        # - Armor: _process_armor_with_inheritance
+        # - Spells: _process_spells_with_inheritance
         
-        # Resolve weapon inheritance  
-        self._resolve_entity_inheritance(self.weapons, 'weapon')
-        
-        # Resolve armor inheritance
-        self._resolve_entity_inheritance(self.armor, 'armor')
-        
-        # Resolve spell inheritance
-        self._resolve_entity_inheritance(self.spells, 'spell')
+        logger.debug("Inheritance resolution completed during entity loading")
 
     def _resolve_entity_inheritance(self, entity_dict: Dict[str, Any], entity_type: str) -> None:
         """Resolve inheritance for a specific entity type.
         
+        This method processes inheritance relationships to create fully resolved entity
+        definitions. It supports multi-level inheritance chains and detects circular
+        dependencies.
+        
         Args:
             entity_dict: Dictionary of entity definitions
             entity_type: Type of entity for error reporting
+            
+        Raises:
+            ValueError: If circular dependencies or invalid inheritance is detected
         """
-        # Simple inheritance resolution - could be enhanced for multi-level inheritance
-        for entity_id, entity_def in entity_dict.items():
-            if entity_def.extends:
-                parent_id = entity_def.extends
-                if parent_id not in entity_dict:
-                    logger.warning(f"{entity_type} '{entity_id}' extends unknown parent '{parent_id}'")
+        try:
+            from config.game_constants import get_entity_config
+            entity_config = get_entity_config()
+        except ImportError:
+            # Fallback for testing - create a mock config
+            entity_config = type('MockConfig', (), {
+                'ENABLE_ENTITY_INHERITANCE': True,
+                'MAX_INHERITANCE_DEPTH': 5
+            })()
+        
+        # Track resolution state to detect circular dependencies
+        resolving = set()  # Currently being resolved (for cycle detection)
+        resolved = set()   # Already fully resolved
+        
+        def resolve_entity(entity_id: str) -> None:
+            """Recursively resolve inheritance for a single entity."""
+            if entity_id in resolved:
+                return  # Already resolved
+                
+            if entity_id in resolving:
+                # Circular dependency detected
+                raise ValueError(f"Circular inheritance detected in {entity_type} '{entity_id}'")
+            
+            if entity_id not in entity_dict:
+                raise ValueError(f"Unknown {entity_type} '{entity_id}' referenced in inheritance")
+            
+            entity_def = entity_dict[entity_id]
+            
+            if not entity_def.extends:
+                # No inheritance, mark as resolved
+                resolved.add(entity_id)
+                logger.debug(f"Resolved {entity_type} '{entity_id}' (no inheritance)")
+                return
+            
+            parent_id = entity_def.extends
+            
+            # Mark as currently resolving
+            resolving.add(entity_id)
+            
+            try:
+                # Recursively resolve parent first
+                resolve_entity(parent_id)
+                
+                # Get resolved parent
+                parent_def = entity_dict[parent_id]
+                
+                # Merge parent properties into child
+                merged_def = self._merge_entity_definitions(parent_def, entity_def, entity_type)
+                
+                # Replace child definition with merged version
+                entity_dict[entity_id] = merged_def
+                
+                # Mark as resolved
+                resolved.add(entity_id)
+                resolving.remove(entity_id)
+                
+                logger.debug(f"Resolved {entity_type} '{entity_id}' extending '{parent_id}'")
+                
+            except Exception as e:
+                resolving.discard(entity_id)  # Clean up on error
+                raise ValueError(f"Error resolving inheritance for {entity_type} '{entity_id}': {e}")
+        
+        # Resolve all entities
+        entity_ids = list(entity_dict.keys())  # Copy keys to avoid modification during iteration
+        for entity_id in entity_ids:
+            try:
+                resolve_entity(entity_id)
+            except ValueError as e:
+                if entity_config.ENABLE_ENTITY_INHERITANCE:
+                    # Fail fast as requested
+                    raise e
+                else:
+                    # Inheritance disabled, skip
+                    logger.warning(f"Skipping inheritance for {entity_type} '{entity_id}': {e}")
+                    continue
+
+    def _merge_entity_definitions(self, parent_def: Any, child_def: Any, entity_type: str) -> Any:
+        """Merge parent and child entity definitions using deep merge strategy.
+        
+        The child definition overrides parent properties, with special handling
+        for nested objects like stats which are merged recursively.
+        
+        Args:
+            parent_def: Parent entity definition
+            child_def: Child entity definition that extends parent
+            entity_type: Type of entity for error reporting
+            
+        Returns:
+            Merged entity definition with child overrides applied to parent base
+        """
+        import copy
+        from dataclasses import fields, is_dataclass, replace
+        
+        if not is_dataclass(parent_def) or not is_dataclass(child_def):
+            raise ValueError(f"Cannot merge non-dataclass entities in {entity_type}")
+        
+        # Start with a deep copy of the parent
+        merged_data = {}
+        
+        # Get all fields from the parent definition
+        for field in fields(parent_def):
+            field_name = field.name
+            parent_value = getattr(parent_def, field_name)
+            
+            # Check if child has this field and it's not None
+            if hasattr(child_def, field_name):
+                child_value = getattr(child_def, field_name)
+                
+                # Skip extends field - it's not part of the final definition
+                if field_name == 'extends':
+                    merged_data[field_name] = None
                     continue
                 
-                # TODO: Implement inheritance merging logic
-                # For now, we just log the inheritance relationship
-                logger.debug(f"{entity_type} '{entity_id}' extends '{parent_id}'")
+                # If child value is None, use parent value
+                if child_value is None:
+                    merged_data[field_name] = copy.deepcopy(parent_value)
+                # If child value is a dataclass, merge recursively
+                elif is_dataclass(child_value) and is_dataclass(parent_value):
+                    merged_data[field_name] = self._merge_entity_definitions(
+                        parent_value, child_value, f"{entity_type}.{field_name}"
+                    )
+                # Otherwise, child overrides parent
+                else:
+                    merged_data[field_name] = copy.deepcopy(child_value)
+            else:
+                # Child doesn't have this field, use parent value
+                merged_data[field_name] = copy.deepcopy(parent_value)
+        
+        # Handle any additional fields that exist only in child
+        for field in fields(child_def):
+            field_name = field.name
+            if field_name not in merged_data and hasattr(child_def, field_name):
+                child_value = getattr(child_def, field_name)
+                if child_value is not None:
+                    merged_data[field_name] = copy.deepcopy(child_value)
+        
+        # Create new instance of the same type as child with merged data
+        try:
+            merged_def = type(child_def)(**merged_data)
+            logger.debug(f"Successfully merged {entity_type} definitions")
+            return merged_def
+        except Exception as e:
+            raise ValueError(f"Failed to create merged {entity_type} definition: {e}")
 
     def get_monster(self, monster_id: str) -> Optional[MonsterDefinition]:
         """Get a monster definition by ID.

@@ -39,9 +39,9 @@ class TestBasicSaveLoad:
         assert save_file_exists() is False
         assert delete_save_file() is False  # Returns False when no file to delete
 
-        # Create a dummy save file
-        with open("savegame.dat.db", "w") as f:
-            f.write("dummy")
+        # Create a dummy JSON save file
+        with open("savegame.json", "w") as f:
+            f.write('{"dummy": "data"}')
 
         # Now file should exist
         assert save_file_exists() is True
@@ -50,11 +50,19 @@ class TestBasicSaveLoad:
         result = delete_save_file()
         assert result is True
         assert save_file_exists() is False
+        
+        # Test with legacy format too
+        with open("savegame.dat.db", "w") as f:
+            f.write("dummy")
+        
+        assert save_file_exists() is True
+        assert delete_save_file() is True
+        assert save_file_exists() is False
 
     def test_load_game_file_not_found(self):
         """Test load_game when save file doesn't exist."""
         with pytest.raises(
-            FileNotFoundError, match="Save file 'savegame.dat.db' not found"
+            FileNotFoundError, match="No save file found \(savegame.json or savegame.dat.db\)"
         ):
             load_game()
 
@@ -75,9 +83,9 @@ class TestBasicSaveLoad:
         # Save the game
         save_game(player, entities, game_map, message_log, game_state)
 
-        # Verify save file was created
+        # Verify save file was created (now JSON format)
         assert save_file_exists() is True
-        assert os.path.isfile("savegame.dat.db")
+        assert os.path.isfile("savegame.json")
 
         # Load the game
         (
@@ -126,7 +134,7 @@ class TestBasicSaveLoad:
 
         # Save first time
         save_game(player, entities, game_map, message_log, game_state)
-        first_size = os.path.getsize("savegame.dat.db")
+        first_size = os.path.getsize("savegame.json")
 
         # Modify player health
         original_hp = player.fighter.hp
@@ -157,28 +165,34 @@ class TestSaveLoadErrorHandling:
 
     def test_load_game_corrupted_file(self):
         """Test load_game with corrupted save file."""
-        # Create a corrupted save file
-        with open("savegame.dat.db", "wb") as f:
-            f.write(b"corrupted data that is not a valid shelve file")
+        # Create a corrupted JSON save file
+        with open("savegame.json", "w") as f:
+            f.write("corrupted data that is not valid JSON")
 
         with pytest.raises(Exception):  # Could be various types of errors
             load_game()
 
     def test_load_game_missing_required_keys(self):
         """Test load_game with save file missing required keys."""
-        import shelve
+        import json
 
-        # Create save file with missing keys
-        with shelve.open("savegame.dat", "n") as data_file:
-            data_file["player_index"] = 0
+        # Create JSON save file with missing keys
+        incomplete_data = {
+            "version": "2.0",
+            "player_index": 0
             # Missing other required keys like 'entities', 'game_map', etc.
+        }
+        
+        with open("savegame.json", "w") as f:
+            json.dump(incomplete_data, f)
 
         with pytest.raises(KeyError, match="Save file is missing required data"):
             load_game()
 
     def test_load_game_invalid_player_index(self):
         """Test load_game with invalid player index."""
-        import shelve
+        import json
+        from loader_functions.data_loaders import _serialize_entity, _serialize_game_map, _serialize_message_log
 
         # Create minimal valid game state
         constants = get_constants()
@@ -186,13 +200,19 @@ class TestSaveLoadErrorHandling:
             constants
         )
 
-        # Create save with invalid player index
-        with shelve.open("savegame.dat", "n") as data_file:
-            data_file["player_index"] = 999  # Invalid index
-            data_file["entities"] = entities
-            data_file["game_map"] = game_map
-            data_file["message_log"] = message_log
-            data_file["game_state"] = game_state
+        # Create JSON save with invalid player index
+        save_data = {
+            "version": "2.0",
+            "timestamp": "2025-01-01T00:00:00",
+            "player_index": 999,  # Invalid index
+            "entities": [_serialize_entity(entity) for entity in entities],
+            "game_map": _serialize_game_map(game_map),
+            "message_log": _serialize_message_log(message_log),
+            "game_state": game_state.name
+        }
+        
+        with open("savegame.json", "w") as f:
+            json.dump(save_data, f)
 
         with pytest.raises(ValueError, match="Invalid player index"):
             load_game()

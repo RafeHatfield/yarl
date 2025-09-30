@@ -7,6 +7,14 @@
 #   - Stats include hp, power, defense, xp, and optional damage/defense ranges
 #   - Characters are single ASCII characters for rendering
 #
+# Inheritance System:
+#   - Use 'extends: parent_name' to inherit all properties from parent entity
+#   - Child entities can override any parent property by specifying it
+#   - Nested objects (like 'stats') are deep-merged (child overrides specific fields)
+#   - Multi-level inheritance supported (A extends B extends C)
+#   - Circular dependencies are detected and prevented
+#   - Examples: orc_chieftain extends orc, orc_veteran extends orc, etc.
+#
 # Monster AI Capabilities:
 #   - can_seek_items: Enables item-seeking behavior (monsters pursue dropped loot)
 #   - inventory_size: Maximum items monster can carry (requires can_seek_items: true)
@@ -47,6 +55,47 @@ monsters:
     inventory_size: 5         # Maximum items monster can carry (0 = no inventory)
     seek_distance: 5          # Maximum distance to detect and pursue items
 
+  # Elite orc variant using inheritance system
+  orc_chieftain:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 35                  # Override: more health than basic orc
+      power: 2                # Override: leadership/training bonus (+2 to all attacks)
+      xp: 75                  # Override: more XP reward for tougher enemy
+    char: "O"                 # Override: capital letter to distinguish from basic orc
+    color: [127, 63, 63]      # Override: reddish color (leadership/authority)
+    inventory_size: 8         # Override: larger inventory (smarter, more organized)
+    seek_distance: 7          # Override: better awareness and leadership
+    # Inherits: damage_min: 4, damage_max: 6, defense: 0, ai_type: "basic", etc.
+    # Total damage: 2 power + 4-6 natural = 6-8 (stronger than basic orc's 4-6)
+
+  # Veteran orc variant - experienced fighter
+  orc_veteran:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 25                  # Override: slightly more health
+      power: 1                # Override: some combat experience (+1 to all attacks)
+      xp: 50                  # Override: moderate XP reward
+    char: "v"                 # Override: different character
+    color: [100, 150, 100]    # Override: slightly different green (experienced)
+    inventory_size: 6         # Override: slightly larger inventory
+    # Inherits: damage_min: 4, damage_max: 6, defense: 0, etc.
+    # Total damage: 1 power + 4-6 natural = 5-7 (between basic orc and chieftain)
+
+  # Weaker orc variant - scout/skirmisher
+  orc_scout:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 15                  # Override: less health (scout, not warrior)
+      defense: 0              # Same as base orc
+      xp: 25                  # Override: less XP (weaker enemy)
+    char: "s"                 # Override: scout character
+    color: [80, 100, 80]      # Override: darker green (stealthy)
+    inventory_size: 3         # Override: smaller inventory (travels light)
+    seek_distance: 8          # Override: better awareness (scout training)
+    # Inherits: power: 0, damage_min: 4, damage_max: 6, ai_type: "basic", etc.
+    # Total damage: 0 power + 4-6 natural = 4-6 (same as basic orc, but less HP)
+
   # Stronger troll enemy  
   troll:
     stats:
@@ -65,6 +114,21 @@ monsters:
     can_seek_items: true      # Trolls actively seek items
     inventory_size: 8         # Larger inventory than orcs (smarter)
     seek_distance: 7          # Longer detection range than orcs
+
+  # Elite troll variant - ancient and powerful
+  troll_ancient:
+    extends: troll            # Inherit all troll properties
+    stats:
+      hp: 50                  # Override: much more health (ancient wisdom)
+      power: 3                # Override: magical/ancient power (+3 to all attacks)
+      defense: 3              # Override: tougher hide/experience
+      xp: 200                 # Override: massive XP reward
+    char: "A"                 # Override: Ancient troll
+    color: [0, 200, 0]        # Override: brighter green (ancient power)
+    inventory_size: 12        # Override: even larger inventory (ancient hoard)
+    seek_distance: 10         # Override: ancient senses
+    # Inherits: damage_min: 8, damage_max: 12, ai_type: "basic", etc.
+    # Total damage: 3 power + 8-12 natural = 11-15 (very powerful!)
 
 # Weapon definitions
 weapons:
