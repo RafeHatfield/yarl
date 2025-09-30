@@ -628,7 +628,8 @@ config/
 - [ ] **More Equipment Slots** - Rings, amulets, boots, helmets
 - [ ] **Equipment Sets** - Bonuses for wearing matching equipment pieces
 - [ ] **Complex Leveling System** - Feats, skill trees, and character specialization
-- [ ] **Player Classes** - Warrior, Mage, Rogue with unique abilities and progression
+- [ ] **Player Classes** - Barbarian (high power), Wizard (magical focus), Warrior (balanced) with unique stats and abilities
+- [ ] **Entity Inheritance System** - YAML `extends` keyword for creating monster variants and elite versions
 - [ ] **Pet System** - Companions that follow and assist the player
 - [ ] **Lockable Treasure Chests** - Containers requiring keys or lockpicking
 - [ ] **Trap System** - Hidden dangers with detection and disarmament mechanics
@@ -669,6 +670,7 @@ config/
 | Equipment Sets | 🟡 Medium | 2-3 weeks | Set detection and bonus logic |
 | Complex Leveling | 🟡 Medium | 3-4 weeks | Feats and skill trees system |
 | Player Classes | 🟡 Medium | 4-6 weeks | Class-specific abilities and progression |
+| **Entity Inheritance System** | 🟡 Medium | 2-3 weeks | YAML extends keyword, monster variants, elite versions |
 | Pet System | 🟡 Medium | 3-4 weeks | AI companions with follow behavior |
 | Lockable Chests | 🟡 Medium | 2-3 weeks | Key/lockpicking mechanics |
 | Trap System | 🟡 Medium | 3-4 weeks | Detection, disarmament, and damage |
