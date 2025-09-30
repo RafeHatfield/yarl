@@ -23,6 +23,25 @@ from config.testing_config import set_testing_mode
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+# Suppress TCOD deprecation warnings early, before any TCOD calls
+warnings.filterwarnings("ignore", message=".*Use the tcod.event module.*")
+warnings.filterwarnings("ignore", message=".*Use tcod.event.get.*")
+warnings.filterwarnings("ignore", message=".*Call the.*method instead.*")
+warnings.filterwarnings("ignore", message=".*Create a console using.*")
+warnings.filterwarnings("ignore", message=".*Soon the.*module will no longer.*")
+warnings.filterwarnings("ignore", message=".*Color constants will be removed.*")
+warnings.filterwarnings("ignore", message=".*Use.*Console.draw_semigraphics.*")
+warnings.filterwarnings("ignore", message=".*console_set_custom_font is deprecated.*")
+warnings.filterwarnings("ignore", message=".*console_init_root is deprecated.*")
+warnings.filterwarnings("ignore", message=".*Call the classmethod.*tcod.image.Image.from_file.*")
+warnings.filterwarnings("ignore", message=".*It's recommended to load images.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="tcod")
+warnings.filterwarnings("ignore", category=FutureWarning, module="tcod")
+
+# Suppress SDL system messages for cleaner console output
+os.environ['SDL_LOG_PRIORITY_SYSTEM'] = '5'  # Only show critical errors
+os.environ['SDL_LOG_PRIORITY_RENDER'] = '5'  # Only show critical errors
+
 
 def parse_arguments():
     """Parse command line arguments.
@@ -58,17 +77,6 @@ def main():
     """
     # Parse command line arguments
     args = parse_arguments()
-    
-    # Suppress specific TCOD deprecation warnings that require major refactoring
-    warnings.filterwarnings("ignore", message=".*Use the tcod.event module.*")
-    warnings.filterwarnings("ignore", message=".*Use tcod.event.get.*")
-    warnings.filterwarnings("ignore", message=".*Call the.*method instead.*")
-    warnings.filterwarnings("ignore", message=".*Create a console using.*")
-    warnings.filterwarnings("ignore", message=".*Soon the.*module will no longer.*")
-    warnings.filterwarnings("ignore", message=".*Color constants will be removed.*")
-    warnings.filterwarnings("ignore", message=".*Use.*Console.draw_semigraphics.*")
-    warnings.filterwarnings("ignore", category=DeprecationWarning, module="tcod")
-    warnings.filterwarnings("ignore", category=FutureWarning, module="tcod")
     
     # Set testing mode if requested
     if args.testing:
