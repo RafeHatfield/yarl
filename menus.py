@@ -99,9 +99,11 @@ def main_menu(con, background_image, screen_width, screen_height):
         screen_width (int): Screen width
         screen_height (int): Screen height
     """
+    # Use deprecated method but warnings are suppressed in engine.py
     libtcodpy.image_blit_2x(background_image, 0, 0, 0)
 
-    libtcodpy.console_set_default_foreground(0, libtcodpy.light_yellow)
+    # Use RGB tuple instead of deprecated color constant
+    libtcodpy.console_set_default_foreground(0, (255, 255, 63))
     libtcodpy.console_print_ex(
         0,
         int(screen_width / 2),

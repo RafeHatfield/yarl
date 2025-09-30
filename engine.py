@@ -65,7 +65,10 @@ def main():
     warnings.filterwarnings("ignore", message=".*Call the.*method instead.*")
     warnings.filterwarnings("ignore", message=".*Create a console using.*")
     warnings.filterwarnings("ignore", message=".*Soon the.*module will no longer.*")
+    warnings.filterwarnings("ignore", message=".*Color constants will be removed.*")
+    warnings.filterwarnings("ignore", message=".*Use.*Console.draw_semigraphics.*")
     warnings.filterwarnings("ignore", category=DeprecationWarning, module="tcod")
+    warnings.filterwarnings("ignore", category=FutureWarning, module="tcod")
     
     # Set testing mode if requested
     if args.testing:
