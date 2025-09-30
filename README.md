@@ -613,6 +613,7 @@ config/
 
 #### 🟢 **Phase 1: Core Gameplay Enhancements** (Easy - 1-2 weeks each)
 - [ ] **Player Naming** - Allow players to enter custom names for personalization
+- [ ] **Weapon Speed** - Different attack speeds per weapon type (daggers fast, swords medium, axes slow)
 - [ ] **More Spells** - Teleport, invisibility, more tactical options
 - [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets
 - [ ] **Chance to Hit/Dodge** - Enhanced combat mechanics with RNG
@@ -621,6 +622,8 @@ config/
 - [ ] **Movement Speed Configuration** - Adjustable mouse movement animation speed
 
 #### 🟡 **Phase 2: Advanced Systems** (Medium - 2-4 weeks each)
+- [ ] **Gear Durability** - Equipment degrades with use and can break, requiring repair
+- [ ] **Monster Speed Variations** - Different movement speeds for different monster types
 - [ ] **Ranged Weapons** - Bows, crossbows with projectile mechanics
 - [ ] **More Equipment Slots** - Rings, amulets, boots, helmets
 - [ ] **Equipment Sets** - Bonuses for wearing matching equipment pieces
@@ -636,6 +639,7 @@ config/
 - [ ] **PC/Mac Distribution** - Packaging and build system setup
 
 #### 🔴 **Phase 3: Major Overhauls** (Hard - 1-3 months each)
+- [ ] **Automated Player** - AI that can play the game automatically for testing and demonstration
 - [ ] **Better Character UI** - Enhanced inventory and character management
 - [ ] **Sound Effects System** - Audio feedback and atmospheric sounds
 - [ ] **Modern UI Overhaul** - Complete interface redesign
@@ -657,6 +661,9 @@ config/
 | JSON Save/Load | 🟢 Easy | 1-2 weeks | Replace existing serialization |
 | More Stats | 🟢 Easy | 1 week | Add to existing stat system |
 | More Monster Types | 🟢 Easy | 1-2 weeks | AI system supports expansion |
+| **Weapon Speed** | 🟢 Easy | 1-2 weeks | Add speed stat to weapons, modify turn order |
+| **Gear Durability** | 🟡 Medium | 2-3 weeks | Track usage, implement repair system, UI updates |
+| **Monster Speed Variations** | 🟡 Medium | 2-3 weeks | Modify AI turn system, balance gameplay |
 | Ranged Weapons | 🟡 Medium | 2-3 weeks | Need targeting system extension |
 | More Equipment Slots | 🟡 Medium | 2-3 weeks | UI updates, component changes |
 | Equipment Sets | 🟡 Medium | 2-3 weeks | Set detection and bonus logic |
@@ -669,6 +676,7 @@ config/
 | Boss Encounters | 🟡 Medium | 3-4 weeks | Special AI behaviors needed |
 | Environmental Hazards | 🟡 Medium | 2-4 weeks | New tile types and mechanics |
 | PC/Mac Distribution | 🟡 Medium | 2-3 weeks | Packaging and build setup |
+| **Automated Player** | 🔴 Hard | 4-8 weeks | Complex AI system, decision trees, game state analysis |
 | Better Character UI | 🔴 Hard | 4-8 weeks | Major UI redesign required |
 | Sound Effects | 🔴 Hard | 6-12 weeks | New audio system needed |
 | Modern UI Overhaul | 🔴 Very Hard | 2-3 months | Complete interface redesign |
