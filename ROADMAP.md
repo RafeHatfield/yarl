@@ -93,6 +93,7 @@ These features add new gameplay dimensions and significantly expand the game's d
 | **Ranged Weapons** | 2-3 weeks | 🔥 High | Need targeting system extension | Projectile mechanics, line-of-sight calculations |
 | **Boss Encounters** | 3-4 weeks | 🔥 High | Special AI behaviors and mechanics | Custom AI states, unique abilities |
 | **Environmental Hazards** | 2-4 weeks | 🔥 High | Traps, poison, lava - tactical positioning | New tile types, damage-over-time systems |
+| **Manual Level Design** | 4-6 weeks | 🔥 High | Hand-crafted special levels (orc villages, boss lairs) | Level templates, custom spawns, room layouts |
 
 **Combined Impact:** Adds strategic depth and memorable encounters.
 
@@ -133,6 +134,16 @@ These features add new gameplay dimensions and significantly expand the game's d
 | **PC/Mac Distribution** | 2-3 weeks | 🔶 Medium | Packaging and build system | Build scripts, installers, distribution setup |
 
 **Combined Impact:** Easier sharing and installation for players.
+
+### **🔧 Code Quality & Performance (2-4 weeks)**
+
+| Feature | Time | Impact | Complexity | Technical Requirements |
+|---------|------|--------|------------|----------------------|
+| **Rendering System Unification** | 2-3 weeks | 🔶 Medium | Consolidate multiple render paths | Merge render systems, optimize pipeline |
+| **State Management Simplification** | 3-4 weeks | 🔶 Medium | Reduce state machine complexity | Evaluate and simplify state patterns |
+| **Entity System Optimization** | 2-3 weeks | 🔶 Medium | Improve entity performance | Spatial indexing, entity pooling |
+
+**Combined Impact:** Cleaner codebase, better performance, easier maintenance.
 
 ---
 

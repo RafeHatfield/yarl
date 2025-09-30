@@ -230,9 +230,10 @@ def _should_exit_game(action, mouse_action, current_state):
     return False
 
 
-# Compatibility wrapper for tests that still use the old function signature
+# DEPRECATED: Compatibility wrapper for tests that still use the old function signature
+# TODO: Update all tests to use ActionProcessor directly and remove this wrapper
 def _process_game_actions(action, mouse_action, state_manager, targeting_item=None, previous_game_state=None, constants=None):
-    """Compatibility wrapper for the old _process_game_actions function.
+    """DEPRECATED: Compatibility wrapper for the old _process_game_actions function.
     
     This function maintains backward compatibility with existing tests while
     using the new ActionProcessor internally. The legacy parameters are kept
@@ -242,13 +243,14 @@ def _process_game_actions(action, mouse_action, state_manager, targeting_item=No
         action (dict): Keyboard action dictionary
         mouse_action (dict): Mouse action dictionary  
         state_manager (GameStateManager): Game state manager instance
-        targeting_item (optional): Legacy parameter, no longer used
-        previous_game_state (optional): Legacy parameter, no longer used
-        constants (optional): Legacy parameter, no longer used
+        targeting_item (optional): DEPRECATED - Legacy parameter, no longer used
+        previous_game_state (optional): DEPRECATED - Legacy parameter, no longer used
+        constants (optional): DEPRECATED - Legacy parameter, no longer used
         
-    Note:
+    Deprecated:
         This wrapper exists to maintain compatibility with existing tests.
-        New code should use ActionProcessor directly.
+        New code should use ActionProcessor directly. This will be removed
+        in a future version once all tests are updated.
     """
     from game_actions import ActionProcessor
     
