@@ -185,7 +185,8 @@ class EntityFactory:
             return weapon
 
         except Exception as e:
-            logger.error(f"Error creating weapon {weapon_type}: {e}")
+            logger.error(f"Error creating weapon {weapon_type}: {e}", exc_info=True)
+            logger.error(f"Weapon definition: {weapon_def}")
             return self._create_fallback_weapon(weapon_type, x, y)
 
     def create_armor(self, armor_type: str, x: int, y: int) -> Optional[Entity]:

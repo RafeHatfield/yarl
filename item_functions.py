@@ -159,8 +159,14 @@ def cast_fireball(*args, **kwargs):
         }
     )
 
+    # Get the caster (first argument)
+    caster = args[0] if args else None
+    
     for entity in entities:
-        if entity.distance(target_x, target_y) <= radius and entity.fighter:
+        # Damage entities in radius, but NOT the caster (player shouldn't fireball themselves!)
+        if (entity.distance(target_x, target_y) <= radius and 
+            entity.fighter and 
+            entity != caster):
             results.append(
                 {
                     "message": Message(

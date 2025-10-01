@@ -85,6 +85,11 @@ def load_game():
         ValueError: If loaded data is invalid
         IOError: If file cannot be read
     """
+    # CRITICAL: Load entity configuration before loading save game
+    # This ensures all entity definitions are available for deserialization
+    from config.entity_registry import load_entity_config
+    load_entity_config()
+    
     try:
         # Try JSON format first
         if os.path.isfile("savegame.json"):
