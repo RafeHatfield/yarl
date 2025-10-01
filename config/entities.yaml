@@ -212,9 +212,31 @@ armor:
     defense_bonus: 0
     defense_min: 1
     defense_max: 3
+    armor_class_bonus: 2  # +2 AC for shields
     slot: "off_hand"
     char: "["
     color: [139, 69, 19]  # Brown
+
+  # Leather helmet - basic head armor
+  leather_helmet:
+    armor_class_bonus: 1  # +1 AC
+    slot: "head"
+    char: "^"
+    color: [160, 82, 45]  # Sienna brown
+
+  # Leather armor - basic chest armor
+  leather_armor:
+    armor_class_bonus: 2  # +2 AC
+    slot: "chest"
+    char: "["
+    color: [139, 69, 19]  # Saddle brown
+
+  # Leather boots - basic foot armor
+  leather_boots:
+    armor_class_bonus: 1  # +1 AC
+    slot: "feet"
+    char: "]"
+    color: [101, 67, 33]  # Dark brown
 
 # Spell and consumable definitions
 spells:

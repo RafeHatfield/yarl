@@ -113,7 +113,7 @@ class Fighter:
     def armor_class(self):
         """Calculate Armor Class (AC) for d20 combat system.
         
-        AC = 10 + DEX modifier + armor AC bonus
+        AC = 10 + DEX modifier + armor AC bonus from all equipped items
         
         Returns:
             int: Armor Class (typically 10-20)
@@ -121,13 +121,14 @@ class Fighter:
         base_ac = 10
         dex_bonus = self.dexterity_mod
         
-        # Get armor AC bonus from equipment (if any)
+        # Get armor AC bonus from ALL equipped items
         armor_ac_bonus = 0
         if self.owner and hasattr(self.owner, 'equipment') and self.owner.equipment:
-            # For now, just check off_hand (shield/armor slot)
-            # Later we'll add chest, head, feet slots
-            if self.owner.equipment.off_hand and hasattr(self.owner.equipment.off_hand, 'equippable'):
-                armor_ac_bonus = getattr(self.owner.equipment.off_hand.equippable, 'armor_class_bonus', 0)
+            equipment = self.owner.equipment
+            for item in [equipment.main_hand, equipment.off_hand, 
+                        equipment.head, equipment.chest, equipment.feet]:
+                if item and hasattr(item, 'equippable'):
+                    armor_ac_bonus += getattr(item.equippable, 'armor_class_bonus', 0)
         
         return base_ac + dex_bonus + armor_ac_bonus
 

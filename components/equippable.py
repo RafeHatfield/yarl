@@ -16,6 +16,8 @@ class Equippable:
         power_bonus (int): Attack power bonus provided by this item
         defense_bonus (int): Defense bonus provided by this item
         max_hp_bonus (int): Maximum HP bonus provided by this item
+        armor_class_bonus (int): Armor Class bonus for d20 combat (0 for non-armor)
+        to_hit_bonus (int): To-hit bonus for d20 combat (0 for non-weapons)
         damage_min (int): Minimum damage for weapons (0 for non-weapons)
         damage_max (int): Maximum damage for weapons (0 for non-weapons)
         defense_min (int): Minimum defense for armor (0 for non-armor)
@@ -24,6 +26,7 @@ class Equippable:
     """
 
     def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0,
+                 armor_class_bonus=0, to_hit_bonus=0,
                  damage_min=0, damage_max=0, defense_min=0, defense_max=0):
         """Initialize an Equippable component.
 
@@ -32,6 +35,8 @@ class Equippable:
             power_bonus (int, optional): Attack power bonus. Defaults to 0.
             defense_bonus (int, optional): Defense bonus. Defaults to 0.
             max_hp_bonus (int, optional): Maximum HP bonus. Defaults to 0.
+            armor_class_bonus (int, optional): AC bonus for d20 combat. Defaults to 0.
+            to_hit_bonus (int, optional): To-hit bonus for d20 combat. Defaults to 0.
             damage_min (int, optional): Minimum weapon damage. Defaults to 0.
             damage_max (int, optional): Maximum weapon damage. Defaults to 0.
             defense_min (int, optional): Minimum armor defense. Defaults to 0.
@@ -41,6 +46,8 @@ class Equippable:
         self.power_bonus = power_bonus
         self.defense_bonus = defense_bonus
         self.max_hp_bonus = max_hp_bonus
+        self.armor_class_bonus = armor_class_bonus
+        self.to_hit_bonus = to_hit_bonus
         self.damage_min = damage_min if damage_min > 0 else 0
         self.damage_max = damage_max if damage_max >= damage_min else damage_min
         self.defense_min = defense_min if defense_min > 0 else 0

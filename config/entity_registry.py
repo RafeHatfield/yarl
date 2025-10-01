@@ -118,6 +118,7 @@ class ArmorDefinition:
     defense_bonus: int = 0
     defense_min: int = 0
     defense_max: int = 0
+    armor_class_bonus: int = 0  # AC bonus for d20 combat
     slot: str = "off_hand"
     char: str = "["
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -131,8 +132,12 @@ class ArmorDefinition:
             raise ValueError(f"Armor defense_min must be >= 0, got {self.defense_min}")
         if self.defense_max < self.defense_min:
             raise ValueError(f"Armor defense_max ({self.defense_max}) cannot be less than defense_min ({self.defense_min})")
-        if self.slot not in ["main_hand", "off_hand"]:
-            raise ValueError(f"Armor slot must be 'main_hand' or 'off_hand', got '{self.slot}'")
+        if self.armor_class_bonus < 0:
+            raise ValueError(f"Armor armor_class_bonus must be >= 0, got {self.armor_class_bonus}")
+        # Allow all equipment slots for armor
+        valid_slots = ["main_hand", "off_hand", "head", "chest", "feet"]
+        if self.slot not in valid_slots:
+            raise ValueError(f"Armor slot must be one of {valid_slots}, got '{self.slot}'")
 
 
 @dataclass
@@ -335,6 +340,7 @@ class EntityRegistry:
                     defense_bonus=armor_data.get('defense_bonus', 0),
                     defense_min=armor_data.get('defense_min', 0),
                     defense_max=armor_data.get('defense_max', 0),
+                    armor_class_bonus=armor_data.get('armor_class_bonus', 0),
                     slot=armor_data.get('slot', 'off_hand'),
                     char=armor_data.get('char', '['),
                     color=tuple(armor_data.get('color', [139, 69, 19])),

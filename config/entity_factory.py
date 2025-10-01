@@ -210,7 +210,8 @@ class EntityFactory:
                 slot=self._get_equipment_slot(armor_def.slot),
                 defense_bonus=armor_def.defense_bonus,
                 defense_min=armor_def.defense_min,
-                defense_max=armor_def.defense_max
+                defense_max=armor_def.defense_max,
+                armor_class_bonus=armor_def.armor_class_bonus
             )
 
             # Create entity
@@ -321,10 +322,17 @@ class EntityFactory:
         Returns:
             EquipmentSlots enum value
         """
-        if slot_str == "main_hand":
-            return EquipmentSlots.MAIN_HAND
-        elif slot_str == "off_hand":
-            return EquipmentSlots.OFF_HAND
+        slot_map = {
+            "main_hand": EquipmentSlots.MAIN_HAND,
+            "off_hand": EquipmentSlots.OFF_HAND,
+            "head": EquipmentSlots.HEAD,
+            "chest": EquipmentSlots.CHEST,
+            "feet": EquipmentSlots.FEET
+        }
+        
+        slot = slot_map.get(slot_str)
+        if slot:
+            return slot
         else:
             logger.warning(f"Unknown equipment slot: {slot_str}, using MAIN_HAND")
             return EquipmentSlots.MAIN_HAND

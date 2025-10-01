@@ -10,25 +10,34 @@ from equipment_slots import EquipmentSlots
 class Equipment:
     """Component that manages equipped items and their stat bonuses.
 
-    This component handles equipment slots (main hand and off hand) and
+    This component handles equipment slots (weapons, shields, armor) and
     calculates the total stat bonuses provided by all equipped items.
     It supports equipping, unequipping, and replacing items.
 
     Attributes:
-        main_hand (Entity): Item equipped in the main hand slot
-        off_hand (Entity): Item equipped in the off hand slot
+        main_hand (Entity): Item equipped in the main hand slot (weapon)
+        off_hand (Entity): Item equipped in the off hand slot (shield/weapon)
+        head (Entity): Item equipped in the head slot (helmet)
+        chest (Entity): Item equipped in the chest slot (armor)
+        feet (Entity): Item equipped in the feet slot (boots)
         owner (Entity): The entity that owns this equipment component
     """
 
-    def __init__(self, main_hand=None, off_hand=None):
+    def __init__(self, main_hand=None, off_hand=None, head=None, chest=None, feet=None):
         """Initialize the Equipment component.
 
         Args:
             main_hand (Entity, optional): Initial main hand equipment
             off_hand (Entity, optional): Initial off hand equipment
+            head (Entity, optional): Initial head equipment
+            chest (Entity, optional): Initial chest equipment
+            feet (Entity, optional): Initial feet equipment
         """
         self.main_hand = main_hand
         self.off_hand = off_hand
+        self.head = head
+        self.chest = chest
+        self.feet = feet
         self.owner = None  # Will be set by Entity when component is registered
 
     @property
@@ -40,11 +49,9 @@ class Equipment:
         """
         bonus = 0
 
-        if self.main_hand and self.main_hand.equippable:
-            bonus += self.main_hand.equippable.max_hp_bonus
-
-        if self.off_hand and self.off_hand.equippable:
-            bonus += self.off_hand.equippable.max_hp_bonus
+        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
+            if item and item.equippable:
+                bonus += item.equippable.max_hp_bonus
 
         return bonus
 
@@ -57,11 +64,9 @@ class Equipment:
         """
         bonus = 0
 
-        if self.main_hand and self.main_hand.equippable:
-            bonus += self.main_hand.equippable.power_bonus
-
-        if self.off_hand and self.off_hand.equippable:
-            bonus += self.off_hand.equippable.power_bonus
+        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
+            if item and item.equippable:
+                bonus += item.equippable.power_bonus
 
         return bonus
 
@@ -74,11 +79,9 @@ class Equipment:
         """
         bonus = 0
 
-        if self.main_hand and self.main_hand.equippable:
-            bonus += self.main_hand.equippable.defense_bonus
-
-        if self.off_hand and self.off_hand.equippable:
-            bonus += self.off_hand.equippable.defense_bonus
+        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
+            if item and item.equippable:
+                bonus += item.equippable.defense_bonus
 
         return bonus
 
@@ -96,28 +99,33 @@ class Equipment:
             list: List of result dictionaries with 'equipped' or 'dequipped' keys
         """
         results = []
-
         slot = equippable_entity.equippable.slot
 
-        if slot == EquipmentSlots.MAIN_HAND:
-            if self.main_hand == equippable_entity:
-                self.main_hand = None
-                results.append({"dequipped": equippable_entity})
-            else:
-                if self.main_hand:
-                    results.append({"dequipped": self.main_hand})
+        # Map slots to their attributes
+        slot_map = {
+            EquipmentSlots.MAIN_HAND: 'main_hand',
+            EquipmentSlots.OFF_HAND: 'off_hand',
+            EquipmentSlots.HEAD: 'head',
+            EquipmentSlots.CHEST: 'chest',
+            EquipmentSlots.FEET: 'feet'
+        }
 
-                self.main_hand = equippable_entity
-                results.append({"equipped": equippable_entity})
-        elif slot == EquipmentSlots.OFF_HAND:
-            if self.off_hand == equippable_entity:
-                self.off_hand = None
-                results.append({"dequipped": equippable_entity})
-            else:
-                if self.off_hand:
-                    results.append({"dequipped": self.off_hand})
+        slot_attr = slot_map.get(slot)
+        if not slot_attr:
+            return results  # Unknown slot
 
-                self.off_hand = equippable_entity
-                results.append({"equipped": equippable_entity})
+        current_item = getattr(self, slot_attr)
+
+        if current_item == equippable_entity:
+            # Unequip the item
+            setattr(self, slot_attr, None)
+            results.append({"dequipped": equippable_entity})
+        else:
+            # Replace or equip
+            if current_item:
+                results.append({"dequipped": current_item})
+
+            setattr(self, slot_attr, equippable_entity)
+            results.append({"equipped": equippable_entity})
 
         return results
