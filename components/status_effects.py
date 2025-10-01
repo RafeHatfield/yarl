@@ -110,7 +110,7 @@ class ShieldEffect(StatusEffect):
         super().__init__("shield", duration, owner)
         self.defense_bonus = defense_bonus
         self.backfired = False
-        self.original_defense = None
+        self.original_base_defense = None
     
     def apply(self) -> List[Dict[str, Any]]:
         results = super().apply()
@@ -123,10 +123,10 @@ class ShieldEffect(StatusEffect):
             from random import random
             if random() < 0.10:
                 self.backfired = True
-                # Halve current defense
+                # Halve base defense (defense property is read-only)
                 if hasattr(self.owner, 'fighter') and self.owner.fighter:
-                    self.original_defense = self.owner.fighter.defense
-                    self.owner.fighter.defense = max(0, self.owner.fighter.defense // 2)
+                    self.original_base_defense = self.owner.fighter.base_defense
+                    self.owner.fighter.base_defense = max(0, self.owner.fighter.base_defense // 2)
                     
                     from game_messages import Message
                     results.append({
@@ -139,7 +139,7 @@ class ShieldEffect(StatusEffect):
         
         # Normal shield effect (player or non-backfired monster)
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
-            self.owner.fighter.defense += self.defense_bonus
+            self.owner.fighter.base_defense += self.defense_bonus
             
             from game_messages import Message
             results.append({
@@ -155,9 +155,9 @@ class ShieldEffect(StatusEffect):
         results = super().remove()
         
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
-            if self.backfired and self.original_defense is not None:
-                # Restore original defense from backfire
-                self.owner.fighter.defense = self.original_defense
+            if self.backfired and self.original_base_defense is not None:
+                # Restore original base defense from backfire
+                self.owner.fighter.base_defense = self.original_base_defense
                 from game_messages import Message
                 results.append({
                     'message': Message(
@@ -166,8 +166,8 @@ class ShieldEffect(StatusEffect):
                     )
                 })
             else:
-                # Remove normal shield bonus
-                self.owner.fighter.defense -= self.defense_bonus
+                # Remove normal shield bonus from base_defense
+                self.owner.fighter.base_defense -= self.defense_bonus
                 from game_messages import Message
                 results.append({
                     'message': Message(
