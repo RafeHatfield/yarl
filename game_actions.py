@@ -325,6 +325,8 @@ class ActionProcessor:
             fov_map=self.state_manager.state.fov_map
         )
         
+        player_died = False
+        
         for result in item_use_results:
             message = result.get("message")
             if message:
@@ -335,6 +337,9 @@ class ActionProcessor:
             if dead_entity:
                 # Item/spell deaths should transform to corpse (not remove)
                 self._handle_entity_death(dead_entity, remove_from_entities=False)
+                # Check if player died
+                if dead_entity == player:
+                    player_died = True
             
             # Handle targeting
             targeting = result.get("targeting")
@@ -349,8 +354,8 @@ class ActionProcessor:
             if equip and player.equipment:
                 self._handle_equipment(equip)
         
-        # Return to player turn if no targeting
-        if not any(result.get("targeting") for result in item_use_results):
+        # Return to player turn if no targeting AND player didn't die
+        if not any(result.get("targeting") for result in item_use_results) and not player_died:
             self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
     def _drop_inventory_item(self, item) -> None:
