@@ -7,6 +7,7 @@ Each function implements the specific effect of using that item type.
 
 import tcod as libtcod
 import tcod.libtcodpy as libtcodpy
+import math
 
 from components.ai import ConfusedMonster
 from game_messages import Message
@@ -544,6 +545,150 @@ def cast_shield(*args, **kwargs):
     
     results.append({
         "consumed": True
+    })
+    
+    return results
+
+
+def get_cone_tiles(origin_x, origin_y, target_x, target_y, max_range=8, cone_width=45):
+    """Calculate tiles in a cone spreading from origin toward target.
+    
+    Args:
+        origin_x, origin_y: Starting point (player position)
+        target_x, target_y: Direction point (where player clicked)
+        max_range: Maximum distance of cone
+        cone_width: Width of cone in degrees (default 45)
+        
+    Returns:
+        set: Set of (x, y) tuples within the cone
+    """
+    cone_tiles = set()
+    
+    # Calculate direction angle from origin to target
+    dx = target_x - origin_x
+    dy = target_y - origin_y
+    
+    if dx == 0 and dy == 0:
+        return cone_tiles
+    
+    target_angle = math.atan2(dy, dx)
+    half_width = math.radians(cone_width / 2)
+    
+    # Check each tile within max_range
+    for distance in range(1, max_range + 1):
+        # Width increases with distance
+        width_at_distance = int(distance * math.tan(half_width))
+        
+        for offset in range(-width_at_distance, width_at_distance + 1):
+            # Calculate position at this distance and offset
+            angle = target_angle + math.atan2(offset, distance)
+            
+            x = origin_x + int(distance * math.cos(angle))
+            y = origin_y + int(distance * math.sin(angle))
+            
+            # Check if within cone angle
+            tile_dx = x - origin_x
+            tile_dy = y - origin_y
+            tile_angle = math.atan2(tile_dy, tile_dx)
+            angle_diff = abs(tile_angle - target_angle)
+            
+            # Normalize angle difference to [-pi, pi]
+            while angle_diff > math.pi:
+                angle_diff -= 2 * math.pi
+            while angle_diff < -math.pi:
+                angle_diff += 2 * math.pi
+            
+            if abs(angle_diff) <= half_width:
+                cone_tiles.add((x, y))
+    
+    return cone_tiles
+
+
+def cast_dragon_fart(*args, **kwargs):
+    """Unleash a cone of noxious gas that puts enemies to sleep!
+    
+    Creates a directional cone of gas that spreads from the caster.
+    All entities in the cone fall asleep for 20 turns (or become confused
+    since we're reusing that AI).
+    
+    Args:
+        *args: [entity, entities, fov_map, game_map]
+        **kwargs: Contains target_x, target_y for direction
+        
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    entity = args[0]
+    entities = args[1]
+    game_map = args[3]
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
+    sleep_duration = kwargs.get("duration", 20)
+    
+    results = []
+    
+    if not target_x or not target_y:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "You must select a direction for the dragon fart!",
+                (255, 255, 0)
+            )
+        })
+        return results
+    
+    # Get all tiles in the cone
+    cone_tiles = get_cone_tiles(
+        entity.x, entity.y,
+        target_x, target_y,
+        max_range=8,
+        cone_width=45
+    )
+    
+    # Track affected entities
+    affected_entities = []
+    
+    # Find all entities in the cone
+    for other_entity in entities:
+        if other_entity == entity:
+            continue  # Don't affect self
+            
+        if (other_entity.x, other_entity.y) in cone_tiles:
+            # Check if entity has AI (is a monster)
+            if hasattr(other_entity, 'ai') and other_entity.ai:
+                affected_entities.append(other_entity)
+    
+    if not affected_entities:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "The noxious gas dissipates harmlessly...",
+                (150, 150, 150)  # Gray
+            )
+        })
+        return results
+    
+    # Apply confusion/sleep to all affected entities
+    for target_entity in affected_entities:
+        # Apply confusion AI (acts like sleep - random wandering)
+        confused_ai = ConfusedMonster(target_entity.ai, sleep_duration)
+        confused_ai.owner = target_entity
+        target_entity.ai = confused_ai
+        
+        results.append({
+            "message": Message(
+                f"{target_entity.name} is overwhelmed by the noxious fumes and passes out!",
+                (100, 255, 100)  # Green
+            )
+        })
+    
+    # Epic dragon fart message!
+    results.append({
+        "consumed": True,
+        "message": Message(
+            f"💨 {entity.name} unleashes a MIGHTY DRAGON FART! A cone of noxious gas spreads outward!",
+            (150, 255, 100)  # Bright green
+        )
     })
     
     return results

@@ -375,6 +375,18 @@ class EntityFactory:
             duration = getattr(spell_def, 'duration', 10)
             defense_bonus = getattr(spell_def, 'defense_bonus', 4)
             return Item(use_function=cast_shield, duration=duration, defense_bonus=defense_bonus)
+        elif spell_def.name.lower().replace(' ', '_') == "dragon_fart_scroll":
+            from item_functions import cast_dragon_fart
+            duration = getattr(spell_def, 'duration', 20)
+            spell_range = getattr(spell_def, 'range', 8)
+            cone_width = getattr(spell_def, 'cone_width', 45)
+            return Item(
+                use_function=cast_dragon_fart,
+                targeting=True,
+                duration=duration,
+                range=spell_range,
+                cone_width=cone_width
+            )
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
             return Item()

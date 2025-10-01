@@ -58,6 +58,7 @@ class TestingConfig:
                 "invisibility_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "teleport_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "shield_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
+                "dragon_fart_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "enhance_weapon_scroll": [[20, 1], [35, 3]],  # Enhancement scrolls for testing
                 "enhance_armor_scroll": [[20, 1], [35, 3]],
             }

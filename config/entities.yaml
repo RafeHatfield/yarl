@@ -258,3 +258,12 @@ spells:
     color: [100, 200, 255]  # Light blue
     duration: 10  # Turns of shield protection
     defense_bonus: 4  # +4 defense
+
+  # Dragon Fart scroll - cone of noxious gas that puts enemies to sleep
+  dragon_fart_scroll:
+    spell_type: "offensive"
+    char: "~"
+    color: [150, 255, 100]  # Bright green
+    duration: 20  # Turns enemies are knocked out
+    range: 8  # Maximum cone distance
+    cone_width: 45  # Cone width in degrees
