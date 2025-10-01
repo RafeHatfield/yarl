@@ -503,27 +503,27 @@ class SlimeAI:
         results = []
         monster = self.owner
         
-        if map_is_in_fov(fov_map, monster.x, monster.y):
-            # Find the best target based on faction relationships and distance
-            best_target = self._find_best_target(entities, fov_map)
+        # Find the best target based on faction relationships and distance
+        # Slimes act independently of whether the player can see them
+        best_target = self._find_best_target(entities, fov_map)
+        
+        if best_target:
+            # Calculate distance to target
+            distance = monster.distance_to(best_target)
             
-            if best_target:
-                # Calculate distance to target
-                distance = monster.distance_to(best_target)
-                
-                if distance >= 2:
-                    # Move towards target using A* pathfinding
-                    monster.move_astar(best_target, entities, game_map)
-                    MonsterActionLogger.log_action_attempt(
-                        monster, "move", f"moving towards {best_target.name}"
-                    )
-                elif best_target.fighter:
-                    # Attack the target (use new d20 system)
-                    attack_results = monster.fighter.attack_d20(best_target)
-                    results.extend(attack_results)
-                    MonsterActionLogger.log_action_attempt(
-                        monster, "attack", f"attacking {best_target.name}"
-                    )
+            if distance >= 2:
+                # Move towards target using A* pathfinding
+                monster.move_astar(best_target, entities, game_map)
+                MonsterActionLogger.log_action_attempt(
+                    monster, "move", f"moving towards {best_target.name}"
+                )
+            elif best_target.fighter:
+                # Attack the target (use new d20 system)
+                attack_results = monster.fighter.attack_d20(best_target)
+                results.extend(attack_results)
+                MonsterActionLogger.log_action_attempt(
+                    monster, "attack", f"attacking {best_target.name}"
+                )
         
         return results
     
