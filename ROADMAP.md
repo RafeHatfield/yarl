@@ -302,9 +302,17 @@ This roadmap should be updated:
 
 ### **🎯 Current Sprint: Equipment Expansion**
 
-**Phase 1: More Scrolls** (1 week)
-- Add new spell scrolls for tactical variety
-- Extend spell system with new effects
+**Phase 1: More Scrolls** (1-2 weeks) 🔄 **IN PROGRESS**
+- **Teleport Scroll**: Escape or reposition instantly
+- **Shield Scroll**: Temporary defense boost
+- **Raise Dead Scroll**: Resurrect defeated monster as ally (2x HP, 0.5x damage)
+- **Dragon Fart Scroll**: Cone of noxious gas, enemies pass out for 20 turns
+- Extend spell system with new targeting modes (directional cone)
+
+**Future Scrolls** (deferred until speed/item systems ready):
+- **Haste Scroll**: Increased movement/attack speed (needs weapon speed system)
+- **Slow Scroll**: Reduce enemy speed (needs speed system)
+- **Identify Scroll**: Reveal item properties (needs item property system)
 
 **Phase 2: Equipment Slots & Items** (2-3 weeks) 🔄 **IN PROGRESS**
 - **New Slots**: chest (armor), head (helmets), boots, rings, amulets
