@@ -488,6 +488,7 @@ class ActionProcessor:
                         targeting_item,
                         entities=self.state_manager.state.entities,
                         fov_map=self.state_manager.state.fov_map,
+                        game_map=self.state_manager.state.game_map,
                         target_x=target_x,
                         target_y=target_y
                     )
