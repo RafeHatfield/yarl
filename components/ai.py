@@ -285,14 +285,15 @@ class MindlessZombieAI:
                         # Check for other adjacent targets first
                         adjacent_targets = self._find_adjacent_targets(entities)
                         
-                        if len(adjacent_targets) > 1:
-                            # 50% chance to switch to different adjacent target
+                        # Check if there are OTHER targets besides current one
+                        other_adjacent = [e for e in adjacent_targets if e != self.current_target]
+                        
+                        if other_adjacent:
+                            # There's at least one other adjacent target - 50% chance to switch
                             from random import random
                             if random() < 0.5:
                                 from random import choice
-                                other_targets = [e for e in adjacent_targets if e != self.current_target]
-                                if other_targets:
-                                    self.current_target = choice(other_targets)
+                                self.current_target = choice(other_adjacent)
                         
                         # Attack current target (use new d20 system)
                         attack_results = self.owner.fighter.attack_d20(self.current_target)
