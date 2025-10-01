@@ -1,14 +1,36 @@
 # 🗺️ **Yarl Development Roadmap: Sorted by Complexity & Impact**
 
-*Last Updated: December 2024 - Entity Configuration System Complete*
+*Last Updated: October 2025 - Manual Level Design Tier 2 Complete*
 
 This roadmap organizes all planned features by implementation complexity and gameplay impact, helping prioritize development efforts for maximum player enjoyment.
 
 ---
 
-## ✅ **Recently Completed: Entity Configuration System**
+## ✅ **Recently Completed: Manual Level Design Tier 2** (v2.6.0)
 
-**🎉 Major Architecture Achievement Unlocked** (December 2024)
+**🎉 Major Level Design System Unlocked** (October 2025)
+
+Complete control over dungeon generation with special themed rooms and parameter overrides:
+
+### **What Was Accomplished**
+- **🏗️ Level Parameters**: Override room counts, sizes, and entity density per level
+- **🎭 Special Rooms**: Themed rooms with guaranteed spawns (Troll Throne Room, Slime Spawning Pool, Armories)
+- **🎯 Placement Strategies**: largest, smallest, random room selection
+- **📊 Count Ranges**: Beautiful syntax `"3-5"` for random spawn counts
+- **🟢 Slime System**: Complete with affiliations, invisibility, corrosion, splitting
+- **🧪 Production Quality**: All 1,444 tests passing, 100% coverage
+
+### **Benefits Realized**
+- **🎮 Designers**: Create boss encounters, themed dungeons, narrative moments
+- **🧪 Testing**: Guaranteed spawns for reliable testing
+- **🎨 Variety**: Multiple special room types per level
+- **📈 Scalability**: Foundation for Tier 3 (full ASCII map crafting)
+
+---
+
+## ✅ **Previously Completed: Entity Configuration System** (v2.0.0)
+
+**🎉 Major Architecture Achievement** (December 2024)
 
 The entire entity creation system has been transformed from hardcoded values to a clean, data-driven architecture:
 
@@ -267,20 +289,62 @@ This roadmap should be updated:
 
 ---
 
-## 🎮 **Current Status**
+## 🎮 **Current Status & Active Development**
 
-### **✅ Recently Completed**
-- **Mouse Movement System** (v1.8.0) - Complete click-to-move with pathfinding
-- **Variable Damage System** (v1.9.0) - Weapons with damage ranges, enhancement scrolls
-- **Variable Defense System** (v1.9.0) - Armor with defense ranges, dynamic protection
-- **JSON Save/Load System** (v2.0.0) - Human-readable saves with legacy compatibility
-- **Comprehensive Testing** - 1,096+ tests with 100% coverage
+### **✅ Recently Completed (v2.6.0)**
+- **Manual Level Design - Tier 2** - Level parameters & special themed rooms
+- **Manual Level Design - Tier 1** - Guaranteed spawns for testing
+- **Slime System Complete** - Affiliations, invisibility, corrosion, splitting
+- **Variable Damage/Defense** - Dynamic combat with ranges
+- **JSON Save/Load System** - Human-readable saves with legacy compatibility
+- **Comprehensive Testing** - 1,444 tests with 100% coverage
 - **Modern Architecture** - ECS, state machines, performance optimization
 
-### **🎯 Next Up**
-- ✅ **Manual Level Design - Tier 1** - Guaranteed spawns for testing (Complete)
-- **Manual Level Design - Tier 2** - Level parameters & special themed rooms
-- **Manual Level Design - Tier 3** - Full ASCII map-based level crafting
+### **🎯 Current Sprint: Equipment Expansion**
+
+**Phase 1: More Scrolls** (1 week)
+- Add new spell scrolls for tactical variety
+- Extend spell system with new effects
+
+**Phase 2: Equipment Slots & Items** (2-3 weeks) 🔄 **IN PROGRESS**
+- **New Slots**: chest (armor), head (helmets), boots, rings, amulets
+- **New Weapons**: varied damage types, different weapon classes
+- **New Armor**: light/medium/heavy with tradeoffs
+- **Weapon Properties**:
+  - Speed (attack frequency)
+  - Reach (melee range)
+  - Durability (item degradation)
+- **Set Bonuses**: Matching gear provides extra bonuses
+
+**Phase 3: Ranged Weapons** (2-3 weeks)
+- Bows, crossbows, throwing weapons
+- Line-of-sight targeting system
+- Ammo management
+- Projectile animations
+
+**Phase 4: Monster Equipment & Loot** (1-2 weeks)
+- Monsters spawn with equipped weapons/armor
+- Drop their equipment when defeated
+- Visible equipment on monsters
+- Stronger monsters = better loot
+
+### **📋 Upcoming Features**
+
+**Manual Level Design - Tier 3** (3-4 weeks)
+- Full ASCII map crafting
+- Hand-designed levels with precise entity placement
+- Boss arenas, puzzle rooms, narrative areas
+
+**Storytelling & Narrative** (4-6 weeks)
+- Story framework integration
+- Quest/objective system
+- NPC dialogue system
+- Narrative progression tracking
+
+**Player Classes** (4-6 weeks)
+- Warrior, Mage, Rogue archetypes
+- Class-specific abilities and progression
+- Unique playstyles and builds
 
 ---
 
