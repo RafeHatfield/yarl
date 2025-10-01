@@ -20,8 +20,8 @@ from menus import main_menu, message_box
 from engine_integration import play_game_with_engine
 from config.testing_config import set_testing_mode
 
-# Set up basic logging
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+# Set up basic logging (WARNING level to see exit triggers)
+logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
 # Set up clean console output (suppress TCOD warnings and SDL messages)
 from config.tcod_warnings import setup_clean_console

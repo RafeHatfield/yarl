@@ -163,6 +163,16 @@ def play_game_with_engine(
         if _should_exit_game(
             action, mouse_action, engine.state_manager.state.current_state
         ):
+            # LOG: Track why game is exiting
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"=== GAME EXIT TRIGGERED ===")
+            logger.warning(f"Action: {action}")
+            logger.warning(f"Mouse action: {mouse_action}")
+            logger.warning(f"Current state: {engine.state_manager.state.current_state}")
+            logger.warning(f"Exit action in actions: {action.get('exit', False)}")
+            logger.warning(f"========================")
+            
             # Save game before exiting
             try:
                 game_state_data = engine.state_manager.state
@@ -176,6 +186,7 @@ def play_game_with_engine(
                 print("Game saved successfully!")
             except Exception as e:
                 print(f"Failed to save game: {e}")
+                logger.error(f"Save failed: {e}")
             break
 
         # Use the new action processor for clean, modular action handling
@@ -204,6 +215,9 @@ def _should_exit_game(action, mouse_action, current_state):
     Returns:
         bool: True if game should exit
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     exit_action = action.get("exit")
     fullscreen = action.get("fullscreen")
 
@@ -212,6 +226,8 @@ def _should_exit_game(action, mouse_action, current_state):
         return False
 
     if exit_action:
+        logger.debug(f"Exit action detected in state {current_state}")
+        
         if current_state in (
             GameStates.SHOW_INVENTORY,
             GameStates.DROP_INVENTORY,
@@ -219,12 +235,15 @@ def _should_exit_game(action, mouse_action, current_state):
             GameStates.LEVEL_UP,
         ):
             # Exit menu, don't exit game
+            logger.debug(f"Exit from menu state {current_state} - closing menu, not exiting game")
             return False
         elif current_state == GameStates.TARGETING:
             # Exit targeting mode
+            logger.debug("Exit from targeting - closing targeting, not exiting game")
             return False
         else:
             # Exit game
+            logger.warning(f"EXIT GAME triggered from state {current_state}")
             return True
 
     return False

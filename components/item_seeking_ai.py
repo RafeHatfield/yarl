@@ -167,8 +167,9 @@ class ItemSeekingAI:
         if dy != 0:
             dy = 1 if dy > 0 else -1
             
-        # Check if we're adjacent to the item (can pick it up)
-        if abs(item.x - self.monster.x) <= 1 and abs(item.y - self.monster.y) <= 1:
+        # Check if we're on the same tile as the item (can pick it up)
+        # Must be EXACTLY on the item, not just adjacent
+        if item.x == self.monster.x and item.y == self.monster.y:
             return self._get_pickup_action(item)
             
         # Check if movement is valid

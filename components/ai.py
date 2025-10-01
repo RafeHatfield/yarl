@@ -503,8 +503,12 @@ class SlimeAI:
         results = []
         monster = self.owner
         
+        # Only act when monster is in player's FOV (prevents off-screen monster-vs-monster)
+        # This keeps the action focused on what the player can see
+        if not map_is_in_fov(fov_map, monster.x, monster.y):
+            return results
+        
         # Find the best target based on faction relationships and distance
-        # Slimes act independently of whether the player can see them
         best_target = self._find_best_target(entities, fov_map)
         
         if best_target:

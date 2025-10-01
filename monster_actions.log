@@ -25879,3 +25879,1027 @@
 14:28:22 - MONSTER: Large_Slime at (23, 10) attempts move: moving towards Orc
 14:28:22 - MONSTER: Orc at (16, 37) turn complete: no actions taken
 14:28:22 - MONSTER: Orc at (20, 39) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:08 - MONSTER: Slime at (39, 18) attempts move: moving towards Orc
+14:38:08 - MONSTER: Large_Slime at (7, 20) attempts move: moving towards Orc
+14:38:08 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:08 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:08 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:08 - MONSTER: Slime at (5, 18) attempts move: moving towards Orc
+14:38:08 - MONSTER: Large_Slime at (68, 20) attempts move: moving towards Orc
+14:38:08 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:08 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:09 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:09 - MONSTER: Large_Slime at (6, 19) attempts move: moving towards Orc
+14:38:09 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:09 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:09 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:09 - MONSTER: Slime at (5, 18) attempts attack: attacking Orc
+14:38:09 - MONSTER: Large_Slime at (67, 21) attempts move: moving towards Orc
+14:38:09 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:09 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:10 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:10 - MONSTER: Large_Slime at (5, 19) attempts move: moving towards Orc
+14:38:10 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:10 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:10 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:10 - MONSTER: Slime at (5, 18) attempts attack: attacking Orc
+14:38:10 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:10 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:10 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:10 - MONSTER: Large_Slime at (5, 19) attempts attack: attacking Orc
+14:38:10 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:10 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:10 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:10 - MONSTER: Slime at (5, 18) attempts attack: attacking Orc
+14:38:10 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:10 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:10 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:11 - MONSTER: Large_Slime at (5, 19) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (5, 18) attempts attack: attacking Orc
+14:38:11 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:11 - MONSTER: Large_Slime at (5, 19) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (5, 18) attempts attack: attacking Orc
+14:38:11 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:11 - MONSTER: Large_Slime at (5, 19) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:11 - MONSTER: Slime at (5, 18) attempts attack: attacking Orc
+14:38:11 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:11 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:11 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:12 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:12 - MONSTER: Large_Slime at (5, 19) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (4, 18) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:12 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:12 - MONSTER: Slime at (5, 18) attempts attack: attacking Orc
+14:38:12 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:12 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:12 - MONSTER: Large_Slime at (5, 19) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (4, 18) loot_drop SUCCESS: dropped Dagger at (4, 18)
+14:38:12 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:12 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:12 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:12 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:12 - MONSTER: Large_Slime at (6, 19) attempts move: moving towards Orc
+14:38:12 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:12 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:12 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:12 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:12 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:13 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:13 - MONSTER: Large_Slime at (7, 19) attempts move: moving towards Orc
+14:38:13 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:13 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:13 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:13 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:13 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:13 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:13 - MONSTER: Large_Slime at (8, 19) attempts move: moving towards Orc
+14:38:13 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:13 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:13 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:13 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:13 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:13 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:13 - MONSTER: Large_Slime at (9, 19) attempts move: moving towards Orc
+14:38:13 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:13 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:13 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (66, 22) turn complete: no actions taken
+14:38:13 - MONSTER: Large_Slime at (67, 21) attempts attack: attacking Orc
+14:38:13 - MONSTER: Orc at (66, 22) loot_drop SUCCESS: dropped Shield at (66, 22)
+14:38:13 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:13 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:14 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:14 - MONSTER: Large_Slime at (10, 20) attempts move: moving towards Orc
+14:38:14 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:14 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:14 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:14 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:14 - MONSTER: Large_Slime at (10, 21) attempts move: moving towards Orc
+14:38:14 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:14 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:14 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:14 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:14 - MONSTER: Large_Slime at (10, 22) attempts move: moving towards Orc
+14:38:14 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:14 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:14 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:14 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:15 - MONSTER: Large_Slime at (10, 23) attempts move: moving towards Orc
+14:38:15 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:15 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:15 - MONSTER: Large_Slime at (10, 24) attempts move: moving towards Orc
+14:38:15 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:15 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:15 - MONSTER: Large_Slime at (11, 25) attempts move: moving towards Orc
+14:38:15 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:15 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:15 - MONSTER: Large_Slime at (11, 25) attempts attack: attacking Orc
+14:38:15 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:15 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:15 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:15 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:16 - MONSTER: Large_Slime at (11, 25) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:16 - MONSTER: Large_Slime at (11, 25) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:16 - MONSTER: Large_Slime at (11, 25) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (12, 26) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:16 - MONSTER: Large_Slime at (11, 25) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (50, 34) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:16 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:16 - MONSTER: Slime at (49, 33) attempts move: moving towards Player
+14:38:16 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:16 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:17 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:17 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:17 - MONSTER: Slime at (48, 32) attempts move: moving towards Player
+14:38:17 - MONSTER: Orc at (50, 33) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:17 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:17 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:17 - MONSTER: Slime at (47, 32) attempts move: moving towards Player
+14:38:17 - MONSTER: Orc at (50, 33) attempts item_pickup: attempting to pick up Raise Dead Scroll
+14:38:17 - MONSTER: Orc at (50, 33) inventory_change SUCCESS: added Raise Dead Scroll (inventory: 1 items)
+14:38:17 - MONSTER: Orc at (50, 33) item_pickup SUCCESS: picked up Raise Dead Scroll from (49, 34)
+14:38:17 - MONSTER: Orc at (50, 33) turn complete: item_seeking
+14:38:17 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:17 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:17 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:17 - MONSTER: Slime at (46, 32) attempts move: moving towards Player
+14:38:17 - MONSTER: Orc at (50, 33) attempts item_seeking_movement: moving towards item
+14:38:17 - MONSTER: Orc at (49, 34) turn complete: item_seeking
+14:38:17 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:17 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:20 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:20 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:20 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:20 - MONSTER: Orc at (49, 34) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:20 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:21 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:21 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:21 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:21 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:21 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:21 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:21 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:21 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:21 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:21 - MONSTER: Orc at (49, 34) attempts item_pickup: attempting to pick up Fireball Scroll
+14:38:21 - MONSTER: Orc at (49, 34) inventory_change SUCCESS: added Fireball Scroll (inventory: 2 items)
+14:38:21 - MONSTER: Orc at (49, 34) item_pickup SUCCESS: picked up Fireball Scroll from (48, 34)
+14:38:21 - MONSTER: Orc at (49, 34) turn complete: item_seeking
+14:38:21 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:21 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:22 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:22 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:22 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:22 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:22 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:22 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:22 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:22 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:22 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:22 - MONSTER: Orc at (49, 34) attempts item_usage: attempting to use Fireball Scroll
+14:38:22 - MONSTER: Orc at (49, 34) item_usage SUCCESS: used Fireball Scroll on Player
+14:38:22 - MONSTER: Orc at (49, 34) inventory_change SUCCESS: removed (used) Fireball Scroll (inventory: 1 items)
+14:38:22 - MONSTER: Orc at (49, 34) turn complete: item_usage
+14:38:22 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:22 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:28 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:28 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:28 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:28 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:28 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:28 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:28 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:28 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:28 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:28 - MONSTER: Orc at (49, 34) attempts item_seeking_movement: moving towards item
+14:38:28 - MONSTER: Orc at (48, 33) turn complete: item_seeking
+14:38:28 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:28 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:29 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:29 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:29 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:29 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:29 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:29 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:29 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:29 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:29 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:29 - MONSTER: Orc at (48, 33) attempts item_pickup: attempting to pick up Lightning Scroll
+14:38:29 - MONSTER: Orc at (48, 33) inventory_change SUCCESS: added Lightning Scroll (inventory: 2 items)
+14:38:29 - MONSTER: Orc at (48, 33) item_pickup SUCCESS: picked up Lightning Scroll from (47, 33)
+14:38:29 - MONSTER: Orc at (48, 33) turn complete: item_seeking
+14:38:29 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:29 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:34 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:34 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:34 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:34 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:34 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:34 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:34 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:34 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:34 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:34 - MONSTER: Orc at (48, 33) attempts item_usage: attempting to use Lightning Scroll
+14:38:34 - MONSTER: Orc at (48, 33) item_usage FAILED: failed to use Lightning Scroll on Player (failure: fizzle)
+14:38:34 - MONSTER: Orc at (48, 33) inventory_change SUCCESS: removed (used) Lightning Scroll (inventory: 1 items)
+14:38:34 - MONSTER: Orc at (48, 33) turn complete: item_usage
+14:38:34 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:34 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:38 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:38 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:38 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:38 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:38 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:38 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:38 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:38 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:38 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:38 - MONSTER: Orc at (48, 33) attempts movement: moving towards Player
+14:38:38 - MONSTER: Orc at (47, 33) turn complete: movement
+14:38:38 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:38 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:39 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:39 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:39 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:39 - MONSTER: Orc at (47, 33) attempts movement: moving towards Player
+14:38:39 - MONSTER: Orc at (47, 33) turn complete: movement
+14:38:39 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:39 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:39 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:39 - MONSTER: Slime at (46, 32) attempts attack: attacking Player
+14:38:39 - MONSTER: Orc at (47, 33) attempts movement: moving towards Player
+14:38:39 - MONSTER: Orc at (47, 33) turn complete: movement
+14:38:39 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:39 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:44 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:44 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (47, 33) attempts movement: moving towards Player
+14:38:44 - MONSTER: Orc at (46, 32) turn complete: movement
+14:38:44 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:44 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (46, 32) loot_drop SUCCESS: dropped Raise Dead Scroll at (46, 32)
+14:38:45 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:45 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:45 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:45 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:46 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:46 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:46 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (39, 19) turn complete: no actions taken
+14:38:50 - MONSTER: Slime at (39, 18) attempts attack: attacking Orc
+14:38:50 - MONSTER: Orc at (39, 19) loot_drop SUCCESS: dropped Shield at (39, 19)
+14:38:50 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (48, 39) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (48, 39) attempts item_seeking_movement: moving towards item
+14:38:50 - MONSTER: Orc at (47, 38) turn complete: item_seeking
+14:38:50 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:50 - MONSTER: Orc at (47, 38) attempts item_pickup: attempting to pick up Raise Dead Scroll
+14:38:50 - MONSTER: Orc at (47, 38) inventory_change SUCCESS: added Raise Dead Scroll (inventory: 1 items)
+14:38:50 - MONSTER: Orc at (47, 38) item_pickup SUCCESS: picked up Raise Dead Scroll from (47, 37)
+14:38:50 - MONSTER: Orc at (47, 38) turn complete: item_seeking
+14:38:50 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:51 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:51 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:51 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:51 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:51 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:51 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:51 - MONSTER: Orc at (47, 38) attempts movement: moving towards Player
+14:38:51 - MONSTER: Orc at (47, 37) turn complete: movement
+14:38:51 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (47, 37) attempts movement: moving towards Player
+14:38:52 - MONSTER: Orc at (47, 36) turn complete: movement
+14:38:52 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:52 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:52 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:52 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:52 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:52 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:53 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:53 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:53 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:53 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:53 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:54 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:54 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:54 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:54 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:54 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:54 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:54 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:55 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:55 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:55 - MONSTER: Orc at (47, 36) attempts combat: attacking Player
+14:38:55 - MONSTER: Orc at (47, 36) turn complete: combat
+14:38:55 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:56 - MONSTER: Orc at (47, 36) loot_drop SUCCESS: dropped Raise Dead Scroll at (47, 36)
+14:38:56 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:56 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:56 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:56 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:56 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:56 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:56 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:57 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:58 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:38:59 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:00 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:01 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:02 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:03 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:04 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (73, 31) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:05 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (73, 31) attempts item_pickup: attempting to pick up Enhance Weapon Scroll
+14:39:06 - MONSTER: Orc at (73, 31) inventory_change SUCCESS: added Enhance Weapon Scroll (inventory: 1 items)
+14:39:06 - MONSTER: Orc at (73, 31) item_pickup SUCCESS: picked up Enhance Weapon Scroll from (74, 31)
+14:39:06 - MONSTER: Orc at (73, 31) turn complete: item_seeking
+14:39:06 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (73, 31) attempts item_usage: attempting to use Enhance Weapon Scroll
+14:39:06 - MONSTER: Orc at (73, 31) item_usage SUCCESS: used Enhance Weapon Scroll on Player
+14:39:06 - MONSTER: Orc at (73, 31) inventory_change SUCCESS: removed (used) Enhance Weapon Scroll (inventory: 0 items)
+14:39:06 - MONSTER: Orc at (73, 31) turn complete: item_usage
+14:39:06 - MONSTER: Orc at (71, 36) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:06 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (73, 31) attempts item_seeking_movement: moving towards item
+14:39:08 - MONSTER: Orc at (72, 31) turn complete: item_seeking
+14:39:08 - MONSTER: Orc at (71, 36) attempts item_seeking_movement: moving towards item
+14:39:08 - MONSTER: Orc at (72, 35) turn complete: item_seeking
+14:39:08 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (72, 31) attempts item_pickup: attempting to pick up Lightning Scroll
+14:39:08 - MONSTER: Orc at (72, 31) inventory_change SUCCESS: added Lightning Scroll (inventory: 1 items)
+14:39:08 - MONSTER: Orc at (72, 31) item_pickup SUCCESS: picked up Lightning Scroll from (71, 31)
+14:39:08 - MONSTER: Orc at (72, 31) turn complete: item_seeking
+14:39:08 - MONSTER: Orc at (72, 35) attempts item_seeking_movement: moving towards item
+14:39:08 - MONSTER: Orc at (72, 34) turn complete: item_seeking
+14:39:08 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:08 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:09 - MONSTER: Orc at (72, 31) attempts item_usage: attempting to use Lightning Scroll
+14:39:09 - MONSTER: Orc at (72, 31) item_usage SUCCESS: used Lightning Scroll on Player
+14:39:09 - MONSTER: Orc at (72, 31) inventory_change SUCCESS: removed (used) Lightning Scroll (inventory: 0 items)
+14:39:09 - MONSTER: Orc at (72, 31) turn complete: item_usage
+14:39:09 - MONSTER: Orc at (72, 34) attempts item_pickup: attempting to pick up Lightning Scroll
+14:39:09 - MONSTER: Orc at (72, 34) inventory_change SUCCESS: added Lightning Scroll (inventory: 1 items)
+14:39:09 - MONSTER: Orc at (72, 34) item_pickup SUCCESS: picked up Lightning Scroll from (72, 33)
+14:39:09 - MONSTER: Orc at (72, 34) turn complete: item_seeking
+14:39:09 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:09 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:09 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:09 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:09 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:10 - MONSTER: Orc at (72, 31) attempts movement: moving towards Player
+14:39:10 - MONSTER: Orc at (71, 31) turn complete: movement
+14:39:10 - MONSTER: Orc at (72, 34) attempts item_usage: attempting to use Lightning Scroll
+14:39:10 - MONSTER: Orc at (72, 34) item_usage FAILED: failed to use Lightning Scroll on Player (failure: unknown)
+14:39:10 - MONSTER: Orc at (72, 34) inventory_change SUCCESS: removed (used) Lightning Scroll (inventory: 0 items)
+14:39:10 - MONSTER: Orc at (72, 34) turn complete: item_usage
+14:39:10 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:10 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:10 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:10 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:10 - MONSTER: Orc at (56, 15) turn complete: no actions taken
+14:39:11 - MONSTER: Orc at (71, 31) attempts combat: attacking Player
+14:39:11 - MONSTER: Orc at (71, 31) turn complete: combat
+14:39:11 - MONSTER: Orc at (72, 34) attempts movement: moving towards Player
+14:39:11 - MONSTER: Orc at (71, 33) turn complete: movement
+14:39:11 - MONSTER: Orc at (70, 11) turn complete: no actions taken
+14:39:11 - MONSTER: Orc at (22, 17) turn complete: no actions taken
+14:39:11 - MONSTER: Orc at (15, 10) turn complete: no actions taken
+14:39:11 - MONSTER: Orc at (13, 10) turn complete: no actions taken
+14:39:11 - MONSTER: Orc at (56, 15) turn complete: no actions taken

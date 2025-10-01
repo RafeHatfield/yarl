@@ -157,14 +157,14 @@ class TestItemSeekingAI(unittest.TestCase):
         
         self.assertIsNone(result)
 
-    def test_pickup_when_adjacent(self):
-        """Test pickup action when adjacent to item."""
-        # Item adjacent to monster
+    def test_pickup_when_on_same_tile(self):
+        """Test pickup action when on same tile as item."""
+        # Item on same tile as monster (fixed: was adjacent, now must be same tile)
         item = Mock()
         item.item = Mock()
         item.name = "sword"
-        item.x = 6
-        item.y = 5  # Adjacent
+        item.x = 5  # Same x
+        item.y = 5  # Same y (monster is at 5, 5)
         item.owner = None
         
         entities = [self.monster, self.player, item]
@@ -174,6 +174,25 @@ class TestItemSeekingAI(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIn("pickup_item", result)
         self.assertEqual(result["pickup_item"], item)
+    
+    def test_move_when_adjacent_not_pickup(self):
+        """Test that monster MOVES toward adjacent item, doesn't pick it up."""
+        # Item adjacent to monster (should move, not pickup)
+        item = Mock()
+        item.item = Mock()
+        item.name = "sword"
+        item.x = 6  # Adjacent x
+        item.y = 5  # Same y
+        item.owner = None
+        
+        entities = [self.monster, self.player, item]
+        
+        result = self.ai.get_item_seeking_action(self.game_map, entities, self.player)
+        
+        # Should move toward item, not pick it up
+        self.assertIsNotNone(result)
+        self.assertIn("move", result, "Should move toward adjacent item")
+        self.assertNotIn("pickup_item", result, "Should NOT pick up from adjacent tile")
 
     @patch.object(ItemSeekingAI, '_is_valid_move')
     def test_blocked_movement_tries_alternatives(self, mock_is_valid):
