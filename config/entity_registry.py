@@ -35,6 +35,10 @@ class EntityStats:
     damage_max: Optional[int] = None
     defense_min: Optional[int] = None
     defense_max: Optional[int] = None
+    # D&D-style stats
+    strength: int = 10
+    dexterity: int = 10
+    constitution: int = 10
 
     def __post_init__(self):
         """Validate stats after creation."""

@@ -82,7 +82,10 @@ def get_game_variables(constants):
         defense=player_stats.defense,
         power=player_stats.power,
         damage_min=getattr(player_stats, 'damage_min', 0),
-        damage_max=getattr(player_stats, 'damage_max', 0)
+        damage_max=getattr(player_stats, 'damage_max', 0),
+        strength=getattr(player_stats, 'strength', 14),
+        dexterity=getattr(player_stats, 'dexterity', 12),
+        constitution=getattr(player_stats, 'constitution', 14)
     )
     inventory_component = Inventory(inventory_config.DEFAULT_INVENTORY_CAPACITY)
     level_component = Level(

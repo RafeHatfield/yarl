@@ -27,12 +27,16 @@ version: "1.0"
 
 # Player starting statistics
 player:
-  hp: 100
+  hp: 30  # Base HP (will be modified by CON)
   power: 0       # No base magical power (reserved for enhancements)
   defense: 1
   xp: 0
-  damage_min: 3  # Fist damage range: 3-4 (was 2+1-2)
-  damage_max: 4  # Total unarmed attack: 0 power + 3-4 fist = 3-4
+  damage_min: 1  # Fist damage range: 1d2 (very weak unarmed)
+  damage_max: 2  # Total unarmed: 1-2 + STR modifier
+  # D&D-style stats (standard fighter build)
+  strength: 14      # Good melee (+2 damage modifier)
+  dexterity: 12     # Decent (+1 to-hit, +1 AC)
+  constitution: 14  # Survivable (+2 HP modifier)
 
 # Monster definitions
 monsters:
@@ -45,6 +49,10 @@ monsters:
       xp: 35
       damage_min: 4  # Natural attack range: 4-6 (was 3+1-3)
       damage_max: 6  # Total attack: 0 power + 4-6 natural = 4-6
+      # D&D-style stats
+      strength: 14      # Strong (+2 damage modifier)
+      dexterity: 10     # Average (0 to-hit, 0 AC)
+      constitution: 12  # Tough (+1 HP modifier)
     char: "o"
     color: [63, 127, 63]  # Dark green
     ai_type: "basic"
@@ -105,6 +113,10 @@ monsters:
       xp: 100
       damage_min: 8   # Natural attack range: 8-12 (was 6+2-6)
       damage_max: 12  # Total attack: 0 power + 8-12 natural = 8-12
+      # D&D-style stats
+      strength: 16      # Very strong (+3 damage modifier)
+      dexterity: 8      # Clumsy (-1 to-hit, -1 AC)
+      constitution: 16  # Very tough (+3 HP modifier)
     char: "T"
     color: [0, 127, 0]  # Green
     ai_type: "basic"
@@ -139,6 +151,10 @@ monsters:
       xp: 25
       damage_min: 1  # Weak individual attacks: 1-3
       damage_max: 3  # But dangerous in groups and with corrosion
+      # D&D-style stats
+      strength: 8       # Weak (-1 damage modifier)
+      dexterity: 6      # Very slow (-2 to-hit, -2 AC)
+      constitution: 10  # Average
     char: "s"
     color: [0, 255, 0]  # Bright green
     ai_type: "slime"
@@ -160,6 +176,10 @@ monsters:
       xp: 75                  # Override: more XP reward
       damage_min: 2           # Override: stronger attacks: 2-5
       damage_max: 5
+      # D&D-style stats
+      strength: 12            # Override: stronger (+1 damage modifier)
+      dexterity: 6            # Same as regular slime (-2 to-hit, -2 AC)
+      constitution: 14        # Override: tougher (+2 HP modifier)
     char: "S"                 # Override: capital S for Large Slime
     color: [0, 200, 0]        # Override: darker green (more mature)
     special_abilities: ["corrosion", "splitting"]  # Override: can split + corrode

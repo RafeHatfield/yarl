@@ -76,7 +76,10 @@ class EntityFactory:
                 power=monster_def.stats.power,
                 xp=monster_def.stats.xp,
                 damage_min=monster_def.stats.damage_min or 0,
-                damage_max=monster_def.stats.damage_max or 0
+                damage_max=monster_def.stats.damage_max or 0,
+                strength=getattr(monster_def.stats, 'strength', 10),
+                dexterity=getattr(monster_def.stats, 'dexterity', 10),
+                constitution=getattr(monster_def.stats, 'constitution', 10)
             )
 
             # Create AI component based on ai_type

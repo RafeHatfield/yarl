@@ -14,25 +14,37 @@ class Fighter:
     points for entities that can engage in combat. It also handles equipment
     bonuses that modify base stats.
 
+    New D&D-style stat system:
+    - STR (Strength): Affects melee damage
+    - DEX (Dexterity): Affects to-hit and AC (armor class)
+    - CON (Constitution): Affects HP
+
     Attributes:
         base_max_hp (int): Base maximum health points
         hp (int): Current health points
-        base_defense (int): Base defense value
-        base_power (int): Base attack power
+        base_defense (int): Base defense value (legacy, will be replaced by AC)
+        base_power (int): Base attack power (legacy, will be replaced by STR)
+        strength (int): Strength stat (8-18)
+        dexterity (int): Dexterity stat (8-18)
+        constitution (int): Constitution stat (8-18)
         xp (int): Experience points earned
         owner (Entity): The entity that owns this component
     """
 
-    def __init__(self, hp, defense, power, xp=0, damage_min=0, damage_max=0):
+    def __init__(self, hp, defense, power, xp=0, damage_min=0, damage_max=0, 
+                 strength=10, dexterity=10, constitution=10):
         """Initialize a Fighter component.
 
         Args:
             hp (int): Maximum health points
-            defense (int): Defense value
-            power (int): Attack power
+            defense (int): Defense value (legacy)
+            power (int): Attack power (legacy)
             xp (int, optional): Starting experience points. Defaults to 0.
             damage_min (int, optional): Minimum base damage (fists/natural attacks). Defaults to 0.
             damage_max (int, optional): Maximum base damage (fists/natural attacks). Defaults to 0.
+            strength (int, optional): Strength stat (8-18). Defaults to 10.
+            dexterity (int, optional): Dexterity stat (8-18). Defaults to 10.
+            constitution (int, optional): Constitution stat (8-18). Defaults to 10.
         """
         self.base_max_hp = hp
         self.hp = hp
@@ -41,7 +53,61 @@ class Fighter:
         self.xp = xp
         self.damage_min = damage_min
         self.damage_max = damage_max
+        
+        # D&D-style stats
+        self.strength = strength
+        self.dexterity = dexterity
+        self.constitution = constitution
+        
         self.owner = None  # Will be set by Entity when component is registered
+
+    @staticmethod
+    def get_stat_modifier(stat):
+        """Calculate D&D-style stat modifier.
+        
+        Formula: (stat - 10) // 2
+        Examples:
+            8-9   → -1
+            10-11 → 0
+            12-13 → +1
+            14-15 → +2
+            16-17 → +3
+            18    → +4
+        
+        Args:
+            stat (int): The ability score (typically 3-18)
+            
+        Returns:
+            int: The stat modifier (-4 to +4 typically)
+        """
+        return (stat - 10) // 2
+    
+    @property
+    def strength_mod(self):
+        """Get strength modifier.
+        
+        Returns:
+            int: Strength modifier
+        """
+        return self.get_stat_modifier(self.strength)
+    
+    @property
+    def dexterity_mod(self):
+        """Get dexterity modifier.
+        
+        Returns:
+            int: Dexterity modifier
+        """
+        return self.get_stat_modifier(self.dexterity)
+    
+    @property
+    def constitution_mod(self):
+        """Get constitution modifier.
+        
+        Returns:
+            int: Constitution modifier
+        """
+        return self.get_stat_modifier(self.constitution)
 
     @property
     def max_hp(self):
