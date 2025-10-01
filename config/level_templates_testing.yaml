@@ -13,9 +13,9 @@ level_overrides:
       mode: "additional"  # Add to normal random spawns
       monsters:
         - type: "slime"
-          count: 3
+          count: 1
         - type: "large_slime"
-          count: 2
+          count: 1
         - type: "orc"  # For testing monster-vs-monster combat
           count: 2
       items:
@@ -36,7 +36,7 @@ level_overrides:
         - type: "shield_scroll"
           count: 1
         - type: "raise_dead_scroll"
-          count: 5
+          count: 20
         - type: "enhance_weapon_scroll"
           count: 1
         - type: "enhance_armor_scroll"

@@ -12,6 +12,7 @@ import math
 from components.ai import ConfusedMonster
 from game_messages import Message
 from fov_functions import map_is_in_fov
+from render_functions import RenderOrder
 
 
 def heal(*args, **kwargs):
@@ -800,6 +801,10 @@ def cast_raise_dead(*args, **kwargs):
     from components.ai import MindlessZombieAI
     corpse.ai = MindlessZombieAI()
     corpse.ai.owner = corpse
+    
+    # Set faction to NEUTRAL or a zombie faction (attacks everything)
+    from components.faction import Faction
+    corpse.faction = Faction.NEUTRAL  # Zombies are hostile to all
     
     # Clear any inventory/equipment from the original monster
     if hasattr(corpse, 'inventory'):
