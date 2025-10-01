@@ -227,6 +227,82 @@ class BasicMonster:
         return results
 
 
+class MindlessZombieAI:
+    """AI for mindless zombies that attack everything.
+    
+    Zombies wander randomly and attack ANY adjacent entity - player,
+    monsters, or other zombies. They have no faction loyalty and are
+    completely mindless, making them chaotic but not reliable allies.
+    
+    Attributes:
+        owner (Entity): The entity that owns this AI component
+    """
+    
+    def __init__(self):
+        """Initialize a MindlessZombieAI."""
+        self.owner = None
+    
+    def take_turn(self, target, fov_map, game_map, entities):
+        """Execute one turn of mindless zombie behavior.
+        
+        Zombies attack any adjacent living creature, otherwise wander randomly.
+        
+        Args:
+            target (Entity): Ignored - zombies don't target specifically
+            fov_map: Field of view map (unused by zombies)
+            game_map (GameMap): The game map for movement
+            entities (list): List of all entities for finding attack targets
+            
+        Returns:
+            list: List of result dictionaries with AI actions
+        """
+        results = []
+        
+        # Look for ANY adjacent living entity to attack
+        for entity in entities:
+            # Skip self
+            if entity == self.owner:
+                continue
+            
+            # Skip non-living entities (corpses, items)
+            if not (hasattr(entity, 'fighter') and entity.fighter):
+                continue
+            
+            # Check if adjacent
+            if self.owner.distance_to(entity) == 1:
+                # ATTACK IT!
+                attack_results = self.owner.fighter.attack(entity)
+                results.extend(attack_results)
+                return results
+        
+        # No adjacent targets - wander randomly
+        dx = randint(-1, 1)
+        dy = randint(-1, 1)
+        
+        # Check if destination is valid
+        if dx != 0 or dy != 0:
+            destination_x = self.owner.x + dx
+            destination_y = self.owner.y + dy
+            
+            # Check bounds and blocking
+            if (0 <= destination_x < game_map.width and 
+                0 <= destination_y < game_map.height and
+                not game_map.is_blocked(destination_x, destination_y)):
+                
+                # Check for entity blocking
+                blocking_entity = None
+                for entity in entities:
+                    if entity.blocks and entity.x == destination_x and entity.y == destination_y:
+                        blocking_entity = entity
+                        break
+                
+                # Only move if not blocked by entity
+                if not blocking_entity:
+                    self.owner.move(dx, dy)
+        
+        return results
+
+
 class ConfusedMonster:
     """Temporary AI component for confused monsters.
 

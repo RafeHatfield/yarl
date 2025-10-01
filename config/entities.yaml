@@ -267,3 +267,10 @@ spells:
     duration: 20  # Turns enemies are knocked out
     range: 8  # Maximum cone distance
     cone_width: 45  # Cone width in degrees
+
+  # Raise Dead scroll - resurrect corpse as mindless zombie (attacks everything!)
+  raise_dead_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [100, 255, 100]  # Necromantic green
+    range: 5  # Maximum distance to corpse

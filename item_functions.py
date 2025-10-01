@@ -692,3 +692,127 @@ def cast_dragon_fart(*args, **kwargs):
     })
     
     return results
+
+
+def cast_raise_dead(*args, **kwargs):
+    """Resurrect a corpse as a mindless zombie that attacks everything.
+    
+    The zombie will have doubled HP, half damage, black coloring, and will
+    attack ANY adjacent entity - player, monsters, or other zombies.
+    Perfect for creating chaos!
+    
+    Args:
+        *args: [entity, entities, fov_map, game_map]
+        **kwargs: Contains target_x, target_y for corpse location
+        
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    entity = args[0]
+    entities = args[1]
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
+    max_range = kwargs.get("range", 5)
+    
+    results = []
+    
+    if not target_x or not target_y:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "You must select a corpse to resurrect!",
+                (255, 255, 0)
+            )
+        })
+        return results
+    
+    # Check range
+    distance = math.sqrt((target_x - entity.x) ** 2 + (target_y - entity.y) ** 2)
+    if distance > max_range:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "That corpse is too far away to resurrect!",
+                (255, 255, 0)
+            )
+        })
+        return results
+    
+    # Find a corpse at the target location
+    corpse = None
+    for ent in entities:
+        if (ent.x == target_x and ent.y == target_y and
+            ent.name.startswith("remains of ")):
+            corpse = ent
+            break
+    
+    if not corpse:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "There is no corpse at that location!",
+                (255, 255, 0)
+            )
+        })
+        return results
+    
+    # Resurrect the corpse!
+    # Extract original name
+    original_name = corpse.name.replace("remains of ", "")
+    
+    # Restore as zombified version
+    corpse.name = f"Zombified {original_name}"
+    corpse.char = corpse.char  # Keep original char (but we'll change color)
+    corpse.color = (40, 40, 40)  # Dark gray/black for undead
+    corpse.blocks = True
+    corpse.render_order = RenderOrder.ACTOR
+    
+    # Restore fighter component with modified stats
+    from components.fighter import Fighter
+    from config.entity_registry import get_entity_registry
+    
+    # Try to get original stats from registry
+    registry = get_entity_registry()
+    original_def = registry.get_entity(original_name.lower())
+    
+    if original_def and hasattr(original_def, 'stats'):
+        base_hp = original_def.stats.hp
+        base_defense = original_def.stats.defense
+        base_power = original_def.stats.power
+    else:
+        # Fallback defaults if we can't find original
+        base_hp = 10
+        base_defense = 0
+        base_power = 3
+    
+    # Create zombie fighter: 2x HP, 0.5x damage
+    zombie_hp = base_hp * 2
+    zombie_power = max(1, int(base_power * 0.5))  # At least 1 damage
+    
+    corpse.fighter = Fighter(
+        hp=zombie_hp,
+        defense=base_defense,
+        power=zombie_power
+    )
+    corpse.fighter.owner = corpse
+    
+    # Give it mindless zombie AI
+    from components.ai import MindlessZombieAI
+    corpse.ai = MindlessZombieAI()
+    corpse.ai.owner = corpse
+    
+    # Clear any inventory/equipment from the original monster
+    if hasattr(corpse, 'inventory'):
+        corpse.inventory = None
+    if hasattr(corpse, 'equipment'):
+        corpse.equipment = None
+    
+    results.append({
+        "consumed": True,
+        "message": Message(
+            f"Dark energy flows into the corpse! {corpse.name} rises, mindless and hungry!",
+            (100, 255, 100)  # Green necromancy
+        )
+    })
+    
+    return results

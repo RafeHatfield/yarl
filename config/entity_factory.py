@@ -387,6 +387,14 @@ class EntityFactory:
                 range=spell_range,
                 cone_width=cone_width
             )
+        elif spell_def.name.lower().replace(' ', '_') == "raise_dead_scroll":
+            from item_functions import cast_raise_dead
+            spell_range = getattr(spell_def, 'range', 5)
+            return Item(
+                use_function=cast_raise_dead,
+                targeting=True,
+                range=spell_range
+            )
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
             return Item()
