@@ -370,6 +370,11 @@ class EntityFactory:
         elif spell_def.name.lower().replace(' ', '_') == "teleport_scroll":
             from item_functions import cast_teleport
             return Item(use_function=cast_teleport, targeting=True)
+        elif spell_def.name.lower().replace(' ', '_') == "shield_scroll":
+            from item_functions import cast_shield
+            duration = getattr(spell_def, 'duration', 10)
+            defense_bonus = getattr(spell_def, 'defense_bonus', 4)
+            return Item(use_function=cast_shield, duration=duration, defense_bonus=defense_bonus)
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
             return Item()

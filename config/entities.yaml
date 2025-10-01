@@ -250,3 +250,11 @@ spells:
     spell_type: "utility"
     char: "~"
     color: [128, 200, 255]  # Light cyan
+
+  # Shield scroll - temporary defense boost (monsters have 10% backfire chance)
+  shield_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [100, 200, 255]  # Light blue
+    duration: 10  # Turns of shield protection
+    defense_bonus: 4  # +4 defense

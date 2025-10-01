@@ -508,3 +508,42 @@ def cast_teleport(*args, **kwargs):
     })
     
     return results
+
+
+def cast_shield(*args, **kwargs):
+    """Cast a protective shield that boosts defense.
+    
+    Players get a safe +4 defense boost.
+    Monsters have a 10% chance for the spell to backfire and halve their defense.
+    
+    Args:
+        *args: First argument should be the entity casting
+        **kwargs: Contains duration (default 10)
+        
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    entity = args[0]
+    duration = kwargs.get("duration", 10)
+    defense_bonus = kwargs.get("defense_bonus", 4)
+    
+    results = []
+    
+    # Create and apply the shield effect
+    from components.status_effects import ShieldEffect
+    shield_effect = ShieldEffect(
+        duration=duration,
+        owner=entity,
+        defense_bonus=defense_bonus
+    )
+    
+    # Add the status effect to the entity
+    if hasattr(entity, 'add_status_effect'):
+        effect_results = entity.add_status_effect(shield_effect)
+        results.extend(effect_results)
+    
+    results.append({
+        "consumed": True
+    })
+    
+    return results

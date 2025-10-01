@@ -104,6 +104,81 @@ class DisorientationEffect(StatusEffect):
         return results
 
 
+class ShieldEffect(StatusEffect):
+    """Temporarily boosts defense, but monsters have a backfire chance."""
+    def __init__(self, duration: int, owner: 'Entity', defense_bonus: int = 4):
+        super().__init__("shield", duration, owner)
+        self.defense_bonus = defense_bonus
+        self.backfired = False
+        self.original_defense = None
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        
+        # Check if this is a monster using the scroll
+        is_monster = hasattr(self.owner, 'ai') and self.owner.ai is not None
+        
+        if is_monster:
+            # 10% chance to backfire for monsters!
+            from random import random
+            if random() < 0.10:
+                self.backfired = True
+                # Halve current defense
+                if hasattr(self.owner, 'fighter') and self.owner.fighter:
+                    self.original_defense = self.owner.fighter.defense
+                    self.owner.fighter.defense = max(0, self.owner.fighter.defense // 2)
+                    
+                    from game_messages import Message
+                    results.append({
+                        'message': Message(
+                            f"The shield spell backfires on {self.owner.name}!",
+                            (255, 100, 100)  # Red
+                        )
+                    })
+                return results
+        
+        # Normal shield effect (player or non-backfired monster)
+        if hasattr(self.owner, 'fighter') and self.owner.fighter:
+            self.owner.fighter.defense += self.defense_bonus
+            
+            from game_messages import Message
+            results.append({
+                'message': Message(
+                    f"{self.owner.name} is surrounded by a protective shield! (+{self.defense_bonus} defense)",
+                    (100, 200, 255)  # Light blue
+                )
+            })
+        
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        
+        if hasattr(self.owner, 'fighter') and self.owner.fighter:
+            if self.backfired and self.original_defense is not None:
+                # Restore original defense from backfire
+                self.owner.fighter.defense = self.original_defense
+                from game_messages import Message
+                results.append({
+                    'message': Message(
+                        f"{self.owner.name}'s defense returns to normal.",
+                        (200, 200, 200)  # Gray
+                    )
+                })
+            else:
+                # Remove normal shield bonus
+                self.owner.fighter.defense -= self.defense_bonus
+                from game_messages import Message
+                results.append({
+                    'message': Message(
+                        f"The protective shield around {self.owner.name} fades.",
+                        (150, 150, 200)  # Light gray-blue
+                    )
+                })
+        
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):
