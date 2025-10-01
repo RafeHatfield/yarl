@@ -612,15 +612,15 @@ def cast_dragon_fart(*args, **kwargs):
     since we're reusing that AI).
     
     Args:
-        *args: [entity, entities, fov_map, game_map]
-        **kwargs: Contains target_x, target_y for direction
+        *args: First argument is the caster entity (self.owner from inventory)
+        **kwargs: Contains entities, fov_map, game_map, target_x, target_y, duration
         
     Returns:
         list: List of result dictionaries with consumption and message info
     """
     entity = args[0]
-    entities = args[1]
-    game_map = args[3]
+    entities = kwargs.get("entities", [])
+    game_map = kwargs.get("game_map")
     target_x = kwargs.get("target_x")
     target_y = kwargs.get("target_y")
     sleep_duration = kwargs.get("duration", 20)
@@ -702,14 +702,14 @@ def cast_raise_dead(*args, **kwargs):
     Perfect for creating chaos!
     
     Args:
-        *args: [entity, entities, fov_map, game_map]
-        **kwargs: Contains target_x, target_y for corpse location
+        *args: First argument is the caster entity (self.owner from inventory)
+        **kwargs: Contains entities, target_x, target_y, range
         
     Returns:
         list: List of result dictionaries with consumption and message info
     """
     entity = args[0]
-    entities = args[1]
+    entities = kwargs.get("entities", [])
     target_x = kwargs.get("target_x")
     target_y = kwargs.get("target_y")
     max_range = kwargs.get("range", 5)
