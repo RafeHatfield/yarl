@@ -559,15 +559,21 @@ class SlimeAI:
     def _can_see_target(self, target, fov_map) -> bool:
         """Check if this AI can see the target.
         
+        Slimes use distance-based vision (radius 10) rather than player FOV,
+        allowing them to act independently even when off-screen.
+        
         Args:
             target: Entity to check visibility for
-            fov_map: Field of view map
+            fov_map: Field of view map (unused for slimes)
             
         Returns:
             bool: True if target is visible
         """
-        # Check basic FOV
-        if not map_is_in_fov(fov_map, target.x, target.y):
+        # Slimes have a fixed vision radius of 10 tiles
+        SLIME_VISION_RADIUS = 10
+        distance = self.owner.distance_to(target)
+        
+        if distance > SLIME_VISION_RADIUS:
             return False
         
         # Check invisibility

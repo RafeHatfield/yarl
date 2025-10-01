@@ -214,12 +214,12 @@ def delete_save_file():
 def _serialize_entity(entity: Entity) -> Dict[str, Any]:
     """Serialize an entity to JSON-compatible format."""
     data = {
-        "x": entity.x,
-        "y": entity.y,
+        "x": int(entity.x),  # Convert to int in case it's a numpy type
+        "y": int(entity.y),  # Convert to int in case it's a numpy type
         "char": entity.char,
         "color": list(entity.color),  # Convert tuple to list for JSON
         "name": entity.name,
-        "blocks": entity.blocks,
+        "blocks": bool(entity.blocks),  # Ensure it's a proper bool
         "render_order": entity.render_order.name if hasattr(entity.render_order, 'name') else str(entity.render_order)
     }
     
@@ -245,11 +245,17 @@ def _serialize_entity(entity: Entity) -> Dict[str, Any]:
 def _serialize_fighter(fighter: Fighter) -> Dict[str, Any]:
     """Serialize a Fighter component."""
     return {
-        "base_max_hp": fighter.base_max_hp,
-        "hp": fighter.hp,
-        "base_defense": fighter.base_defense,
-        "base_power": fighter.base_power,
-        "xp": fighter.xp
+        "base_max_hp": int(fighter.base_max_hp),
+        "hp": int(fighter.hp),
+        "base_defense": int(fighter.base_defense),
+        "base_power": int(fighter.base_power),
+        "xp": int(fighter.xp),
+        # New stat system (d20 combat)
+        "damage_min": int(fighter.damage_min) if hasattr(fighter, 'damage_min') else 0,
+        "damage_max": int(fighter.damage_max) if hasattr(fighter, 'damage_max') else 0,
+        "strength": int(fighter.strength) if hasattr(fighter, 'strength') else 10,
+        "dexterity": int(fighter.dexterity) if hasattr(fighter, 'dexterity') else 10,
+        "constitution": int(fighter.constitution) if hasattr(fighter, 'constitution') else 10
     }
 
 
@@ -306,9 +312,9 @@ def _serialize_equipment(equipment: Equipment) -> Dict[str, Any]:
 def _serialize_game_map(game_map: GameMap) -> Dict[str, Any]:
     """Serialize a GameMap."""
     return {
-        "width": game_map.width,
-        "height": game_map.height,
-        "dungeon_level": game_map.dungeon_level,
+        "width": int(game_map.width),
+        "height": int(game_map.height),
+        "dungeon_level": int(game_map.dungeon_level),
         "tiles": [[_serialize_tile(game_map.tiles[x][y]) for y in range(game_map.height)] 
                   for x in range(game_map.width)]
     }
@@ -384,7 +390,13 @@ def _deserialize_fighter(data: Dict[str, Any]) -> Fighter:
         hp=data["base_max_hp"],  # Constructor expects max HP
         defense=data["base_defense"],
         power=data["base_power"],
-        xp=data.get("xp", 0)
+        xp=data.get("xp", 0),
+        # New stat system (d20 combat) - with defaults for backward compatibility
+        damage_min=data.get("damage_min", 0),
+        damage_max=data.get("damage_max", 0),
+        strength=data.get("strength", 10),
+        dexterity=data.get("dexterity", 10),
+        constitution=data.get("constitution", 10)
     )
     # Set current HP separately
     fighter.hp = data["hp"]

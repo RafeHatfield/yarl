@@ -168,10 +168,13 @@ class TestSlimeAI:
             assert best_target == orc1
     
     def test_slime_no_target_when_none_visible(self):
-        """Test that slime finds no target when none are visible."""
-        with patch('components.ai.map_is_in_fov', return_value=False):
-            best_target = self.slime_ai._find_best_target(self.entities, self.fov_map)
-            assert best_target is None
+        """Test that slime finds no target when none are within vision range."""
+        # Place all targets far away (beyond slime vision radius of 10)
+        self.player.x, self.player.y = 50, 50
+        self.orc.x, self.orc.y = 55, 55
+        
+        best_target = self.slime_ai._find_best_target(self.entities, self.fov_map)
+        assert best_target is None
     
     def test_slime_take_turn_movement(self):
         """Test that slime moves towards distant targets."""
