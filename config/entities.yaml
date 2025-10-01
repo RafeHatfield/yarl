@@ -27,7 +27,7 @@ version: "1.0"
 
 # Player starting statistics
 player:
-  hp: 30  # Base HP (will be modified by CON)
+  hp: 60  # Base HP (modified by CON: 60 + 2 = 62 total)
   power: 0       # No base magical power (reserved for enhancements)
   defense: 1
   xp: 0
@@ -36,7 +36,7 @@ player:
   # D&D-style stats (standard fighter build)
   strength: 14      # Good melee (+2 damage modifier)
   dexterity: 12     # Decent (+1 to-hit, +1 AC)
-  constitution: 14  # Survivable (+2 HP modifier)
+  constitution: 14  # Survivable (+2 HP modifier = +2 max HP)
 
 # Monster definitions
 monsters:

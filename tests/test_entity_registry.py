@@ -445,7 +445,7 @@ class TestEntityRegistryIntegration:
             
             # Verify player stats match current values (updated for new power system)
             player_stats = registry.get_player_stats()
-            assert player_stats.hp == 30
+            assert player_stats.hp == 60  # Updated: rebalanced for d20 combat
             assert player_stats.power == 0  # Updated: new power system baseline
             assert player_stats.defense == 1
             

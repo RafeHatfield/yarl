@@ -134,17 +134,25 @@ class Fighter:
 
     @property
     def max_hp(self):
-        """Get maximum HP including equipment bonuses.
+        """Get maximum HP including CON modifier and equipment bonuses.
+        
+        Formula: base_max_hp + CON modifier + equipment bonuses
+        
+        Example:
+            Base HP: 60
+            CON: 14 (+2 modifier)
+            Equipment: +0
+            Max HP: 62
 
         Returns:
-            int: Maximum health points including equipment bonuses
+            int: Maximum health points including all modifiers
         """
         if self.owner and self.owner.equipment:
-            bonus = self.owner.equipment.max_hp_bonus
+            equipment_bonus = self.owner.equipment.max_hp_bonus
         else:
-            bonus = 0
+            equipment_bonus = 0
 
-        return self.base_max_hp + bonus
+        return self.base_max_hp + self.constitution_mod + equipment_bonus
 
     @property
     def power(self):

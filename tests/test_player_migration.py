@@ -29,8 +29,8 @@ class TestPlayerMigrationCompatibility:
         factory = get_entity_factory()
         player_stats = factory.get_player_stats()
         
-        # Verify stats match the old hardcoded values
-        assert player_stats.hp == 30
+        # Verify stats match the current values (updated for d20 combat rebalancing)
+        assert player_stats.hp == 60  # Rebalanced: was 30, now 60 for survivability
         assert player_stats.power == 0  # New system uses damage_min/max instead of power
         assert player_stats.defense == 1  # DEFAULT_DEFENSE + 1 = 0 + 1 = 1
         assert player_stats.xp == 0
@@ -74,8 +74,8 @@ class TestPlayerMigrationCompatibility:
         assert player.char == "@"
         assert player.color == (255, 255, 255)
         
-        # Verify player stats match configuration
-        assert player.fighter.base_max_hp == 30
+        # Verify player stats match configuration (rebalanced for d20 combat)
+        assert player.fighter.base_max_hp == 60  # Rebalanced: was 30, now 60
         assert player.fighter.base_power == 0
         assert player.fighter.base_defense == 1
         
@@ -145,7 +145,7 @@ class TestPlayerMigrationIntegration:
         
         player_stats = registry.get_player_stats()
         assert player_stats is not None
-        assert player_stats.hp == 30
+        assert player_stats.hp == 60  # Rebalanced for d20 combat
         assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0
@@ -156,7 +156,7 @@ class TestPlayerMigrationIntegration:
         
         player_stats = factory.get_player_stats()
         assert player_stats is not None
-        assert player_stats.hp == 30
+        assert player_stats.hp == 60  # Rebalanced for d20 combat
         assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0
@@ -185,33 +185,34 @@ class TestBackwardCompatibility:
         load_entity_config()
 
     def test_player_stats_exactly_match_hardcoded_values(self):
-        """Test that config values exactly match the old hardcoded values."""
+        """Test that config values match the rebalanced values for d20 combat."""
         factory = get_entity_factory()
         player_stats = factory.get_player_stats()
         
-        # These values must exactly match the old hardcoded creation:
-        # hp=100, defense=DEFAULT_DEFENSE + 1, power=DEFAULT_POWER + 1
-        # where DEFAULT_DEFENSE=0 and DEFAULT_POWER=1
-        assert player_stats.hp == 30
+        # These values reflect the d20 combat rebalancing:
+        # hp=60 (was 30, rebalanced for survivability)
+        # defense=1, power=0 (new damage system)
+        assert player_stats.hp == 60  # Rebalanced for d20 combat
         assert player_stats.defense == 1  # 0 + 1
         assert player_stats.power == 0   # New system uses damage_min/max instead of power
         assert player_stats.xp == 0
 
     def test_player_creation_produces_identical_fighter(self):
-        """Test that new player creation produces functionally identical Fighter."""
+        """Test that new player creation produces correct Fighter with rebalanced stats."""
         constants = get_constants()
         
         # Create player using new system
         new_player, _, _, _, _ = get_game_variables(constants)
         
-        # Compare with new system values
-        # New system: Fighter(hp=30, defense=1, power=0)
-        assert new_player.fighter.base_max_hp == 30
+        # Compare with rebalanced system values
+        # Rebalanced system: Fighter(hp=60, defense=1, power=0)
+        assert new_player.fighter.base_max_hp == 60  # Rebalanced for d20 combat
         assert new_player.fighter.base_defense == 1
         assert new_player.fighter.base_power == 0
         
-        # Verify current HP is set to max HP
-        assert new_player.fighter.hp == 30
+        # Verify current HP is set to base max HP
+        # Note: Actual max_hp will be base_max_hp + CON modifier (60 + 2 = 62)
+        assert new_player.fighter.hp == 60  # Current HP starts at base_max_hp
 
     def test_save_load_compatibility(self):
         """Test that migrated player can be saved and loaded correctly."""

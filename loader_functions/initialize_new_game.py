@@ -112,10 +112,15 @@ def get_game_variables(constants):
     pathfinding_component.owner = player
     entities = [player]
 
-    # Create starting dagger using EntityFactory
+    # Create starting equipment using EntityFactory
     dagger = entity_factory.create_weapon("dagger", 0, 0)
     player.inventory.add_item(dagger)
     player.equipment.toggle_equip(dagger)
+    
+    # Add starting leather armor for better survivability
+    leather_armor = entity_factory.create_armor("leather_armor", 0, 0)
+    player.inventory.add_item(leather_armor)
+    player.equipment.toggle_equip(leather_armor)
 
     game_map = GameMap(constants["map_width"], constants["map_height"])
     game_map.make_map(
