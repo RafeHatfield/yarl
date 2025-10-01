@@ -441,12 +441,13 @@ class GameMap:
         
         # Place guaranteed monsters
         for spawn in level_override.guaranteed_monsters:
-            for i in range(spawn.count):
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
                 x, y = self._find_random_unoccupied_position(rooms, entities)
                 if x is None:
                     logger.warning(
                         f"Could not find unoccupied position for {spawn.entity_type}, "
-                        f"spawned {i}/{spawn.count}"
+                        f"spawned {i}/{spawn_count}"
                     )
                     failed_count += 1
                     break
@@ -466,12 +467,13 @@ class GameMap:
                     
         # Place guaranteed items (spells/potions)
         for spawn in level_override.guaranteed_items:
-            for i in range(spawn.count):
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
                 x, y = self._find_random_unoccupied_position(rooms, entities)
                 if x is None:
                     logger.warning(
                         f"Could not find unoccupied position for {spawn.entity_type}, "
-                        f"spawned {i}/{spawn.count}"
+                        f"spawned {i}/{spawn_count}"
                     )
                     failed_count += 1
                     break
@@ -488,12 +490,13 @@ class GameMap:
                     
         # Place guaranteed equipment (weapons/armor)
         for spawn in level_override.guaranteed_equipment:
-            for i in range(spawn.count):
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
                 x, y = self._find_random_unoccupied_position(rooms, entities)
                 if x is None:
                     logger.warning(
                         f"Could not find unoccupied position for {spawn.entity_type}, "
-                        f"spawned {i}/{spawn.count}"
+                        f"spawned {i}/{spawn_count}"
                     )
                     failed_count += 1
                     break

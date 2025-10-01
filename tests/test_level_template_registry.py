@@ -23,9 +23,25 @@ class TestGuaranteedSpawn:
     
     def test_creation(self):
         """Test creating a GuaranteedSpawn."""
-        spawn = GuaranteedSpawn(entity_type="slime", count=3)
+        spawn = GuaranteedSpawn(entity_type="slime", count_min=3, count_max=3)
         assert spawn.entity_type == "slime"
-        assert spawn.count == 3
+        assert spawn.count_min == 3
+        assert spawn.count_max == 3
+        
+    def test_get_random_count_fixed(self):
+        """Test get_random_count with fixed count."""
+        spawn = GuaranteedSpawn(entity_type="orc", count_min=5, count_max=5)
+        for _ in range(10):
+            assert spawn.get_random_count() == 5
+            
+    def test_get_random_count_range(self):
+        """Test get_random_count with range."""
+        spawn = GuaranteedSpawn(entity_type="slime", count_min=3, count_max=8)
+        counts = [spawn.get_random_count() for _ in range(100)]
+        # All values should be in range
+        assert all(3 <= c <= 8 for c in counts)
+        # Should have some variety (not all the same)
+        assert len(set(counts)) > 1
 
 
 class TestLevelOverride:
@@ -33,9 +49,9 @@ class TestLevelOverride:
     
     def test_creation(self):
         """Test creating a LevelOverride."""
-        monsters = [GuaranteedSpawn("orc", 2)]
-        items = [GuaranteedSpawn("healing_potion", 1)]
-        equipment = [GuaranteedSpawn("sword", 1)]
+        monsters = [GuaranteedSpawn("orc", 2, 2)]
+        items = [GuaranteedSpawn("healing_potion", 1, 1)]
+        equipment = [GuaranteedSpawn("sword", 1, 1)]
         
         override = LevelOverride(
             level_number=1,
@@ -53,9 +69,9 @@ class TestLevelOverride:
         
     def test_all_guaranteed_spawns(self):
         """Test getting all spawns combined."""
-        monsters = [GuaranteedSpawn("orc", 2), GuaranteedSpawn("troll", 1)]
-        items = [GuaranteedSpawn("healing_potion", 3)]
-        equipment = [GuaranteedSpawn("sword", 1), GuaranteedSpawn("leather_armor", 1)]
+        monsters = [GuaranteedSpawn("orc", 2, 2), GuaranteedSpawn("troll", 1, 1)]
+        items = [GuaranteedSpawn("healing_potion", 3, 3)]
+        equipment = [GuaranteedSpawn("sword", 1, 1), GuaranteedSpawn("shield", 1, 1)]
         
         override = LevelOverride(
             level_number=5,
@@ -104,7 +120,8 @@ class TestLevelTemplateRegistry:
         assert override.mode == 'additional'
         assert len(override.guaranteed_monsters) == 1
         assert override.guaranteed_monsters[0].entity_type == 'slime'
-        assert override.guaranteed_monsters[0].count == 2
+        assert override.guaranteed_monsters[0].count_min == 2
+        assert override.guaranteed_monsters[0].count_max == 2
         assert len(override.guaranteed_items) == 1
         assert len(override.guaranteed_equipment) == 1
         
@@ -286,7 +303,8 @@ level_overrides:
             self.registry._load_template_file(testing_path, is_testing=True)
             assert self.registry.overrides[1].mode == "replace"
             assert self.registry.overrides[1].guaranteed_monsters[0].entity_type == "slime"
-            assert self.registry.overrides[1].guaranteed_monsters[0].count == 5
+            assert self.registry.overrides[1].guaranteed_monsters[0].count_min == 5
+            assert self.registry.overrides[1].guaranteed_monsters[0].count_max == 5
             
         finally:
             os.unlink(normal_path)
