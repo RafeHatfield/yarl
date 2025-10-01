@@ -177,7 +177,8 @@ class ActionProcessor:
         if hasattr(attacker, 'invisible') and attacker.invisible:
             self._break_invisibility(attacker)
         
-        attack_results = attacker.fighter.attack(target)
+        # Use new d20-based attack system
+        attack_results = attacker.fighter.attack_d20(target)
         
         for result in attack_results:
             message = result.get("message")

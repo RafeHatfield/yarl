@@ -108,6 +108,28 @@ class Fighter:
             int: Constitution modifier
         """
         return self.get_stat_modifier(self.constitution)
+    
+    @property
+    def armor_class(self):
+        """Calculate Armor Class (AC) for d20 combat system.
+        
+        AC = 10 + DEX modifier + armor AC bonus
+        
+        Returns:
+            int: Armor Class (typically 10-20)
+        """
+        base_ac = 10
+        dex_bonus = self.dexterity_mod
+        
+        # Get armor AC bonus from equipment (if any)
+        armor_ac_bonus = 0
+        if self.owner and hasattr(self.owner, 'equipment') and self.owner.equipment:
+            # For now, just check off_hand (shield/armor slot)
+            # Later we'll add chest, head, feet slots
+            if self.owner.equipment.off_hand and hasattr(self.owner.equipment.off_hand, 'equippable'):
+                armor_ac_bonus = getattr(self.owner.equipment.off_hand.equippable, 'armor_class_bonus', 0)
+        
+        return base_ac + dex_bonus + armor_ac_bonus
 
     @property
     def max_hp(self):
@@ -288,6 +310,177 @@ class Fighter:
                 self._log_combat_debug(target, total_attack, variable_damage, damage_source, total_defense, armor_defense, final_damage)
 
         return results
+    
+    def attack_d20(self, target):
+        """Perform a d20-based attack against a target entity.
+        
+        New combat system:
+        - Roll d20 + DEX modifier + weapon to-hit bonus
+        - Compare to target's AC (10 + DEX mod + armor AC)
+        - Natural 20 = critical hit (double damage)
+        - Natural 1 = fumble (auto-miss)
+        - On hit: Roll weapon damage + STR modifier
+        
+        Args:
+            target (Entity): The target entity to attack
+            
+        Returns:
+            list: List of result dictionaries with combat messages and effects
+        """
+        import random
+        from game_messages import Message
+        
+        results = []
+        
+        # Roll d20 for attack
+        d20_roll = random.randint(1, 20)
+        
+        # Get attacker's to-hit bonus
+        to_hit_bonus = self.dexterity_mod
+        weapon_bonus = 0
+        if self.owner and hasattr(self.owner, 'equipment') and self.owner.equipment:
+            if self.owner.equipment.main_hand and hasattr(self.owner.equipment.main_hand, 'equippable'):
+                weapon_bonus = getattr(self.owner.equipment.main_hand.equippable, 'to_hit_bonus', 0)
+        
+        # Calculate total attack roll
+        attack_roll = d20_roll + to_hit_bonus + weapon_bonus
+        
+        # Get target's AC
+        target_ac = target.fighter.armor_class
+        
+        # Check for critical hit or fumble
+        is_critical = (d20_roll == 20)
+        is_fumble = (d20_roll == 1)
+        
+        # Determine if attack hits
+        hit = False
+        if is_critical:
+            hit = True  # Natural 20 always hits
+        elif is_fumble:
+            hit = False  # Natural 1 always misses
+        else:
+            hit = (attack_roll >= target_ac)
+        
+        if hit:
+            # Calculate damage
+            base_damage = 0
+            
+            # Get weapon damage or fist damage
+            weapon_damage = self._get_weapon_damage()
+            if weapon_damage > 0:
+                base_damage = weapon_damage
+            else:
+                # Unarmed: use base damage range
+                base_damage = self._get_base_variable_damage()
+            
+            # Add STR modifier to damage
+            damage = base_damage + self.strength_mod
+            
+            # Critical hit: double all damage
+            if is_critical:
+                damage = damage * 2
+                damage = max(1, damage)  # Minimum 1 damage even on crit
+                
+                message_text = "CRITICAL HIT! {0} strikes {1} for {2} damage!".format(
+                    self.owner.name.capitalize(),
+                    target.name,
+                    damage
+                )
+                results.append({
+                    "message": Message(message_text, (255, 215, 0))  # Gold color for crits
+                })
+            else:
+                # Normal hit
+                damage = max(1, damage)  # Minimum 1 damage
+                
+                # Calculate hit percentage for display
+                min_roll_needed = target_ac - (to_hit_bonus + weapon_bonus)
+                hit_percentage = max(5, min(95, (21 - min_roll_needed) * 5))
+                
+                message_text = "{0} attacks {1} ({2}% to hit) - HIT for {3} damage!".format(
+                    self.owner.name.capitalize(),
+                    target.name,
+                    hit_percentage,
+                    damage
+                )
+                results.append({
+                    "message": Message(message_text, (255, 255, 255))
+                })
+            
+            # Log detailed combat info in testing mode
+            if is_testing_mode():
+                self._log_d20_combat(d20_roll, to_hit_bonus, weapon_bonus, attack_roll,
+                                    target_ac, hit, is_critical, damage, base_damage)
+            
+            # Apply damage
+            results.extend(target.fighter.take_damage(damage))
+            
+            # Apply corrosion effects if applicable
+            corrosion_results = self._apply_corrosion_effects(target, damage)
+            results.extend(corrosion_results)
+        else:
+            # Miss
+            if is_fumble:
+                message_text = "FUMBLE! {0} attacks {1} - complete miss!".format(
+                    self.owner.name.capitalize(),
+                    target.name
+                )
+                results.append({
+                    "message": Message(message_text, (200, 200, 200))  # Gray for fumble
+                })
+            else:
+                # Calculate hit percentage for display
+                min_roll_needed = target_ac - (to_hit_bonus + weapon_bonus)
+                hit_percentage = max(5, min(95, (21 - min_roll_needed) * 5))
+                
+                message_text = "{0} attacks {1} ({2}% to hit) - MISS!".format(
+                    self.owner.name.capitalize(),
+                    target.name,
+                    hit_percentage
+                )
+                results.append({
+                    "message": Message(message_text, (180, 180, 180))
+                })
+            
+            # Log miss in testing mode
+            if is_testing_mode():
+                self._log_d20_combat(d20_roll, to_hit_bonus, weapon_bonus, attack_roll,
+                                    target_ac, hit, is_fumble, 0, 0)
+        
+        return results
+    
+    def _log_d20_combat(self, d20_roll, to_hit_bonus, weapon_bonus, attack_roll,
+                        target_ac, hit, is_special, damage, base_damage):
+        """Log detailed d20 combat breakdown for debugging.
+        
+        Args:
+            d20_roll: The raw d20 roll (1-20)
+            to_hit_bonus: DEX modifier
+            weapon_bonus: Weapon to-hit bonus
+            attack_roll: Total attack roll
+            target_ac: Target's armor class
+            hit: Whether attack hit
+            is_special: Whether it was a crit or fumble
+            damage: Damage dealt
+            base_damage: Base damage before STR modifier
+        """
+        special_text = ""
+        if is_special and d20_roll == 20:
+            special_text = " [CRITICAL HIT]"
+        elif is_special and d20_roll == 1:
+            special_text = " [FUMBLE]"
+        
+        result_text = "HIT" if hit else "MISS"
+        
+        debug_text = (f"d20 Combat: {self.owner.name} rolled {d20_roll} + {to_hit_bonus} (DEX) "
+                     f"+ {weapon_bonus} (weapon) = {attack_roll} vs AC {target_ac} → {result_text}{special_text}")
+        
+        if hit and damage > 0:
+            debug_text += f" | Damage: {base_damage} (base) + {self.strength_mod} (STR) = {damage}"
+            if is_special and d20_roll == 20:
+                debug_text += " × 2 (crit)"
+        
+        combat_logger.debug(debug_text)
     
     def _log_combat_debug(self, target, total_attack: int, variable_damage: int, 
                          damage_source: str, total_defense: int, armor_defense: int, final_damage: int) -> None:

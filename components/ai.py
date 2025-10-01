@@ -83,9 +83,9 @@ class BasicMonster:
                 actions_taken.append("movement")
             elif target.fighter.hp > 0:
                 # print('The {0} insults you!'.format(monster.name))
-                # monster.fighter.attack(target)
+                # Use new d20-based attack system
                 MonsterActionLogger.log_action_attempt(monster, "combat", f"attacking {target.name}")
-                attack_results = monster.fighter.attack(target)
+                attack_results = monster.fighter.attack_d20(target)
                 results.extend(attack_results)
                 actions_taken.append("combat")
 
@@ -294,8 +294,8 @@ class MindlessZombieAI:
                                 if other_targets:
                                     self.current_target = choice(other_targets)
                         
-                        # Attack current target
-                        attack_results = self.owner.fighter.attack(self.current_target)
+                        # Attack current target (use new d20 system)
+                        attack_results = self.owner.fighter.attack_d20(self.current_target)
                         results.extend(attack_results)
                         return results
                     else:
@@ -317,9 +317,9 @@ class MindlessZombieAI:
             closest = min(visible_targets, key=lambda e: self.owner.distance_to(e))
             self.current_target = closest
             
-            # If adjacent, attack immediately
+            # If adjacent, attack immediately (use new d20 system)
             if self.owner.distance_to(closest) == 1:
-                attack_results = self.owner.fighter.attack(closest)
+                attack_results = self.owner.fighter.attack_d20(closest)
                 results.extend(attack_results)
                 return results
             else:
@@ -518,8 +518,8 @@ class SlimeAI:
                         monster, "move", f"moving towards {best_target.name}"
                     )
                 elif best_target.fighter:
-                    # Attack the target
-                    attack_results = monster.fighter.attack(best_target)
+                    # Attack the target (use new d20 system)
+                    attack_results = monster.fighter.attack_d20(best_target)
                     results.extend(attack_results)
                     MonsterActionLogger.log_action_attempt(
                         monster, "attack", f"attacking {best_target.name}"
