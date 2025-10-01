@@ -32,6 +32,6 @@ level_overrides:
       equipment:
         - type: "dagger"
           count: 1
-        - type: "leather_armor"
+        - type: "shield"
           count: 1
 
