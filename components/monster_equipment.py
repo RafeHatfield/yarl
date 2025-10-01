@@ -61,6 +61,10 @@ class MonsterEquipmentSpawner:
         Returns:
             List: List of equipment entities that were created (for tracking)
         """
+        # Slimes are just blobs - they can't carry equipment!
+        if 'slime' in monster.name.lower():
+            return []
+        
         if not self.should_spawn_with_equipment(monster.name, dungeon_level):
             return []
         
@@ -138,6 +142,10 @@ class MonsterLootDropper:
         Returns:
             List: List of dropped item entities
         """
+        # Slimes are just blobs - they don't carry items!
+        if 'slime' in monster.name.lower():
+            return []
+        
         dropped_items = []
         
         # Drop equipped items

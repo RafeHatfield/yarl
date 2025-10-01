@@ -250,13 +250,13 @@ class MindlessZombieAI:
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of mindless zombie behavior.
         
-        Zombies attack any adjacent living creature with sticky targeting.
-        Once locked onto a target, they continue attacking it until it's dead
-        or no longer adjacent. If another entity gets close, 50% chance to switch.
+        Zombies are hungry! They chase and attack any living creature in their FOV.
+        Once locked onto a target, they pursue it relentlessly until it's dead
+        or out of sight. If adjacent, they attack. If in FOV but not adjacent, they chase.
         
         Args:
             target (Entity): Ignored - zombies don't target specifically
-            fov_map: Field of view map (unused by zombies)
+            fov_map: Field of view map for detecting targets
             game_map (GameMap): The game map for movement
             entities (list): List of all entities for finding attack targets
             
@@ -265,48 +265,69 @@ class MindlessZombieAI:
         """
         results = []
         
-        # Check if current target is still valid (adjacent and alive)
+        # Zombies have limited FOV (radius 5)
+        zombie_fov_radius = 5
+        
+        # Check if current target is still valid (alive and in FOV)
         if self.current_target:
-            # Is target still adjacent and alive?
+            # Is target still alive and in FOV?
             if (self.current_target in entities and
                 hasattr(self.current_target, 'fighter') and 
-                self.current_target.fighter and
-                self.owner.distance_to(self.current_target) == 1):
+                self.current_target.fighter):
                 
-                # Current target still valid - keep attacking it!
-                # But check if there's a new adjacent target
-                new_adjacent = self._find_adjacent_targets(entities)
+                distance = self.owner.distance_to(self.current_target)
+                in_fov = distance <= zombie_fov_radius
                 
-                if len(new_adjacent) > 1:  # More than just current target
-                    # 50% chance to switch to a different target
-                    from random import random
-                    if random() < 0.5:
-                        # Switch to a random adjacent target
-                        from random import choice
-                        other_targets = [e for e in new_adjacent if e != self.current_target]
-                        if other_targets:
-                            self.current_target = choice(other_targets)
-                
-                # Attack current target
-                attack_results = self.owner.fighter.attack(self.current_target)
+                if in_fov:
+                    # Target still in FOV!
+                    if distance == 1:
+                        # Adjacent - ATTACK!
+                        # Check for other adjacent targets first
+                        adjacent_targets = self._find_adjacent_targets(entities)
+                        
+                        if len(adjacent_targets) > 1:
+                            # 50% chance to switch to different adjacent target
+                            from random import random
+                            if random() < 0.5:
+                                from random import choice
+                                other_targets = [e for e in adjacent_targets if e != self.current_target]
+                                if other_targets:
+                                    self.current_target = choice(other_targets)
+                        
+                        # Attack current target
+                        attack_results = self.owner.fighter.attack(self.current_target)
+                        results.extend(attack_results)
+                        return results
+                    else:
+                        # In FOV but not adjacent - CHASE!
+                        self.owner.move_astar(self.current_target, entities, game_map)
+                        return results
+                else:
+                    # Target out of FOV - lose interest
+                    self.current_target = None
+            else:
+                # Target dead or removed - clear it
+                self.current_target = None
+        
+        # No current target - look for any living entity in FOV
+        visible_targets = self._find_visible_targets(entities, zombie_fov_radius)
+        
+        if visible_targets:
+            # Pick closest target and lock onto it
+            closest = min(visible_targets, key=lambda e: self.owner.distance_to(e))
+            self.current_target = closest
+            
+            # If adjacent, attack immediately
+            if self.owner.distance_to(closest) == 1:
+                attack_results = self.owner.fighter.attack(closest)
                 results.extend(attack_results)
                 return results
             else:
-                # Target no longer valid - clear it
-                self.current_target = None
+                # Chase it!
+                self.owner.move_astar(closest, entities, game_map)
+                return results
         
-        # No current target - find any adjacent living entity to attack
-        adjacent_targets = self._find_adjacent_targets(entities)
-        
-        if adjacent_targets:
-            # Pick a random adjacent target and lock onto it
-            from random import choice
-            self.current_target = choice(adjacent_targets)
-            attack_results = self.owner.fighter.attack(self.current_target)
-            results.extend(attack_results)
-            return results
-        
-        # No adjacent targets - wander randomly
+        # No visible targets - wander randomly
         dx = randint(-1, 1)
         dy = randint(-1, 1)
         
@@ -358,6 +379,33 @@ class MindlessZombieAI:
                 adjacent.append(entity)
         
         return adjacent
+    
+    def _find_visible_targets(self, entities, fov_radius):
+        """Find all living entities within FOV radius.
+        
+        Args:
+            entities (list): List of all entities
+            fov_radius (int): Vision radius for zombie
+            
+        Returns:
+            list: List of entities within FOV with fighter components
+        """
+        visible = []
+        
+        for entity in entities:
+            # Skip self
+            if entity == self.owner:
+                continue
+            
+            # Skip non-living entities (corpses, items)
+            if not (hasattr(entity, 'fighter') and entity.fighter):
+                continue
+            
+            # Check if within FOV radius
+            if self.owner.distance_to(entity) <= fov_radius:
+                visible.append(entity)
+        
+        return visible
 
 
 class ConfusedMonster:
