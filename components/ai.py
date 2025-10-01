@@ -234,18 +234,25 @@ class MindlessZombieAI:
     monsters, or other zombies. They have no faction loyalty and are
     completely mindless, making them chaotic but not reliable allies.
     
+    Once locked onto a target, zombies continue attacking it relentlessly.
+    If another entity gets adjacent, there's a 50% chance to switch targets.
+    
     Attributes:
         owner (Entity): The entity that owns this AI component
+        current_target (Entity): Current entity being attacked (sticky targeting)
     """
     
     def __init__(self):
         """Initialize a MindlessZombieAI."""
         self.owner = None
+        self.current_target = None  # Track current target for sticky behavior
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of mindless zombie behavior.
         
-        Zombies attack any adjacent living creature, otherwise wander randomly.
+        Zombies attack any adjacent living creature with sticky targeting.
+        Once locked onto a target, they continue attacking it until it's dead
+        or no longer adjacent. If another entity gets close, 50% chance to switch.
         
         Args:
             target (Entity): Ignored - zombies don't target specifically
@@ -258,22 +265,46 @@ class MindlessZombieAI:
         """
         results = []
         
-        # Look for ANY adjacent living entity to attack
-        for entity in entities:
-            # Skip self
-            if entity == self.owner:
-                continue
-            
-            # Skip non-living entities (corpses, items)
-            if not (hasattr(entity, 'fighter') and entity.fighter):
-                continue
-            
-            # Check if adjacent
-            if self.owner.distance_to(entity) == 1:
-                # ATTACK IT!
-                attack_results = self.owner.fighter.attack(entity)
+        # Check if current target is still valid (adjacent and alive)
+        if self.current_target:
+            # Is target still adjacent and alive?
+            if (self.current_target in entities and
+                hasattr(self.current_target, 'fighter') and 
+                self.current_target.fighter and
+                self.owner.distance_to(self.current_target) == 1):
+                
+                # Current target still valid - keep attacking it!
+                # But check if there's a new adjacent target
+                new_adjacent = self._find_adjacent_targets(entities)
+                
+                if len(new_adjacent) > 1:  # More than just current target
+                    # 50% chance to switch to a different target
+                    from random import random
+                    if random() < 0.5:
+                        # Switch to a random adjacent target
+                        from random import choice
+                        other_targets = [e for e in new_adjacent if e != self.current_target]
+                        if other_targets:
+                            self.current_target = choice(other_targets)
+                
+                # Attack current target
+                attack_results = self.owner.fighter.attack(self.current_target)
                 results.extend(attack_results)
                 return results
+            else:
+                # Target no longer valid - clear it
+                self.current_target = None
+        
+        # No current target - find any adjacent living entity to attack
+        adjacent_targets = self._find_adjacent_targets(entities)
+        
+        if adjacent_targets:
+            # Pick a random adjacent target and lock onto it
+            from random import choice
+            self.current_target = choice(adjacent_targets)
+            attack_results = self.owner.fighter.attack(self.current_target)
+            results.extend(attack_results)
+            return results
         
         # No adjacent targets - wander randomly
         dx = randint(-1, 1)
@@ -301,6 +332,32 @@ class MindlessZombieAI:
                     self.owner.move(dx, dy)
         
         return results
+    
+    def _find_adjacent_targets(self, entities):
+        """Find all adjacent living entities that can be attacked.
+        
+        Args:
+            entities (list): List of all entities
+            
+        Returns:
+            list: List of adjacent entities with fighter components
+        """
+        adjacent = []
+        
+        for entity in entities:
+            # Skip self
+            if entity == self.owner:
+                continue
+            
+            # Skip non-living entities (corpses, items)
+            if not (hasattr(entity, 'fighter') and entity.fighter):
+                continue
+            
+            # Check if adjacent
+            if self.owner.distance_to(entity) == 1:
+                adjacent.append(entity)
+        
+        return adjacent
 
 
 class ConfusedMonster:

@@ -341,6 +341,196 @@ class TestMindlessZombieAI(unittest.TestCase):
         # Should not attack corpse (no fighter), should wander instead
         # Results should be empty (wandering) or very short
         self.assertIsInstance(results, list)
+    
+    def test_zombie_sticky_targeting_continues_attack(self):
+        """Test that zombie continues attacking the same target (sticky targeting)."""
+        # Ensure zombie starts with no target
+        self.zombie.ai.current_target = None
+        
+        entities = [self.zombie, self.player, self.orc]
+        
+        # First attack - should pick player (adjacent at 6,5)
+        results1 = self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Should have attacked and set current_target
+        self.assertIsNotNone(self.zombie.ai.current_target)
+        first_target = self.zombie.ai.current_target
+        self.assertIn(first_target, [self.player, self.orc])  # Should be one of adjacent targets
+        
+        # Second attack - should continue attacking same target
+        results2 = self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Should still be attacking the same target
+        self.assertEqual(self.zombie.ai.current_target, first_target)
+        self.assertTrue(len(results2) > 0)  # Should have attack results
+    
+    def test_zombie_clears_target_when_not_adjacent(self):
+        """Test that zombie clears target when it's no longer adjacent."""
+        entities = [self.zombie, self.player]
+        
+        # First attack
+        self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Should have a target
+        self.assertIsNotNone(self.zombie.ai.current_target)
+        
+        # Move player away (no longer adjacent)
+        self.player.x, self.player.y = 10, 10
+        
+        # Next turn - should clear target
+        self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Target should be cleared
+        self.assertIsNone(self.zombie.ai.current_target)
+    
+    def test_zombie_clears_target_when_dead(self):
+        """Test that zombie clears target when it dies."""
+        entities = [self.zombie, self.player]
+        
+        # First attack
+        self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Should have a target
+        self.assertIsNotNone(self.zombie.ai.current_target)
+        
+        # Kill the player (remove fighter)
+        self.player.fighter = None
+        
+        # Next turn - should clear target
+        self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Target should be cleared
+        self.assertIsNone(self.zombie.ai.current_target)
+    
+    def test_zombie_multiple_adjacent_targets(self):
+        """Test that zombie can handle multiple adjacent targets."""
+        # Create a troll also adjacent to zombie
+        troll = Entity(4, 5, 'T', (0, 127, 0), 'Troll', blocks=True)
+        troll.fighter = Fighter(hp=30, defense=1, power=8)
+        troll.fighter.owner = troll
+        
+        entities = [self.zombie, self.player, self.orc, troll]
+        
+        # First attack - should pick one of the adjacent targets
+        results = self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Should have picked a target
+        self.assertIsNotNone(self.zombie.ai.current_target)
+        self.assertTrue(len(results) > 0)  # Should have attack results
+        
+        # Target should be one of the adjacent entities
+        self.assertIn(self.zombie.ai.current_target, [self.player, self.orc, troll])
+        
+        # Run several turns to verify behavior is stable
+        for _ in range(5):
+            results = self.zombie.ai.take_turn(
+                target=None,
+                fov_map=None,
+                game_map=self.game_map,
+                entities=entities
+            )
+            
+            # Should continue to have a target and attack
+            self.assertIsNotNone(self.zombie.ai.current_target)
+            # Target should still be adjacent and alive
+            self.assertEqual(self.zombie.distance_to(self.zombie.ai.current_target), 1)
+    
+    def test_zombie_find_adjacent_targets_helper(self):
+        """Test the _find_adjacent_targets helper method."""
+        # Place multiple entities at different distances
+        adjacent1 = Entity(6, 5, '@', (255, 255, 255), 'Player', blocks=True)
+        adjacent1.fighter = Fighter(hp=100, defense=2, power=5)
+        adjacent1.fighter.owner = adjacent1
+        
+        adjacent2 = Entity(5, 6, 'o', (63, 127, 63), 'Orc', blocks=True)
+        adjacent2.fighter = Fighter(hp=20, defense=0, power=4)
+        adjacent2.fighter.owner = adjacent2
+        
+        far_away = Entity(10, 10, 'T', (0, 127, 0), 'Troll', blocks=True)
+        far_away.fighter = Fighter(hp=30, defense=1, power=8)
+        far_away.fighter.owner = far_away
+        
+        corpse = Entity(4, 5, '%', (127, 0, 0), 'corpse', blocks=False)
+        corpse.fighter = None  # No fighter
+        
+        entities = [self.zombie, adjacent1, adjacent2, far_away, corpse]
+        
+        # Find adjacent targets
+        adjacent_targets = self.zombie.ai._find_adjacent_targets(entities)
+        
+        # Should find exactly 2 adjacent living entities
+        self.assertEqual(len(adjacent_targets), 2)
+        self.assertIn(adjacent1, adjacent_targets)
+        self.assertIn(adjacent2, adjacent_targets)
+        self.assertNotIn(far_away, adjacent_targets)
+        self.assertNotIn(corpse, adjacent_targets)
+        self.assertNotIn(self.zombie, adjacent_targets)
+    
+    def test_zombie_targets_removed_from_entities(self):
+        """Test that zombie handles targets being removed from entities list."""
+        entities = [self.zombie, self.player]
+        
+        # First attack
+        self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Should have a target
+        self.assertIsNotNone(self.zombie.ai.current_target)
+        
+        # Remove player from entities list (e.g., teleported away)
+        entities.remove(self.player)
+        
+        # Next turn - should clear target and not crash
+        results = self.zombie.ai.take_turn(
+            target=None,
+            fov_map=None,
+            game_map=self.game_map,
+            entities=entities
+        )
+        
+        # Target should be cleared
+        self.assertIsNone(self.zombie.ai.current_target)
+        # Should not crash
+        self.assertIsInstance(results, list)
 
 
 if __name__ == '__main__':
