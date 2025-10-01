@@ -313,7 +313,11 @@ class Entity:
         cost = np.where(walkable, 1, 0).astype(np.int8)
         
         # Create pathfinder using the modern tcod.path API
-        graph = tcod.path.SimpleGraph(cost=cost, cardinal=2, diagonal=3)
+        # IMPORTANT: cost array is indexed [y, x] but tcod expects (x, y)
+        # We need to transpose the cost array OR swap coordinates
+        # Here we transpose the cost array to match tcod's (x, y) expectations
+        cost_transposed = cost.T  # Transpose from [y, x] to [x, y]
+        graph = tcod.path.SimpleGraph(cost=cost_transposed, cardinal=2, diagonal=3)
         pf = tcod.path.Pathfinder(graph)
         pf.add_root((self.x, self.y))
 
@@ -324,9 +328,10 @@ class Entity:
         path = pf.path_to((target.x, target.y))
         
         # Check if the path exists and is not too long
-        if len(path) > 0 and len(path) < pathfinding_config.MAX_PATH_LENGTH:
-            # Get next step (first element in path)
-            x, y = path[0]
+        # NOTE: path includes the starting position, so we need at least 2 elements
+        if len(path) > 1 and len(path) < pathfinding_config.MAX_PATH_LENGTH:
+            # Get next step (skip first element which is current position)
+            x, y = path[1]
             
             # Validate that the destination is not occupied by a blocking entity
             # (entities might have moved since pathfinding was calculated)
