@@ -210,7 +210,8 @@ class ActionProcessor:
             # Monster died - always transform to corpse first
             from death_functions import kill_monster
             game_map = self.state_manager.state.game_map
-            death_message = kill_monster(dead_entity, game_map)
+            entities = self.state_manager.state.entities
+            death_message = kill_monster(dead_entity, game_map, entities)
             self.state_manager.state.message_log.add_message(death_message)
             
             # Handle dropped loot

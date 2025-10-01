@@ -259,7 +259,7 @@ class AISystem(System):
                 else:
                     # Monster died - transform to corpse and handle loot
                     from death_functions import kill_monster
-                    death_message = kill_monster(dead_entity, game_state.game_map)
+                    death_message = kill_monster(dead_entity, game_state.game_map, game_state.entities)
                     if game_state.message_log:
                         game_state.message_log.add_message(death_message)
                     

@@ -343,6 +343,25 @@ This roadmap should be updated:
 - Hand-designed levels with precise entity placement
 - Boss arenas, puzzle rooms, narrative areas
 
+**Dynamic Terrain & Diggable Walls** (2-4 weeks)
+- Different terrain types (stone, dirt, water, etc.)
+- Destructible dirt walls that player can dig through
+- Strategic path creation and exploration options
+- Resource management for digging tools/abilities
+
+**Scrolling Maps & Camera System** (3-5 weeks)
+- Maps larger than viewport (currently 80x45)
+- Camera follows player movement
+- Smooth scrolling as player approaches edges
+- Zoom levels and viewport management
+
+**Mini-Map System** (1-2 weeks)
+- Small overview map display
+- Shows explored areas and current position
+- Auto-updates as player explores
+- Toggle on/off with hotkey
+- **Dependency**: Requires scrolling maps first
+
 **Storytelling & Narrative** (4-6 weeks)
 - Story framework integration
 - Quest/objective system

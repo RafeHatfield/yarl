@@ -1,0 +1,41 @@
+# Level Templates Testing Configuration
+# 
+# This file defines overrides and guaranteed spawns for testing mode.
+# Only loaded when YARL_TESTING_MODE=1 environment variable is set.
+# Takes precedence over level_templates.yaml.
+
+version: "1.0"
+
+level_overrides:
+  # Level 1 - Slime Spawning Pool (Special Room Testing)
+  1:
+    special_rooms:
+      - type: "slime_spawning_pool"
+        count: 1
+        placement: "largest"  # Use the biggest room for dramatic effect
+        min_room_size: 8  # Need a decent-sized room
+        guaranteed_spawns:
+          monsters:
+            - type: "large_slime"
+              count: 2  # Two large slimes (can split!)
+            - type: "slime"
+              count: "5-8"  # Lots of little ones (random 5-8)
+            - type: "orc"
+              count: 2  # For testing monster-vs-monster combat
+          items:
+            - type: "invisibility_scroll"
+              count: 2  # Go invisible and watch them fight!
+            - type: "healing_potion"
+              count: 3  # You'll need them for corrosion damage
+            - type: "lightning_scroll"
+              count: 1
+            - type: "fireball_scroll"
+              count: 1
+            - type: "confusion_scroll"
+              count: 1
+          equipment:
+            - type: "dagger"
+              count: 1  # Will get corroded!
+            - type: "shield"
+              count: 1
+

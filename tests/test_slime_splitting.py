@@ -157,10 +157,10 @@ class TestSlimeSplitting(unittest.TestCase):
         mock_slime2 = MagicMock()
         mock_splitting.return_value = [mock_slime1, mock_slime2]
         
-        death_message = kill_monster(self.large_slime, self.mock_game_map)
+        death_message = kill_monster(self.large_slime, self.mock_game_map, entities=None)
         
         # Should call splitting handler
-        mock_splitting.assert_called_once_with(self.large_slime, self.mock_game_map)
+        mock_splitting.assert_called_once_with(self.large_slime, self.mock_game_map, None)
         
         # Should store spawned entities on the monster
         self.assertTrue(hasattr(self.large_slime, '_spawned_entities'))
@@ -176,10 +176,10 @@ class TestSlimeSplitting(unittest.TestCase):
         # Mock no splitting
         mock_splitting.return_value = []
         
-        death_message = kill_monster(self.large_slime, self.mock_game_map)
+        death_message = kill_monster(self.large_slime, self.mock_game_map, entities=None)
         
         # Should call splitting handler
-        mock_splitting.assert_called_once_with(self.large_slime, self.mock_game_map)
+        mock_splitting.assert_called_once_with(self.large_slime, self.mock_game_map, None)
         
         # Should not store spawned entities
         self.assertFalse(hasattr(self.large_slime, '_spawned_entities'))

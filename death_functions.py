@@ -31,12 +31,13 @@ def kill_player(player):
     return Message("You died!", (255, 0, 0)), GameStates.PLAYER_DEAD
 
 
-def _handle_slime_splitting(monster, game_map) -> List:
+def _handle_slime_splitting(monster, game_map, entities=None) -> List:
     """Handle Large Slime splitting when it dies.
     
     Args:
         monster: The Large Slime that died
         game_map: Game map for spawning new slimes
+        entities: List of all entities (to avoid spawning on occupied tiles)
         
     Returns:
         List of newly spawned slime entities, or empty list if no splitting
@@ -54,7 +55,7 @@ def _handle_slime_splitting(monster, game_map) -> List:
     spawned_slimes = []
     
     # Get valid spawn positions around the dead slime
-    spawn_positions = _get_valid_spawn_positions(monster.x, monster.y, game_map, num_slimes)
+    spawn_positions = _get_valid_spawn_positions(monster.x, monster.y, game_map, num_slimes, entities)
     
     # Create new slimes
     from config.entity_factory import get_entity_factory
@@ -86,7 +87,7 @@ def _can_monster_split(monster) -> bool:
             'splitting' in monster.special_abilities)
 
 
-def _get_valid_spawn_positions(center_x: int, center_y: int, game_map, max_positions: int) -> List[tuple]:
+def _get_valid_spawn_positions(center_x: int, center_y: int, game_map, max_positions: int, entities=None) -> List[tuple]:
     """Get valid positions around a center point for spawning entities.
     
     Args:
@@ -94,6 +95,7 @@ def _get_valid_spawn_positions(center_x: int, center_y: int, game_map, max_posit
         center_y: Y coordinate of center position  
         game_map: Game map to check for valid tiles
         max_positions: Maximum number of positions to return
+        entities: List of all entities to check for occupied tiles
         
     Returns:
         List of (x, y) tuples for valid spawn positions
@@ -113,20 +115,31 @@ def _get_valid_spawn_positions(center_x: int, center_y: int, game_map, max_posit
                     
                 x, y = center_x + dx, center_y + dy
                 
-                # Check bounds
+                # Check bounds and if tile is blocked
                 if (0 <= x < game_map.width and 0 <= y < game_map.height and
                     not game_map.tiles[x][y].blocked):
-                    valid_positions.append((x, y))
                     
-                    if len(valid_positions) >= max_positions:
-                        return valid_positions
+                    # Check if position is occupied by an entity
+                    position_occupied = False
+                    if entities:
+                        for entity in entities:
+                            if entity.x == x and entity.y == y and entity.blocks:
+                                position_occupied = True
+                                break
+                    
+                    # Only add if not occupied
+                    if not position_occupied:
+                        valid_positions.append((x, y))
+                        
+                        if len(valid_positions) >= max_positions:
+                            return valid_positions
     
     # If we couldn't find enough positions, return what we have
     # If no valid positions found, fall back to center (shouldn't happen but safety)
     return valid_positions if valid_positions else [(center_x, center_y)]
 
 
-def kill_monster(monster, game_map=None):
+def kill_monster(monster, game_map=None, entities=None):
     """Handle monster death.
 
     Transforms a monster into a non-blocking corpse, removes its
@@ -135,6 +148,7 @@ def kill_monster(monster, game_map=None):
     Args:
         monster (Entity): The monster entity that died
         game_map (GameMap, optional): Game map for proper item placement
+        entities (list, optional): List of all entities to avoid spawning on occupied tiles
 
     Returns:
         Message: Death message to display to the player
@@ -151,7 +165,7 @@ def kill_monster(monster, game_map=None):
         monster._dropped_loot = dropped_items
     
     # Handle slime splitting before transforming to corpse
-    spawned_slimes = _handle_slime_splitting(monster, game_map)
+    spawned_slimes = _handle_slime_splitting(monster, game_map, entities)
     if spawned_slimes:
         # Store spawned slimes on the monster for the caller to handle
         monster._spawned_entities = spawned_slimes
