@@ -3,23 +3,34 @@
 # This file defines overrides and guaranteed spawns for specific dungeon levels
 # in normal gameplay mode.
 #
-# Currently empty - no overrides in normal gameplay.
-# Add level-specific configurations here as needed.
+# See level_templates_examples.yaml for more configuration examples.
 
 version: "1.0"
 
-level_overrides: {}
-  # Example configuration (commented out):
-  # 5:
-  #   guaranteed_spawns:
-  #     mode: "additional"  # Options: "additional" (add to random) or "replace" (only guaranteed)
-  #     monsters:
-  #       - type: "orc"
-  #         count: 2
-  #     items:
-  #       - type: "healing_potion"
-  #         count: 1
-  #     equipment:
-  #       - type: "sword"
-  #         count: 1
+level_overrides:
+  # Level 10 - Boss Level: Troll Throne Room
+  10:
+    parameters:
+      max_rooms: 12
+      min_room_size: 10
+      max_room_size: 15
+      max_monsters_per_room: 4
+      
+    special_rooms:
+      - type: "troll_throne_room"
+        count: 1
+        placement: "largest"  # Boss gets the biggest room!
+        min_room_size: 12
+        guaranteed_spawns:
+          monsters:
+            - type: "troll"
+              count: 1  # The boss
+            - type: "orc"
+              count: "2-4"  # Guards (random 2-4)
+          items:
+            - type: "healing_potion"
+              count: 2
+          equipment:
+            - type: "sword"
+              count: 1  # Boss drops a sword!
 

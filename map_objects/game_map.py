@@ -184,6 +184,9 @@ class GameMap:
         )
         entities.append(down_stairs)
         
+        # Apply special rooms from level templates (Tier 2)
+        self.place_special_rooms(rooms, entities)
+        
         # Apply guaranteed spawns from level templates (if configured)
         self.place_guaranteed_spawns(rooms, entities)
 
@@ -556,6 +559,240 @@ class GameMap:
             room = rooms[randint(0, len(rooms) - 1)]
             
             # Pick a random position in that room
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if position is unoccupied
+            if not any(entity.x == x and entity.y == y for entity in entities):
+                return (x, y)
+                
+        # Could not find a position after max_attempts
+        return (None, None)
+    
+    def place_special_rooms(self, rooms, entities):
+        """Place special themed rooms with guaranteed spawns (Tier 2).
+        
+        Selects rooms based on placement strategy and populates them with
+        configured entities.
+        
+        Args:
+            rooms (list): List of Rect objects representing generated rooms
+            entities (list): List to add new entities to
+        """
+        if not rooms:
+            logger.warning("No rooms available for special rooms")
+            return
+            
+        # Get level template registry
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        if not level_override or not level_override.has_special_rooms():
+            # No special rooms configured for this level
+            return
+            
+        logger.info(
+            f"Placing {len(level_override.special_rooms)} special room type(s) "
+            f"for level {self.dungeon_level}"
+        )
+        
+        # Track which rooms have been used for special rooms
+        used_rooms = set()
+        
+        for special_room in level_override.special_rooms:
+            # Select rooms for this special room type
+            selected_rooms = self._select_rooms_for_special_type(
+                rooms, special_room, used_rooms
+            )
+            
+            if not selected_rooms:
+                logger.warning(
+                    f"Could not find suitable rooms for special room type "
+                    f"'{special_room.room_type}'"
+                )
+                continue
+                
+            # Populate each selected room with guaranteed spawns
+            for room in selected_rooms:
+                self._populate_special_room(room, special_room, entities)
+                used_rooms.add(id(room))  # Mark room as used
+                
+            logger.info(
+                f"Created {len(selected_rooms)} '{special_room.room_type}' room(s)"
+            )
+    
+    def _select_rooms_for_special_type(self, rooms, special_room, used_rooms):
+        """Select rooms for a special room type based on placement strategy.
+        
+        Args:
+            rooms (list): All available rooms
+            special_room (SpecialRoom): Special room configuration
+            used_rooms (set): Set of room IDs already used
+            
+        Returns:
+            list: Selected rooms (may be empty)
+        """
+        # Filter out already-used rooms
+        available_rooms = [r for r in rooms if id(r) not in used_rooms]
+        
+        if not available_rooms:
+            return []
+            
+        # Filter by minimum size requirement
+        if special_room.min_room_size is not None:
+            available_rooms = [
+                r for r in available_rooms 
+                if self._get_room_size(r) >= special_room.min_room_size
+            ]
+            
+        if not available_rooms:
+            logger.warning(
+                f"No rooms meet min_room_size={special_room.min_room_size} "
+                f"for '{special_room.room_type}'"
+            )
+            return []
+            
+        # Apply placement strategy
+        if special_room.placement == "largest":
+            # Sort by size descending and take the count largest
+            available_rooms.sort(key=self._get_room_size, reverse=True)
+        elif special_room.placement == "smallest":
+            # Sort by size ascending and take the count smallest
+            available_rooms.sort(key=self._get_room_size)
+        elif special_room.placement == "random":
+            # Shuffle for random selection
+            from random import shuffle
+            shuffle(available_rooms)
+        else:
+            logger.warning(
+                f"Unknown placement strategy '{special_room.placement}', "
+                f"using random"
+            )
+            from random import shuffle
+            shuffle(available_rooms)
+            
+        # Return up to 'count' rooms
+        return available_rooms[:special_room.count]
+    
+    def _get_room_size(self, room):
+        """Get the size (area) of a room.
+        
+        Args:
+            room (Rect): Room to measure
+            
+        Returns:
+            int: Area of the room (width * height)
+        """
+        width = room.x2 - room.x1
+        height = room.y2 - room.y1
+        return width * height
+    
+    def _populate_special_room(self, room, special_room, entities):
+        """Populate a special room with guaranteed spawns.
+        
+        Args:
+            room (Rect): Room to populate
+            special_room (SpecialRoom): Special room configuration
+            entities (list): List to add new entities to
+        """
+        logger.info(
+            f"Populating '{special_room.room_type}' at "
+            f"({room.center()[0]}, {room.center()[1]})"
+        )
+        
+        entity_factory = get_entity_factory()
+        spawned_count = 0
+        failed_count = 0
+        
+        # Place guaranteed monsters
+        for spawn in special_room.guaranteed_monsters:
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
+                # Find position within THIS specific room
+                x, y = self._find_random_position_in_room(room, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find position in special room for "
+                        f"{spawn.entity_type}, spawned {i}/{spawn_count}"
+                    )
+                    failed_count += 1
+                    break
+                    
+                monster = entity_factory.create_monster(spawn.entity_type, x, y)
+                if monster:
+                    from components.monster_equipment import spawn_equipment_on_monster
+                    spawn_equipment_on_monster(monster, self.dungeon_level)
+                    entities.append(monster)
+                    invalidate_entity_cache("special_room_monster")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create monster: {spawn.entity_type}")
+                    failed_count += 1
+                    
+        # Place guaranteed items
+        for spawn in special_room.guaranteed_items:
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
+                x, y = self._find_random_position_in_room(room, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find position in special room for "
+                        f"{spawn.entity_type}, spawned {i}/{spawn_count}"
+                    )
+                    failed_count += 1
+                    break
+                    
+                item = entity_factory.create_spell_item(spawn.entity_type, x, y)
+                if item:
+                    entities.append(item)
+                    invalidate_entity_cache("special_room_item")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create item: {spawn.entity_type}")
+                    failed_count += 1
+                    
+        # Place guaranteed equipment
+        for spawn in special_room.guaranteed_equipment:
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
+                x, y = self._find_random_position_in_room(room, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find position in special room for "
+                        f"{spawn.entity_type}, spawned {i}/{spawn_count}"
+                    )
+                    failed_count += 1
+                    break
+                    
+                equipment = entity_factory.create_armor(spawn.entity_type, x, y)
+                if not equipment:
+                    equipment = entity_factory.create_weapon(spawn.entity_type, x, y)
+                    
+                if equipment:
+                    entities.append(equipment)
+                    invalidate_entity_cache("special_room_equipment")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create equipment: {spawn.entity_type}")
+                    failed_count += 1
+                    
+        logger.info(
+            f"Special room '{special_room.room_type}': "
+            f"{spawned_count} entities placed, {failed_count} failed"
+        )
+    
+    def _find_random_position_in_room(self, room, entities, max_attempts=50):
+        """Find a random unoccupied position within a specific room.
+        
+        Args:
+            room (Rect): Room to search within
+            entities (list): Existing entities to avoid
+            max_attempts (int): Maximum placement attempts
+            
+        Returns:
+            tuple: (x, y) coordinates, or (None, None) if no position found
+        """
+        for attempt in range(max_attempts):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             
