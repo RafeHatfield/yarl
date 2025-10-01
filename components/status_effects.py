@@ -60,6 +60,50 @@ class InvisibilityEffect(StatusEffect):
             return self.remove()
         return []
 
+
+class DisorientationEffect(StatusEffect):
+    """Makes the owner move randomly for a short duration."""
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("disorientation", duration, owner)
+        self.previous_ai = None
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        
+        # Store the current AI and replace with confused AI
+        if hasattr(self.owner, 'ai') and self.owner.ai:
+            from components.ai import ConfusedMonster
+            self.previous_ai = self.owner.ai
+            self.owner.ai = ConfusedMonster(self.previous_ai, self.duration)
+            self.owner.ai.owner = self.owner
+        
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} feels disoriented!",
+                (255, 165, 0)  # Orange
+            )
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        
+        # Restore previous AI
+        if self.previous_ai and hasattr(self.owner, 'ai'):
+            self.owner.ai = self.previous_ai
+            self.previous_ai = None
+        
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} is no longer disoriented.",
+                (200, 200, 200)  # Gray
+            )
+        })
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):

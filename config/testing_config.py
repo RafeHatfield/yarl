@@ -56,6 +56,7 @@ class TestingConfig:
                 "fireball_scroll": [[30, 1], [45, 6]],  # Available from level 1
                 "confusion_scroll": [[30, 1], [45, 2]],  # Available from level 1
                 "invisibility_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
+                "teleport_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "enhance_weapon_scroll": [[20, 1], [35, 3]],  # Enhancement scrolls for testing
                 "enhance_armor_scroll": [[20, 1], [35, 3]],
             }

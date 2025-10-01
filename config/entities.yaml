@@ -244,3 +244,9 @@ spells:
     char: "~"
     color: [200, 200, 255]  # Light blue
     duration: 10  # Turns of invisibility
+
+  # Teleport scroll - teleport to target location (10% misfire chance)
+  teleport_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [128, 200, 255]  # Light cyan

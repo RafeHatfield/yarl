@@ -389,3 +389,122 @@ def cast_invisibility(*args, **kwargs):
     })
     
     return results
+
+
+def cast_teleport(*args, **kwargs):
+    """Teleport the caster to a target location.
+    
+    Has a 10% chance to misfire and teleport to a random location instead.
+    
+    Args:
+        *args: [entity, entities, fov_map, game_map]
+        **kwargs: Contains target_x, target_y from targeting
+        
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    from random import randint, random
+    
+    entity = args[0]
+    entities = args[1]
+    game_map = args[3]
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
+    
+    results = []
+    
+    # 10% chance of misfire!
+    if random() < 0.10:
+        # Misfire - teleport to random location
+        max_attempts = 100
+        for _ in range(max_attempts):
+            random_x = randint(1, game_map.width - 2)
+            random_y = randint(1, game_map.height - 2)
+            
+            # Check if location is valid (walkable and unoccupied)
+            if not game_map.tiles[random_x][random_y].blocked:
+                # Check if any entity is blocking this position
+                blocking_entity = None
+                for other_entity in entities:
+                    if other_entity.blocks and other_entity.x == random_x and other_entity.y == random_y:
+                        blocking_entity = other_entity
+                        break
+                
+                if not blocking_entity:
+                    # Valid random location found!
+                    entity.x = random_x
+                    entity.y = random_y
+                    
+                    # Apply disorientation effect (3-5 turns of random movement)
+                    disorientation_duration = randint(3, 5)
+                    from components.status_effects import DisorientationEffect
+                    disorientation_effect = DisorientationEffect(
+                        duration=disorientation_duration,
+                        owner=entity
+                    )
+                    
+                    # Add the status effect
+                    if hasattr(entity, 'add_status_effect'):
+                        effect_results = entity.add_status_effect(disorientation_effect)
+                        results.extend(effect_results)
+                    
+                    results.append({
+                        "consumed": True,
+                        "message": Message(
+                            "The teleport spell misfires!",
+                            (255, 165, 0)  # Orange - warning color
+                        )
+                    })
+                    return results
+        
+        # Couldn't find valid random location - fail safely
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "The teleport spell fizzles and fails!",
+                (255, 255, 0)  # Yellow
+            )
+        })
+        return results
+    
+    # Normal teleport to target location
+    if not target_x or not target_y:
+        results.append({
+            "consumed": False,
+            "message": Message("You must select a target location.", (255, 255, 0))
+        })
+        return results
+    
+    # Check if target location is valid
+    if game_map.tiles[target_x][target_y].blocked:
+        results.append({
+            "consumed": False,
+            "message": Message("You cannot teleport to a blocked location.", (255, 255, 0))
+        })
+        return results
+    
+    # Check if any entity is blocking the target
+    for other_entity in entities:
+        if other_entity.blocks and other_entity.x == target_x and other_entity.y == target_y:
+            results.append({
+                "consumed": False,
+                "message": Message(
+                    f"You cannot teleport to a location occupied by {other_entity.name}.",
+                    (255, 255, 0)
+                )
+            })
+            return results
+    
+    # Successful teleport!
+    entity.x = target_x
+    entity.y = target_y
+    
+    results.append({
+        "consumed": True,
+        "message": Message(
+            "You teleport across space!",
+            (128, 200, 255)  # Light cyan
+        )
+    })
+    
+    return results

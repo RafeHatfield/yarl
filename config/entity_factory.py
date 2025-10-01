@@ -367,6 +367,9 @@ class EntityFactory:
             from item_functions import cast_invisibility
             duration = getattr(spell_def, 'duration', 10)  # Default 10 turns
             return Item(use_function=cast_invisibility, duration=duration)
+        elif spell_def.name.lower().replace(' ', '_') == "teleport_scroll":
+            from item_functions import cast_teleport
+            return Item(use_function=cast_teleport, targeting=True)
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
             return Item()
