@@ -774,7 +774,8 @@ def cast_raise_dead(*args, **kwargs):
     
     # Try to get original stats from registry
     registry = get_entity_registry()
-    original_def = registry.get_entity(original_name.lower())
+    monster_id = original_name.lower()
+    original_def = registry.monsters.get(monster_id)
     
     if original_def and hasattr(original_def, 'stats'):
         base_hp = original_def.stats.hp
