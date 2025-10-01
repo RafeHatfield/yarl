@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1257%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1462%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 [![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
 
@@ -26,6 +26,10 @@
 - **⚡ Lightning** - Single-target high damage to closest enemy (unlocks at level 4)
 - **😵 Confusion** - Causes enemies to move randomly for several turns (unlocks at level 2)
 - **💚 Healing Potions** - Restore health when injured (available from start)
+- **🌀 Teleport** - Instant repositioning (10% chance of disorienting misfire)
+- **🛡️ Shield** - Temporary defense boost (+4 defense for 10 turns)
+- **🧟 Raise Dead** - Resurrect a corpse as a mindless zombie ally
+- **💨 Dragon Fart** - Directional cone of noxious gas (20-turn knockout)
 - **🎯 Progressive item availability** - Better items unlock as you go deeper
 
 ### Equipment System
@@ -41,16 +45,25 @@
 - **🎲 Variable Monster Damage** - Orcs (3 power + 1-3 natural) and Trolls (6 power + 2-6 natural) for dynamic combat
 - **BasicMonster AI** - Tracks and attacks the player using A* pathfinding
 - **ConfusedMonster AI** - Random movement with automatic recovery
+- **SlimeAI** - Monster-vs-monster combat with faction-based targeting
+- **MindlessZombieAI** - Resurrected undead that hunt anything in FOV
+- **Invisibility Mechanics** - Monsters can't detect invisible targets
 - **Dynamic AI switching** - Spells can temporarily alter monster behavior
 - **Progressive monster scaling** - More and stronger monsters on deeper levels
 - **🧌 Orcs** - Basic enemies with balanced variable damage (total range: 4-6)
 - **👹 Trolls** - Stronger enemies with high variable damage (total range: 8-12)
+- **🟢 Slimes** - Corrosive monsters that attack everything (weapons/armor degrade)
+- **🟢 Large Slimes** - Powerful slimes that split into smaller slimes on death
 
 ### Technical Features
 - **Entity-Component-System (ECS)** architecture
 - **Data-Driven Entity System** - All entities configured via YAML with validation
+- **Manual Level Design System** - Template-based level customization with guaranteed spawns and special rooms
 - **A* pathfinding** for intelligent monster movement
 - **Equipment system** with stat bonuses and slot management
+- **Status Effect System** - Invisibility, confusion, disorientation, shield buffs
+- **Faction System** - Monster-vs-monster combat and affiliations
+- **Equipment Corrosion** - Weapons and armor can degrade during combat
 - **Entity sorting cache** for optimized rendering performance
 - **Dynamic difficulty scaling** with configurable progression curves
 - **Weighted random selection** for balanced item/monster distribution
@@ -252,7 +265,7 @@ This project maintains **100% test coverage** with a comprehensive test suite co
 # Install test dependencies
 pip install -r requirements-dev.txt
 
-# Run all tests (1,103 tests)
+# Run all tests (1,462 tests)
 pytest
 
 # Run with coverage reporting
@@ -275,19 +288,23 @@ pytest tests/comprehensive/ -v               # Comprehensive end-to-end tests
 ```
 
 ### Test Coverage
-- **1,103 tests** with **100% pass rate**
+- **1,462 tests** with **100% pass rate**
 - **Entity System** - Movement, pathfinding, A* algorithm
 - **Combat System** - Attack, defense, healing, death mechanics, XP rewards
 - **Equipment System** - Equipment slots, stat bonuses, equip/unequip mechanics
 - **Inventory System** - Item management, capacity limits, equipment integration
-- **Spell System** - All spells including confusion mechanics and targeting
-- **AI System** - BasicMonster and ConfusedMonster behavior
+- **Spell System** - All spells including confusion, teleport, raise dead, dragon fart, and targeting
+- **AI System** - BasicMonster, ConfusedMonster, SlimeAI, MindlessZombieAI behavior
+- **Status Effect System** - Invisibility, confusion, disorientation, shield buffs
+- **Faction System** - Monster-vs-monster combat and targeting priorities
 - **Message System** - Game event logging and display
 - **Difficulty Scaling** - Progressive monster/item scaling, weighted selection
 - **JSON Save/Load System** - Human-readable saves, legacy compatibility, comprehensive validation
 - **Character Progression** - XP system, leveling, stat increases
 - **Dungeon Levels** - Multi-floor generation, stairs, level transitions
 - **FOV & Rendering System** - Field of view calculations, map rendering, visual regression prevention
+- **Manual Level Design** - Template-based level customization with guaranteed spawns and special rooms
+- **Equipment Corrosion** - Weapon and armor degradation mechanics
 - **Game Engine Integration** - System coordination, state management, performance optimization
 - **Regression Testing** - Automated prevention of critical bugs (FOV, combat, death system)
 - **Integration Testing** - End-to-end system interaction validation
@@ -298,16 +315,23 @@ pytest tests/comprehensive/ -v               # Comprehensive end-to-end tests
 ```
 rlike/
 ├── components/          # ECS Components
-│   ├── ai.py           # AI behaviors (BasicMonster, ConfusedMonster)
+│   ├── ai.py           # AI behaviors (BasicMonster, ConfusedMonster, SlimeAI, MindlessZombieAI)
 │   ├── equipment.py    # Equipment slot management and stat bonuses
 │   ├── equippable.py   # Equippable item component with bonuses
 │   ├── fighter.py      # Combat stats and methods with XP rewards
 │   ├── inventory.py    # Item storage and equipment management
 │   ├── item.py         # Item component definition
-│   └── level.py        # XP and leveling system
+│   ├── level.py        # XP and leveling system
+│   └── status_effects.py  # Status effects (invisibility, confusion, shield, disorientation)
 ├── config/             # Centralized configuration system
-│   ├── game_constants.py    # All game constants and configuration
-│   └── testing_config.py    # Testing mode configuration
+│   ├── game_constants.py       # All game constants and configuration
+│   ├── testing_config.py       # Testing mode configuration
+│   ├── entities.yaml           # Entity definitions (monsters, weapons, armor, spells)
+│   ├── entity_registry.py      # Entity loading and validation
+│   ├── entity_factory.py       # Entity creation from YAML definitions
+│   ├── level_templates.yaml    # Normal level templates and special rooms
+│   ├── level_templates_testing.yaml  # Testing mode level overrides
+│   └── level_template_registry.py    # Level template loading and parsing
 ├── loader_functions/   # Game initialization and JSON save/load
 │   ├── initialize_new_game.py  # New game setup
 │   └── data_loaders.py         # Save/load functionality
@@ -315,7 +339,7 @@ rlike/
 │   ├── game_map.py     # Dungeon generation with difficulty scaling
 │   ├── rectangle.py    # Room generation utilities
 │   └── tile.py         # Tile properties (walkable, transparent)
-├── tests/              # Comprehensive test suite (1,103 tests)
+├── tests/              # Comprehensive test suite (1,462 tests)
 │   ├── comprehensive/  # End-to-end integration tests
 │   ├── integration/    # System interaction tests
 │   ├── regression/     # Critical bug prevention tests
@@ -603,9 +627,16 @@ config/
 - [x] **Monster Equipment & Loot** - Monsters spawn with equipment, seek items, use scrolls, and drop loot
 - [x] **General Loot Drops** - All monsters drop equipped items and inventory contents
 - [x] **Data-Driven Entity System** - YAML configuration for all entities
+- [x] **Manual Level Design Tier 1** - Guaranteed spawns via YAML templates
+- [x] **Manual Level Design Tier 2** - Level parameters and special themed rooms
+- [x] **Slime System** - Monster-vs-monster combat, invisibility, corrosion, splitting
+- [x] **Status Effect System** - Invisibility, confusion, disorientation, shield buffs
+- [x] **Faction System** - Monster affiliations and targeting priorities
+- [x] **Equipment Corrosion** - Weapons and armor can degrade during combat
+- [x] **More Scrolls** - Teleport, Shield, Raise Dead, Dragon Fart (4 new scrolls)
 - [x] **Configuration Management** - Centralized game constants with file loading
 - [x] **Clean Console Output** - TCOD deprecation warnings suppressed
-- [x] **Comprehensive Testing** - 1,300+ tests with 100% coverage
+- [x] **Comprehensive Testing** - 1,462 tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 - [x] **Debug Logging System** - Comprehensive monster action and combat logging
 

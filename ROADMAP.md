@@ -1,30 +1,32 @@
 # 🗺️ **Yarl Development Roadmap: Sorted by Complexity & Impact**
 
-*Last Updated: October 2025 - Manual Level Design Tier 2 Complete*
+*Last Updated: October 2025 - Equipment Expansion Sprint Phase 1 Complete*
 
 This roadmap organizes all planned features by implementation complexity and gameplay impact, helping prioritize development efforts for maximum player enjoyment.
 
 ---
 
-## ✅ **Recently Completed: Manual Level Design Tier 2** (v2.6.0)
+## ✅ **Recently Completed: Equipment Expansion Sprint - Phase 1** (v2.7.0)
 
-**🎉 Major Level Design System Unlocked** (October 2025)
+**🎉 Major Spell & AI System Expansion** (October 2025)
 
-Complete control over dungeon generation with special themed rooms and parameter overrides:
+Complete overhaul of spell system, AI behaviors, and monster-vs-monster combat:
 
 ### **What Was Accomplished**
-- **🏗️ Level Parameters**: Override room counts, sizes, and entity density per level
-- **🎭 Special Rooms**: Themed rooms with guaranteed spawns (Troll Throne Room, Slime Spawning Pool, Armories)
-- **🎯 Placement Strategies**: largest, smallest, random room selection
-- **📊 Count Ranges**: Beautiful syntax `"3-5"` for random spawn counts
-- **🟢 Slime System**: Complete with affiliations, invisibility, corrosion, splitting
-- **🧪 Production Quality**: All 1,444 tests passing, 100% coverage
+- **🌀 Teleport Scroll**: Instant repositioning with 10% misfire chance (disorientation)
+- **🛡️ Shield Scroll**: Temporary +4 defense buff (10% monster backfire)
+- **🧟 Raise Dead Scroll**: Resurrect corpses as mindless zombie allies
+- **💨 Dragon Fart Scroll**: Directional cone of noxious gas (20-turn knockout)
+- **🤖 MindlessZombieAI**: Sticky targeting, FOV-based hunting, attacks anything
+- **🎯 Status Effect System**: Disorientation and shield effects
+- **🐌 Slime Loot Fix**: Slimes no longer drop equipment
+- **🧪 Production Quality**: All 1,462 tests passing, 100% coverage
 
 ### **Benefits Realized**
-- **🎮 Designers**: Create boss encounters, themed dungeons, narrative moments
-- **🧪 Testing**: Guaranteed spawns for reliable testing
-- **🎨 Variety**: Multiple special room types per level
-- **📈 Scalability**: Foundation for Tier 3 (full ASCII map crafting)
+- **🎮 Players**: 4 new tactical scrolls, zombie summoning, enhanced combat variety
+- **🤖 AI Systems**: Sophisticated zombie AI with FOV and sticky targeting
+- **🐛 Bug Fixes**: Slime splitting on valid tiles, proper loot drops
+- **📈 Scalability**: Foundation for more complex spells and AI behaviors
 
 ---
 
@@ -291,30 +293,34 @@ This roadmap should be updated:
 
 ## 🎮 **Current Status & Active Development**
 
-### **✅ Recently Completed (v2.6.0)**
+### **✅ Recently Completed (v2.7.0)**
+- **More Scrolls Phase** - Teleport, Shield, Raise Dead, Dragon Fart (4 new scrolls)
+- **MindlessZombieAI** - Sophisticated FOV-based hunting and sticky targeting
+- **Status Effect System** - Disorientation and shield effects
+- **Slime Loot Fix** - Slimes no longer drop equipment inappropriately
 - **Manual Level Design - Tier 2** - Level parameters & special themed rooms
 - **Manual Level Design - Tier 1** - Guaranteed spawns for testing
 - **Slime System Complete** - Affiliations, invisibility, corrosion, splitting
 - **Variable Damage/Defense** - Dynamic combat with ranges
 - **JSON Save/Load System** - Human-readable saves with legacy compatibility
-- **Comprehensive Testing** - 1,444 tests with 100% coverage
+- **Comprehensive Testing** - 1,462 tests with 100% coverage
 - **Modern Architecture** - ECS, state machines, performance optimization
 
 ### **🎯 Current Sprint: Equipment Expansion**
 
-**Phase 1: More Scrolls** (1-2 weeks) 🔄 **IN PROGRESS**
-- **Teleport Scroll**: Escape or reposition instantly
-- **Shield Scroll**: Temporary defense boost
-- **Raise Dead Scroll**: Resurrect defeated monster as ally (2x HP, 0.5x damage)
-- **Dragon Fart Scroll**: Cone of noxious gas, enemies pass out for 20 turns
-- Extend spell system with new targeting modes (directional cone)
+**✅ Phase 1: More Scrolls** (COMPLETE)
+- ✅ **Teleport Scroll**: Escape or reposition instantly (10% misfire → disorientation)
+- ✅ **Shield Scroll**: Temporary +4 defense boost (10% monster backfire)
+- ✅ **Raise Dead Scroll**: Resurrect defeated monster as zombie ally (2x HP, 0.5x damage)
+- ✅ **Dragon Fart Scroll**: Cone of noxious gas, enemies pass out for 20 turns
+- ✅ Extended spell system with new targeting modes (directional cone)
 
 **Future Scrolls** (deferred until speed/item systems ready):
 - **Haste Scroll**: Increased movement/attack speed (needs weapon speed system)
 - **Slow Scroll**: Reduce enemy speed (needs speed system)
 - **Identify Scroll**: Reveal item properties (needs item property system)
 
-**Phase 2: Equipment Slots & Items** (2-3 weeks) 🔄 **IN PROGRESS**
+**Phase 2: Equipment Slots & Items** (2-3 weeks) 🔜 **NEXT**
 - **New Slots**: chest (armor), head (helmets), boots, rings, amulets
 - **New Weapons**: varied damage types, different weapon classes
 - **New Armor**: light/medium/heavy with tradeoffs
