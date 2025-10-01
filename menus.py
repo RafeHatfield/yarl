@@ -167,9 +167,10 @@ def message_box(con, header, width, screen_width, screen_height):
 def character_screen(
     player, character_screen_width, character_screen_height, screen_width, screen_height
 ):
-    """Display the character information screen.
+    """Display the character information screen with slot-based equipment layout.
 
-    Shows player stats, level, and equipment information.
+    Shows player stats, equipped items in slots, and inventory consumables separately.
+    Items are lettered for selection (equip/unequip/use).
 
     Args:
         player (Entity): Player entity with stats
@@ -182,90 +183,329 @@ def character_screen(
         Console: The character screen console
     """
     window = libtcodpy.console_new(character_screen_width, character_screen_height)
-
     libtcodpy.console_set_default_foreground(window, (255, 255, 255))
 
-    libtcodpy.console_print_rect_ex(
-        window,
-        0,
-        1,
-        character_screen_width,
-        character_screen_height,
-        libtcodpy.BKGND_NONE,
-        libtcodpy.LEFT,
-        "Character Information",
-    )
-    libtcodpy.console_print_rect_ex(
-        window,
-        0,
-        2,
-        character_screen_width,
-        character_screen_height,
-        libtcodpy.BKGND_NONE,
-        libtcodpy.LEFT,
-        "Level: {0}".format(player.level.current_level),
-    )
-    libtcodpy.console_print_rect_ex(
-        window,
-        0,
-        3,
-        character_screen_width,
-        character_screen_height,
-        libtcodpy.BKGND_NONE,
-        libtcodpy.LEFT,
-        "Experience: {0}".format(player.level.current_xp),
-    )
-    libtcodpy.console_print_rect_ex(
-        window,
-        0,
-        4,
-        character_screen_width,
-        character_screen_height,
-        libtcodpy.BKGND_NONE,
-        libtcodpy.LEFT,
-        "Experience to Level: {0}".format(player.level.experience_to_next_level),
-    )
-    libtcodpy.console_print_rect_ex(
-        window,
-        0,
-        6,
-        character_screen_width,
-        character_screen_height,
-        libtcodpy.BKGND_NONE,
-        libtcodpy.LEFT,
-        "Maximum HP: {0}".format(player.fighter.max_hp),
-    )
-    # Get attack info with weapon damage range
-    attack_text = _get_attack_display_text(player)
-    libtcodpy.console_print_rect_ex(
-        window,
-        0,
-        7,
-        character_screen_width,
-        character_screen_height,
-        libtcodpy.BKGND_NONE,
-        libtcodpy.LEFT,
-        attack_text,
-    )
+    y = 0
     
-    # Get defense info with armor defense range
-    defense_text = _get_defense_display_text(player)
+    # ═══════════════════════════════════════════════════════════
+    # TITLE & LEVEL
+    # ═══════════════════════════════════════════════════════════
     libtcodpy.console_print_rect_ex(
-        window,
-        0,
-        8,
-        character_screen_width,
-        character_screen_height,
-        libtcodpy.BKGND_NONE,
-        libtcodpy.LEFT,
-        defense_text,
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        "CHARACTER INFORMATION"
     )
+    y += 1
+    
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"Level: {player.level.current_level}        XP: {player.level.current_xp}/{player.level.experience_to_next_level}"
+    )
+    y += 2
+    
+    # ═══════════════════════════════════════════════════════════
+    # ATTRIBUTES & COMBAT STATS
+    # ═══════════════════════════════════════════════════════════
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        "ATTRIBUTES                      COMBAT STATS"
+    )
+    y += 1
+    
+    # Get stat modifiers
+    str_mod = player.fighter.strength_mod
+    dex_mod = player.fighter.dexterity_mod
+    con_mod = player.fighter.constitution_mod
+    
+    # Format modifiers with + or -
+    str_mod_str = f"+{str_mod}" if str_mod >= 0 else str(str_mod)
+    dex_mod_str = f"+{dex_mod}" if dex_mod >= 0 else str(dex_mod)
+    con_mod_str = f"+{con_mod}" if con_mod >= 0 else str(con_mod)
+    
+    # Get AC breakdown
+    ac_breakdown = _get_ac_breakdown(player)
+    
+    # Get to-hit
+    to_hit = dex_mod
+    to_hit_str = f"+{to_hit}" if to_hit >= 0 else str(to_hit)
+    
+    # Attributes (left side)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"STR: {player.fighter.strength} ({str_mod_str})  HP:  {player.fighter.hp}/{player.fighter.max_hp}"
+    )
+    y += 1
+    
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"DEX: {player.fighter.dexterity} ({dex_mod_str})  AC:  {ac_breakdown}"
+    )
+    y += 1
+    
+    # Get damage display
+    damage_text = _get_damage_display(player)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"CON: {player.fighter.constitution} ({con_mod_str})  Dmg: {damage_text}"
+    )
+    y += 1
+    
+    # To-hit
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"                                Hit: {to_hit_str} (DEX)"
+    )
+    y += 2
+    
+    # ═══════════════════════════════════════════════════════════
+    # EQUIPMENT SLOTS
+    # ═══════════════════════════════════════════════════════════
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        "EQUIPMENT"
+    )
+    y += 1
+    
+    # Display equipment slots with letters for selection
+    letter_index = ord('a')
+    equipment_items = []
+    
+    # Weapon slot
+    weapon_text, weapon_item = _get_slot_display(player.equipment.main_hand, "Weapon", chr(letter_index))
+    equipment_items.append(weapon_item)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT, weapon_text
+    )
+    y += 1
+    letter_index += 1
+    
+    # Shield/Off-hand slot
+    shield_text, shield_item = _get_slot_display(player.equipment.off_hand, "Shield", chr(letter_index))
+    equipment_items.append(shield_item)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT, shield_text
+    )
+    y += 1
+    letter_index += 1
+    
+    # Head slot
+    head_text, head_item = _get_slot_display(player.equipment.head, "Head", chr(letter_index))
+    equipment_items.append(head_item)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT, head_text
+    )
+    y += 1
+    letter_index += 1
+    
+    # Chest slot
+    chest_text, chest_item = _get_slot_display(player.equipment.chest, "Chest", chr(letter_index))
+    equipment_items.append(chest_item)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT, chest_text
+    )
+    y += 1
+    letter_index += 1
+    
+    # Feet slot
+    feet_text, feet_item = _get_slot_display(player.equipment.feet, "Feet", chr(letter_index))
+    equipment_items.append(feet_item)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT, feet_text
+    )
+    y += 2
+    letter_index += 1
+    
+    # ═══════════════════════════════════════════════════════════
+    # INVENTORY (Consumables only)
+    # ═══════════════════════════════════════════════════════════
+    # Get non-equipped items (consumables, unequipped equipment)
+    inventory_items = [item for item in player.inventory.items if item not in equipment_items]
+    
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"INVENTORY ({len(inventory_items)}/{player.inventory.capacity})"
+    )
+    y += 1
+    
+    if len(inventory_items) == 0:
+        libtcodpy.console_print_rect_ex(
+            window, 0, y, character_screen_width, character_screen_height,
+            libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+            "  (empty)"
+        )
+    else:
+        for item in inventory_items[:10]:  # Show up to 10 items
+            item_letter = chr(letter_index)
+            item_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+            libtcodpy.console_print_rect_ex(
+                window, 0, y, character_screen_width, character_screen_height,
+                libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+                f"  ({item_letter}) {item_name}"
+            )
+            y += 1
+            letter_index += 1
+            
+            # Stop if we run out of room
+            if y >= character_screen_height - 1:
+                break
 
     x = screen_width // 2 - character_screen_width // 2
-    y = screen_height // 2 - character_screen_height // 2
+    y_pos = screen_height // 2 - character_screen_height // 2
     libtcodpy.console_blit(
-        window, 0, 0, character_screen_width, character_screen_height, 0, x, y, 1.0, 0.7
+        window, 0, 0, character_screen_width, character_screen_height, 0, x, y_pos, 1.0, 0.7
     )
+
+
+def _get_slot_display(equipped_item, slot_name, letter):
+    """Get display text for an equipment slot with selection letter.
+    
+    Args:
+        equipped_item: The equipped item entity (or None if empty)
+        slot_name (str): Name of the slot (e.g., "Weapon", "Head")
+        letter (str): Selection letter for this slot
+        
+    Returns:
+        tuple: (display_text, equipped_item)
+            - display_text: Formatted string for display
+            - equipped_item: The item (for tracking what's equipped)
+    """
+    if equipped_item is None:
+        return (f"({letter}) [{slot_name:7s}] (empty)", None)
+    
+    # Get item name
+    item_name = equipped_item.get_display_name() if hasattr(equipped_item, 'get_display_name') else equipped_item.name
+    
+    # Get item stats for display
+    stats = []
+    if hasattr(equipped_item, 'equippable') and equipped_item.equippable:
+        equippable = equipped_item.equippable
+        
+        # Weapon stats
+        if hasattr(equippable, 'damage_min') and equippable.damage_max > 0:
+            if equippable.damage_min == equippable.damage_max:
+                stats.append(f"{equippable.damage_max}")
+            else:
+                stats.append(f"{equippable.damage_min}-{equippable.damage_max}")
+        
+        # Armor stats
+        if hasattr(equippable, 'armor_class_bonus') and equippable.armor_class_bonus > 0:
+            stats.append(f"+{equippable.armor_class_bonus} AC")
+        
+        # To-hit bonus
+        if hasattr(equippable, 'to_hit_bonus') and equippable.to_hit_bonus != 0:
+            stats.append(f"+{equippable.to_hit_bonus} hit")
+    
+    stats_text = f" ({', '.join(stats)})" if stats else ""
+    return (f"({letter}) [{slot_name:7s}] {item_name}{stats_text}", equipped_item)
+
+
+def _get_ac_breakdown(player):
+    """Get detailed AC breakdown showing base + DEX + armor.
+    
+    Args:
+        player: Player entity
+        
+    Returns:
+        str: AC breakdown (e.g., "13 (10 + 1 DEX + 2 armor)")
+    """
+    base_ac = 10
+    dex_bonus = player.fighter.dexterity_mod
+    
+    # Get armor AC bonus and check for DEX caps
+    armor_ac_bonus = 0
+    most_restrictive_dex_cap = None
+    
+    if hasattr(player, 'equipment') and player.equipment:
+        equipment = player.equipment
+        for item in [equipment.main_hand, equipment.off_hand,
+                    equipment.head, equipment.chest, equipment.feet]:
+            if item and hasattr(item, 'equippable'):
+                equippable = item.equippable
+                
+                # Add AC bonus
+                armor_ac_bonus += getattr(equippable, 'armor_class_bonus', 0)
+                
+                # Check for DEX cap
+                armor_type = getattr(equippable, 'armor_type', None)
+                item_dex_cap = getattr(equippable, 'dex_cap', None)
+                
+                if armor_type in ['light', 'medium', 'heavy'] and item_dex_cap is not None:
+                    if most_restrictive_dex_cap is None:
+                        most_restrictive_dex_cap = item_dex_cap
+                    else:
+                        most_restrictive_dex_cap = min(most_restrictive_dex_cap, item_dex_cap)
+    
+    # Apply DEX cap
+    original_dex_bonus = dex_bonus
+    if most_restrictive_dex_cap is not None:
+        dex_bonus = min(dex_bonus, most_restrictive_dex_cap)
+    
+    total_ac = base_ac + dex_bonus + armor_ac_bonus
+    
+    # Format with cap indicator if applicable
+    if most_restrictive_dex_cap is not None and original_dex_bonus > most_restrictive_dex_cap:
+        dex_str = f"{dex_bonus} DEX*"  # Asterisk indicates capped
+    else:
+        dex_str = f"{dex_bonus} DEX" if dex_bonus != 0 else "0 DEX"
+    
+    # Format AC display
+    if armor_ac_bonus > 0:
+        return f"{total_ac} ({base_ac}+{dex_str}+{armor_ac_bonus})"
+    elif dex_bonus != 0:
+        return f"{total_ac} ({base_ac}+{dex_str})"
+    else:
+        return f"{total_ac}"
+
+
+def _get_damage_display(player):
+    """Get damage display for character screen.
+    
+    Args:
+        player: Player entity
+        
+    Returns:
+        str: Damage display (e.g., "1d4+2" or "1-2+2")
+    """
+    str_mod = player.fighter.strength_mod
+    
+    # Check for equipped weapon
+    if (hasattr(player, 'equipment') and player.equipment and
+        player.equipment.main_hand and
+        hasattr(player.equipment.main_hand, 'equippable')):
+        
+        weapon = player.equipment.main_hand.equippable
+        if hasattr(weapon, 'damage_min') and weapon.damage_max > 0:
+            if str_mod != 0:
+                str_mod_str = f"+{str_mod}" if str_mod > 0 else str(str_mod)
+                return f"{weapon.damage_min}-{weapon.damage_max}{str_mod_str}"
+            else:
+                return f"{weapon.damage_min}-{weapon.damage_max}"
+    
+    # Natural damage
+    if hasattr(player.fighter, 'damage_min') and player.fighter.damage_max > 0:
+        if str_mod != 0:
+            str_mod_str = f"+{str_mod}" if str_mod > 0 else str(str_mod)
+            return f"{player.fighter.damage_min}-{player.fighter.damage_max}{str_mod_str}"
+        else:
+            return f"{player.fighter.damage_min}-{player.fighter.damage_max}"
+    
+    # Fallback
+    if str_mod != 0:
+        return f"+{str_mod}" if str_mod > 0 else str(str_mod)
+    return "0"
 
 
 def _get_attack_display_text(player):
