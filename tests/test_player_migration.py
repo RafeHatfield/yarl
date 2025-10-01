@@ -31,7 +31,7 @@ class TestPlayerMigrationCompatibility:
         
         # Verify stats match the old hardcoded values
         assert player_stats.hp == 100
-        assert player_stats.power == 2  # DEFAULT_POWER + 1 = 1 + 1 = 2
+        assert player_stats.power == 0  # New system uses damage_min/max instead of power
         assert player_stats.defense == 1  # DEFAULT_DEFENSE + 1 = 0 + 1 = 1
         assert player_stats.xp == 0
 
@@ -76,7 +76,7 @@ class TestPlayerMigrationCompatibility:
         
         # Verify player stats match configuration
         assert player.fighter.base_max_hp == 100
-        assert player.fighter.base_power == 2
+        assert player.fighter.base_power == 0
         assert player.fighter.base_defense == 1
         
         # Verify other components are still created
@@ -124,8 +124,8 @@ class TestPlayerMigrationCompatibility:
         # Verify dagger properties
         assert dagger.name == "Dagger"
         assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 1
-        assert dagger.equippable.damage_max == 3
+        assert dagger.equippable.damage_min == 3  # Updated to match current YAML
+        assert dagger.equippable.damage_max == 5  # Updated to match current YAML
         
         # Verify dagger is in inventory
         assert dagger in player.inventory.items
@@ -146,7 +146,7 @@ class TestPlayerMigrationIntegration:
         player_stats = registry.get_player_stats()
         assert player_stats is not None
         assert player_stats.hp == 100
-        assert player_stats.power == 2
+        assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0
 
@@ -157,7 +157,7 @@ class TestPlayerMigrationIntegration:
         player_stats = factory.get_player_stats()
         assert player_stats is not None
         assert player_stats.hp == 100
-        assert player_stats.power == 2
+        assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0
 
@@ -194,7 +194,7 @@ class TestBackwardCompatibility:
         # where DEFAULT_DEFENSE=0 and DEFAULT_POWER=1
         assert player_stats.hp == 100
         assert player_stats.defense == 1  # 0 + 1
-        assert player_stats.power == 2   # 1 + 1
+        assert player_stats.power == 0   # New system uses damage_min/max instead of power
         assert player_stats.xp == 0
 
     def test_player_creation_produces_identical_fighter(self):
@@ -208,7 +208,7 @@ class TestBackwardCompatibility:
         # Old system: Fighter(hp=100, defense=0+1, power=1+1)
         assert new_player.fighter.base_max_hp == 100
         assert new_player.fighter.base_defense == 1
-        assert new_player.fighter.base_power == 2
+        assert new_player.fighter.base_power == 0
         
         # Verify current HP is set to max HP
         assert new_player.fighter.hp == 100
@@ -284,6 +284,6 @@ class TestPlayerConfigurationFallback:
         player_stats = factory.get_player_stats()
         assert player_stats is not None
         assert player_stats.hp == 100
-        assert player_stats.power == 2
+        assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0

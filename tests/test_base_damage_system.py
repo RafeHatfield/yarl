@@ -61,8 +61,8 @@ class TestBaseDamageSystem(unittest.TestCase):
         # Check combat message
         message_result = next(r for r in results if 'message' in r)
         message_text = message_result['message'].text
-        self.assertIn("4 hit points", message_text)
-        self.assertIn("(+2 natural)", message_text)
+        self.assertIn("4 damage", message_text)
+        self.assertIn("(2 power + 2 natural)", message_text)
 
     @patch('random.randint')
     def test_monster_attack_uses_natural_damage(self, mock_randint):
@@ -79,8 +79,8 @@ class TestBaseDamageSystem(unittest.TestCase):
         # Check combat message
         message_result = next(r for r in results if 'message' in r)
         message_text = message_result['message'].text
-        self.assertIn("5 hit points", message_text)
-        self.assertIn("(+3 natural)", message_text)
+        self.assertIn("5 damage", message_text)
+        self.assertIn("(3 power + 3 natural)", message_text)
 
     @patch('random.randint')
     def test_weapon_overrides_base_damage(self, mock_randint):
@@ -105,8 +105,8 @@ class TestBaseDamageSystem(unittest.TestCase):
         # Check combat message uses weapon, not natural
         message_result = next(r for r in results if 'message' in r)
         message_text = message_result['message'].text
-        self.assertIn("6 hit points", message_text)
-        self.assertIn("(+4 weapon)", message_text)
+        self.assertIn("6 damage", message_text)
+        self.assertIn("(2 power + 4 weapon)", message_text)
         self.assertNotIn("natural", message_text)
 
     @patch('random.randint')
@@ -134,8 +134,8 @@ class TestBaseDamageSystem(unittest.TestCase):
         # Check combat message uses natural damage when weapon does 0
         message_result = next(r for r in results if 'message' in r)
         message_text = message_result['message'].text
-        self.assertIn("5 hit points", message_text)
-        self.assertIn("(+1 natural)", message_text)
+        self.assertIn("5 damage", message_text)
+        self.assertIn("(4 power + 1 natural)", message_text)
 
     def test_base_damage_defaults_to_0_0(self):
         """Test that entities without specified damage get 0-0 base damage (backward compatibility)."""

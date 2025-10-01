@@ -228,6 +228,7 @@ class TestProcessGameActions:
         player = Mock()
         player.x = 10
         player.y = 10
+        player.process_status_effects_turn_end.return_value = []  # Return empty list for status effects
         self.state_manager.state.player = player
         self.state_manager.state.game_map.is_blocked.return_value = False
         mock_get_blocking.return_value = None

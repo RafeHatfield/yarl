@@ -222,50 +222,51 @@ class TestStatusEffects:
     
     def test_invisibility_effect_application(self):
         """Test applying invisibility effect."""
-        invisibility = InvisibilityEffect(duration=5)
+        invisibility = InvisibilityEffect(duration=5, owner=self.entity)
         
         results = self.entity.add_status_effect(invisibility)
         
         assert self.entity.invisible is True
-        assert self.entity.has_status_effect("Invisible")
-        assert len(results) == 0  # No immediate messages from apply
+        assert self.entity.has_status_effect("invisibility")
+        assert len(results) == 1  # Should have application message
+        assert "becomes invisible" in results[0]['message'].text
     
     def test_invisibility_effect_removal(self):
         """Test removing invisibility effect."""
-        invisibility = InvisibilityEffect(duration=1)
+        invisibility = InvisibilityEffect(duration=1, owner=self.entity)
         self.entity.add_status_effect(invisibility)
         
         # Process turn end to expire effect
         results = self.entity.process_status_effects_turn_end()
         
         assert self.entity.invisible is False
-        assert not self.entity.has_status_effect("Invisible")
+        assert not self.entity.has_status_effect("invisibility")
         assert len(results) == 1  # Should have removal message
-        assert "visible again" in results[0]['message'].text
+        assert "no longer invisible" in results[0]['message'].text
     
     def test_invisibility_effect_breaking(self):
         """Test breaking invisibility early."""
-        invisibility = InvisibilityEffect(duration=10)
+        invisibility = InvisibilityEffect(duration=10, owner=self.entity)
         self.entity.add_status_effect(invisibility)
         
         # Break invisibility
-        results = invisibility.break_invisibility(self.entity, "attack")
+        results = invisibility.break_invisibility()
         
         assert len(results) == 1
-        assert "invisibility breaks" in results[0]['message'].text
+        assert "no longer invisible" in results[0]['message'].text
         assert invisibility.duration == 0  # Should be expired
     
     def test_status_effect_replacement(self):
         """Test that adding same effect type replaces existing."""
-        invisibility1 = InvisibilityEffect(duration=5)
-        invisibility2 = InvisibilityEffect(duration=10)
+        invisibility1 = InvisibilityEffect(duration=5, owner=self.entity)
+        invisibility2 = InvisibilityEffect(duration=10, owner=self.entity)
         
         self.entity.add_status_effect(invisibility1)
         self.entity.add_status_effect(invisibility2)
         
         # Should only have one invisibility effect
         manager = self.entity.get_status_effect_manager()
-        invisibility_effects = [e for e in manager.effects if e.name == "Invisible"]
+        invisibility_effects = [e for e in manager.active_effects.values() if e.name == "invisibility"]
         assert len(invisibility_effects) == 1
         assert invisibility_effects[0].duration == 10  # Should be the newer one
 

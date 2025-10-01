@@ -64,7 +64,7 @@ class TestVariableDefenseCombat:
         assert len(results) == 1
         assert "message" in results[0]
         message_text = results[0]["message"].text
-        assert "completely blocked by armor" in message_text
+        assert "attack blocked!" in message_text
         assert "orc attacks player" in message_text.lower()
 
     def test_variable_defense_with_partial_absorption(self):
@@ -93,8 +93,8 @@ class TestVariableDefenseCombat:
         assert len(results) >= 1
         assert "message" in results[0]
         message_text = results[0]["message"].text
-        assert "1 hit points" in message_text
-        assert "(1 absorbed by armor)" in message_text
+        assert "1 damage" in message_text
+        assert "(2 base + 1 armor)" in message_text
         assert "orc attacks player" in message_text.lower()
 
     def test_no_armor_defense_message(self):
@@ -110,7 +110,7 @@ class TestVariableDefenseCombat:
         assert len(results) >= 1
         assert "message" in results[0]
         message_text = results[0]["message"].text
-        assert "3 hit points" in message_text
+        assert "3 damage" in message_text
         assert "absorbed by armor" not in message_text
         assert "orc attacks player" in message_text.lower()
 
@@ -137,7 +137,7 @@ class TestVariableDefenseCombat:
         assert len(results) >= 1
         assert "message" in results[0]
         message_text = results[0]["message"].text
-        assert "hit points" in message_text
+        assert "damage" in message_text
         assert "absorbed by armor" not in message_text  # No variable defense to show
 
     def test_multiple_armor_pieces_defense(self):
@@ -165,7 +165,7 @@ class TestVariableDefenseCombat:
         assert len(results) >= 1
         assert "message" in results[0]
         message_text = results[0]["message"].text
-        assert "completely blocked by armor" in message_text
+        assert "attack blocked!" in message_text
 
     def test_high_armor_defense_blocks_all_damage(self):
         """Test that high armor defense can completely block attacks."""
@@ -190,7 +190,7 @@ class TestVariableDefenseCombat:
         assert len(results) == 1
         assert "message" in results[0]
         message_text = results[0]["message"].text
-        assert "completely blocked by armor" in message_text
+        assert "attack blocked!" in message_text
 
     def test_variable_defense_randomness(self):
         """Test that armor defense varies between rolls."""
@@ -279,9 +279,9 @@ class TestVariableDefenseIntegration:
         
         assert len(results) >= 1
         message_text = results[0]["message"].text
-        assert "9 hit points" in message_text
-        assert "(+3 weapon)" in message_text
-        assert "(2 absorbed by armor)" in message_text
+        assert "9 damage" in message_text
+        assert "(10 power + 3 weapon)" in message_text
+        assert "(2 base + 2 armor)" in message_text
 
     def test_base_defense_still_applied(self):
         """Test that base defense from Fighter is still applied along with armor."""
@@ -310,8 +310,8 @@ class TestVariableDefenseIntegration:
         
         assert len(results) >= 1
         message_text = results[0]["message"].text
-        assert "3 hit points" in message_text
-        assert "(1 absorbed by armor)" in message_text
+        assert "3 damage" in message_text
+        assert "(4 base + 1 armor)" in message_text
 
     def test_legacy_defense_bonus_compatibility(self):
         """Test that the system works with equipment that only has defense_bonus."""
@@ -335,7 +335,7 @@ class TestVariableDefenseIntegration:
         
         assert len(results) >= 1
         message_text = results[0]["message"].text
-        assert "hit points" in message_text
+        assert "damage" in message_text
         # No "(X absorbed by armor)" message since roll_defense returns 0
 
 
@@ -363,7 +363,7 @@ class TestVariableDefenseEdgeCases:
         # Should work without error, armor_defense = 0
         assert len(results) >= 1
         message_text = results[0]["message"].text
-        assert "4 hit points" in message_text  # full damage, no armor
+        assert "4 damage" in message_text  # full damage, no armor
         assert "absorbed by armor" not in message_text
 
     def test_equipment_with_no_off_hand(self):
@@ -391,7 +391,7 @@ class TestVariableDefenseEdgeCases:
         # Should work without error, armor_defense = 0
         assert len(results) >= 1
         message_text = results[0]["message"].text
-        assert "3 hit points" in message_text  # power(4) - defense(1) = 3
+        assert "3 damage" in message_text  # power(4) - defense(1) = 3
         assert "absorbed by armor" not in message_text
 
     def test_off_hand_with_no_equippable(self):
@@ -422,7 +422,7 @@ class TestVariableDefenseEdgeCases:
         # Should work without error, armor_defense = 0
         assert len(results) >= 1
         message_text = results[0]["message"].text
-        assert "3 hit points" in message_text
+        assert "3 damage" in message_text
         assert "absorbed by armor" not in message_text
 
     def test_zero_damage_attack_with_armor_message(self):
@@ -460,7 +460,7 @@ class TestVariableDefenseEdgeCases:
         
         assert len(results) == 1
         message_text = results[0]["message"].text
-        assert "completely blocked by armor" in message_text
+        assert "attack blocked!" in message_text
         assert "weak_goblin attacks armored_knight" in message_text.lower()
 
 

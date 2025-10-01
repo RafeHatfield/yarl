@@ -102,7 +102,7 @@ class TestMonsterVariableDamage(unittest.TestCase):
         
         # Check combat message
         message_result = next(r for r in results if 'message' in r)
-        self.assertIn("orc attacks player for 4 hit points (+2 natural)", 
+        self.assertIn("orc attacks player for 4 damage (5 attack (3 power + 2 natural) - 1 defense)", 
                      message_result['message'].text.lower())
 
     @patch('random.randint')
@@ -134,7 +134,7 @@ class TestMonsterVariableDamage(unittest.TestCase):
         
         # Verify weapon damage was used
         message_result = next(r for r in results if 'message' in r)
-        self.assertIn("+2 weapon", message_result['message'].text)
+        self.assertIn("(2 power + 2 weapon)", message_result['message'].text)
         self.assertNotIn("natural", message_result['message'].text.lower())
 
     @patch('random.randint')
@@ -154,7 +154,7 @@ class TestMonsterVariableDamage(unittest.TestCase):
         results = monster.fighter.attack(self.player)
         
         message_result = next(r for r in results if 'message' in r)
-        expected_text = "Troll attacks player for 9 hit points (+4 natural)."
+        expected_text = "Troll attacks player for 9 damage (10 attack (6 power + 4 natural) - 1 defense)."
         self.assertEqual(message_result['message'].text, expected_text)
 
     @patch('components.fighter.is_testing_mode')
@@ -262,7 +262,7 @@ class TestEntityFactoryIntegration(unittest.TestCase):
         
         # Verify variable damage was applied
         message_result = next(r for r in results if 'message' in r)
-        self.assertIn("+2 natural", message_result['message'].text)
+        self.assertIn("(3 power + 2 natural)", message_result['message'].text)
 
 
 class TestBackwardCompatibility(unittest.TestCase):

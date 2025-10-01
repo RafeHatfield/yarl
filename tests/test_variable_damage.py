@@ -279,8 +279,8 @@ class TestVariableDamageCombat(unittest.TestCase):
         # Check message includes weapon damage
         message_result = next(r for r in results if "message" in r)
         message_text = message_result["message"].text
-        self.assertIn("9 hit points", message_text)
-        self.assertIn("(+4 weapon)", message_text)
+        self.assertIn("9 damage", message_text)
+        self.assertIn("(7 power + 4 weapon)", message_text)
     
     def test_attack_without_weapon(self):
         """Test attack without weapon uses no variable damage."""
@@ -299,7 +299,7 @@ class TestVariableDamageCombat(unittest.TestCase):
         # Check message doesn't include weapon damage
         message_result = next(r for r in results if "message" in r)
         message_text = message_result["message"].text
-        self.assertIn("3 hit points", message_text)
+        self.assertIn("3 damage", message_text)
         self.assertNotIn("weapon", message_text)
     
     @patch('components.equippable.Equippable.roll_damage')
@@ -323,7 +323,7 @@ class TestVariableDamageCombat(unittest.TestCase):
         # Check message doesn't show weapon bonus for zero damage
         message_result = next(r for r in results if "message" in r)
         message_text = message_result["message"].text
-        self.assertIn("5 hit points", message_text)
+        self.assertIn("5 damage", message_text)
         self.assertNotIn("weapon", message_text)
 
 

@@ -29,7 +29,7 @@ class TestCharacterScreenDisplay:
     def test_attack_display_no_weapon(self):
         """Test attack display with no weapon equipped."""
         result = _get_attack_display_text(self.player)
-        assert result == "Attack: 5"
+        assert result == "Attack: 5 power"
 
     def test_attack_display_with_variable_damage_weapon(self):
         """Test attack display with variable damage weapon."""
@@ -46,9 +46,9 @@ class TestCharacterScreenDisplay:
         self.equipment.toggle_equip(weapon)
         
         result = _get_attack_display_text(self.player)
-        # Should show: base power + weapon range = total range
-        # 5 + 1-4 = 6-9
-        assert result == "Attack: 5 + 1-4 = 6-9"
+        # Should show: weapon range + total power = total range
+        # 1-4 + (5+2) power = 8-11
+        assert result == "Attack: 1-4 + 7 power = 8-11"
 
     def test_attack_display_with_power_bonus_only(self):
         """Test attack display with weapon that has power bonus but no damage range."""
@@ -63,9 +63,9 @@ class TestCharacterScreenDisplay:
         self.equipment.toggle_equip(weapon)
         
         result = _get_attack_display_text(self.player)
-        # Should show: base power + power bonus = total (fallback to power bonus since damage_max = 0)
-        # 5 + 3 = 8
-        assert result == "Attack: 5 + 3 = 8"
+        # Should show: total power (fallback to power bonus since damage_max = 0)
+        # (5+3) = 8
+        assert result == "Attack: 8 power"
 
     def test_defense_display_no_armor(self):
         """Test defense display with no armor equipped."""
@@ -124,8 +124,8 @@ class TestCharacterScreenDisplay:
         
         result = _get_attack_display_text(self.player)
         # Should prioritize damage range over power bonus
-        # 5 + 2-5 = 7-10
-        assert result == "Attack: 5 + 2-5 = 7-10"
+        # 2-5 + (5+2) power = 9-12
+        assert result == "Attack: 2-5 + 7 power = 9-12"
 
     def test_defense_display_with_both_defense_bonus_and_defense_range(self):
         """Test defense display when armor has both defense bonus and defense range."""
@@ -162,8 +162,8 @@ class TestCharacterScreenDisplay:
         
         result = _get_attack_display_text(self.player)
         # Should fall back to power bonus
-        # 5 + 3 = 8
-        assert result == "Attack: 5 + 3 = 8"
+        # (5+3) = 8
+        assert result == "Attack: 8 power"
 
     def test_defense_display_with_zero_defense_range(self):
         """Test defense display when armor has zero defense range."""

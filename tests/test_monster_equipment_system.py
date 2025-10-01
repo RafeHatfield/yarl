@@ -277,7 +277,7 @@ class TestConvenienceFunctions(unittest.TestCase):
         monster = Mock()
         result = drop_loot_from_monster(monster, 5, 10)
         
-        mock_drop_loot.assert_called_once_with(monster, 5, 10)
+        mock_drop_loot.assert_called_once_with(monster, 5, 10, None)  # Updated signature includes game_map parameter
         self.assertEqual(result, ["sword", "shield"])
 
 

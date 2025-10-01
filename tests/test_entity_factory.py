@@ -216,7 +216,7 @@ class TestEntityFactory:
 
         assert stats is not None
         assert stats.hp == 100  # Fallback values
-        assert stats.power == 2
+        assert stats.power == 0  # Updated to new system
         assert stats.defense == 1
         assert stats.xp == 0
 

@@ -273,7 +273,7 @@ class EntityFactory:
         stats = self.registry.get_player_stats()
         if not stats:
             logger.warning("No player stats configured, using fallback values")
-            return EntityStats(hp=100, power=2, defense=1, xp=0)
+            return EntityStats(hp=100, power=0, defense=1, xp=0, damage_min=3, damage_max=4)  # Updated to new system
         
         return stats
 
@@ -353,11 +353,12 @@ class EntityFactory:
         elif spell_def.name.lower().replace(' ', '_') == "fireball_scroll":
             return Item(
                 use_function=cast_fireball,
+                targeting=True,
                 damage=spell_def.damage,
                 radius=spell_def.radius
             )
         elif spell_def.name.lower().replace(' ', '_') == "confusion_scroll":
-            return Item(use_function=cast_confuse)
+            return Item(use_function=cast_confuse, targeting=True)
         elif spell_def.name.lower().replace(' ', '_') == "enhance_weapon_scroll":
             return Item(use_function=enhance_weapon)
         elif spell_def.name.lower().replace(' ', '_') == "enhance_armor_scroll":

@@ -130,11 +130,16 @@ class TestDifficultyScaling:
                     15,  # troll chance (for monster_chances dict)
                     5,  # sword chance
                     15,  # shield chance
+                    5,  # healing_potion chance
                     lightning,  # lightning_scroll
                     fireball,  # fireball_scroll
                     confusion,  # confusion_scroll
                     5,  # enhance_weapon_scroll chance
                     5,  # enhance_armor_scroll chance
+                    5,  # invisibility_scroll chance
+                    5,  # extra buffer for any additional items
+                    5,  # extra buffer for any additional items
+                    5,  # extra buffer for any additional items
                 ]
 
                 room = Mock()
@@ -180,7 +185,7 @@ class TestMonsterSpawning:
             assert orc.char == "o"
             assert orc.fighter.hp == 20
             assert orc.fighter.defense == 0
-            assert orc.fighter.power == 3  # Reduced from 4 to balance variable damage
+            assert orc.fighter.power == 0  # New system uses damage_min/max instead of power
             assert orc.fighter.xp == 35
             assert orc.ai is not None
 
@@ -205,7 +210,7 @@ class TestMonsterSpawning:
             assert troll.char == "T"
             assert troll.fighter.hp == 30
             assert troll.fighter.defense == 2
-            assert troll.fighter.power == 6  # Reduced from 8 to balance variable damage
+            assert troll.fighter.power == 0  # New system uses damage_min/max instead of power
             assert troll.fighter.xp == 100
             assert troll.ai is not None
 
@@ -279,13 +284,15 @@ class TestItemSpawning:
 
     def setup_method(self):
         """Set up test fixtures."""
+        from config.entity_registry import load_entity_config
+        load_entity_config()
         self.game_map = GameMap(width=80, height=43, dungeon_level=6)
 
     def test_healing_potion_spawning(self):
         """Test healing potion spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 0, 0, 0, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="healing_potion",
@@ -312,7 +319,7 @@ class TestItemSpawning:
         """Test lightning scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 25, 0, 0, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 25, 0, 0, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="lightning_scroll",
@@ -331,7 +338,7 @@ class TestItemSpawning:
             scroll = items[0]
 
             assert scroll.name == "Lightning Scroll"
-            assert scroll.char == "#"
+            assert scroll.char == "~"
             assert scroll.item.use_function.__name__ == "cast_lightning"
             assert scroll.item.function_kwargs["damage"] == 40
             assert scroll.item.function_kwargs["maximum_range"] == 5
@@ -340,7 +347,7 @@ class TestItemSpawning:
         """Test fireball scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 0, 25, 0, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 25, 0, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="fireball_scroll",
@@ -359,7 +366,7 @@ class TestItemSpawning:
             scroll = items[0]
 
             assert scroll.name == "Fireball Scroll"
-            assert scroll.char == "#"
+            assert scroll.char == "~"
             assert scroll.item.use_function.__name__ == "cast_fireball"
             assert scroll.item.function_kwargs["damage"] == 25
             assert scroll.item.function_kwargs["radius"] == 3
@@ -369,7 +376,7 @@ class TestItemSpawning:
         """Test confusion scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 0, 0, 10, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="confusion_scroll",
@@ -388,7 +395,7 @@ class TestItemSpawning:
             scroll = items[0]
 
             assert scroll.name == "Confusion Scroll"
-            assert scroll.char == "#"
+            assert scroll.char == "~"
             assert scroll.item.use_function.__name__ == "cast_confuse"
             assert scroll.item.targeting is True
 
@@ -396,7 +403,7 @@ class TestItemSpawning:
         """Test spawning multiple items in one room."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 25, 25, 10, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5],
         ), patch(
             "map_objects.game_map.randint", side_effect=[0, 2, 8, 8, 9, 9]
         ):  # 2 items, positions
@@ -434,11 +441,14 @@ class TestDifficultyProgression:
                     0 if level < 3 else 15,  # troll chance (none before level 3)
                     0,  # sword (not available early)
                     0,  # shield (not available early)
+                    5,  # healing_potion
                     0,  # lightning (not available)
                     0,  # fireball (not available)
                     10 if level >= 2 else 0,  # confusion (available from level 2)
                     5,  # enhance_weapon_scroll
                     5,  # enhance_armor_scroll
+                    5,  # invisibility_scroll
+                    5, 5, 5,  # extra buffer
                 ]
 
                 with patch("map_objects.game_map.randint", return_value=0), patch(
@@ -468,11 +478,14 @@ class TestDifficultyProgression:
                     30 if level >= 5 else 15,  # troll chance (increased at level 5)
                     5,  # sword (available from level 4)
                     0 if level < 8 else 15,  # shield (available from level 8)
+                    5,  # healing_potion
                     25,  # lightning (available from level 4)
                     25 if level >= 6 else 0,  # fireball (available from level 6)
                     10,  # confusion (still available)
                     5,  # enhance_weapon_scroll
                     5,  # enhance_armor_scroll
+                    5,  # invisibility_scroll
+                    5, 5, 5,  # extra buffer
                 ]
 
                 with patch("map_objects.game_map.randint", return_value=0), patch(
@@ -501,11 +514,14 @@ class TestDifficultyProgression:
                     60,  # troll chance (maximum)
                     5,  # sword (stable)
                     15,  # shield (available)
+                    5,  # healing_potion
                     25,  # lightning (stable)
                     25,  # fireball (stable)
                     10,  # confusion (stable)
                     5,  # enhance_weapon_scroll
                     5,  # enhance_armor_scroll
+                    5,  # invisibility_scroll
+                    5, 5, 5,  # extra buffer
                 ]
 
                 with patch("map_objects.game_map.randint", return_value=0), patch(
@@ -659,7 +675,7 @@ class TestDifficultyScalingIntegration:
             # Get the actual values that would be used
             with patch(
                 "map_objects.game_map.from_dungeon_level",
-                side_effect=[3, 2, 30, 5, 15, 25, 25, 10, 5, 5],
+                side_effect=[3, 2, 30, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5],
             ) as mock_from_level:
                 with patch("map_objects.game_map.randint", return_value=0), patch(
                     "map_objects.game_map.random_choice_from_dict", return_value="orc"

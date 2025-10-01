@@ -42,8 +42,8 @@ class TestEquipmentMigrationCompatibility:
         assert dagger.equippable is not None
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
         assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 1
-        assert dagger.equippable.damage_max == 3
+        assert dagger.equippable.damage_min == 3
+        assert dagger.equippable.damage_max == 5
 
     def test_sword_creation_matches_hardcoded_values(self):
         """Test that EntityFactory creates swords with same stats as hardcoded version."""
@@ -62,8 +62,8 @@ class TestEquipmentMigrationCompatibility:
         assert sword.equippable is not None
         assert sword.equippable.slot == EquipmentSlots.MAIN_HAND
         assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert sword.equippable.damage_min == 2
-        assert sword.equippable.damage_max == 5
+        assert sword.equippable.damage_min == 4
+        assert sword.equippable.damage_max == 7
 
     def test_shield_creation_matches_hardcoded_values(self):
         """Test that EntityFactory creates shields with same stats as hardcoded version."""
@@ -99,8 +99,8 @@ class TestEquipmentMigrationCompatibility:
         # Verify dagger properties
         assert dagger.name == "Dagger"
         assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 1
-        assert dagger.equippable.damage_max == 3
+        assert dagger.equippable.damage_min == 3
+        assert dagger.equippable.damage_max == 5
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
         
         # Verify dagger is in inventory
@@ -157,8 +157,8 @@ class TestEquipmentGameMapIntegration:
         assert sword.x == 7
         assert sword.y == 7
         assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert sword.equippable.damage_min == 2
-        assert sword.equippable.damage_max == 5
+        assert sword.equippable.damage_min == 4
+        assert sword.equippable.damage_max == 7
 
     def test_shield_spawning_in_game_map(self):
         """Test that shields spawn correctly in game map using EntityFactory."""
@@ -209,14 +209,14 @@ class TestEquipmentMigrationIntegration:
         dagger = registry.get_weapon("dagger")
         assert dagger is not None
         assert dagger.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.damage_min == 1
-        assert dagger.damage_max == 3
+        assert dagger.damage_min == 3
+        assert dagger.damage_max == 5
         
         sword = registry.get_weapon("sword")
         assert sword is not None
         assert sword.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert sword.damage_min == 2
-        assert sword.damage_max == 5
+        assert sword.damage_min == 4
+        assert sword.damage_max == 7
         
         # Check armor
         shield = registry.get_armor("shield")
@@ -258,8 +258,8 @@ class TestEquipmentMigrationIntegration:
         dagger = player.equipment.main_hand
         assert dagger.name == "Dagger"
         assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 1
-        assert dagger.equippable.damage_max == 3
+        assert dagger.equippable.damage_min == 3
+        assert dagger.equippable.damage_max == 5
 
 
 class TestBackwardCompatibility:
@@ -278,15 +278,15 @@ class TestBackwardCompatibility:
         dagger = factory.create_weapon("dagger", 0, 0)
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
         assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 1
-        assert dagger.equippable.damage_max == 3
+        assert dagger.equippable.damage_min == 3
+        assert dagger.equippable.damage_max == 5
         
         # Test sword matches: Equippable(EquipmentSlots.MAIN_HAND, power_bonus=3, damage_min=2, damage_max=5)
         sword = factory.create_weapon("sword", 0, 0)
         assert sword.equippable.slot == EquipmentSlots.MAIN_HAND
         assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert sword.equippable.damage_min == 2
-        assert sword.equippable.damage_max == 5
+        assert sword.equippable.damage_min == 4
+        assert sword.equippable.damage_max == 7
         
         # Test shield matches: Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1, defense_min=1, defense_max=3)
         shield = factory.create_armor("shield", 0, 0)
@@ -309,7 +309,7 @@ class TestBackwardCompatibility:
         
         old_equippable = Equippable(
             EquipmentSlots.MAIN_HAND, power_bonus=0,  # Updated: basic weapons no longer have magic bonuses
-            damage_min=2, damage_max=5
+            damage_min=4, damage_max=7  # Updated to match current YAML values
         )
         old_sword = Entity(
             5, 5, "/", (0, 191, 255), "Sword",
@@ -366,8 +366,8 @@ class TestBackwardCompatibility:
         assert dagger is not None
         assert dagger.name == "Dagger"
         assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 1
-        assert dagger.equippable.damage_max == 3
+        assert dagger.equippable.damage_min == 3
+        assert dagger.equippable.damage_max == 5
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
         
         # Verify dagger is equipped and in inventory

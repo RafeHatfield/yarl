@@ -360,6 +360,7 @@ class Fighter:
         # Check if entity has special_abilities with corrosion
         if (hasattr(self.owner, 'special_abilities') and 
             self.owner.special_abilities and 
+            isinstance(self.owner.special_abilities, (list, tuple)) and
             'corrosion' in self.owner.special_abilities):
             return True
         

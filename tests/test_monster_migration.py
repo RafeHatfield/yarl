@@ -68,7 +68,7 @@ class TestMonsterMigrationCompatibility:
         # Verify fighter component matches hardcoded values
         assert monster.fighter is not None
         assert monster.fighter.base_max_hp == 20
-        assert monster.fighter.base_power == 3  # Reduced from 4 to balance variable damage
+        assert monster.fighter.base_power == 0  # New system uses damage_min/max instead of power
         assert monster.fighter.base_defense == 0
         assert monster.fighter.xp == 35
         
@@ -102,7 +102,7 @@ class TestMonsterMigrationCompatibility:
         # Verify fighter component matches hardcoded values
         assert monster.fighter is not None
         assert monster.fighter.base_max_hp == 30
-        assert monster.fighter.base_power == 6  # Reduced from 8 to balance variable damage
+        assert monster.fighter.base_power == 0  # New system uses damage_min/max instead of power
         assert monster.fighter.base_defense == 2
         assert monster.fighter.xp == 100
         
@@ -148,7 +148,7 @@ class TestMonsterMigrationCompatibility:
             mock_from_level.side_effect = [
                 3,  # max_monsters_per_room
                 0,  # max_items_per_room (no items for this test)
-                15, 5, 15, 0, 0, 10, 5, 5  # Item chances (unused)
+                15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5  # Item chances (includes invisibility_scroll)
             ]
             
             # Set up positions - use same position to test collision detection
@@ -188,14 +188,14 @@ class TestMonsterMigrationIntegration:
         # Verify orc stats
         orc = registry.get_monster("orc")
         assert orc.stats.hp == 20
-        assert orc.stats.power == 3  # Updated for variable damage balance
+        assert orc.stats.power == 0  # New system uses damage_min/max instead of power
         assert orc.stats.defense == 0
         assert orc.stats.xp == 35
         
         # Verify troll stats
         troll = registry.get_monster("troll")
         assert troll.stats.hp == 30
-        assert troll.stats.power == 6  # Updated for variable damage balance
+        assert troll.stats.power == 0  # New system uses damage_min/max instead of power
         assert troll.stats.defense == 2
         assert troll.stats.xp == 100
 
@@ -230,7 +230,7 @@ class TestMonsterMigrationIntegration:
              patch('map_objects.game_map.from_dungeon_level') as mock_from_level:
             
             # Set up mocks
-            mock_from_level.side_effect = [1, 0, 15, 5, 15, 0, 0, 10, 5, 5]  # 1 monster, no items
+            mock_from_level.side_effect = [1, 0, 15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5]  # 1 monster, no items (includes invisibility_scroll)
             mock_randint.return_value = 8  # Position
             mock_choice.return_value = "orc"
             
@@ -263,7 +263,7 @@ class TestBackwardCompatibility:
         orc = registry.get_monster("orc")
         assert orc.stats.hp == 20
         assert orc.stats.defense == 0
-        assert orc.stats.power == 3  # Updated for variable damage balance
+        assert orc.stats.power == 0  # New system uses damage_min/max instead of power
         assert orc.stats.xp == 35
         assert orc.char == "o"
         assert orc.color == (63, 127, 63)
@@ -274,7 +274,7 @@ class TestBackwardCompatibility:
         troll = registry.get_monster("troll")
         assert troll.stats.hp == 30
         assert troll.stats.defense == 2
-        assert troll.stats.power == 6  # Updated for variable damage balance
+        assert troll.stats.power == 0  # New system uses damage_min/max instead of power
         assert troll.stats.xp == 100
         assert troll.char == "T"
         assert troll.color == (0, 127, 0)
@@ -294,7 +294,7 @@ class TestBackwardCompatibility:
         from entity import Entity
         from render_functions import RenderOrder
         
-        old_fighter = Fighter(hp=20, defense=0, power=3, xp=35)  # Updated: balanced power for variable damage
+        old_fighter = Fighter(hp=20, defense=0, power=0, xp=35)  # New system uses damage_min/max instead of power
         old_ai = BasicMonster()
         old_orc = Entity(
             5, 5, "o", (63, 127, 63), "Orc",
