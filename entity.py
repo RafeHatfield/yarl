@@ -286,14 +286,18 @@ class Entity:
             entities: List of entities that block movement
             game_map: The game map for pathfinding
         """
-        # Create a FOV map that has the dimensions of the map
-        fov = tcod.map.Map(game_map.width, game_map.height)
-
+        # Create a FOV map using the modern numpy-based API
+        import numpy as np
+        
+        # Initialize transparent and walkable arrays
+        transparent = np.ones((game_map.height, game_map.width), dtype=bool, order="F")
+        walkable = np.ones((game_map.height, game_map.width), dtype=bool, order="F")
+        
         # Scan the current map each turn and set all the walls as unwalkable
         for y1 in range(game_map.height):
             for x1 in range(game_map.width):
-                fov.transparent[y1, x1] = not game_map.tiles[x1][y1].block_sight
-                fov.walkable[y1, x1] = not game_map.tiles[x1][y1].blocked
+                transparent[y1, x1] = not game_map.tiles[x1][y1].block_sight
+                walkable[y1, x1] = not game_map.tiles[x1][y1].blocked
 
         # Scan all the objects to see if there are objects that must be
         # navigated around. Check also that the object isn't self or the target
@@ -303,50 +307,45 @@ class Entity:
         for entity in entities:
             if entity.blocks and entity != self and entity != target:
                 # Set the tile as a wall so it must be navigated around
-                fov.transparent[entity.y, entity.x] = True
-                fov.walkable[entity.y, entity.x] = False
+                walkable[entity.y, entity.x] = False
+        
+        # Create the cost map for pathfinding (1 = normal cost, 0 = blocked)
+        cost = np.where(walkable, 1, 0).astype(np.int8)
+        
+        # Create pathfinder using the modern tcod.path API
+        graph = tcod.path.SimpleGraph(cost=cost, cardinal=2, diagonal=3)
+        pf = tcod.path.Pathfinder(graph)
+        pf.add_root((self.x, self.y))
 
         # Get pathfinding configuration
         pathfinding_config = get_pathfinding_config()
         
-        # Allocate a A* path
-        # Use configured diagonal cost for movement
-        my_path = libtcodpy.path_new_using_map(fov, pathfinding_config.DIAGONAL_MOVE_COST)
-
-        # Compute the path between self's coordinates and the target's coordinates
-        libtcodpy.path_compute(my_path, self.x, self.y, target.x, target.y)
-
-        # Check if the path exists, and in this case, also the path is shorter
-        # than the configured maximum. The path size matters if you want the monster to use
-        # alternative longer paths (for example through other rooms) if for
-        # example the player is in a corridor. It makes sense to keep path size
-        # relatively low to keep the monsters from running around the map if
-        # there's an alternative path really far away
-        if not libtcodpy.path_is_empty(my_path) and libtcodpy.path_size(my_path) < pathfinding_config.MAX_PATH_LENGTH:
-            # Find the next coordinates in the computed full path
-            x, y = libtcodpy.path_walk(my_path, True)
-            if x or y:
-                # Validate that the destination is not occupied by a blocking entity
-                # (entities might have moved since pathfinding was calculated)
-                destination_blocked = False
-                for entity in entities:
-                    if entity.blocks and entity != self and entity.x == x and entity.y == y:
-                        destination_blocked = True
-                        break
-                
-                # Only move if destination is clear
-                if not destination_blocked:
-                    self.x = x
-                    self.y = y
-                # If blocked, don't move this turn (path will be recalculated next turn)
+        # Compute path to target
+        path = pf.path_to((target.x, target.y))
+        
+        # Check if the path exists and is not too long
+        if len(path) > 0 and len(path) < pathfinding_config.MAX_PATH_LENGTH:
+            # Get next step (first element in path)
+            x, y = path[0]
+            
+            # Validate that the destination is not occupied by a blocking entity
+            # (entities might have moved since pathfinding was calculated)
+            destination_blocked = False
+            for entity in entities:
+                if entity.blocks and entity != self and entity.x == x and entity.y == y:
+                    destination_blocked = True
+                    break
+            
+            # Only move if destination is clear
+            if not destination_blocked:
+                self.x = x
+                self.y = y
+            # If blocked, don't move this turn (path will be recalculated next turn)
         else:
             # Keep the old move function as a backup so that if there are no
             # paths (for example another monster blocks a corridor) it will
             # still try to move towards the player (closer to the corridor opening)
             self.move_towards(target.x, target.y, game_map, entities)
-
-            # Delete the path to free memory
-        libtcodpy.path_delete(my_path)
 
     def distance_to(self, other: 'Entity') -> float:
         """Calculate the distance to another entity.
