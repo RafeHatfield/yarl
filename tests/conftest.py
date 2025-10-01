@@ -11,6 +11,22 @@ from entity import Entity
 from render_functions import RenderOrder
 
 
+@pytest.fixture(autouse=True)
+def reset_level_template_registry():
+    """Reset the global level template registry between tests.
+    
+    This prevents test pollution where templates loaded in one test
+    affect subsequent tests. The autouse=True makes this run automatically
+    for every test.
+    """
+    # Clear the global registry before each test
+    import config.level_template_registry as ltr_module
+    ltr_module._level_template_registry = None
+    yield
+    # Clear it after the test too for good measure
+    ltr_module._level_template_registry = None
+
+
 @pytest.fixture
 def mock_libtcod(mocker):
     """Mock the libtcod library for headless testing."""

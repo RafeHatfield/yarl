@@ -82,6 +82,8 @@ class GameMap:
         Uses BSP-style generation to create rectangular rooms connected
         by horizontal and vertical tunnels. Places the player in the first
         room and stairs in the last room.
+        
+        Level parameters can be overridden via level templates (Tier 2).
 
         Args:
             max_rooms (int): Maximum number of rooms to generate
@@ -92,14 +94,23 @@ class GameMap:
             player (Entity): Player entity to place
             entities (list): List to populate with generated entities
         """
-        # Create two rooms for demonstration purposes
-        # room1 = Rect(20, 15, 10, 15)
-        # room2 = Rect(35, 15, 10, 15)
-
-        # self.create_room(room1)
-        # self.create_room(room2)
-
-        # self.create_h_tunnel(25, 40, 23)
+        # Check for level template overrides (Tier 2)
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        # Apply level parameter overrides if configured
+        if level_override and level_override.has_parameters():
+            params = level_override.parameters
+            if params.max_rooms is not None:
+                max_rooms = params.max_rooms
+                logger.info(f"Level {self.dungeon_level}: Overriding max_rooms = {max_rooms}")
+            if params.min_room_size is not None:
+                room_min_size = params.min_room_size
+                logger.info(f"Level {self.dungeon_level}: Overriding min_room_size = {room_min_size}")
+            if params.max_room_size is not None:
+                room_max_size = params.max_room_size
+                logger.info(f"Level {self.dungeon_level}: Overriding max_room_size = {room_max_size}")
+        
         rooms = []
         num_rooms = 0
 
@@ -218,7 +229,7 @@ class GameMap:
 
         Uses probability tables that scale with dungeon level to determine
         what entities to spawn and where to place them. Spawn rates can be
-        modified by testing configuration.
+        modified by testing configuration or level template overrides (Tier 2).
 
         Args:
             room (Rect): Room to place entities in
@@ -233,6 +244,17 @@ class GameMap:
         max_items_per_room = from_dungeon_level(
             config.get_max_items_per_room(self.dungeon_level), self.dungeon_level
         )
+        
+        # Apply level parameter overrides if configured (Tier 2)
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        if level_override and level_override.has_parameters():
+            params = level_override.parameters
+            if params.max_monsters_per_room is not None:
+                max_monsters_per_room = params.max_monsters_per_room
+            if params.max_items_per_room is not None:
+                max_items_per_room = params.max_items_per_room
         
         # Get a random number of monsters and items
         number_of_monsters = randint(0, max_monsters_per_room)
