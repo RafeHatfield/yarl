@@ -126,7 +126,7 @@ class TestAISystemIntegration:
                     return [{"message": Mock()}]
 
                 with patch.object(
-                    self.monster.fighter, "attack", side_effect=kill_monster
+                    self.monster.fighter, "attack_d20", side_effect=kill_monster
                 ):
                     # This should handle monster death gracefully
                     self.ai_system.update(0.016)

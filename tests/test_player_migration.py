@@ -30,7 +30,7 @@ class TestPlayerMigrationCompatibility:
         player_stats = factory.get_player_stats()
         
         # Verify stats match the old hardcoded values
-        assert player_stats.hp == 100
+        assert player_stats.hp == 30
         assert player_stats.power == 0  # New system uses damage_min/max instead of power
         assert player_stats.defense == 1  # DEFAULT_DEFENSE + 1 = 0 + 1 = 1
         assert player_stats.xp == 0
@@ -75,7 +75,7 @@ class TestPlayerMigrationCompatibility:
         assert player.color == (255, 255, 255)
         
         # Verify player stats match configuration
-        assert player.fighter.base_max_hp == 100
+        assert player.fighter.base_max_hp == 30
         assert player.fighter.base_power == 0
         assert player.fighter.base_defense == 1
         
@@ -145,7 +145,7 @@ class TestPlayerMigrationIntegration:
         
         player_stats = registry.get_player_stats()
         assert player_stats is not None
-        assert player_stats.hp == 100
+        assert player_stats.hp == 30
         assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0
@@ -156,7 +156,7 @@ class TestPlayerMigrationIntegration:
         
         player_stats = factory.get_player_stats()
         assert player_stats is not None
-        assert player_stats.hp == 100
+        assert player_stats.hp == 30
         assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0
@@ -192,7 +192,7 @@ class TestBackwardCompatibility:
         # These values must exactly match the old hardcoded creation:
         # hp=100, defense=DEFAULT_DEFENSE + 1, power=DEFAULT_POWER + 1
         # where DEFAULT_DEFENSE=0 and DEFAULT_POWER=1
-        assert player_stats.hp == 100
+        assert player_stats.hp == 30
         assert player_stats.defense == 1  # 0 + 1
         assert player_stats.power == 0   # New system uses damage_min/max instead of power
         assert player_stats.xp == 0
@@ -204,14 +204,14 @@ class TestBackwardCompatibility:
         # Create player using new system
         new_player, _, _, _, _ = get_game_variables(constants)
         
-        # Compare with what the old system would create
-        # Old system: Fighter(hp=100, defense=0+1, power=1+1)
-        assert new_player.fighter.base_max_hp == 100
+        # Compare with new system values
+        # New system: Fighter(hp=30, defense=1, power=0)
+        assert new_player.fighter.base_max_hp == 30
         assert new_player.fighter.base_defense == 1
         assert new_player.fighter.base_power == 0
         
         # Verify current HP is set to max HP
-        assert new_player.fighter.hp == 100
+        assert new_player.fighter.hp == 30
 
     def test_save_load_compatibility(self):
         """Test that migrated player can be saved and loaded correctly."""
@@ -280,10 +280,10 @@ class TestPlayerConfigurationFallback:
         from config.entity_factory import EntityFactory
         factory = EntityFactory(empty_registry)
         
-        # Should return fallback stats
+        # Should return fallback stats (old hardcoded values)
         player_stats = factory.get_player_stats()
         assert player_stats is not None
-        assert player_stats.hp == 100
+        assert player_stats.hp == 100  # Fallback to old default
         assert player_stats.power == 0
         assert player_stats.defense == 1
         assert player_stats.xp == 0

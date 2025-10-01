@@ -543,11 +543,12 @@ class TestBasicMonsterAI:
 
         # Mock FOV check
         with patch("components.ai.libtcodpy") as mock_tcod:
-            mock_tcod.map_is_in_fov.return_value = True
-            mock_tcod.white = mock_libtcod.white
+            with patch('random.randint', return_value=20):  # Guarantee critical hit
+                mock_tcod.map_is_in_fov.return_value = True
+                mock_tcod.white = mock_libtcod.white
 
-            # Act
-            results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
+                # Act
+                results = ai.take_turn(target, mock_fov_map, mock_game_map, entities)
 
         # Assert
         assert len(results) >= 1  # Should have attack result

@@ -96,15 +96,16 @@ class TestZombieBugRegression(unittest.TestCase):
         
         # 3. Now AI system runs and kills player
         with patch('components.ai.libtcodpy.map_is_in_fov') as mock_fov:
-            mock_fov.return_value = True
-            
-            # AI system processes monster turn (monster kills player)
-            ai_system.update(0.016)
-            
-            # Player should now be dead (HP can be negative for XP calculation)
-            self.assertLessEqual(self.player.fighter.hp, 0, "Player should be dead after monster attack")
-            self.assertEqual(self.state_manager.state.current_state, GameStates.PLAYER_DEAD,
-                           "Should be in death state after AI kills player")
+            with patch('random.randint', return_value=20):  # Guarantee critical hit
+                mock_fov.return_value = True
+                
+                # AI system processes monster turn (monster kills player)
+                ai_system.update(0.016)
+                
+                # Player should now be dead (HP can be negative for XP calculation)
+                self.assertLessEqual(self.player.fighter.hp, 0, "Player should be dead after monster attack")
+                self.assertEqual(self.state_manager.state.current_state, GameStates.PLAYER_DEAD,
+                               "Should be in death state after AI kills player")
         
         # 4. Try to process another player action (should be blocked)
         zombie_action = {"move": (0, 1)}  # Try to move after death

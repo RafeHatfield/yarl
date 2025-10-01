@@ -794,20 +794,42 @@ def cast_raise_dead(*args, **kwargs):
         base_hp = original_def.stats.hp
         base_defense = original_def.stats.defense
         base_power = original_def.stats.power
+        base_damage_min = getattr(original_def.stats, 'damage_min', 0)
+        base_damage_max = getattr(original_def.stats, 'damage_max', 0)
+        base_strength = getattr(original_def.stats, 'strength', 10)
+        base_dexterity = getattr(original_def.stats, 'dexterity', 10)
+        base_constitution = getattr(original_def.stats, 'constitution', 10)
     else:
         # Fallback defaults if we can't find original
         base_hp = 10
         base_defense = 0
         base_power = 3
+        base_damage_min = 1
+        base_damage_max = 3
+        base_strength = 10
+        base_dexterity = 10
+        base_constitution = 10
     
-    # Create zombie fighter: 2x HP, 0.5x damage
+    # Create zombie fighter: 2x HP, 0.5x damage, reduced stats
     zombie_hp = base_hp * 2
     zombie_power = max(1, int(base_power * 0.5))  # At least 1 damage
+    zombie_damage_min = max(1, int(base_damage_min * 0.5))  # Half natural damage, min 1
+    zombie_damage_max = max(1, int(base_damage_max * 0.5))  # Half natural damage, min 1
+    
+    # Zombies are slow and clumsy but tough
+    zombie_strength = max(6, int(base_strength * 0.75))  # Reduced strength
+    zombie_dexterity = max(6, int(base_dexterity * 0.5))  # Very slow/clumsy
+    zombie_constitution = min(18, int(base_constitution * 1.5))  # Undead are tough
     
     corpse.fighter = Fighter(
         hp=zombie_hp,
         defense=base_defense,
-        power=zombie_power
+        power=zombie_power,
+        damage_min=zombie_damage_min,
+        damage_max=zombie_damage_max,
+        strength=zombie_strength,
+        dexterity=zombie_dexterity,
+        constitution=zombie_constitution
     )
     corpse.fighter.owner = corpse
     

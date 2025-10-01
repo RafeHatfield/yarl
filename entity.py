@@ -326,9 +326,19 @@ class Entity:
             # Find the next coordinates in the computed full path
             x, y = libtcodpy.path_walk(my_path, True)
             if x or y:
-                # Set self's coordinates to the next path tile
-                self.x = x
-                self.y = y
+                # Validate that the destination is not occupied by a blocking entity
+                # (entities might have moved since pathfinding was calculated)
+                destination_blocked = False
+                for entity in entities:
+                    if entity.blocks and entity != self and entity.x == x and entity.y == y:
+                        destination_blocked = True
+                        break
+                
+                # Only move if destination is clear
+                if not destination_blocked:
+                    self.x = x
+                    self.y = y
+                # If blocked, don't move this turn (path will be recalculated next turn)
         else:
             # Keep the old move function as a backup so that if there are no
             # paths (for example another monster blocks a corridor) it will

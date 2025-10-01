@@ -61,18 +61,19 @@ class TestPlayerDeathDuringEnemyTurn(unittest.TestCase):
         """Test that AI system properly handles killing the player."""
         # Mock FOV to allow monster to see player
         with patch('components.ai.libtcodpy.map_is_in_fov') as mock_fov:
-            mock_fov.return_value = True
-            
-            # Run AI system update (monster should attack player)
-            self.ai_system.update(0.016)
-            
-            # Player should be dead (HP <= 0)
-            self.assertLessEqual(self.player.fighter.hp, 0,
-                           "Player should have HP <= 0 after monster attack")
-            
-            # Verify AI system detected player death and changed game state
-            self.assertEqual(self.state_manager.state.current_state, GameStates.PLAYER_DEAD,
-                           "AI system should change game state to PLAYER_DEAD when player dies")
+            with patch('random.randint', return_value=20):  # Guarantee critical hit
+                mock_fov.return_value = True
+                
+                # Run AI system update (monster should attack player)
+                self.ai_system.update(0.016)
+                
+                # Player should be dead (HP <= 0)
+                self.assertLessEqual(self.player.fighter.hp, 0,
+                               "Player should have HP <= 0 after monster attack")
+                
+                # Verify AI system detected player death and changed game state
+                self.assertEqual(self.state_manager.state.current_state, GameStates.PLAYER_DEAD,
+                               "AI system should change game state to PLAYER_DEAD when player dies")
 
 
 class TestDeathDetectionIntegration(unittest.TestCase):

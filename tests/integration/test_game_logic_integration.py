@@ -95,22 +95,23 @@ class TestGameLogicIntegration(unittest.TestCase):
         
         # Mock get_blocking_entities_at_location to return the monster
         with patch('entity.get_blocking_entities_at_location') as mock_get_blocking:
-            mock_get_blocking.return_value = self.monster
-            
-            # Process action
-            _process_game_actions(
-                action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
-            )
-            
-            # Verify player didn't move (blocked by monster)
-            self.assertEqual(self.player.x, 10, "Player should not have moved (blocked by monster)")
-            
-            # Verify monster took damage
-            self.assertLess(self.monster.fighter.hp, 10, "Monster should have taken damage")
-            
-            # Verify message log was called (attack message should be added)
-            self.assertTrue(self.message_log.add_message.called, 
-                          "Attack should generate a message")
+            with patch('random.randint', return_value=20):  # Guarantee critical hit
+                mock_get_blocking.return_value = self.monster
+                
+                # Process action
+                _process_game_actions(
+                    action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
+                )
+                
+                # Verify player didn't move (blocked by monster)
+                self.assertEqual(self.player.x, 10, "Player should not have moved (blocked by monster)")
+                
+                # Verify monster took damage
+                self.assertLess(self.monster.fighter.hp, 10, "Monster should have taken damage")
+                
+                # Verify message log was called (attack message should be added)
+                self.assertTrue(self.message_log.add_message.called, 
+                              "Attack should generate a message")
 
     def test_item_pickup_integration(self):
         """Test complete item pickup flow."""
@@ -169,13 +170,15 @@ class TestGameLogicIntegration(unittest.TestCase):
         self.monster.fighter.hp = 1
         
         # Mock get_blocking_entities_at_location to return the monster
+        # Also mock d20 roll to guarantee a critical hit (killing blow)
         with patch('entity.get_blocking_entities_at_location') as mock_get_blocking:
-            mock_get_blocking.return_value = self.monster
-            
-            # Process action
-            _process_game_actions(
-                action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
-            )
+            with patch('random.randint', return_value=20):  # Critical hit
+                mock_get_blocking.return_value = self.monster
+                
+                # Process action
+                _process_game_actions(
+                    action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
+                )
             
         # Verify monster was transformed into a corpse (remains in entities)
         self.assertIn(self.monster, self.state_manager.state.entities,

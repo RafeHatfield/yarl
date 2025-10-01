@@ -127,11 +127,12 @@ class TestPlayerDeathRegression(unittest.TestCase):
         action = {"move": (1, 0)}
         
         with patch('entity.get_blocking_entities_at_location') as mock_get_blocking:
-            mock_get_blocking.return_value = weak_monster
-            
-            _process_game_actions(
-                action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
-            )
+            with patch('random.randint', return_value=20):  # Guarantee critical hit
+                mock_get_blocking.return_value = weak_monster
+                
+                _process_game_actions(
+                    action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
+                )
             
             # Player should be alive
             self.assertGreater(self.player.fighter.hp, 0, "Player should still be alive")

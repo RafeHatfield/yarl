@@ -191,7 +191,7 @@ class TestSlimeAI:
         self.player.x, self.player.y = 6, 5  # Distance 1 from slime at (5,5)
         
         with patch('components.ai.map_is_in_fov', return_value=True):
-            with patch.object(self.slime.fighter, 'attack') as mock_attack:
+            with patch.object(self.slime.fighter, 'attack_d20') as mock_attack:
                 mock_attack.return_value = [{'message': 'Attack!'}]
                 
                 results = self.slime_ai.take_turn(self.player, self.fov_map, self.game_map, self.entities)
