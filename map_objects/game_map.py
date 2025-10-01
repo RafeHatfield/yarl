@@ -6,12 +6,14 @@ room generation with connecting tunnels.
 """
 
 from random import randint
+import logging
 
 from components.ai import BasicMonster
 from components.equippable import Equippable
 from components.fighter import Fighter
 from components.item import Item
 from config.entity_factory import get_entity_factory
+from config.level_template_registry import get_level_template_registry
 from entity import Entity
 from entity_sorting_cache import invalidate_entity_cache
 from equipment_slots import EquipmentSlots
@@ -23,6 +25,8 @@ from random_utils import from_dungeon_level, random_choice_from_dict
 from render_functions import RenderOrder
 from stairs import Stairs
 from config.testing_config import get_testing_config
+
+logger = logging.getLogger(__name__)
 
 
 class GameMap:
@@ -168,6 +172,9 @@ class GameMap:
             stairs=stairs_component,
         )
         entities.append(down_stairs)
+        
+        # Apply guaranteed spawns from level templates (if configured)
+        self.place_guaranteed_spawns(rooms, entities)
 
     def create_room(self, room):
         """Create a room by making tiles passable.
@@ -388,3 +395,122 @@ class GameMap:
         )
 
         return entities
+    
+    def place_guaranteed_spawns(self, rooms, entities):
+        """Place guaranteed spawns from level templates.
+        
+        Checks if the current dungeon level has guaranteed spawns configured
+        in the level template registry. If so, places those entities according
+        to the configured mode ('additional' or 'replace').
+        
+        Args:
+            rooms (list): List of Rect objects representing rooms
+            entities (list): List to add new entities to
+        """
+        if not rooms:
+            logger.warning("No rooms available for guaranteed spawns")
+            return
+            
+        # Get level template registry
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        if not level_override:
+            # No override configured for this level
+            return
+            
+        logger.info(
+            f"Applying guaranteed spawns for level {self.dungeon_level} "
+            f"(mode: {level_override.mode})"
+        )
+        
+        # If mode is 'replace', clear existing entities (except player and stairs)
+        if level_override.mode == 'replace':
+            original_count = len(entities)
+            # Keep only player and stairs
+            entities[:] = [
+                e for e in entities 
+                if e.name == 'Player' or (hasattr(e, 'stairs') and e.stairs)
+            ]
+            removed_count = original_count - len(entities)
+            logger.info(f"Replaced {removed_count} random spawns with guaranteed spawns")
+            
+        entity_factory = get_entity_factory()
+        spawned_count = 0
+        failed_count = 0
+        
+        # Place guaranteed monsters
+        for spawn in level_override.guaranteed_monsters:
+            for i in range(spawn.count):
+                x, y = self._find_random_unoccupied_position(rooms, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find unoccupied position for {spawn.entity_type}, "
+                        f"spawned {i}/{spawn.count}"
+                    )
+                    failed_count += 1
+                    break
+                    
+                monster = entity_factory.create_monster(spawn.entity_type, x, y)
+                if monster:
+                    # Try to spawn equipment on the monster
+                    from components.monster_equipment import spawn_equipment_on_monster
+                    spawn_equipment_on_monster(monster, self.dungeon_level)
+                    
+                    entities.append(monster)
+                    invalidate_entity_cache("guaranteed_spawn_monster")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create monster: {spawn.entity_type}")
+                    failed_count += 1
+                    
+        # Place guaranteed items and equipment
+        for spawn in (level_override.guaranteed_items + level_override.guaranteed_equipment):
+            for i in range(spawn.count):
+                x, y = self._find_random_unoccupied_position(rooms, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find unoccupied position for {spawn.entity_type}, "
+                        f"spawned {i}/{spawn.count}"
+                    )
+                    failed_count += 1
+                    break
+                    
+                item = entity_factory.create_item(spawn.entity_type, x, y)
+                if item:
+                    entities.append(item)
+                    invalidate_entity_cache("guaranteed_spawn_item")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create item: {spawn.entity_type}")
+                    failed_count += 1
+                    
+        logger.info(
+            f"Guaranteed spawns complete: {spawned_count} placed, {failed_count} failed"
+        )
+        
+    def _find_random_unoccupied_position(self, rooms, entities, max_attempts=50):
+        """Find a random unoccupied position in the given rooms.
+        
+        Args:
+            rooms (list): List of Rect objects to search
+            entities (list): List of existing entities to avoid
+            max_attempts (int): Maximum number of random placement attempts
+            
+        Returns:
+            tuple: (x, y) coordinates, or (None, None) if no position found
+        """
+        for attempt in range(max_attempts):
+            # Pick a random room
+            room = rooms[randint(0, len(rooms) - 1)]
+            
+            # Pick a random position in that room
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if position is unoccupied
+            if not any(entity.x == x and entity.y == y for entity in entities):
+                return (x, y)
+                
+        # Could not find a position after max_attempts
+        return (None, None)

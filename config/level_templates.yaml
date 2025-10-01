@@ -1,0 +1,25 @@
+# Level Templates Configuration
+# 
+# This file defines overrides and guaranteed spawns for specific dungeon levels
+# in normal gameplay mode.
+#
+# Currently empty - no overrides in normal gameplay.
+# Add level-specific configurations here as needed.
+
+version: "1.0"
+
+level_overrides: {}
+  # Example configuration (commented out):
+  # 5:
+  #   guaranteed_spawns:
+  #     mode: "additional"  # Options: "additional" (add to random) or "replace" (only guaranteed)
+  #     monsters:
+  #       - type: "orc"
+  #         count: 2
+  #     items:
+  #       - type: "healing_potion"
+  #         count: 1
+  #     equipment:
+  #       - type: "sword"
+  #         count: 1
+

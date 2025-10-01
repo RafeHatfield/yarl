@@ -93,7 +93,9 @@ These features add new gameplay dimensions and significantly expand the game's d
 | **Ranged Weapons** | 2-3 weeks | 🔥 High | Need targeting system extension | Projectile mechanics, line-of-sight calculations |
 | **Boss Encounters** | 3-4 weeks | 🔥 High | Special AI behaviors and mechanics | Custom AI states, unique abilities |
 | **Environmental Hazards** | 2-4 weeks | 🔥 High | Traps, poison, lava - tactical positioning | New tile types, damage-over-time systems |
-| **Manual Level Design** | 4-6 weeks | 🔥 High | Hand-crafted special levels (orc villages, boss lairs) | Level templates, custom spawns, room layouts |
+| **Manual Level Design - Tier 1** | ✅ Complete | 🔥 High | Guaranteed spawns for testing (YAML-based) | Template system with mode control (additional/replace) |
+| **Manual Level Design - Tier 2** | 2-3 weeks | 🔥 High | Level parameters & special rooms | Room count/size control, themed room types |
+| **Manual Level Design - Tier 3** | 3-4 weeks | 🔥 High | Full level crafting with ASCII maps | Custom maps, precise entity placement, boss arenas |
 
 **Combined Impact:** Adds strategic depth and memorable encounters.
 
@@ -276,9 +278,9 @@ This roadmap should be updated:
 - **Modern Architecture** - ECS, state machines, performance optimization
 
 ### **🎯 Next Up**
-- ✅ **Variable Monster Damage** - Extend damage ranges to monsters (Complete)
-- **Monster Equipment & Loot** - Monsters wield and drop weapons/armor
-- **General Loot Drops** - All monsters drop items when defeated
+- ✅ **Manual Level Design - Tier 1** - Guaranteed spawns for testing (Complete)
+- **Manual Level Design - Tier 2** - Level parameters & special themed rooms
+- **Manual Level Design - Tier 3** - Full ASCII map-based level crafting
 
 ---
 
