@@ -111,24 +111,58 @@ class Fighter:
     
     @property
     def armor_class(self):
-        """Calculate Armor Class (AC) for d20 combat system.
+        """Calculate Armor Class (AC) for d20 combat system with DEX caps.
         
-        AC = 10 + DEX modifier + armor AC bonus from all equipped items
+        AC = 10 + capped DEX modifier + armor AC bonus from all equipped items
+        
+        DEX Modifier Capping:
+        - Light Armor: No cap (full DEX bonus)
+        - Medium Armor: Cap at +2 DEX
+        - Heavy Armor: Cap at 0 DEX (no DEX bonus!)
+        - Multiple armor pieces: Use the MOST RESTRICTIVE cap
+        
+        Example:
+            DEX 18 (+4), wearing Plate Mail (heavy, dex_cap=0):
+            AC = 10 + 0 (capped) + 6 (plate) = 16
+            
+            DEX 18 (+4), wearing Studded Leather (light, no cap):
+            AC = 10 + 4 (full) + 3 (studded) = 17
         
         Returns:
-            int: Armor Class (typically 10-20)
+            int: Armor Class (typically 10-25)
         """
         base_ac = 10
         dex_bonus = self.dexterity_mod
         
-        # Get armor AC bonus from ALL equipped items
+        # Get armor AC bonus and determine DEX cap from ALL equipped items
         armor_ac_bonus = 0
+        most_restrictive_dex_cap = None  # None = no cap
+        
         if self.owner and hasattr(self.owner, 'equipment') and self.owner.equipment:
             equipment = self.owner.equipment
             for item in [equipment.main_hand, equipment.off_hand, 
                         equipment.head, equipment.chest, equipment.feet]:
                 if item and hasattr(item, 'equippable'):
-                    armor_ac_bonus += getattr(item.equippable, 'armor_class_bonus', 0)
+                    equippable = item.equippable
+                    
+                    # Add AC bonus
+                    armor_ac_bonus += getattr(equippable, 'armor_class_bonus', 0)
+                    
+                    # Check for DEX cap (only for armor, not weapons/shields)
+                    armor_type = getattr(equippable, 'armor_type', None)
+                    item_dex_cap = getattr(equippable, 'dex_cap', None)
+                    
+                    # Apply DEX cap if this is armor (not weapon or shield)
+                    if armor_type in ['light', 'medium', 'heavy'] and item_dex_cap is not None:
+                        # Use the most restrictive (lowest) cap
+                        if most_restrictive_dex_cap is None:
+                            most_restrictive_dex_cap = item_dex_cap
+                        else:
+                            most_restrictive_dex_cap = min(most_restrictive_dex_cap, item_dex_cap)
+        
+        # Apply DEX cap if we found one
+        if most_restrictive_dex_cap is not None:
+            dex_bonus = min(dex_bonus, most_restrictive_dex_cap)
         
         return base_ac + dex_bonus + armor_ac_bonus
 

@@ -113,12 +113,21 @@ class WeaponDefinition:
 
 @dataclass
 class ArmorDefinition:
-    """Definition for an armor item."""
+    """Definition for an armor item.
+    
+    Armor Types & DEX Caps:
+    - light: No DEX cap (full DEX bonus applies to AC)
+    - medium: DEX cap +2 (max +2 DEX bonus to AC)
+    - heavy: DEX cap 0 (no DEX bonus to AC)
+    - shield: No impact on DEX cap
+    """
     name: str
     defense_bonus: int = 0
     defense_min: int = 0
     defense_max: int = 0
     armor_class_bonus: int = 0  # AC bonus for d20 combat
+    armor_type: Optional[str] = None  # light, medium, heavy, shield
+    dex_cap: Optional[int] = None  # Max DEX modifier for AC (None = no cap)
     slot: str = "off_hand"
     char: str = "["
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -341,6 +350,8 @@ class EntityRegistry:
                     defense_min=armor_data.get('defense_min', 0),
                     defense_max=armor_data.get('defense_max', 0),
                     armor_class_bonus=armor_data.get('armor_class_bonus', 0),
+                    armor_type=armor_data.get('armor_type'),  # light, medium, heavy, shield
+                    dex_cap=armor_data.get('dex_cap'),  # Max DEX modifier for AC
                     slot=armor_data.get('slot', 'off_hand'),
                     char=armor_data.get('char', '['),
                     color=tuple(armor_data.get('color', [139, 69, 19])),

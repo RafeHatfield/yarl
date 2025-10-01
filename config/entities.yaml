@@ -205,38 +205,141 @@ weapons:
     char: "/"
     color: [192, 192, 192]  # Silver
 
-# Armor definitions  
+# Armor definitions
+#
+# Armor Types & DEX Caps:
+# - Light Armor: +2-3 AC, no DEX cap (full DEX bonus applies)
+# - Medium Armor: +4-5 AC, DEX cap +2 (max +2 DEX bonus to AC)
+# - Heavy Armor: +6-8 AC, DEX cap 0 (no DEX bonus to AC)
+#
+# This creates meaningful trade-offs: high DEX characters prefer light armor,
+# while low DEX characters benefit from heavy armor protection.
 armor:
-  # Basic shield
+  # ═══════════════════════════════════════════════════════════
+  # SHIELDS (Off-Hand Slot)
+  # ═══════════════════════════════════════════════════════════
   shield:
     defense_bonus: 0
     defense_min: 1
     defense_max: 3
     armor_class_bonus: 2  # +2 AC for shields
+    armor_type: "shield"  # Shields don't affect DEX cap
     slot: "off_hand"
     char: "["
     color: [139, 69, 19]  # Brown
 
-  # Leather helmet - basic head armor
+  # ═══════════════════════════════════════════════════════════
+  # LIGHT ARMOR (No DEX Cap)
+  # ═══════════════════════════════════════════════════════════
+  
+  # HEAD SLOT - Light
   leather_helmet:
     armor_class_bonus: 1  # +1 AC
+    armor_type: "light"
     slot: "head"
     char: "^"
     color: [160, 82, 45]  # Sienna brown
 
-  # Leather armor - basic chest armor
+  # CHEST SLOT - Light
   leather_armor:
     armor_class_bonus: 2  # +2 AC
+    armor_type: "light"
     slot: "chest"
     char: "["
     color: [139, 69, 19]  # Saddle brown
+  
+  studded_leather_armor:
+    armor_class_bonus: 3  # +3 AC (better light armor)
+    armor_type: "light"
+    slot: "chest"
+    char: "["
+    color: [101, 67, 33]  # Dark brown with studs
 
-  # Leather boots - basic foot armor
+  # FEET SLOT - Light
   leather_boots:
     armor_class_bonus: 1  # +1 AC
+    armor_type: "light"
     slot: "feet"
     char: "]"
     color: [101, 67, 33]  # Dark brown
+
+  # ═══════════════════════════════════════════════════════════
+  # MEDIUM ARMOR (DEX Cap +2)
+  # ═══════════════════════════════════════════════════════════
+  
+  # HEAD SLOT - Medium
+  chain_coif:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "head"
+    char: "^"
+    color: [192, 192, 192]  # Silver
+
+  # CHEST SLOT - Medium
+  chain_mail:
+    armor_class_bonus: 4  # +4 AC
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "chest"
+    char: "["
+    color: [169, 169, 169]  # Dark gray
+  
+  scale_mail:
+    armor_class_bonus: 5  # +5 AC (better medium armor)
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "chest"
+    char: "["
+    color: [128, 128, 128]  # Gray
+
+  # FEET SLOT - Medium
+  chain_boots:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "feet"
+    char: "]"
+    color: [192, 192, 192]  # Silver
+
+  # ═══════════════════════════════════════════════════════════
+  # HEAVY ARMOR (DEX Cap 0 - No DEX Bonus!)
+  # ═══════════════════════════════════════════════════════════
+  
+  # HEAD SLOT - Heavy
+  plate_helmet:
+    armor_class_bonus: 3  # +3 AC
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "head"
+    char: "^"
+    color: [211, 211, 211]  # Light gray (polished)
+
+  # CHEST SLOT - Heavy
+  plate_mail:
+    armor_class_bonus: 6  # +6 AC
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "chest"
+    char: "["
+    color: [220, 220, 220]  # Bright silver
+  
+  full_plate:
+    armor_class_bonus: 8  # +8 AC (best armor in game!)
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "chest"
+    char: "["
+    color: [230, 230, 230]  # Shining silver
+
+  # FEET SLOT - Heavy
+  plate_boots:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "feet"
+    char: "]"
+    color: [211, 211, 211]  # Light gray
 
 # Spell and consumable definitions
 spells:

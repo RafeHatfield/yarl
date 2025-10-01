@@ -212,7 +212,9 @@ class EntityFactory:
                 defense_bonus=armor_def.defense_bonus,
                 defense_min=armor_def.defense_min,
                 defense_max=armor_def.defense_max,
-                armor_class_bonus=armor_def.armor_class_bonus
+                armor_class_bonus=armor_def.armor_class_bonus,
+                armor_type=armor_def.armor_type,
+                dex_cap=armor_def.dex_cap
             )
 
             # Create entity

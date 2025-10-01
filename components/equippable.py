@@ -22,12 +22,15 @@ class Equippable:
         damage_max (int): Maximum damage for weapons (0 for non-weapons)
         defense_min (int): Minimum defense for armor (0 for non-armor)
         defense_max (int): Maximum defense for armor (0 for non-armor)
+        armor_type (str): Type of armor (light/medium/heavy/shield/weapon)
+        dex_cap (int): Maximum DEX modifier that applies to AC (None = no cap)
         owner (Entity): The entity that owns this component
     """
 
     def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0,
                  armor_class_bonus=0, to_hit_bonus=0,
-                 damage_min=0, damage_max=0, defense_min=0, defense_max=0):
+                 damage_min=0, damage_max=0, defense_min=0, defense_max=0,
+                 armor_type=None, dex_cap=None):
         """Initialize an Equippable component.
 
         Args:
@@ -41,6 +44,8 @@ class Equippable:
             damage_max (int, optional): Maximum weapon damage. Defaults to 0.
             defense_min (int, optional): Minimum armor defense. Defaults to 0.
             defense_max (int, optional): Maximum armor defense. Defaults to 0.
+            armor_type (str, optional): Armor type (light/medium/heavy). Defaults to None.
+            dex_cap (int, optional): Max DEX modifier for AC (None = no cap). Defaults to None.
         """
         self.slot = slot
         self.power_bonus = power_bonus
@@ -52,6 +57,8 @@ class Equippable:
         self.damage_max = damage_max if damage_max >= damage_min else damage_min
         self.defense_min = defense_min if defense_min > 0 else 0
         self.defense_max = defense_max if defense_max >= defense_min else defense_min
+        self.armor_type = armor_type  # light, medium, heavy, shield, or weapon
+        self.dex_cap = dex_cap  # Maximum DEX modifier that applies to AC (None = no cap)
         self.owner = None  # Will be set by Entity when component is registered
     
     def get_damage_range_text(self) -> str:
