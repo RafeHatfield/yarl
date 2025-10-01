@@ -464,8 +464,8 @@ class GameMap:
                     logger.warning(f"Failed to create monster: {spawn.entity_type}")
                     failed_count += 1
                     
-        # Place guaranteed items and equipment
-        for spawn in (level_override.guaranteed_items + level_override.guaranteed_equipment):
+        # Place guaranteed items (spells/potions)
+        for spawn in level_override.guaranteed_items:
             for i in range(spawn.count):
                 x, y = self._find_random_unoccupied_position(rooms, entities)
                 if x is None:
@@ -476,13 +476,39 @@ class GameMap:
                     failed_count += 1
                     break
                     
-                item = entity_factory.create_item(spawn.entity_type, x, y)
+                # Try to create as spell/potion (most items are spells)
+                item = entity_factory.create_spell_item(spawn.entity_type, x, y)
                 if item:
                     entities.append(item)
                     invalidate_entity_cache("guaranteed_spawn_item")
                     spawned_count += 1
                 else:
                     logger.warning(f"Failed to create item: {spawn.entity_type}")
+                    failed_count += 1
+                    
+        # Place guaranteed equipment (weapons/armor)
+        for spawn in level_override.guaranteed_equipment:
+            for i in range(spawn.count):
+                x, y = self._find_random_unoccupied_position(rooms, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find unoccupied position for {spawn.entity_type}, "
+                        f"spawned {i}/{spawn.count}"
+                    )
+                    failed_count += 1
+                    break
+                    
+                # Try to create equipment (try both weapon and armor)
+                equipment = entity_factory.create_armor(spawn.entity_type, x, y)
+                if not equipment:
+                    equipment = entity_factory.create_weapon(spawn.entity_type, x, y)
+                    
+                if equipment:
+                    entities.append(equipment)
+                    invalidate_entity_cache("guaranteed_spawn_equipment")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create equipment: {spawn.entity_type}")
                     failed_count += 1
                     
         logger.info(

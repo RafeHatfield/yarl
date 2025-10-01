@@ -45,6 +45,13 @@ class BasicMonster:
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         if map_is_in_fov(fov_map, monster.x, monster.y):
+            # Check if target is invisible - if so, can't see them
+            if (hasattr(target, 'has_status_effect') and 
+                callable(target.has_status_effect) and 
+                target.has_status_effect('invisibility') is True):
+                MonsterActionLogger.log_turn_summary(monster, ["cannot_see_invisible_target"])
+                return results
+            
             # Check for item usage first (scrolls, potions, etc.)
             item_usage_action = self._try_item_usage(target, game_map, entities)
             if item_usage_action:
