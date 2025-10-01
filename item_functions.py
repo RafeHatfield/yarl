@@ -757,6 +757,19 @@ def cast_raise_dead(*args, **kwargs):
         })
         return results
     
+    # Check if there's already a blocking entity at the corpse's location
+    from entity import get_blocking_entities_at_location
+    blocking_entity = get_blocking_entities_at_location(entities, corpse.x, corpse.y)
+    if blocking_entity and blocking_entity != corpse:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                f"Cannot resurrect corpse - {blocking_entity.name} is in the way!",
+                (255, 255, 0)
+            )
+        })
+        return results
+    
     # Resurrect the corpse!
     # Extract original name
     original_name = corpse.name.replace("remains of ", "")

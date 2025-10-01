@@ -38,6 +38,33 @@ class TestRaiseDeadScroll(unittest.TestCase):
         # Entities list
         self.entities = [self.player, self.corpse]
         
+    def test_raise_dead_blocked_by_entity(self):
+        """Test that resurrection fails if a blocking entity is on the corpse."""
+        # Create an orc standing on the corpse
+        orc = Entity(3, 3, 'o', (0, 255, 0), 'Orc', blocks=True)
+        orc.fighter = Fighter(hp=20, defense=0, power=4)
+        orc.fighter.owner = orc
+        self.entities.append(orc)
+        
+        # Try to resurrect the corpse
+        results = cast_raise_dead(
+            self.player,
+            entities=self.entities,
+            target_x=3,
+            target_y=3,
+            range=5
+        )
+        
+        # Should fail with message about blocking entity
+        self.assertEqual(len(results), 1)
+        self.assertFalse(results[0]["consumed"])
+        self.assertIn("Orc is in the way", results[0]["message"].text)
+        
+        # Corpse should still be a corpse
+        self.assertEqual(self.corpse.name, "remains of orc")
+        self.assertFalse(self.corpse.blocks)
+        self.assertIsNone(self.corpse.fighter)
+    
     def test_raise_dead_basic_resurrection(self):
         """Test basic corpse resurrection."""
         # Mock the entity registry to return orc stats
@@ -362,13 +389,16 @@ class TestMindlessZombieAI(unittest.TestCase):
         first_target = self.zombie.ai.current_target
         self.assertIn(first_target, [self.player, self.orc])  # Should be one of adjacent targets
         
-        # Second attack - should continue attacking same target
-        results2 = self.zombie.ai.take_turn(
-            target=None,
-            fov_map=None,
-            game_map=self.game_map,
-            entities=entities
-        )
+        # Second attack - mock random to NOT switch targets (>= 0.5)
+        with patch('random.random') as mock_random:
+            mock_random.return_value = 0.6  # Don't switch (>= 0.5)
+            
+            results2 = self.zombie.ai.take_turn(
+                target=None,
+                fov_map=None,
+                game_map=self.game_map,
+                entities=entities
+            )
         
         # Should still be attacking the same target
         self.assertEqual(self.zombie.ai.current_target, first_target)
