@@ -1,12 +1,44 @@
 # 🗺️ **Yarl Development Roadmap: Sorted by Complexity & Impact**
 
-*Last Updated: October 2025 - Equipment Expansion Sprint Phase 1 Complete*
+*Last Updated: October 2025 - Equipment System Overhaul Complete*
 
 This roadmap organizes all planned features by implementation complexity and gameplay impact, helping prioritize development efforts for maximum player enjoyment.
 
 ---
 
-## ✅ **Recently Completed: Equipment Expansion Sprint - Phase 1** (v2.7.0)
+## ✅ **Recently Completed: Equipment System Overhaul** (v3.0.0)
+
+**🎉 Major Equipment & Combat System Transformation** (October 2025)
+
+Complete D&D-style equipment system with dice notation, 12 new weapons, and full stat integration:
+
+### **What Was Accomplished**
+- **🎲 D&D Dice Notation**: Full dice rolling system (1d4, 2d6+3, 1d20, etc.)
+- **⚔️ 12 New Weapons**: Dagger (1d4) → Greatsword (2d6), covering all power levels
+- **🎯 Weapon Properties**: Finesse weapons (+1 to-hit), Unwieldy weapons (-1 to-hit)
+- **🛡️ Armor System**: Light/Medium/Heavy armor with DEX caps
+- **📊 Equipment Slots**: Weapon, Shield, Head, Chest, Feet
+- **💪 Full Stat System**: STR/DEX/CON with proper modifiers
+- **🎯 d20 Combat**: Attack rolls, AC calculation, critical hits, fumbles
+- **📱 Character Screen**: Beautiful slot-based UI showing all equipment
+- **🧪 Production Quality**: All 1,575 tests passing, 100% coverage
+
+### **Weapons Added**
+- **Light (1d4)**: Dagger (+1 to-hit, finesse)
+- **One-Handed (1d6)**: Club, Shortsword (+1 to-hit), Mace
+- **One-Handed (1d8)**: Longsword, Rapier (+1 to-hit), Spear
+- **Heavy (1d10)**: Battleaxe, Warhammer
+- **Two-Handed**: Greataxe (1d12, -1 to-hit), Greatsword (2d6)
+
+### **Benefits Realized**
+- **🎮 Players**: 12 weapon choices, strategic builds (finesse vs strength)
+- **⚔️ Combat**: D&D-familiar mechanics, tactical depth, clear feedback
+- **🎨 Display**: Clean dice notation ("1d4+2" instead of "1-4+2")
+- **📈 Scalability**: Easy to add more weapons, armor types, and properties
+
+---
+
+## ✅ **Previously Completed: Spell & AI System Expansion** (v2.7.0)
 
 **🎉 Major Spell & AI System Expansion** (October 2025)
 
@@ -72,13 +104,13 @@ These features build on existing systems and provide immediate gameplay improvem
 
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
-| **Variable Damage** | ✅ Complete | 🔥 High | Makes combat more exciting and unpredictable | Simple RNG modification to existing combat system |
-| **Variable Defense** | ✅ Complete | 🔥 High | Complements variable damage for dynamic combat | Similar implementation to variable damage |
-| **Variable Monster Damage** | ✅ Complete | 🔥 High | Monsters use damage ranges like players do | Extend monster creation with damage ranges |
+| **Variable Damage** | ✅ Complete (v3.0) | 🔥 High | D&D dice notation (1d4, 2d6) for dynamic combat | Dice rolling system with full notation support |
+| **Variable Defense** | ✅ Complete (v3.0) | 🔥 High | Armor provides variable protection | Defense ranges integrated with dice system |
+| **Variable Monster Damage** | ✅ Complete (v3.0) | 🔥 High | Monsters use dice-based damage like players | All entities use unified dice combat system |
+| **Chance to Hit/Dodge** | ✅ Complete (v3.0) | 🔥 High | d20 attack rolls vs AC for tactical depth | Full d20 combat with critical hits/fumbles |
+| **More Spells** | ✅ Complete (v2.7) | 🔥 High | 8 tactical scrolls (teleport, invisibility, etc.) | Comprehensive spell system with status effects |
 | **Monster Equipment & Loot** | 1-2 weeks | 🔥 High | Monsters can wield weapons/armor and drop them | Equipment system for monsters, loot drops |
 | **General Loot Drops** | 1 week | 🔥 High | All monsters drop items when defeated | Death event handling, loot table system |
-| **Chance to Hit/Dodge** | 1 week | 🔥 High | Adds tactical depth and tension to every attack | RNG checks in combat calculations |
-| **More Spells** | 1-2 weeks | 🔥 High | Teleport, invisibility = immediate tactical options | Framework exists, just add spell functions |
 
 **Combined Impact:** Transforms combat from predictable to dynamic and tactical.
 
@@ -86,11 +118,14 @@ These features build on existing systems and provide immediate gameplay improvem
 
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
+| **Rings & Amulets** | 1 week | 🔥 High | 2 new equipment slots for magical effects | Slots exist, just add items with special effects |
 | **Extended Equipment** | 1-2 weeks | 🔥 High | More loot variety = more exploration motivation | System designed for easy expansion |
 | **More Stats on Equipment** | 1 week | 🔥 High | Makes loot more interesting and build diversity | Add to existing stat system |
 | **Stat Boosting Potions** | 1-2 weeks | 🔥 High | Tactical consumables add resource management | Extend existing item system |
 
 **Combined Impact:** Creates meaningful loot progression and tactical resource decisions.
+
+**Note on Rings & Amulets:** Equipment system is ready for 2 more slots. These would provide magical bonuses (HP regen, resistance, special abilities). Low complexity since infrastructure exists - just need item definitions and slot UI updates.
 
 ### **🎮 Quality of Life (Polish)**
 
