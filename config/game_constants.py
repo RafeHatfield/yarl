@@ -157,21 +157,21 @@ class ItemSpawnConfig:
     """Configuration for item spawn rates in normal gameplay."""
     
     # Healing potion spawn rates (level-dependent)
-    HEALING_POTION_LEVEL_1: int = 60  # Higher rate on level 1 for balance
-    HEALING_POTION_DEFAULT: int = 35  # Standard rate for other levels
+    HEALING_POTION_LEVEL_1: int = 55  # Higher rate on level 1 for balance (reduced from 60)
+    HEALING_POTION_DEFAULT: int = 28  # Standard rate for other levels (reduced from 35)
     
     # Equipment spawn rates (format: [[chance, min_level], ...])
     # Note: These are used by from_dungeon_level() function
     SWORD_SPAWN: list = None  # [[5, 4]] - 5% from level 4
     SHIELD_SPAWN: list = None  # [[15, 8]] - 15% from level 8
     
-    # Scroll spawn rates
+    # Scroll spawn rates (format: [[chance%, min_level], ...])
     LIGHTNING_SCROLL_SPAWN: list = None  # [[25, 4]]
     FIREBALL_SCROLL_SPAWN: list = None  # [[25, 6]]
-    CONFUSION_SCROLL_SPAWN: list = None  # [[10, 2]]
-    INVISIBILITY_SCROLL_SPAWN: list = None  # [[15, 4]]
-    ENHANCE_WEAPON_SCROLL_SPAWN: list = None  # [[10, 5]]
-    ENHANCE_ARMOR_SCROLL_SPAWN: list = None  # [[10, 6]]
+    CONFUSION_SCROLL_SPAWN: list = None  # [[12, 2]] - increased from 10 for variety
+    INVISIBILITY_SCROLL_SPAWN: list = None  # [[18, 3]] - increased from 15, starts level 3
+    ENHANCE_WEAPON_SCROLL_SPAWN: list = None  # [[12, 5]] - increased from 10
+    ENHANCE_ARMOR_SCROLL_SPAWN: list = None  # [[12, 6]] - increased from 10
     
     def __post_init__(self):
         """Initialize list values after dataclass creation."""
@@ -184,13 +184,13 @@ class ItemSpawnConfig:
         if self.FIREBALL_SCROLL_SPAWN is None:
             self.FIREBALL_SCROLL_SPAWN = [[25, 6]]
         if self.CONFUSION_SCROLL_SPAWN is None:
-            self.CONFUSION_SCROLL_SPAWN = [[10, 2]]
+            self.CONFUSION_SCROLL_SPAWN = [[12, 2]]  # Increased for variety
         if self.INVISIBILITY_SCROLL_SPAWN is None:
-            self.INVISIBILITY_SCROLL_SPAWN = [[15, 4]]
+            self.INVISIBILITY_SCROLL_SPAWN = [[18, 3]]  # Increased, starts earlier
         if self.ENHANCE_WEAPON_SCROLL_SPAWN is None:
-            self.ENHANCE_WEAPON_SCROLL_SPAWN = [[10, 5]]
+            self.ENHANCE_WEAPON_SCROLL_SPAWN = [[12, 5]]  # Increased for variety
         if self.ENHANCE_ARMOR_SCROLL_SPAWN is None:
-            self.ENHANCE_ARMOR_SCROLL_SPAWN = [[10, 6]]
+            self.ENHANCE_ARMOR_SCROLL_SPAWN = [[12, 6]]  # Increased for variety
     
     def get_item_spawn_chances(self, dungeon_level: int) -> dict:
         """Get item spawn chances for normal gameplay.
