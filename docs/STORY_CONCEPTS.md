@@ -238,12 +238,38 @@
 - Currently shows statistics
 - **Add**: Brief dialogue from entity
 - **Add**: Entity's commentary on your performance
-- **Example**: 
-  ```
-  "47 kills this time. Better. But still not enough.
-   The [artifact] remains out of reach.
-   Again."
-  ```
+- **Tone**: Sarcastically condescending, dismissive
+
+**Example Quotes** (matching current personality direction):
+
+*On death to weak monster:*
+- "A goblin? Really? How embarrassingly mortal of you."
+- "Well, that was... pathetic. Let's try that again, shall we?"
+- "I'd say I'm disappointed, but that would imply I had expectations."
+
+*On death to strong monster:*
+- "Ah yes, the [monster]. Ambitious. Foolish, but ambitious."
+- "At least you aimed high before failing spectacularly."
+- "Impressive that you made it that far. Not impressive that you died, but still."
+
+*On good run (reached deep levels):*
+- "Oh? You almost made it. Almost. But 'almost' doesn't retrieve artifacts, does it?"
+- "Level [X]. Not terrible. For you, anyway."
+- "I suppose that was... adequate. By mortal standards."
+
+*On multiple quick deaths:*
+- "Again already? I've barely had time to prepare the next vessel."
+- "Do try to make this one last more than a few moments, would you?"
+- "Your enthusiasm for dying is noted. Perhaps try *not* dying?"
+
+*On collecting treasure:*
+- "Yes, yes, bring that to me. It's the least you can do."
+- "Finally, something useful from your little expedition."
+- "Adequate. Though I could have retrieved it myself if I weren't... otherwise occupied."
+
+*On quick restart (pressing R):*
+- "Eager for another beating, are we? Admirable. Foolish, but admirable."
+- "Back so soon? I like your determination. Pity about your competence."
 
 ### Main Menu
 - Add brief lore text
@@ -304,15 +330,49 @@ When ready for deeper integration:
 
 ---
 
-## Questions to Resolve
+## Current Direction (Decisions Made)
+
+### ✅ Entity Personality
+**Sarcastically overbearing, overconfident in supremacy, extremely condescending**
+- Treats you as an expendable tool
+- Views your deaths as minor inconveniences
+- Supremely confident in their power
+- Mocks your failures but not in a cruel way - more dismissive
+- "Oh. You're back. How... unsurprising."
+
+### ✅ Overall Tone
+**Epic but doesn't take itself too seriously**
+- Not slapstick comedy, but in that direction
+- Stakes are real but presentation has levity
+- Think: heroic fantasy with wit
+- Entity's arrogance provides humor
+- Player's struggle is genuine but entity's attitude deflates drama
+
+### 🤔 Story Revelation
+**Slowly comes together as you play** (leaning this way)
+- Not all explained upfront
+- Pieces revealed through play
+- Environmental clues, dialogue snippets
+- Mystery encourages exploration
+- Multiple playthroughs reveal more
+
+### 🤔 Entity Identity
+**Dragon in person form? (Very early idea)**
+- Classic fantasy, fits tone
+- Explains treasure obsession (dragon hoard)
+- Arrogance/supremacy fits dragon archetype
+- Could be other powerful creature
+- TBD - exploring options
+
+---
+
+## Questions Still to Resolve
 
 1. What's the entity's name? Or do they remain nameless?
-2. What tone do we want? (Dark comedy, horror, epic, mystery?)
-3. Which "why the dungeon" option resonates most?
-4. How sympathetic should the entity be?
-5. Do we want multiple endings or one true ending?
-6. Should the story be explicit or mysterious/interpretive?
-7. How much dialogue? (Minimalist or narrative-heavy?)
+2. Which "why the dungeon" option resonates most?
+3. How sympathetic should the entity be? (Probably not very, given personality)
+4. Do we want multiple endings or one true ending?
+5. How much dialogue? (Minimalist or narrative-heavy?)
 
 ---
 
@@ -330,6 +390,34 @@ When ready for deeper integration:
 
 *Use this section for freeform brainstorming:*
 
+### Dragon Entity Ideas
+If we go with dragon-in-person-form:
+- Classic fantasy trope but with our twist
+- Explains obsession with treasure/artifacts
+- Dragon's hoard = the dungeon itself?
+- Arrogance fits dragon archetype perfectly
+- Too "injured/cursed/lazy" to delve themselves, so uses you
+- Reveal: Late game you discover their true form
+- Maybe they're wounded and can't shapeshift back to dragon form?
+- Using you to retrieve something that will heal/free them?
+
+### Personality Voice Examples
+**Condescending dismissal:**
+- "Do you need me to explain basic combat to you? Point sword at enemy. Swing."
+- "I've seen snails with more survival instinct."
+- "Remind me why I bound *your* soul specifically? Oh yes, you were convenient."
+
+**Overconfident supremacy:**
+- "If I deigned to descend myself, this would be over in moments. Alas, I have standards."
+- "Your struggles are... quaint. Like watching a child learn to walk. And fall. Repeatedly."
+- "You realize I could obliterate that entire level with a thought? But where's the fun in that?"
+
+**Sarcastic 'praise':**
+- "Congratulations, you didn't die immediately. Shall I throw you a parade?"
+- "Only 47 deaths to reach level 5. At this rate, you'll succeed by the heat death of the universe."
+- "I'm *almost* impressed. Almost. But not quite."
+
+### Other Ideas
 - What if the entity IS you from a successful run, now trapped in a time loop?
 - Could the dungeon be inside the entity's mind/body?
 - What if treasure you collect is actually memories or soul fragments?
@@ -337,6 +425,8 @@ When ready for deeper integration:
 - Dark twist: Freedom means becoming the next entity, binding another soul
 - Cooperation ending: Work together with entity to escape a greater threat
 - The entity might be lying about everything (unreliable narrator)
+- Entity gets increasingly worried/defensive as you get deeper (cracks in the arrogance)
+- Endgame reveal: They're not as supreme as they claim (wounded, trapped, desperate)
 
 ---
 
