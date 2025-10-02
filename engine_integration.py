@@ -157,6 +157,11 @@ def play_game_with_engine(
         action = engine.state_manager.get_extra_data("keyboard_actions", {})
         mouse_action = engine.state_manager.get_extra_data("mouse_actions", {})
         
+        # Check for restart action (from death screen)
+        if action.get("restart"):
+            # Player wants to restart - return to main loop for new game
+            engine.stop()
+            return {"restart": True}
 
         # Process actions BEFORE AI system runs
         # This prevents zombie actions after death
@@ -173,20 +178,21 @@ def play_game_with_engine(
             logger.warning(f"Exit action in actions: {action.get('exit', False)}")
             logger.warning(f"========================")
             
-            # Save game before exiting
-            try:
-                game_state_data = engine.state_manager.state
-                save_game(
-                    game_state_data.player,
-                    game_state_data.entities,
-                    game_state_data.game_map,
-                    game_state_data.message_log,
-                    game_state_data.current_state
-                )
-                print("Game saved successfully!")
-            except Exception as e:
-                print(f"Failed to save game: {e}")
-                logger.error(f"Save failed: {e}")
+            # Save game before exiting (unless player is dead)
+            if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
+                try:
+                    game_state_data = engine.state_manager.state
+                    save_game(
+                        game_state_data.player,
+                        game_state_data.entities,
+                        game_state_data.game_map,
+                        game_state_data.message_log,
+                        game_state_data.current_state
+                    )
+                    print("Game saved successfully!")
+                except Exception as e:
+                    print(f"Failed to save game: {e}")
+                    logger.error(f"Save failed: {e}")
             break
 
         # Use the new action processor for clean, modular action handling
@@ -202,6 +208,9 @@ def play_game_with_engine(
 
     # Clean up
     engine.stop()
+    
+    # Return to main menu (no restart)
+    return {"restart": False}
 
 
 def _should_exit_game(action, mouse_action, current_state):

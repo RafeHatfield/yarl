@@ -106,6 +106,13 @@ class InputSystem(System):
 
         game_state = state_manager.state
 
+        # Increment death frame counter if in PLAYER_DEAD state
+        if game_state.current_state == GameStates.PLAYER_DEAD:
+            if hasattr(game_state, 'death_frame_counter'):
+                game_state.death_frame_counter += 1
+            else:
+                game_state.death_frame_counter = 0
+
         # Get current input objects
         self.current_key = game_state.key
         self.current_mouse = game_state.mouse
@@ -147,7 +154,13 @@ class InputSystem(System):
         """
         handler = self.key_handlers.get(current_state)
         if handler and self.current_key:
-            return handler(self.current_key)
+            # Pass death_frame_counter for PLAYER_DEAD state
+            if current_state == GameStates.PLAYER_DEAD:
+                game_state = self.engine.state_manager.state
+                death_counter = getattr(game_state, 'death_frame_counter', None)
+                return handler(self.current_key, death_counter)
+            else:
+                return handler(self.current_key)
         return {}
 
     def _process_mouse_input(self, current_state: GameStates) -> Dict[str, Any]:

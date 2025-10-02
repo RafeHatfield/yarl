@@ -80,10 +80,18 @@ def inventory_menu(con, header, player, inventory_width, screen_width, screen_he
 
         for item in player.inventory.items:
             display_name = item.get_display_name()
+            
+            # Check if item is equipped in any slot
             if player.equipment.main_hand == item:
-                options.append("{0} (on main hand)".format(display_name))
+                options.append("{0} (equipped)".format(display_name))
             elif player.equipment.off_hand == item:
-                options.append("{0} (on off hand)".format(display_name))
+                options.append("{0} (equipped)".format(display_name))
+            elif player.equipment.head == item:
+                options.append("{0} (equipped)".format(display_name))
+            elif player.equipment.chest == item:
+                options.append("{0} (equipped)".format(display_name))
+            elif player.equipment.feet == item:
+                options.append("{0} (equipped)".format(display_name))
             else:
                 options.append(display_name)
 

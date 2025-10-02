@@ -13,6 +13,7 @@ import tcod
 import tcod.libtcodpy as libtcodpy
 
 from config.game_constants import get_pathfinding_config
+from fov_functions import map_is_in_fov
 from game_messages import Message
 
 if TYPE_CHECKING:
@@ -54,7 +55,8 @@ class PlayerPathfinding:
         self.total_moves_completed: int = 0
         self.interruption_count: int = 0
     
-    def set_destination(self, x: int, y: int, game_map: 'GameMap', entities: List['Entity']) -> bool:
+    def set_destination(self, x: int, y: int, game_map: 'GameMap', entities: List['Entity'], 
+                        fov_map=None) -> bool:
         """Set a new destination and compute the path.
         
         Args:
@@ -62,6 +64,7 @@ class PlayerPathfinding:
             y (int): Target y coordinate
             game_map (GameMap): The game map for pathfinding
             entities (List[Entity]): List of entities for collision detection
+            fov_map: Optional FOV map to determine if destination is visible
             
         Returns:
             bool: True if a valid path was found, False otherwise
@@ -80,8 +83,8 @@ class PlayerPathfinding:
             logger.debug("Already at destination")
             return False
         
-        # Compute path using A*
-        path = self._compute_path(x, y, game_map, entities)
+        # Compute path using A* (with FOV awareness for smart limits)
+        path = self._compute_path(x, y, game_map, entities, fov_map)
         if not path:
             logger.debug(f"No path found to ({x}, {y})")
             return False
@@ -200,7 +203,7 @@ class PlayerPathfinding:
         return True
     
     def _compute_path(self, target_x: int, target_y: int, game_map: 'GameMap', 
-                     entities: List['Entity']) -> List[Tuple[int, int]]:
+                     entities: List['Entity'], fov_map=None) -> List[Tuple[int, int]]:
         """Compute A* path to target coordinates.
         
         Args:
@@ -208,6 +211,7 @@ class PlayerPathfinding:
             target_y (int): Target y coordinate
             game_map (GameMap): The game map for pathfinding
             entities (List[Entity]): List of entities for collision detection
+            fov_map: Optional FOV map to determine if destination is visible
             
         Returns:
             List[Tuple[int, int]]: List of (x, y) coordinates forming the path
@@ -236,6 +240,21 @@ class PlayerPathfinding:
         # Get pathfinding configuration
         pathfinding_config = get_pathfinding_config()
         
+        # Determine max path length based on whether destination is in FOV
+        destination_in_fov = False
+        if fov_map is not None:
+            try:
+                destination_in_fov = map_is_in_fov(fov_map, target_x, target_y)
+            except (AttributeError, TypeError):
+                # FOV map might be None or invalid, fall back to conservative limit
+                pass
+        
+        max_path_length = (pathfinding_config.MAX_PATH_LENGTH_IN_FOV if destination_in_fov 
+                          else pathfinding_config.MAX_PATH_LENGTH_OUT_FOV)
+        
+        logger.debug(f"Computing path to ({target_x}, {target_y}), in_fov={destination_in_fov}, "
+                    f"max_length={max_path_length}")
+        
         # Allocate a A* path
         my_path = libtcodpy.path_new_using_map(fov, pathfinding_config.DIAGONAL_MOVE_COST)
         
@@ -245,7 +264,7 @@ class PlayerPathfinding:
             
             # Check if the path exists and is reasonable length
             if (libtcodpy.path_is_empty(my_path) or 
-                libtcodpy.path_size(my_path) >= pathfinding_config.MAX_PATH_LENGTH):
+                libtcodpy.path_size(my_path) >= max_path_length):
                 return []
             
             # Extract the path coordinates

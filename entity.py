@@ -371,7 +371,10 @@ class Entity:
         Returns:
             str: Display name with damage/defense info in brackets
         """
-        display_name = self.name
+        # Replace underscores with spaces for better readability
+        # Handle case where name might not be a string
+        name_str = str(self.name) if not isinstance(self.name, str) else self.name
+        display_name = name_str.replace('_', ' ').title()
         
         if self.equippable:
             # Add damage range for weapons

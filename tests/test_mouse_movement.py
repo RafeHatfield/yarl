@@ -285,9 +285,9 @@ class TestMouseMovementHandling(unittest.TestCase):
         self.assertIn("moving to", messages[0]["message"].text.lower())
         self.assertTrue(pathfinding_signals[0]["start_pathfinding"])
         
-        # Verify pathfinding was called correctly
+        # Verify pathfinding was called correctly (now includes fov_map parameter)
         self.player.pathfinding.set_destination.assert_called_once_with(
-            10, 8, self.game_map, self.entities
+            10, 8, self.game_map, self.entities, None
         )
     
     @patch('mouse_movement.get_blocking_entities_at_location')

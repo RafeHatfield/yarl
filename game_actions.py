@@ -76,7 +76,7 @@ class ActionProcessor:
                 try:
                     self.action_handlers[action_type](value)
                 except Exception as e:
-                    logger.error(f"Error processing action {action_type}: {e}")
+                    logger.error(f"Error processing action {action_type}: {e}", exc_info=True)
         
         # Process mouse actions
         for mouse_action_type, value in mouse_action.items():
@@ -207,6 +207,10 @@ class ActionProcessor:
                 (255, 30, 30)
             )
             self.state_manager.state.message_log.add_message(death_message)
+            
+            # Add a frame counter to prevent immediate exit from death screen
+            if not hasattr(self.state_manager.state, 'death_frame_counter'):
+                self.state_manager.state.death_frame_counter = 0
         else:
             # Monster died - always transform to corpse first
             from death_functions import kill_monster
@@ -214,6 +218,13 @@ class ActionProcessor:
             entities = self.state_manager.state.entities
             death_message = kill_monster(dead_entity, game_map, entities)
             self.state_manager.state.message_log.add_message(death_message)
+            
+            # Record kill statistics (only for player kills)
+            player = self.state_manager.state.player
+            if player and hasattr(player, 'statistics') and player.statistics:
+                # Track monster type killed
+                monster_name = dead_entity.name.lower()
+                player.statistics.record_kill(monster_name)
             
             # Handle dropped loot
             if hasattr(dead_entity, '_dropped_loot') and dead_entity._dropped_loot:
@@ -299,7 +310,56 @@ class ActionProcessor:
         if not player or not player.inventory:
             return
         
-        if not (0 <= inventory_index < len(player.inventory.items)):
+        # Defensive check: ensure inventory_index is an integer
+        if inventory_index is None or not isinstance(inventory_index, int):
+            logger.warning(f"Invalid inventory_index: {inventory_index} (type: {type(inventory_index)})")
+            message = Message(
+                "Error: Invalid inventory selection. Please try again.",
+                (255, 0, 0)
+            )
+            self.state_manager.state.message_log.add_message(message)
+            return
+        
+        # Defensive check: ensure inventory items list is valid
+        if not hasattr(player.inventory, 'items') or player.inventory.items is None:
+            logger.error(f"Player inventory.items is invalid: {player.inventory.items}")
+            message = Message(
+                "Error: Inventory is corrupted. Please report this bug.",
+                (255, 0, 0)
+            )
+            self.state_manager.state.message_log.add_message(message)
+            return
+        
+        # Get inventory size safely
+        try:
+            inventory_size = len(player.inventory.items)
+        except (TypeError, AttributeError) as e:
+            logger.error(f"Cannot get inventory size: {e}, items type: {type(player.inventory.items)}")
+            message = Message(
+                "Error: Inventory is corrupted. Please report this bug.",
+                (255, 0, 0)
+            )
+            self.state_manager.state.message_log.add_message(message)
+            return
+        
+        # Extra safety check: ensure inventory_size is a valid integer
+        if inventory_size is None or not isinstance(inventory_size, int):
+            logger.error(f"Inventory size is not an integer! type={type(inventory_size)}, value={inventory_size}")
+            message = Message(
+                "Error: Inventory is corrupted (invalid size). Please report this bug.",
+                (255, 0, 0)
+            )
+            self.state_manager.state.message_log.add_message(message)
+            return
+        
+        # Check if index is in valid range
+        if inventory_index < 0 or inventory_index >= inventory_size:
+            logger.warning(f"Inventory index {inventory_index} out of range (inventory size: {inventory_size})")
+            message = Message(
+                f"Inventory slot '{chr(ord('a') + inventory_index)}' is empty.",
+                (255, 255, 0)
+            )
+            self.state_manager.state.message_log.add_message(message)
             return
         
         item = player.inventory.items[inventory_index]
@@ -530,14 +590,15 @@ class ActionProcessor:
         entities = self.state_manager.state.entities
         game_map = self.state_manager.state.game_map
         message_log = self.state_manager.state.message_log
+        fov_map = self.state_manager.state.fov_map
         
         if not all([player, entities is not None, game_map, message_log]):
             return
         
         click_x, click_y = click_pos
         
-        # Handle the mouse click
-        click_result = handle_mouse_click(click_x, click_y, player, entities, game_map)
+        # Handle the mouse click (with FOV map for smart pathfinding limits)
+        click_result = handle_mouse_click(click_x, click_y, player, entities, game_map, fov_map)
         
         # Process results
         for result in click_result.get("results", []):

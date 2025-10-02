@@ -40,6 +40,9 @@ class TestingConfig:
     def get_item_spawn_chances(self, dungeon_level: int) -> Dict[str, Any]:
         """Get item spawn chances based on testing mode.
         
+        In testing mode, provides higher chances and earlier availability for all items.
+        In normal mode, delegates to the normal game configuration.
+        
         Args:
             dungeon_level: Current dungeon level
             
@@ -64,18 +67,10 @@ class TestingConfig:
                 "enhance_armor_scroll": [[20, 1], [35, 3]],
             }
         else:
-            # NORMAL: Balanced gameplay progression
-            return {
-                "healing_potion": 35,
-                "sword": [[5, 4]],
-                "shield": [[15, 8]],
-                "lightning_scroll": [[25, 4]],
-                "fireball_scroll": [[25, 6]],
-                "confusion_scroll": [[10, 2]],
-                "invisibility_scroll": [[15, 4]],  # Available from level 4 in normal mode
-                "enhance_weapon_scroll": [[10, 5]],  # Rare enhancement scrolls
-                "enhance_armor_scroll": [[10, 6]],
-            }
+            # NORMAL: Use normal game configuration
+            from config.game_constants import get_item_spawn_config
+            normal_config = get_item_spawn_config()
+            return normal_config.get_item_spawn_chances(dungeon_level)
     
     def get_max_monsters_per_room(self, dungeon_level: int) -> List[List[int]]:
         """Get maximum monsters per room (unchanged by testing mode).

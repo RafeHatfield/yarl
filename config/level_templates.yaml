@@ -8,6 +8,20 @@
 version: "1.0"
 
 level_overrides:
+  # Level 1 - Tutorial Level: Gentle Introduction
+  # Balance: Reduce difficulty for new players while teaching mechanics
+  1:
+    parameters:
+      max_monsters_per_room: 1  # First 2 rooms: max 1 monster (gradual difficulty)
+    
+    guaranteed_spawns:
+      mode: "additional"  # Add to normal random spawns
+      items:
+        - type: "healing_potion"
+          count: 2  # Guarantee 2 healing potions on level 1
+        - type: "invisibility_scroll"
+          count: 1  # One escape scroll for emergencies
+  
   # Level 10 - Boss Level: Troll Throne Room
   10:
     parameters:

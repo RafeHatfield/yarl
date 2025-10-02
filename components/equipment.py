@@ -4,7 +4,10 @@ This module defines the Equipment component which manages equipped items
 and calculates total stat bonuses from all equipped gear.
 """
 
+import logging
 from equipment_slots import EquipmentSlots
+
+logger = logging.getLogger(__name__)
 
 
 class Equipment:
@@ -51,7 +54,10 @@ class Equipment:
 
         for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
             if item and item.equippable:
-                bonus += item.equippable.max_hp_bonus
+                item_bonus = item.equippable.max_hp_bonus
+                # Defensive: treat None as 0
+                if item_bonus is not None:
+                    bonus += item_bonus
 
         return bonus
 
@@ -66,7 +72,10 @@ class Equipment:
 
         for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
             if item and item.equippable:
-                bonus += item.equippable.power_bonus
+                item_bonus = item.equippable.power_bonus
+                # Defensive: treat None as 0
+                if item_bonus is not None:
+                    bonus += item_bonus
 
         return bonus
 
@@ -81,7 +90,10 @@ class Equipment:
 
         for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
             if item and item.equippable:
-                bonus += item.equippable.defense_bonus
+                item_bonus = item.equippable.defense_bonus
+                # Defensive: treat None as 0
+                if item_bonus is not None:
+                    bonus += item_bonus
 
         return bonus
 

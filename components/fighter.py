@@ -6,6 +6,10 @@ from config.testing_config import is_testing_mode
 combat_logger = logging.getLogger('combat_debug')
 combat_logger.setLevel(logging.DEBUG)
 
+# General logger for this module
+logger = logging.getLogger(__name__)
+
+
 
 class Fighter:
     """Component that handles combat statistics and actions.
@@ -186,7 +190,12 @@ class Fighter:
         else:
             equipment_bonus = 0
 
-        return self.base_max_hp + self.constitution_mod + equipment_bonus
+        # Defensive: ensure all components are valid integers
+        base_hp = self.base_max_hp if self.base_max_hp is not None else 0
+        con_mod = self.constitution_mod if self.constitution_mod is not None else 0
+        equip_bonus = equipment_bonus if equipment_bonus is not None else 0
+        
+        return base_hp + con_mod + equip_bonus
 
     @property
     def power(self):
@@ -231,6 +240,10 @@ class Fighter:
         results = []
 
         self.hp -= amount
+        
+        # Record damage taken (only for player)
+        if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
+            self.owner.statistics.record_damage_taken(amount)
 
         if self.hp <= 0:
             results.append({"dead": self.owner, "xp": self.xp})
@@ -247,10 +260,29 @@ class Fighter:
         Args:
             amount (int): Amount of health to restore
         """
+        # Defensive: ensure values are not None (prevents crashes from configuration errors)
+        if amount is None:
+            logger.error(f"heal() called with amount=None for {self.owner.name if self.owner else 'unknown'}")
+            return
+        
+        if self.hp is None:
+            logger.error(f"heal() called but self.hp is None for {self.owner.name if self.owner else 'unknown'}")
+            self.hp = 0
+        
+        max_hp = self.max_hp
+        if max_hp is None:
+            logger.error(f"heal() called but max_hp is None for {self.owner.name if self.owner else 'unknown'}")
+            max_hp = amount  # Just heal the amount without cap
+        
+        actual_healing = min(amount, max_hp - self.hp)
         self.hp += amount
 
-        if self.hp > self.max_hp:
-            self.hp = self.max_hp
+        if self.hp > max_hp:
+            self.hp = max_hp
+        
+        # Record healing (only for player)
+        if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
+            self.owner.statistics.record_healing(actual_healing)
 
     def attack(self, target):
         """Perform an attack against a target entity.
@@ -419,6 +451,11 @@ class Fighter:
             # Add STR modifier to damage
             damage = base_damage + self.strength_mod
             
+            # Record statistics (only for player)
+            if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
+                self.owner.statistics.record_attack(hit=True, critical=is_critical)
+                self.owner.statistics.record_damage_dealt(max(1, damage if not is_critical else damage * 2))
+            
             # Critical hit: double all damage
             if is_critical:
                 damage = damage * 2
@@ -462,6 +499,10 @@ class Fighter:
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
         else:
+            # Record miss statistics (only for player)
+            if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
+                self.owner.statistics.record_attack(hit=False, fumble=is_fumble)
+            
             # Miss
             if is_fumble:
                 message_text = "FUMBLE! {0} attacks {1} - complete miss!".format(

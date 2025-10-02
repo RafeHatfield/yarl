@@ -96,6 +96,21 @@ This establishes the **gold standard** for data-driven game development in Pytho
 
 ---
 
+## ✅ **Recently Completed: Balance & Quality of Life** (October 2025)
+
+**🎯 Early Game Balance Improvements** (v3.1.0 - In Progress)
+- **Level 1 Balance**: Reduced first 2 rooms to max 1 monster
+- **Increased Potion Spawns**: 60% healing potion rate on level 1 (vs 35% standard)
+- **Guaranteed Items**: 2 healing potions + 1 invisibility scroll on level 1
+- **Starting Equipment**: Player now starts with 1 healing potion
+- **Statistics Tracking**: Comprehensive combat/exploration/consumables tracking
+- **Death Screen Overhaul**: Stats display + quick restart (Press R)
+- **Config Refactoring**: Clean separation of normal vs testing configuration
+
+**Combined Impact:** Significantly improves new player experience and adds "one more run" appeal.
+
+---
+
 ## 🟢 **Phase 1: Quick Wins & High Impact** (1-2 weeks each)
 
 These features build on existing systems and provide immediate gameplay improvements with minimal risk.
@@ -136,6 +151,8 @@ These features build on existing systems and provide immediate gameplay improvem
 | **More Monster Types** | 1-2 weeks | 🔥 High | Keeps exploration fresh and challenging | AI system supports easy expansion |
 | **Multi-Save Games** | 2-3 weeks | 🔥 High | Multiple save slots with metadata display | Save slot UI, file management, save previews |
 | **JSON Save/Load** | ✅ Complete | 🔶 Medium | Human-readable saves, easier debugging | Replace existing shelve serialization |
+| **Difficulty Selection** | 1-2 weeks | 🔥 High | Player choice for game challenge level (Easy/Normal/Hard/Ironman) | Startup menu, scaling config for monsters/loot |
+| **Player Profiles** | 2-3 weeks | 🔥 High | Persistent player stats across runs, multiple profiles | Profile management, aggregate statistics tracking |
 
 **Combined Impact:** Polishes the core experience and improves development workflow.
 
@@ -162,11 +179,13 @@ These features add new gameplay dimensions and significantly expand the game's d
 
 | Feature | Time | Impact | Complexity | Technical Requirements |
 |---------|------|--------|------------|----------------------|
+| **Difficulty Selection** | 1-2 weeks | 🔥 High | Choose challenge level at game start | Startup menu, monster/loot scaling configs |
+| **Player Profiles** | 2-3 weeks | 🔥 High | Persistent stats across runs, multiple profiles | Profile management, aggregate statistics |
 | **Player Classes** | 4-6 weeks | 🔥 High | Warrior/Mage/Rogue with unique abilities | Class-specific progression, ability systems |
 | **Complex Leveling** | 3-4 weeks | 🔥 High | Feats, skill trees, specialization | Feat system, prerequisite checking |
 | **Skill System** | 3-5 weeks | 🔥 High | Lockpicking, stealth, trap detection | Multiple skill mechanics with progression |
 
-**Combined Impact:** Massive replayability boost through character customization.
+**Combined Impact:** Massive replayability boost through character customization and difficulty options.
 
 ### **🏆 Equipment Evolution (2-3 weeks)**
 
@@ -328,17 +347,29 @@ This roadmap should be updated:
 
 ## 🎮 **Current Status & Active Development**
 
+### **✅ Recently Completed (v3.1.0 - In Progress)**
+- **Early Game Balance** - Level 1 difficulty reduction for new players
+- **Statistics System** - Comprehensive tracking (kills, damage, accuracy, exploration)
+- **Death Screen Overhaul** - Stats display with quick restart functionality (Press R)
+- **Config Architecture** - Clean separation of normal vs testing configuration
+- **Option 6 Balance Changes** - Multi-layered safety nets for early game survival
+
+### **✅ Recently Completed (v3.0.0)**
+- **D&D Dice Notation** - Complete dice rolling system (1d4, 2d6+3, etc.)
+- **12 New Weapons** - Dagger to Greatsword with finesse/unwieldy properties
+- **Full Stat System** - STR/DEX/CON with proper modifiers
+- **d20 Combat** - Attack rolls, AC, critical hits, fumbles
+- **Armor System** - Light/Medium/Heavy armor with DEX caps
+- **Equipment Overhaul** - Slot-based system with 6 equipment slots
+
 ### **✅ Recently Completed (v2.7.0)**
 - **More Scrolls Phase** - Teleport, Shield, Raise Dead, Dragon Fart (4 new scrolls)
 - **MindlessZombieAI** - Sophisticated FOV-based hunting and sticky targeting
 - **Status Effect System** - Disorientation and shield effects
-- **Slime Loot Fix** - Slimes no longer drop equipment inappropriately
-- **Manual Level Design - Tier 2** - Level parameters & special themed rooms
-- **Manual Level Design - Tier 1** - Guaranteed spawns for testing
 - **Slime System Complete** - Affiliations, invisibility, corrosion, splitting
-- **Variable Damage/Defense** - Dynamic combat with ranges
+- **Manual Level Design** - Tier 1 (guaranteed spawns) and Tier 2 (level parameters)
 - **JSON Save/Load System** - Human-readable saves with legacy compatibility
-- **Comprehensive Testing** - 1,462 tests with 100% coverage
+- **Comprehensive Testing** - 1,575+ tests with 100% coverage
 - **Modern Architecture** - ECS, state machines, performance optimization
 
 ### **🎯 Current Sprint: Equipment Expansion**
@@ -378,6 +409,22 @@ This roadmap should be updated:
 - Stronger monsters = better loot
 
 ### **📋 Upcoming Features**
+
+**Difficulty Selection System** (1-2 weeks) 🔜 **NEXT**
+- **Easy Mode**: 50% more HP, +2 to-hit, 50% more healing potions
+- **Normal Mode**: Current balance (newly improved for v3.1)
+- **Hard Mode**: Monsters deal 25% more damage, fewer consumables
+- **Ironman Mode**: Permadeath (no save/load), achievements unlocked
+- Startup menu integration
+- Profile-based difficulty tracking
+
+**Player Profile System** (2-3 weeks)
+- Multiple named profiles per player
+- Aggregate statistics across all runs
+- Best run tracking (deepest level, most kills, fastest time)
+- Achievement system (first kill, 100 kills, reach level 10, etc.)
+- Profile selection/creation UI
+- Leaderboard display (local only)
 
 **Manual Level Design - Tier 3** (3-4 weeks)
 - Full ASCII map crafting

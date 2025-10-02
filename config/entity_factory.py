@@ -359,7 +359,7 @@ class EntityFactory:
 
         # Map spell types to functions and parameters
         if spell_def.name.lower().replace(' ', '_') == "healing_potion":
-            return Item(use_function=heal, heal_amount=spell_def.heal_amount)
+            return Item(use_function=heal, amount=spell_def.heal_amount)
         elif spell_def.name.lower().replace(' ', '_') == "lightning_scroll":
             return Item(
                 use_function=cast_lightning,

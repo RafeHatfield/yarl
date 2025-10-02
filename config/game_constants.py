@@ -26,7 +26,14 @@ class PathfindingConfig:
     
     # A* pathfinding constants
     DIAGONAL_MOVE_COST: float = 1.41  # Normal diagonal movement cost
-    MAX_PATH_LENGTH: int = 25  # Maximum path length before fallback to simple movement
+    MAX_PATH_LENGTH_IN_FOV: int = 40  # Maximum path length when destination is visible
+    MAX_PATH_LENGTH_OUT_FOV: int = 25  # Maximum path length when destination is not visible
+    
+    # Legacy compatibility
+    @property
+    def MAX_PATH_LENGTH(self) -> int:
+        """Legacy property for backward compatibility. Returns out-of-FOV limit."""
+        return self.MAX_PATH_LENGTH_OUT_FOV
     
     # Movement validation
     MAX_COORDINATE: int = 9999  # Maximum valid map coordinate
@@ -146,6 +153,71 @@ class MonsterEquipmentConfig:
 
 
 @dataclass
+class ItemSpawnConfig:
+    """Configuration for item spawn rates in normal gameplay."""
+    
+    # Healing potion spawn rates (level-dependent)
+    HEALING_POTION_LEVEL_1: int = 60  # Higher rate on level 1 for balance
+    HEALING_POTION_DEFAULT: int = 35  # Standard rate for other levels
+    
+    # Equipment spawn rates (format: [[chance, min_level], ...])
+    # Note: These are used by from_dungeon_level() function
+    SWORD_SPAWN: list = None  # [[5, 4]] - 5% from level 4
+    SHIELD_SPAWN: list = None  # [[15, 8]] - 15% from level 8
+    
+    # Scroll spawn rates
+    LIGHTNING_SCROLL_SPAWN: list = None  # [[25, 4]]
+    FIREBALL_SCROLL_SPAWN: list = None  # [[25, 6]]
+    CONFUSION_SCROLL_SPAWN: list = None  # [[10, 2]]
+    INVISIBILITY_SCROLL_SPAWN: list = None  # [[15, 4]]
+    ENHANCE_WEAPON_SCROLL_SPAWN: list = None  # [[10, 5]]
+    ENHANCE_ARMOR_SCROLL_SPAWN: list = None  # [[10, 6]]
+    
+    def __post_init__(self):
+        """Initialize list values after dataclass creation."""
+        if self.SWORD_SPAWN is None:
+            self.SWORD_SPAWN = [[5, 4]]
+        if self.SHIELD_SPAWN is None:
+            self.SHIELD_SPAWN = [[15, 8]]
+        if self.LIGHTNING_SCROLL_SPAWN is None:
+            self.LIGHTNING_SCROLL_SPAWN = [[25, 4]]
+        if self.FIREBALL_SCROLL_SPAWN is None:
+            self.FIREBALL_SCROLL_SPAWN = [[25, 6]]
+        if self.CONFUSION_SCROLL_SPAWN is None:
+            self.CONFUSION_SCROLL_SPAWN = [[10, 2]]
+        if self.INVISIBILITY_SCROLL_SPAWN is None:
+            self.INVISIBILITY_SCROLL_SPAWN = [[15, 4]]
+        if self.ENHANCE_WEAPON_SCROLL_SPAWN is None:
+            self.ENHANCE_WEAPON_SCROLL_SPAWN = [[10, 5]]
+        if self.ENHANCE_ARMOR_SCROLL_SPAWN is None:
+            self.ENHANCE_ARMOR_SCROLL_SPAWN = [[10, 6]]
+    
+    def get_item_spawn_chances(self, dungeon_level: int) -> dict:
+        """Get item spawn chances for normal gameplay.
+        
+        Args:
+            dungeon_level: Current dungeon level
+            
+        Returns:
+            Dictionary of item names to spawn chance configurations
+        """
+        # Level 1 gets increased healing potion chance for balance
+        healing_potion_chance = self.HEALING_POTION_LEVEL_1 if dungeon_level == 1 else self.HEALING_POTION_DEFAULT
+        
+        return {
+            "healing_potion": healing_potion_chance,
+            "sword": self.SWORD_SPAWN,
+            "shield": self.SHIELD_SPAWN,
+            "lightning_scroll": self.LIGHTNING_SCROLL_SPAWN,
+            "fireball_scroll": self.FIREBALL_SCROLL_SPAWN,
+            "confusion_scroll": self.CONFUSION_SCROLL_SPAWN,
+            "invisibility_scroll": self.INVISIBILITY_SCROLL_SPAWN,
+            "enhance_weapon_scroll": self.ENHANCE_WEAPON_SCROLL_SPAWN,
+            "enhance_armor_scroll": self.ENHANCE_ARMOR_SCROLL_SPAWN,
+        }
+
+
+@dataclass
 class GameplayConfig:
     """Configuration for core gameplay mechanics."""
     
@@ -175,6 +247,7 @@ class GameConstants:
     gameplay: GameplayConfig = None
     entities: EntityConfig = None
     monster_equipment: MonsterEquipmentConfig = None
+    item_spawns: ItemSpawnConfig = None
     
     def __post_init__(self):
         """Initialize default values after dataclass creation."""
@@ -194,6 +267,8 @@ class GameConstants:
             self.entities = EntityConfig()
         if self.monster_equipment is None:
             self.monster_equipment = MonsterEquipmentConfig()
+        if self.item_spawns is None:
+            self.item_spawns = ItemSpawnConfig()
     
     @classmethod
     def load_from_file(cls, config_path: str = None) -> 'GameConstants':
@@ -517,3 +592,13 @@ def get_monster_equipment_config() -> MonsterEquipmentConfig:
             including spawn rates, item seeking behavior, and failure rates.
     """
     return GAME_CONSTANTS.monster_equipment
+
+
+def get_item_spawn_config() -> ItemSpawnConfig:
+    """Get item spawn configuration.
+    
+    Returns:
+        ItemSpawnConfig: Configuration object containing item spawn rates
+            for normal gameplay mode.
+    """
+    return GAME_CONSTANTS.item_spawns

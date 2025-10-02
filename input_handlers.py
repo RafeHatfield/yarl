@@ -10,12 +10,13 @@ import tcod.libtcodpy as libtcod
 from game_states import GameStates
 
 
-def handle_keys(key, game_state):
+def handle_keys(key, game_state, death_frame_counter=None):
     """Route key input to the appropriate handler based on game state.
 
     Args:
         key: tcod Key object containing key press information
         game_state (GameStates): Current game state
+        death_frame_counter: Number of frames since death (optional, for PLAYER_DEAD state)
 
     Returns:
         dict: Dictionary of actions to perform based on the key press
@@ -23,7 +24,7 @@ def handle_keys(key, game_state):
     if game_state == GameStates.PLAYERS_TURN:
         return handle_player_turn_keys(key)
     elif game_state == GameStates.PLAYER_DEAD:
-        return handle_player_dead_keys(key)
+        return handle_player_dead_keys(key, death_frame_counter)
     elif game_state == GameStates.TARGETING:
         return handle_targeting_keys(key)
     elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
@@ -130,30 +131,43 @@ def handle_player_turn_keys(key):
     return {}
 
 
-def handle_player_dead_keys(key):
+def handle_player_dead_keys(key, death_frame_counter=None):
     """Handle input when the player is dead (game over screen).
 
-    When the player is dead, they should only be able to:
-    - Press any key to return to the main menu
-    - Toggle fullscreen
-    - Exit the game
+    When the player is dead, they should be able to:
+    - Press R to restart a new game
+    - Press ESC to return to main menu
+    - Press Alt+Enter to toggle fullscreen
+    - Press any other key to exit
     
     No other actions (movement, inventory, etc.) should be allowed.
 
     Args:
         key: tcod Key object containing key press information
+        death_frame_counter: Number of frames since death (to prevent immediate exit)
 
     Returns:
-        dict: Dictionary with 'fullscreen' or 'exit' keys
+        dict: Dictionary with 'restart', 'exit', or 'fullscreen' keys
     """
+    # Ignore input for the first 10 frames after death to prevent accidental exit
+    if death_frame_counter is not None and death_frame_counter < 10:
+        return {}
+    
+    # Only respond to actual key presses (not key releases or no-key state)
+    if key.vk == libtcod.KEY_NONE and key.c == 0:
+        return {}
+    
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle full screen
         return {"fullscreen": True}
     elif key.vk == libtcod.KEY_ESCAPE:
-        # Exit the game completely
+        # ESC: return to main menu
         return {"exit": True}
-    elif key.vk != libtcod.KEY_NONE:
-        # Any other key press returns to main menu
+    elif key.c == ord('r') or key.c == ord('R'):
+        # R: restart a new game
+        return {"restart": True}
+    elif key.vk != libtcod.KEY_NONE or key.c != 0:
+        # Any other key press exits to main menu
         return {"exit": True}
 
     return {}

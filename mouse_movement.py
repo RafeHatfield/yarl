@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def handle_mouse_click(click_x: int, click_y: int, player: 'Entity', 
-                      entities: List['Entity'], game_map: 'GameMap') -> dict:
+                      entities: List['Entity'], game_map: 'GameMap', fov_map=None) -> dict:
     """Handle a mouse click for movement or combat.
     
     This function processes mouse clicks and determines the appropriate action:
@@ -34,6 +34,7 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
         player (Entity): The player entity
         entities (List[Entity]): List of all entities
         game_map (GameMap): The game map
+        fov_map: Optional FOV map for smart pathfinding limits
         
     Returns:
         dict: Dictionary containing action results and messages
@@ -55,7 +56,7 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
         return _handle_enemy_click(player, target_entity, results)
     else:
         # Clicked on empty space - attempt movement
-        return _handle_movement_click(click_x, click_y, player, entities, game_map, results)
+        return _handle_movement_click(click_x, click_y, player, entities, game_map, results, fov_map)
 
 
 def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> dict:
@@ -99,7 +100,7 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
 
 
 def _handle_movement_click(click_x: int, click_y: int, player: 'Entity', 
-                          entities: List['Entity'], game_map: 'GameMap', results: list) -> dict:
+                          entities: List['Entity'], game_map: 'GameMap', results: list, fov_map=None) -> dict:
     """Handle clicking on empty space for movement.
     
     Args:
@@ -109,6 +110,7 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
         entities (List[Entity]): List of all entities
         game_map (GameMap): The game map
         results (list): List to append results to
+        fov_map: Optional FOV map for smart pathfinding limits
         
     Returns:
         dict: Dictionary containing action results
@@ -120,8 +122,8 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
         })
         return {"results": results}
     
-    # Attempt to set destination
-    if player.pathfinding.set_destination(click_x, click_y, game_map, entities):
+    # Attempt to set destination (with FOV awareness)
+    if player.pathfinding.set_destination(click_x, click_y, game_map, entities, fov_map):
         # Successfully set path
         distance = player.distance(click_x, click_y)
         results.append({

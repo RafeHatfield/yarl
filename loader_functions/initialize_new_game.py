@@ -12,6 +12,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.item import Item
 from components.level import Level
+from components.statistics import Statistics
 from config.game_constants import get_constants as get_new_constants, get_combat_config, get_inventory_config
 from config.entity_registry import load_entity_config
 from config.entity_factory import get_entity_factory
@@ -93,6 +94,7 @@ def get_game_variables(constants):
         level_up_factor=combat_config.DEFAULT_LEVEL_UP_FACTOR
     )
     equipment_component = Equipment()
+    statistics_component = Statistics()
 
     # Create pathfinding component for mouse movement
     from components.player_pathfinding import PlayerPathfinding
@@ -107,9 +109,11 @@ def get_game_variables(constants):
         equipment=equipment_component
     )
     
-    # Add pathfinding component manually since create_player doesn't support it yet
+    # Add pathfinding and statistics components manually
     player.pathfinding = pathfinding_component
     pathfinding_component.owner = player
+    player.statistics = statistics_component
+    statistics_component.owner = player
     entities = [player]
 
     # Create starting equipment using EntityFactory
@@ -121,6 +125,14 @@ def get_game_variables(constants):
     leather_armor = entity_factory.create_armor("leather_armor", 0, 0)
     player.inventory.add_item(leather_armor)
     player.equipment.toggle_equip(leather_armor)
+    
+    # Add starting healing potion for early game survivability (Option 6 balance)
+    starting_potion = entity_factory.create_spell_item("healing_potion", 0, 0)
+    player.inventory.add_item(starting_potion)
+    
+    # Set player HP to max_hp after all equipment and components are initialized
+    # (max_hp includes CON modifier and equipment bonuses)
+    player.fighter.hp = player.fighter.max_hp
 
     game_map = GameMap(constants["map_width"], constants["map_height"])
     game_map.make_map(

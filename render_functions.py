@@ -225,6 +225,11 @@ def render_all(
 
     elif game_state == GameStates.CHARACTER_SCREEN:
         character_screen(player, 50, 40, screen_width, screen_height)
+    
+    elif game_state == GameStates.PLAYER_DEAD:
+        # Render death screen with statistics
+        from death_screen import render_death_screen
+        render_death_screen(con, player, screen_width, screen_height)
 
 
 def _render_tiles_original(con, game_map, fov_map, colors):

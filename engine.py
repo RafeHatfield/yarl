@@ -163,7 +163,7 @@ def main():
             libtcod.console_clear(con)
             
             # Use the modern engine architecture
-            play_game_with_engine(
+            result = play_game_with_engine(
                 player,
                 entities,
                 game_map,
@@ -174,7 +174,17 @@ def main():
                 constants
             )
 
-            show_main_menu = True
+            # Check if player wants to restart or go to main menu
+            if result and result.get("restart"):
+                # Restart: create a new game immediately
+                player, entities, game_map, message_log, game_state = (
+                    get_game_variables(constants)
+                )
+                game_state = GameStates.PLAYERS_TURN
+                # Don't show main menu, continue playing
+            else:
+                # Return to main menu
+                show_main_menu = True
 
 
 if __name__ == "__main__":
