@@ -14,6 +14,7 @@ from menus import character_screen, inventory_menu, level_up_menu
 from fov_functions import map_is_in_fov
 from render_optimization import render_tiles_optimized
 from entity_sorting_cache import get_sorted_entities
+from death_screen import render_death_screen
 
 
 class RenderOrder(Enum):

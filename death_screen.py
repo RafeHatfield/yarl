@@ -1,9 +1,11 @@
 """Death screen rendering and statistics display.
 
 This module handles the display of player statistics and options when the player dies.
+Includes Entity dialogue to establish the bound soul narrative.
 """
 
 import tcod.libtcodpy as libtcodpy
+from entity_dialogue import get_entity_quote_for_death
 
 
 def render_death_screen(con, player, screen_width, screen_height):
@@ -26,16 +28,45 @@ def render_death_screen(con, player, screen_width, screen_height):
     title = "YOU DIED"
     title_x = screen_width // 2 - len(title) // 2
     libtcodpy.console_set_default_foreground(con, libtcodpy.Color(255, 50, 50))
-    libtcodpy.console_print_ex(con, title_x, 5, libtcodpy.BKGND_NONE, libtcodpy.LEFT, title)
+    libtcodpy.console_print_ex(con, title_x, 3, libtcodpy.BKGND_NONE, libtcodpy.LEFT, title)
     
     # Draw a line under the title
     line = "=" * (len(title) + 4)
     libtcodpy.console_set_default_foreground(con, libtcodpy.Color(150, 50, 50))
-    libtcodpy.console_print_ex(con, title_x - 2, 6, libtcodpy.BKGND_NONE, libtcodpy.LEFT, line)
+    libtcodpy.console_print_ex(con, title_x - 2, 4, libtcodpy.BKGND_NONE, libtcodpy.LEFT, line)
+    
+    # Entity dialogue (THE PERSONALITY!)
+    y = 6
+    if stats:
+        entity_quote = get_entity_quote_for_death(stats, stats.deepest_level)
+        
+        # Word wrap the quote to fit the screen (max 50 characters per line)
+        max_line_length = 50
+        words = entity_quote.split()
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            if len(current_line) + len(word) + 1 <= max_line_length:
+                current_line += word + " "
+            else:
+                lines.append(current_line.strip())
+                current_line = word + " "
+        if current_line:
+            lines.append(current_line.strip())
+        
+        # Draw the Entity's quote in italics style (lighter color)
+        libtcodpy.console_set_default_foreground(con, libtcodpy.Color(200, 200, 150))
+        for line in lines:
+            quote_x = screen_width // 2 - len(line) // 2
+            libtcodpy.console_print_ex(con, quote_x, y, libtcodpy.BKGND_NONE, libtcodpy.LEFT, line)
+            y += 1
+        
+        y += 1  # Extra space after quote
     
     if stats:
         # Render statistics
-        y = 8
+        y += 1
         
         # Header
         libtcodpy.console_set_default_foreground(con, libtcodpy.Color(200, 200, 200))
