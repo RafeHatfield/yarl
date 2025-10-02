@@ -463,16 +463,19 @@ class TestEntityRegistryIntegration:
             assert troll.stats.defense == 2
             assert troll.stats.xp == 100
             
-            # Verify weapon stats match current values (updated for new power system)
+            # Verify weapon stats use new dice system
             dagger = registry.get_weapon("dagger")
-            assert dagger.power_bonus == 0  # Basic weapons no longer have magic bonuses
-            assert dagger.damage_min == 3  # Updated: new damage values
-            assert dagger.damage_max == 5
+            assert dagger.power_bonus == 0
+            assert dagger.damage_dice == "1d4"
+            assert dagger.damage_min == 1  # Calculated from 1d4
+            assert dagger.damage_max == 4
+            assert dagger.to_hit_bonus == 1  # Finesse weapon
             
             sword = registry.get_weapon("sword")
-            assert sword.power_bonus == 0  # Basic weapons no longer have magic bonuses
-            assert sword.damage_min == 4  # Updated: new damage values
-            assert sword.damage_max == 7
+            assert sword.power_bonus == 0
+            assert sword.damage_dice == "1d8"
+            assert sword.damage_min == 1  # Calculated from 1d8
+            assert sword.damage_max == 8
             
             # Verify armor stats match hardcoded values
             shield = registry.get_armor("shield")
