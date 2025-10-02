@@ -30,7 +30,7 @@ class Equippable:
     def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0,
                  armor_class_bonus=0, to_hit_bonus=0,
                  damage_min=0, damage_max=0, defense_min=0, defense_max=0,
-                 armor_type=None, dex_cap=None):
+                 armor_type=None, dex_cap=None, damage_dice=None):
         """Initialize an Equippable component.
 
         Args:
@@ -46,6 +46,7 @@ class Equippable:
             defense_max (int, optional): Maximum armor defense. Defaults to 0.
             armor_type (str, optional): Armor type (light/medium/heavy). Defaults to None.
             dex_cap (int, optional): Max DEX modifier for AC (None = no cap). Defaults to None.
+            damage_dice (str, optional): Dice notation for damage (e.g., "1d4", "2d6"). Defaults to None.
         """
         self.slot = slot
         self.power_bonus = power_bonus
@@ -59,6 +60,7 @@ class Equippable:
         self.defense_max = defense_max if defense_max >= defense_min else defense_min
         self.armor_type = armor_type  # light, medium, heavy, shield, or weapon
         self.dex_cap = dex_cap  # Maximum DEX modifier that applies to AC (None = no cap)
+        self.damage_dice = damage_dice  # Dice notation like "1d4", "1d6", "2d6"
         self.owner = None  # Will be set by Entity when component is registered
     
     def get_damage_range_text(self) -> str:
@@ -88,14 +90,23 @@ class Equippable:
         return ""
     
     def roll_damage(self) -> int:
-        """Roll damage within the weapon's damage range.
+        """Roll damage using dice notation or damage range.
+        
+        Prefers dice notation if available, otherwise uses damage_min/max range.
         
         Returns:
-            int: Random damage value between damage_min and damage_max (inclusive)
+            int: Random damage value
         """
+        # Use dice notation if available
+        if self.damage_dice:
+            from dice import roll_dice
+            return roll_dice(self.damage_dice)
+        
+        # Fall back to legacy damage range
         if self.damage_min > 0 and self.damage_max > 0:
             import random
             return random.randint(self.damage_min, self.damage_max)
+        
         return 0
     
     def roll_defense(self) -> int:

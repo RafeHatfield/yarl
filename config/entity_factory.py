@@ -168,7 +168,9 @@ class EntityFactory:
                 slot=self._get_equipment_slot(weapon_def.slot),
                 power_bonus=weapon_def.power_bonus,
                 damage_min=weapon_def.damage_min,
-                damage_max=weapon_def.damage_max
+                damage_max=weapon_def.damage_max,
+                damage_dice=weapon_def.damage_dice,
+                to_hit_bonus=weapon_def.to_hit_bonus
             )
 
             # Create entity

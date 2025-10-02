@@ -202,21 +202,24 @@ class TestEquipmentMigrationIntegration:
         load_entity_config()
 
     def test_entity_registry_has_equipment_definitions(self):
-        """Test that entity registry contains weapon and armor configurations."""
+        """Test that entity registry contains weapon and armor configurations with dice."""
         registry = get_entity_registry()
         
-        # Check weapons
+        # Check weapons use new dice system
         dagger = registry.get_weapon("dagger")
         assert dagger is not None
-        assert dagger.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.damage_min == 3
-        assert dagger.damage_max == 5
+        assert dagger.power_bonus == 0
+        assert dagger.damage_dice == "1d4"
+        assert dagger.damage_min == 1  # Calculated from 1d4
+        assert dagger.damage_max == 4
+        assert dagger.to_hit_bonus == 1  # Finesse
         
         sword = registry.get_weapon("sword")
         assert sword is not None
-        assert sword.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert sword.damage_min == 4
-        assert sword.damage_max == 7
+        assert sword.power_bonus == 0
+        assert sword.damage_dice == "1d8"
+        assert dagger.damage_min == 1  # Calculated from 1d8
+        assert sword.damage_max == 8
         
         # Check armor
         shield = registry.get_armor("shield")
@@ -247,19 +250,21 @@ class TestEquipmentMigrationIntegration:
         assert shield.equippable.defense_bonus == 0  # Basic armor no longer has magic bonuses
 
     def test_equipment_creation_end_to_end(self):
-        """Test complete equipment creation flow."""
+        """Test complete equipment creation flow with dice system."""
         constants = get_constants()
         
         # This should create player with starting dagger
         player, entities, game_map, message_log, game_state = get_game_variables(constants)
         
-        # Verify starting equipment works
+        # Verify starting equipment uses dice system
         assert player.equipment.main_hand is not None
         dagger = player.equipment.main_hand
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 3
-        assert dagger.equippable.damage_max == 5
+        assert dagger.equippable.power_bonus == 0
+        assert dagger.equippable.damage_dice == "1d4"
+        assert dagger.equippable.damage_min == 1
+        assert dagger.equippable.damage_max == 4
+        assert dagger.equippable.to_hit_bonus == 1
 
 
 class TestBackwardCompatibility:
@@ -271,22 +276,25 @@ class TestBackwardCompatibility:
         load_entity_config()
 
     def test_equipment_stats_exactly_match_hardcoded_values(self):
-        """Test that config values exactly match the old hardcoded values."""
+        """Test that config values match the new dice-based system."""
         factory = get_entity_factory()
         
-        # Test dagger matches: Equippable(EquipmentSlots.MAIN_HAND, power_bonus=2, damage_min=1, damage_max=3)
+        # Test dagger uses dice notation: "1d4" with +1 to-hit
         dagger = factory.create_weapon("dagger", 0, 0)
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
-        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 3
-        assert dagger.equippable.damage_max == 5
+        assert dagger.equippable.power_bonus == 0
+        assert dagger.equippable.damage_dice == "1d4"  # New dice system
+        assert dagger.equippable.damage_min == 1  # Calculated from 1d4
+        assert dagger.equippable.damage_max == 4  # Calculated from 1d4
+        assert dagger.equippable.to_hit_bonus == 1  # Finesse weapon
         
-        # Test sword matches: Equippable(EquipmentSlots.MAIN_HAND, power_bonus=3, damage_min=2, damage_max=5)
+        # Test sword uses dice notation: "1d8" (now longsword equivalent)
         sword = factory.create_weapon("sword", 0, 0)
         assert sword.equippable.slot == EquipmentSlots.MAIN_HAND
-        assert sword.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert sword.equippable.damage_min == 4
-        assert sword.equippable.damage_max == 7
+        assert sword.equippable.power_bonus == 0
+        assert sword.equippable.damage_dice == "1d8"  # New dice system
+        assert sword.equippable.damage_min == 1  # Calculated from 1d8
+        assert sword.equippable.damage_max == 8  # Calculated from 1d8
         
         # Test shield matches: Equippable(EquipmentSlots.OFF_HAND, defense_bonus=1, defense_min=1, defense_max=3)
         shield = factory.create_armor("shield", 0, 0)
@@ -296,38 +304,21 @@ class TestBackwardCompatibility:
         assert shield.equippable.defense_max == 3
 
     def test_equipment_creation_produces_identical_objects(self):
-        """Test that EntityFactory produces functionally identical equipment."""
+        """Test that EntityFactory produces correct equipment with dice system."""
         factory = get_entity_factory()
         
         # Create sword using new system
         new_sword = factory.create_weapon("sword", 5, 5)
         
-        # Manually create sword using old system (for comparison)
-        from components.equippable import Equippable
-        from entity import Entity
-        from equipment_slots import EquipmentSlots
-        
-        old_equippable = Equippable(
-            EquipmentSlots.MAIN_HAND, power_bonus=0,  # Updated: basic weapons no longer have magic bonuses
-            damage_min=4, damage_max=7  # Updated to match current YAML values
-        )
-        old_sword = Entity(
-            5, 5, "/", (0, 191, 255), "Sword",
-            equippable=old_equippable
-        )
-        
-        # Compare all relevant properties
-        assert new_sword.name == old_sword.name
-        assert new_sword.char == old_sword.char
-        # Note: Colors may differ (old hardcoded vs new YAML config)
-        assert new_sword.x == old_sword.x
-        assert new_sword.y == old_sword.y
-        
-        # Compare equippable component
-        assert new_sword.equippable.slot == old_sword.equippable.slot
-        assert new_sword.equippable.power_bonus == old_sword.equippable.power_bonus
-        assert new_sword.equippable.damage_min == old_sword.equippable.damage_min
-        assert new_sword.equippable.damage_max == old_sword.equippable.damage_max
+        # Verify sword has correct dice-based properties
+        assert new_sword.name == "Sword"
+        assert new_sword.char == "/"
+        assert new_sword.x == 5
+        assert new_sword.y == 5
+        assert new_sword.equippable.slot == EquipmentSlots.MAIN_HAND
+        assert new_sword.equippable.damage_dice == "1d8"
+        assert new_sword.equippable.damage_min == 1
+        assert new_sword.equippable.damage_max == 8
 
     def test_save_load_compatibility(self):
         """Test that migrated equipment can be saved and loaded correctly."""
@@ -361,13 +352,15 @@ class TestBackwardCompatibility:
         # Create player with new system
         player, _, _, _, _ = get_game_variables(constants)
         
-        # Verify starting dagger matches old hardcoded creation
+        # Verify starting dagger uses new dice system
         dagger = player.equipment.main_hand
         assert dagger is not None
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 3
-        assert dagger.equippable.damage_max == 5
+        assert dagger.equippable.power_bonus == 0
+        assert dagger.equippable.damage_dice == "1d4"  # New dice system
+        assert dagger.equippable.damage_min == 1  # Calculated from 1d4
+        assert dagger.equippable.damage_max == 4  # Calculated from 1d4
+        assert dagger.equippable.to_hit_bonus == 1  # Finesse weapon
         assert dagger.equippable.slot == EquipmentSlots.MAIN_HAND
         
         # Verify dagger is equipped and in inventory

@@ -112,7 +112,7 @@ class TestPlayerMigrationCompatibility:
         assert player.pathfinding.owner is player
 
     def test_player_starting_equipment_unchanged(self):
-        """Test that player starting equipment creation is unchanged."""
+        """Test that player starting equipment uses new dice system."""
         constants = get_constants()
         
         player, entities, game_map, message_log, game_state = get_game_variables(constants)
@@ -121,11 +121,13 @@ class TestPlayerMigrationCompatibility:
         assert player.equipment.main_hand is not None
         dagger = player.equipment.main_hand
         
-        # Verify dagger properties
+        # Verify dagger uses new dice system
         assert dagger.name == "Dagger"
-        assert dagger.equippable.power_bonus == 0  # Basic weapons no longer have magic bonuses
-        assert dagger.equippable.damage_min == 3  # Updated to match current YAML
-        assert dagger.equippable.damage_max == 5  # Updated to match current YAML
+        assert dagger.equippable.power_bonus == 0
+        assert dagger.equippable.damage_dice == "1d4"  # New dice system
+        assert dagger.equippable.damage_min == 1  # Calculated from 1d4
+        assert dagger.equippable.damage_max == 4  # Calculated from 1d4
+        assert dagger.equippable.to_hit_bonus == 1  # Finesse weapon
         
         # Verify dagger is in inventory
         assert dagger in player.inventory.items

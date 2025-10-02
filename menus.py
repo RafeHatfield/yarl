@@ -393,8 +393,12 @@ def _get_slot_display(equipped_item, slot_name, letter):
     if hasattr(equipped_item, 'equippable') and equipped_item.equippable:
         equippable = equipped_item.equippable
         
-        # Weapon stats
-        if hasattr(equippable, 'damage_min') and equippable.damage_max > 0:
+        # Weapon stats (prefer dice notation over damage range)
+        if hasattr(equippable, 'damage_dice') and equippable.damage_dice:
+            # Show dice notation
+            stats.append(equippable.damage_dice)
+        elif hasattr(equippable, 'damage_min') and equippable.damage_max > 0:
+            # Fall back to damage range for legacy weapons
             if equippable.damage_min == equippable.damage_max:
                 stats.append(f"{equippable.damage_max}")
             else:
@@ -487,6 +491,16 @@ def _get_damage_display(player):
         hasattr(player.equipment.main_hand, 'equippable')):
         
         weapon = player.equipment.main_hand.equippable
+        
+        # Prefer dice notation if available
+        if hasattr(weapon, 'damage_dice') and weapon.damage_dice:
+            if str_mod != 0:
+                str_mod_str = f"+{str_mod}" if str_mod > 0 else str(str_mod)
+                return f"{weapon.damage_dice}{str_mod_str}"
+            else:
+                return weapon.damage_dice
+        
+        # Fall back to damage range for legacy weapons
         if hasattr(weapon, 'damage_min') and weapon.damage_max > 0:
             if str_mod != 0:
                 str_mod_str = f"+{str_mod}" if str_mod > 0 else str(str_mod)

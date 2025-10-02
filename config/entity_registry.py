@@ -89,11 +89,17 @@ class MonsterDefinition:
 
 @dataclass  
 class WeaponDefinition:
-    """Definition for a weapon item."""
+    """Definition for a weapon item.
+    
+    Supports both dice notation (1d4, 2d6) and legacy damage ranges.
+    Dice notation is preferred for new weapons.
+    """
     name: str
     power_bonus: int = 0
     damage_min: int = 0
     damage_max: int = 0
+    damage_dice: Optional[str] = None  # e.g., "1d4", "1d6", "1d8", "1d10", "1d12", "2d6"
+    to_hit_bonus: int = 0  # Bonus to attack rolls
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -321,11 +327,23 @@ class EntityRegistry:
         
         for weapon_id, weapon_data in resolved_weapons_data.items():
             try:
+                # Get dice notation or damage range
+                damage_dice = weapon_data.get('damage_dice')
+                damage_min = weapon_data.get('damage_min', 0)
+                damage_max = weapon_data.get('damage_max', 0)
+                
+                # If dice notation is provided but no damage range, calculate range from dice
+                if damage_dice and (damage_min == 0 or damage_max == 0):
+                    from dice import get_dice_min_max
+                    damage_min, damage_max = get_dice_min_max(damage_dice)
+                
                 weapon_def = WeaponDefinition(
                     name=weapon_id.title(),
                     power_bonus=weapon_data.get('power_bonus', 0),
-                    damage_min=weapon_data.get('damage_min', 0),
-                    damage_max=weapon_data.get('damage_max', 0),
+                    damage_min=damage_min,
+                    damage_max=damage_max,
+                    damage_dice=damage_dice,
+                    to_hit_bonus=weapon_data.get('to_hit_bonus', 0),
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),

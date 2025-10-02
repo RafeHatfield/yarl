@@ -186,21 +186,130 @@ monsters:
     # Inherits: ai_type: "slime", faction: "hostile_all", can_seek_items: false, etc.
 
 # Weapon definitions
+#
+# Weapon Properties (D&D-style):
+# - damage_dice: Dice notation for damage (e.g., "1d4", "1d6", "1d8")
+# - to_hit_bonus: Bonus to attack rolls (finesse weapons get +1)
+# - Damage is: dice roll + STR modifier + to_hit_bonus
+#
+# Weapon Categories:
+# - Light weapons (1d4): Fast, finesse-based
+# - One-handed (1d6-1d8): Balanced weapons
+# - Heavy (1d10-1d12): Slow but powerful
+#
 weapons:
-  # Starting weapon
+  # ═══════════════════════════════════════════════════════════
+  # LIGHT WEAPONS (1d4) - Fast, Finesse
+  # ═══════════════════════════════════════════════════════════
+  
+  # Starting weapon - weak but fast
   dagger:
-    power_bonus: 0
-    damage_min: 3  # Replaces fist damage: 0 power + 3-5 = 3-5
-    damage_max: 5  # Slight improvement over fists (3-4)
+    damage_dice: "1d4"      # 1-4 damage (avg 2.5)
+    to_hit_bonus: 1         # Finesse weapon: easier to hit
     slot: "main_hand"
     char: "-"
-    color: [139, 69, 19]  # Brown
+    color: [139, 69, 19]    # Brown
 
-  # Mid-tier weapon
+  # ═══════════════════════════════════════════════════════════
+  # ONE-HANDED WEAPONS (1d6) - Balanced
+  # ═══════════════════════════════════════════════════════════
+  
+  # Common bludgeoning weapon
+  club:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 0
+    slot: "main_hand"
+    char: ")"
+    color: [101, 67, 33]    # Dark brown
+  
+  # Piercing finesse weapon
+  shortsword:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 1         # Finesse: better to-hit
+    slot: "main_hand"
+    char: "/"
+    color: [192, 192, 192]  # Silver
+  
+  # Bludgeoning weapon, good vs armor
+  mace:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 0
+    slot: "main_hand"
+    char: ")"
+    color: [128, 128, 128]  # Gray
+
+  # ═══════════════════════════════════════════════════════════
+  # ONE-HANDED WEAPONS (1d8) - Better Damage
+  # ═══════════════════════════════════════════════════════════
+  
+  # Standard sword - well-balanced
+  longsword:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    slot: "main_hand"
+    char: "/"
+    color: [192, 192, 192]  # Silver
+  
+  # Elegant finesse weapon
+  rapier:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 1         # Finesse: precision strikes
+    slot: "main_hand"
+    char: "/"
+    color: [220, 220, 220]  # Bright silver
+  
+  # Versatile piercing weapon
+  spear:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0         # Reach weapon (future: reach property)
+    slot: "main_hand"
+    char: "/"
+    color: [160, 82, 45]    # Brown/wood
+
+  # ═══════════════════════════════════════════════════════════
+  # HEAVY WEAPONS (1d10) - High Damage, No Finesse
+  # ═══════════════════════════════════════════════════════════
+  
+  # Heavy chopping weapon
+  battleaxe:
+    damage_dice: "1d10"     # 1-10 damage (avg 5.5)
+    to_hit_bonus: 0
+    slot: "main_hand"
+    char: "/"
+    color: [169, 169, 169]  # Dark gray
+  
+  # Heavy bludgeoning weapon
+  warhammer:
+    damage_dice: "1d10"     # 1-10 damage (avg 5.5)
+    to_hit_bonus: 0
+    slot: "main_hand"
+    char: ")"
+    color: [105, 105, 105]  # Dim gray
+
+  # ═══════════════════════════════════════════════════════════
+  # TWO-HANDED WEAPONS (1d12) - Maximum Damage
+  # ═══════════════════════════════════════════════════════════
+  
+  # Massive two-handed axe
+  greataxe:
+    damage_dice: "1d12"     # 1-12 damage (avg 6.5) - HIGHEST!
+    to_hit_bonus: -1        # Unwieldy: harder to hit
+    slot: "main_hand"       # Future: add two_handed property
+    char: "/"
+    color: [128, 128, 128]  # Gray
+  
+  # Large two-handed sword
+  greatsword:
+    damage_dice: "2d6"      # 2-12 damage (avg 7.0) - MOST CONSISTENT!
+    to_hit_bonus: 0
+    slot: "main_hand"       # Future: add two_handed property
+    char: "/"
+    color: [211, 211, 211]  # Light gray
+  
+  # Legacy weapon (for backward compatibility)
   sword:
-    power_bonus: 0
-    damage_min: 4  # Better weapon: 0 power + 4-7 = 4-7
-    damage_max: 7  # Significant improvement over dagger
+    damage_dice: "1d8"      # Same as longsword
+    to_hit_bonus: 0
     slot: "main_hand"
     char: "/"
     color: [192, 192, 192]  # Silver
