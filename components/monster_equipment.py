@@ -103,8 +103,10 @@ class MonsterEquipmentSpawner:
             # For now, simple logic: daggers at level 1-2, swords at level 3+
             if dungeon_level <= 2:
                 return self.entity_factory.create_weapon("dagger", 0, 0)
+            elif dungeon_level <= 5:
+                return self.entity_factory.create_weapon("shortsword", 0, 0)
             else:
-                return self.entity_factory.create_weapon("sword", 0, 0)
+                return self.entity_factory.create_weapon("longsword", 0, 0)
         except Exception as e:
             logger.warning(f"Failed to create weapon for level {dungeon_level}: {e}")
             return None
