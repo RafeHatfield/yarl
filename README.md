@@ -1,7 +1,7 @@
 # Catacombs of Yarl - A Python Roguelike Game
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-1462%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 [![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
@@ -725,7 +725,20 @@ This project is inspired by the classic roguelike tradition and follows patterns
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Yarl - Catacombs of Yarl** is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+
+This means you're free to:
+- ✅ Use, study, and modify the code
+- ✅ Distribute copies and modifications
+- ✅ Use it for any purpose, including commercial
+
+**BUT** any derivative works must also be open-sourced under GPL-3.0.
+
+**Copyright © 2024-2025 Rafe Hatfield**
+
+For commercial licensing inquiries or questions about alternative licensing, please open an issue on GitHub.
+
+See the [LICENSE](LICENSE) file for complete terms.
 
 ## 🙏 Acknowledgments
 
