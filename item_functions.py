@@ -13,6 +13,7 @@ from components.ai import ConfusedMonster
 from game_messages import Message
 from fov_functions import map_is_in_fov
 from render_functions import RenderOrder
+from visual_effects import show_fireball, show_lightning, show_dragon_fart
 
 
 def heal(*args, **kwargs):
@@ -87,6 +88,34 @@ def cast_lightning(*args, **kwargs):
                 closest_distance = distance
 
     if target:
+        # VISUAL EFFECT: Show lightning path! ⚡
+        lightning_path = []
+        # Calculate straight line from caster to target using Bresenham's line algorithm
+        x0, y0 = caster.x, caster.y
+        x1, y1 = target.x, target.y
+        
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
+        
+        x, y = x0, y0
+        while True:
+            lightning_path.append((x, y))
+            if x == x1 and y == y1:
+                break
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x += sx
+            if e2 < dx:
+                err += dx
+                y += sy
+        
+        # Show the lightning zap!
+        show_lightning(lightning_path)
+        
         results.append(
             {
                 "consumed": True,
@@ -158,6 +187,19 @@ def cast_fireball(*args, **kwargs):
             ),
         }
     )
+    
+    # VISUAL EFFECT: Show explosion area! 🔥
+    explosion_tiles = []
+    for dx in range(-radius, radius + 1):
+        for dy in range(-radius, radius + 1):
+            # Check if tile is within circular radius
+            if math.sqrt(dx**2 + dy**2) <= radius:
+                tile_x = target_x + dx
+                tile_y = target_y + dy
+                explosion_tiles.append((tile_x, tile_y))
+    
+    # Show the fiery explosion!
+    show_fireball(explosion_tiles)
 
     for entity in entities:
         # Damage ALL entities in radius, including the caster!
@@ -647,6 +689,9 @@ def cast_dragon_fart(*args, **kwargs):
         max_range=8,
         cone_width=45
     )
+    
+    # VISUAL EFFECT: Show the noxious cone! 💨
+    show_dragon_fart(list(cone_tiles))
     
     # Track affected entities
     affected_entities = []
