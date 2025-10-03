@@ -66,6 +66,10 @@ class ActionProcessor:
             action: Dictionary of keyboard actions
             mouse_action: Dictionary of mouse actions
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        if mouse_action:
+            logger.warning(f"PROCESS_ACTIONS: mouse_action = {mouse_action}")
         current_state = self.state_manager.state.current_state
         
         # CRITICAL: Don't process any game actions if player is dead

@@ -196,6 +196,9 @@ def handle_mouse(mouse):
     if ui_layout.is_in_sidebar(screen_x, screen_y):
         # Handle sidebar clicks (inventory items)
         if mouse.lbutton_pressed:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"SIDEBAR CLICK detected at screen ({screen_x}, {screen_y})")
             return {"sidebar_click": (screen_x, screen_y)}
         return {}
     

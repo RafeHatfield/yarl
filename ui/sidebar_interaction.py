@@ -24,8 +24,11 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout) -> Opt
     Returns:
         dict: Action dictionary if item clicked, None otherwise
     """
+    logger.info(f"handle_sidebar_click called: ({screen_x}, {screen_y})")
+    
     # Verify click is actually in sidebar
     if not ui_layout.is_in_sidebar(screen_x, screen_y):
+        logger.info(f"Click not in sidebar bounds")
         return None
     
     # Check if player has inventory
@@ -72,9 +75,12 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout) -> Opt
             clicked_item_index = i
             break
     
+    logger.info(f"Checking {len(inventory_items)} items starting at Y={inventory_start_y}")
+    logger.info(f"Click was at Y={screen_y}, clicked_item_index={clicked_item_index}")
+    
     if clicked_item_index is not None:
         # User clicked on an item!
-        logger.info(f"Sidebar inventory click: item index {clicked_item_index}")
+        logger.warning(f"ITEM CLICKED! Index: {clicked_item_index}")
         
         # Return action to use this item
         # The index corresponds to the unequipped items, so we need to find
@@ -82,11 +88,14 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout) -> Opt
         clicked_item = inventory_items[clicked_item_index]
         actual_inventory_index = player.inventory.items.index(clicked_item)
         
+        logger.warning(f"Returning inventory_index={actual_inventory_index}")
+        
         return {
             "inventory_index": actual_inventory_index,
             "source": "sidebar_click"
         }
     
+    logger.info(f"No item clicked at this position")
     return None
 
 
