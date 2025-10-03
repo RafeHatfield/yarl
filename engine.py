@@ -19,6 +19,7 @@ from loader_functions.initialize_new_game import get_constants, get_game_variabl
 from menus import main_menu, message_box
 from engine_integration import play_game_with_engine
 from config.testing_config import set_testing_mode
+from config.ui_layout import get_ui_layout
 
 # Set up basic logging (WARNING level to see exit triggers)
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
@@ -79,20 +80,45 @@ def main():
         from components.monster_action_logger import MonsterActionLogger
         MonsterActionLogger.setup_logging()
     constants = get_constants()
+    
+    # Get UI layout configuration for split-screen design
+    ui_layout = get_ui_layout()
 
     libtcod.console_set_custom_font(
         "arial10x10.png", libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD
     )
 
+    # Initialize root console with new layout dimensions
     libtcod.console_init_root(
-        constants["screen_width"],
-        constants["screen_height"],
+        ui_layout.screen_width,
+        ui_layout.screen_height,
         constants["window_title"],
         False,
     )
 
-    con = libtcod.console_new(constants["screen_width"], constants["screen_height"])
-    panel = libtcod.console_new(constants["screen_width"], constants["panel_height"])
+    # Create 3 consoles for split-screen layout
+    # Sidebar: Full height, left side
+    sidebar_console = libtcod.console_new(
+        ui_layout.sidebar_width, 
+        ui_layout.screen_height
+    )
+    
+    # Viewport: Main game view, right side
+    viewport_console = libtcod.console_new(
+        ui_layout.viewport_width, 
+        ui_layout.viewport_height
+    )
+    
+    # Status Panel: Below viewport (HP, messages, dungeon info)
+    status_console = libtcod.console_new(
+        ui_layout.status_panel_width,
+        ui_layout.status_panel_height
+    )
+    
+    # Legacy consoles for compatibility during transition
+    # TODO: Remove these once all systems updated
+    con = viewport_console  # Main console points to viewport
+    panel = status_console  # Panel points to status
 
     player = None
     entities = []
@@ -121,8 +147,8 @@ def main():
             main_menu(
                 con,
                 main_menu_background_image,
-                constants["screen_width"],
-                constants["screen_height"],
+                ui_layout.screen_width,  # Use actual screen dimensions
+                ui_layout.screen_height,  # Not old constants!
                 entity_menu_quote,  # Pass the pre-selected quote
             )
 
@@ -131,8 +157,8 @@ def main():
                     con,
                     "No save game to load",
                     50,
-                    constants["screen_width"],
-                    constants["screen_height"],
+                    ui_layout.screen_width,  # Use actual screen dimensions
+                    ui_layout.screen_height,  # Not old constants!
                 )
 
             with warnings.catch_warnings():
@@ -171,15 +197,16 @@ def main():
         else:
             libtcod.console_clear(con)
             
-            # Use the modern engine architecture
+            # Use the modern engine architecture with 3-console layout
             result = play_game_with_engine(
                 player,
                 entities,
                 game_map,
                 message_log,
                 game_state,
-                con,
-                panel,
+                sidebar_console,
+                viewport_console,
+                status_console,
                 constants
             )
 

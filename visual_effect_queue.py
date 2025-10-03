@@ -56,11 +56,24 @@ class QueuedEffect:
         self.params = kwargs
     
     def play(self, con=0) -> None:
-        """Play this effect immediately.
+        """Play this effect immediately with viewport offset.
+        
+        Visual effects are drawn in world coordinates but need to account
+        for the viewport offset in split-screen layout.
         
         Args:
             con: Console to draw on (default: root console 0)
         """
+        # Get viewport offset for coordinate translation
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_offset = ui_layout.viewport_position
+        
+        # Adjust coordinates for viewport offset
+        self.screen_x = self.x + viewport_offset[0]
+        self.screen_y = self.y + viewport_offset[1]
+        
+        # Now play the effect at screen coordinates
         if self.effect_type == EffectType.HIT:
             self._play_hit(con)
         elif self.effect_type == EffectType.CRITICAL_HIT:
@@ -87,13 +100,13 @@ class QueuedEffect:
         if self.entity and hasattr(self.entity, 'char'):
             char = self.entity.char
         else:
-            char = libtcodpy.console_get_char(con, self.x, self.y)
+            char = libtcodpy.console_get_char(con, self.screen_x, self.screen_y)
             if char == 0 or char == ord(' '):
                 char = ord('*')
         
-        # Flash red
+        # Flash red at screen position (viewport offset already applied)
         libtcodpy.console_set_default_foreground(con, color)
-        libtcodpy.console_put_char(con, self.x, self.y, char, libtcodpy.BKGND_NONE)
+        libtcodpy.console_put_char(con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE)
         libtcodpy.console_flush()
         
         time.sleep(duration)
@@ -107,13 +120,13 @@ class QueuedEffect:
         if self.entity and hasattr(self.entity, 'char'):
             char = self.entity.char
         else:
-            char = libtcodpy.console_get_char(con, self.x, self.y)
+            char = libtcodpy.console_get_char(con, self.screen_x, self.screen_y)
             if char == 0 or char == ord(' '):
                 char = ord('*')
         
-        # Flash yellow
+        # Flash yellow at screen position (viewport offset already applied)
         libtcodpy.console_set_default_foreground(con, color)
-        libtcodpy.console_put_char(con, self.x, self.y, char, libtcodpy.BKGND_NONE)
+        libtcodpy.console_put_char(con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE)
         libtcodpy.console_flush()
         
         time.sleep(duration)
@@ -127,13 +140,13 @@ class QueuedEffect:
         if self.entity and hasattr(self.entity, 'char'):
             char = self.entity.char
         else:
-            char = libtcodpy.console_get_char(con, self.x, self.y)
+            char = libtcodpy.console_get_char(con, self.screen_x, self.screen_y)
             if char == 0 or char == ord(' '):
                 char = ord('-')
         
-        # Flash grey
+        # Flash grey at screen position (viewport offset already applied)
         libtcodpy.console_set_default_foreground(con, color)
-        libtcodpy.console_put_char(con, self.x, self.y, char, libtcodpy.BKGND_NONE)
+        libtcodpy.console_put_char(con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE)
         libtcodpy.console_flush()
         
         time.sleep(duration)
@@ -145,10 +158,17 @@ class QueuedEffect:
         char = self.params.get('char', ord('*'))
         duration = 0.25  # 250ms
         
-        # Draw explosion area
+        # Get viewport offset for coordinate translation
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_offset = ui_layout.viewport_position
+        
+        # Draw explosion area (translate world coords to screen coords)
         for tile_x, tile_y in tiles:
+            screen_x = tile_x + viewport_offset[0]
+            screen_y = tile_y + viewport_offset[1]
             libtcodpy.console_set_default_foreground(con, color)
-            libtcodpy.console_put_char(con, tile_x, tile_y, char, libtcodpy.BKGND_NONE)
+            libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)
@@ -160,10 +180,17 @@ class QueuedEffect:
         char = self.params.get('char', ord('|'))
         duration = 0.15  # 150ms
         
-        # Draw lightning path
+        # Get viewport offset for coordinate translation
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_offset = ui_layout.viewport_position
+        
+        # Draw lightning path (translate world coords to screen coords)
         for tile_x, tile_y in path:
+            screen_x = tile_x + viewport_offset[0]
+            screen_y = tile_y + viewport_offset[1]
             libtcodpy.console_set_default_foreground(con, color)
-            libtcodpy.console_put_char(con, tile_x, tile_y, char, libtcodpy.BKGND_NONE)
+            libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)
@@ -175,10 +202,17 @@ class QueuedEffect:
         char = self.params.get('char', ord('~'))
         duration = 0.25  # 250ms
         
-        # Draw cone area
+        # Get viewport offset for coordinate translation
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_offset = ui_layout.viewport_position
+        
+        # Draw cone area (translate world coords to screen coords)
         for tile_x, tile_y in tiles:
+            screen_x = tile_x + viewport_offset[0]
+            screen_y = tile_y + viewport_offset[1]
             libtcodpy.console_set_default_foreground(con, color)
-            libtcodpy.console_put_char(con, tile_x, tile_y, char, libtcodpy.BKGND_NONE)
+            libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)

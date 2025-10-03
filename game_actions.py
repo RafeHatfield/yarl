@@ -56,6 +56,7 @@ class ActionProcessor:
         self.mouse_handlers = {
             'left_click': self._handle_left_click,
             'right_click': self._handle_right_click,
+            'sidebar_click': self._handle_sidebar_click,
         }
     
     def process_actions(self, action: Dict[str, Any], mouse_action: Dict[str, Any]) -> None:
@@ -65,6 +66,10 @@ class ActionProcessor:
             action: Dictionary of keyboard actions
             mouse_action: Dictionary of mouse actions
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        if mouse_action:
+            logger.warning(f"PROCESS_ACTIONS: mouse_action = {mouse_action}")
         current_state = self.state_manager.state.current_state
         
         # CRITICAL: Don't process any game actions if player is dead
@@ -82,11 +87,13 @@ class ActionProcessor:
         
         # Process mouse actions
         for mouse_action_type, value in mouse_action.items():
+            logger.warning(f"Mouse action type: {mouse_action_type}, value: {value}, has handler: {mouse_action_type in self.mouse_handlers}")
             if value and mouse_action_type in self.mouse_handlers:
                 try:
+                    logger.warning(f"Calling mouse handler for {mouse_action_type}")
                     self.mouse_handlers[mouse_action_type](value)
                 except Exception as e:
-                    logger.error(f"Error processing mouse action {mouse_action_type}: {e}")
+                    logger.error(f"Error processing mouse action {mouse_action_type}: {e}", exc_info=True)
     
     def _handle_show_inventory(self, _) -> None:
         """Handle showing the inventory screen."""
@@ -392,10 +399,16 @@ class ActionProcessor:
         
         item = player.inventory.items[inventory_index]
         
+        logger.warning(f"Current state: {current_state}, item: {item.name if item else None}")
+        
         if current_state == GameStates.SHOW_INVENTORY:
             self._use_inventory_item(item)
         elif current_state == GameStates.DROP_INVENTORY:
             self._drop_inventory_item(item)
+        elif current_state == GameStates.PLAYERS_TURN:
+            # Sidebar click during normal gameplay - use the item!
+            logger.warning(f"Using item from sidebar during PLAYERS_TURN")
+            self._use_inventory_item(item)
     
     def _use_inventory_item(self, item) -> None:
         """Use an item from inventory.
@@ -611,11 +624,55 @@ class ActionProcessor:
             # Handle mouse movement/combat during player turn
             self._handle_mouse_movement(click_pos)
     
+    def _handle_sidebar_click(self, click_pos: Tuple[int, int]) -> None:
+        """Handle mouse click in sidebar (hotkeys and inventory items).
+        
+        Args:
+            click_pos: Tuple of (screen_x, screen_y) click coordinates
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"_handle_sidebar_click called with {click_pos}")
+        
+        from ui.sidebar_interaction import handle_sidebar_click
+        from config.ui_layout import get_ui_layout
+        
+        screen_x, screen_y = click_pos
+        player = self.state_manager.state.player
+        game_map = self.state_manager.state.game_map
+        entities = self.state_manager.state.entities
+        ui_layout = get_ui_layout()
+        
+        logger.warning(f"About to call handle_sidebar_click with player={player}, ui_layout={ui_layout}")
+        
+        # Check if click is on a hotkey or inventory item
+        action = handle_sidebar_click(screen_x, screen_y, player, ui_layout, game_map, entities)
+        
+        logger.warning(f"handle_sidebar_click returned: {action}")
+        
+        if action:
+            # Process the action returned from sidebar
+            if 'inventory_index' in action:
+                # User clicked on an inventory item - use it!
+                logger.warning(f"SIDEBAR INVENTORY ITEM CLICKED: index {action['inventory_index']}")
+                self._handle_inventory_action(action['inventory_index'])
+            else:
+                # User clicked on a hotkey button - process it!
+                logger.warning(f"SIDEBAR HOTKEY CLICKED: {action}")
+                # Add action to the normal action processing queue
+                for action_type, value in action.items():
+                    if action_type in self.action_handlers:
+                        self.action_handlers[action_type](value)
+                    else:
+                        logger.warning(f"Unknown action type from sidebar: {action_type}")
+        else:
+            logger.warning(f"No valid action returned from sidebar click")
+    
     def _handle_mouse_movement(self, click_pos: Tuple[int, int]) -> None:
         """Handle mouse click for movement or combat.
         
         Args:
-            click_pos: Tuple of (x, y) click coordinates
+            click_pos: Tuple of (x, y) click coordinates (world space)
         """
         from mouse_movement import handle_mouse_click
         

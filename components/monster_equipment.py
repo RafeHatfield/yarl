@@ -77,16 +77,28 @@ class MonsterEquipmentSpawner:
             # Spawn weapon
             weapon = self._create_weapon_for_level(dungeon_level)
             if weapon and hasattr(monster, 'equipment') and monster.equipment:
-                monster.equipment.toggle_equip(weapon)
-                equipment_list.append(weapon)
-                logger.debug(f"Equipped {monster.name} with {weapon.name}")
+                # Ensure it's actually a weapon before equipping
+                if hasattr(weapon, 'equippable') and weapon.equippable:
+                    monster.equipment.toggle_equip(weapon)
+                    equipment_list.append(weapon)
+                    logger.debug(f"Equipped {monster.name} with {weapon.name}")
+                else:
+                    logger.warning(f"Failed to equip weapon - no equippable component: {weapon.name}")
         else:
             # Spawn armor
+            logger.debug(f"Rolling for armor for {monster.name} at level {dungeon_level}")
             armor = self._create_armor_for_level(dungeon_level)
             if armor and hasattr(monster, 'equipment') and monster.equipment:
-                monster.equipment.toggle_equip(armor)
-                equipment_list.append(armor)
-                logger.debug(f"Equipped {monster.name} with {armor.name}")
+                # Ensure it's actually armor before equipping
+                if hasattr(armor, 'equippable') and armor.equippable:
+                    logger.debug(f"Attempting to equip {monster.name} with {armor.name}")
+                    monster.equipment.toggle_equip(armor)
+                    equipment_list.append(armor)
+                    logger.debug(f"Successfully equipped {monster.name} with {armor.name}")
+                else:
+                    logger.warning(f"Failed to equip armor - no equippable component: {armor.name}")
+            elif armor:
+                logger.warning(f"Armor created but monster has no equipment component: {armor.name}")
         
         return equipment_list
     
@@ -122,9 +134,15 @@ class MonsterEquipmentSpawner:
         """
         try:
             # For now, only shields available
-            return self.entity_factory.create_armor("shield", 0, 0)
+            logger.debug(f"Creating armor for level {dungeon_level}: requesting 'shield'")
+            armor = self.entity_factory.create_armor("shield", 0, 0)
+            if armor:
+                logger.debug(f"Successfully created armor: {armor.name}")
+            else:
+                logger.warning(f"create_armor('shield') returned None!")
+            return armor
         except Exception as e:
-            logger.warning(f"Failed to create armor for level {dungeon_level}: {e}")
+            logger.error(f"Exception creating armor for level {dungeon_level}: {e}", exc_info=True)
             return None
 
 

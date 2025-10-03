@@ -16,6 +16,7 @@ from render_optimization import render_tiles_optimized
 from entity_sorting_cache import get_sorted_entities
 from death_screen import render_death_screen
 from visual_effect_queue import get_effect_queue
+from ui.sidebar import _render_sidebar
 
 
 class RenderOrder(Enum):
@@ -39,14 +40,27 @@ def get_names_under_mouse(mouse, entities, fov_map):
     """Get the names of all visible entities under the mouse cursor.
 
     Args:
-        mouse: Mouse object with cursor coordinates
+        mouse: Mouse object with cursor coordinates (screen space)
         entities (list): List of all entities to check
         fov_map: Field of view map for visibility checking
 
     Returns:
         str: Comma-separated string of entity names under the cursor
     """
-    (x, y) = (mouse.cx, mouse.cy)
+    # Get screen coordinates from mouse
+    screen_x, screen_y = int(mouse.cx), int(mouse.cy)
+    
+    # Translate to world coordinates using ui_layout
+    from config.ui_layout import get_ui_layout
+    ui_layout = get_ui_layout()
+    
+    world_coords = ui_layout.screen_to_world(screen_x, screen_y)
+    
+    # If mouse is not over viewport, return empty string
+    if world_coords is None:
+        return ""
+    
+    (x, y) = world_coords
 
     names = [
         entity.name
@@ -112,15 +126,21 @@ def render_all(
     colors,
     game_state,
     use_optimization=True,
+    sidebar_console=None,
 ):
     """Render the entire game screen including map, entities, and UI.
 
     This is the main rendering function that draws everything visible
     on the screen including the game map, entities, UI panels, and menus.
+    
+    Now supports 3-console split-screen layout:
+    - Sidebar (left, full height): Menu, stats, equipment
+    - Viewport (right, main): Map and entities
+    - Status Panel (below viewport): HP, messages, dungeon info
 
     Args:
-        con: Main game console
-        panel: UI panel console
+        con: Main game console (viewport in new layout)
+        panel: UI panel console (status panel in new layout)
         entities (list): All entities to potentially render
         player (Entity): The player entity
         game_map (GameMap): The game map to render
@@ -136,6 +156,7 @@ def render_all(
         colors (dict): Color configuration dictionary
         game_state (GameStates): Current game state
         use_optimization (bool): Whether to use optimized tile rendering
+        sidebar_console: Left sidebar console (optional, for new layout)
     """
     # Render map tiles with optional optimization
     if use_optimization:
@@ -157,9 +178,18 @@ def render_all(
     # libtcod.console_print_ex(con, 1, screen_height - 2, libtcod.BKGND_NONE, libtcod.LEFT,
     #                      'HP: {0:02}/{1:02}'.format(player.fighter.hp, player.fighter.max_hp))
 
-    # CRITICAL: Blit console to screen BEFORE playing effects
+    # Get UI layout for positioning consoles
+    from config.ui_layout import get_ui_layout
+    ui_layout = get_ui_layout()
+    
+    # CRITICAL: Blit viewport to screen BEFORE playing effects
     # This ensures entities are rendered at correct positions when effects display
-    libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
+    # Viewport goes to the right side (after sidebar)
+    viewport_pos = ui_layout.viewport_position
+    libtcod.console_blit(
+        con, 0, 0, ui_layout.viewport_width, ui_layout.viewport_height,
+        0, viewport_pos[0], viewport_pos[1]
+    )
     
     # Play any queued visual effects NOW (after entities are rendered)
     # This is the key to fixing the double-entity bug!
@@ -209,7 +239,21 @@ def render_all(
         get_names_under_mouse(mouse, entities, fov_map),
     )
 
-    libtcod.console_blit(panel, 0, 0, screen_width, panel_height, 0, 0, panel_y)
+    # Blit status panel below viewport (not full width, just viewport width)
+    status_pos = ui_layout.status_panel_position
+    libtcod.console_blit(
+        panel, 0, 0, ui_layout.status_panel_width, ui_layout.status_panel_height,
+        0, status_pos[0], status_pos[1]
+    )
+    
+    # Render and blit sidebar (if provided)
+    if sidebar_console:
+        _render_sidebar(sidebar_console, player, ui_layout)
+        sidebar_pos = ui_layout.sidebar_position
+        libtcod.console_blit(
+            sidebar_console, 0, 0, ui_layout.sidebar_width, ui_layout.screen_height,
+            0, sidebar_pos[0], sidebar_pos[1]
+        )
 
     if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
         if game_state == GameStates.SHOW_INVENTORY:

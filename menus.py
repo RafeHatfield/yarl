@@ -8,6 +8,7 @@ message boxes. All menus are rendered as centered overlays.
 import tcod as libtcod
 from tcod import libtcodpy
 from entity_dialogue import EntityDialogue
+from config.ui_layout import get_ui_layout
 
 
 def menu(con, header, options, width, screen_width, screen_height):
@@ -54,9 +55,23 @@ def menu(con, header, options, width, screen_width, screen_height):
         y += 1
         letter_index += 1
 
-    # blit the contents of "window" to the root console
-    x = int(screen_width / 2 - width / 2)
-    y = int(screen_height / 2 - height / 2)
+    # Blit the contents of "window" to the root console
+    # For main menu (called with empty header), center on FULL screen
+    # For in-game menus (called with header), center in viewport
+    if header == "":
+        # Main menu - center on full screen
+        x = int(screen_width / 2 - width / 2)
+        y = int(screen_height / 2 - height / 2)
+    else:
+        # In-game menu - center in viewport area
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_pos = ui_layout.viewport_position
+        
+        # Center within viewport
+        x = viewport_pos[0] + int(ui_layout.viewport_width / 2 - width / 2)
+        y = viewport_pos[1] + int(ui_layout.viewport_height / 2 - height / 2)
+    
     libtcodpy.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
 
@@ -118,12 +133,16 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     # Use deprecated method but warnings are suppressed in engine.py
     libtcodpy.image_blit_2x(background_image, 0, 0, 0)
 
+    # Calculate center positions for new screen dimensions (100x52)
+    center_x = screen_width // 2  # 50
+    center_y = screen_height // 2  # 26
+    
     # Title
     libtcodpy.console_set_default_foreground(0, (255, 255, 63))
     libtcodpy.console_print_ex(
         0,
-        int(screen_width / 2),
-        int(screen_height / 2) - 8,
+        center_x,
+        center_y - 8,  # Back to original vertical spacing
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         "CATACOMBS OF YARL",
@@ -137,8 +156,8 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     libtcodpy.console_set_default_foreground(0, (180, 180, 150))  # Muted gold
     libtcodpy.console_print_ex(
         0,
-        int(screen_width / 2),
-        int(screen_height / 2) - 6,
+        center_x,
+        center_y - 5,  # Between title and menu
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         f'"{entity_quote}"',
@@ -147,8 +166,8 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     # Author credit
     libtcodpy.console_print_ex(
         0,
-        int(screen_width / 2),
-        int(screen_height - 2),
+        center_x,
+        screen_height - 2,
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         "By Rastaphibian",
@@ -395,8 +414,14 @@ def character_screen(
             if y >= character_screen_height - 1:
                 break
 
-    x = screen_width // 2 - character_screen_width // 2
-    y_pos = screen_height // 2 - character_screen_height // 2
+    # Blit the contents of "window" to the root console
+    # Center in viewport area for split-screen layout
+    ui_layout = get_ui_layout()
+    viewport_pos = ui_layout.viewport_position
+    
+    # Center within viewport
+    x = viewport_pos[0] + ui_layout.viewport_width // 2 - character_screen_width // 2
+    y_pos = viewport_pos[1] + ui_layout.viewport_height // 2 - character_screen_height // 2
     libtcodpy.console_blit(
         window, 0, 0, character_screen_width, character_screen_height, 0, x, y_pos, 1.0, 0.7
     )

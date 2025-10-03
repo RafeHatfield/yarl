@@ -42,19 +42,21 @@ class OptimizedRenderSystem(RenderSystem):
         colors: Dict[str, Any],
         priority: int = 100,
         use_optimizations: bool = True,
+        sidebar_console=None,
     ):
         """Initialize the OptimizedRenderSystem.
 
         Args:
-            console: Main game console for rendering
-            panel: UI panel console
+            console: Main game console for rendering (viewport)
+            panel: UI panel console (status panel)
             screen_width (int): Width of the screen
             screen_height (int): Height of the screen
             colors (Dict[str, Any]): Color configuration dictionary
             priority (int, optional): System update priority. Defaults to 100.
             use_optimizations (bool, optional): Whether to use optimizations. Defaults to True.
+            sidebar_console: Left sidebar console (optional)
         """
-        super().__init__(console, panel, screen_width, screen_height, colors, priority)
+        super().__init__(console, panel, screen_width, screen_height, colors, priority, sidebar_console)
 
         # Optimization settings
         self.use_optimizations = use_optimizations
@@ -331,6 +333,7 @@ class OptimizedRenderSystem(RenderSystem):
             self.colors,
             current_game_state,
             use_optimization=False,
+            sidebar_console=self.sidebar_console,
         )
 
         self.fov_recompute = False
@@ -384,6 +387,7 @@ class OptimizedRenderSystem(RenderSystem):
             self.colors,
             current_game_state,
             use_optimization=False,
+            sidebar_console=self.sidebar_console,
         )
 
         # Track skipped entities
