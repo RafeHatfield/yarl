@@ -99,17 +99,21 @@ def inventory_menu(con, header, player, inventory_width, screen_width, screen_he
     menu(con, header, options, inventory_width, screen_width, screen_height)
 
 
-def main_menu(con, background_image, screen_width, screen_height):
+def main_menu(con, background_image, screen_width, screen_height, entity_quote=None):
     """Display the main menu screen with Entity presence.
     
     The Entity's voice greets (mocks) the player on the menu screen,
     establishing the tone immediately. Alan Rickman would be proud.
+    
+    Note: entity_quote should be selected once outside the render loop
+    to prevent flickering. Pass it in rather than generating here.
 
     Args:
         con: Console to draw on
         background_image: Background image for the menu
         screen_width (int): Screen width
         screen_height (int): Screen height
+        entity_quote (str, optional): Pre-selected Entity quote (prevents flickering)
     """
     # Use deprecated method but warnings are suppressed in engine.py
     libtcodpy.image_blit_2x(background_image, 0, 0, 0)
@@ -126,7 +130,10 @@ def main_menu(con, background_image, screen_width, screen_height):
     )
     
     # Entity quote - the personality begins HERE
-    entity_quote = EntityDialogue.get_main_menu_quote()
+    # Only generate if not provided (prevents flickering in render loop)
+    if entity_quote is None:
+        entity_quote = EntityDialogue.get_main_menu_quote()
+    
     libtcodpy.console_set_default_foreground(0, (180, 180, 150))  # Muted gold
     libtcodpy.console_print_ex(
         0,

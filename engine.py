@@ -104,6 +104,10 @@ def main():
     show_load_error_message = False
 
     main_menu_background_image = libtcod.image_load("menu_background1.png")
+    
+    # Generate Entity quote ONCE to prevent flickering (Phase 1 feature)
+    from entity_dialogue import EntityDialogue
+    entity_menu_quote = EntityDialogue.get_main_menu_quote()
 
     key = libtcod.Key()
     mouse = libtcod.Mouse()
@@ -119,6 +123,7 @@ def main():
                 main_menu_background_image,
                 constants["screen_width"],
                 constants["screen_height"],
+                entity_menu_quote,  # Pass the pre-selected quote
             )
 
             if show_load_error_message:
@@ -154,6 +159,8 @@ def main():
                 try:
                     player, entities, game_map, message_log, game_state = load_game()
                     show_main_menu = False
+                    # Generate new Entity quote for next time menu is shown
+                    entity_menu_quote = EntityDialogue.get_main_menu_quote()
                 except FileNotFoundError:
                     show_load_error_message = True
             elif exit_game:
