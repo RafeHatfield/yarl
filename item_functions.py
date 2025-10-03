@@ -443,8 +443,8 @@ def cast_teleport(*args, **kwargs):
     Has a 10% chance to misfire and teleport to a random location instead.
     
     Args:
-        *args: [entity, entities, fov_map, game_map]
-        **kwargs: Contains target_x, target_y from targeting
+        *args: First argument should be the caster entity
+        **kwargs: Contains 'entities', 'game_map', 'target_x', 'target_y'
         
     Returns:
         list: List of result dictionaries with consumption and message info
@@ -452,8 +452,8 @@ def cast_teleport(*args, **kwargs):
     from random import randint, random
     
     entity = args[0]
-    entities = args[1]
-    game_map = args[3]
+    entities = kwargs.get("entities", [])
+    game_map = kwargs.get("game_map")
     target_x = kwargs.get("target_x")
     target_y = kwargs.get("target_y")
     
