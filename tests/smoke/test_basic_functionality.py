@@ -66,7 +66,7 @@ class TestBasicGameFunctionality(unittest.TestCase):
         }
         
         # Should not crash
-        engine = create_game_engine(constants, mock_console, mock_panel)
+        engine = create_game_engine(constants, Mock(), Mock(), Mock())  # sidebar, viewport, status
         
         # Basic verification
         self.assertIsNotNone(engine, "Engine should be created")

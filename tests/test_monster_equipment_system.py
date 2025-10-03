@@ -131,9 +131,9 @@ class TestMonsterEquipmentSpawner(unittest.TestCase):
         mock_factory.create_weapon.assert_called_with("dagger", 0, 0)
         self.assertEqual(result, mock_weapon)
         
-        # Level 3+: sword
+        # Level 3+: shortsword (updated in v3.0.0)
         result = self.spawner._create_weapon_for_level(3)
-        mock_factory.create_weapon.assert_called_with("sword", 0, 0)
+        mock_factory.create_weapon.assert_called_with("shortsword", 0, 0)
         self.assertEqual(result, mock_weapon)
 
     def test_create_armor_for_level(self):

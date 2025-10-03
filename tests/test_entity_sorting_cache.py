@@ -319,6 +319,8 @@ class TestEntitySortingIntegration(unittest.TestCase):
         mock_message_log.messages = []  # Add empty messages list
         mock_message_log.x = 1
         mock_mouse = Mock()
+        mock_mouse.cx = 0  # Add required mouse coordinates
+        mock_mouse.cy = 0
         
         # Create test entities
         entities = [
@@ -341,13 +343,13 @@ class TestEntitySortingIntegration(unittest.TestCase):
             # Call render_all twice
             render_all(
                 mock_con, mock_panel, entities, mock_player, mock_game_map,
-                mock_fov_map, False, mock_message_log, 80, 50, 20, 7, 43,
+                mock_fov_map, False, mock_message_log, 80, 50, 20, 7, 45,  # panel_y updated to 45 in v3.5.0
                 mock_mouse, colors, Mock(), use_optimization=False
             )
             
             render_all(
                 mock_con, mock_panel, entities, mock_player, mock_game_map,
-                mock_fov_map, False, mock_message_log, 80, 50, 20, 7, 43,
+                mock_fov_map, False, mock_message_log, 80, 50, 20, 7, 45,  # panel_y updated to 45 in v3.5.0
                 mock_mouse, colors, Mock(), use_optimization=False
             )
         

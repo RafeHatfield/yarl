@@ -84,7 +84,7 @@ class TestGameStartup(unittest.TestCase):
         mock_panel = Mock()
         
         constants = get_constants()
-        engine = create_game_engine(constants, mock_con, mock_panel)
+        engine = create_game_engine(constants, Mock(), Mock(), Mock())  # sidebar, viewport, status
         
         self.assertIsNotNone(engine)
         self.assertTrue(hasattr(engine, 'systems'))
@@ -103,7 +103,7 @@ class TestGameStartup(unittest.TestCase):
         player, entities, game_map, message_log, game_state = get_game_variables(constants)
         
         # Create and initialize engine
-        engine = create_game_engine(constants, mock_con, mock_panel)
+        engine = create_game_engine(constants, Mock(), Mock(), Mock())  # sidebar, viewport, status
         initialize_game_engine(engine, player, entities, game_map, message_log, game_state, constants)
         
         # Verify systems are initialized

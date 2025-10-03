@@ -35,7 +35,7 @@ class TestRenderSystemInitialization:
         assert render_system.fov_recompute is True
         assert render_system.bar_width == 20
         assert render_system.panel_height == 7
-        assert render_system.panel_y == 43  # 50 - 7
+        assert render_system.panel_y == 45  # ui_layout.viewport_height (updated in v3.5.0)
 
     def test_render_system_default_priority(self):
         """Test RenderSystem initialization with default priority."""
@@ -228,11 +228,12 @@ class TestRenderSystemUpdate:
             50,  # screen_height
             20,  # bar_width
             7,  # panel_height
-            43,  # panel_y
+            45,  # panel_y (ui_layout.viewport_height, updated in v3.5.0)
             mouse,
             self.colors,
             current_state,
             use_optimization=False,
+            sidebar_console=None,  # Added in v3.5.0 split-screen update
         )
 
         # Verify screen presentation

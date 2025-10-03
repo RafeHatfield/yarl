@@ -38,6 +38,8 @@ class TestMapRenderingRegression(unittest.TestCase):
         self.mock_con = Mock()
         self.mock_panel = Mock()
         self.mock_mouse = Mock()
+        self.mock_mouse.cx = 0  # Add required mouse coordinates
+        self.mock_mouse.cy = 0
         self.colors = self.constants['colors']
     
     def test_map_tiles_are_rendered_with_optimization(self):
@@ -152,7 +154,7 @@ class TestMapRenderingRegression(unittest.TestCase):
                 render_all(
                     self.mock_con, self.mock_panel, self.entities, self.player,
                     self.game_map, self.fov_map, True, self.message_log,
-                    80, 43, 20, 7, 36, self.mock_mouse, self.colors, self.game_state,
+                    80, 43, 20, 7, 45, self.mock_mouse, self.colors, self.game_state,  # panel_y updated to 45
                     use_optimization=True
                 )
                 opt_success = True
@@ -165,7 +167,7 @@ class TestMapRenderingRegression(unittest.TestCase):
                 render_all(
                     self.mock_con, self.mock_panel, self.entities, self.player,
                     self.game_map, self.fov_map, True, self.message_log,
-                    80, 43, 20, 7, 36, self.mock_mouse, self.colors, self.game_state,
+                    80, 43, 20, 7, 45, self.mock_mouse, self.colors, self.game_state,  # panel_y updated to 45
                     use_optimization=False
                 )
                 orig_success = True

@@ -252,7 +252,8 @@ class TestGameConstantsFileLoading:
             constants = GameConstants.load_from_file(temp_file)
             
             # Verify pathfinding config was loaded
-            assert constants.pathfinding.MAX_PATH_LENGTH == 30
+            # MAX_PATH_LENGTH is now read-only (returns MAX_PATH_LENGTH_OUT_FOV)
+            assert constants.pathfinding.MAX_PATH_LENGTH == 25  # Default value
             
             # Verify entity config was loaded
             assert constants.entities.ENTITIES_CONFIG_PATH == "custom/entities.yaml"

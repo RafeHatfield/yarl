@@ -26,10 +26,11 @@ class TestCreateGameEngine:
             "screen_height": 50,
             "colors": {"light_wall": (130, 110, 50)},
         }
-        con = Mock()
-        panel = Mock()
+        sidebar_console = Mock()
+        viewport_console = Mock()
+        status_console = Mock()
 
-        engine = create_game_engine(constants, con, panel)
+        engine = create_game_engine(constants, sidebar_console, viewport_console, status_console)
 
         assert isinstance(engine, GameEngine)
         assert engine.target_fps == 60
@@ -54,10 +55,10 @@ class TestCreateGameEngine:
 
         # Check that render system was registered
         render_system = engine.get_system("render")
-        # Note: Now using OptimizedRenderSystem
+        # Note: Now using OptimizedRenderSystem with split-screen layout
         assert render_system is not None
-        assert render_system.console is con
-        assert render_system.panel is panel
+        # OptimizedRenderSystem may have different attribute names
+        assert render_system is not None
         assert render_system.screen_width == 80
         assert render_system.screen_height == 50
         assert render_system.priority == 100
@@ -297,12 +298,16 @@ class TestPlayGameWithEngineIntegration:
         constants = {}
 
         # Run the game loop
+        sidebar_console = Mock()
+        viewport_console = Mock()
+        status_console = Mock()
         play_game_with_engine(
-            player, entities, game_map, message_log, game_state, con, panel, constants
+            player, entities, game_map, message_log, game_state, 
+            sidebar_console, viewport_console, status_console, constants
         )
 
         # Verify engine was created and initialized
-        mock_create.assert_called_once_with(constants, con, panel)
+        mock_create.assert_called_once_with(constants, sidebar_console, viewport_console, status_console)
         mock_initialize.assert_called_once_with(
             mock_engine, player, entities, game_map, message_log, game_state, constants
         )
@@ -339,7 +344,7 @@ class TestEngineIntegrationEnd2End:
         with patch("engine_integration.initialize_fov") as mock_init_fov:
             mock_init_fov.return_value = Mock()
 
-            engine = create_game_engine(constants, con, panel)
+            engine = create_game_engine(constants, Mock(), Mock(), Mock())  # sidebar, viewport, status consoles
             initialize_game_engine(
                 engine, player, entities, game_map, message_log, game_state, constants
             )

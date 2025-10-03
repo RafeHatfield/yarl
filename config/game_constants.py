@@ -332,7 +332,10 @@ class GameConstants:
             if isinstance(pathfinding_data, dict):
                 for key, value in pathfinding_data.items():
                     if hasattr(instance.pathfinding, key):
-                        setattr(instance.pathfinding, key, value)
+                        # Skip read-only properties (e.g., MAX_PATH_LENGTH)
+                        attr = getattr(type(instance.pathfinding), key, None)
+                        if not isinstance(attr, property):
+                            setattr(instance.pathfinding, key, value)
         
         # Update performance config
         if 'performance' in config_data:
@@ -340,7 +343,10 @@ class GameConstants:
             if isinstance(performance_data, dict):
                 for key, value in performance_data.items():
                     if hasattr(instance.performance, key):
-                        setattr(instance.performance, key, value)
+                        # Skip read-only properties
+                        attr = getattr(type(instance.performance), key, None)
+                        if not isinstance(attr, property):
+                            setattr(instance.performance, key, value)
         
         # Update combat config
         if 'combat' in config_data:

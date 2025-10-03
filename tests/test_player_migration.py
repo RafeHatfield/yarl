@@ -46,6 +46,13 @@ class TestPlayerMigrationCompatibility:
             mock_stats.hp = 150  # Different from hardcoded 100
             mock_stats.power = 5  # Different from hardcoded 2
             mock_stats.defense = 3  # Different from hardcoded 1
+            # Add all required stats for Fighter calculations
+            mock_stats.strength = 10  # Neutral modifier (0)
+            mock_stats.dexterity = 10  # Neutral modifier (0)
+            mock_stats.constitution = 10  # Neutral modifier (0)
+            mock_stats.intelligence = 10  # Neutral modifier (0)
+            mock_stats.wisdom = 10  # Neutral modifier (0)
+            mock_stats.charisma = 10  # Neutral modifier (0)
             mock_factory.get_player_stats.return_value = mock_stats
             mock_get_factory.return_value = mock_factory
             
@@ -97,7 +104,7 @@ class TestPlayerMigrationCompatibility:
         
         # Verify inventory component
         assert isinstance(player.inventory, Inventory)
-        assert player.inventory.capacity == 26  # DEFAULT_INVENTORY_CAPACITY
+        assert player.inventory.capacity == 20  # DEFAULT_INVENTORY_CAPACITY (reduced in v3.5.0)
         
         # Verify level component
         assert isinstance(player.level, Level)
@@ -214,7 +221,7 @@ class TestBackwardCompatibility:
         
         # Verify current HP is set to base max HP
         # Note: Actual max_hp will be base_max_hp + CON modifier (60 + 2 = 62)
-        assert new_player.fighter.hp == 60  # Current HP starts at base_max_hp
+        assert new_player.fighter.hp == 62  # Current HP starts at full HP (updated in v3.1.0)
 
     def test_save_load_compatibility(self):
         """Test that migrated player can be saved and loaded correctly."""
