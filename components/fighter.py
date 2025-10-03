@@ -1,6 +1,7 @@
 import logging
 from game_messages import Message
 from config.testing_config import is_testing_mode
+from visual_effects import show_hit, show_miss
 
 # Set up combat debug logger
 combat_logger = logging.getLogger('combat_debug')
@@ -437,6 +438,9 @@ class Fighter:
             hit = (attack_roll >= target_ac)
         
         if hit:
+            # Visual feedback: Show hit effect!
+            show_hit(target.x, target.y, is_critical=is_critical)
+            
             # Calculate damage
             base_damage = 0
             
@@ -499,6 +503,9 @@ class Fighter:
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
         else:
+            # Visual feedback: Show miss effect!
+            show_miss(target.x, target.y)
+            
             # Record miss statistics (only for player)
             if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
                 self.owner.statistics.record_attack(hit=False, fumble=is_fumble)
