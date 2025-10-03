@@ -77,7 +77,7 @@ class InventoryConfig:
     """Configuration for inventory and item systems."""
     
     # Default inventory settings
-    DEFAULT_INVENTORY_CAPACITY: int = 26  # Standard inventory size
+    DEFAULT_INVENTORY_CAPACITY: int = 20  # Sidebar-optimized capacity (fits perfectly!)
     
     # Item usage
     MAX_ITEM_NAME_LENGTH: int = 50  # Maximum length for item names
