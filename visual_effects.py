@@ -60,12 +60,16 @@ class VisualEffects:
             color = VisualEffects.HIT_COLOR
             duration = VisualEffects.HIT_DURATION
         
-        # Get the entity's character (or use a default if entity not provided)
+        # Save what's currently at this position to restore after effect
+        old_char = libtcodpy.console_get_char(0, x, y)
+        old_fg = libtcodpy.console_get_char_foreground(0, x, y)
+        old_bg = libtcodpy.console_get_char_background(0, x, y)
+        
+        # Get the entity's character (or use what's on screen)
         if entity:
             char = entity.char
         else:
-            # Fallback: try to read what's at that position
-            char = libtcodpy.console_get_char(0, x, y)
+            char = old_char
             if char == 0 or char == ord(' '):
                 char = ord('*')  # Default if we can't determine
         
@@ -77,29 +81,35 @@ class VisualEffects:
         # Wait for effect duration
         time.sleep(duration)
         
-        # Effect will be cleared by next render cycle
+        # Restore what was there before to prevent visual artifacts
+        libtcodpy.console_set_default_foreground(0, old_fg)
+        libtcodpy.console_set_default_background(0, old_bg)
+        libtcodpy.console_put_char(0, x, y, old_char, libtcodpy.BKGND_SET)
+        libtcodpy.console_flush()
     
     @staticmethod
     def show_miss_effect(x: int, y: int, entity=None) -> None:
-        """Show a miss effect on a target location.
+        """Show a miss effect on a target location (fumbles only).
         
-        Shows a brief grey '-' next to the entity to indicate a miss,
-        without obscuring what's there.
+        Shows a brief grey flash to indicate a critical miss/fumble.
         
         Args:
             x: X coordinate where attack missed
             y: Y coordinate where attack missed
             entity: The entity that was targeted (optional)
         """
-        # For misses, we'll just show a brief grey character
-        # You could also flash the entity grey if provided
+        # Save what's currently at this position
+        old_char = libtcodpy.console_get_char(0, x, y)
+        old_fg = libtcodpy.console_get_char_foreground(0, x, y)
+        old_bg = libtcodpy.console_get_char_background(0, x, y)
+        
+        # Get character to display
         if entity:
-            # Flash the entity grey to show the miss
             char = entity.char
         else:
-            # Fallback: just show a miss indicator
-            char = VisualEffects.MISS_CHAR
+            char = old_char if old_char != 0 else VisualEffects.MISS_CHAR
         
+        # Flash grey
         libtcodpy.console_set_default_foreground(0, VisualEffects.MISS_COLOR)
         libtcodpy.console_put_char(0, x, y, char, libtcodpy.BKGND_NONE)
         libtcodpy.console_flush()
@@ -107,7 +117,11 @@ class VisualEffects:
         # Wait for effect duration
         time.sleep(VisualEffects.MISS_DURATION)
         
-        # Effect will be cleared by next render cycle
+        # Restore original to prevent artifacts
+        libtcodpy.console_set_default_foreground(0, old_fg)
+        libtcodpy.console_set_default_background(0, old_bg)
+        libtcodpy.console_put_char(0, x, y, old_char, libtcodpy.BKGND_SET)
+        libtcodpy.console_flush()
     
     @staticmethod
     def show_area_effect(

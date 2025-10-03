@@ -503,8 +503,9 @@ class Fighter:
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
         else:
-            # Visual feedback: Flash target grey to show miss!
-            show_miss(target.x, target.y, entity=target)
+            # Visual feedback: Only show animation on fumbles (critical fails)!
+            if is_fumble:
+                show_miss(target.x, target.y, entity=target)
             
             # Record miss statistics (only for player)
             if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
