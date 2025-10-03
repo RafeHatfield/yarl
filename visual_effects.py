@@ -3,6 +3,11 @@
 Provides visual feedback for combat, spells, and other actions.
 Makes the game feel more responsive and 'juicy'.
 
+ARCHITECTURE:
+This module now uses a deferred rendering system. Effects are QUEUED
+during action processing, then PLAYED during rendering after the screen
+state is correct. This eliminates double-entity artifacts.
+
 Phase 1: Hit/Miss indicators
 Phase 2: Area effects (Fireball)
 Phase 3: Path effects (Lightning)
@@ -12,6 +17,7 @@ Phase 4: Special effects (Dragon Fart, etc.)
 import time
 import tcod.libtcodpy as libtcodpy
 from typing import List, Tuple, Optional
+from visual_effect_queue import get_effect_queue
 
 
 class VisualEffects:
@@ -189,7 +195,10 @@ class VisualEffects:
 # Convenience functions for common effects
 
 def show_hit(x: int, y: int, entity=None, is_critical: bool = False) -> None:
-    """Show a hit effect. Convenience wrapper.
+    """Queue a hit effect for deferred rendering.
+    
+    Instead of showing immediately, this queues the effect to be played
+    during the render phase when screen state is correct.
     
     Args:
         x: X coordinate
@@ -197,44 +206,49 @@ def show_hit(x: int, y: int, entity=None, is_critical: bool = False) -> None:
         entity: The entity being hit (to preserve character)
         is_critical: Whether this was a critical hit
     """
-    VisualEffects.show_hit_effect(x, y, entity, is_critical)
+    get_effect_queue().queue_hit(x, y, entity, is_critical)
 
 
 def show_miss(x: int, y: int, entity=None) -> None:
-    """Show a miss effect. Convenience wrapper.
+    """Queue a miss effect for deferred rendering.
+    
+    Instead of showing immediately, this queues the effect to be played
+    during the render phase when screen state is correct.
     
     Args:
         x: X coordinate
         y: Y coordinate
         entity: The entity targeted (optional)
     """
-    VisualEffects.show_miss_effect(x, y, entity)
+    get_effect_queue().queue_miss(x, y, entity)
 
 
 def show_fireball(tiles: List[Tuple[int, int]]) -> None:
-    """Show a fireball explosion effect. Convenience wrapper."""
-    VisualEffects.show_area_effect(
-        tiles, 
-        VisualEffects.FIREBALL_CHAR,
-        VisualEffects.FIREBALL_COLOR
+    """Queue a fireball explosion effect for deferred rendering."""
+    get_effect_queue().queue_fireball(
+        tiles,
+        char=VisualEffects.FIREBALL_CHAR,
+        color=VisualEffects.FIREBALL_COLOR,
+        duration=VisualEffects.AREA_DURATION
     )
 
 
-def show_lightning(start: Tuple[int, int], end: Tuple[int, int]) -> None:
-    """Show a lightning zap effect. Convenience wrapper."""
-    VisualEffects.show_path_effect(
-        start, 
-        end,
-        VisualEffects.LIGHTNING_CHAR,
-        VisualEffects.LIGHTNING_COLOR
+def show_lightning(path: List[Tuple[int, int]]) -> None:
+    """Queue a lightning bolt effect for deferred rendering."""
+    get_effect_queue().queue_lightning(
+        path,
+        char=VisualEffects.LIGHTNING_CHAR,
+        color=VisualEffects.LIGHTNING_COLOR,
+        duration=VisualEffects.PATH_DURATION
     )
 
 
 def show_dragon_fart(tiles: List[Tuple[int, int]]) -> None:
-    """Show a dragon fart gas cloud effect. Convenience wrapper."""
-    VisualEffects.show_area_effect(
+    """Queue a dragon fart cone effect for deferred rendering."""
+    get_effect_queue().queue_dragon_fart(
         tiles,
-        VisualEffects.DRAGON_FART_CHAR,
-        VisualEffects.DRAGON_FART_COLOR
+        char=VisualEffects.DRAGON_FART_CHAR,
+        color=VisualEffects.DRAGON_FART_COLOR,
+        duration=VisualEffects.AREA_DURATION
     )
 

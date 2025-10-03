@@ -15,6 +15,7 @@ from fov_functions import map_is_in_fov
 from render_optimization import render_tiles_optimized
 from entity_sorting_cache import get_sorted_entities
 from death_screen import render_death_screen
+from visual_effect_queue import get_effect_queue
 
 
 class RenderOrder(Enum):
@@ -156,7 +157,15 @@ def render_all(
     # libtcod.console_print_ex(con, 1, screen_height - 2, libtcod.BKGND_NONE, libtcod.LEFT,
     #                      'HP: {0:02}/{1:02}'.format(player.fighter.hp, player.fighter.max_hp))
 
+    # CRITICAL: Blit console to screen BEFORE playing effects
+    # This ensures entities are rendered at correct positions when effects display
     libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
+    
+    # Play any queued visual effects NOW (after entities are rendered)
+    # This is the key to fixing the double-entity bug!
+    effect_queue = get_effect_queue()
+    if effect_queue.has_effects():
+        effect_queue.play_all(con=0)  # Play on root console
 
     libtcod.console_set_default_background(panel, (0, 0, 0))
     libtcod.console_clear(panel)
