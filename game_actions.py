@@ -399,10 +399,16 @@ class ActionProcessor:
         
         item = player.inventory.items[inventory_index]
         
+        logger.warning(f"Current state: {current_state}, item: {item.name if item else None}")
+        
         if current_state == GameStates.SHOW_INVENTORY:
             self._use_inventory_item(item)
         elif current_state == GameStates.DROP_INVENTORY:
             self._drop_inventory_item(item)
+        elif current_state == GameStates.PLAYERS_TURN:
+            # Sidebar click during normal gameplay - use the item!
+            logger.warning(f"Using item from sidebar during PLAYERS_TURN")
+            self._use_inventory_item(item)
     
     def _use_inventory_item(self, item) -> None:
         """Use an item from inventory.
