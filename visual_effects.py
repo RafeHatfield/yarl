@@ -41,24 +41,35 @@ class VisualEffects:
     PATH_DURATION = 0.15     # 150ms
     
     @staticmethod
-    def show_hit_effect(x: int, y: int, is_critical: bool = False) -> None:
-        """Show a hit effect on a target.
+    def show_hit_effect(x: int, y: int, entity=None, is_critical: bool = False) -> None:
+        """Show a hit effect on a target by flashing its color.
+        
+        Flashes the entity red (or yellow for crits) while keeping the
+        original character visible. Much clearer than replacing with '!'.
         
         Args:
             x: X coordinate of target
             y: Y coordinate of target
+            entity: The entity being hit (to preserve character)
             is_critical: Whether this was a critical hit
         """
         if is_critical:
             color = VisualEffects.CRITICAL_HIT_COLOR
-            char = VisualEffects.CRITICAL_CHAR
             duration = VisualEffects.CRITICAL_DURATION
         else:
             color = VisualEffects.HIT_COLOR
-            char = VisualEffects.HIT_CHAR
             duration = VisualEffects.HIT_DURATION
         
-        # Draw the effect character on the target
+        # Get the entity's character (or use a default if entity not provided)
+        if entity:
+            char = entity.char
+        else:
+            # Fallback: try to read what's at that position
+            char = libtcodpy.console_get_char(0, x, y)
+            if char == 0 or char == ord(' '):
+                char = ord('*')  # Default if we can't determine
+        
+        # Flash the entity's character in the hit color
         libtcodpy.console_set_default_foreground(0, color)
         libtcodpy.console_put_char(0, x, y, char, libtcodpy.BKGND_NONE)
         libtcodpy.console_flush()
@@ -69,16 +80,28 @@ class VisualEffects:
         # Effect will be cleared by next render cycle
     
     @staticmethod
-    def show_miss_effect(x: int, y: int) -> None:
+    def show_miss_effect(x: int, y: int, entity=None) -> None:
         """Show a miss effect on a target location.
+        
+        Shows a brief grey '-' next to the entity to indicate a miss,
+        without obscuring what's there.
         
         Args:
             x: X coordinate where attack missed
             y: Y coordinate where attack missed
+            entity: The entity that was targeted (optional)
         """
-        # Draw miss indicator
+        # For misses, we'll just show a brief grey character
+        # You could also flash the entity grey if provided
+        if entity:
+            # Flash the entity grey to show the miss
+            char = entity.char
+        else:
+            # Fallback: just show a miss indicator
+            char = VisualEffects.MISS_CHAR
+        
         libtcodpy.console_set_default_foreground(0, VisualEffects.MISS_COLOR)
-        libtcodpy.console_put_char(0, x, y, VisualEffects.MISS_CHAR, libtcodpy.BKGND_NONE)
+        libtcodpy.console_put_char(0, x, y, char, libtcodpy.BKGND_NONE)
         libtcodpy.console_flush()
         
         # Wait for effect duration
@@ -167,14 +190,27 @@ class VisualEffects:
 
 # Convenience functions for common effects
 
-def show_hit(x: int, y: int, is_critical: bool = False) -> None:
-    """Show a hit effect. Convenience wrapper."""
-    VisualEffects.show_hit_effect(x, y, is_critical)
+def show_hit(x: int, y: int, entity=None, is_critical: bool = False) -> None:
+    """Show a hit effect. Convenience wrapper.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: The entity being hit (to preserve character)
+        is_critical: Whether this was a critical hit
+    """
+    VisualEffects.show_hit_effect(x, y, entity, is_critical)
 
 
-def show_miss(x: int, y: int) -> None:
-    """Show a miss effect. Convenience wrapper."""
-    VisualEffects.show_miss_effect(x, y)
+def show_miss(x: int, y: int, entity=None) -> None:
+    """Show a miss effect. Convenience wrapper.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: The entity targeted (optional)
+    """
+    VisualEffects.show_miss_effect(x, y, entity)
 
 
 def show_fireball(tiles: List[Tuple[int, int]]) -> None:

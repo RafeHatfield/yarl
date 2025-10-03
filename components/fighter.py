@@ -438,8 +438,8 @@ class Fighter:
             hit = (attack_roll >= target_ac)
         
         if hit:
-            # Visual feedback: Show hit effect!
-            show_hit(target.x, target.y, is_critical=is_critical)
+            # Visual feedback: Flash target red (or yellow for crits)!
+            show_hit(target.x, target.y, entity=target, is_critical=is_critical)
             
             # Calculate damage
             base_damage = 0
@@ -503,8 +503,8 @@ class Fighter:
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
         else:
-            # Visual feedback: Show miss effect!
-            show_miss(target.x, target.y)
+            # Visual feedback: Flash target grey to show miss!
+            show_miss(target.x, target.y, entity=target)
             
             # Record miss statistics (only for player)
             if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
