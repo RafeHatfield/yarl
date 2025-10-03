@@ -333,6 +333,7 @@ class OptimizedRenderSystem(RenderSystem):
             self.colors,
             current_game_state,
             use_optimization=False,
+            sidebar_console=self.sidebar_console,
         )
 
         self.fov_recompute = False
@@ -386,6 +387,7 @@ class OptimizedRenderSystem(RenderSystem):
             self.colors,
             current_game_state,
             use_optimization=False,
+            sidebar_console=self.sidebar_console,
         )
 
         # Track skipped entities
