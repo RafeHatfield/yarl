@@ -49,19 +49,28 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout) -> Opt
         return None
     
     # Calculate where inventory section starts in sidebar
-    # This needs to match the rendering logic in ui/sidebar.py
+    # This MUST match the rendering logic in ui/sidebar.py EXACTLY!
     padding = ui_layout.sidebar_padding
     
-    # Header layout (must match sidebar.py exactly!)
-    y_cursor = 2  # Title
+    # Trace through sidebar.py rendering to calculate Y positions:
+    y_cursor = 2   # Starting Y in sidebar.py
+    y_cursor += 2  # Title (line) + spacing
     y_cursor += 2  # Separator + spacing
-    y_cursor += 3  # Hotkeys section (header + 2 lines)
-    y_cursor += 1  # Spacing
-    y_cursor += 7  # Equipment section (header + 5 slots + spacing)
-    y_cursor += 1  # Inventory header
+    # Hotkeys section in sidebar.py:
+    y_cursor += 1  # "HOTKEYS" header
+    y_cursor += 2  # 2 hotkey lines
+    y_cursor += 1  # Spacing after hotkeys
+    # Equipment section in sidebar.py:
+    y_cursor += 1  # "EQUIPMENT" header
+    y_cursor += 5  # 5 equipment slots
+    y_cursor += 1  # Spacing after equipment
+    # Inventory section in sidebar.py:
+    y_cursor += 1  # "INVENTORY (N/20)" header
     
     # Now y_cursor is at first inventory item
     inventory_start_y = y_cursor
+    
+    logger.info(f"Calculated inventory_start_y = {inventory_start_y}")
     
     # Check if click is on an inventory item
     # Items are rendered at: padding + 1, inventory_start_y + index
