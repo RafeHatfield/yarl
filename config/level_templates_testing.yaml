@@ -32,7 +32,7 @@ level_overrides:
         - type: "teleport_scroll"
           count: 1
         - type: "dragon_fart_scroll"
-          count: 3
+          count: 10
         - type: "shield_scroll"
           count: 1
         - type: "raise_dead_scroll"

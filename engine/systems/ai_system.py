@@ -255,6 +255,17 @@ class AISystem(System):
                         )
                         game_state.message_log.add_message(death_message)
                         
+                        # Generate Entity death quote ONCE (don't regenerate every frame!)
+                        player = game_state.player
+                        if hasattr(player, 'statistics') and player.statistics:
+                            from entity_dialogue import get_entity_quote_for_death
+                            self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
+                                player.statistics, 
+                                player.statistics.deepest_level
+                            )
+                        else:
+                            self.engine.state_manager.state.death_screen_quote = "How... disappointing."
+                        
                         logger.info(f"Player killed by {self.current_turn_entity.name if self.current_turn_entity else 'unknown'}")
                 else:
                     # Monster died - transform to corpse and handle loot
