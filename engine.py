@@ -147,8 +147,8 @@ def main():
             main_menu(
                 con,
                 main_menu_background_image,
-                constants["screen_width"],
-                constants["screen_height"],
+                ui_layout.screen_width,  # Use actual screen dimensions
+                ui_layout.screen_height,  # Not old constants!
                 entity_menu_quote,  # Pass the pre-selected quote
             )
 
