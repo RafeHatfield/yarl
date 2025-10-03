@@ -157,8 +157,8 @@ def main():
                     con,
                     "No save game to load",
                     50,
-                    constants["screen_width"],
-                    constants["screen_height"],
+                    ui_layout.screen_width,  # Use actual screen dimensions
+                    ui_layout.screen_height,  # Not old constants!
                 )
 
             with warnings.catch_warnings():
