@@ -87,11 +87,13 @@ class ActionProcessor:
         
         # Process mouse actions
         for mouse_action_type, value in mouse_action.items():
+            logger.warning(f"Mouse action type: {mouse_action_type}, value: {value}, has handler: {mouse_action_type in self.mouse_handlers}")
             if value and mouse_action_type in self.mouse_handlers:
                 try:
+                    logger.warning(f"Calling mouse handler for {mouse_action_type}")
                     self.mouse_handlers[mouse_action_type](value)
                 except Exception as e:
-                    logger.error(f"Error processing mouse action {mouse_action_type}: {e}")
+                    logger.error(f"Error processing mouse action {mouse_action_type}: {e}", exc_info=True)
     
     def _handle_show_inventory(self, _) -> None:
         """Handle showing the inventory screen."""
