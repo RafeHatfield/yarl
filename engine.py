@@ -155,6 +155,8 @@ def main():
                 game_state = GameStates.PLAYERS_TURN
 
                 show_main_menu = False
+                # Generate new Entity quote for next time menu is shown
+                entity_menu_quote = EntityDialogue.get_main_menu_quote()
             elif load_saved_game:
                 try:
                     player, entities, game_map, message_log, game_state = load_game()
