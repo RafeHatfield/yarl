@@ -56,14 +56,22 @@ def menu(con, header, options, width, screen_width, screen_height):
         letter_index += 1
 
     # Blit the contents of "window" to the root console
-    # Center in viewport area (not full screen) for split-screen layout
-    from config.ui_layout import get_ui_layout
-    ui_layout = get_ui_layout()
-    viewport_pos = ui_layout.viewport_position
+    # For main menu (called with empty header), center on FULL screen
+    # For in-game menus (called with header), center in viewport
+    if header == "":
+        # Main menu - center on full screen
+        x = int(screen_width / 2 - width / 2)
+        y = int(screen_height / 2 - height / 2)
+    else:
+        # In-game menu - center in viewport area
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_pos = ui_layout.viewport_position
+        
+        # Center within viewport
+        x = viewport_pos[0] + int(ui_layout.viewport_width / 2 - width / 2)
+        y = viewport_pos[1] + int(ui_layout.viewport_height / 2 - height / 2)
     
-    # Center within viewport
-    x = viewport_pos[0] + int(ui_layout.viewport_width / 2 - width / 2)
-    y = viewport_pos[1] + int(ui_layout.viewport_height / 2 - height / 2)
     libtcodpy.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
 
@@ -134,7 +142,7 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     libtcodpy.console_print_ex(
         0,
         center_x,
-        center_y - 5,  # Bring title down a bit
+        center_y - 8,  # Back to original vertical spacing
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         "CATACOMBS OF YARL",
@@ -149,7 +157,7 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     libtcodpy.console_print_ex(
         0,
         center_x,
-        center_y - 2,  # Closer to menu options
+        center_y - 5,  # Between title and menu
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         f'"{entity_quote}"',
