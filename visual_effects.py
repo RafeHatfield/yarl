@@ -14,19 +14,34 @@ import tcod.libtcodpy as libtcodpy
 from typing import List, Tuple, Optional
 
 
-def _redraw_entity(entity, con=0) -> None:
-    """Quickly redraw a single entity at its current position.
+def _sync_entity_visuals(attacker, target, con=0) -> None:
+    """Force a visual update of entities involved in combat.
     
-    This ensures the entity is visible at the correct location before
-    showing visual effects, preventing double-entity artifacts.
+    The problem: Visual effects happen during action processing, after
+    the console is cleared but BEFORE rendering. This causes entities
+    to appear in wrong positions during effects.
+    
+    The solution: Don't try to render to the blank console. Instead,
+    just ensure the effect shows ONLY at the current position, and
+    accept that there might be a brief flicker. The next full render
+    will fix everything.
+    
+    Actually, a better solution: Just flush between the entity draw
+    and the effect draw, so they're separate visual frames.
     
     Args:
-        entity: The entity to redraw
+        attacker: The attacking entity
+        target: The target entity
         con: Console to draw on (default: root console 0)
     """
-    if entity and hasattr(entity, 'char') and hasattr(entity, 'color'):
-        libtcodpy.console_set_default_foreground(con, entity.color)
-        libtcodpy.console_put_char(con, entity.x, entity.y, entity.char, libtcodpy.BKGND_NONE)
+    # Draw both entities at their current positions
+    for entity in [attacker, target]:
+        if entity and hasattr(entity, 'char') and hasattr(entity, 'color'):
+            libtcodpy.console_set_default_foreground(con, entity.color)
+            libtcodpy.console_put_char(con, entity.x, entity.y, entity.char, libtcodpy.BKGND_NONE)
+    
+    # FLUSH to make these draws visible before the effect
+    libtcodpy.console_flush()
 
 
 class VisualEffects:
@@ -76,12 +91,9 @@ class VisualEffects:
             color = VisualEffects.HIT_COLOR
             duration = VisualEffects.HIT_DURATION
         
-        # IMPORTANT: Redraw both entities at their CURRENT positions first
-        # This prevents the "double entity" bug when entities move before attacking
-        if attacker:
-            _redraw_entity(attacker)
-        if entity:
-            _redraw_entity(entity)
+        # IMPORTANT: Sync entity visuals before showing effect
+        # Draw entities and flush to create a clean frame before the flash
+        _sync_entity_visuals(attacker, entity)
         
         # Get the entity's character
         if entity:
@@ -113,11 +125,8 @@ class VisualEffects:
             entity: The entity that was targeted (optional)
             attacker: The entity doing the attacking (to redraw at correct position)
         """
-        # IMPORTANT: Redraw both entities at their CURRENT positions first
-        if attacker:
-            _redraw_entity(attacker)
-        if entity:
-            _redraw_entity(entity)
+        # IMPORTANT: Sync entity visuals before showing effect
+        _sync_entity_visuals(attacker, entity)
         
         # Get character to display
         if entity:
