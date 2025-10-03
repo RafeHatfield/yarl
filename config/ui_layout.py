@@ -33,13 +33,14 @@ class UILayoutConfig:
     """
     
     # Sidebar dimensions
-    sidebar_width: int = 25
+    sidebar_width: int = 20
     sidebar_enabled: bool = True
     sidebar_padding: int = 1
     
-    # Viewport dimensions
-    viewport_width: int = 50
-    viewport_height: int = 60
+    # Viewport dimensions (sized to fit current maps: 80x43)
+    # Slightly larger for comfortable view
+    viewport_width: int = 80
+    viewport_height: int = 45
     
     # Status panel dimensions
     status_panel_height: int = 7

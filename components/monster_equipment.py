@@ -77,16 +77,24 @@ class MonsterEquipmentSpawner:
             # Spawn weapon
             weapon = self._create_weapon_for_level(dungeon_level)
             if weapon and hasattr(monster, 'equipment') and monster.equipment:
-                monster.equipment.toggle_equip(weapon)
-                equipment_list.append(weapon)
-                logger.debug(f"Equipped {monster.name} with {weapon.name}")
+                # Ensure it's actually a weapon before equipping
+                if hasattr(weapon, 'equippable') and weapon.equippable:
+                    monster.equipment.toggle_equip(weapon)
+                    equipment_list.append(weapon)
+                    logger.debug(f"Equipped {monster.name} with {weapon.name}")
+                else:
+                    logger.warning(f"Failed to equip weapon - no equippable component: {weapon.name}")
         else:
             # Spawn armor
             armor = self._create_armor_for_level(dungeon_level)
             if armor and hasattr(monster, 'equipment') and monster.equipment:
-                monster.equipment.toggle_equip(armor)
-                equipment_list.append(armor)
-                logger.debug(f"Equipped {monster.name} with {armor.name}")
+                # Ensure it's actually armor before equipping
+                if hasattr(armor, 'equippable') and armor.equippable:
+                    monster.equipment.toggle_equip(armor)
+                    equipment_list.append(armor)
+                    logger.debug(f"Equipped {monster.name} with {armor.name}")
+                else:
+                    logger.warning(f"Failed to equip armor - no equippable component: {armor.name}")
         
         return equipment_list
     
