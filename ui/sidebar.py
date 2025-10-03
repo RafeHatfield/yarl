@@ -46,7 +46,7 @@ def render_sidebar(console, player, ui_layout) -> None:
     )
     y += 2
     
-    # Hotkeys Section (includes menu items!)
+    # Hotkeys Section (compact!)
     libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
     libtcod.console_print_ex(
         console, padding, y,
@@ -55,15 +55,10 @@ def render_sidebar(console, player, ui_layout) -> None:
     y += 1
     
     libtcod.console_set_default_foreground(console, libtcod.Color(150, 150, 150))
+    # Compact layout: most important keys first, others abbreviated
     hotkeys = [
-        "I - Inventory",
         "C - Character",
-        "Z - Wait",
-        "< - Stairs Up",
-        "> - Stairs Down",
-        "G - Pickup",
-        "D - Drop",
-        "/ - Look",
+        "Z,<,>,G,D,/",
     ]
     
     for hotkey in hotkeys:
@@ -73,81 +68,105 @@ def render_sidebar(console, player, ui_layout) -> None:
         )
         y += 1
     
-    y += 2
-    
-    # Player Stats Section
-    if player and hasattr(player, 'fighter') and player.fighter:
+    y += 1
+        
+    # Equipment Section
+    if hasattr(player, 'equipment') and player.equipment:
         libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
         libtcod.console_print_ex(
             console, padding, y,
-            libtcod.BKGND_NONE, libtcod.LEFT, "STATS"
+            libtcod.BKGND_NONE, libtcod.LEFT, "EQUIPMENT"
         )
         y += 1
         
         libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
         
-        # HP
-        hp_text = f"HP: {player.fighter.hp}/{player.fighter.max_hp}"
+        # Show equipped items
+        equipment_slots = [
+            ("Weapon", player.equipment.main_hand),
+            ("Shield", player.equipment.off_hand),
+            ("Helm", player.equipment.head),
+            ("Armor", player.equipment.chest),
+            ("Boots", player.equipment.feet),
+        ]
+        
+        for slot_name, item in equipment_slots:
+            if item:
+                # Truncate name if too long
+                item_name = item.name
+                max_name_len = ui_layout.sidebar_content_width - 6
+                if len(item_name) > max_name_len:
+                    item_name = item_name[:max_name_len-2] + ".."
+                
+                slot_text = f"{slot_name[:3]}: {item_name}"
+            else:
+                slot_text = f"{slot_name[:3]}: -"
+            
+            libtcod.console_print_ex(
+                console, padding + 1, y,
+                libtcod.BKGND_NONE, libtcod.LEFT, slot_text
+            )
+            y += 1
+        
+        y += 1
+        
+    # Inventory Section (PERSISTENT!)
+    if hasattr(player, 'inventory') and player.inventory:
+        # Get unequipped items only (equipped items shown in EQUIPMENT section)
+        equipped_items = set()
+        if hasattr(player, 'equipment') and player.equipment:
+            for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
+                            player.equipment.head, player.equipment.chest, player.equipment.feet]:
+                if slot_item:
+                    equipped_items.add(slot_item)
+        
+        # Filter out equipped items
+        inventory_items = [item for item in player.inventory.items if item not in equipped_items]
+        
+        # Header with count
+        libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
+        inv_header = f"INVENTORY ({len(inventory_items)}/{player.inventory.capacity})"
         libtcod.console_print_ex(
-            console, padding + 2, y,
-            libtcod.BKGND_NONE, libtcod.LEFT, hp_text
+            console, padding, y,
+            libtcod.BKGND_NONE, libtcod.LEFT, inv_header
         )
         y += 1
         
-        # Ability scores
-        stats_to_show = [
-            ("STR", player.fighter.strength),
-            ("DEX", player.fighter.dexterity),
-            ("CON", player.fighter.constitution),
-        ]
-        
-        for stat_name, stat_value in stats_to_show:
-            stat_text = f"{stat_name}: {stat_value}"
+        if len(inventory_items) == 0:
+            libtcod.console_set_default_foreground(console, libtcod.Color(128, 128, 128))
             libtcod.console_print_ex(
-                console, padding + 2, y,
-                libtcod.BKGND_NONE, libtcod.LEFT, stat_text
+                console, padding + 1, y,
+                libtcod.BKGND_NONE, libtcod.LEFT, "(empty)"
             )
-            y += 1
-        
-        y += 2
-        
-        # Equipment Section
-        if hasattr(player, 'equipment') and player.equipment:
-            libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
-            libtcod.console_print_ex(
-                console, padding, y,
-                libtcod.BKGND_NONE, libtcod.LEFT, "EQUIPMENT"
-            )
-            y += 1
-            
+        else:
             libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
+            letter_index = ord('a')
             
-            # Show equipped items
-            equipment_slots = [
-                ("Weapon", player.equipment.main_hand),
-                ("Shield", player.equipment.off_hand),
-                ("Helm", player.equipment.head),
-                ("Armor", player.equipment.chest),
-                ("Boots", player.equipment.feet),
-            ]
-            
-            for slot_name, item in equipment_slots:
-                if item:
-                    # Truncate name if too long
-                    item_name = item.name
-                    max_name_len = ui_layout.sidebar_content_width - 6
-                    if len(item_name) > max_name_len:
-                        item_name = item_name[:max_name_len-2] + ".."
-                    
-                    slot_text = f"{slot_name[:3]}: {item_name}"
-                else:
-                    slot_text = f"{slot_name[:3]}: -"
+            for item in inventory_items:
+                # Format: "a) Potion"
+                item_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
                 
+                # Truncate if too long
+                max_name_len = ui_layout.sidebar_content_width - 4  # "a) " = 3 chars + 1 space
+                if len(item_name) > max_name_len:
+                    item_name = item_name[:max_name_len-2] + ".."
+                
+                item_text = f"{chr(letter_index)}) {item_name}"
                 libtcod.console_print_ex(
-                    console, padding + 2, y,
-                    libtcod.BKGND_NONE, libtcod.LEFT, slot_text
+                    console, padding + 1, y,
+                    libtcod.BKGND_NONE, libtcod.LEFT, item_text
                 )
                 y += 1
+                letter_index += 1
+        
+        y += 1
+        
+        # Click hint
+        libtcod.console_set_default_foreground(console, libtcod.Color(100, 100, 100))
+        libtcod.console_print_ex(
+            console, padding + 1, y,
+            libtcod.BKGND_NONE, libtcod.LEFT, "(Click to use!)"
+        )
 
 
 def _render_sidebar(console, player, ui_layout) -> None:
