@@ -174,15 +174,32 @@ def handle_player_dead_keys(key, death_frame_counter=None):
 
 
 def handle_mouse(mouse):
-    """Handle mouse input events.
+    """Handle mouse input events with coordinate translation for split-screen layout.
 
     Args:
         mouse: tcod Mouse object containing mouse state information
 
     Returns:
-        dict: Dictionary with mouse action keys
+        dict: Dictionary with mouse action keys (coordinates in world space)
     """
-    (x, y) = (int(mouse.cx), int(mouse.cy))
+    # Get raw screen coordinates
+    screen_x, screen_y = int(mouse.cx), int(mouse.cy)
+    
+    # Translate screen coordinates to world coordinates
+    # This accounts for sidebar offset and viewport positioning
+    from config.ui_layout import get_ui_layout
+    ui_layout = get_ui_layout()
+    
+    world_coords = ui_layout.screen_to_world(screen_x, screen_y)
+    
+    # If click is not in viewport (e.g., in sidebar), ignore for movement
+    if world_coords is None:
+        # Click was outside viewport (sidebar, status panel, etc.)
+        # For now, we ignore these clicks
+        # Future: Handle sidebar clicks for interactive inventory
+        return {}
+    
+    x, y = world_coords
 
     if mouse.lbutton_pressed:
         return {"left_click": (x, y)}

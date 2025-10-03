@@ -40,14 +40,27 @@ def get_names_under_mouse(mouse, entities, fov_map):
     """Get the names of all visible entities under the mouse cursor.
 
     Args:
-        mouse: Mouse object with cursor coordinates
+        mouse: Mouse object with cursor coordinates (screen space)
         entities (list): List of all entities to check
         fov_map: Field of view map for visibility checking
 
     Returns:
         str: Comma-separated string of entity names under the cursor
     """
-    (x, y) = (mouse.cx, mouse.cy)
+    # Get screen coordinates from mouse
+    screen_x, screen_y = int(mouse.cx), int(mouse.cy)
+    
+    # Translate to world coordinates using ui_layout
+    from config.ui_layout import get_ui_layout
+    ui_layout = get_ui_layout()
+    
+    world_coords = ui_layout.screen_to_world(screen_x, screen_y)
+    
+    # If mouse is not over viewport, return empty string
+    if world_coords is None:
+        return ""
+    
+    (x, y) = world_coords
 
     names = [
         entity.name

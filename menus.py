@@ -8,6 +8,7 @@ message boxes. All menus are rendered as centered overlays.
 import tcod as libtcod
 from tcod import libtcodpy
 from entity_dialogue import EntityDialogue
+from config.ui_layout import get_ui_layout
 
 
 def menu(con, header, options, width, screen_width, screen_height):
@@ -54,9 +55,15 @@ def menu(con, header, options, width, screen_width, screen_height):
         y += 1
         letter_index += 1
 
-    # blit the contents of "window" to the root console
-    x = int(screen_width / 2 - width / 2)
-    y = int(screen_height / 2 - height / 2)
+    # Blit the contents of "window" to the root console
+    # Center in viewport area (not full screen) for split-screen layout
+    from config.ui_layout import get_ui_layout
+    ui_layout = get_ui_layout()
+    viewport_pos = ui_layout.viewport_position
+    
+    # Center within viewport
+    x = viewport_pos[0] + int(ui_layout.viewport_width / 2 - width / 2)
+    y = viewport_pos[1] + int(ui_layout.viewport_height / 2 - height / 2)
     libtcodpy.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
 
