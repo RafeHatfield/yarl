@@ -134,7 +134,7 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     libtcodpy.console_print_ex(
         0,
         center_x,
-        center_y - 7,  # Adjusted for 52-height screen
+        center_y - 5,  # Bring title down a bit
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         "CATACOMBS OF YARL",
@@ -149,7 +149,7 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     libtcodpy.console_print_ex(
         0,
         center_x,
-        center_y - 4,  # Adjusted spacing
+        center_y - 2,  # Closer to menu options
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         f'"{entity_quote}"',
