@@ -14,6 +14,21 @@ import tcod.libtcodpy as libtcodpy
 from typing import List, Tuple, Optional
 
 
+def _redraw_entity(entity, con=0) -> None:
+    """Quickly redraw a single entity at its current position.
+    
+    This ensures the entity is visible at the correct location before
+    showing visual effects, preventing double-entity artifacts.
+    
+    Args:
+        entity: The entity to redraw
+        con: Console to draw on (default: root console 0)
+    """
+    if entity and hasattr(entity, 'char') and hasattr(entity, 'color'):
+        libtcodpy.console_set_default_foreground(con, entity.color)
+        libtcodpy.console_put_char(con, entity.x, entity.y, entity.char, libtcodpy.BKGND_NONE)
+
+
 class VisualEffects:
     """Manages visual feedback effects for game actions."""
     
@@ -41,7 +56,7 @@ class VisualEffects:
     PATH_DURATION = 0.15     # 150ms
     
     @staticmethod
-    def show_hit_effect(x: int, y: int, entity=None, is_critical: bool = False) -> None:
+    def show_hit_effect(x: int, y: int, entity=None, attacker=None, is_critical: bool = False) -> None:
         """Show a hit effect on a target by flashing its color.
         
         Flashes the entity red (or yellow for crits) while keeping the
@@ -51,6 +66,7 @@ class VisualEffects:
             x: X coordinate of target
             y: Y coordinate of target
             entity: The entity being hit (to preserve character)
+            attacker: The entity doing the attacking (to redraw at correct position)
             is_critical: Whether this was a critical hit
         """
         if is_critical:
@@ -60,18 +76,20 @@ class VisualEffects:
             color = VisualEffects.HIT_COLOR
             duration = VisualEffects.HIT_DURATION
         
-        # Save what's currently at this position to restore after effect
-        old_char = libtcodpy.console_get_char(0, x, y)
-        old_fg = libtcodpy.console_get_char_foreground(0, x, y)
-        old_bg = libtcodpy.console_get_char_background(0, x, y)
+        # IMPORTANT: Redraw both entities at their CURRENT positions first
+        # This prevents the "double entity" bug when entities move before attacking
+        if attacker:
+            _redraw_entity(attacker)
+        if entity:
+            _redraw_entity(entity)
         
-        # Get the entity's character (or use what's on screen)
+        # Get the entity's character
         if entity:
             char = entity.char
         else:
-            char = old_char
+            char = libtcodpy.console_get_char(0, x, y)
             if char == 0 or char == ord(' '):
-                char = ord('*')  # Default if we can't determine
+                char = ord('*')
         
         # Flash the entity's character in the hit color
         libtcodpy.console_set_default_foreground(0, color)
@@ -81,11 +99,10 @@ class VisualEffects:
         # Wait for effect duration
         time.sleep(duration)
         
-        # DON'T restore - let the next render cycle clean up naturally
-        # Restoring causes double-entity artifacts when entities move
+        # Let the next render cycle clean up naturally
     
     @staticmethod
-    def show_miss_effect(x: int, y: int, entity=None) -> None:
+    def show_miss_effect(x: int, y: int, entity=None, attacker=None) -> None:
         """Show a miss effect on a target location (fumbles only).
         
         Shows a brief grey flash to indicate a critical miss/fumble.
@@ -94,17 +111,21 @@ class VisualEffects:
             x: X coordinate where attack missed
             y: Y coordinate where attack missed
             entity: The entity that was targeted (optional)
+            attacker: The entity doing the attacking (to redraw at correct position)
         """
-        # Save what's currently at this position
-        old_char = libtcodpy.console_get_char(0, x, y)
-        old_fg = libtcodpy.console_get_char_foreground(0, x, y)
-        old_bg = libtcodpy.console_get_char_background(0, x, y)
+        # IMPORTANT: Redraw both entities at their CURRENT positions first
+        if attacker:
+            _redraw_entity(attacker)
+        if entity:
+            _redraw_entity(entity)
         
         # Get character to display
         if entity:
             char = entity.char
         else:
-            char = old_char if old_char != 0 else VisualEffects.MISS_CHAR
+            char = libtcodpy.console_get_char(0, x, y)
+            if char == 0 or char == ord(' '):
+                char = VisualEffects.MISS_CHAR
         
         # Flash grey
         libtcodpy.console_set_default_foreground(0, VisualEffects.MISS_COLOR)
@@ -114,8 +135,7 @@ class VisualEffects:
         # Wait for effect duration
         time.sleep(VisualEffects.MISS_DURATION)
         
-        # DON'T restore - let the next render cycle clean up naturally
-        # Restoring causes double-entity artifacts when entities move
+        # Let the next render cycle clean up naturally
     
     @staticmethod
     def show_area_effect(
@@ -198,27 +218,29 @@ class VisualEffects:
 
 # Convenience functions for common effects
 
-def show_hit(x: int, y: int, entity=None, is_critical: bool = False) -> None:
+def show_hit(x: int, y: int, entity=None, attacker=None, is_critical: bool = False) -> None:
     """Show a hit effect. Convenience wrapper.
     
     Args:
         x: X coordinate
         y: Y coordinate
         entity: The entity being hit (to preserve character)
+        attacker: The entity doing the attacking
         is_critical: Whether this was a critical hit
     """
-    VisualEffects.show_hit_effect(x, y, entity, is_critical)
+    VisualEffects.show_hit_effect(x, y, entity, attacker, is_critical)
 
 
-def show_miss(x: int, y: int, entity=None) -> None:
+def show_miss(x: int, y: int, entity=None, attacker=None) -> None:
     """Show a miss effect. Convenience wrapper.
     
     Args:
         x: X coordinate
         y: Y coordinate
         entity: The entity targeted (optional)
+        attacker: The entity doing the attacking
     """
-    VisualEffects.show_miss_effect(x, y, entity)
+    VisualEffects.show_miss_effect(x, y, entity, attacker)
 
 
 def show_fireball(tiles: List[Tuple[int, int]]) -> None:
