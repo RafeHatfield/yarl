@@ -123,7 +123,7 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     libtcodpy.console_print_ex(
         0,
         int(screen_width / 2),
-        int(screen_height / 2) - 4,
+        int(screen_height / 2) - 8,
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         "CATACOMBS OF YARL",
@@ -138,7 +138,7 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     libtcodpy.console_print_ex(
         0,
         int(screen_width / 2),
-        int(screen_height / 2) - 2,
+        int(screen_height / 2) - 6,
         libtcodpy.BKGND_NONE,
         libtcodpy.CENTER,
         f'"{entity_quote}"',
