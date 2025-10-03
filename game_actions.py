@@ -56,6 +56,7 @@ class ActionProcessor:
         self.mouse_handlers = {
             'left_click': self._handle_left_click,
             'right_click': self._handle_right_click,
+            'sidebar_click': self._handle_sidebar_click,
         }
     
     def process_actions(self, action: Dict[str, Any], mouse_action: Dict[str, Any]) -> None:
@@ -611,11 +612,32 @@ class ActionProcessor:
             # Handle mouse movement/combat during player turn
             self._handle_mouse_movement(click_pos)
     
+    def _handle_sidebar_click(self, click_pos: Tuple[int, int]) -> None:
+        """Handle mouse click in sidebar (inventory items).
+        
+        Args:
+            click_pos: Tuple of (screen_x, screen_y) click coordinates
+        """
+        from ui.sidebar_interaction import handle_sidebar_click
+        from config.ui_layout import get_ui_layout
+        
+        screen_x, screen_y = click_pos
+        player = self.state_manager.state.player
+        ui_layout = get_ui_layout()
+        
+        # Check if click is on an inventory item
+        action = handle_sidebar_click(screen_x, screen_y, player, ui_layout)
+        
+        if action and 'inventory_index' in action:
+            # User clicked on an item - use it!
+            logger.info(f"Sidebar inventory item clicked: index {action['inventory_index']}")
+            self._handle_inventory_action(action['inventory_index'])
+    
     def _handle_mouse_movement(self, click_pos: Tuple[int, int]) -> None:
         """Handle mouse click for movement or combat.
         
         Args:
-            click_pos: Tuple of (x, y) click coordinates
+            click_pos: Tuple of (x, y) click coordinates (world space)
         """
         from mouse_movement import handle_mouse_click
         

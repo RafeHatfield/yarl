@@ -192,11 +192,16 @@ def handle_mouse(mouse):
     
     world_coords = ui_layout.screen_to_world(screen_x, screen_y)
     
-    # If click is not in viewport (e.g., in sidebar), ignore for movement
+    # Check if click is in sidebar (for inventory interaction!)
+    if ui_layout.is_in_sidebar(screen_x, screen_y):
+        # Handle sidebar clicks (inventory items)
+        if mouse.lbutton_pressed:
+            return {"sidebar_click": (screen_x, screen_y)}
+        return {}
+    
+    # If click is not in viewport or sidebar, ignore
     if world_coords is None:
-        # Click was outside viewport (sidebar, status panel, etc.)
-        # For now, we ignore these clicks
-        # Future: Handle sidebar clicks for interactive inventory
+        # Click was in status panel or outside bounds
         return {}
     
     x, y = world_coords
