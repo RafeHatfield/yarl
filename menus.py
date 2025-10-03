@@ -402,8 +402,14 @@ def character_screen(
             if y >= character_screen_height - 1:
                 break
 
-    x = screen_width // 2 - character_screen_width // 2
-    y_pos = screen_height // 2 - character_screen_height // 2
+    # Blit the contents of "window" to the root console
+    # Center in viewport area for split-screen layout
+    ui_layout = get_ui_layout()
+    viewport_pos = ui_layout.viewport_position
+    
+    # Center within viewport
+    x = viewport_pos[0] + ui_layout.viewport_width // 2 - character_screen_width // 2
+    y_pos = viewport_pos[1] + ui_layout.viewport_height // 2 - character_screen_height // 2
     libtcodpy.console_blit(
         window, 0, 0, character_screen_width, character_screen_height, 0, x, y_pos, 1.0, 0.7
     )
