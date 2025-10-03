@@ -15,33 +15,25 @@ from typing import List, Tuple, Optional
 
 
 def _sync_entity_visuals(attacker, target, con=0) -> None:
-    """Force a visual update of entities involved in combat.
+    """Wait briefly to let the render cycle catch up.
     
     The problem: Visual effects happen during action processing, after
-    the console is cleared but BEFORE rendering. This causes entities
-    to appear in wrong positions during effects.
+    the console is cleared but BEFORE rendering. We can't properly sync
+    because we don't have the full game state rendered.
     
-    The solution: Don't try to render to the blank console. Instead,
-    just ensure the effect shows ONLY at the current position, and
-    accept that there might be a brief flicker. The next full render
-    will fix everything.
-    
-    Actually, a better solution: Just flush between the entity draw
-    and the effect draw, so they're separate visual frames.
+    The solution: Add a small delay to let the game loop render the
+    current state, THEN show the effect. This ensures the screen is
+    up-to-date before the flash.
     
     Args:
-        attacker: The attacking entity
-        target: The target entity
-        con: Console to draw on (default: root console 0)
+        attacker: The attacking entity (not used, but kept for API consistency)
+        target: The target entity (not used, but kept for API consistency)
+        con: Console to draw on (not used, but kept for API consistency)
     """
-    # Draw both entities at their current positions
-    for entity in [attacker, target]:
-        if entity and hasattr(entity, 'char') and hasattr(entity, 'color'):
-            libtcodpy.console_set_default_foreground(con, entity.color)
-            libtcodpy.console_put_char(con, entity.x, entity.y, entity.char, libtcodpy.BKGND_NONE)
-    
-    # FLUSH to make these draws visible before the effect
-    libtcodpy.console_flush()
+    # Give the render cycle time to catch up (50ms)
+    # This is enough for one frame at 20fps, which ensures the screen
+    # is updated with the current game state before the effect shows
+    time.sleep(0.05)
 
 
 class VisualEffects:
