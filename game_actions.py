@@ -625,7 +625,7 @@ class ActionProcessor:
             self._handle_mouse_movement(click_pos)
     
     def _handle_sidebar_click(self, click_pos: Tuple[int, int]) -> None:
-        """Handle mouse click in sidebar (inventory items).
+        """Handle mouse click in sidebar (hotkeys and inventory items).
         
         Args:
             click_pos: Tuple of (screen_x, screen_y) click coordinates
@@ -639,19 +639,32 @@ class ActionProcessor:
         
         screen_x, screen_y = click_pos
         player = self.state_manager.state.player
+        game_map = self.state_manager.state.game_map
+        entities = self.state_manager.state.entities
         ui_layout = get_ui_layout()
         
         logger.warning(f"About to call handle_sidebar_click with player={player}, ui_layout={ui_layout}")
         
-        # Check if click is on an inventory item
-        action = handle_sidebar_click(screen_x, screen_y, player, ui_layout)
+        # Check if click is on a hotkey or inventory item
+        action = handle_sidebar_click(screen_x, screen_y, player, ui_layout, game_map, entities)
         
         logger.warning(f"handle_sidebar_click returned: {action}")
         
-        if action and 'inventory_index' in action:
-            # User clicked on an item - use it!
-            logger.warning(f"SIDEBAR INVENTORY ITEM CLICKED: index {action['inventory_index']}")
-            self._handle_inventory_action(action['inventory_index'])
+        if action:
+            # Process the action returned from sidebar
+            if 'inventory_index' in action:
+                # User clicked on an inventory item - use it!
+                logger.warning(f"SIDEBAR INVENTORY ITEM CLICKED: index {action['inventory_index']}")
+                self._handle_inventory_action(action['inventory_index'])
+            else:
+                # User clicked on a hotkey button - process it!
+                logger.warning(f"SIDEBAR HOTKEY CLICKED: {action}")
+                # Add action to the normal action processing queue
+                for action_type, value in action.items():
+                    if action_type in self.action_handlers:
+                        self.action_handlers[action_type](value)
+                    else:
+                        logger.warning(f"Unknown action type from sidebar: {action_type}")
         else:
             logger.warning(f"No valid action returned from sidebar click")
     

@@ -46,7 +46,7 @@ def render_sidebar(console, player, ui_layout) -> None:
     )
     y += 2
     
-    # Hotkeys Section (compact!)
+    # Hotkeys Section (clickable!)
     libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
     libtcod.console_print_ex(
         console, padding, y,
@@ -55,10 +55,15 @@ def render_sidebar(console, player, ui_layout) -> None:
     y += 1
     
     libtcod.console_set_default_foreground(console, libtcod.Color(150, 150, 150))
-    # Compact layout: most important keys first, others abbreviated
+    # Option C: Hybrid clickable layout
+    # Each line is a clickable action
     hotkeys = [
         "C - Character",
-        "Z,<,>,G,D,/",
+        "I - Inventory",
+        "G - Get/Drop",
+        "Z - Wait",
+        "<> - Stairs",
+        "/ - Look",
     ]
     
     for hotkey in hotkeys:
