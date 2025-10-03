@@ -439,8 +439,7 @@ class Fighter:
         
         if hit:
             # Visual feedback: Flash target red (or yellow for crits)!
-            # Pass both attacker and target so we can redraw them at correct positions
-            show_hit(target.x, target.y, entity=target, attacker=self.owner, is_critical=is_critical)
+            show_hit(target.x, target.y, entity=target, is_critical=is_critical)
             
             # Calculate damage
             base_damage = 0
@@ -506,8 +505,7 @@ class Fighter:
         else:
             # Visual feedback: Only show animation on fumbles (critical fails)!
             if is_fumble:
-                # Pass both attacker and target so we can redraw them at correct positions
-                show_miss(target.x, target.y, entity=target, attacker=self.owner)
+                show_miss(target.x, target.y, entity=target)
             
             # Record miss statistics (only for player)
             if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:

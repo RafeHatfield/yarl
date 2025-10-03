@@ -14,26 +14,6 @@ import tcod.libtcodpy as libtcodpy
 from typing import List, Tuple, Optional
 
 
-def _sync_entity_visuals(attacker, target, con=0) -> None:
-    """Disabled - visual effects are too complex to sync with game loop.
-    
-    The double-entity bug is caused by the game loop architecture where
-    visual effects happen during action processing but rendering happens
-    after. Various sync strategies (redrawing, flushing, delays) all fail
-    because we're fighting the architecture.
-    
-    For now, we accept this limitation. A future refactor could move
-    visual effects to happen during rendering instead of action processing.
-    
-    Args:
-        attacker: The attacking entity (unused)
-        target: The target entity (unused)
-        con: Console to draw on (unused)
-    """
-    # DISABLED - no sync strategy works with current architecture
-    pass
-
-
 class VisualEffects:
     """Manages visual feedback effects for game actions."""
     
@@ -61,17 +41,16 @@ class VisualEffects:
     PATH_DURATION = 0.15     # 150ms
     
     @staticmethod
-    def show_hit_effect(x: int, y: int, entity=None, attacker=None, is_critical: bool = False) -> None:
+    def show_hit_effect(x: int, y: int, entity=None, is_critical: bool = False) -> None:
         """Show a hit effect on a target by flashing its color.
         
         Flashes the entity red (or yellow for crits) while keeping the
-        original character visible. Much clearer than replacing with '!'.
+        original character visible.
         
         Args:
             x: X coordinate of target
             y: Y coordinate of target
             entity: The entity being hit (to preserve character)
-            attacker: The entity doing the attacking (to redraw at correct position)
             is_critical: Whether this was a critical hit
         """
         if is_critical:
@@ -80,10 +59,6 @@ class VisualEffects:
         else:
             color = VisualEffects.HIT_COLOR
             duration = VisualEffects.HIT_DURATION
-        
-        # IMPORTANT: Sync entity visuals before showing effect
-        # Draw entities and flush to create a clean frame before the flash
-        _sync_entity_visuals(attacker, entity)
         
         # Get the entity's character
         if entity:
@@ -104,7 +79,7 @@ class VisualEffects:
         # Let the next render cycle clean up naturally
     
     @staticmethod
-    def show_miss_effect(x: int, y: int, entity=None, attacker=None) -> None:
+    def show_miss_effect(x: int, y: int, entity=None) -> None:
         """Show a miss effect on a target location (fumbles only).
         
         Shows a brief grey flash to indicate a critical miss/fumble.
@@ -113,11 +88,7 @@ class VisualEffects:
             x: X coordinate where attack missed
             y: Y coordinate where attack missed
             entity: The entity that was targeted (optional)
-            attacker: The entity doing the attacking (to redraw at correct position)
         """
-        # IMPORTANT: Sync entity visuals before showing effect
-        _sync_entity_visuals(attacker, entity)
-        
         # Get character to display
         if entity:
             char = entity.char
@@ -217,29 +188,27 @@ class VisualEffects:
 
 # Convenience functions for common effects
 
-def show_hit(x: int, y: int, entity=None, attacker=None, is_critical: bool = False) -> None:
+def show_hit(x: int, y: int, entity=None, is_critical: bool = False) -> None:
     """Show a hit effect. Convenience wrapper.
     
     Args:
         x: X coordinate
         y: Y coordinate
         entity: The entity being hit (to preserve character)
-        attacker: The entity doing the attacking
         is_critical: Whether this was a critical hit
     """
-    VisualEffects.show_hit_effect(x, y, entity, attacker, is_critical)
+    VisualEffects.show_hit_effect(x, y, entity, is_critical)
 
 
-def show_miss(x: int, y: int, entity=None, attacker=None) -> None:
+def show_miss(x: int, y: int, entity=None) -> None:
     """Show a miss effect. Convenience wrapper.
     
     Args:
         x: X coordinate
         y: Y coordinate
         entity: The entity targeted (optional)
-        attacker: The entity doing the attacking
     """
-    VisualEffects.show_miss_effect(x, y, entity, attacker)
+    VisualEffects.show_miss_effect(x, y, entity)
 
 
 def show_fireball(tiles: List[Tuple[int, int]]) -> None:
