@@ -46,41 +46,7 @@ def render_sidebar(console, player, ui_layout) -> None:
     )
     y += 2
     
-    # Menu Buttons
-    libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
-    libtcod.console_print_ex(
-        console, padding, y,
-        libtcod.BKGND_NONE, libtcod.LEFT, "MENU"
-    )
-    y += 2
-    
-    # Inventory button (bold the I)
-    libtcod.console_set_default_foreground(console, libtcod.Color(255, 215, 0))
-    libtcod.console_print_ex(
-        console, padding + 2, y,
-        libtcod.BKGND_NONE, libtcod.LEFT, "I"
-    )
-    libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
-    libtcod.console_print_ex(
-        console, padding + 3, y,
-        libtcod.BKGND_NONE, libtcod.LEFT, "nventory"
-    )
-    y += 1
-    
-    # Character button (bold the C)
-    libtcod.console_set_default_foreground(console, libtcod.Color(255, 215, 0))
-    libtcod.console_print_ex(
-        console, padding + 2, y,
-        libtcod.BKGND_NONE, libtcod.LEFT, "C"
-    )
-    libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
-    libtcod.console_print_ex(
-        console, padding + 3, y,
-        libtcod.BKGND_NONE, libtcod.LEFT, "haracter"
-    )
-    y += 3
-    
-    # Hotkeys Section
+    # Hotkeys Section (includes menu items!)
     libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
     libtcod.console_print_ex(
         console, padding, y,
@@ -90,6 +56,8 @@ def render_sidebar(console, player, ui_layout) -> None:
     
     libtcod.console_set_default_foreground(console, libtcod.Color(150, 150, 150))
     hotkeys = [
+        "I - Inventory",
+        "C - Character",
         "Z - Wait",
         "< - Stairs Up",
         "> - Stairs Down",
@@ -100,7 +68,7 @@ def render_sidebar(console, player, ui_layout) -> None:
     
     for hotkey in hotkeys:
         libtcod.console_print_ex(
-            console, padding + 2, y,
+            console, padding + 1, y,
             libtcod.BKGND_NONE, libtcod.LEFT, hotkey
         )
         y += 1
