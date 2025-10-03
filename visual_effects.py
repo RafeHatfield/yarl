@@ -81,11 +81,8 @@ class VisualEffects:
         # Wait for effect duration
         time.sleep(duration)
         
-        # Restore what was there before to prevent visual artifacts
-        libtcodpy.console_set_default_foreground(0, old_fg)
-        libtcodpy.console_set_default_background(0, old_bg)
-        libtcodpy.console_put_char(0, x, y, old_char, libtcodpy.BKGND_SET)
-        libtcodpy.console_flush()
+        # DON'T restore - let the next render cycle clean up naturally
+        # Restoring causes double-entity artifacts when entities move
     
     @staticmethod
     def show_miss_effect(x: int, y: int, entity=None) -> None:
@@ -117,11 +114,8 @@ class VisualEffects:
         # Wait for effect duration
         time.sleep(VisualEffects.MISS_DURATION)
         
-        # Restore original to prevent artifacts
-        libtcodpy.console_set_default_foreground(0, old_fg)
-        libtcodpy.console_set_default_background(0, old_bg)
-        libtcodpy.console_put_char(0, x, y, old_char, libtcodpy.BKGND_SET)
-        libtcodpy.console_flush()
+        # DON'T restore - let the next render cycle clean up naturally
+        # Restoring causes double-entity artifacts when entities move
     
     @staticmethod
     def show_area_effect(
