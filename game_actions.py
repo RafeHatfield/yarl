@@ -624,6 +624,10 @@ class ActionProcessor:
         Args:
             click_pos: Tuple of (screen_x, screen_y) click coordinates
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"_handle_sidebar_click called with {click_pos}")
+        
         from ui.sidebar_interaction import handle_sidebar_click
         from config.ui_layout import get_ui_layout
         
@@ -631,13 +635,19 @@ class ActionProcessor:
         player = self.state_manager.state.player
         ui_layout = get_ui_layout()
         
+        logger.warning(f"About to call handle_sidebar_click with player={player}, ui_layout={ui_layout}")
+        
         # Check if click is on an inventory item
         action = handle_sidebar_click(screen_x, screen_y, player, ui_layout)
         
+        logger.warning(f"handle_sidebar_click returned: {action}")
+        
         if action and 'inventory_index' in action:
             # User clicked on an item - use it!
-            logger.info(f"Sidebar inventory item clicked: index {action['inventory_index']}")
+            logger.warning(f"SIDEBAR INVENTORY ITEM CLICKED: index {action['inventory_index']}")
             self._handle_inventory_action(action['inventory_index'])
+        else:
+            logger.warning(f"No valid action returned from sidebar click")
     
     def _handle_mouse_movement(self, click_pos: Tuple[int, int]) -> None:
         """Handle mouse click for movement or combat.
