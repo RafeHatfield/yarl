@@ -15,25 +15,23 @@ from typing import List, Tuple, Optional
 
 
 def _sync_entity_visuals(attacker, target, con=0) -> None:
-    """Wait briefly to let the render cycle catch up.
+    """Disabled - visual effects are too complex to sync with game loop.
     
-    The problem: Visual effects happen during action processing, after
-    the console is cleared but BEFORE rendering. We can't properly sync
-    because we don't have the full game state rendered.
+    The double-entity bug is caused by the game loop architecture where
+    visual effects happen during action processing but rendering happens
+    after. Various sync strategies (redrawing, flushing, delays) all fail
+    because we're fighting the architecture.
     
-    The solution: Add a small delay to let the game loop render the
-    current state, THEN show the effect. This ensures the screen is
-    up-to-date before the flash.
+    For now, we accept this limitation. A future refactor could move
+    visual effects to happen during rendering instead of action processing.
     
     Args:
-        attacker: The attacking entity (not used, but kept for API consistency)
-        target: The target entity (not used, but kept for API consistency)
-        con: Console to draw on (not used, but kept for API consistency)
+        attacker: The attacking entity (unused)
+        target: The target entity (unused)
+        con: Console to draw on (unused)
     """
-    # Give the render cycle time to catch up (50ms)
-    # This is enough for one frame at 20fps, which ensures the screen
-    # is updated with the current game state before the effect shows
-    time.sleep(0.05)
+    # DISABLED - no sync strategy works with current architecture
+    pass
 
 
 class VisualEffects:
