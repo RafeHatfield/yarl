@@ -7,6 +7,19 @@ architecture and the existing game loop, allowing for gradual migration.
 import tcod.libtcodpy as libtcod
 
 from engine import GameEngine
+
+
+# Global reference to current state manager for accessing from render functions
+_current_state_manager = None
+
+
+def get_current_state_manager():
+    """Get the current state manager instance.
+    
+    Returns:
+        StateManager: The current state manager, or None if not set
+    """
+    return _current_state_manager
 from engine.systems import RenderSystem, InputSystem, AISystem, PerformanceSystem
 from engine.systems.optimized_render_system import OptimizedRenderSystem
 from fov_functions import initialize_fov
@@ -112,8 +125,14 @@ def play_game_with_engine(
         panel: UI panel console
         constants: Game configuration constants
     """
+    global _current_state_manager
+    
     # Create and initialize the engine
     engine = create_game_engine(constants, con, panel)
+    
+    # Store state manager globally for access from render functions
+    _current_state_manager = engine.state_manager
+    
     initialize_game_engine(
         engine, player, entities, game_map, message_log, game_state, constants
     )
