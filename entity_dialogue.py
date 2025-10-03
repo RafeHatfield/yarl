@@ -3,6 +3,8 @@
 The Entity is a powerful being who owns the player's soul and forces them
 to delve into the dungeon repeatedly. They are sarcastically overbearing,
 overconfident in their supremacy, and extremely condescending.
+
+Voice Inspiration: Alan Rickman - dry, withering, magnificently condescending.
 """
 
 import random
@@ -169,6 +171,155 @@ class EntityDialogue:
             "Dead. Naturally. Don't worry, you'll get used to it. I certainly have.",
             "How unfortunate. For you, anyway. For me, it's merely an inconvenience.",
         ]
+        return random.choice(quotes)
+    
+    # ============================================================================
+    # PHASE 1 EXPANSION: Entity Presence Throughout Game
+    # ============================================================================
+    
+    @classmethod
+    def get_main_menu_quote(cls) -> str:
+        """Get a rotating quote for the main menu screen.
+        
+        Sets the tone immediately when player sees the menu.
+        Voice: Alan Rickman - dry, withering sarcasm.
+        
+        Returns:
+            A quote for the main menu
+        """
+        quotes = [
+            "Back again? How... persistent.",
+            "Ready to fail once more?",
+            "Another attempt. How delightfully futile.",
+            "Your soul is mine. Let's not forget that.",
+            "Impatient to die again, are we?",
+            "Yes, yes, off you go. Try to last more than five minutes this time.",
+            "Another body awaits. Try not to waste it.",
+            "Eager for more punishment? Very well.",
+            "I do admire your determination. If not your competence.",
+            "Let's see if you've learned anything. Unlikely.",
+            "Oh good. You're back. I was getting... bored.",
+            "Shall we begin again? I have nothing but time.",
+        ]
+        return random.choice(quotes)
+    
+    @classmethod
+    def get_level_transition_quote(cls, new_level: int) -> str:
+        """Get a quote for descending to a new dungeon level.
+        
+        Personality shifts based on depth:
+        - Early (1-3): Maximum condescension
+        - Mid (4-7): Grudging acknowledgment
+        - Deep (8-9): Subtle worry
+        - Very Deep (10+): Defensiveness
+        
+        Args:
+            new_level: The dungeon level being entered
+            
+        Returns:
+            A level-appropriate quote
+        """
+        if new_level <= 3:
+            # Early levels - maximum condescension
+            quotes = [
+                "Level 2. Try not to embarrass yourself immediately.",
+                "Deeper you go. How... ambitious.",
+                "Level 3 already? Don't let it go to your head.",
+                "Another level down. And another body wasted soon, no doubt.",
+                "Descending. How very brave. Or foolish. Probably foolish.",
+            ]
+        elif new_level <= 7:
+            # Mid levels - less dismissive, grudging acknowledgment
+            quotes = [
+                f"Level {new_level}? I'm almost impressed. Almost.",
+                "You're getting deeper. The monsters are getting... less forgiving.",
+                f"Level {new_level}. This is where most of your predecessors failed.",
+                "Still alive. Marginally impressive. For you, anyway.",
+                f"Level {new_level}. Don't get cocky. You're still mortal.",
+            ]
+        elif new_level <= 9:
+            # Deep levels - subtle worry creeping in
+            quotes = [
+                f"Level {new_level}. Careful down here.",
+                "You're... actually making progress. Fascinating.",
+                f"Level {new_level}. I'd say you're close to something, but that would be premature.",
+                "This deep already? Unexpected.",
+                f"Level {new_level}. The air grows... thicker here.",
+            ]
+        else:
+            # Very deep (10+) - defensiveness, Entity is worried
+            quotes = [
+                f"Level {new_level}. You shouldn't be this deep.",
+                "This... this is unexpected.",
+                "Perhaps I underestimated you. Slightly.",
+                f"Level {new_level}? Are you... testing me?",
+                "Impressive. And concerning. Mostly concerning.",
+            ]
+        
+        return random.choice(quotes)
+    
+    @classmethod
+    def get_first_kill_quote(cls) -> str:
+        """Get a quote for the player's very first kill of a run.
+        
+        Returns:
+            A condescending quote about basic combat
+        """
+        quotes = [
+            "Your first kill. How... violent. Continue.",
+            "Well, at least you can swing a sword. Barely.",
+            "One down. Only several hundred more to go.",
+            "Congratulations. You've discovered basic combat. Thrilling.",
+            "A kill. Don't celebrate too early.",
+            "Blood on your hands already. Good. You'll need that ruthlessness.",
+        ]
+        return random.choice(quotes)
+    
+    @classmethod
+    def get_milestone_kill_quote(cls, kill_count: int) -> str:
+        """Get a quote for reaching kill milestones.
+        
+        Args:
+            kill_count: Current total kills (10, 25, 50, 100)
+            
+        Returns:
+            A milestone-appropriate quote
+        """
+        if kill_count == 10:
+            quotes = [
+                "Ten kills. Are you expecting applause?",
+                "Double digits. How... pedestrian.",
+                "Ten corpses. The dungeon barely notices.",
+                "Your tenth kill. Should I bake you a cake? No, I shan't.",
+            ]
+        elif kill_count == 25:
+            quotes = [
+                "Twenty-five kills. You're actually keeping count, aren't you?",
+                "Quarter century of death. Still not impressive.",
+                "Your enthusiasm for violence is noted.",
+                "Twenty-five. Adequate. By mortal standards.",
+            ]
+        elif kill_count == 50:
+            quotes = [
+                "Fifty kills. I suppose that's... adequate.",
+                "Half a hundred. If you're looking for praise, you won't find it here.",
+                "Your body count grows. As does my collection.",
+                "Fifty. Not terrible. For you, anyway.",
+            ]
+        elif kill_count == 100:
+            quotes = [
+                "One hundred. Yes, I'm counting too.",
+                "A century of kills. Still think you're the hero?",
+                "One hundred souls. All mine. Including yours.",
+                "Impressive dedication to carnage. Almost... professional.",
+            ]
+        else:
+            # Fallback for other milestones
+            quotes = [
+                f"{kill_count} kills. Quite the little warrior, aren't you?",
+                f"Your {kill_count}th kill. How... efficient.",
+            ]
+        
         return random.choice(quotes)
 
 

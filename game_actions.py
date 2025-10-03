@@ -2,6 +2,7 @@
 
 This module provides a clean, modular way to handle game actions by breaking
 down the monolithic action processing into focused, testable components.
+Also integrates Entity dialogue for key game moments (Phase 1 expansion).
 """
 
 from typing import Dict, Any, Optional, Tuple
@@ -11,6 +12,7 @@ from game_messages import Message
 from game_states import GameStates
 from config.game_constants import get_constants
 from entity_sorting_cache import invalidate_entity_cache
+from entity_dialogue import EntityDialogue
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +227,22 @@ class ActionProcessor:
                 # Track monster type killed
                 monster_name = dead_entity.name.lower()
                 player.statistics.record_kill(monster_name)
+                
+                # Entity comments on kills (Phase 1 feature!)
+                message_log = self.state_manager.state.message_log
+                total_kills = player.statistics.total_kills
+                
+                # First kill - Entity mocks basic combat
+                if total_kills == 1:
+                    entity_quote = EntityDialogue.get_first_kill_quote()
+                    entity_message = Message(entity_quote, (180, 180, 150))  # Muted gold
+                    message_log.add_message(entity_message)
+                
+                # Kill milestones - Entity tracks your progress
+                elif total_kills in [10, 25, 50, 100]:
+                    entity_quote = EntityDialogue.get_milestone_kill_quote(total_kills)
+                    entity_message = Message(entity_quote, (180, 180, 150))  # Muted gold
+                    message_log.add_message(entity_message)
             
             # Handle dropped loot
             if hasattr(dead_entity, '_dropped_loot') and dead_entity._dropped_loot:
@@ -491,6 +509,11 @@ class ActionProcessor:
                 new_fov_map = initialize_fov(game_map)
                 self.state_manager.update_state(fov_map=new_fov_map)
                 self.state_manager.request_fov_recompute()
+                
+                # Entity comments on level transition (Phase 1 feature!)
+                entity_quote = EntityDialogue.get_level_transition_quote(game_map.dungeon_level)
+                entity_message = Message(entity_quote, (180, 180, 150))  # Muted gold for Entity
+                message_log.add_message(entity_message)
                 
                 break
         else:

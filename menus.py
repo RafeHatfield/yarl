@@ -7,6 +7,7 @@ message boxes. All menus are rendered as centered overlays.
 
 import tcod as libtcod
 from tcod import libtcodpy
+from entity_dialogue import EntityDialogue
 
 
 def menu(con, header, options, width, screen_width, screen_height):
@@ -99,7 +100,10 @@ def inventory_menu(con, header, player, inventory_width, screen_width, screen_he
 
 
 def main_menu(con, background_image, screen_width, screen_height):
-    """Display the main menu screen.
+    """Display the main menu screen with Entity presence.
+    
+    The Entity's voice greets (mocks) the player on the menu screen,
+    establishing the tone immediately. Alan Rickman would be proud.
 
     Args:
         con: Console to draw on
@@ -110,7 +114,7 @@ def main_menu(con, background_image, screen_width, screen_height):
     # Use deprecated method but warnings are suppressed in engine.py
     libtcodpy.image_blit_2x(background_image, 0, 0, 0)
 
-    # Use RGB tuple instead of deprecated color constant
+    # Title
     libtcodpy.console_set_default_foreground(0, (255, 255, 63))
     libtcodpy.console_print_ex(
         0,
@@ -120,6 +124,20 @@ def main_menu(con, background_image, screen_width, screen_height):
         libtcodpy.CENTER,
         "CATACOMBS OF YARL",
     )
+    
+    # Entity quote - the personality begins HERE
+    entity_quote = EntityDialogue.get_main_menu_quote()
+    libtcodpy.console_set_default_foreground(0, (180, 180, 150))  # Muted gold
+    libtcodpy.console_print_ex(
+        0,
+        int(screen_width / 2),
+        int(screen_height / 2) - 2,
+        libtcodpy.BKGND_NONE,
+        libtcodpy.CENTER,
+        f'"{entity_quote}"',
+    )
+    
+    # Author credit
     libtcodpy.console_print_ex(
         0,
         int(screen_width / 2),
