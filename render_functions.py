@@ -238,8 +238,13 @@ def render_all(
     
     elif game_state == GameStates.PLAYER_DEAD:
         # Render death screen with statistics
+        # Get the pre-generated Entity quote from game state (prevents flickering)
+        from engine_integration import get_current_state_manager
+        state_manager = get_current_state_manager()
+        entity_quote = getattr(state_manager.state, 'death_screen_quote', None) if state_manager else None
+        
         from death_screen import render_death_screen
-        render_death_screen(con, player, screen_width, screen_height)
+        render_death_screen(con, player, screen_width, screen_height, entity_quote)
 
 
 def _render_tiles_original(con, game_map, fov_map, colors):

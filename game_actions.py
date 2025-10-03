@@ -213,6 +213,16 @@ class ActionProcessor:
             # Add a frame counter to prevent immediate exit from death screen
             if not hasattr(self.state_manager.state, 'death_frame_counter'):
                 self.state_manager.state.death_frame_counter = 0
+            
+            # Generate Entity death quote ONCE (don't regenerate every frame!)
+            if hasattr(player, 'statistics') and player.statistics:
+                from entity_dialogue import get_entity_quote_for_death
+                self.state_manager.state.death_screen_quote = get_entity_quote_for_death(
+                    player.statistics, 
+                    player.statistics.deepest_level
+                )
+            else:
+                self.state_manager.state.death_screen_quote = "How... disappointing."
         else:
             # Monster died - always transform to corpse first
             from death_functions import kill_monster

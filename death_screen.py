@@ -8,7 +8,7 @@ import tcod.libtcodpy as libtcodpy
 from entity_dialogue import get_entity_quote_for_death
 
 
-def render_death_screen(con, player, screen_width, screen_height):
+def render_death_screen(con, player, screen_width, screen_height, entity_quote=None):
     """Render the death screen with statistics and restart options.
     
     Args:
@@ -16,6 +16,7 @@ def render_death_screen(con, player, screen_width, screen_height):
         player: The player entity (to access statistics)
         screen_width: Width of the screen
         screen_height: Height of the screen
+        entity_quote: Pre-generated Entity quote (to prevent flickering)
     """
     # Clear the console with a dark overlay
     libtcodpy.console_set_default_background(con, libtcodpy.black)
@@ -37,9 +38,8 @@ def render_death_screen(con, player, screen_width, screen_height):
     
     # Entity dialogue (THE PERSONALITY!)
     y = 6
-    if stats:
-        entity_quote = get_entity_quote_for_death(stats, stats.deepest_level)
-        
+    if stats and entity_quote:
+        # Entity quote is pre-generated when player dies (prevents flickering)
         # Word wrap the quote to fit the screen (max 50 characters per line)
         max_line_length = 50
         words = entity_quote.split()
