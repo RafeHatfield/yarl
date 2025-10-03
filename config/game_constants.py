@@ -157,8 +157,8 @@ class ItemSpawnConfig:
     """Configuration for item spawn rates in normal gameplay."""
     
     # Healing potion spawn rates (level-dependent)
-    HEALING_POTION_LEVEL_1: int = 55  # Higher rate on level 1 for balance (reduced from 60)
-    HEALING_POTION_DEFAULT: int = 28  # Standard rate for other levels (reduced from 35)
+    HEALING_POTION_LEVEL_1: int = 50  # Higher rate on level 1 for balance (reduced from 55)
+    HEALING_POTION_DEFAULT: int = 25  # Standard rate for other levels (reduced from 28)
     
     # Equipment spawn rates (format: [[chance, min_level], ...])
     # Note: These are used by from_dungeon_level() function

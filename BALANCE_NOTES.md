@@ -1,5 +1,29 @@
 # Balance Adjustment Notes
 
+## v3.3.0 - Continued Loot Balance (October 3, 2025)
+
+### Issue Identified
+**Playtesting feedback**: Still slightly too many healing potions. Getting close to right balance.
+
+### Changes Made
+Conservative adjustment - another small reduction:
+
+**Healing Potions (Further Reduced):**
+- Level 1: 55% → 50% (-5%)
+- Other Levels: 28% → 25% (-3%)
+
+### Rationale
+1. **Small steps**: Another ~10% reduction rather than dramatic change
+2. **Iterative refinement**: Close to the sweet spot now
+3. **Maintain safety**: Still generous on level 1 (guaranteed 2 potions + 1 starting)
+4. **Total reduction from original**: Level 1 now 50% (was 60%), Other now 25% (was 35%)
+
+### Expected Impact
+- ~1-2 fewer healing potions per playthrough
+- Should feel "just right" - enough to survive, not flooded
+
+---
+
 ## v3.1.1 - Loot Balance Tweaks (October 2, 2025)
 
 ### Issue Identified
