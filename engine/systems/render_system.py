@@ -40,20 +40,23 @@ class RenderSystem(System):
         screen_height: int,
         colors: Dict[str, Any],
         priority: int = 100,
+        sidebar_console=None,
     ):
         """Initialize the RenderSystem.
 
         Args:
-            console: Main game console for rendering
-            panel: UI panel console for UI elements
+            console: Main game console for rendering (viewport in new layout)
+            panel: UI panel console for UI elements (status panel in new layout)
             screen_width (int): Width of the screen in characters
             screen_height (int): Height of the screen in characters
             colors (Dict[str, Any]): Color configuration dictionary
             priority (int, optional): System update priority. Defaults to 100.
+            sidebar_console: Left sidebar console (optional, for new layout)
         """
         super().__init__("render", priority)
         self.console = console
         self.panel = panel
+        self.sidebar_console = sidebar_console
         self.fov_map = None
         self.fov_recompute = True
         self.screen_width = screen_width
@@ -61,9 +64,11 @@ class RenderSystem(System):
         self.colors = colors
 
         # UI layout configuration
+        from config.ui_layout import get_ui_layout
+        self.ui_layout = get_ui_layout()
         self.bar_width = 20
-        self.panel_height = 7
-        self.panel_y = screen_height - self.panel_height
+        self.panel_height = self.ui_layout.status_panel_height
+        self.panel_y = self.ui_layout.viewport_height
 
     def initialize(self, engine) -> None:
         """Initialize the render system with engine reference.

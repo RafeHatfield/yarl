@@ -30,13 +30,14 @@ from input_handlers import handle_keys, handle_mouse
 from loader_functions.data_loaders import save_game
 
 
-def create_game_engine(constants, con, panel):
+def create_game_engine(constants, sidebar_console, viewport_console, status_console):
     """Create and configure a GameEngine with all necessary systems.
 
     Args:
         constants (dict): Game configuration constants
-        con: Main game console
-        panel: UI panel console
+        sidebar_console: Left sidebar console (full height)
+        viewport_console: Main viewport console (map view)
+        status_console: Status panel console (HP, messages)
 
     Returns:
         GameEngine: Configured game engine ready to run
@@ -59,9 +60,11 @@ def create_game_engine(constants, con, panel):
     engine.register_system(ai_system)
 
     # Create and register the optimized render system (late priority)
+    # Pass all 3 consoles for split-screen layout
     render_system = OptimizedRenderSystem(
-        console=con,
-        panel=panel,
+        console=viewport_console,  # Main viewport (legacy 'con')
+        panel=status_console,       # Status panel (legacy 'panel')
+        sidebar_console=sidebar_console,  # NEW: Sidebar console
         screen_width=constants["screen_width"],
         screen_height=constants["screen_height"],
         colors=constants["colors"],
@@ -108,9 +111,10 @@ def initialize_game_engine(
 
 
 def play_game_with_engine(
-    player, entities, game_map, message_log, game_state, con, panel, constants
+    player, entities, game_map, message_log, game_state, 
+    sidebar_console, viewport_console, status_console, constants
 ):
-    """Play the game using the new engine architecture.
+    """Play the game using the new engine architecture with 3-console layout.
 
     This function replaces the original play_game function and demonstrates
     how the new engine integrates with the existing game systems.
@@ -121,14 +125,19 @@ def play_game_with_engine(
         game_map: Game map
         message_log: Message log
         game_state: Initial game state
-        con: Main game console
-        panel: UI panel console
+        sidebar_console: Left sidebar console (full height)
+        viewport_console: Main viewport console (map view)
+        status_console: Status panel console (HP, messages)
         constants: Game configuration constants
     """
     global _current_state_manager
     
-    # Create and initialize the engine
-    engine = create_game_engine(constants, con, panel)
+    # Create and initialize the engine with 3-console layout
+    engine = create_game_engine(constants, sidebar_console, viewport_console, status_console)
+    
+    # Legacy aliases for compatibility during transition
+    con = viewport_console
+    panel = status_console
     
     # Store state manager globally for access from render functions
     _current_state_manager = engine.state_manager
