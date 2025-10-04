@@ -2232,3 +2232,75 @@
 10:35:36 - COMBAT: d20 Combat: Orc rolled 5 + 0 (DEX) + 0 (weapon) = 5 vs AC 13 → MISS
 10:35:36 - COMBAT: d20 Combat: Player rolled 16 + 1 (DEX) + 1 (weapon) = 18 vs AC 10 → HIT | Damage: 2 (base) + 2 (STR) = 4
 10:35:36 - COMBAT: d20 Combat: Orc rolled 14 + 0 (DEX) + 0 (weapon) = 14 vs AC 13 → HIT | Damage: 5 (base) + 2 (STR) = 7
+10:35:36 - COMBAT: d20 Combat: Player rolled 9 + 1 (DEX) + 1 (weapon) = 11 vs AC 10 → HIT | Damage: 2 (base) + 2 (STR) = 4
+10:35:36 - COMBAT: d20 Combat: Orc rolled 3 + 0 (DEX) + 0 (weapon) = 3 vs AC 13 → MISS
+10:35:37 - COMBAT: d20 Combat: Player rolled 20 + 1 (DEX) + 1 (weapon) = 22 vs AC 10 → HIT [CRITICAL HIT] | Damage: 2 (base) + 2 (STR) = 8 × 2 (crit)
+10:35:37 - COMBAT: d20 Combat: Orc rolled 18 + 0 (DEX) + 0 (weapon) = 18 vs AC 13 → HIT | Damage: 6 (base) + 2 (STR) = 8
+10:35:38 - COMBAT: d20 Combat: Player rolled 2 + 1 (DEX) + 1 (weapon) = 4 vs AC 10 → MISS
+10:35:38 - COMBAT: d20 Combat: Orc rolled 16 + 0 (DEX) + 0 (weapon) = 16 vs AC 13 → HIT | Damage: 4 (base) + 2 (STR) = 6
+10:35:38 - COMBAT: d20 Combat: Player rolled 13 + 1 (DEX) + 1 (weapon) = 15 vs AC 10 → HIT | Damage: 3 (base) + 2 (STR) = 5
+10:35:52 - COMBAT: d20 Combat: Player rolled 5 + 1 (DEX) + 1 (weapon) = 7 vs AC 8 → MISS
+10:35:52 - COMBAT: d20 Combat: Slime rolled 14 + -2 (DEX) + 0 (weapon) = 12 vs AC 13 → MISS
+10:35:52 - COMBAT: d20 Combat: Player rolled 1 + 1 (DEX) + 1 (weapon) = 3 vs AC 8 → MISS [FUMBLE]
+10:35:52 - COMBAT: d20 Combat: Slime rolled 18 + -2 (DEX) + 0 (weapon) = 16 vs AC 13 → HIT | Damage: 1 (base) + -1 (STR) = 1
+10:35:52 - COMBAT: d20 Combat: Player rolled 9 + 1 (DEX) + 1 (weapon) = 11 vs AC 8 → HIT | Damage: 4 (base) + 2 (STR) = 6
+10:35:52 - COMBAT: d20 Combat: Slime rolled 13 + -2 (DEX) + 0 (weapon) = 11 vs AC 13 → MISS
+10:35:53 - COMBAT: d20 Combat: Player rolled 16 + 1 (DEX) + 1 (weapon) = 18 vs AC 8 → HIT | Damage: 4 (base) + 2 (STR) = 6
+10:35:53 - COMBAT: d20 Combat: Slime rolled 19 + -2 (DEX) + 0 (weapon) = 17 vs AC 13 → HIT | Damage: 3 (base) + -1 (STR) = 2
+10:35:53 - COMBAT: d20 Combat: Player rolled 4 + 1 (DEX) + 1 (weapon) = 6 vs AC 8 → MISS
+10:35:53 - COMBAT: d20 Combat: Slime rolled 19 + -2 (DEX) + 0 (weapon) = 17 vs AC 13 → HIT | Damage: 2 (base) + -1 (STR) = 1
+10:35:54 - COMBAT: d20 Combat: Player rolled 12 + 1 (DEX) + 1 (weapon) = 14 vs AC 8 → HIT | Damage: 2 (base) + 2 (STR) = 4
+10:36:19 - COMBAT: d20 Combat: Player rolled 9 + 1 (DEX) + 1 (weapon) = 11 vs AC 8 → HIT | Damage: 3 (base) + 2 (STR) = 5
+10:36:19 - COMBAT: d20 Combat: Player rolled 3 + 1 (DEX) + 1 (weapon) = 5 vs AC 8 → MISS
+10:36:21 - COMBAT: d20 Combat: Orc rolled 11 + 0 (DEX) + 0 (weapon) = 11 vs AC 13 → MISS
+10:36:22 - COMBAT: d20 Combat: Player rolled 2 + 1 (DEX) + 1 (weapon) = 4 vs AC 10 → MISS
+10:36:22 - COMBAT: d20 Combat: Orc rolled 10 + 0 (DEX) + 0 (weapon) = 10 vs AC 13 → MISS
+10:36:38 - COMBAT: d20 Combat: Player rolled 11 + 1 (DEX) + 1 (weapon) = 13 vs AC 10 → HIT | Damage: 3 (base) + 2 (STR) = 5
+10:36:40 - COMBAT: d20 Combat: Player rolled 11 + 1 (DEX) + 1 (weapon) = 13 vs AC 8 → HIT | Damage: 1 (base) + 2 (STR) = 3
+10:36:41 - COMBAT: d20 Combat: Player rolled 20 + 1 (DEX) + 1 (weapon) = 22 vs AC 8 → HIT [CRITICAL HIT] | Damage: 3 (base) + 2 (STR) = 10 × 2 (crit)
+10:36:45 - COMBAT: d20 Combat: Player rolled 9 + 1 (DEX) + 1 (weapon) = 11 vs AC 10 → HIT | Damage: 2 (base) + 2 (STR) = 4
+10:36:45 - COMBAT: d20 Combat: Player rolled 8 + 1 (DEX) + 1 (weapon) = 10 vs AC 10 → HIT | Damage: 2 (base) + 2 (STR) = 4
+10:36:46 - COMBAT: d20 Combat: Player rolled 10 + 1 (DEX) + 1 (weapon) = 12 vs AC 10 → HIT | Damage: 4 (base) + 2 (STR) = 6
+10:36:46 - COMBAT: d20 Combat: Player rolled 17 + 1 (DEX) + 1 (weapon) = 19 vs AC 10 → HIT | Damage: 4 (base) + 2 (STR) = 6
+10:37:22 - COMBAT: d20 Combat: Player rolled 6 + 1 (DEX) + 1 (weapon) = 8 vs AC 8 → HIT | Damage: 2 (base) + 2 (STR) = 4
+10:37:25 - COMBAT: d20 Combat: Player rolled 18 + 1 (DEX) + 1 (weapon) = 20 vs AC 8 → HIT | Damage: 3 (base) + 2 (STR) = 5
+10:37:26 - COMBAT: d20 Combat: Player rolled 8 + 1 (DEX) + 1 (weapon) = 10 vs AC 8 → HIT | Damage: 4 (base) + 2 (STR) = 6
+10:39:01 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 2 (0 power + 2 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+10:39:02 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 3 (0 power + 3 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+10:39:03 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 4 (0 power + 4 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+10:39:03 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 4 (0 power + 4 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+10:39:05 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 2 (0 power + 2 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+10:39:40 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 3 (0 power + 3 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+10:39:47 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 1 (0 power + 1 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+10:39:47 - COMBAT: d20 Combat: Zombified Slime rolled 11 + -2 (DEX) + 0 (weapon) = 9 vs AC 15 → MISS
+10:39:49 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 1 (0 power + 1 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+10:39:49 - COMBAT: d20 Combat: Zombified Slime rolled 16 + -2 (DEX) + 0 (weapon) = 14 vs AC 15 → MISS
+10:39:50 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 6 (0 power + 6 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 6 total damage
+10:39:50 - COMBAT: d20 Combat: Zombified Slime rolled 2 + -2 (DEX) + 0 (weapon) = 0 vs AC 15 → MISS
+10:39:51 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 1 (0 power + 1 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+10:39:51 - COMBAT: d20 Combat: Zombified Slime rolled 14 + -2 (DEX) + 0 (weapon) = 12 vs AC 15 → MISS
+10:39:51 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 8 (0 power + 8 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 8 total damage
+10:39:51 - COMBAT: d20 Combat: Zombified Slime rolled 2 + -2 (DEX) + 0 (weapon) = 0 vs AC 15 → MISS
+10:39:52 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 1 (0 power + 1 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+10:39:52 - COMBAT: d20 Combat: Zombified Slime rolled 4 + -2 (DEX) + 0 (weapon) = 2 vs AC 15 → MISS
+10:39:53 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 4 (0 power + 4 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+10:39:53 - COMBAT: d20 Combat: Zombified Slime rolled 4 + -2 (DEX) + 0 (weapon) = 2 vs AC 15 → MISS
+10:39:53 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 4 (0 power + 4 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+10:39:53 - COMBAT: d20 Combat: Zombified Slime rolled 20 + -2 (DEX) + 0 (weapon) = 18 vs AC 15 → HIT [CRITICAL HIT] | Damage: 1 (base) + -2 (STR) = 1 × 2 (crit)
+10:39:54 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 3 (0 power + 3 rolled), Zombified Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+10:40:33 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 6 (0 power + 6 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 6 total damage
+10:40:33 - COMBAT: d20 Combat: Slime rolled 14 + -2 (DEX) + 0 (weapon) = 12 vs AC 15 → MISS
+10:40:34 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 5 (0 power + 5 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 5 total damage
+10:40:34 - COMBAT: d20 Combat: Slime rolled 9 + -2 (DEX) + 0 (weapon) = 7 vs AC 15 → MISS
+10:40:35 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 1 (0 power + 1 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+10:40:35 - COMBAT: d20 Combat: Slime rolled 19 + -2 (DEX) + 0 (weapon) = 17 vs AC 15 → HIT | Damage: 3 (base) + -1 (STR) = 2
+10:40:35 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 7 (0 power + 7 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 7 total damage
+10:40:36 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 5 (0 power + 5 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 5 total damage
+10:40:36 - COMBAT: d20 Combat: Orc rolled 3 + 0 (DEX) + 0 (weapon) = 3 vs AC 15 → MISS
+10:40:38 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 4 (0 power + 4 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+10:40:38 - COMBAT: d20 Combat: Orc rolled 2 + 0 (DEX) + 0 (weapon) = 2 vs AC 15 → MISS
+10:40:38 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 2 (0 power + 2 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+10:40:38 - COMBAT: d20 Combat: Orc rolled 10 + 0 (DEX) + 0 (weapon) = 10 vs AC 15 → MISS
+10:40:39 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 4 (0 power + 4 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+10:40:39 - COMBAT: d20 Combat: Orc rolled 3 + 0 (DEX) + 0 (weapon) = 3 vs AC 15 → MISS
+10:40:40 - COMBAT: Player [power:0+0] (1-8 dmg) attacks for 7 (0 power + 7 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 7 total damage

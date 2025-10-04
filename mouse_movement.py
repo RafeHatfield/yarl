@@ -259,8 +259,10 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         })
         return {"results": results}
     
-    # Check for enemies in FOV AFTER moving
-    if _check_for_enemies_in_fov(player, entities, fov_map):
+    # Check for enemies CLOSER than weapon range (threat detection)
+    # This allows ranged weapons to keep approaching until in range
+    weapon_reach = _get_weapon_reach(player)
+    if _check_for_close_enemies(player, entities, fov_map, weapon_reach):
         pathfinding.interrupt_movement("Enemy spotted")
         results.append({
             "message": Message("Movement stopped - enemy spotted!", (255, 255, 0))
@@ -314,6 +316,38 @@ def _check_for_enemy_in_weapon_range(player: 'Entity', entities: List['Entity'],
         return enemies_in_range[0][0]
     
     return None
+
+
+def _check_for_close_enemies(player: 'Entity', entities: List['Entity'], fov_map, weapon_reach: int) -> bool:
+    """Check if any enemies are CLOSER than weapon range (threat detection).
+    
+    This prevents ranged weapons from continuing to approach when melee enemies
+    are dangerously close. For ranged weapons (reach 8-10), only enemies within
+    melee range will trigger this. For melee weapons, it works as before.
+    
+    Args:
+        player (Entity): The player entity
+        entities (List[Entity]): List of all entities
+        fov_map: Field of view map
+        weapon_reach (int): The reach of the player's weapon
+        
+    Returns:
+        bool: True if any enemies are closer than weapon reach
+    """
+    from fov_functions import map_is_in_fov
+    
+    # For ranged weapons, only stop if enemy gets within melee range (2 tiles)
+    # For melee weapons, stop immediately when spotted
+    threat_distance = min(weapon_reach, 2) * 1.5  # Account for diagonals
+    
+    for entity in entities:
+        if (entity != player and entity.fighter and 
+            map_is_in_fov(fov_map, entity.x, entity.y)):
+            distance = player.distance_to(entity)
+            if distance <= threat_distance:
+                return True
+    
+    return False
 
 
 def _check_for_enemies_in_fov(player: 'Entity', entities: List['Entity'], fov_map) -> bool:

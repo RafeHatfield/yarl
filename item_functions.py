@@ -716,6 +716,15 @@ def cast_dragon_fart(*args, **kwargs):
         })
         return results
     
+    # Epic dragon fart message FIRST! 💨
+    results.append({
+        "consumed": True,
+        "message": Message(
+            f"💨 {entity.name} unleashes a MIGHTY DRAGON FART! A cone of noxious gas spreads outward!",
+            (150, 255, 100)  # Bright green
+        )
+    })
+    
     # Apply confusion/sleep to all affected entities
     for target_entity in affected_entities:
         # Apply confusion AI (acts like sleep - random wandering)
@@ -729,15 +738,6 @@ def cast_dragon_fart(*args, **kwargs):
                 (100, 255, 100)  # Green
             )
         })
-    
-    # Epic dragon fart message!
-    results.append({
-        "consumed": True,
-        "message": Message(
-            f"💨 {entity.name} unleashes a MIGHTY DRAGON FART! A cone of noxious gas spreads outward!",
-            (150, 255, 100)  # Bright green
-        )
-    })
     
     return results
 
