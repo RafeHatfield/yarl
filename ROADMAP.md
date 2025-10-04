@@ -123,6 +123,7 @@ These features build on existing systems and provide immediate gameplay improvem
 | **Variable Defense** | ✅ Complete (v3.0) | 🔥 High | Armor provides variable protection | Defense ranges integrated with dice system |
 | **Variable Monster Damage** | ✅ Complete (v3.0) | 🔥 High | Monsters use dice-based damage like players | All entities use unified dice combat system |
 | **Chance to Hit/Dodge** | ✅ Complete (v3.0) | 🔥 High | d20 attack rolls vs AC for tactical depth | Full d20 combat with critical hits/fumbles |
+| **Critical Failure Consequences** | 1-2 weeks | 🔥 High | Fumbles cause weapon drops, armor falls off, or prone + free crit | Fumble outcome table, equipment drop mechanics, prone status |
 | **More Spells** | ✅ Complete (v2.7) | 🔥 High | 8 tactical scrolls (teleport, invisibility, etc.) | Comprehensive spell system with status effects |
 | **Monster Equipment & Loot** | 1-2 weeks | 🔥 High | Monsters can wield weapons/armor and drop them | Equipment system for monsters, loot drops |
 | **General Loot Drops** | 1 week | 🔥 High | All monsters drop items when defeated | Death event handling, loot table system |
@@ -205,6 +206,7 @@ These features add new gameplay dimensions and significantly expand the game's d
 |---------|------|--------|------------|----------------------|
 | **Pet System** | 3-4 weeks | 🔥 High | AI companions that follow and assist | Companion AI, follow behavior, combat assistance |
 | **Trap System** | 3-4 weeks | 🔥 High | Detection, disarmament, damage | Hidden objects, skill checks, trigger mechanics |
+| **Hidden Doors & Secrets** | 1-2 weeks | 🔥 High | Secret passages, search mechanics, exploration rewards | Door revealing system, search/detection mechanics, visual cues |
 | **Skill Scrolls** | 2-3 weeks | 🔶 Medium | Consumable ability learning | Skill teaching items, progression integration |
 
 **Combined Impact:** Living world feel with meaningful exploration rewards.

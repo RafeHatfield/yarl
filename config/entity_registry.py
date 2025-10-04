@@ -795,6 +795,9 @@ def load_entity_config(config_path: str = None) -> None:
     Args:
         config_path: Path to configuration file. If None, uses path from GameConstants.
     """
+    logger.warning(f"🔧 load_entity_config() CALLED!")
+    logger.warning(f"  Current weapons count BEFORE load: {len(_entity_registry.weapons)}")
+    
     if config_path is None:
         # Get path from GameConstants
         from config.game_constants import get_entity_config
@@ -806,4 +809,10 @@ def load_entity_config(config_path: str = None) -> None:
             config_dir = Path(__file__).parent.parent  # Go up to project root
             config_path = config_dir / config_path
     
+    logger.warning(f"  Loading from: {config_path}")
+    logger.warning(f"  Path exists: {os.path.exists(str(config_path))}")
+    
     _entity_registry.load_from_file(str(config_path))
+    
+    logger.warning(f"  Weapons count AFTER load: {len(_entity_registry.weapons)}")
+    logger.warning(f"  Dagger found: {_entity_registry.get_weapon('dagger') is not None}")
