@@ -356,7 +356,7 @@ level_overrides:
 
 ### **Weapon Choice:**
 - **High STR?** → Greataxe/Greatsword (ignore finesse)
-- **High DEX?** → Rapier (1d8+1 to-hit is amazing!)
+- **High DEX?** → Rapier (1d8+1 to-hit is amazing!) or Longbow (10 tile range!)
 - **Balanced?** → Longsword (reliable 1d8)
 - **Starting?** → Dagger until you find better
 
@@ -367,7 +367,7 @@ level_overrides:
 
 ### **Essential Scrolls:**
 1. **Healing Potions** - Always carry 3+
-2. **Invisibility** - Emergency escape
+2. **Invisibility** - Emergency escape (or assassin tactics!)
 3. **Fireball** - Clear rooms
 4. **Lightning** - Boss damage
 
@@ -376,6 +376,180 @@ level_overrides:
 - **Raise Dead:** Free tank, attacks everything (including enemies!)
 - **Teleport:** 10% misfire = risky but powerful
 - **Shield:** Monsters can backfire it on themselves (10% chance)
+
+---
+
+## 🎯 **PROVEN BUILD GUIDES**
+
+### **🏹 The Archer (DEX Ranged Build)**
+**Difficulty:** Easy | **Survivability:** High | **Damage:** Medium
+
+**Equipment:**
+- **Weapon:** Longbow (10 tile range, 1d8 damage)
+- **Armor:** Studded Leather Armor (+3 AC, no DEX cap)
+- **Helmet:** Leather Helmet (+1 AC)
+- **Boots:** Leather Boots (+1 AC)
+- **Shield:** Optional (+2 AC, but restricts movement)
+
+**Stats Priority:** DEX > CON > STR
+
+**Strategy:**
+- Keep enemies at 8-10 tile range
+- Click on distant enemies → auto-attack when in range
+- Kite backward while shooting
+- Use terrain to funnel enemies
+- Combine with Invisibility for ultimate safety
+
+**Pros:** Very safe, great for learning, works with any DEX
+**Cons:** Lower damage than melee, requires positioning
+
+---
+
+### **🗡️ The Assassin (Stealth Archer)**
+**Difficulty:** Medium | **Survivability:** Very High | **Damage:** Medium
+
+**Equipment:**
+- **Weapon:** Longbow (10 tiles) or Crossbow (8 tiles)
+- **Armor:** Light armor (maximize DEX)
+- **Scrolls:** 5+ Invisibility Scrolls (your bread and butter!)
+
+**Stats Priority:** DEX > INT (for scroll success?) > CON
+
+**Strategy:**
+1. **Use Invisibility Scroll** (10 turns of stealth)
+2. **Position at max range** (10 tiles for longbow)
+3. **Shoot enemies from stealth** - they can't see you!
+4. **Enemies will wander** looking for you
+5. **Re-stealth before duration ends**
+6. **Repeat until victory**
+
+**Advanced Tactics:**
+- Combine with Dragon Fart (sleep + stealth = free damage)
+- Use Teleport to reposition if caught
+- Raise Dead to create chaos while invisible
+
+**Pros:** Nearly invincible, very fun, tactical depth
+**Cons:** Scroll-dependent, slower gameplay, requires patience
+
+---
+
+### **⚔️ The Berserker (Glass Cannon)**
+**Difficulty:** Hard | **Survivability:** Low | **Damage:** Maximum
+
+**Equipment:**
+- **Weapon:** Greatsword (2d6 damage, 2-12, avg 7.0!)
+- **Armor:** None or light armor (maximize damage output)
+- **No Shield** (two-handed weapon prevents it)
+
+**Stats Priority:** STR > CON > DEX
+
+**Strategy:**
+- Maximum damage per hit
+- Kill before you get killed
+- Use healing potions liberally
+- Combine with Shield Scroll for temporary defense
+- Dragon Fart → rush in while they're asleep
+
+**Pros:** Highest damage in game, satisfying hits
+**Cons:** Very risky, requires good timing, potion-dependent
+
+---
+
+### **🛡️ The Paladin (Balanced Tank)**
+**Difficulty:** Easy | **Survivability:** Very High | **Damage:** Medium
+
+**Equipment:**
+- **Weapon:** Longsword (1d8) or Mace (1d6)
+- **Shield:** Shield (+2 AC)
+- **Armor:** Scale Mail (+5 AC, DEX cap +2)
+- **Helmet:** Chain Coif (+2 AC)
+- **Boots:** Chain Boots (+2 AC)
+
+**Stats Priority:** CON > STR > DEX (to 14-15 max)
+
+**Total AC:** Can reach 20+ AC!
+
+**Strategy:**
+- Face-tank everything with high AC
+- Moderate damage output
+- Very forgiving for mistakes
+- Use Shield Scroll to become unkillable temporarily
+- Healing potions for sustain
+
+**Pros:** Very survivable, forgiving, steady progress
+**Cons:** Slower kills, less exciting
+
+---
+
+### **🧙 The Battle Mage (Hybrid)**
+**Difficulty:** Medium | **Survivability:** Medium | **Damage:** High (Burst)
+
+**Equipment:**
+- **Weapon:** Rapier (1d8, +1 to-hit, finesse)
+- **Armor:** Light armor (full DEX bonus)
+- **Scrolls:** Fireball, Lightning, Dragon Fart (lots of them!)
+
+**Stats Priority:** DEX > INT (?) > CON
+
+**Strategy:**
+- Open with Fireball (25 AoE damage, radius 3)
+- Use Dragon Fart to disable groups (20 turn sleep!)
+- Clean up survivors with rapier
+- Lightning for single-target burst (40 damage!)
+- Raise Dead for meat shields
+
+**Pros:** Versatile, fun, powerful burst, tactical depth
+**Cons:** Scroll-dependent, requires good spell management
+
+---
+
+### **💀 The Necromancer (Summon Build)**
+**Difficulty:** Hard | **Survivability:** High | **Damage:** Low (Direct)
+
+**Equipment:**
+- **Weapon:** Any (you're not doing the fighting!)
+- **Armor:** Heavy armor (you'll get hit eventually)
+- **Scrolls:** 10+ Raise Dead Scrolls, Invisibility
+
+**Stats Priority:** CON > Any
+
+**Strategy:**
+1. **Let enemies kill each other**
+2. **Raise the corpses as zombies** (2x HP, attacks all!)
+3. **Your zombies do the fighting** for you
+4. **Stay invisible** while chaos unfolds
+5. **Raise more zombies** from fallen enemies
+6. **Build your undead army**
+
+**Advanced:**
+- Combine with Dragon Fart (put enemies to sleep, raise dead allies)
+- Use Teleport to escape if surrounded
+- Confusion on strong enemies, raise them when they die
+
+**Pros:** Most unique playstyle, very safe, hilarious
+**Cons:** Slow, requires lots of scrolls, RNG-dependent
+
+---
+
+### **🎯 Build Comparison Table:**
+
+| Build | Difficulty | Survivability | Damage | Fun Factor | Scroll Reliance |
+|-------|-----------|---------------|---------|-----------|-----------------|
+| **Archer** | Easy | High | Medium | ⭐⭐⭐⭐ | Low |
+| **Assassin** | Medium | Very High | Medium | ⭐⭐⭐⭐⭐ | High |
+| **Berserker** | Hard | Low | Maximum | ⭐⭐⭐⭐ | Medium |
+| **Paladin** | Easy | Very High | Medium | ⭐⭐⭐ | Low |
+| **Battle Mage** | Medium | Medium | High (Burst) | ⭐⭐⭐⭐⭐ | High |
+| **Necromancer** | Hard | High | Low (Direct) | ⭐⭐⭐⭐⭐ | Very High |
+
+**Beginner Recommendations:**
+1. **Archer** - Safe, straightforward, fun
+2. **Paladin** - Forgiving, tanky, reliable
+
+**Advanced Players:**
+1. **Assassin** - Tactical stealth gameplay
+2. **Necromancer** - Unique summon strategy
+3. **Battle Mage** - Versatile, high skill ceiling
 
 ---
 
@@ -393,6 +567,12 @@ level_overrides:
 - **Durability** - Equipment degradation
 
 **Future Items:**
+- **Wands** (rechargeable spells with multiple charges!)
+  - Wand of Fireball, Wand of Lightning, Wand of Healing, etc.
+  - Start with 3-10 charges
+  - Recharge by "feeding" matching scrolls to wands
+  - More reliable than scrolls, but rarer to find
+  - Durability system (max charges decrease over time)
 - More ranged weapons (heavy crossbow, throwing weapons)
 - Rings & amulets
 - More armor sets

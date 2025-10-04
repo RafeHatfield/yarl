@@ -432,14 +432,19 @@ This roadmap should be updated:
 - **Identify Scroll**: Reveal item properties (needs item property system)
 
 **Phase 2: Equipment Slots & Items** (2-3 weeks) 🔜 **NEXT**
-- **New Slots**: chest (armor), head (helmets), boots, rings, amulets
+- **New Slots**: rings, amulets
 - **New Weapons**: varied damage types, different weapon classes
 - **New Armor**: light/medium/heavy with tradeoffs
 - **Weapon Properties**:
   - Speed (attack frequency)
-  - Reach (melee range)
   - Durability (item degradation)
 - **Set Bonuses**: Matching gear provides extra bonuses
+- **Wands System**: Rechargeable spell items
+  - Multi-charge items (like scrolls but reusable!)
+  - Can be recharged by "feeding" matching scrolls
+  - Different wand types for each spell
+  - Wand durability/max charges
+  - More reliable than scroll RNG
 
 **Phase 3: Ranged Weapons** (2-3 weeks) 🟢 **IN PROGRESS**
 - ✅ **Basic Ranged Weapons**: Shortbow, Longbow, Crossbow (reach system!)
@@ -472,6 +477,27 @@ This roadmap should be updated:
 - Achievement system (first kill, 100 kills, reach level 10, etc.)
 - Profile selection/creation UI
 - Leaderboard display (local only)
+
+**Wands System** (1-2 weeks)
+- **Rechargeable spell items**: Like scrolls but with multiple charges!
+- **Wand Types**: Wand of Fireball, Wand of Lightning, Wand of Healing, etc.
+- **Charge System**: 
+  - Each wand starts with 3-10 charges
+  - Using a wand consumes 1 charge
+  - Empty wands remain in inventory
+- **Recharging Mechanic**:
+  - "Feed" matching scrolls to wands to recharge them
+  - E.g., use Fireball Scroll on empty Wand of Fireball → +1 charge
+  - Intuitive: drag scroll onto wand or use scroll while targeting wand
+  - Makes scrolls valuable even when you have wands
+- **Benefits over Scrolls**:
+  - More reliable (no RNG on finding them)
+  - Encourages long-term planning
+  - Trade-off: rarer to find, but reusable
+- **Wand Durability**: 
+  - Max charges decrease over time (e.g., 10 → 9 → 8...)
+  - Eventually wands "wear out" and break
+  - Creates item sink and progression
 
 **Manual Level Design - Tier 3** (3-4 weeks)
 - Full ASCII map crafting
