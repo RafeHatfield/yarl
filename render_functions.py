@@ -203,7 +203,7 @@ def render_all(
     # This is the key to fixing the double-entity bug!
     effect_queue = get_effect_queue()
     if effect_queue.has_effects():
-        effect_queue.play_all(con=0)  # Play on root console
+        effect_queue.play_all(con=0, camera=camera)  # Play with camera translation
 
     libtcod.console_set_default_background(panel, (0, 0, 0))
     libtcod.console_clear(panel)

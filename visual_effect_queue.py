@@ -55,23 +55,35 @@ class QueuedEffect:
         self.entity = entity
         self.params = kwargs
     
-    def play(self, con=0) -> None:
-        """Play this effect immediately with viewport offset.
+    def play(self, con=0, camera=None) -> None:
+        """Play this effect immediately with camera and viewport offset.
         
-        Visual effects are drawn in world coordinates but need to account
-        for the viewport offset in split-screen layout.
+        Visual effects use world coordinates but need to be translated:
+        1. World coords → Viewport coords (via camera)
+        2. Viewport coords → Screen coords (via viewport offset)
         
         Args:
             con: Console to draw on (default: root console 0)
+            camera: Camera for world→viewport translation (optional)
         """
-        # Get viewport offset for coordinate translation
+        # Step 1: Translate world coordinates to viewport coordinates using camera
+        if camera:
+            # Check if effect is in viewport
+            if not camera.is_in_viewport(self.x, self.y):
+                return  # Effect is off-screen, don't render
+            
+            viewport_x, viewport_y = camera.world_to_viewport(self.x, self.y)
+        else:
+            # No camera, world coords = viewport coords (backward compatibility)
+            viewport_x, viewport_y = self.x, self.y
+        
+        # Step 2: Translate viewport coordinates to screen coordinates
         from config.ui_layout import get_ui_layout
         ui_layout = get_ui_layout()
         viewport_offset = ui_layout.viewport_position
         
-        # Adjust coordinates for viewport offset
-        self.screen_x = self.x + viewport_offset[0]
-        self.screen_y = self.y + viewport_offset[1]
+        self.screen_x = viewport_x + viewport_offset[0]
+        self.screen_y = viewport_y + viewport_offset[1]
         
         # Now play the effect at screen coordinates
         if self.effect_type == EffectType.HIT:
@@ -320,7 +332,7 @@ class VisualEffectQueue:
             EffectType.DRAGON_FART, x, y, None, tiles=tiles, **kwargs
         ))
     
-    def play_all(self, con=0) -> None:
+    def play_all(self, con=0, camera=None) -> None:
         """Play all queued effects and clear the queue.
         
         This should be called during rendering, after entities are drawn
@@ -328,9 +340,10 @@ class VisualEffectQueue:
         
         Args:
             con: Console to draw on (default: root console 0)
+            camera: Camera for coordinate translation (optional)
         """
         for effect in self.effects:
-            effect.play(con)
+            effect.play(con, camera)
         
         # Clear the queue
         self.effects.clear()
