@@ -140,3 +140,22 @@ def is_testing_mode() -> bool:
         True if testing mode is enabled
     """
     return get_testing_config().testing_mode
+
+
+def get_testing_map_size() -> Tuple[int, int]:
+    """Get map size for testing mode.
+    
+    Returns larger map dimensions to demonstrate camera following.
+    Only applies when testing mode is enabled.
+    
+    Returns:
+        Tuple of (width, height) for map dimensions
+        Returns (160, 100) in testing mode, (80, 43) in normal mode
+    """
+    if is_testing_mode():
+        # TESTING: Larger map to demonstrate camera scrolling
+        # Viewport is 80x45, so this allows plenty of scrolling
+        return (160, 100)
+    else:
+        # NORMAL: Standard map size (fits in viewport)
+        return (80, 43)

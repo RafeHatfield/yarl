@@ -34,6 +34,12 @@ def get_constants():
     # Use the new centralized constants system
     constants = get_new_constants()
     
+    # Override map size for testing mode (larger map to demonstrate camera scrolling)
+    from config.testing_config import get_testing_map_size
+    map_width, map_height = get_testing_map_size()
+    constants["map_width"] = map_width
+    constants["map_height"] = map_height
+    
     # Add legacy-specific values that aren't in the new system yet
     constants.update({
         "window_title": "Yarl (Catacombs of Yarl)",  # Updated title
