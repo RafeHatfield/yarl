@@ -7,8 +7,14 @@
 version: "1.0"
 
 level_overrides:
-  # Level 1 - Testing configuration for slime features
+  # Level 1 - Testing configuration for slime features + camera scrolling
   1:
+    parameters:
+      # Larger map to demonstrate camera scrolling (viewport is 80x45)
+      map_width: 160
+      map_height: 100
+      # Keep default values for other parameters (max_monsters_per_room: 3, etc.)
+    
     guaranteed_spawns:
       mode: "additional"  # Add to normal random spawns
       monsters:

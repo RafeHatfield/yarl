@@ -91,6 +91,8 @@ class LevelParameters:
     max_room_size: Optional[int] = None
     max_monsters_per_room: Optional[int] = None
     max_items_per_room: Optional[int] = None
+    map_width: Optional[int] = None  # Map width override (for testing camera scrolling)
+    map_height: Optional[int] = None  # Map height override (for testing camera scrolling)
     
     def has_overrides(self) -> bool:
         """Check if any parameters are overridden."""
@@ -99,7 +101,9 @@ class LevelParameters:
             self.min_room_size is not None,
             self.max_room_size is not None,
             self.max_monsters_per_room is not None,
-            self.max_items_per_room is not None
+            self.max_items_per_room is not None,
+            self.map_width is not None,
+            self.map_height is not None
         ])
 
 
@@ -302,7 +306,9 @@ class LevelTemplateRegistry:
                 min_room_size=params_data.get('min_room_size'),
                 max_room_size=params_data.get('max_room_size'),
                 max_monsters_per_room=params_data.get('max_monsters_per_room'),
-                max_items_per_room=params_data.get('max_items_per_room')
+                max_items_per_room=params_data.get('max_items_per_room'),
+                map_width=params_data.get('map_width'),  # Support map size overrides
+                map_height=params_data.get('map_height')
             )
             
         # Parse Tier 2: special_rooms

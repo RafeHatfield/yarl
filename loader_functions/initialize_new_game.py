@@ -34,11 +34,18 @@ def get_constants():
     # Use the new centralized constants system
     constants = get_new_constants()
     
-    # Override map size for testing mode (larger map to demonstrate camera scrolling)
-    from config.testing_config import get_testing_map_size
-    map_width, map_height = get_testing_map_size()
-    constants["map_width"] = map_width
-    constants["map_height"] = map_height
+    # Check for map size overrides from level templates (level 1)
+    # This allows testing mode to set larger maps via level_templates_testing.yaml
+    from config.level_template_registry import get_level_template_registry
+    registry = get_level_template_registry()
+    
+    level_1_override = registry.get_override(1)
+    if level_1_override and level_1_override.has_parameters():
+        params = level_1_override.parameters
+        if params.map_width is not None:
+            constants["map_width"] = params.map_width
+        if params.map_height is not None:
+            constants["map_height"] = params.map_height
     
     # Add legacy-specific values that aren't in the new system yet
     constants.update({
