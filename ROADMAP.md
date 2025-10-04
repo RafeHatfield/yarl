@@ -168,6 +168,8 @@ These features add new gameplay dimensions and significantly expand the game's d
 |---------|------|--------|------------|----------------------|
 | **Ranged Weapons** | 2-3 weeks | 🔥 High | Need targeting system extension | Projectile mechanics, line-of-sight calculations |
 | **Boss Encounters** | 3-4 weeks | 🔥 High | Special AI behaviors and mechanics | Custom AI states, unique abilities |
+| **Persistent Spell Effects** | 2-3 weeks | 🔥 High | Lingering ground effects (fireball/dragon fart) | Ground effect tracking, turn duration, area denial |
+| **Spell-Item Interaction** | 1 week | 🔥 High | Fireball destroys items in blast zone | Item destruction system, area effect on ground items |
 | **Environmental Hazards** | 2-4 weeks | 🔥 High | Traps, poison, lava - tactical positioning | New tile types, damage-over-time systems |
 | **Manual Level Design - Tier 1** | ✅ Complete | 🔥 High | Guaranteed spawns for testing (YAML-based) | Template system with mode control (additional/replace) |
 | **Manual Level Design - Tier 2** | 2-3 weeks | 🔥 High | Level parameters & special rooms | Room count/size control, themed room types |
