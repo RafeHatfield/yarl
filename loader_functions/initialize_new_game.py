@@ -39,7 +39,7 @@ def get_constants():
     from config.level_template_registry import get_level_template_registry
     registry = get_level_template_registry()
     
-    level_1_override = registry.get_override(1)
+    level_1_override = registry.get_level_override(1)
     if level_1_override and level_1_override.has_parameters():
         params = level_1_override.parameters
         if params.map_width is not None:
