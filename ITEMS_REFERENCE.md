@@ -18,67 +18,79 @@ This document provides a comprehensive reference for all items implemented in Ya
 ### **Weapon Properties:**
 - **Finesse** (+1 to-hit): Easier to land hits, good for high-DEX builds
 - **Unwieldy** (-1 to-hit): Harder to hit, but massive damage
-- **Reach** (planned): Attack from 2 tiles away
+- **Two-Handed**: Requires both hands, **prevents shield use**
+- **Reach**: Attack from **2 tiles away** (spears)
+
+### **Combat Mechanics:**
+- **Keyboard Bump Attack**: Move into adjacent monster → attack (reach doesn't apply)
+- **Mouse Click Attack**: Click on monster → attack if within reach, else pathfind
+- **Auto-Attack on Approach**: When pathfinding toward an enemy, automatically attack when you get within weapon reach!
+  - **Spear (Reach 2)**: Auto-attacks when you get within 2 tiles
+  - **Normal Weapons**: Auto-attack when adjacent
+  - **Future Ranged Weapons**: Will auto-attack at their max range
+- **Two-Handed Weapons**: 
+  - Equipping a two-handed weapon auto-unequips your shield
+  - Equipping a shield auto-unequips your two-handed weapon
 
 ---
 
 ### **Light Weapons (1d4)**
 Fast, precise strikes. Good for finesse builds.
 
-| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Properties | Char | Notes |
-|----------|--------------|--------|--------|---------|-------|------------|------|-------|
-| `dagger` | Dagger | 1d4 | +1 | 2.5 | 1-4 | Finesse | `-` | Starting weapon, easiest to hit |
+| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Reach | Properties | Char | Notes |
+|----------|--------------|--------|--------|---------|-------|-------|------------|------|-------|
+| `dagger` | Dagger | 1d4 | +1 | 2.5 | 1-4 | 1 | Finesse | `-` | Starting weapon, easiest to hit |
 
 ---
 
 ### **One-Handed Weapons (1d6)**
 Balanced weapons for early-mid game.
 
-| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Properties | Char | Notes |
-|----------|--------------|--------|--------|---------|-------|------------|------|-------|
-| `club` | Club | 1d6 | 0 | 3.5 | 1-6 | Bludgeoning | `)` | Common weapon |
-| `shortsword` | Shortsword | 1d6 | +1 | 3.5 | 1-6 | Finesse | `/` | Piercing, easier to hit |
-| `mace` | Mace | 1d6 | 0 | 3.5 | 1-6 | Bludgeoning | `)` | Good vs armor |
+| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Reach | Properties | Char | Notes |
+|----------|--------------|--------|--------|---------|-------|-------|------------|------|-------|
+| `club` | Club | 1d6 | 0 | 3.5 | 1-6 | 1 | Bludgeoning | `)` | Common weapon |
+| `shortsword` | Shortsword | 1d6 | +1 | 3.5 | 1-6 | 1 | Finesse | `/` | Piercing, easier to hit |
+| `mace` | Mace | 1d6 | 0 | 3.5 | 1-6 | 1 | Bludgeoning | `)` | Good vs armor |
 
 ---
 
 ### **One-Handed Weapons (1d8)**
 Better damage, versatile options.
 
-| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Properties | Char | Notes |
-|----------|--------------|--------|--------|---------|-------|------------|------|-------|
-| `longsword` | Longsword | 1d8 | 0 | 4.5 | 1-8 | Slashing | `/` | Well-balanced, standard sword |
-| `rapier` | Rapier | 1d8 | +1 | 4.5 | 1-8 | Finesse | `/` | Precision weapon, elegant |
-| `spear` | Spear | 1d8 | 0 | 4.5 | 1-8 | Reach (future) | `/` | Versatile piercing weapon |
+| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Reach | Properties | Char | Notes |
+|----------|--------------|--------|--------|---------|-------|-------|------------|------|-------|
+| `longsword` | Longsword | 1d8 | 0 | 4.5 | 1-8 | 1 | Slashing | `/` | Well-balanced, standard sword |
+| `rapier` | Rapier | 1d8 | +1 | 4.5 | 1-8 | 1 | Finesse | `/` | Precision weapon, elegant |
+| `spear` | Spear | 1d8 | 0 | 4.5 | 1-8 | **2** | **Reach** | `/` | **Attack from 2 tiles away!** |
 
 ---
 
 ### **Heavy Weapons (1d10)**
 High damage, no finesse.
 
-| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Properties | Char | Notes |
-|----------|--------------|--------|--------|---------|-------|------------|------|-------|
-| `battleaxe` | Battleaxe | 1d10 | 0 | 5.5 | 1-10 | Slashing | `/` | Heavy chopping weapon |
-| `warhammer` | Warhammer | 1d10 | 0 | 5.5 | 1-10 | Bludgeoning | `)` | Heavy bludgeoning |
+| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Reach | Properties | Char | Notes |
+|----------|--------------|--------|--------|---------|-------|-------|------------|------|-------|
+| `battleaxe` | Battleaxe | 1d10 | 0 | 5.5 | 1-10 | 1 | Slashing | `/` | Heavy chopping weapon |
+| `warhammer` | Warhammer | 1d10 | 0 | 5.5 | 1-10 | 1 | Bludgeoning | `)` | Heavy bludgeoning |
 
 ---
 
 ### **Two-Handed Weapons (1d12 / 2d6)**
-Maximum damage, requires both hands (planned).
+Maximum damage, **prevents shield use**.
 
-| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Properties | Char | Notes |
-|----------|--------------|--------|--------|---------|-------|------------|------|-------|
-| `greataxe` | Greataxe | 1d12 | -1 | 6.5 | 1-12 | Unwieldy | `/` | **HIGHEST SINGLE DAMAGE**, harder to hit |
-| `greatsword` | Greatsword | 2d6 | 0 | 7.0 | 2-12 | Two-handed | `/` | **MOST CONSISTENT**, best avg damage |
+| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Reach | Properties | Char | Notes |
+|----------|--------------|--------|--------|---------|-------|-------|------------|------|-------|
+| `greataxe` | Greataxe | 1d12 | -1 | 6.5 | 1-12 | 1 | Unwieldy, **Two-Handed** | `/` | **HIGHEST SINGLE DAMAGE**, harder to hit, no shield! |
+| `greatsword` | Greatsword | 2d6 | 0 | 7.0 | 2-12 | 1 | **Two-Handed** | `/` | **MOST CONSISTENT**, best avg damage, no shield! |
 
 ---
 
 ### **Legacy Weapons**
 Backward compatibility only.
 
-| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Properties | Char | Notes |
-|----------|--------------|--------|--------|---------|-------|------------|------|-------|
-| `sword` | Sword | 1d8 | 0 | 4.5 | 1-8 | - | `/` | Same as longsword, for old saves |
+| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Reach | Properties | Char | Notes |
+|----------|--------------|--------|--------|---------|-------|-------|------------|------|-------|
+| `sword` | Sword | 1d8 | 0 | 4.5 | 1-8 | 1 | - | `/` | Same as longsword, for old saves |
 
 ---
 
@@ -346,10 +358,11 @@ level_overrides:
 ## 🔮 **COMING SOON**
 
 **Weapon Properties (Planned):**
-- **Two-Handed** - Prevents shield use (Greataxe, Greatsword)
-- **Reach** - Attack from 2 tiles away (Spear)
+- ✅ **Two-Handed** - IMPLEMENTED! (Greataxe, Greatsword)
+- ✅ **Reach** - IMPLEMENTED! (Spear = 2 tiles)
 - **Attack Speed** - Multiple attacks per turn
 - **Durability** - Equipment degradation
+- **Ranged Weapons** - Bows, crossbows with projectiles
 
 **Future Items:**
 - Ranged weapons (bows, crossbows)
@@ -357,6 +370,12 @@ level_overrides:
 - Rings & amulets
 - More armor sets
 - Set bonuses
+
+**Architecture Ready:**
+- The reach system works for any reach value (1, 2, 3, etc.)
+- Future ranged weapons just need to set `reach: 10` (or whatever range)
+- Auto-attack on approach will work for all ranged weapons!
+- Two-handed property fully integrated with equipment system
 
 ---
 

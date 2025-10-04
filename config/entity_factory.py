@@ -170,7 +170,9 @@ class EntityFactory:
                 damage_min=weapon_def.damage_min,
                 damage_max=weapon_def.damage_max,
                 damage_dice=weapon_def.damage_dice,
-                to_hit_bonus=weapon_def.to_hit_bonus
+                to_hit_bonus=weapon_def.to_hit_bonus,
+                two_handed=weapon_def.two_handed,
+                reach=weapon_def.reach
             )
 
             # Create entity

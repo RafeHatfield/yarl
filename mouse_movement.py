@@ -59,6 +59,23 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
         return _handle_movement_click(click_x, click_y, player, entities, game_map, results, fov_map)
 
 
+def _get_weapon_reach(entity: 'Entity') -> int:
+    """Get the reach of the entity's equipped weapon.
+    
+    Args:
+        entity (Entity): The entity to check
+        
+    Returns:
+        int: The reach of the weapon in tiles (default 1 for adjacent)
+    """
+    if (hasattr(entity, 'equipment') and entity.equipment and 
+        entity.equipment.main_hand and 
+        hasattr(entity.equipment.main_hand, 'equippable')):
+        weapon = entity.equipment.main_hand.equippable
+        return getattr(weapon, 'reach', 1)
+    return 1  # Default reach for unarmed/no weapon
+
+
 def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> dict:
     """Handle clicking on an enemy entity.
     
@@ -73,8 +90,12 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
     # Calculate distance to target
     distance = player.distance_to(target)
     
-    if distance <= 1.5:  # Adjacent (including diagonals)
-        # Attack the target
+    # Get weapon reach (default 1 for adjacent, 2 for spear, etc.)
+    weapon_reach = _get_weapon_reach(player)
+    max_attack_distance = weapon_reach * 1.5  # 1.5 for diagonals (e.g., spear: 2 * 1.5 = 3.0)
+    
+    if distance <= max_attack_distance:
+        # Within reach - attack the target
         if player.fighter:
             attack_results = player.fighter.attack(target)
             results.extend(attack_results)
@@ -226,6 +247,18 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         "fov_recompute": True
     })
     
+    # Check if we're within weapon reach of any enemy (auto-attack!)
+    enemy_in_range = _check_for_enemy_in_weapon_range(player, entities, fov_map)
+    if enemy_in_range:
+        # Attack the enemy!
+        pathfinding.interrupt_movement("Enemy within weapon reach - attacking!")
+        attack_results = player.fighter.attack(enemy_in_range)
+        results.extend(attack_results)
+        results.append({
+            "enemy_turn": True  # Trigger enemy turn after attack
+        })
+        return {"results": results}
+    
     # Check for enemies in FOV AFTER moving
     if _check_for_enemies_in_fov(player, entities, fov_map):
         pathfinding.interrupt_movement("Enemy spotted")
@@ -246,6 +279,41 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         })
     
     return {"results": results}
+
+
+def _check_for_enemy_in_weapon_range(player: 'Entity', entities: List['Entity'], fov_map) -> Optional['Entity']:
+    """Check if any enemy is within weapon reach and visible.
+    
+    This is used during pathfinding to auto-attack when getting within range.
+    
+    Args:
+        player (Entity): The player entity
+        entities (List[Entity]): List of all entities
+        fov_map: Field of view map
+        
+    Returns:
+        Entity or None: The closest enemy within weapon range, or None
+    """
+    from fov_functions import map_is_in_fov
+    
+    weapon_reach = _get_weapon_reach(player)
+    max_attack_distance = weapon_reach * 1.5  # Account for diagonals
+    
+    enemies_in_range = []
+    
+    for entity in entities:
+        if (entity != player and entity.fighter and 
+            map_is_in_fov(fov_map, entity.x, entity.y)):
+            distance = player.distance_to(entity)
+            if distance <= max_attack_distance:
+                enemies_in_range.append((entity, distance))
+    
+    if enemies_in_range:
+        # Return the closest enemy
+        enemies_in_range.sort(key=lambda x: x[1])
+        return enemies_in_range[0][0]
+    
+    return None
 
 
 def _check_for_enemies_in_fov(player: 'Entity', entities: List['Entity'], fov_map) -> bool:

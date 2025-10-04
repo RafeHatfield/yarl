@@ -1,5 +1,5 @@
 from random import randint
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, TYPE_CHECKING
 
 import tcod as libtcod
 import tcod.libtcodpy as libtcodpy
@@ -8,6 +8,32 @@ from game_messages import Message
 from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger
 from components.faction import Faction, are_factions_hostile, get_target_priority
+
+if TYPE_CHECKING:
+    from entity import Entity
+
+
+def get_weapon_reach(entity: 'Entity') -> int:
+    """Get the reach of the entity's equipped weapon.
+    
+    Args:
+        entity (Entity): The entity to check
+        
+    Returns:
+        int: The reach of the weapon in tiles (default 1 for adjacent)
+    """
+    try:
+        if (hasattr(entity, 'equipment') and entity.equipment and 
+            entity.equipment.main_hand and 
+            hasattr(entity.equipment.main_hand, 'equippable')):
+            weapon = entity.equipment.main_hand.equippable
+            reach = getattr(weapon, 'reach', 1)
+            # Defensive: ensure reach is an int (for tests with Mocks)
+            return reach if isinstance(reach, int) else 1
+    except (AttributeError, TypeError):
+        # Handle Mocks or incomplete test objects
+        pass
+    return 1  # Default reach for unarmed/no weapon
 
 
 class BasicMonster:
@@ -76,14 +102,17 @@ class BasicMonster:
                 MonsterActionLogger.log_turn_summary(monster, actions_taken)
                 return results
 
-            if monster.distance_to(target) >= 2:
-                # monster.move_towards(target.x, target.y, game_map, entities)
+            # Check weapon reach for attack range
+            distance = monster.distance_to(target)
+            weapon_reach = get_weapon_reach(monster)
+            
+            if distance > weapon_reach:
+                # Too far to attack - move towards target
                 MonsterActionLogger.log_action_attempt(monster, "movement", f"moving towards {target.name}")
                 monster.move_astar(target, entities, game_map)
                 actions_taken.append("movement")
             elif target.fighter.hp > 0:
-                # print('The {0} insults you!'.format(monster.name))
-                # Use new d20-based attack system
+                # Within attack range - attack!
                 MonsterActionLogger.log_action_attempt(monster, "combat", f"attacking {target.name}")
                 attack_results = monster.fighter.attack_d20(target)
                 results.extend(attack_results)
@@ -286,8 +315,9 @@ class MindlessZombieAI:
                 
                 if in_fov:
                     # Target still in FOV!
-                    if distance == 1:
-                        # Adjacent - ATTACK!
+                    weapon_reach = get_weapon_reach(self.owner)
+                    if distance <= weapon_reach:
+                        # Within attack range - ATTACK!
                         # Check for other adjacent targets first
                         adjacent_targets = self._find_adjacent_targets(entities)
                         
@@ -525,15 +555,16 @@ class SlimeAI:
         if best_target:
             # Calculate distance to target
             distance = monster.distance_to(best_target)
+            weapon_reach = get_weapon_reach(monster)
             
-            if distance >= 2:
-                # Move towards target using A* pathfinding
+            if distance > weapon_reach:
+                # Too far to attack - move towards target using A* pathfinding
                 monster.move_astar(best_target, entities, game_map)
                 MonsterActionLogger.log_action_attempt(
                     monster, "move", f"moving towards {best_target.name}"
                 )
             elif best_target.fighter:
-                # Attack the target (use new d20 system)
+                # Within attack range - attack the target (use new d20 system)
                 attack_results = monster.fighter.attack_d20(best_target)
                 results.extend(attack_results)
                 MonsterActionLogger.log_action_attempt(
