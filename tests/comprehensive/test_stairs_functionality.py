@@ -145,12 +145,15 @@ class TestStairsIntegration(unittest.TestCase):
 
     def test_stairs_with_real_game_map(self):
         """Test stairs functionality with actual GameMap."""
+        # Use new default map size (Phase 3: 120x80)
+        map_width, map_height = 120, 80
+        
         # Create real game map
-        game_map = GameMap(width=80, height=50, dungeon_level=1)
+        game_map = GameMap(width=map_width, height=map_height, dungeon_level=1)
         
         # Create player
         player = Entity(
-            x=40, y=25, char='@', color=(255, 255, 255), name='Player',
+            x=60, y=40, char='@', color=(255, 255, 255), name='Player',
             fighter=Fighter(hp=20, defense=2, power=5),
             inventory=Inventory(capacity=26)
         )
@@ -161,8 +164,8 @@ class TestStairsIntegration(unittest.TestCase):
             "max_rooms": 10,
             "room_min_size": 6,
             "room_max_size": 10,
-            "map_width": 80,
-            "map_height": 50,
+            "map_width": map_width,
+            "map_height": map_height,
         }
         
         game_map.make_map(
