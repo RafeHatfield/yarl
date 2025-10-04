@@ -85,9 +85,10 @@ class OptimizedTileRenderer:
         game_map,
         fov_map,
         colors: Dict[str, Any],
-        force_full_redraw: bool = False
+        force_full_redraw: bool = False,
+        camera=None
     ) -> None:
-        """Render map tiles with optimization caching.
+        """Render map tiles with optimization caching and camera support.
         
         This is a drop-in replacement for the tile rendering portion of render_all()
         that provides significant performance improvements through caching.
@@ -98,6 +99,7 @@ class OptimizedTileRenderer:
             fov_map: Field of view map for visibility checks
             colors: Color configuration dictionary
             force_full_redraw: Whether to force redrawing all tiles
+            camera: Camera for viewport scrolling (optional, defaults to no offset)
         """
         self.frame_counter += 1
         self.optimization_stats['total_frames'] += 1
@@ -117,10 +119,10 @@ class OptimizedTileRenderer:
         # Force full redraw on first render or when explicitly requested
         if force_full_redraw or self.first_render:
             self.optimization_stats['full_redraws'] += 1
-            self._render_all_tiles(con, game_map, fov_map, colors)
+            self._render_all_tiles(con, game_map, fov_map, colors, camera)
             self.first_render = False  # Clear first render flag
         else:
-            self._render_dirty_tiles(con, game_map, fov_map, colors)
+            self._render_dirty_tiles(con, game_map, fov_map, colors, camera)
         
         # Clear dirty tiles after rendering
         self.dirty_tiles.clear()
@@ -166,7 +168,8 @@ class OptimizedTileRenderer:
         con,
         game_map,
         fov_map,
-        colors: Dict[str, Any]
+        colors: Dict[str, Any],
+        camera=None
     ) -> None:
         """Render all tiles and update cache.
         
@@ -175,17 +178,33 @@ class OptimizedTileRenderer:
             game_map: Game map containing tile data
             fov_map: Field of view map for visibility checks
             colors: Color configuration dictionary
+            camera: Camera for viewport scrolling (optional)
         """
-        for y in range(game_map.height):
-            for x in range(game_map.width):
-                self._render_tile(con, x, y, game_map, fov_map, colors, update_cache=True)
+        # Determine which tiles to render based on camera viewport
+        if camera:
+            # Only render tiles visible in viewport
+            start_x, start_y, end_x, end_y = camera.get_viewport_bounds()
+            # Clamp to map boundaries
+            start_x = max(0, start_x)
+            start_y = max(0, start_y)
+            end_x = min(game_map.width, end_x)
+            end_y = min(game_map.height, end_y)
+        else:
+            # No camera, render entire map
+            start_x, start_y = 0, 0
+            end_x, end_y = game_map.width, game_map.height
+        
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                self._render_tile(con, x, y, game_map, fov_map, colors, update_cache=True, camera=camera)
     
     def _render_dirty_tiles(
         self,
         con,
         game_map,
         fov_map,
-        colors: Dict[str, Any]
+        colors: Dict[str, Any],
+        camera=None
     ) -> None:
         """Render only tiles marked as dirty.
         
@@ -194,10 +213,14 @@ class OptimizedTileRenderer:
             game_map: Game map containing tile data
             fov_map: Field of view map for visibility checks
             colors: Color configuration dictionary
+            camera: Camera for viewport scrolling (optional)
         """
         for x, y in self.dirty_tiles:
             if 0 <= x < game_map.width and 0 <= y < game_map.height:
-                self._render_tile(con, x, y, game_map, fov_map, colors, update_cache=True)
+                # Skip tiles outside viewport if camera is active
+                if camera and not camera.is_in_viewport(x, y):
+                    continue
+                self._render_tile(con, x, y, game_map, fov_map, colors, update_cache=True, camera=camera)
         
         self.optimization_stats['tiles_redrawn'] += len(self.dirty_tiles)
     
@@ -209,19 +232,33 @@ class OptimizedTileRenderer:
         game_map,
         fov_map,
         colors: Dict[str, Any],
-        update_cache: bool = True
+        update_cache: bool = True,
+        camera=None
     ) -> None:
         """Render a single tile and optionally update cache.
         
         Args:
             con: Console to render to
-            x: Tile X coordinate
-            y: Tile Y coordinate
+            x: Tile X coordinate (world space)
+            y: Tile Y coordinate (world space)
             game_map: Game map containing tile data
             fov_map: Field of view map for visibility checks
             colors: Color configuration dictionary
             update_cache: Whether to update the tile cache
+            camera: Camera for viewport scrolling (optional)
         """
+        # Translate world coordinates to viewport coordinates using camera
+        if camera:
+            # Check if tile is in viewport
+            if not camera.is_in_viewport(x, y):
+                return  # Tile is outside viewport, don't render
+            
+            # Translate to viewport coordinates
+            viewport_x, viewport_y = camera.world_to_viewport(x, y)
+        else:
+            # No camera, use world coordinates directly (backward compatibility)
+            viewport_x, viewport_y = x, y
+        
         # Get current tile state
         visible = map_is_in_fov(fov_map, x, y)
         wall = game_map.tiles[x][y].block_sight
@@ -247,22 +284,22 @@ class OptimizedTileRenderer:
         
         self.optimization_stats['cache_misses'] += 1
         
-        # Render the tile
+        # Render the tile at viewport coordinates
         if render_state == TileRenderState.VISIBLE_WALL:
             libtcod.console_set_char_background(
-                con, x, y, colors.get("light_wall"), libtcod.BKGND_SET
+                con, viewport_x, viewport_y, colors.get("light_wall"), libtcod.BKGND_SET
             )
         elif render_state == TileRenderState.VISIBLE_FLOOR:
             libtcod.console_set_char_background(
-                con, x, y, colors.get("light_ground"), libtcod.BKGND_SET
+                con, viewport_x, viewport_y, colors.get("light_ground"), libtcod.BKGND_SET
             )
         elif render_state == TileRenderState.EXPLORED_WALL:
             libtcod.console_set_char_background(
-                con, x, y, colors.get("dark_wall"), libtcod.BKGND_SET
+                con, viewport_x, viewport_y, colors.get("dark_wall"), libtcod.BKGND_SET
             )
         elif render_state == TileRenderState.EXPLORED_FLOOR:
             libtcod.console_set_char_background(
-                con, x, y, colors.get("dark_ground"), libtcod.BKGND_SET
+                con, viewport_x, viewport_y, colors.get("dark_ground"), libtcod.BKGND_SET
             )
         # UNEXPLORED tiles are not rendered (remain black/default)
         
@@ -326,8 +363,8 @@ class OptimizedTileRenderer:
 _global_tile_renderer = OptimizedTileRenderer()
 
 
-def render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=False):
-    """Global function for optimized tile rendering.
+def render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=False, camera=None):
+    """Global function for optimized tile rendering with camera support.
     
     This provides a simple interface for the optimized tile renderer that can
     be used as a drop-in replacement for the tile rendering portion of render_all().
@@ -338,9 +375,10 @@ def render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=Fal
         fov_map: Field of view map for visibility checks
         colors: Color configuration dictionary
         force_full_redraw: Whether to force redrawing all tiles
+        camera: Camera for viewport scrolling (optional, defaults to no offset)
     """
     _global_tile_renderer.render_tiles_optimized(
-        con, game_map, fov_map, colors, force_full_redraw
+        con, game_map, fov_map, colors, force_full_redraw, camera
     )
 
 

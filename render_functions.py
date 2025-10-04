@@ -162,11 +162,11 @@ def render_all(
     """
     # Render map tiles with optional optimization
     if use_optimization:
-        # Use optimized tile rendering with caching
-        render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=fov_recompute)
+        # Use optimized tile rendering with caching and camera
+        render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=fov_recompute, camera=camera)
     else:
         # Original tile rendering logic (kept for compatibility/debugging)
-        _render_tiles_original(con, game_map, fov_map, colors)
+        _render_tiles_original(con, game_map, fov_map, colors, camera)
 
     # Use cached entity sorting for performance optimization
     entities_in_render_order = get_sorted_entities(entities)
@@ -293,8 +293,8 @@ def render_all(
         render_death_screen(con, player, screen_width, screen_height, entity_quote)
 
 
-def _render_tiles_original(con, game_map, fov_map, colors):
-    """Original tile rendering logic (kept for compatibility/debugging).
+def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
+    """Original tile rendering logic with camera support (kept for compatibility/debugging).
     
     This function contains the original tile rendering code that processes
     every tile on every frame. It's kept for compatibility and performance
@@ -305,31 +305,51 @@ def _render_tiles_original(con, game_map, fov_map, colors):
         game_map: Game map containing tile data
         fov_map: Field of view map for visibility checks
         colors: Color configuration dictionary
+        camera: Camera for viewport scrolling (optional)
     """
-    for y in range(game_map.height):
-        for x in range(game_map.width):
+    # Determine which tiles to render based on camera viewport
+    if camera:
+        start_x, start_y, end_x, end_y = camera.get_viewport_bounds()
+        start_x = max(0, start_x)
+        start_y = max(0, start_y)
+        end_x = min(game_map.width, end_x)
+        end_y = min(game_map.height, end_y)
+    else:
+        start_x, start_y = 0, 0
+        end_x, end_y = game_map.width, game_map.height
+    
+    for y in range(start_y, end_y):
+        for x in range(start_x, end_x):
+            # Translate world coordinates to viewport coordinates
+            if camera:
+                if not camera.is_in_viewport(x, y):
+                    continue
+                viewport_x, viewport_y = camera.world_to_viewport(x, y)
+            else:
+                viewport_x, viewport_y = x, y
+            
             visible = map_is_in_fov(fov_map, x, y)
             wall = game_map.tiles[x][y].block_sight
 
             if visible:
                 if wall:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("light_wall"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("light_wall"), libtcod.BKGND_SET
                     )
                 else:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("light_ground"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("light_ground"), libtcod.BKGND_SET
                     )
 
                 game_map.tiles[x][y].explored = True
             elif game_map.tiles[x][y].explored:
                 if wall:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("dark_wall"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("dark_wall"), libtcod.BKGND_SET
                     )
                 else:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("dark_ground"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("dark_ground"), libtcod.BKGND_SET
                     )
 
 

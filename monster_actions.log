@@ -36166,3 +36166,74 @@
 14:05:29 - MONSTER: Orc at (52, 3) turn complete: no actions taken
 14:05:29 - MONSTER: Orc at (10, 7) turn complete: no actions taken
 14:05:29 - MONSTER: Orc at (67, 8) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (115, 40) attempts movement: moving towards Player
+21:44:02 - MONSTER: Orc at (116, 39) turn complete: movement
+21:44:02 - MONSTER: Orc at (149, 14) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (133, 93) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (20, 70) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (12, 32) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (41, 11) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (40, 9) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (49, 69) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (107, 13) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (106, 18) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (46, 51) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (89, 9) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (127, 50) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (17, 10) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (33, 46) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (92, 30) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (2, 77) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (2, 79) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (23, 93) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (26, 92) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (108, 18) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (121, 77) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (116, 39) attempts item_seeking_movement: moving towards item
+21:44:02 - MONSTER: Orc at (117, 38) turn complete: item_seeking
+21:44:02 - MONSTER: Orc at (149, 14) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (133, 93) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (20, 70) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (12, 32) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (41, 11) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (40, 9) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (49, 69) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (107, 13) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (106, 18) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (46, 51) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (89, 9) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (127, 50) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (17, 10) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (33, 46) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (92, 30) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (2, 77) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (2, 79) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (23, 93) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (26, 92) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (108, 18) turn complete: no actions taken
+21:44:02 - MONSTER: Orc at (121, 77) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (117, 38) attempts item_pickup: attempting to pick up Dragon Fart Scroll
+21:44:03 - MONSTER: Orc at (117, 38) inventory_change SUCCESS: added Dragon Fart Scroll (inventory: 1 items)
+21:44:03 - MONSTER: Orc at (117, 38) item_pickup SUCCESS: picked up Dragon Fart Scroll from (117, 38)
+21:44:03 - MONSTER: Orc at (117, 38) turn complete: item_seeking
+21:44:03 - MONSTER: Orc at (149, 14) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (133, 93) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (20, 70) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (12, 32) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (41, 11) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (40, 9) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (49, 69) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (107, 13) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (106, 18) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (46, 51) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (89, 9) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (127, 50) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (17, 10) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (33, 46) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (92, 30) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (2, 77) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (2, 79) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (23, 93) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (26, 92) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (108, 18) turn complete: no actions taken
+21:44:03 - MONSTER: Orc at (121, 77) turn complete: no actions taken
