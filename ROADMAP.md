@@ -508,9 +508,18 @@ This roadmap should be updated:
 - Different terrain types (stone, dirt, water, etc.)
 - Destructible dirt walls that player can dig through
 - Strategic path creation and exploration options
-- Resource management for digging tools/abilities
 
-**Scrolling Maps & Camera System** (3-5 weeks)
+**Distribution & Packaging** (4-6 hours first time, 30 min subsequent)
+- **PyInstaller Setup**: Bundle Python + dependencies into standalone executables
+- **Windows Build**: Create .exe with no Python installation required
+- **macOS Build**: Create .app bundle (Intel + Apple Silicon)
+- **Testing**: Validate on clean machines (Windows 10/11, macOS)
+- **Documentation**: Installation instructions for playtesters
+- **GitHub Releases**: Automated release packaging
+- **Future**: Code signing ($100-400/year), installers (DMG/NSIS), CI/CD automation
+- **See:** `docs/DISTRIBUTION_PLAN.md` for complete guide
+
+**Scrolling Maps & Camera System** (3-5 weeks) ✅ **COMPLETE!**
 - Maps larger than viewport (currently 80x45)
 - Camera follows player movement
 - Smooth scrolling as player approaches edges
