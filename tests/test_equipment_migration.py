@@ -111,27 +111,22 @@ class TestEquipmentMigrationCompatibility:
         # Verify dagger is in inventory
         assert dagger in player.inventory.items
 
-    def test_unknown_equipment_creates_fallback(self):
-        """Test that unknown equipment types create fallback equipment."""
+    def test_unknown_equipment_returns_none(self):
+        """Test that unknown equipment types return None (allowing caller to try both types).
+        
+        Changed behavior: Instead of creating fallback "Unknown X" items that could cause bugs,
+        the factory now returns None when equipment type is not found. This allows the caller
+        to try both create_weapon() and create_armor() without getting incorrect fallback items.
+        """
         factory = get_entity_factory()
         
-        # Test unknown weapon
+        # Test unknown weapon returns None
         unknown_weapon = factory.create_weapon("unknown_weapon", 10, 10)
-        assert unknown_weapon is not None
-        assert unknown_weapon.name == "Unknown unknown_weapon"
-        assert unknown_weapon.char == "?"
-        assert unknown_weapon.color == (255, 0, 255)  # Magenta for unknown
-        assert unknown_weapon.equippable is not None
-        assert unknown_weapon.equippable.slot == EquipmentSlots.MAIN_HAND
+        assert unknown_weapon is None, "Unknown weapon should return None, not a fallback"
         
-        # Test unknown armor
+        # Test unknown armor returns None
         unknown_armor = factory.create_armor("unknown_armor", 15, 15)
-        assert unknown_armor is not None
-        assert unknown_armor.name == "Unknown unknown_armor"
-        assert unknown_armor.char == "?"
-        assert unknown_armor.color == (255, 0, 255)  # Magenta for unknown
-        assert unknown_armor.equippable is not None
-        assert unknown_armor.equippable.slot == EquipmentSlots.OFF_HAND
+        assert unknown_armor is None, "Unknown armor should return None, not a fallback"
 
 
 class TestEquipmentGameMapIntegration:

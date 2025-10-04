@@ -266,9 +266,8 @@ class MindlessZombieAI:
         import logging
         logger = logging.getLogger(__name__)
         
-        # DEBUG: Log EVERY turn
-        logger.warning(f"🧟 ZOMBIE TURN START: {self.owner.name} at ({self.owner.x}, {self.owner.y})")
-        logger.warning(f"  Current target: {self.current_target.name if self.current_target else 'NONE'}")
+        # Debug logging for zombie behavior
+        logger.debug(f"Zombie {self.owner.name} taking turn at ({self.owner.x}, {self.owner.y}), target: {self.current_target.name if self.current_target else 'None'}")
         
         results = []
         
@@ -277,20 +276,13 @@ class MindlessZombieAI:
         
         # Check if current target is still valid (alive and in FOV)
         if self.current_target:
-            logger.warning(f"  Checking current target validity...")
-            
             # Is target still alive and in FOV?
             target_in_entities = self.current_target in entities
             target_has_fighter = hasattr(self.current_target, 'fighter') and self.current_target.fighter
             
-            logger.warning(f"    In entities list: {target_in_entities}")
-            logger.warning(f"    Has fighter: {target_has_fighter}")
-            
             if target_in_entities and target_has_fighter:
                 distance = self.owner.distance_to(self.current_target)
                 in_fov = distance <= zombie_fov_radius
-                
-                logger.warning(f"    Distance: {distance}, In FOV: {in_fov}")
                 
                 if in_fov:
                     # Target still in FOV!
@@ -299,30 +291,17 @@ class MindlessZombieAI:
                         # Check for other adjacent targets first
                         adjacent_targets = self._find_adjacent_targets(entities)
                         
-                        # DEBUG: Log adjacent targets
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"ZOMBIE at ({self.owner.x}, {self.owner.y}): Found {len(adjacent_targets)} adjacent targets")
-                        logger.warning(f"  Current target: {self.current_target.name if self.current_target else None}")
-                        for t in adjacent_targets:
-                            logger.warning(f"    - {t.name} at ({t.x}, {t.y})")
-                        
                         # Check if there are OTHER targets besides current one
                         other_adjacent = [e for e in adjacent_targets if e != self.current_target]
-                        logger.warning(f"  Other adjacent (excluding current): {len(other_adjacent)}")
                         
                         if other_adjacent:
                             # There's at least one other adjacent target - 50% chance to switch
                             from random import random
-                            rand_val = random()
-                            logger.warning(f"  Random value: {rand_val:.2f} (< 0.5 = switch)")
-                            if rand_val < 0.5:
+                            if random() < 0.5:
                                 from random import choice
                                 old_target = self.current_target
                                 self.current_target = choice(other_adjacent)
-                                logger.warning(f"  SWITCHED from {old_target.name} to {self.current_target.name}")
-                            else:
-                                logger.warning(f"  NO SWITCH (random >= 0.5)")
+                                logger.info(f"Zombie {self.owner.name} switched target from {old_target.name} to {self.current_target.name}")
                         
                         # Attack current target (use new d20 system)
                         attack_results = self.owner.fighter.attack_d20(self.current_target)
@@ -334,11 +313,11 @@ class MindlessZombieAI:
                         return results
                 else:
                     # Target out of FOV - lose interest
-                    logger.warning(f"  ❌ Target out of FOV - clearing target")
+                    logger.debug(f"Zombie {self.owner.name} lost sight of target")
                     self.current_target = None
             else:
                 # Target dead or removed - clear it
-                logger.warning(f"  ❌ Target dead or invalid - clearing target")
+                logger.debug(f"Zombie {self.owner.name} target is dead/invalid")
                 self.current_target = None
         
         # No current target - look for any living entity in FOV
