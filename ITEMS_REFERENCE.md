@@ -94,6 +94,30 @@ Backward compatibility only.
 
 ---
 
+### **🏹 Ranged Weapons (Bows & Crossbows)**
+Attack from a distance! No ammo system yet (infinite arrows/bolts).
+
+| YAML Key | Display Name | Damage | To-Hit | Avg Dmg | Range | Reach | Properties | Char | Notes |
+|----------|--------------|--------|--------|---------|-------|-------|------------|------|-------|
+| `shortbow` | Shortbow | 1d6 | 0 | 3.5 | 1-6 | **8** | **Ranged** | `}` | Light bow, medium range |
+| `longbow` | Longbow | 1d8 | 0 | 4.5 | 1-8 | **10** | **Ranged** | `}` | **Longest range in game!** |
+| `crossbow` | Crossbow | 1d8 | 0 | 4.5 | 1-8 | **8** | **Ranged** | `}` | Mechanical, reliable |
+
+**Ranged Weapon Tactics:**
+- **Kite enemies**: Stay at max range, shoot as they approach
+- **Auto-attack on approach**: Click distant enemy → pathfind stops at max range and shoots!
+- **Safe damage**: Stay out of melee range entirely
+- **No ammo yet**: Infinite arrows/bolts (ammo system coming soon!)
+- **Perfect for DEX builds**: High DEX = better to-hit!
+
+**Strategic Notes:**
+- Enemies will close distance while you shoot
+- Use with invisibility scroll for ultimate safety
+- Combine with spells for crowd control while you kite
+- Trade-off: Lower damage than two-handed melee, but much safer
+
+---
+
 ## 🛡️ **ARMOR**
 
 ### **How Armor Works:**
@@ -309,13 +333,13 @@ level_overrides:
 ## 📊 **QUICK STATS SUMMARY**
 
 **Total Items Implemented:**
-- **13 Weapons** (12 unique + 1 legacy)
+- **16 Weapons** (12 melee + 3 ranged + 1 legacy)
 - **13 Armor Pieces** (1 shield + 12 armor)
 - **11 Scrolls/Consumables** (1 potion + 10 scrolls)
-- **37 Total Items**
+- **40 Total Items**
 
 **Equipment Slots:**
-- `main_hand` - Weapons (13)
+- `main_hand` - Weapons (16: 12 melee + 3 ranged + 1 legacy)
 - `off_hand` - Shields (1)
 - `head` - Helmets (3)
 - `chest` - Armor (9)
@@ -357,25 +381,30 @@ level_overrides:
 
 ## 🔮 **COMING SOON**
 
+**Weapon Properties (Implemented):**
+- ✅ **Two-Handed** - DONE! (Greataxe, Greatsword)
+- ✅ **Reach** - DONE! (Spear = 2 tiles)
+- ✅ **Ranged Weapons** - DONE! (Shortbow, Longbow, Crossbow)
+
 **Weapon Properties (Planned):**
-- ✅ **Two-Handed** - IMPLEMENTED! (Greataxe, Greatsword)
-- ✅ **Reach** - IMPLEMENTED! (Spear = 2 tiles)
+- **Ammunition System** - Arrows, bolts, limited ammo
+- **Projectile Animations** - See arrows/bolts fly through the air!
 - **Attack Speed** - Multiple attacks per turn
 - **Durability** - Equipment degradation
-- **Ranged Weapons** - Bows, crossbows with projectiles
 
 **Future Items:**
-- Ranged weapons (bows, crossbows)
-- Throwing weapons
+- More ranged weapons (heavy crossbow, throwing weapons)
 - Rings & amulets
 - More armor sets
 - Set bonuses
+- Weapon enchantments
 
-**Architecture Ready:**
-- The reach system works for any reach value (1, 2, 3, etc.)
-- Future ranged weapons just need to set `reach: 10` (or whatever range)
-- Auto-attack on approach will work for all ranged weapons!
-- Two-handed property fully integrated with equipment system
+**Architecture Notes:**
+- ✅ The reach system works for any reach value (1, 2, 8, 10, etc.)
+- ✅ Ranged weapons use the same combat system as melee
+- ✅ Auto-attack on approach works perfectly for ranged!
+- ✅ Two-handed property fully integrated
+- 📋 **Next**: Ammo tracking + projectile visual effects
 
 ---
 

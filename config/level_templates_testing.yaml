@@ -52,4 +52,14 @@ level_overrides:
           count: 1
         - type: "shield"
           count: 1
+        - type: "spear"
+          count: 1  # Test reach property (2 tiles)
+        - type: "greatsword"
+          count: 1  # Test two-handed property
+        - type: "shortbow"
+          count: 1  # Test ranged combat (8 tile reach)
+        - type: "longbow"
+          count: 1  # Test max range (10 tiles)
+        - type: "crossbow"
+          count: 1  # Test ranged combat (8 tiles)
 

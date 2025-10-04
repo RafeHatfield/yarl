@@ -317,6 +317,37 @@ weapons:
     char: "/"
     color: [192, 192, 192]  # Silver
 
+  # ═══════════════════════════════════════════════════════════
+  # RANGED WEAPONS - Bows & Crossbows
+  # ═══════════════════════════════════════════════════════════
+  
+  # Light ranged weapon
+  shortbow:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 0
+    reach: 8                # Can attack up to 8 tiles away!
+    slot: "main_hand"
+    char: "}"
+    color: [139, 69, 19]    # Brown wood
+  
+  # Powerful ranged weapon
+  longbow:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    reach: 10               # Longest range! 10 tiles!
+    slot: "main_hand"
+    char: "}"
+    color: [160, 82, 45]    # Sienna brown
+  
+  # Mechanical ranged weapon
+  crossbow:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    reach: 8                # Medium range
+    slot: "main_hand"
+    char: "}"
+    color: [105, 105, 105]  # Dim gray (metal + wood)
+
 # Armor definitions
 #
 # Armor Types & DEX Caps:

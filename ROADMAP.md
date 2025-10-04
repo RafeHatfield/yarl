@@ -441,11 +441,13 @@ This roadmap should be updated:
   - Durability (item degradation)
 - **Set Bonuses**: Matching gear provides extra bonuses
 
-**Phase 3: Ranged Weapons** (2-3 weeks)
-- Bows, crossbows, throwing weapons
-- Line-of-sight targeting system
-- Ammo management
-- Projectile animations
+**Phase 3: Ranged Weapons** (2-3 weeks) 🟢 **IN PROGRESS**
+- ✅ **Basic Ranged Weapons**: Shortbow, Longbow, Crossbow (reach system!)
+- ✅ **Targeting System**: Uses existing reach/pathfinding system
+- ✅ **Auto-attack on Approach**: Stops at max range and fires!
+- 📋 **Ammo Management**: Track arrows/bolts, limited ammo (1-2 weeks)
+- 📋 **Projectile Animations**: Visual arrow/bolt flight path (1-2 weeks)
+- 📋 **Throwing Weapons**: Daggers, javelins, axes (1 week)
 
 **Phase 4: Monster Equipment & Loot** (1-2 weeks)
 - Monsters spawn with equipped weapons/armor
