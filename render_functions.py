@@ -36,13 +36,14 @@ class RenderOrder(Enum):
     # ACTOR = 4
 
 
-def get_names_under_mouse(mouse, entities, fov_map):
+def get_names_under_mouse(mouse, entities, fov_map, camera=None):
     """Get the names of all visible entities under the mouse cursor.
 
     Args:
         mouse: Mouse object with cursor coordinates (screen space)
         entities (list): List of all entities to check
         fov_map: Field of view map for visibility checking
+        camera: Camera for coordinate translation (optional)
 
     Returns:
         str: Comma-separated string of entity names under the cursor
@@ -50,11 +51,16 @@ def get_names_under_mouse(mouse, entities, fov_map):
     # Get screen coordinates from mouse
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
     
-    # Translate to world coordinates using ui_layout
+    # Translate to world coordinates using ui_layout and camera
     from config.ui_layout import get_ui_layout
     ui_layout = get_ui_layout()
     
-    world_coords = ui_layout.screen_to_world(screen_x, screen_y)
+    # Get camera offset if available
+    camera_x, camera_y = 0, 0
+    if camera:
+        camera_x, camera_y = camera.x, camera.y
+    
+    world_coords = ui_layout.screen_to_world(screen_x, screen_y, camera_x, camera_y)
     
     # If mouse is not over viewport, return empty string
     if world_coords is None:
@@ -238,7 +244,7 @@ def render_all(
         0,
         libtcod.BKGND_NONE,
         libtcod.LEFT,
-        get_names_under_mouse(mouse, entities, fov_map),
+        get_names_under_mouse(mouse, entities, fov_map, camera),
     )
 
     # Blit status panel below viewport (not full width, just viewport width)
