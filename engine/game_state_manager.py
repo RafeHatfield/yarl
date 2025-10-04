@@ -51,6 +51,7 @@ class GameState:
     # Rendering state
     fov_map: Any = None
     fov_recompute: bool = True
+    camera: Any = None  # Camera for viewport scrolling
 
     # Interaction state
     targeting_item: Any = None
@@ -129,6 +130,7 @@ class GameStateManager:
             "key": self._state.key,
             "fov_map": self._state.fov_map,
             "fov_recompute": self._state.fov_recompute,
+            "camera": self._state.camera,
             "targeting_item": self._state.targeting_item,
             "constants": self._state.constants,
             **self._state.extra_data,

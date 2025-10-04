@@ -102,6 +102,7 @@ class OptimizedRenderSystem(RenderSystem):
         message_log = game_state.get("message_log")
         current_game_state = game_state.get("current_state")
         mouse = game_state.get("mouse")
+        camera = game_state.get("camera")  # Get camera from game state (Phase 2)
 
         if not all([player, game_map, message_log]):
             return
@@ -127,6 +128,7 @@ class OptimizedRenderSystem(RenderSystem):
                 current_game_state,
                 mouse,
                 original_fov_recompute,
+                camera,
             )
         else:
             # Fall back to standard rendering
@@ -139,6 +141,7 @@ class OptimizedRenderSystem(RenderSystem):
                 current_game_state,
                 mouse,
                 original_fov_recompute,
+                camera,
             )
 
         # Present the frame
@@ -189,6 +192,7 @@ class OptimizedRenderSystem(RenderSystem):
         current_game_state,
         mouse,
         original_fov_recompute: bool,
+        camera=None,
     ) -> None:
         """Perform optimized rendering using performance data.
 
@@ -200,6 +204,7 @@ class OptimizedRenderSystem(RenderSystem):
             message_log: Message log
             current_game_state: Current game state
             mouse: Mouse object
+            camera: Camera for viewport scrolling (optional)
         """
         visible_entities = game_state.get("visible_entities", set())
         dirty_rectangles = game_state.get("dirty_rectangles", set())
@@ -251,6 +256,7 @@ class OptimizedRenderSystem(RenderSystem):
                 current_game_state,
                 mouse,
                 original_fov_recompute,
+                camera,
             )
             self.optimization_stats["full_renders"] += 1
         else:
@@ -291,6 +297,7 @@ class OptimizedRenderSystem(RenderSystem):
         current_game_state,
         mouse,
         original_fov_recompute: bool,
+        camera=None,
     ) -> None:
         """Perform standard rendering (fallback when optimizations unavailable).
 
@@ -302,6 +309,7 @@ class OptimizedRenderSystem(RenderSystem):
             message_log: Message log
             current_game_state: Current game state
             mouse: Mouse object
+            camera: Camera for viewport scrolling (optional)
         """
         # Standard FOV recomputation
         if self.fov_recompute and self.fov_map:
@@ -334,6 +342,7 @@ class OptimizedRenderSystem(RenderSystem):
             current_game_state,
             use_optimization=False,
             sidebar_console=self.sidebar_console,
+            camera=camera,
         )
 
         self.fov_recompute = False
@@ -354,6 +363,7 @@ class OptimizedRenderSystem(RenderSystem):
         current_game_state,
         mouse,
         original_fov_recompute: bool,
+        camera=None,
     ) -> None:
         """Perform a full render with entity culling optimization.
 
@@ -365,6 +375,7 @@ class OptimizedRenderSystem(RenderSystem):
             message_log: Message log
             current_game_state: Current game state
             mouse: Mouse object
+            camera: Camera for viewport scrolling (optional)
         """
         # Use render_all but with culled entity list
         culled_entities = [e for e in entities if e in visible_entities or e == player]
@@ -388,6 +399,7 @@ class OptimizedRenderSystem(RenderSystem):
             current_game_state,
             use_optimization=False,
             sidebar_console=self.sidebar_console,
+            camera=camera,
         )
 
         # Track skipped entities

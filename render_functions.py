@@ -127,15 +127,16 @@ def render_all(
     game_state,
     use_optimization=True,
     sidebar_console=None,
+    camera=None,
 ):
     """Render the entire game screen including map, entities, and UI.
 
     This is the main rendering function that draws everything visible
     on the screen including the game map, entities, UI panels, and menus.
     
-    Now supports 3-console split-screen layout:
+    Now supports 3-console split-screen layout with camera (Phase 2):
     - Sidebar (left, full height): Menu, stats, equipment
-    - Viewport (right, main): Map and entities
+    - Viewport (right, main): Map and entities (with camera scrolling!)
     - Status Panel (below viewport): HP, messages, dungeon info
 
     Args:
@@ -157,6 +158,7 @@ def render_all(
         game_state (GameStates): Current game state
         use_optimization (bool): Whether to use optimized tile rendering
         sidebar_console: Left sidebar console (optional, for new layout)
+        camera: Camera for viewport scrolling (optional, defaults to no scrolling)
     """
     # Render map tiles with optional optimization
     if use_optimization:
@@ -172,7 +174,7 @@ def render_all(
     # Draw all entities in the list
     # for entity in entities:
     for entity in entities_in_render_order:
-        draw_entity(con, entity, fov_map, game_map)
+        draw_entity(con, entity, fov_map, game_map, camera)
 
     # libtcod.console_set_default_foreground(con, (255, 255, 255))
     # libtcod.console_print_ex(con, 1, screen_height - 2, libtcod.BKGND_NONE, libtcod.LEFT,
@@ -347,7 +349,7 @@ def clear_all(con, entities):
 #     libtcod.console_put_char(con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE)
 
 
-def draw_entity(con, entity, fov_map, game_map):
+def draw_entity(con, entity, fov_map, game_map, camera=None):
     """Draw a single entity on the console if it's visible.
 
     Args:
@@ -355,12 +357,25 @@ def draw_entity(con, entity, fov_map, game_map):
         entity (Entity): Entity to draw
         fov_map: Field of view map for visibility checking
         game_map (GameMap): Game map for tile information
+        camera: Camera for viewport translation (optional, defaults to no offset)
     """
     # Check if entity has stairs attribute (for backwards compatibility with saves)
     has_stairs = hasattr(entity, "stairs") and entity.stairs
     if map_is_in_fov(fov_map, entity.x, entity.y) or (
         has_stairs and game_map.tiles[entity.x][entity.y].explored
     ):
+        # Translate world coordinates to viewport coordinates using camera
+        if camera:
+            # Check if entity is in viewport
+            if not camera.is_in_viewport(entity.x, entity.y):
+                return  # Entity is outside viewport, don't render
+            
+            # Translate to viewport coordinates
+            viewport_x, viewport_y = camera.world_to_viewport(entity.x, entity.y)
+        else:
+            # No camera, use world coordinates directly (backward compatibility)
+            viewport_x, viewport_y = entity.x, entity.y
+        
         # Check if entity is invisible and modify rendering accordingly
         if hasattr(entity, 'invisible') and entity.invisible:
             # Render invisible entities with a translucent/faded appearance
@@ -374,12 +389,12 @@ def draw_entity(con, entity, fov_map, game_map):
             libtcod.console_set_default_foreground(con, invisible_color)
             # Use a different character to indicate invisibility (optional)
             char = '?' if entity.name == "Player" else entity.char
-            libtcod.console_put_char(con, entity.x, entity.y, char, libtcod.BKGND_NONE)
+            libtcod.console_put_char(con, viewport_x, viewport_y, char, libtcod.BKGND_NONE)
         else:
             # Normal rendering
             libtcod.console_set_default_foreground(con, entity.color)
             libtcod.console_put_char(
-                con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE
+                con, viewport_x, viewport_y, entity.char, libtcod.BKGND_NONE
             )
 
 

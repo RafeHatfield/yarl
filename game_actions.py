@@ -165,6 +165,11 @@ class ActionProcessor:
             # Move player
             player.move(dx, dy)
             self.state_manager.request_fov_recompute()
+            
+            # Update camera to follow player (Phase 2)
+            camera = self.state_manager.state.camera
+            if camera:
+                camera.update(player.x, player.y)
         
         # Process status effects at end of player turn
         self._process_player_status_effects()
@@ -743,6 +748,11 @@ class ActionProcessor:
         
         # Process pathfinding movement
         movement_result = process_pathfinding_movement(player, entities, game_map, fov_map)
+        
+        # Update camera to follow player (Phase 2)
+        camera = self.state_manager.state.camera
+        if camera:
+            camera.update(player.x, player.y)
         
         # Process results
         for result in movement_result.get("results", []):

@@ -98,6 +98,7 @@ class RenderSystem(System):
         message_log = game_state.get("message_log")
         current_game_state = game_state.get("current_state")
         mouse = game_state.get("mouse")
+        camera = game_state.get("camera")  # Get camera from game state (Phase 2)
 
         if not all([player, game_map, message_log]):
             return
@@ -133,6 +134,7 @@ class RenderSystem(System):
             current_game_state,
             use_optimization=False,
             sidebar_console=self.sidebar_console,
+            camera=camera,  # Pass camera to render_all (Phase 2)
         )
 
         self.fov_recompute = False

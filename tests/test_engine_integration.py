@@ -71,8 +71,12 @@ class TestInitializeGameEngine:
         """Set up test fixtures."""
         self.engine = GameEngine()
         self.player = Mock()
+        self.player.x = 40  # Player position for camera initialization
+        self.player.y = 20
         self.entities = [Mock(), Mock()]
         self.game_map = Mock()
+        self.game_map.width = 80  # Map dimensions for camera initialization
+        self.game_map.height = 43
         self.message_log = Mock()
         self.game_state = GameStates.PLAYERS_TURN
         self.constants = {"fov_radius": 10}
@@ -335,8 +339,12 @@ class TestEngineIntegrationEnd2End:
         con = Mock()
         panel = Mock()
         player = Mock()
+        player.x = 40  # Player position for camera initialization
+        player.y = 20
         entities = []
         game_map = Mock()
+        game_map.width = 80  # Map dimensions for camera initialization
+        game_map.height = 43
         message_log = Mock()
         game_state = GameStates.PLAYERS_TURN
 
