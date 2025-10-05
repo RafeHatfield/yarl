@@ -184,6 +184,8 @@ class TestProcessGameActions:
         self.state_manager = Mock()
         self.state_manager.state.current_state = GameStates.PLAYERS_TURN
         self.state_manager.state.player = Mock()
+        # Ensure player has no active pathfinding to avoid triggering pathfinding movement
+        self.state_manager.state.player.pathfinding = None
         self.state_manager.state.entities = []
         self.state_manager.state.game_map = Mock()
         self.targeting_item = None

@@ -20,14 +20,9 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     Returns:
         Item entity if hovering over an inventory item, None otherwise
     """
-    import logging
-    logger = logging.getLogger(__name__)
-    
     # Verify mouse is in sidebar
     if not ui_layout.is_in_sidebar(screen_x, screen_y):
         return None
-    
-    logger.warning(f"TOOLTIP: Mouse in sidebar at ({screen_x}, {screen_y})")
     
     # Check if player has inventory
     if not hasattr(player, 'inventory') or not player.inventory:
@@ -67,10 +62,8 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
         
         # Check if hovering over this line
         if screen_y == item_y and screen_x >= padding and screen_x < ui_layout.sidebar_width - padding:
-            logger.warning(f"TOOLTIP: Found hovered item: {item.name} at Y={item_y}")
             return item
     
-    logger.warning(f"TOOLTIP: No item found. Inventory starts at Y={inventory_start_y}, mouse Y={screen_y}")
     return None
 
 
@@ -86,13 +79,8 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
         mouse_y: Mouse Y position (screen coordinates)
         ui_layout: UILayoutConfig instance
     """
-    import logging
-    logger = logging.getLogger(__name__)
-    
     if not item:
         return
-    
-    logger.warning(f"TOOLTIP: Rendering tooltip for {item.name} at mouse ({mouse_x}, {mouse_y})")
     
     # Get full item information
     item_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
@@ -175,6 +163,4 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
             libtcod.LEFT,
             line
         )
-    
-    logger.warning(f"TOOLTIP: Drawn at ({tooltip_x}, {tooltip_y}) size ({tooltip_width}x{tooltip_height})")
 

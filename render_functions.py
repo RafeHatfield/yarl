@@ -300,22 +300,13 @@ def render_all(
     
     # Render tooltip for sidebar items (if hovering)
     # This should be rendered LAST so it appears on top of everything
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    # Use WARNING level temporarily to see logs (will change back to DEBUG later)
-    logger.warning(f"TOOLTIP: mouse={mouse}, has cx={hasattr(mouse, 'cx') if mouse else False}, has cy={hasattr(mouse, 'cy') if mouse else False}")
     if mouse and hasattr(mouse, 'cx') and hasattr(mouse, 'cy'):
-        logger.warning(f"TOOLTIP: Checking at mouse ({mouse.cx}, {mouse.cy})")
         from ui.tooltip import get_sidebar_item_at_position, render_tooltip
         hovered_item = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
         if hovered_item:
-            logger.warning(f"TOOLTIP: Found item: {hovered_item.name}")
             # Render tooltip on ROOT console (0) so it appears on top of everything
             # Use screen coordinates directly since we're rendering to root
             render_tooltip(0, hovered_item, mouse.cx, mouse.cy, ui_layout)
-        else:
-            logger.warning(f"TOOLTIP: No hovered item at ({mouse.cx}, {mouse.cy})")
 
 
 def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
