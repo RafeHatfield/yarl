@@ -2544,3 +2544,48 @@
 22:42:11 - COMBAT: Player [power:0+0] (1-6 dmg) attacks for 5 (0 power + 5 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 5 total damage
 22:42:22 - COMBAT: d20 Combat: Orc rolled 12 + 0 (DEX) + 0 (weapon) = 12 vs AC 15 → MISS
 22:42:50 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 4 (0 power + 4 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+22:48:26 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 3 (0 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:48:27 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 3 (0 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:48:28 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 3 (0 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:48:29 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 2 (0 power + 2 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+22:48:29 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 1 (0 power + 1 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+22:48:32 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 2 (0 power + 2 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+22:48:46 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 1 (0 power + 1 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+22:48:48 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 3 (0 power + 3 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:48:48 - COMBAT: d20 Combat: Slime rolled 5 + -2 (DEX) + 0 (weapon) = 3 vs AC 13 → MISS
+22:48:49 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 3 (0 power + 3 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:48:49 - COMBAT: d20 Combat: Slime rolled 10 + -2 (DEX) + 0 (weapon) = 8 vs AC 13 → MISS
+22:48:49 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 4 (0 power + 4 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+22:48:49 - COMBAT: d20 Combat: Slime rolled 1 + -2 (DEX) + 0 (weapon) = -1 vs AC 13 → MISS [FUMBLE]
+22:48:50 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 1 (0 power + 1 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+22:48:50 - COMBAT: d20 Combat: Slime rolled 1 + -2 (DEX) + 0 (weapon) = -1 vs AC 13 → MISS [FUMBLE]
+22:48:50 - COMBAT: d20 Combat: Orc rolled 4 + 0 (DEX) + 1 (weapon) = 5 vs AC 13 → MISS
+22:48:51 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 2 (0 power + 2 rolled), Slime [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+22:48:51 - COMBAT: d20 Combat: Orc rolled 4 + 0 (DEX) + 1 (weapon) = 5 vs AC 13 → MISS
+22:48:52 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 3 (0 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:48:52 - COMBAT: d20 Combat: Orc rolled 10 + 0 (DEX) + 1 (weapon) = 11 vs AC 13 → MISS
+22:48:53 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 2 (0 power + 2 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+22:48:53 - COMBAT: d20 Combat: Orc rolled 18 + 0 (DEX) + 1 (weapon) = 19 vs AC 13 → HIT | Damage: 2 (base) + 2 (STR) = 4
+22:48:53 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 1 (0 power + 1 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+22:48:53 - COMBAT: d20 Combat: Orc rolled 15 + 0 (DEX) + 1 (weapon) = 16 vs AC 13 → HIT | Damage: 3 (base) + 2 (STR) = 5
+22:48:54 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 1 (0 power + 1 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+22:48:54 - COMBAT: d20 Combat: Orc rolled 6 + 0 (DEX) + 1 (weapon) = 7 vs AC 13 → MISS
+22:48:55 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 4 (0 power + 4 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+22:49:08 - COMBAT: Player [power:0+0] (1-4 dmg) attacks for 2 (0 power + 2 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 2 total damage
+22:49:26 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 8 (0 power + 8 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 8 total damage
+22:49:33 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 3 (0 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:49:46 - COMBAT: d20 Combat: Orc rolled 13 + 0 (DEX) + 0 (weapon) = 13 vs AC 13 → HIT | Damage: 6 (base) + 2 (STR) = 8
+22:49:56 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 3 (0 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:49:56 - COMBAT: d20 Combat: Orc rolled 10 + 0 (DEX) + 0 (weapon) = 10 vs AC 13 → MISS
+22:49:56 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 1 (0 power + 1 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 1 total damage
+22:49:56 - COMBAT: d20 Combat: Orc rolled 16 + 0 (DEX) + 0 (weapon) = 16 vs AC 13 → HIT | Damage: 4 (base) + 2 (STR) = 6
+22:49:57 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 4 (0 power + 4 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+22:49:57 - COMBAT: d20 Combat: Orc rolled 12 + 0 (DEX) + 0 (weapon) = 12 vs AC 13 → MISS
+22:49:57 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 4 (0 power + 4 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 4 total damage
+22:49:57 - COMBAT: d20 Combat: Orc rolled 11 + 0 (DEX) + 0 (weapon) = 11 vs AC 13 → MISS
+22:49:57 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 7 (0 power + 7 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 7 total damage
+22:49:58 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 5 (0 power + 5 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 5 total damage
+22:49:58 - COMBAT: d20 Combat: Orc rolled 3 + 0 (DEX) + 0 (weapon) = 3 vs AC 13 → MISS
+22:49:58 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 3 (0 power + 3 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 3 total damage
+22:49:58 - COMBAT: d20 Combat: Orc rolled 13 + 0 (DEX) + 0 (weapon) = 13 vs AC 13 → HIT | Damage: 5 (base) + 2 (STR) = 7
+22:49:59 - COMBAT: Player [power:0+0] (2-10 dmg) attacks for 8 (0 power + 8 rolled), Orc [def:0+0] blocks 0 (0 defense + 0 rolled) = 8 total damage

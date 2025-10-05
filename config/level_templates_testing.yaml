@@ -59,7 +59,7 @@ level_overrides:
         - type: "shortbow"
           count: 1  # Test ranged combat (8 tile reach)
         - type: "longbow"
-          count: 1  # Test max range (10 tiles)
+          count: 10  # Test max range (10 tiles)
         - type: "crossbow"
           count: 1  # Test ranged combat (8 tiles)
 
