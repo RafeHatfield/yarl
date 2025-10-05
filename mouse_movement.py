@@ -248,7 +248,16 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     })
     
     # Check if we're within weapon reach of any enemy (auto-attack!)
+    weapon_reach = _get_weapon_reach(player)
     enemy_in_range = _check_for_enemy_in_weapon_range(player, entities, fov_map)
+    
+    # DEBUG: Log ranged weapon behavior
+    import sys
+    print(f"DEBUG RANGED: pos=({player.x},{player.y}), weapon_reach={weapon_reach}, enemy_in_range={enemy_in_range.name if enemy_in_range else None}", file=sys.stderr)
+    if enemy_in_range:
+        distance = player.distance_to(enemy_in_range)
+        print(f"DEBUG RANGED: Found {enemy_in_range.name} at distance {distance:.1f}, max_attack_distance={weapon_reach * 1.5:.1f}", file=sys.stderr)
+    
     if enemy_in_range:
         # Attack the enemy!
         pathfinding.interrupt_movement("Enemy within weapon reach - attacking!")
