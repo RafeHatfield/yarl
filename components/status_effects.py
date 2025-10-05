@@ -206,6 +206,146 @@ class TauntedTargetEffect(StatusEffect):
         return results
 
 
+class SlowedEffect(StatusEffect):
+    """Makes the owner move slowly - only acts every 2nd turn.
+    
+    The entity skips turns when turn_counter is odd.
+    This makes combat more strategic and gives the player/monsters time to reposition.
+    
+    Attributes:
+        turn_counter (int): Tracks which turn we're on (even = act, odd = skip)
+    """
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("slowed", duration, owner)
+        self.turn_counter = 0
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} moves sluggishly!",
+                (150, 150, 255)  # Light blue
+            )
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} regains normal speed.",
+                (200, 200, 200)  # Gray
+            )
+        })
+        return results
+    
+    def process_turn_start(self) -> List[Dict[str, Any]]:
+        """Check if entity should skip this turn."""
+        results = []
+        self.turn_counter += 1
+        
+        # Skip every other turn (odd turns)
+        if self.turn_counter % 2 == 1:
+            from game_messages import Message
+            results.append({
+                'message': Message(
+                    f"{self.owner.name} is too slow to act!",
+                    (100, 100, 200)  # Darker blue
+                ),
+                'skip_turn': True  # Signal to AI/player that this turn is skipped
+            })
+        
+        return results
+
+
+class ImmobilizedEffect(StatusEffect):
+    """Prevents the owner from moving for X turns.
+    
+    The entity can still attack if enemies are adjacent, but cannot move.
+    Used by the 'Glue' spell to create tactical zoning.
+    """
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("immobilized", duration, owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} is stuck in place!",
+                (139, 69, 19)  # Brown (glue color)
+            )
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} breaks free!",
+                (200, 200, 200)  # Gray
+            )
+        })
+        return results
+
+
+class EnragedEffect(StatusEffect):
+    """Makes the owner attack ANYONE nearby - friend or foe!
+    
+    Effects:
+    - Deals 2x damage (damage multiplier)
+    - Has 0.5x to-hit chance (wild, inaccurate swings)
+    - AI attacks ANY adjacent entity, not just enemies
+    - Creates absolute chaos!
+    
+    Attributes:
+        damage_multiplier (float): Multiplier for damage (2.0 = double damage)
+        to_hit_multiplier (float): Multiplier for to-hit (0.5 = half accuracy)
+    """
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("enraged", duration, owner)
+        self.damage_multiplier = 2.0
+        self.to_hit_multiplier = 0.5
+        self.stored_faction = None
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        
+        # Store original faction and make entity hostile to all
+        if hasattr(self.owner, 'faction'):
+            from components.faction import Faction
+            self.stored_faction = self.owner.faction
+            self.owner.faction = Faction.HOSTILE_ALL
+        
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} flies into a rage!",
+                (255, 50, 50)  # Bright red
+            )
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        
+        # Restore original faction
+        if self.stored_faction is not None and hasattr(self.owner, 'faction'):
+            self.owner.faction = self.stored_faction
+        
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"{self.owner.name} calms down.",
+                (200, 200, 200)  # Gray
+            )
+        })
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):

@@ -484,6 +484,36 @@ class EntityFactory:
                 targeting=True,
                 range=spell_range
             )
+        elif spell_def.name.lower().replace(' ', '_') == "slow_scroll":
+            from item_functions import cast_slow
+            duration = getattr(spell_def, 'duration', 10)
+            spell_range = getattr(spell_def, 'range', 8)
+            return Item(
+                use_function=cast_slow,
+                targeting=True,
+                duration=duration,
+                range=spell_range
+            )
+        elif spell_def.name.lower().replace(' ', '_') == "glue_scroll":
+            from item_functions import cast_glue
+            duration = getattr(spell_def, 'duration', 5)
+            spell_range = getattr(spell_def, 'range', 8)
+            return Item(
+                use_function=cast_glue,
+                targeting=True,
+                duration=duration,
+                range=spell_range
+            )
+        elif spell_def.name.lower().replace(' ', '_') == "rage_scroll":
+            from item_functions import cast_rage
+            duration = getattr(spell_def, 'duration', 8)
+            spell_range = getattr(spell_def, 'range', 8)
+            return Item(
+                use_function=cast_rage,
+                targeting=True,
+                duration=duration,
+                range=spell_range
+            )
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
             return Item()
@@ -539,6 +569,30 @@ class EntityFactory:
             return Item(
                 use_function=cast_yo_mama,
                 targeting=True,
+                range=wand_def.range
+            )
+        elif spell_name == "slow_scroll":
+            from item_functions import cast_slow
+            return Item(
+                use_function=cast_slow,
+                targeting=True,
+                duration=wand_def.duration,
+                range=wand_def.range
+            )
+        elif spell_name == "glue_scroll":
+            from item_functions import cast_glue
+            return Item(
+                use_function=cast_glue,
+                targeting=True,
+                duration=wand_def.duration,
+                range=wand_def.range
+            )
+        elif spell_name == "rage_scroll":
+            from item_functions import cast_rage
+            return Item(
+                use_function=cast_rage,
+                targeting=True,
+                duration=wand_def.duration,
                 range=wand_def.range
             )
         else:

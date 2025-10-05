@@ -999,3 +999,126 @@ def cast_yo_mama(*args, **kwargs):
         })
     
     return results
+
+
+def cast_slow(*args, **kwargs):
+    """Cast Slow spell - target moves every 2nd turn.
+    
+    Applies SlowedEffect to the target, making them only act on even-numbered turns.
+    This gives tactical advantage by reducing enemy action economy.
+    
+    Args:
+        *args: Standard targeting args (caster entity)
+        **kwargs: Should contain:
+            - target: The entity to slow
+            - duration: How many turns the slow lasts (default 10)
+    
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    caster = args[0] if args else None
+    target = kwargs.get("target")
+    duration = kwargs.get("duration", 10)
+    
+    results = []
+    
+    if not target:
+        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+    
+    # Apply SlowedEffect
+    from components.status_effects import SlowedEffect, StatusEffectManager
+    
+    # Ensure target has status_effects component
+    if not hasattr(target, 'status_effects') or target.status_effects is None:
+        target.status_effects = StatusEffectManager(target)
+    
+    # Apply the slow effect
+    slow_effect = SlowedEffect(duration=duration, owner=target)
+    effect_results = target.status_effects.add_effect(slow_effect)
+    results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    return results
+
+
+def cast_glue(*args, **kwargs):
+    """Cast Glue spell - target cannot move for X turns.
+    
+    Applies ImmobilizedEffect to the target, preventing all movement.
+    Target can still attack if enemies are adjacent. Great for zoning!
+    
+    Args:
+        *args: Standard targeting args (caster entity)
+        **kwargs: Should contain:
+            - target: The entity to immobilize
+            - duration: How many turns they're stuck (default 5)
+    
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    caster = args[0] if args else None
+    target = kwargs.get("target")
+    duration = kwargs.get("duration", 5)
+    
+    results = []
+    
+    if not target:
+        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+    
+    # Apply ImmobilizedEffect
+    from components.status_effects import ImmobilizedEffect, StatusEffectManager
+    
+    # Ensure target has status_effects component
+    if not hasattr(target, 'status_effects') or target.status_effects is None:
+        target.status_effects = StatusEffectManager(target)
+    
+    # Apply the immobilize effect
+    immobilize_effect = ImmobilizedEffect(duration=duration, owner=target)
+    effect_results = target.status_effects.add_effect(immobilize_effect)
+    results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    return results
+
+
+def cast_rage(*args, **kwargs):
+    """Cast Rage spell - target attacks ANYONE nearby with 2x damage, 0.5x accuracy!
+    
+    Applies EnragedEffect to the target:
+    - Attacks any adjacent entity (friend or foe!)
+    - Deals 2x damage
+    - Has 0.5x to-hit chance (wild, inaccurate swings)
+    - Absolute chaos!
+    
+    Args:
+        *args: Standard targeting args (caster entity)
+        **kwargs: Should contain:
+            - target: The entity to enrage
+            - duration: How many turns they're enraged (default 8)
+    
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    caster = args[0] if args else None
+    target = kwargs.get("target")
+    duration = kwargs.get("duration", 8)
+    
+    results = []
+    
+    if not target:
+        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+    
+    # Apply EnragedEffect
+    from components.status_effects import EnragedEffect, StatusEffectManager
+    
+    # Ensure target has status_effects component
+    if not hasattr(target, 'status_effects') or target.status_effects is None:
+        target.status_effects = StatusEffectManager(target)
+    
+    # Apply the enrage effect
+    enrage_effect = EnragedEffect(duration=duration, owner=target)
+    effect_results = target.status_effects.add_effect(enrage_effect)
+    results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    return results

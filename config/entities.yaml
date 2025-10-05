@@ -571,6 +571,30 @@ spells:
     duration: 1000  # Effectively permanent
     range: 10  # Can target from distance
 
+  # Slow scroll - target moves every 2nd turn
+  slow_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [150, 150, 255]  # Light blue
+    duration: 10  # Turns of slow
+    range: 8  # Targeting range
+
+  # Glue scroll - target cannot move (but can attack)
+  glue_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [139, 69, 19]  # Brown glue
+    duration: 5  # Turns stuck
+    range: 8  # Targeting range
+
+  # Rage scroll - target attacks ANYONE with 2x dmg, 0.5x accuracy
+  rage_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 50, 50]  # Bright red
+    duration: 8  # Turns enraged
+    range: 8  # Targeting range
+
 # ═══════════════════════════════════════════════════════════
 # WANDS - Multi-charge reusable magic items
 # ═══════════════════════════════════════════════════════════
@@ -627,3 +651,27 @@ wands:
     color: [220, 170, 255]  # Bright purple (wand)
     duration: 1000
     range: 10
+  
+  wand_of_slow:
+    spell_type: "utility"
+    spell_name: "slow_scroll"
+    char: "/"
+    color: [180, 180, 255]  # Bright light blue (wand)
+    duration: 10
+    range: 8
+  
+  wand_of_glue:
+    spell_type: "utility"
+    spell_name: "glue_scroll"
+    char: "/"
+    color: [180, 100, 50]  # Bright brown (wand)
+    duration: 5
+    range: 8
+  
+  wand_of_rage:
+    spell_type: "utility"
+    spell_name: "rage_scroll"
+    char: "/"
+    color: [255, 100, 100]  # Bright red (wand)
+    duration: 8
+    range: 8
