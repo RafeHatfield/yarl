@@ -375,6 +375,18 @@ class GameMap:
                     item = entity_factory.create_wand("wand_of_yo_mama", x, y, self.dungeon_level)
                 elif item_choice == "yo_mama_scroll":
                     item = entity_factory.create_spell_item("yo_mama_scroll", x, y)
+                elif item_choice == "slow_scroll":
+                    item = entity_factory.create_spell_item("slow_scroll", x, y)
+                elif item_choice == "glue_scroll":
+                    item = entity_factory.create_spell_item("glue_scroll", x, y)
+                elif item_choice == "rage_scroll":
+                    item = entity_factory.create_spell_item("rage_scroll", x, y)
+                elif item_choice == "wand_of_slow":
+                    item = entity_factory.create_wand("wand_of_slow", x, y, self.dungeon_level)
+                elif item_choice == "wand_of_glue":
+                    item = entity_factory.create_wand("wand_of_glue", x, y, self.dungeon_level)
+                elif item_choice == "wand_of_rage":
+                    item = entity_factory.create_wand("wand_of_rage", x, y, self.dungeon_level)
                 else:
                     # Default to lightning scroll
                     item = entity_factory.create_spell_item("lightning_scroll", x, y)

@@ -181,9 +181,15 @@ class ItemSpawnConfig:
     WAND_OF_TELEPORTATION_SPAWN: list = None  # [[6, 6]] - rare utility
     WAND_OF_DRAGON_FARTS_SPAWN: list = None  # [[4, 8]] - very rare, powerful
     WAND_OF_YO_MAMA_SPAWN: list = None  # [[3, 9]] - extremely rare, chaotic
+    WAND_OF_SLOW_SPAWN: list = None  # [[10, 5]] - tactical wand
+    WAND_OF_GLUE_SPAWN: list = None  # [[8, 6]] - control wand
+    WAND_OF_RAGE_SPAWN: list = None  # [[6, 7]] - chaos wand
     
-    # Special scrolls
+    # Special/tactical scrolls
     YO_MAMA_SCROLL_SPAWN: list = None  # [[8, 7]] - rare tactical spell
+    SLOW_SCROLL_SPAWN: list = None  # [[15, 4]] - common tactical spell
+    GLUE_SCROLL_SPAWN: list = None  # [[12, 5]] - zoning/control spell
+    RAGE_SCROLL_SPAWN: list = None  # [[10, 6]] - chaos spell
     
     def __post_init__(self):
         """Initialize list values after dataclass creation."""
@@ -217,8 +223,20 @@ class ItemSpawnConfig:
             self.WAND_OF_DRAGON_FARTS_SPAWN = [[4, 8]]
         if self.WAND_OF_YO_MAMA_SPAWN is None:
             self.WAND_OF_YO_MAMA_SPAWN = [[3, 9]]
+        if self.WAND_OF_SLOW_SPAWN is None:
+            self.WAND_OF_SLOW_SPAWN = [[10, 5]]
+        if self.WAND_OF_GLUE_SPAWN is None:
+            self.WAND_OF_GLUE_SPAWN = [[8, 6]]
+        if self.WAND_OF_RAGE_SPAWN is None:
+            self.WAND_OF_RAGE_SPAWN = [[6, 7]]
         if self.YO_MAMA_SCROLL_SPAWN is None:
             self.YO_MAMA_SCROLL_SPAWN = [[8, 7]]
+        if self.SLOW_SCROLL_SPAWN is None:
+            self.SLOW_SCROLL_SPAWN = [[15, 4]]
+        if self.GLUE_SCROLL_SPAWN is None:
+            self.GLUE_SCROLL_SPAWN = [[12, 5]]
+        if self.RAGE_SCROLL_SPAWN is None:
+            self.RAGE_SCROLL_SPAWN = [[10, 6]]
     
     def get_item_spawn_chances(self, dungeon_level: int) -> dict:
         """Get item spawn chances for normal gameplay.
@@ -249,7 +267,13 @@ class ItemSpawnConfig:
             "wand_of_teleportation": self.WAND_OF_TELEPORTATION_SPAWN,
             "wand_of_dragon_farts": self.WAND_OF_DRAGON_FARTS_SPAWN,
             "wand_of_yo_mama": self.WAND_OF_YO_MAMA_SPAWN,
+            "wand_of_slow": self.WAND_OF_SLOW_SPAWN,
+            "wand_of_glue": self.WAND_OF_GLUE_SPAWN,
+            "wand_of_rage": self.WAND_OF_RAGE_SPAWN,
             "yo_mama_scroll": self.YO_MAMA_SCROLL_SPAWN,
+            "slow_scroll": self.SLOW_SCROLL_SPAWN,
+            "glue_scroll": self.GLUE_SCROLL_SPAWN,
+            "rage_scroll": self.RAGE_SCROLL_SPAWN,
         }
 
 
