@@ -180,6 +180,10 @@ class ItemSpawnConfig:
     WAND_OF_CONFUSION_SPAWN: list = None  # [[8, 4]] - less rare
     WAND_OF_TELEPORTATION_SPAWN: list = None  # [[6, 6]] - rare utility
     WAND_OF_DRAGON_FARTS_SPAWN: list = None  # [[4, 8]] - very rare, powerful
+    WAND_OF_YO_MAMA_SPAWN: list = None  # [[3, 9]] - extremely rare, chaotic
+    
+    # Special scrolls
+    YO_MAMA_SCROLL_SPAWN: list = None  # [[8, 7]] - rare tactical spell
     
     def __post_init__(self):
         """Initialize list values after dataclass creation."""
@@ -211,6 +215,10 @@ class ItemSpawnConfig:
             self.WAND_OF_TELEPORTATION_SPAWN = [[6, 6]]
         if self.WAND_OF_DRAGON_FARTS_SPAWN is None:
             self.WAND_OF_DRAGON_FARTS_SPAWN = [[4, 8]]
+        if self.WAND_OF_YO_MAMA_SPAWN is None:
+            self.WAND_OF_YO_MAMA_SPAWN = [[3, 9]]
+        if self.YO_MAMA_SCROLL_SPAWN is None:
+            self.YO_MAMA_SCROLL_SPAWN = [[8, 7]]
     
     def get_item_spawn_chances(self, dungeon_level: int) -> dict:
         """Get item spawn chances for normal gameplay.
@@ -240,6 +248,8 @@ class ItemSpawnConfig:
             "wand_of_confusion": self.WAND_OF_CONFUSION_SPAWN,
             "wand_of_teleportation": self.WAND_OF_TELEPORTATION_SPAWN,
             "wand_of_dragon_farts": self.WAND_OF_DRAGON_FARTS_SPAWN,
+            "wand_of_yo_mama": self.WAND_OF_YO_MAMA_SPAWN,
+            "yo_mama_scroll": self.YO_MAMA_SCROLL_SPAWN,
         }
 
 

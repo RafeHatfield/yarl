@@ -64,6 +64,8 @@ class TestingConfig:
                 "wand_of_confusion": [[20, 1]],  # Available from level 1
                 "wand_of_teleportation": [[15, 1]],  # Available from level 1
                 "wand_of_dragon_farts": [[15, 1]],  # Available from level 1
+                "wand_of_yo_mama": [[15, 1]],  # Available from level 1
+                "yo_mama_scroll": [[30, 1], [40, 3]],  # Available from level 1 for testing
                 "invisibility_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "teleport_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "shield_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
