@@ -311,8 +311,9 @@ def render_all(
         hovered_item = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
         if hovered_item:
             logger.warning(f"TOOLTIP: Found item: {hovered_item.name}")
-            # Render tooltip on viewport console (it handles coordinate translation)
-            render_tooltip(con, hovered_item, mouse.cx, mouse.cy, ui_layout)
+            # Render tooltip on ROOT console (0) so it appears on top of everything
+            # Use screen coordinates directly since we're rendering to root
+            render_tooltip(0, hovered_item, mouse.cx, mouse.cy, ui_layout)
         else:
             logger.warning(f"TOOLTIP: No hovered item at ({mouse.cx}, {mouse.cy})")
 
