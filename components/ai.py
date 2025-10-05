@@ -13,6 +13,26 @@ if TYPE_CHECKING:
     from entity import Entity
 
 
+def find_taunted_target(entities: list) -> Optional['Entity']:
+    """Find if there's an entity with the 'taunted' status effect.
+    
+    Used by the Yo Mama spell to redirect all hostiles to attack a single target.
+    
+    Args:
+        entities (list): List of all entities in the game
+        
+    Returns:
+        Entity or None: The taunted entity, or None if no entity is taunted
+    """
+    for entity in entities:
+        if (hasattr(entity, 'status_effects') and entity.status_effects and
+            entity.status_effects.has_effect('taunted')):
+            # Also check if entity is still alive (has fighter component)
+            if hasattr(entity, 'fighter') and entity.fighter:
+                return entity
+    return None
+
+
 def get_weapon_reach(entity: 'Entity') -> int:
     """Get the reach of the entity's equipped weapon.
     
@@ -67,6 +87,12 @@ class BasicMonster:
         """
         results = []
         actions_taken = []
+
+        # Check if there's a taunted target (Yo Mama spell effect)
+        taunted_target = find_taunted_target(entities)
+        if taunted_target and taunted_target != self.owner:
+            # Override normal targeting - attack the taunted entity instead!
+            target = taunted_target
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
@@ -299,6 +325,13 @@ class MindlessZombieAI:
         logger.debug(f"Zombie {self.owner.name} taking turn at ({self.owner.x}, {self.owner.y}), target: {self.current_target.name if self.current_target else 'None'}")
         
         results = []
+        
+        # Check if there's a taunted target (Yo Mama spell effect)
+        # Even mindless zombies are drawn to the insult!
+        taunted_target = find_taunted_target(entities)
+        if taunted_target and taunted_target != self.owner:
+            # Override current target with taunted target
+            self.current_target = taunted_target
         
         # Zombies have limited FOV (radius 5)
         zombie_fov_radius = 5
@@ -549,8 +582,14 @@ class SlimeAI:
         if not map_is_in_fov(fov_map, monster.x, monster.y):
             return results
         
-        # Find the best target based on faction relationships and distance
-        best_target = self._find_best_target(entities, fov_map)
+        # Check if there's a taunted target (Yo Mama spell effect)
+        taunted_target = find_taunted_target(entities)
+        if taunted_target and taunted_target != self.owner:
+            # Override normal targeting - slimes are drawn to the insult!
+            best_target = taunted_target
+        else:
+            # Find the best target based on faction relationships and distance
+            best_target = self._find_best_target(entities, fov_map)
         
         if best_target:
             # Calculate distance to target

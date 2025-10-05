@@ -563,6 +563,14 @@ spells:
     color: [100, 255, 100]  # Necromantic green
     range: 5  # Maximum distance to corpse
 
+  # Yo Mama scroll - target yells insult, ALL hostiles attack them!
+  yo_mama_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [200, 150, 255]  # Entity purple
+    duration: 1000  # Effectively permanent
+    range: 10  # Can target from distance
+
 # ═══════════════════════════════════════════════════════════
 # WANDS - Multi-charge reusable magic items
 # ═══════════════════════════════════════════════════════════
@@ -611,3 +619,11 @@ wands:
     duration: 20
     range: 8
     cone_width: 45
+  
+  wand_of_yo_mama:
+    spell_type: "utility"
+    spell_name: "yo_mama_scroll"
+    char: "/"
+    color: [220, 170, 255]  # Bright purple (wand)
+    duration: 1000
+    range: 10

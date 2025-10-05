@@ -179,6 +179,33 @@ class ShieldEffect(StatusEffect):
         return results
 
 
+class TauntedTargetEffect(StatusEffect):
+    """Marks an entity as taunted - all hostiles will attack this target.
+    
+    Used by the 'Yo Mama' spell to redirect all aggro to a single entity.
+    This creates tactical chaos and hilarious situations!
+    """
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("taunted", duration, owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        # The joke message is handled by cast_yo_mama, not here
+        # This just marks the entity as taunted
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        from game_messages import Message
+        results.append({
+            'message': Message(
+                f"Monsters stop focusing on {self.owner.name}.",
+                (200, 200, 200)  # Gray
+            )
+        })
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):

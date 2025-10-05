@@ -177,6 +177,7 @@ These features build on existing systems and provide immediate gameplay improvem
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
 | **Movement Speed Config** | 1 week | 🔥 High | Makes mouse movement feel perfect for each player | Add animation timing to pathfinding |
+| **Tooltip System** | 1 week | 🔥 High | Hovering items shows tooltip instead of bottom bar text | Tooltip rendering, positioning logic, item info display |
 | **Player Naming** | 1 week | 🔥 High | Allow players to enter custom names for personalization | Add name input dialog at game start |
 | **More Monster Types** | 1-2 weeks | 🔥 High | Keeps exploration fresh and challenging | AI system supports easy expansion |
 | **Multi-Save Games** | 2-3 weeks | 🔥 High | Multiple save slots with metadata display | Save slot UI, file management, save previews |

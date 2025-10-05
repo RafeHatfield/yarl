@@ -904,3 +904,98 @@ def cast_raise_dead(*args, **kwargs):
     })
     
     return results
+
+
+def cast_yo_mama(*args, **kwargs):
+    """Cast Yo Mama spell - target yells a joke and becomes the focus of all hostiles.
+    
+    This spell marks a target entity (monster, player, or even a corpse) as "taunted".
+    All hostile creatures in the dungeon will immediately switch their aggro to attack
+    the taunted target. The target yells a random Yo Mama joke when taunted.
+    
+    Duration is 1000 turns (effectively permanent, but easy to adjust).
+    
+    Args:
+        *args: Standard targeting args (caster entity)
+        **kwargs: Should contain:
+            - target: The entity to taunt
+            - entities: List of all entities in the game
+    
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    import yaml
+    import random
+    import os
+    
+    caster = args[0] if args else None
+    target = kwargs.get("target")
+    entities = kwargs.get("entities", [])
+    
+    results = []
+    
+    if not target:
+        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+    
+    # Load jokes from YAML
+    jokes_path = os.path.join(os.path.dirname(__file__), "config", "yo_mama_jokes.yaml")
+    try:
+        with open(jokes_path, 'r') as f:
+            jokes_data = yaml.safe_load(f)
+            jokes = jokes_data.get('jokes', [])
+    except Exception as e:
+        # Fallback joke if loading fails
+        jokes = ["Yo mama so ugly, even the game couldn't load her jokes!"]
+        print(f"Warning: Could not load yo_mama_jokes.yaml: {e}")
+    
+    if not jokes:
+        jokes = ["Yo mama so forgettable, even the joke list forgot about her!"]
+    
+    # Select random joke
+    joke = random.choice(jokes)
+    
+    # Target yells the joke (in Entity's purple color for consistency)
+    results.append({
+        "message": Message(
+            f'{target.name} yells: "{joke}"',
+            (200, 150, 255)  # Entity purple
+        )
+    })
+    
+    # Apply TauntedTargetEffect to the target
+    from components.status_effects import TauntedTargetEffect, StatusEffectManager
+    
+    # Ensure target has status_effects component
+    if not hasattr(target, 'status_effects') or target.status_effects is None:
+        target.status_effects = StatusEffectManager(target)
+    
+    # Apply the taunt effect (1000 turns = effectively permanent)
+    taunt_effect = TauntedTargetEffect(duration=1000, owner=target)
+    effect_results = target.status_effects.add_effect(taunt_effect)
+    results.extend(effect_results)
+    
+    # Add message about all monsters turning attention
+    results.append({
+        "message": Message(
+            "All hostile creatures in the dungeon turn their attention to the insult!",
+            (255, 100, 100)  # Red warning
+        )
+    })
+    
+    # Count how many monsters are affected
+    affected_count = 0
+    for entity in entities:
+        if (hasattr(entity, 'ai') and entity.ai and 
+            hasattr(entity, 'fighter') and entity.fighter and 
+            entity != target):
+            affected_count += 1
+    
+    if affected_count > 0:
+        results.append({
+            "message": Message(
+                f"{affected_count} hostile creature{'s' if affected_count != 1 else ''} now target {target.name}!",
+                (255, 200, 100)  # Orange
+            )
+        })
+    
+    return results

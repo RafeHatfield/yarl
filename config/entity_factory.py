@@ -476,6 +476,14 @@ class EntityFactory:
                 targeting=True,
                 range=spell_range
             )
+        elif spell_def.name.lower().replace(' ', '_') == "yo_mama_scroll":
+            from item_functions import cast_yo_mama
+            spell_range = getattr(spell_def, 'range', 10)
+            return Item(
+                use_function=cast_yo_mama,
+                targeting=True,
+                range=spell_range
+            )
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
             return Item()
@@ -525,6 +533,13 @@ class EntityFactory:
                 duration=wand_def.duration,
                 range=wand_def.range,
                 cone_width=wand_def.cone_width
+            )
+        elif spell_name == "yo_mama_scroll":
+            from item_functions import cast_yo_mama
+            return Item(
+                use_function=cast_yo_mama,
+                targeting=True,
+                range=wand_def.range
             )
         else:
             logger.warning(f"Unknown wand spell '{spell_name}', creating basic item")
