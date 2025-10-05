@@ -108,7 +108,7 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
     # Position tooltip near mouse, but keep it on screen
     # Convert screen coordinates to viewport coordinates for rendering
     tooltip_x = mouse_x - ui_layout.sidebar_width + 2  # Offset from sidebar
-    tooltip_y = mouse_y - ui_layout.status_height
+    tooltip_y = mouse_y - ui_layout.status_panel_height
     
     # Adjust if tooltip would go off screen
     if tooltip_x + tooltip_width > ui_layout.viewport_width:
