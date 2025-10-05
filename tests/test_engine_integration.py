@@ -235,6 +235,7 @@ class TestProcessGameActions:
         player = Mock()
         player.x = 10
         player.y = 10
+        player.pathfinding = None  # No active pathfinding
         player.process_status_effects_turn_end.return_value = []  # Return empty list for status effects
         self.state_manager.state.player = player
         self.state_manager.state.game_map.is_blocked.return_value = False
@@ -287,6 +288,9 @@ class TestPlayGameWithEngineIntegration:
         mock_state_manager = Mock()
         mock_state_manager.get_extra_data.return_value = {}
         mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
+        # Need to ensure state.player has pathfinding attribute
+        mock_state_manager.state.player = Mock()
+        mock_state_manager.state.player.pathfinding = None
         mock_engine.state_manager = mock_state_manager
         mock_create.return_value = mock_engine
         mock_window_closed.side_effect = [False, True]  # Run once then exit
@@ -295,6 +299,7 @@ class TestPlayGameWithEngineIntegration:
 
         # Game state
         player = Mock()
+        player.pathfinding = None  # No active pathfinding
         entities = []
         game_map = Mock()
         message_log = Mock()
