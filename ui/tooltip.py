@@ -27,7 +27,7 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     if not ui_layout.is_in_sidebar(screen_x, screen_y):
         return None
     
-    logger.debug(f"Mouse in sidebar at ({screen_x}, {screen_y})")
+    logger.warning(f"TOOLTIP: Mouse in sidebar at ({screen_x}, {screen_y})")
     
     # Check if player has inventory
     if not hasattr(player, 'inventory') or not player.inventory:
@@ -67,10 +67,10 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
         
         # Check if hovering over this line
         if screen_y == item_y and screen_x >= padding and screen_x < ui_layout.sidebar_width - padding:
-            logger.debug(f"Found hovered item: {item.name} at Y={item_y}")
+            logger.warning(f"TOOLTIP: Found hovered item: {item.name} at Y={item_y}")
             return item
     
-    logger.debug(f"No item found. Inventory starts at Y={inventory_start_y}, mouse Y={screen_y}")
+    logger.warning(f"TOOLTIP: No item found. Inventory starts at Y={inventory_start_y}, mouse Y={screen_y}")
     return None
 
 
@@ -92,7 +92,7 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
     if not item:
         return
     
-    logger.debug(f"Rendering tooltip for {item.name} at mouse ({mouse_x}, {mouse_y})")
+    logger.warning(f"TOOLTIP: Rendering tooltip for {item.name} at mouse ({mouse_x}, {mouse_y})")
     
     # Get full item information
     item_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
@@ -176,5 +176,5 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
             line
         )
     
-    logger.debug(f"Tooltip drawn at ({tooltip_x}, {tooltip_y}) size ({tooltip_width}x{tooltip_height})")
+    logger.warning(f"TOOLTIP: Drawn at ({tooltip_x}, {tooltip_y}) size ({tooltip_width}x{tooltip_height})")
 
