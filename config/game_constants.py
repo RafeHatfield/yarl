@@ -173,6 +173,14 @@ class ItemSpawnConfig:
     ENHANCE_WEAPON_SCROLL_SPAWN: list = None  # [[12, 5]] - increased from 10
     ENHANCE_ARMOR_SCROLL_SPAWN: list = None  # [[12, 6]] - increased from 10
     
+    # Wand spawn rates (format: [[chance%, min_level], ...])
+    # Wands are rare but powerful multi-use items
+    WAND_OF_FIREBALL_SPAWN: list = None  # [[5, 7]] - rare, deep dungeon
+    WAND_OF_LIGHTNING_SPAWN: list = None  # [[5, 5]] - rare, mid dungeon
+    WAND_OF_CONFUSION_SPAWN: list = None  # [[8, 4]] - less rare
+    WAND_OF_TELEPORTATION_SPAWN: list = None  # [[6, 6]] - rare utility
+    WAND_OF_DRAGON_FARTS_SPAWN: list = None  # [[4, 8]] - very rare, powerful
+    
     def __post_init__(self):
         """Initialize list values after dataclass creation."""
         if self.SWORD_SPAWN is None:
@@ -191,6 +199,18 @@ class ItemSpawnConfig:
             self.ENHANCE_WEAPON_SCROLL_SPAWN = [[12, 5]]  # Increased for variety
         if self.ENHANCE_ARMOR_SCROLL_SPAWN is None:
             self.ENHANCE_ARMOR_SCROLL_SPAWN = [[12, 6]]  # Increased for variety
+        
+        # Initialize wand spawn rates
+        if self.WAND_OF_FIREBALL_SPAWN is None:
+            self.WAND_OF_FIREBALL_SPAWN = [[5, 7]]
+        if self.WAND_OF_LIGHTNING_SPAWN is None:
+            self.WAND_OF_LIGHTNING_SPAWN = [[5, 5]]
+        if self.WAND_OF_CONFUSION_SPAWN is None:
+            self.WAND_OF_CONFUSION_SPAWN = [[8, 4]]
+        if self.WAND_OF_TELEPORTATION_SPAWN is None:
+            self.WAND_OF_TELEPORTATION_SPAWN = [[6, 6]]
+        if self.WAND_OF_DRAGON_FARTS_SPAWN is None:
+            self.WAND_OF_DRAGON_FARTS_SPAWN = [[4, 8]]
     
     def get_item_spawn_chances(self, dungeon_level: int) -> dict:
         """Get item spawn chances for normal gameplay.
@@ -214,6 +234,12 @@ class ItemSpawnConfig:
             "invisibility_scroll": self.INVISIBILITY_SCROLL_SPAWN,
             "enhance_weapon_scroll": self.ENHANCE_WEAPON_SCROLL_SPAWN,
             "enhance_armor_scroll": self.ENHANCE_ARMOR_SCROLL_SPAWN,
+            # Wands
+            "wand_of_fireball": self.WAND_OF_FIREBALL_SPAWN,
+            "wand_of_lightning": self.WAND_OF_LIGHTNING_SPAWN,
+            "wand_of_confusion": self.WAND_OF_CONFUSION_SPAWN,
+            "wand_of_teleportation": self.WAND_OF_TELEPORTATION_SPAWN,
+            "wand_of_dragon_farts": self.WAND_OF_DRAGON_FARTS_SPAWN,
         }
 
 

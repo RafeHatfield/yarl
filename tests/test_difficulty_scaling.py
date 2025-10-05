@@ -137,6 +137,11 @@ class TestDifficultyScaling:
                     5,  # enhance_weapon_scroll chance
                     5,  # enhance_armor_scroll chance
                     5,  # invisibility_scroll chance
+                    5,  # wand_of_fireball
+                    5,  # wand_of_lightning
+                    5,  # wand_of_confusion
+                    5,  # wand_of_teleportation
+                    5,  # wand_of_dragon_farts
                     5,  # extra buffer for any additional items
                     5,  # extra buffer for any additional items
                     5,  # extra buffer for any additional items
@@ -292,7 +297,7 @@ class TestItemSpawning:
         """Test healing potion spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="healing_potion",
@@ -319,7 +324,7 @@ class TestItemSpawning:
         """Test lightning scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 25, 0, 0, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 25, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="lightning_scroll",
@@ -347,7 +352,7 @@ class TestItemSpawning:
         """Test fireball scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 0, 25, 0, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 25, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="fireball_scroll",
@@ -376,7 +381,7 @@ class TestItemSpawning:
         """Test confusion scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="confusion_scroll",
@@ -403,7 +408,7 @@ class TestItemSpawning:
         """Test spawning multiple items in one room."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch(
             "map_objects.game_map.randint", side_effect=[0, 2, 8, 8, 9, 9]
         ):  # 2 items, positions
@@ -448,6 +453,11 @@ class TestDifficultyProgression:
                     5,  # enhance_weapon_scroll
                     5,  # enhance_armor_scroll
                     5,  # invisibility_scroll
+                    5,  # wand_of_fireball
+                    5,  # wand_of_lightning
+                    5,  # wand_of_confusion
+                    5,  # wand_of_teleportation
+                    5,  # wand_of_dragon_farts
                     5, 5, 5,  # extra buffer
                 ]
 
@@ -485,6 +495,11 @@ class TestDifficultyProgression:
                     5,  # enhance_weapon_scroll
                     5,  # enhance_armor_scroll
                     5,  # invisibility_scroll
+                    5,  # wand_of_fireball
+                    5,  # wand_of_lightning
+                    5,  # wand_of_confusion
+                    5,  # wand_of_teleportation
+                    5,  # wand_of_dragon_farts
                     5, 5, 5,  # extra buffer
                 ]
 
@@ -521,6 +536,11 @@ class TestDifficultyProgression:
                     5,  # enhance_weapon_scroll
                     5,  # enhance_armor_scroll
                     5,  # invisibility_scroll
+                    5,  # wand_of_fireball
+                    5,  # wand_of_lightning
+                    5,  # wand_of_confusion
+                    5,  # wand_of_teleportation
+                    5,  # wand_of_dragon_farts
                     5, 5, 5,  # extra buffer
                 ]
 
@@ -675,7 +695,7 @@ class TestDifficultyScalingIntegration:
             # Get the actual values that would be used
             with patch(
                 "map_objects.game_map.from_dungeon_level",
-                side_effect=[3, 2, 30, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5],
+                side_effect=[3, 2, 30, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
             ) as mock_from_level:
                 with patch("map_objects.game_map.randint", return_value=0), patch(
                     "map_objects.game_map.random_choice_from_dict", return_value="orc"

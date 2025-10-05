@@ -58,6 +58,12 @@ class TestingConfig:
                 "lightning_scroll": [[30, 1], [45, 4]],  # Available from level 1
                 "fireball_scroll": [[30, 1], [45, 6]],  # Available from level 1
                 "confusion_scroll": [[30, 1], [45, 2]],  # Available from level 1
+                # Wands - available early for testing
+                "wand_of_fireball": [[20, 1]],  # Available from level 1
+                "wand_of_lightning": [[20, 1]],  # Available from level 1
+                "wand_of_confusion": [[20, 1]],  # Available from level 1
+                "wand_of_teleportation": [[15, 1]],  # Available from level 1
+                "wand_of_dragon_farts": [[15, 1]],  # Available from level 1
                 "invisibility_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "teleport_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing
                 "shield_scroll": [[25, 1], [40, 3]],  # Available from level 1 for testing

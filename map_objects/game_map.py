@@ -360,6 +360,17 @@ class GameMap:
                     item = entity_factory.create_spell_item("enhance_armor_scroll", x, y)
                 elif item_choice == "invisibility_scroll":
                     item = entity_factory.create_spell_item("invisibility_scroll", x, y)
+                # Wands
+                elif item_choice == "wand_of_fireball":
+                    item = entity_factory.create_wand("wand_of_fireball", x, y, self.dungeon_level)
+                elif item_choice == "wand_of_lightning":
+                    item = entity_factory.create_wand("wand_of_lightning", x, y, self.dungeon_level)
+                elif item_choice == "wand_of_confusion":
+                    item = entity_factory.create_wand("wand_of_confusion", x, y, self.dungeon_level)
+                elif item_choice == "wand_of_teleportation":
+                    item = entity_factory.create_wand("wand_of_teleportation", x, y, self.dungeon_level)
+                elif item_choice == "wand_of_dragon_farts":
+                    item = entity_factory.create_wand("wand_of_dragon_farts", x, y, self.dungeon_level)
                 else:
                     # Default to lightning scroll
                     item = entity_factory.create_spell_item("lightning_scroll", x, y)

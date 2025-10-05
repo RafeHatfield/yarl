@@ -368,9 +368,16 @@ class Entity:
     def get_display_name(self) -> str:
         """Get the display name with damage/defense ranges if applicable.
         
+        For wands, includes charge count.
+        
         Returns:
-            str: Display name with damage/defense info in brackets
+            str: Display name with damage/defense info in brackets, or charge count for wands
         """
+        # Check if this is a wand - if so, use the wand's display name
+        wand = getattr(self, 'wand', None)
+        if wand:
+            return wand.get_display_name()
+        
         # Replace underscores with spaces for better readability
         # Handle case where name might not be a string
         name_str = str(self.name) if not isinstance(self.name, str) else self.name
