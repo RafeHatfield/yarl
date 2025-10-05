@@ -166,5 +166,11 @@ class Equipment:
 
             setattr(self, slot_attr, equippable_entity)
             results.append({"equipped": equippable_entity})
+            
+            # DEBUG: Log equip details
+            import sys
+            item_name = equippable_entity.name if hasattr(equippable_entity, 'name') else 'unknown'
+            reach = getattr(equippable_entity.equippable, 'reach', 1) if hasattr(equippable_entity, 'equippable') else 1
+            print(f"DEBUG EQUIPMENT: Equipped {item_name} with reach={reach}", file=sys.stderr)
 
         return results
