@@ -68,16 +68,11 @@ def _get_weapon_reach(entity: 'Entity') -> int:
     Returns:
         int: The reach of the weapon in tiles (default 1 for adjacent)
     """
-    import sys
     if (hasattr(entity, 'equipment') and entity.equipment and 
         entity.equipment.main_hand and 
         hasattr(entity.equipment.main_hand, 'equippable')):
         weapon = entity.equipment.main_hand.equippable
-        reach = getattr(weapon, 'reach', 1)
-        weapon_name = entity.equipment.main_hand.name if hasattr(entity.equipment.main_hand, 'name') else 'unknown'
-        print(f"DEBUG: _get_weapon_reach: weapon={weapon_name}, reach={reach}", file=sys.stderr)
-        return reach
-    print(f"DEBUG: _get_weapon_reach: no weapon, reach=1", file=sys.stderr)
+        return getattr(weapon, 'reach', 1)
     return 1  # Default reach for unarmed/no weapon
 
 
@@ -206,22 +201,15 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     Returns:
         dict: Dictionary containing movement results and messages
     """
-    import sys
     results = []
     
-    print(f"DEBUG: process_pathfinding_movement called, player at ({player.x}, {player.y})", file=sys.stderr)
-    
     if not hasattr(player, 'pathfinding') or not player.pathfinding:
-        print(f"DEBUG: No pathfinding component", file=sys.stderr)
         return {"results": results}
     
     pathfinding = player.pathfinding
     
     if not pathfinding.is_path_active():
-        print(f"DEBUG: Pathfinding not active", file=sys.stderr)
         return {"results": results}
-    
-    print(f"DEBUG: Pathfinding active, remaining steps: {pathfinding.get_remaining_steps()}", file=sys.stderr)
     
     # Get next move
     next_pos = pathfinding.get_next_move()
@@ -260,14 +248,9 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     })
     
     # Check if we're within weapon reach of any enemy (auto-attack!)
-    print(f"DEBUG: Checking for enemies in weapon range...", file=sys.stderr)
     enemy_in_range = _check_for_enemy_in_weapon_range(player, entities, fov_map)
-    print(f"DEBUG: Enemy in range: {enemy_in_range.name if enemy_in_range else None}", file=sys.stderr)
-    
     if enemy_in_range:
         # Attack the enemy!
-        distance = player.distance_to(enemy_in_range)
-        print(f"DEBUG: AUTO-ATTACKING {enemy_in_range.name} at distance {distance:.1f}", file=sys.stderr)
         pathfinding.interrupt_movement("Enemy within weapon reach - attacking!")
         attack_results = player.fighter.attack(enemy_in_range)
         results.extend(attack_results)
@@ -275,8 +258,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             "enemy_turn": True  # Trigger enemy turn after attack
         })
         return {"results": results}
-    else:
-        print(f"DEBUG: No enemy in weapon range, continuing pathfinding", file=sys.stderr)
     
     # Check for enemies CLOSER than weapon range (threat detection)
     # This allows ranged weapons to keep approaching until in range
@@ -315,30 +296,19 @@ def _check_for_enemy_in_weapon_range(player: 'Entity', entities: List['Entity'],
     Returns:
         Entity or None: The closest enemy within weapon range, or None
     """
-    import sys
     from fov_functions import map_is_in_fov
     
     weapon_reach = _get_weapon_reach(player)
     max_attack_distance = weapon_reach * 1.5  # Account for diagonals
     
-    print(f"DEBUG: _check_for_enemy_in_weapon_range: weapon_reach={weapon_reach}, max_attack_distance={max_attack_distance:.1f}", file=sys.stderr)
-    
     enemies_in_range = []
-    enemies_checked = 0
     
     for entity in entities:
-        if entity != player and entity.fighter:
-            enemies_checked += 1
-            in_fov = map_is_in_fov(fov_map, entity.x, entity.y)
+        if (entity != player and entity.fighter and 
+            map_is_in_fov(fov_map, entity.x, entity.y)):
             distance = player.distance_to(entity)
-            entity_name = entity.name if hasattr(entity, 'name') else 'unknown'
-            print(f"DEBUG:   Checking {entity_name} at ({entity.x},{entity.y}): in_fov={in_fov}, distance={distance:.1f}", file=sys.stderr)
-            
-            if in_fov and distance <= max_attack_distance:
+            if distance <= max_attack_distance:
                 enemies_in_range.append((entity, distance))
-                print(f"DEBUG:   -> IN RANGE!", file=sys.stderr)
-    
-    print(f"DEBUG: Checked {enemies_checked} enemies, {len(enemies_in_range)} in range", file=sys.stderr)
     
     if enemies_in_range:
         # Return the closest enemy

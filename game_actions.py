@@ -83,8 +83,6 @@ class ActionProcessor:
             if (player and hasattr(player, 'pathfinding') and player.pathfinding and 
                 player.pathfinding.is_path_active()):
                 # Process pathfinding movement automatically
-                import sys
-                print(f"DEBUG GAME_ACTIONS: Auto-processing pathfinding movement", file=sys.stderr)
                 self._process_pathfinding_movement_action(None)
                 return  # Don't process other input this turn
         

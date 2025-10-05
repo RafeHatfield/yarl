@@ -713,11 +713,7 @@ class EntityRegistry:
         Returns:
             WeaponDefinition if found, None otherwise
         """
-        weapon = self.weapons.get(weapon_id)
-        if weapon and weapon_id in ["longbow", "shortbow", "crossbow"]:
-            import sys
-            print(f"DEBUG REGISTRY: get_weapon('{weapon_id}') -> reach={weapon.reach}, two_handed={weapon.two_handed}", file=sys.stderr)
-        return weapon
+        return self.weapons.get(weapon_id)
 
     def get_armor(self, armor_id: str) -> Optional[ArmorDefinition]:
         """Get an armor definition by ID.
