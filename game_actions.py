@@ -76,6 +76,16 @@ class ActionProcessor:
         if current_state == GameStates.PLAYER_DEAD:
             return
         
+        # AUTO-PROCESS: Handle pathfinding movement if active (before processing input)
+        # This enables ranged weapon auto-attack and continuous pathfinding
+        if current_state == GameStates.PLAYERS_TURN:
+            player = self.state_manager.state.player
+            if (player and hasattr(player, 'pathfinding') and player.pathfinding and 
+                player.pathfinding.is_path_active()):
+                # Process pathfinding movement automatically
+                self._process_pathfinding_movement_action(None)
+                return  # Don't process other input this turn
+        
         # Process keyboard actions
         for action_type, value in action.items():
             # Use 'is not None' instead of just 'value' to handle inventory_index=0
