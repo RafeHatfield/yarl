@@ -562,3 +562,52 @@ spells:
     char: "~"
     color: [100, 255, 100]  # Necromantic green
     range: 5  # Maximum distance to corpse
+
+# ═══════════════════════════════════════════════════════════
+# WANDS - Multi-charge reusable magic items
+# ═══════════════════════════════════════════════════════════
+# Wands work like scrolls but have charges. They can be recharged
+# by picking up matching scrolls. Wands spawn with random charges:
+# - Level 1: 2-4 charges
+# - Higher levels: 2-4 + (level-1) charges, max 10 starting charges
+#
+# Note: Wands have INFINITE max capacity (no charge limit)
+wands:
+  # Damage wands
+  wand_of_fireball:
+    spell_type: "damage"
+    spell_name: "fireball_scroll"  # Matches scroll for recharging
+    damage: 25
+    radius: 3
+    char: "/"
+    color: [255, 100, 0]  # Bright orange (wand)
+  
+  wand_of_lightning:
+    spell_type: "damage"
+    spell_name: "lightning_scroll"
+    damage: 40
+    maximum_range: 5
+    char: "/"
+    color: [255, 255, 100]  # Bright yellow (wand)
+  
+  # Utility wands
+  wand_of_confusion:
+    spell_type: "utility"
+    spell_name: "confusion_scroll"
+    char: "/"
+    color: [207, 100, 255]  # Bright pink (wand)
+  
+  wand_of_teleportation:
+    spell_type: "utility"
+    spell_name: "teleport_scroll"
+    char: "/"
+    color: [150, 220, 255]  # Bright cyan (wand)
+  
+  wand_of_dragon_farts:
+    spell_type: "offensive"
+    spell_name: "dragon_fart_scroll"
+    char: "/"
+    color: [180, 255, 150]  # Bright green (wand)
+    duration: 20
+    range: 8
+    cone_width: 45

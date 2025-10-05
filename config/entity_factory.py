@@ -275,6 +275,69 @@ class EntityFactory:
             logger.error(f"Error creating spell {spell_type}: {e}")
             return self._create_fallback_spell(spell_type, x, y)
 
+    def create_wand(self, wand_type: str, x: int, y: int, dungeon_level: int = 1) -> Optional[Entity]:
+        """Create a wand item entity with random charges.
+        
+        Wands are multi-charge spell casters that can be recharged by picking up
+        matching scrolls. They spawn with random charges based on dungeon level:
+        - Base charges: 2-4 (random)
+        - Additional charges: +(dungeon_level - 1)
+        - Max starting charges: 10
+        
+        Args:
+            wand_type: The type of wand to create (e.g., "wand_of_fireball")
+            x: X coordinate for the wand
+            y: Y coordinate for the wand
+            dungeon_level: Current dungeon level (affects starting charges)
+            
+        Returns:
+            Entity instance if wand type exists, None otherwise
+        """
+        wand_def = self.registry.get_wand(wand_type)
+        if not wand_def:
+            logger.warning(f"Unknown wand type: {wand_type}")
+            return None
+
+        try:
+            import random
+            from components.wand import Wand
+            
+            # Calculate random starting charges
+            # Base: 2-4, + (level-1), max 10
+            base_charges = random.randint(2, 4)
+            level_bonus = dungeon_level - 1
+            starting_charges = min(base_charges + level_bonus, 10)
+            
+            # Create wand component
+            wand_component = Wand(
+                spell_type=wand_def.spell_name,
+                charges=starting_charges
+            )
+            
+            # Create item component (same as the spell it casts)
+            item_component = self._create_item_component_from_wand(wand_def)
+            
+            # Create entity
+            wand_entity = Entity(
+                x=x,
+                y=y,
+                char=wand_def.char,
+                color=wand_def.color,
+                name=wand_def.name,
+                item=item_component
+            )
+            
+            # Attach wand component
+            wand_entity.wand = wand_component
+            wand_component.owner = wand_entity
+            
+            logger.debug(f"Created wand: {wand_def.name} ({starting_charges} charges) at ({x}, {y})")
+            return wand_entity
+
+        except Exception as e:
+            logger.error(f"Error creating wand {wand_type}: {e}")
+            return None
+
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get player starting stats from configuration.
         
@@ -415,6 +478,56 @@ class EntityFactory:
             )
         else:
             logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
+            return Item()
+
+    def _create_item_component_from_wand(self, wand_def):
+        """Create an item component from a wand definition.
+        
+        This creates an Item component that matches the spell the wand casts.
+        The wand's spell_name field determines which spell function to use.
+        
+        Args:
+            wand_def: WandDefinition
+            
+        Returns:
+            Item component with appropriate use function
+        """
+        # Import item functions dynamically to avoid circular imports
+        from item_functions import (
+            cast_lightning, cast_fireball, cast_confuse, cast_teleport,
+            cast_dragon_fart
+        )
+        
+        # Map spell names to functions and parameters
+        spell_name = wand_def.spell_name.lower()
+        
+        if spell_name == "fireball_scroll":
+            return Item(
+                use_function=cast_fireball,
+                targeting=True,
+                damage=wand_def.damage,
+                radius=wand_def.radius
+            )
+        elif spell_name == "lightning_scroll":
+            return Item(
+                use_function=cast_lightning,
+                damage=wand_def.damage,
+                maximum_range=wand_def.maximum_range
+            )
+        elif spell_name == "confusion_scroll":
+            return Item(use_function=cast_confuse, targeting=True)
+        elif spell_name == "teleport_scroll":
+            return Item(use_function=cast_teleport, targeting=True)
+        elif spell_name == "dragon_fart_scroll":
+            return Item(
+                use_function=cast_dragon_fart,
+                targeting=True,
+                duration=wand_def.duration,
+                range=wand_def.range,
+                cone_width=wand_def.cone_width
+            )
+        else:
+            logger.warning(f"Unknown wand spell '{spell_name}', creating basic item")
             return Item()
 
     def _create_fallback_monster(self, monster_type: str, x: int, y: int) -> Entity:

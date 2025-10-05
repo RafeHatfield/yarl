@@ -188,6 +188,40 @@ class SpellDefinition:
             raise ValueError(f"Spell radius must be >= 0, got {self.radius}")
 
 
+@dataclass
+class WandDefinition:
+    """Definition for a wand item (multi-charge spell caster).
+    
+    Wands are reusable versions of scrolls that have charges. They can be
+    recharged by picking up matching scrolls.
+    """
+    name: str
+    spell_name: str  # The scroll name this wand is equivalent to (for recharging)
+    spell_type: str  # "damage", "heal", "utility", "offensive"
+    damage: int = 0
+    heal_amount: int = 0
+    maximum_range: int = 0
+    radius: int = 0
+    duration: int = 0  # For effects that last multiple turns
+    range: int = 0  # Alternate name for maximum_range (used by some spells)
+    cone_width: int = 0  # For cone spells like dragon fart
+    defense_bonus: int = 0  # For shield-type effects
+    char: str = "/"
+    color: Tuple[int, int, int] = (255, 200, 0)  # Golden yellow
+    extends: Optional[str] = None
+
+    def __post_init__(self):
+        """Validate wand definition."""
+        if self.damage < 0:
+            raise ValueError(f"Wand damage must be >= 0, got {self.damage}")
+        if self.heal_amount < 0:
+            raise ValueError(f"Wand heal_amount must be >= 0, got {self.heal_amount}")
+        if self.maximum_range < 0:
+            raise ValueError(f"Wand maximum_range must be >= 0, got {self.maximum_range}")
+        if self.radius < 0:
+            raise ValueError(f"Wand radius must be >= 0, got {self.radius}")
+
+
 class EntityRegistry:
     """Registry for all entity definitions loaded from configuration files.
     
@@ -207,6 +241,7 @@ class EntityRegistry:
         self.weapons: Dict[str, WeaponDefinition] = {}
         self.armor: Dict[str, ArmorDefinition] = {}
         self.spells: Dict[str, SpellDefinition] = {}
+        self.wands: Dict[str, WandDefinition] = {}
         self.player_stats: Optional[EntityStats] = None
         self._loaded = False
 
@@ -283,6 +318,10 @@ class EntityRegistry:
         # Load spells - process inheritance-aware
         if 'spells' in config_data:
             self._process_spells_with_inheritance(config_data['spells'])
+        
+        # Load wands - process inheritance-aware
+        if 'wands' in config_data:
+            self._process_wands_with_inheritance(config_data['wands'])
 
     def _process_monsters_with_inheritance(self, monsters_data: Dict[str, Any]) -> None:
         """Process monster data with inheritance-aware creation.
@@ -415,6 +454,35 @@ class EntityRegistry:
             except Exception as e:
                 logger.error(f"Error creating resolved spell '{spell_id}': {e}")
                 raise ValueError(f"Invalid resolved spell configuration for '{spell_id}': {e}")
+
+    def _process_wands_with_inheritance(self, wands_data: Dict[str, Any]) -> None:
+        """Process wand data with inheritance-aware creation."""
+        resolved_wands_data = self._resolve_raw_inheritance(wands_data, 'wand')
+        
+        for wand_id, wand_data in resolved_wands_data.items():
+            try:
+                wand_def = WandDefinition(
+                    name=wand_id.replace('_', ' ').title(),
+                    spell_name=wand_data.get('spell_name', ''),
+                    spell_type=wand_data.get('spell_type', 'utility'),
+                    damage=wand_data.get('damage', 0),
+                    heal_amount=wand_data.get('heal_amount', 0),
+                    maximum_range=wand_data.get('maximum_range', 0),
+                    radius=wand_data.get('radius', 0),
+                    duration=wand_data.get('duration', 0),
+                    range=wand_data.get('range', 0),
+                    cone_width=wand_data.get('cone_width', 0),
+                    defense_bonus=wand_data.get('defense_bonus', 0),
+                    char=wand_data.get('char', '/'),
+                    color=tuple(wand_data.get('color', [255, 200, 0])),
+                    extends=None  # Clear extends after resolution
+                )
+                
+                self.wands[wand_id] = wand_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved wand '{wand_id}': {e}")
+                raise ValueError(f"Invalid resolved wand configuration for '{wand_id}': {e}")
 
     def _resolve_raw_inheritance(self, entities_data: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
         """Resolve inheritance at the raw data level before entity creation.
@@ -736,6 +804,17 @@ class EntityRegistry:
             SpellDefinition if found, None otherwise
         """
         return self.spells.get(spell_id)
+
+    def get_wand(self, wand_id: str) -> Optional[WandDefinition]:
+        """Get a wand definition by ID.
+        
+        Args:
+            wand_id: The wand identifier
+            
+        Returns:
+            WandDefinition if found, None otherwise
+        """
+        return self.wands.get(wand_id)
 
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get the player starting stats.
