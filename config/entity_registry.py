@@ -352,6 +352,8 @@ class EntityRegistry:
                     damage_max=damage_max,
                     damage_dice=damage_dice,
                     to_hit_bonus=weapon_data.get('to_hit_bonus', 0),
+                    two_handed=weapon_data.get('two_handed', False),  # NEW!
+                    reach=weapon_data.get('reach', 1),  # NEW!
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),
@@ -711,7 +713,11 @@ class EntityRegistry:
         Returns:
             WeaponDefinition if found, None otherwise
         """
-        return self.weapons.get(weapon_id)
+        weapon = self.weapons.get(weapon_id)
+        if weapon and weapon_id in ["longbow", "shortbow", "crossbow"]:
+            import sys
+            print(f"DEBUG REGISTRY: get_weapon('{weapon_id}') -> reach={weapon.reach}, two_handed={weapon.two_handed}", file=sys.stderr)
+        return weapon
 
     def get_armor(self, armor_id: str) -> Optional[ArmorDefinition]:
         """Get an armor definition by ID.
