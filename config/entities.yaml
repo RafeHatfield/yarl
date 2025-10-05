@@ -261,7 +261,8 @@ weapons:
   # Versatile piercing weapon
   spear:
     damage_dice: "1d8"      # 1-8 damage (avg 4.5)
-    to_hit_bonus: 0         # Reach weapon (future: reach property)
+    to_hit_bonus: 0
+    reach: 2                # Can attack from 2 tiles away!
     slot: "main_hand"
     char: "/"
     color: [160, 82, 45]    # Brown/wood
@@ -294,7 +295,8 @@ weapons:
   greataxe:
     damage_dice: "1d12"     # 1-12 damage (avg 6.5) - HIGHEST!
     to_hit_bonus: -1        # Unwieldy: harder to hit
-    slot: "main_hand"       # Future: add two_handed property
+    two_handed: true        # Requires both hands, prevents shield use
+    slot: "main_hand"
     char: "/"
     color: [128, 128, 128]  # Gray
   
@@ -302,7 +304,8 @@ weapons:
   greatsword:
     damage_dice: "2d6"      # 2-12 damage (avg 7.0) - MOST CONSISTENT!
     to_hit_bonus: 0
-    slot: "main_hand"       # Future: add two_handed property
+    two_handed: true        # Requires both hands, prevents shield use
+    slot: "main_hand"
     char: "/"
     color: [211, 211, 211]  # Light gray
   
@@ -313,6 +316,37 @@ weapons:
     slot: "main_hand"
     char: "/"
     color: [192, 192, 192]  # Silver
+
+  # ═══════════════════════════════════════════════════════════
+  # RANGED WEAPONS - Bows & Crossbows
+  # ═══════════════════════════════════════════════════════════
+  
+  # Light ranged weapon
+  shortbow:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 0
+    reach: 8                # Can attack up to 8 tiles away!
+    slot: "main_hand"
+    char: "}"
+    color: [139, 69, 19]    # Brown wood
+  
+  # Powerful ranged weapon
+  longbow:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    reach: 10               # Longest range! 10 tiles!
+    slot: "main_hand"
+    char: "}"
+    color: [160, 82, 45]    # Sienna brown
+  
+  # Mechanical ranged weapon
+  crossbow:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    reach: 8                # Medium range
+    slot: "main_hand"
+    char: "}"
+    color: [105, 105, 105]  # Dim gray (metal + wood)
 
 # Armor definitions
 #

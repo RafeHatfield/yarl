@@ -55,23 +55,42 @@ class QueuedEffect:
         self.entity = entity
         self.params = kwargs
     
-    def play(self, con=0) -> None:
-        """Play this effect immediately with viewport offset.
+    def play(self, con=0, camera=None) -> None:
+        """Play this effect immediately with camera and viewport offset.
         
-        Visual effects are drawn in world coordinates but need to account
-        for the viewport offset in split-screen layout.
+        Visual effects use world coordinates but need to be translated:
+        1. World coords → Viewport coords (via camera)
+        2. Viewport coords → Screen coords (via viewport offset)
         
         Args:
             con: Console to draw on (default: root console 0)
+            camera: Camera for world→viewport translation (optional)
         """
-        # Get viewport offset for coordinate translation
+        # Step 1: Translate world coordinates to viewport coordinates using camera
+        if camera:
+            # For single-point effects (hit, miss, crit), check if in viewport
+            # For area effects (fireball, lightning, etc.), skip this check and let
+            # individual tiles be culled in the helper methods
+            is_area_effect = self.effect_type in [
+                EffectType.FIREBALL, EffectType.LIGHTNING, EffectType.DRAGON_FART,
+                EffectType.AREA_EFFECT, EffectType.PATH_EFFECT
+            ]
+            
+            if not is_area_effect and not camera.is_in_viewport(self.x, self.y):
+                return  # Single-point effect is off-screen, don't render
+            
+            viewport_x, viewport_y = camera.world_to_viewport(self.x, self.y)
+        else:
+            # No camera, world coords = viewport coords (backward compatibility)
+            viewport_x, viewport_y = self.x, self.y
+        
+        # Step 2: Translate viewport coordinates to screen coordinates
         from config.ui_layout import get_ui_layout
         ui_layout = get_ui_layout()
         viewport_offset = ui_layout.viewport_position
         
-        # Adjust coordinates for viewport offset
-        self.screen_x = self.x + viewport_offset[0]
-        self.screen_y = self.y + viewport_offset[1]
+        self.screen_x = viewport_x + viewport_offset[0]
+        self.screen_y = viewport_y + viewport_offset[1]
         
         # Now play the effect at screen coordinates
         if self.effect_type == EffectType.HIT:
@@ -81,15 +100,15 @@ class QueuedEffect:
         elif self.effect_type == EffectType.MISS:
             self._play_miss(con)
         elif self.effect_type == EffectType.FIREBALL:
-            self._play_fireball(con)
+            self._play_fireball(con, camera)
         elif self.effect_type == EffectType.LIGHTNING:
-            self._play_lightning(con)
+            self._play_lightning(con, camera)
         elif self.effect_type == EffectType.DRAGON_FART:
-            self._play_dragon_fart(con)
+            self._play_dragon_fart(con, camera)
         elif self.effect_type == EffectType.AREA_EFFECT:
-            self._play_area_effect(con)
+            self._play_area_effect(con, camera)
         elif self.effect_type == EffectType.PATH_EFFECT:
-            self._play_path_effect(con)
+            self._play_path_effect(con, camera)
     
     def _play_hit(self, con=0) -> None:
         """Play a hit effect."""
@@ -151,8 +170,8 @@ class QueuedEffect:
         
         time.sleep(duration)
     
-    def _play_fireball(self, con=0) -> None:
-        """Play a fireball area effect."""
+    def _play_fireball(self, con=0, camera=None) -> None:
+        """Play a fireball area effect with proper camera translation."""
         tiles = self.params.get('tiles', [])
         color = self.params.get('color', (255, 100, 0))  # Orange
         char = self.params.get('char', ord('*'))
@@ -163,18 +182,28 @@ class QueuedEffect:
         ui_layout = get_ui_layout()
         viewport_offset = ui_layout.viewport_position
         
-        # Draw explosion area (translate world coords to screen coords)
-        for tile_x, tile_y in tiles:
-            screen_x = tile_x + viewport_offset[0]
-            screen_y = tile_y + viewport_offset[1]
+        # Draw explosion area (translate world coords → viewport coords → screen coords)
+        for world_x, world_y in tiles:
+            # Step 1: Translate world → viewport via camera
+            if camera:
+                if not camera.is_in_viewport(world_x, world_y):
+                    continue  # Skip tiles outside viewport
+                viewport_x, viewport_y = camera.world_to_viewport(world_x, world_y)
+            else:
+                viewport_x, viewport_y = world_x, world_y
+            
+            # Step 2: Translate viewport → screen
+            screen_x = viewport_x + viewport_offset[0]
+            screen_y = viewport_y + viewport_offset[1]
+            
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)
     
-    def _play_lightning(self, con=0) -> None:
-        """Play a lightning path effect."""
+    def _play_lightning(self, con=0, camera=None) -> None:
+        """Play a lightning path effect with proper camera translation."""
         path = self.params.get('path', [])
         color = self.params.get('color', (255, 255, 100))  # Cyan-yellow
         char = self.params.get('char', ord('|'))
@@ -185,18 +214,28 @@ class QueuedEffect:
         ui_layout = get_ui_layout()
         viewport_offset = ui_layout.viewport_position
         
-        # Draw lightning path (translate world coords to screen coords)
-        for tile_x, tile_y in path:
-            screen_x = tile_x + viewport_offset[0]
-            screen_y = tile_y + viewport_offset[1]
+        # Draw lightning path (translate world coords → viewport coords → screen coords)
+        for world_x, world_y in path:
+            # Step 1: Translate world → viewport via camera
+            if camera:
+                if not camera.is_in_viewport(world_x, world_y):
+                    continue  # Skip tiles outside viewport
+                viewport_x, viewport_y = camera.world_to_viewport(world_x, world_y)
+            else:
+                viewport_x, viewport_y = world_x, world_y
+            
+            # Step 2: Translate viewport → screen
+            screen_x = viewport_x + viewport_offset[0]
+            screen_y = viewport_y + viewport_offset[1]
+            
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)
     
-    def _play_dragon_fart(self, con=0) -> None:
-        """Play a dragon fart cone effect."""
+    def _play_dragon_fart(self, con=0, camera=None) -> None:
+        """Play a dragon fart cone effect with proper camera translation."""
         tiles = self.params.get('tiles', [])
         color = self.params.get('color', (100, 200, 50))  # Sickly green
         char = self.params.get('char', ord('~'))
@@ -207,42 +246,86 @@ class QueuedEffect:
         ui_layout = get_ui_layout()
         viewport_offset = ui_layout.viewport_position
         
-        # Draw cone area (translate world coords to screen coords)
-        for tile_x, tile_y in tiles:
-            screen_x = tile_x + viewport_offset[0]
-            screen_y = tile_y + viewport_offset[1]
+        # Draw cone area (translate world coords → viewport coords → screen coords)
+        for world_x, world_y in tiles:
+            # Step 1: Translate world → viewport via camera
+            if camera:
+                if not camera.is_in_viewport(world_x, world_y):
+                    continue  # Skip tiles outside viewport
+                viewport_x, viewport_y = camera.world_to_viewport(world_x, world_y)
+            else:
+                viewport_x, viewport_y = world_x, world_y
+            
+            # Step 2: Translate viewport → screen
+            screen_x = viewport_x + viewport_offset[0]
+            screen_y = viewport_y + viewport_offset[1]
+            
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)
     
-    def _play_area_effect(self, con=0) -> None:
-        """Play a generic area effect."""
+    def _play_area_effect(self, con=0, camera=None) -> None:
+        """Play a generic area effect with proper camera translation."""
         tiles = self.params.get('tiles', [])
         color = self.params.get('color', (255, 100, 0))
         char = self.params.get('char', ord('*'))
         duration = self.params.get('duration', 0.25)
         
-        # Draw area
-        for tile_x, tile_y in tiles:
+        # Get viewport offset for coordinate translation
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_offset = ui_layout.viewport_position
+        
+        # Draw area (translate world coords → viewport coords → screen coords)
+        for world_x, world_y in tiles:
+            # Step 1: Translate world → viewport via camera
+            if camera:
+                if not camera.is_in_viewport(world_x, world_y):
+                    continue  # Skip tiles outside viewport
+                viewport_x, viewport_y = camera.world_to_viewport(world_x, world_y)
+            else:
+                viewport_x, viewport_y = world_x, world_y
+            
+            # Step 2: Translate viewport → screen
+            screen_x = viewport_x + viewport_offset[0]
+            screen_y = viewport_y + viewport_offset[1]
+            
             libtcodpy.console_set_default_foreground(con, color)
-            libtcodpy.console_put_char(con, tile_x, tile_y, char, libtcodpy.BKGND_NONE)
+            libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)
     
-    def _play_path_effect(self, con=0) -> None:
-        """Play a generic path effect."""
+    def _play_path_effect(self, con=0, camera=None) -> None:
+        """Play a generic path effect with proper camera translation."""
         path = self.params.get('path', [])
         color = self.params.get('color', (255, 255, 100))
         char = self.params.get('char', ord('|'))
         duration = self.params.get('duration', 0.15)
         
-        # Draw path
-        for tile_x, tile_y in path:
+        # Get viewport offset for coordinate translation
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_offset = ui_layout.viewport_position
+        
+        # Draw path (translate world coords → viewport coords → screen coords)
+        for world_x, world_y in path:
+            # Step 1: Translate world → viewport via camera
+            if camera:
+                if not camera.is_in_viewport(world_x, world_y):
+                    continue  # Skip tiles outside viewport
+                viewport_x, viewport_y = camera.world_to_viewport(world_x, world_y)
+            else:
+                viewport_x, viewport_y = world_x, world_y
+            
+            # Step 2: Translate viewport → screen
+            screen_x = viewport_x + viewport_offset[0]
+            screen_y = viewport_y + viewport_offset[1]
+            
             libtcodpy.console_set_default_foreground(con, color)
-            libtcodpy.console_put_char(con, tile_x, tile_y, char, libtcodpy.BKGND_NONE)
+            libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
         
         libtcodpy.console_flush()
         time.sleep(duration)
@@ -320,7 +403,7 @@ class VisualEffectQueue:
             EffectType.DRAGON_FART, x, y, None, tiles=tiles, **kwargs
         ))
     
-    def play_all(self, con=0) -> None:
+    def play_all(self, con=0, camera=None) -> None:
         """Play all queued effects and clear the queue.
         
         This should be called during rendering, after entities are drawn
@@ -328,9 +411,10 @@ class VisualEffectQueue:
         
         Args:
             con: Console to draw on (default: root console 0)
+            camera: Camera for coordinate translation (optional)
         """
         for effect in self.effects:
-            effect.play(con)
+            effect.play(con, camera)
         
         # Clear the queue
         self.effects.clear()

@@ -103,12 +103,16 @@ class Equipment:
         If the item is already equipped, it will be unequipped.
         If the slot is empty, the item will be equipped.
         If the slot has a different item, it will be replaced.
+        
+        Two-handed weapons prevent shield use:
+        - Equipping a two-handed weapon will unequip any shield
+        - Equipping a shield will unequip any two-handed weapon
 
         Args:
             equippable_entity (Entity): The entity with an equippable component
 
         Returns:
-            list: List of result dictionaries with 'equipped' or 'dequipped' keys
+            list: List of result dictionaries with 'equipped', 'dequipped', or 'cannot_equip' keys
         """
         results = []
         slot = equippable_entity.equippable.slot
@@ -133,6 +137,29 @@ class Equipment:
             setattr(self, slot_attr, None)
             results.append({"dequipped": equippable_entity})
         else:
+            # Check for two-handed weapon conflicts BEFORE equipping
+            two_handed_conflict = False
+            
+            # Trying to equip a two-handed weapon while holding a shield
+            if (slot == EquipmentSlots.MAIN_HAND and 
+                hasattr(equippable_entity.equippable, 'two_handed') and
+                equippable_entity.equippable.two_handed is True and 
+                self.off_hand is not None):
+                # Auto-unequip the shield
+                results.append({"dequipped": self.off_hand})
+                self.off_hand = None
+                logger.debug(f"Auto-unequipped off_hand to equip two-handed weapon: {equippable_entity.name}")
+            
+            # Trying to equip a shield while holding a two-handed weapon
+            elif (slot == EquipmentSlots.OFF_HAND and 
+                  self.main_hand is not None and
+                  hasattr(self.main_hand.equippable, 'two_handed') and
+                  self.main_hand.equippable.two_handed is True):
+                # Auto-unequip the two-handed weapon
+                results.append({"dequipped": self.main_hand})
+                self.main_hand = None
+                logger.debug(f"Auto-unequipped two-handed weapon to equip shield: {equippable_entity.name}")
+            
             # Replace or equip
             if current_item:
                 results.append({"dequipped": current_item})

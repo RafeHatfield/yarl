@@ -175,7 +175,12 @@ class InputSystem(System):
         # For now, use default mouse handler for all states
         handler = self.mouse_handlers.get("default")
         if handler and self.current_mouse:
-            return handler(self.current_mouse)
+            # Get camera from game state for coordinate translation (Phase 2)
+            camera = None
+            if self.engine and hasattr(self.engine, 'state_manager'):
+                if hasattr(self.engine.state_manager.state, 'camera'):
+                    camera = self.engine.state_manager.state.camera
+            return handler(self.current_mouse, camera)
         return {}
 
     def _execute_action_callbacks(self) -> None:

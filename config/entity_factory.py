@@ -159,8 +159,8 @@ class EntityFactory:
         """
         weapon_def = self.registry.get_weapon(weapon_type)
         if not weapon_def:
-            logger.warning(f"Unknown weapon type: {weapon_type}")
-            return self._create_fallback_weapon(weapon_type, x, y)
+            logger.debug(f"Unknown weapon type: {weapon_type}")
+            return None  # Return None so caller can try armor
 
         try:
             # Create equippable component
@@ -170,7 +170,9 @@ class EntityFactory:
                 damage_min=weapon_def.damage_min,
                 damage_max=weapon_def.damage_max,
                 damage_dice=weapon_def.damage_dice,
-                to_hit_bonus=weapon_def.to_hit_bonus
+                to_hit_bonus=weapon_def.to_hit_bonus,
+                two_handed=weapon_def.two_handed,
+                reach=weapon_def.reach
             )
 
             # Create entity
@@ -204,8 +206,8 @@ class EntityFactory:
         """
         armor_def = self.registry.get_armor(armor_type)
         if not armor_def:
-            logger.warning(f"Unknown armor type: {armor_type}")
-            return self._create_fallback_armor(armor_type, x, y)
+            logger.debug(f"Unknown armor type: {armor_type}")
+            return None  # Return None so caller can try weapon
 
         try:
             # Create equippable component

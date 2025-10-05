@@ -432,18 +432,23 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         
         self.assertEqual(result["results"], [])
     
-    @patch('mouse_movement._check_for_enemies_in_fov')
+    @patch('mouse_movement._check_for_close_enemies')
+    @patch('mouse_movement._check_for_enemy_in_weapon_range')
     @patch('mouse_movement.get_blocking_entities_at_location')
-    def test_enemy_spotted_interruption(self, mock_get_blocking, mock_check_enemies):
-        """Test movement interruption when enemy is spotted AFTER moving."""
+    def test_enemy_spotted_interruption(self, mock_get_blocking, mock_check_range, mock_check_close):
+        """Test movement interruption when close enemy is detected AFTER moving.
+        
+        Updated for ranged weapons fix: Only stop if enemy is CLOSER than weapon range.
+        """
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5), (7, 5)]
         self.player.pathfinding.is_moving = True
         self.player.pathfinding.path_index = 0
         
-        # Mock no blocking entities but enemy detection after move
+        # Mock no blocking entities, no enemies in weapon range, but close enemy detected
         mock_get_blocking.return_value = None
-        mock_check_enemies.return_value = True
+        mock_check_range.return_value = None  # Not in weapon range yet
+        mock_check_close.return_value = True  # But dangerously close (within threat range)
         
         result = process_pathfinding_movement(
             self.player, self.entities, self.game_map, self.fov_map
@@ -465,17 +470,19 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.assertFalse(self.player.pathfinding.is_moving)
         self.assertTrue(self.player.pathfinding.movement_interrupted)
     
-    @patch('mouse_movement._check_for_enemies_in_fov')
+    @patch('mouse_movement._check_for_close_enemies')
+    @patch('mouse_movement._check_for_enemy_in_weapon_range')
     @patch('mouse_movement.get_blocking_entities_at_location')
-    def test_successful_movement_step(self, mock_get_blocking, mock_check_enemies):
+    def test_successful_movement_step(self, mock_get_blocking, mock_check_range, mock_check_close):
         """Test successful movement step."""
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5), (7, 5)]
         self.player.pathfinding.is_moving = True
         self.player.pathfinding.path_index = 0
         
-        # Mock no enemies and no blocking entities
-        mock_check_enemies.return_value = False
+        # Mock no enemies in range, no close enemies, and no blocking entities
+        mock_check_range.return_value = None
+        mock_check_close.return_value = False
         mock_get_blocking.return_value = None
         
         result = process_pathfinding_movement(
@@ -496,9 +503,10 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         # Verify player moved
         self.player.move.assert_called_once_with(1, 0)  # (6,5) - (5,5) = (1,0)
     
-    @patch('mouse_movement._check_for_enemies_in_fov')
+    @patch('mouse_movement._check_for_close_enemies')
+    @patch('mouse_movement._check_for_enemy_in_weapon_range')
     @patch('mouse_movement.get_blocking_entities_at_location')
-    def test_path_blocked_by_entity(self, mock_get_blocking, mock_check_enemies):
+    def test_path_blocked_by_entity(self, mock_get_blocking, mock_check_range, mock_check_close):
         """Test movement interruption when path is blocked by entity."""
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5)]
@@ -506,7 +514,8 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.player.pathfinding.path_index = 0
         
         # Mock no enemies but blocking entity
-        mock_check_enemies.return_value = False
+        mock_check_range.return_value = None
+        mock_check_close.return_value = False
         blocking_entity = Mock()
         blocking_entity.name = "Wall"
         mock_get_blocking.return_value = blocking_entity
@@ -522,8 +531,9 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.assertIn("blocked by wall", messages[0]["message"].text.lower())
         self.assertFalse(self.player.pathfinding.is_moving)
     
-    @patch('mouse_movement._check_for_enemies_in_fov')
-    def test_path_blocked_by_terrain(self, mock_check_enemies):
+    @patch('mouse_movement._check_for_close_enemies')
+    @patch('mouse_movement._check_for_enemy_in_weapon_range')
+    def test_path_blocked_by_terrain(self, mock_check_range, mock_check_close):
         """Test movement interruption when path is blocked by terrain."""
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5)]
@@ -531,7 +541,8 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.player.pathfinding.path_index = 0
         
         # Mock no enemies but blocked terrain
-        mock_check_enemies.return_value = False
+        mock_check_range.return_value = None
+        mock_check_close.return_value = False
         self.game_map.is_blocked.return_value = True
         
         result = process_pathfinding_movement(
@@ -545,9 +556,10 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.assertIn("path blocked", messages[0]["message"].text.lower())
         self.assertFalse(self.player.pathfinding.is_moving)
     
-    @patch('mouse_movement._check_for_enemies_in_fov')
+    @patch('mouse_movement._check_for_close_enemies')
+    @patch('mouse_movement._check_for_enemy_in_weapon_range')
     @patch('mouse_movement.get_blocking_entities_at_location')
-    def test_movement_completion(self, mock_get_blocking, mock_check_enemies):
+    def test_movement_completion(self, mock_get_blocking, mock_check_range, mock_check_close):
         """Test movement completion."""
         # Set up pathfinding with final step
         self.player.pathfinding.current_path = [(6, 5)]
@@ -555,7 +567,8 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.player.pathfinding.path_index = 0
         
         # Mock no enemies and no blocking entities
-        mock_check_enemies.return_value = False
+        mock_check_range.return_value = None
+        mock_check_close.return_value = False
         mock_get_blocking.return_value = None
         
         result = process_pathfinding_movement(

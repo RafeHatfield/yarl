@@ -24,13 +24,16 @@ class Equippable:
         defense_max (int): Maximum defense for armor (0 for non-armor)
         armor_type (str): Type of armor (light/medium/heavy/shield/weapon)
         dex_cap (int): Maximum DEX modifier that applies to AC (None = no cap)
+        two_handed (bool): Requires both hands, prevents shield use
+        reach (int): Attack range in tiles (1 = adjacent, 2 = spear reach)
         owner (Entity): The entity that owns this component
     """
 
     def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0,
                  armor_class_bonus=0, to_hit_bonus=0,
                  damage_min=0, damage_max=0, defense_min=0, defense_max=0,
-                 armor_type=None, dex_cap=None, damage_dice=None):
+                 armor_type=None, dex_cap=None, damage_dice=None,
+                 two_handed=False, reach=1):
         """Initialize an Equippable component.
 
         Args:
@@ -47,6 +50,8 @@ class Equippable:
             armor_type (str, optional): Armor type (light/medium/heavy). Defaults to None.
             dex_cap (int, optional): Max DEX modifier for AC (None = no cap). Defaults to None.
             damage_dice (str, optional): Dice notation for damage (e.g., "1d4", "2d6"). Defaults to None.
+            two_handed (bool, optional): Requires both hands, prevents shield use. Defaults to False.
+            reach (int, optional): Attack range in tiles (1 = adjacent, 2 = spear). Defaults to 1.
         """
         self.slot = slot
         self.power_bonus = power_bonus
@@ -61,6 +66,8 @@ class Equippable:
         self.armor_type = armor_type  # light, medium, heavy, shield, or weapon
         self.dex_cap = dex_cap  # Maximum DEX modifier that applies to AC (None = no cap)
         self.damage_dice = damage_dice  # Dice notation like "1d4", "1d6", "2d6"
+        self.two_handed = two_handed  # Requires both hands, prevents shield use
+        self.reach = reach  # Attack range in tiles (1 = adjacent, 2 = spear reach)
         self.owner = None  # Will be set by Entity when component is registered
     
     def get_damage_range_text(self) -> str:

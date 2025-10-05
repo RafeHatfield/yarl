@@ -1,12 +1,41 @@
 # 🗺️ **Yarl Development Roadmap: Sorted by Complexity & Impact**
 
-*Last Updated: October 2025 - Equipment System Overhaul Complete*
+*Last Updated: October 2025 - Camera System & Larger Maps Complete*
 
 This roadmap organizes all planned features by implementation complexity and gameplay impact, helping prioritize development efforts for maximum player enjoyment.
 
 ---
 
-## ✅ **Recently Completed: Equipment System Overhaul** (v3.0.0)
+## ✅ **Recently Completed: Camera System & Larger Maps** (v3.4.0)
+
+**📷 Dynamic Camera with Smooth Scrolling** (October 2025)
+
+Complete camera system enabling massive explorable dungeons with smooth viewport scrolling:
+
+### **What Was Accomplished**
+- **📹 Camera Infrastructure**: Complete Camera class with CENTER/EDGE_FOLLOW/MANUAL modes
+- **🎥 Smooth Scrolling**: Player-centered camera with perfect coordinate translation
+- **🗺️ Larger Maps**: Default map size increased from 80x43 to 120x80 (2.8x more area!)
+- **✨ All Systems Updated**: Rendering, input, visual effects, targeting all work with camera
+- **⚡ Excellent Performance**: 17ms map gen, 5ms pathfinding, 0.7ms FOV computation
+- **🧪 Production Quality**: 29 camera tests + 1,662 total tests passing (99.88%)
+
+### **Technical Achievements**
+- **Coordinate Translation**: World ↔ Viewport ↔ Screen with camera offset
+- **Entity Culling**: Only render entities within viewport (performance!)
+- **Mouse Input**: Targeting spells work perfectly with camera scrolling
+- **Save/Load**: Map size preserved across sessions
+- **Flexible Testing**: Testing mode supports 160x100 maps for validation
+
+### **Benefits Realized**
+- **🎮 Players**: Massive explorable dungeons, smooth camera following, immersive exploration
+- **🏗️ Architecture**: Clean camera abstraction, easy to extend (edge scrolling ready)
+- **📈 Scalability**: Supports maps up to 200x200 with current performance
+- **✨ Polish**: Professional-feeling camera system that "just works"
+
+---
+
+## ✅ **Previously Completed: Equipment System Overhaul** (v3.0.0)
 
 **🎉 Major Equipment & Combat System Transformation** (October 2025)
 
@@ -123,6 +152,7 @@ These features build on existing systems and provide immediate gameplay improvem
 | **Variable Defense** | ✅ Complete (v3.0) | 🔥 High | Armor provides variable protection | Defense ranges integrated with dice system |
 | **Variable Monster Damage** | ✅ Complete (v3.0) | 🔥 High | Monsters use dice-based damage like players | All entities use unified dice combat system |
 | **Chance to Hit/Dodge** | ✅ Complete (v3.0) | 🔥 High | d20 attack rolls vs AC for tactical depth | Full d20 combat with critical hits/fumbles |
+| **Critical Failure Consequences** | 1-2 weeks | 🔥 High | Fumbles cause weapon drops, armor falls off, or prone + free crit | Fumble outcome table, equipment drop mechanics, prone status |
 | **More Spells** | ✅ Complete (v2.7) | 🔥 High | 8 tactical scrolls (teleport, invisibility, etc.) | Comprehensive spell system with status effects |
 | **Monster Equipment & Loot** | 1-2 weeks | 🔥 High | Monsters can wield weapons/armor and drop them | Equipment system for monsters, loot drops |
 | **General Loot Drops** | 1 week | 🔥 High | All monsters drop items when defeated | Death event handling, loot table system |
@@ -156,6 +186,18 @@ These features build on existing systems and provide immediate gameplay improvem
 
 **Combined Impact:** Polishes the core experience and improves development workflow.
 
+### **📷 Camera System (Optional Polish)**
+
+| Feature | Time | Impact | Why Now | Technical Notes |
+|---------|------|--------|---------|-----------------|
+| **Camera & Viewport Scrolling** | ✅ Complete (Phases 1-3) | 🔥 High | Smooth scrolling, 120x80 maps, excellent performance | Camera class, coordinate translation, all systems integrated |
+| **Edge Scrolling Mode** | 1-2 hours | 🔶 Medium | Alternative to CENTER mode - camera moves when player near edge | Infrastructure exists (EDGE_FOLLOW mode), just needs UI toggle |
+| **Camera Smooth Interpolation** | 2-3 hours | 🔷 Low | Gradual camera movement instead of instant snap | Interpolation between camera positions |
+| **Camera Shake Effects** | 2-3 hours | 🔷 Low | Screen shake for combat/explosions | Shake amplitude/duration system |
+| **Performance Optimization** | 2-3 hours | 🔷 Low | Optimize for 200x200+ maps | Tile caching, dirty rectangle tracking, profiling |
+
+**Combined Impact:** Camera system is production-ready! Optional polish items add nice-to-have effects but aren't critical. Current performance is excellent (17ms map gen, 5ms pathfinding, 0.7ms FOV).
+
 ---
 
 ## 🟡 **Phase 2: Game-Changing Systems** (2-6 weeks each)
@@ -168,6 +210,8 @@ These features add new gameplay dimensions and significantly expand the game's d
 |---------|------|--------|------------|----------------------|
 | **Ranged Weapons** | 2-3 weeks | 🔥 High | Need targeting system extension | Projectile mechanics, line-of-sight calculations |
 | **Boss Encounters** | 3-4 weeks | 🔥 High | Special AI behaviors and mechanics | Custom AI states, unique abilities |
+| **Persistent Spell Effects** | 2-3 weeks | 🔥 High | Lingering ground effects (fireball/dragon fart) | Ground effect tracking, turn duration, area denial |
+| **Spell-Item Interaction** | 1 week | 🔥 High | Fireball destroys items in blast zone | Item destruction system, area effect on ground items |
 | **Environmental Hazards** | 2-4 weeks | 🔥 High | Traps, poison, lava - tactical positioning | New tile types, damage-over-time systems |
 | **Manual Level Design - Tier 1** | ✅ Complete | 🔥 High | Guaranteed spawns for testing (YAML-based) | Template system with mode control (additional/replace) |
 | **Manual Level Design - Tier 2** | 2-3 weeks | 🔥 High | Level parameters & special rooms | Room count/size control, themed room types |
@@ -203,6 +247,7 @@ These features add new gameplay dimensions and significantly expand the game's d
 |---------|------|--------|------------|----------------------|
 | **Pet System** | 3-4 weeks | 🔥 High | AI companions that follow and assist | Companion AI, follow behavior, combat assistance |
 | **Trap System** | 3-4 weeks | 🔥 High | Detection, disarmament, damage | Hidden objects, skill checks, trigger mechanics |
+| **Hidden Doors & Secrets** | 1-2 weeks | 🔥 High | Secret passages, search mechanics, exploration rewards | Door revealing system, search/detection mechanics, visual cues |
 | **Skill Scrolls** | 2-3 weeks | 🔶 Medium | Consumable ability learning | Skill teaching items, progression integration |
 
 **Combined Impact:** Living world feel with meaningful exploration rewards.
@@ -387,20 +432,27 @@ This roadmap should be updated:
 - **Identify Scroll**: Reveal item properties (needs item property system)
 
 **Phase 2: Equipment Slots & Items** (2-3 weeks) 🔜 **NEXT**
-- **New Slots**: chest (armor), head (helmets), boots, rings, amulets
+- **New Slots**: rings, amulets
 - **New Weapons**: varied damage types, different weapon classes
 - **New Armor**: light/medium/heavy with tradeoffs
 - **Weapon Properties**:
   - Speed (attack frequency)
-  - Reach (melee range)
   - Durability (item degradation)
 - **Set Bonuses**: Matching gear provides extra bonuses
+- **Wands System**: Rechargeable spell items
+  - Multi-charge items (like scrolls but reusable!)
+  - Can be recharged by "feeding" matching scrolls
+  - Different wand types for each spell
+  - Wand durability/max charges
+  - More reliable than scroll RNG
 
-**Phase 3: Ranged Weapons** (2-3 weeks)
-- Bows, crossbows, throwing weapons
-- Line-of-sight targeting system
-- Ammo management
-- Projectile animations
+**Phase 3: Ranged Weapons** (2-3 weeks) 🟢 **IN PROGRESS**
+- ✅ **Basic Ranged Weapons**: Shortbow, Longbow, Crossbow (reach system!)
+- ✅ **Targeting System**: Uses existing reach/pathfinding system
+- ✅ **Auto-attack on Approach**: Stops at max range and fires!
+- 📋 **Ammo Management**: Track arrows/bolts, limited ammo (1-2 weeks)
+- 📋 **Projectile Animations**: Visual arrow/bolt flight path (1-2 weeks)
+- 📋 **Throwing Weapons**: Daggers, javelins, axes (1 week)
 
 **Phase 4: Monster Equipment & Loot** (1-2 weeks)
 - Monsters spawn with equipped weapons/armor
@@ -426,6 +478,27 @@ This roadmap should be updated:
 - Profile selection/creation UI
 - Leaderboard display (local only)
 
+**Wands System** (1-2 weeks)
+- **Rechargeable spell items**: Like scrolls but with multiple charges!
+- **Wand Types**: Wand of Fireball, Wand of Lightning, Wand of Healing, etc.
+- **Charge System**: 
+  - Each wand starts with 3-10 charges
+  - Using a wand consumes 1 charge
+  - Empty wands remain in inventory
+- **Recharging Mechanic**:
+  - "Feed" matching scrolls to wands to recharge them
+  - E.g., use Fireball Scroll on empty Wand of Fireball → +1 charge
+  - Intuitive: drag scroll onto wand or use scroll while targeting wand
+  - Makes scrolls valuable even when you have wands
+- **Benefits over Scrolls**:
+  - More reliable (no RNG on finding them)
+  - Encourages long-term planning
+  - Trade-off: rarer to find, but reusable
+- **Wand Durability**: 
+  - Max charges decrease over time (e.g., 10 → 9 → 8...)
+  - Eventually wands "wear out" and break
+  - Creates item sink and progression
+
 **Manual Level Design - Tier 3** (3-4 weeks)
 - Full ASCII map crafting
 - Hand-designed levels with precise entity placement
@@ -435,9 +508,18 @@ This roadmap should be updated:
 - Different terrain types (stone, dirt, water, etc.)
 - Destructible dirt walls that player can dig through
 - Strategic path creation and exploration options
-- Resource management for digging tools/abilities
 
-**Scrolling Maps & Camera System** (3-5 weeks)
+**Distribution & Packaging** (4-6 hours first time, 30 min subsequent)
+- **PyInstaller Setup**: Bundle Python + dependencies into standalone executables
+- **Windows Build**: Create .exe with no Python installation required
+- **macOS Build**: Create .app bundle (Intel + Apple Silicon)
+- **Testing**: Validate on clean machines (Windows 10/11, macOS)
+- **Documentation**: Installation instructions for playtesters
+- **GitHub Releases**: Automated release packaging
+- **Future**: Code signing ($100-400/year), installers (DMG/NSIS), CI/CD automation
+- **See:** `docs/DISTRIBUTION_PLAN.md` for complete guide
+
+**Scrolling Maps & Camera System** (3-5 weeks) ✅ **COMPLETE!**
 - Maps larger than viewport (currently 80x45)
 - Camera follows player movement
 - Smooth scrolling as player approaches edges

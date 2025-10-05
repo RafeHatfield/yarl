@@ -526,10 +526,10 @@ class GameMap:
                     failed_count += 1
                     break
                     
-                # Try to create equipment (try both weapon and armor)
-                equipment = entity_factory.create_armor(spawn.entity_type, x, y)
+                # Try to create equipment (try weapon first, then armor)
+                equipment = entity_factory.create_weapon(spawn.entity_type, x, y)
                 if not equipment:
-                    equipment = entity_factory.create_weapon(spawn.entity_type, x, y)
+                    equipment = entity_factory.create_armor(spawn.entity_type, x, y)
                     
                 if equipment:
                     entities.append(equipment)
@@ -764,9 +764,9 @@ class GameMap:
                     failed_count += 1
                     break
                     
-                equipment = entity_factory.create_armor(spawn.entity_type, x, y)
+                equipment = entity_factory.create_weapon(spawn.entity_type, x, y)
                 if not equipment:
-                    equipment = entity_factory.create_weapon(spawn.entity_type, x, y)
+                    equipment = entity_factory.create_armor(spawn.entity_type, x, y)
                     
                 if equipment:
                     entities.append(equipment)

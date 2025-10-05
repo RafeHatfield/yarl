@@ -103,6 +103,25 @@ def initialize_game_engine(
     # Initialize FOV
     fov_map = initialize_fov(game_map)
     engine.state_manager.set_fov_data(fov_map, fov_recompute=True)
+    
+    # Initialize Camera (Phase 2)
+    from rendering.camera import Camera, CameraMode
+    from config.ui_layout import get_ui_layout
+    ui_layout = get_ui_layout()
+    
+    camera = Camera(
+        viewport_width=ui_layout.viewport_width,
+        viewport_height=ui_layout.viewport_height,
+        map_width=game_map.width,
+        map_height=game_map.height,
+        mode=CameraMode.CENTER,  # Player is always centered
+    )
+    
+    # Center camera on player initially
+    camera.center_on(player.x, player.y)
+    
+    # Store camera in game state
+    engine.state_manager.update_state(camera=camera)
 
     # Set up the render system's FOV map
     render_system = engine.get_system("render")

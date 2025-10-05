@@ -36,13 +36,14 @@ class RenderOrder(Enum):
     # ACTOR = 4
 
 
-def get_names_under_mouse(mouse, entities, fov_map):
+def get_names_under_mouse(mouse, entities, fov_map, camera=None):
     """Get the names of all visible entities under the mouse cursor.
 
     Args:
         mouse: Mouse object with cursor coordinates (screen space)
         entities (list): List of all entities to check
         fov_map: Field of view map for visibility checking
+        camera: Camera for coordinate translation (optional)
 
     Returns:
         str: Comma-separated string of entity names under the cursor
@@ -50,11 +51,16 @@ def get_names_under_mouse(mouse, entities, fov_map):
     # Get screen coordinates from mouse
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
     
-    # Translate to world coordinates using ui_layout
+    # Translate to world coordinates using ui_layout and camera
     from config.ui_layout import get_ui_layout
     ui_layout = get_ui_layout()
     
-    world_coords = ui_layout.screen_to_world(screen_x, screen_y)
+    # Get camera offset if available
+    camera_x, camera_y = 0, 0
+    if camera:
+        camera_x, camera_y = camera.x, camera.y
+    
+    world_coords = ui_layout.screen_to_world(screen_x, screen_y, camera_x, camera_y)
     
     # If mouse is not over viewport, return empty string
     if world_coords is None:
@@ -127,15 +133,16 @@ def render_all(
     game_state,
     use_optimization=True,
     sidebar_console=None,
+    camera=None,
 ):
     """Render the entire game screen including map, entities, and UI.
 
     This is the main rendering function that draws everything visible
     on the screen including the game map, entities, UI panels, and menus.
     
-    Now supports 3-console split-screen layout:
+    Now supports 3-console split-screen layout with camera (Phase 2):
     - Sidebar (left, full height): Menu, stats, equipment
-    - Viewport (right, main): Map and entities
+    - Viewport (right, main): Map and entities (with camera scrolling!)
     - Status Panel (below viewport): HP, messages, dungeon info
 
     Args:
@@ -157,14 +164,15 @@ def render_all(
         game_state (GameStates): Current game state
         use_optimization (bool): Whether to use optimized tile rendering
         sidebar_console: Left sidebar console (optional, for new layout)
+        camera: Camera for viewport scrolling (optional, defaults to no scrolling)
     """
     # Render map tiles with optional optimization
     if use_optimization:
-        # Use optimized tile rendering with caching
-        render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=fov_recompute)
+        # Use optimized tile rendering with caching and camera
+        render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=fov_recompute, camera=camera)
     else:
         # Original tile rendering logic (kept for compatibility/debugging)
-        _render_tiles_original(con, game_map, fov_map, colors)
+        _render_tiles_original(con, game_map, fov_map, colors, camera)
 
     # Use cached entity sorting for performance optimization
     entities_in_render_order = get_sorted_entities(entities)
@@ -172,7 +180,7 @@ def render_all(
     # Draw all entities in the list
     # for entity in entities:
     for entity in entities_in_render_order:
-        draw_entity(con, entity, fov_map, game_map)
+        draw_entity(con, entity, fov_map, game_map, camera)
 
     # libtcod.console_set_default_foreground(con, (255, 255, 255))
     # libtcod.console_print_ex(con, 1, screen_height - 2, libtcod.BKGND_NONE, libtcod.LEFT,
@@ -195,7 +203,7 @@ def render_all(
     # This is the key to fixing the double-entity bug!
     effect_queue = get_effect_queue()
     if effect_queue.has_effects():
-        effect_queue.play_all(con=0)  # Play on root console
+        effect_queue.play_all(con=0, camera=camera)  # Play with camera translation
 
     libtcod.console_set_default_background(panel, (0, 0, 0))
     libtcod.console_clear(panel)
@@ -236,7 +244,7 @@ def render_all(
         0,
         libtcod.BKGND_NONE,
         libtcod.LEFT,
-        get_names_under_mouse(mouse, entities, fov_map),
+        get_names_under_mouse(mouse, entities, fov_map, camera),
     )
 
     # Blit status panel below viewport (not full width, just viewport width)
@@ -291,8 +299,8 @@ def render_all(
         render_death_screen(con, player, screen_width, screen_height, entity_quote)
 
 
-def _render_tiles_original(con, game_map, fov_map, colors):
-    """Original tile rendering logic (kept for compatibility/debugging).
+def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
+    """Original tile rendering logic with camera support (kept for compatibility/debugging).
     
     This function contains the original tile rendering code that processes
     every tile on every frame. It's kept for compatibility and performance
@@ -303,31 +311,51 @@ def _render_tiles_original(con, game_map, fov_map, colors):
         game_map: Game map containing tile data
         fov_map: Field of view map for visibility checks
         colors: Color configuration dictionary
+        camera: Camera for viewport scrolling (optional)
     """
-    for y in range(game_map.height):
-        for x in range(game_map.width):
+    # Determine which tiles to render based on camera viewport
+    if camera:
+        start_x, start_y, end_x, end_y = camera.get_viewport_bounds()
+        start_x = max(0, start_x)
+        start_y = max(0, start_y)
+        end_x = min(game_map.width, end_x)
+        end_y = min(game_map.height, end_y)
+    else:
+        start_x, start_y = 0, 0
+        end_x, end_y = game_map.width, game_map.height
+    
+    for y in range(start_y, end_y):
+        for x in range(start_x, end_x):
+            # Translate world coordinates to viewport coordinates
+            if camera:
+                if not camera.is_in_viewport(x, y):
+                    continue
+                viewport_x, viewport_y = camera.world_to_viewport(x, y)
+            else:
+                viewport_x, viewport_y = x, y
+            
             visible = map_is_in_fov(fov_map, x, y)
             wall = game_map.tiles[x][y].block_sight
 
             if visible:
                 if wall:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("light_wall"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("light_wall"), libtcod.BKGND_SET
                     )
                 else:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("light_ground"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("light_ground"), libtcod.BKGND_SET
                     )
 
                 game_map.tiles[x][y].explored = True
             elif game_map.tiles[x][y].explored:
                 if wall:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("dark_wall"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("dark_wall"), libtcod.BKGND_SET
                     )
                 else:
                     libtcod.console_set_char_background(
-                        con, x, y, colors.get("dark_ground"), libtcod.BKGND_SET
+                        con, viewport_x, viewport_y, colors.get("dark_ground"), libtcod.BKGND_SET
                     )
 
 
@@ -347,7 +375,7 @@ def clear_all(con, entities):
 #     libtcod.console_put_char(con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE)
 
 
-def draw_entity(con, entity, fov_map, game_map):
+def draw_entity(con, entity, fov_map, game_map, camera=None):
     """Draw a single entity on the console if it's visible.
 
     Args:
@@ -355,12 +383,25 @@ def draw_entity(con, entity, fov_map, game_map):
         entity (Entity): Entity to draw
         fov_map: Field of view map for visibility checking
         game_map (GameMap): Game map for tile information
+        camera: Camera for viewport translation (optional, defaults to no offset)
     """
     # Check if entity has stairs attribute (for backwards compatibility with saves)
     has_stairs = hasattr(entity, "stairs") and entity.stairs
     if map_is_in_fov(fov_map, entity.x, entity.y) or (
         has_stairs and game_map.tiles[entity.x][entity.y].explored
     ):
+        # Translate world coordinates to viewport coordinates using camera
+        if camera:
+            # Check if entity is in viewport
+            if not camera.is_in_viewport(entity.x, entity.y):
+                return  # Entity is outside viewport, don't render
+            
+            # Translate to viewport coordinates
+            viewport_x, viewport_y = camera.world_to_viewport(entity.x, entity.y)
+        else:
+            # No camera, use world coordinates directly (backward compatibility)
+            viewport_x, viewport_y = entity.x, entity.y
+        
         # Check if entity is invisible and modify rendering accordingly
         if hasattr(entity, 'invisible') and entity.invisible:
             # Render invisible entities with a translucent/faded appearance
@@ -374,12 +415,12 @@ def draw_entity(con, entity, fov_map, game_map):
             libtcod.console_set_default_foreground(con, invisible_color)
             # Use a different character to indicate invisibility (optional)
             char = '?' if entity.name == "Player" else entity.char
-            libtcod.console_put_char(con, entity.x, entity.y, char, libtcod.BKGND_NONE)
+            libtcod.console_put_char(con, viewport_x, viewport_y, char, libtcod.BKGND_NONE)
         else:
             # Normal rendering
             libtcod.console_set_default_foreground(con, entity.color)
             libtcod.console_put_char(
-                con, entity.x, entity.y, entity.char, libtcod.BKGND_NONE
+                con, viewport_x, viewport_y, entity.char, libtcod.BKGND_NONE
             )
 
 

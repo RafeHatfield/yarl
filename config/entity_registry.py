@@ -93,6 +93,10 @@ class WeaponDefinition:
     
     Supports both dice notation (1d4, 2d6) and legacy damage ranges.
     Dice notation is preferred for new weapons.
+    
+    Weapon Properties:
+    - two_handed: Requires both hands, prevents shield use
+    - reach: Attack range in tiles (default 1, spears have 2)
     """
     name: str
     power_bonus: int = 0
@@ -100,6 +104,8 @@ class WeaponDefinition:
     damage_max: int = 0
     damage_dice: Optional[str] = None  # e.g., "1d4", "1d6", "1d8", "1d10", "1d12", "2d6"
     to_hit_bonus: int = 0  # Bonus to attack rolls
+    two_handed: bool = False  # Requires both hands, prevents shield use
+    reach: int = 1  # Attack range in tiles (1 = adjacent, 2 = spear reach)
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -115,6 +121,8 @@ class WeaponDefinition:
             raise ValueError(f"Weapon damage_max ({self.damage_max}) cannot be less than damage_min ({self.damage_min})")
         if self.slot not in ["main_hand", "off_hand"]:
             raise ValueError(f"Weapon slot must be 'main_hand' or 'off_hand', got '{self.slot}'")
+        if self.reach < 1:
+            raise ValueError(f"Weapon reach must be >= 1, got {self.reach}")
 
 
 @dataclass
@@ -344,6 +352,8 @@ class EntityRegistry:
                     damage_max=damage_max,
                     damage_dice=damage_dice,
                     to_hit_bonus=weapon_data.get('to_hit_bonus', 0),
+                    two_handed=weapon_data.get('two_handed', False),  # NEW!
+                    reach=weapon_data.get('reach', 1),  # NEW!
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),
@@ -807,3 +817,6 @@ def load_entity_config(config_path: str = None) -> None:
             config_path = config_dir / config_path
     
     _entity_registry.load_from_file(str(config_path))
+    
+    logger.info(f"Entity configuration loaded: {len(_entity_registry.weapons)} weapons, "
+               f"{len(_entity_registry.monsters)} monsters, {len(_entity_registry.armor)} armor")

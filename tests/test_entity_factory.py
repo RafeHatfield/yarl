@@ -128,16 +128,16 @@ class TestEntityFactory:
         assert weapon.equippable.damage_max == 5
 
     def test_create_weapon_not_found(self):
-        """Test weapon creation when definition not found."""
+        """Test weapon creation when definition not found returns None.
+        
+        Changed behavior: Instead of creating fallback items, factory now returns None
+        to allow caller to try both create_weapon() and create_armor().
+        """
         self.mock_registry.get_weapon.return_value = None
 
         weapon = self.factory.create_weapon("unknown_weapon", 3, 7)
 
-        assert weapon is not None
-        assert weapon.name == "Unknown unknown_weapon"
-        assert weapon.char == "?"
-        assert weapon.color == (255, 0, 255)
-        assert weapon.equippable is not None
+        assert weapon is None, "Unknown weapon should return None, not fallback"
 
     def test_create_armor_success(self):
         """Test successful armor creation."""
@@ -158,16 +158,16 @@ class TestEntityFactory:
         assert armor.equippable.defense_max == 3
 
     def test_create_armor_not_found(self):
-        """Test armor creation when definition not found."""
+        """Test armor creation when definition not found returns None.
+        
+        Changed behavior: Instead of creating fallback items, factory now returns None
+        to allow caller to try both create_weapon() and create_armor().
+        """
         self.mock_registry.get_armor.return_value = None
 
         armor = self.factory.create_armor("unknown_armor", 2, 8)
 
-        assert armor is not None
-        assert armor.name == "Unknown unknown_armor"
-        assert armor.char == "?"
-        assert armor.color == (255, 0, 255)
-        assert armor.equippable is not None
+        assert armor is None, "Unknown armor should return None, not fallback"
 
     @patch('item_functions.heal')
     def test_create_spell_item_healing_potion(self, mock_heal):

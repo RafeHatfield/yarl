@@ -221,9 +221,9 @@ class ItemSpawnConfig:
 class GameplayConfig:
     """Configuration for core gameplay mechanics."""
     
-    # Map generation
-    DEFAULT_MAP_WIDTH: int = 80
-    DEFAULT_MAP_HEIGHT: int = 43
+    # Map generation (Phase 3: Larger maps for exploration!)
+    DEFAULT_MAP_WIDTH: int = 120   # Was 80 - 50% larger
+    DEFAULT_MAP_HEIGHT: int = 80   # Was 43 - ~86% larger
     
     # Room generation
     MIN_ROOM_SIZE: int = 6
