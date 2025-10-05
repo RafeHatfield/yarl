@@ -365,10 +365,13 @@ class Entity:
         dy = other.y - self.y
         return math.sqrt(dx**2 + dy**2)
     
-    def get_display_name(self) -> str:
+    def get_display_name(self, compact: bool = False) -> str:
         """Get the display name with damage/defense ranges if applicable.
         
         For wands, includes charge count.
+        
+        Args:
+            compact: If True, return abbreviated name for sidebar display
         
         Returns:
             str: Display name with damage/defense info in brackets, or charge count for wands
@@ -376,7 +379,7 @@ class Entity:
         # Check if this is a wand - if so, use the wand's display name
         wand = getattr(self, 'wand', None)
         if wand:
-            return wand.get_display_name()
+            return wand.get_display_name(compact=compact)
         
         # Replace underscores with spaces for better readability
         # Handle case where name might not be a string

@@ -89,6 +89,35 @@ class Inventory:
                 )
 
                 self.items.append(item)
+                
+                # NEW: If we just picked up a wand, check for matching scrolls to consume
+                wand = getattr(item, 'wand', None)
+                if wand:
+                    # This is a wand! Look for matching scrolls in inventory
+                    scrolls_to_consume = []
+                    for inv_item in self.items:
+                        if inv_item == item:  # Skip the wand itself
+                            continue
+                        # Check if this is a scroll matching the wand's spell type
+                        if inv_item.item and inv_item.item.use_function:
+                            scroll_name = inv_item.name.lower().replace(' ', '_')
+                            if scroll_name == wand.spell_type:
+                                scrolls_to_consume.append(inv_item)
+                    
+                    # Consume all matching scrolls
+                    if scrolls_to_consume:
+                        for scroll in scrolls_to_consume:
+                            self.items.remove(scroll)
+                            wand.add_charge()
+                        
+                        scroll_word = "scroll" if len(scrolls_to_consume) == 1 else "scrolls"
+                        results.append({
+                            "message": Message(
+                                f"Your {item.name} hungrily absorbs {len(scrolls_to_consume)} {scroll_word}! "
+                                f"({wand.charges} charges)",
+                                (255, 215, 0)  # Gold
+                            )
+                        })
 
         return results
 

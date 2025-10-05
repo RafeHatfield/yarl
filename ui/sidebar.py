@@ -149,7 +149,11 @@ def render_sidebar(console, player, ui_layout) -> None:
             
             for item in inventory_items:
                 # Format: "a) Potion"
-                item_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+                # Use compact name for wands to fit in sidebar
+                if hasattr(item, 'get_display_name'):
+                    item_name = item.get_display_name(compact=True)
+                else:
+                    item_name = item.name
                 
                 # Truncate if too long
                 max_name_len = ui_layout.sidebar_content_width - 4  # "a) " = 3 chars + 1 space

@@ -243,6 +243,62 @@ class TestWandRecharge:
         
         # Should still recharge (no max limit)
         assert self.wand_component.charges == 101
+    
+    def test_picking_up_wand_consumes_existing_scrolls(self):
+        """Test that picking up a wand consumes matching scrolls already in inventory."""
+        # Start with 3 fireball scrolls in inventory
+        for i in range(3):
+            scroll = Entity(0, 0, '~', (255, 0, 0), 'Fireball Scroll', blocks=False)
+            scroll.item = Item(use_function=Mock())
+            self.inventory.items.append(scroll)
+        
+        # Create a new wand (not in inventory yet)
+        new_wand = Entity(0, 0, '/', (255, 200, 0), 'Wand of Fireball', blocks=False)
+        new_wand_component = Wand(spell_type="fireball_scroll", charges=2)
+        new_wand.wand = new_wand_component
+        new_wand_component.owner = new_wand
+        
+        # Pick up the wand
+        results = self.inventory.add_item(new_wand)
+        
+        # Wand should have consumed all 3 scrolls
+        assert new_wand_component.charges == 5  # 2 starting + 3 from scrolls
+        
+        # Scrolls should be gone from inventory
+        scrolls_in_inventory = [item for item in self.inventory.items if 'Scroll' in item.name]
+        assert len(scrolls_in_inventory) == 0
+        
+        # Should have message about absorption
+        messages = [r.get("message") for r in results if r.get("message")]
+        absorption_messages = [m for m in messages if "absorbs" in str(m).lower()]
+        assert len(absorption_messages) > 0
+    
+    def test_picking_up_wand_with_no_matching_scrolls(self):
+        """Test that picking up a wand when no matching scrolls exist works normally."""
+        # Start with a lightning scroll (doesn't match fireball wand)
+        scroll = Entity(0, 0, '~', (255, 255, 0), 'Lightning Scroll', blocks=False)
+        scroll.item = Item(use_function=Mock())
+        self.inventory.items.append(scroll)
+        
+        # Create a fireball wand
+        new_wand = Entity(0, 0, '/', (255, 200, 0), 'Wand of Fireball', blocks=False)
+        new_wand_component = Wand(spell_type="fireball_scroll", charges=3)
+        new_wand.wand = new_wand_component
+        new_wand_component.owner = new_wand
+        
+        # Pick up the wand
+        results = self.inventory.add_item(new_wand)
+        
+        # Wand should have starting charges only
+        assert new_wand_component.charges == 3
+        
+        # Lightning scroll should still be there
+        assert scroll in self.inventory.items
+        
+        # Should NOT have absorption message
+        messages = [r.get("message") for r in results if r.get("message")]
+        absorption_messages = [m for m in messages if "absorbs" in str(m).lower()]
+        assert len(absorption_messages) == 0
 
 
 class TestWandDisplayName:
