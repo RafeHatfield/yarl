@@ -1,11 +1,47 @@
 """Tooltip rendering system.
 
 Provides hover tooltips for UI elements, particularly for items in the sidebar
-that have abbreviated names.
+that have abbreviated names, and for items on the ground in the viewport.
 """
 
 import tcod.libtcodpy as libtcod
 from typing import Optional, Any
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_map=None) -> Optional[Any]:
+    """Get the item on the ground at the specified world coordinates.
+    
+    Args:
+        world_x: X coordinate in world space
+        world_y: Y coordinate in world space
+        entities: List of all entities in the game
+        fov_map: Optional FOV map to check visibility
+        
+    Returns:
+        Item entity if there's an item at that position, None otherwise
+    """
+    # Check FOV if provided (only show tooltips for visible items)
+    if fov_map:
+        from fov_functions import map_is_in_fov
+        if not map_is_in_fov(fov_map, world_x, world_y):
+            return None
+    
+    # Find items at this position (prioritize items over corpses)
+    items_at_pos = []
+    for entity in entities:
+        if entity.x == world_x and entity.y == world_y:
+            # Check if it's an item (has item component and not the player)
+            if hasattr(entity, 'item') and entity.item:
+                items_at_pos.append(entity)
+    
+    # Return the first item found (if multiple items stacked, show top one)
+    if items_at_pos:
+        return items_at_pos[0]
+    
+    return None
 
 
 def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout) -> Optional[Any]:
@@ -88,18 +124,66 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
     # Build tooltip lines
     tooltip_lines = [item_name]
     
-    # Add item type/description
+    # Add detailed item information
     if hasattr(item, 'wand') and item.wand:
-        tooltip_lines.append(f"Multi-use spell caster")
-        tooltip_lines.append(f"{item.wand.charges} charges remaining")
+        tooltip_lines.append(f"Wand ({item.wand.charges} charges)")
     elif hasattr(item, 'equippable') and item.equippable:
-        if hasattr(item.equippable, 'damage_dice') and item.equippable.damage_dice:
-            tooltip_lines.append("Weapon")
-        elif hasattr(item.equippable, 'defense_bonus') and item.equippable.defense_bonus:
-            tooltip_lines.append("Armor")
+        eq = item.equippable
+        
+        # Weapon information
+        if hasattr(eq, 'damage_dice') and eq.damage_dice:
+            weapon_info = f"Weapon: {eq.damage_dice} damage"
+            if hasattr(eq, 'to_hit_bonus') and eq.to_hit_bonus:
+                weapon_info += f", +{eq.to_hit_bonus} to hit"
+            tooltip_lines.append(weapon_info)
+            
+            # Reach info
+            if hasattr(eq, 'reach') and eq.reach and eq.reach > 1:
+                tooltip_lines.append(f"Range: {eq.reach} tiles")
+            
+            # Two-handed
+            if hasattr(eq, 'two_handed') and eq.two_handed:
+                tooltip_lines.append("Two-handed")
+        
+        # Armor information
+        elif hasattr(eq, 'defense_bonus') and eq.defense_bonus:
+            armor_info = f"Armor: +{eq.defense_bonus} AC"
+            tooltip_lines.append(armor_info)
+            
+            # DEX cap for armor
+            if hasattr(eq, 'max_dex_bonus') and eq.max_dex_bonus is not None:
+                tooltip_lines.append(f"Max DEX bonus: +{eq.max_dex_bonus}")
+        
+        # Slot information
+        if hasattr(eq, 'slot'):
+            slot_name = eq.slot.replace('_', ' ').title()
+            tooltip_lines.append(f"Slot: {slot_name}")
+    
     elif hasattr(item, 'item') and item.item:
         if item.item.use_function:
-            tooltip_lines.append("Consumable")
+            # Get function name for better description
+            func_name = item.item.use_function.__name__ if hasattr(item.item.use_function, '__name__') else 'Unknown'
+            
+            if 'heal' in func_name:
+                tooltip_lines.append("Consumable: Healing")
+            elif 'lightning' in func_name:
+                tooltip_lines.append("Scroll: Lightning Bolt")
+            elif 'fireball' in func_name:
+                tooltip_lines.append("Scroll: Fireball")
+            elif 'confuse' in func_name:
+                tooltip_lines.append("Scroll: Confusion")
+            elif 'teleport' in func_name:
+                tooltip_lines.append("Scroll: Teleportation")
+            elif 'yo_mama' in func_name:
+                tooltip_lines.append("Scroll: Yo Mama")
+            elif 'slow' in func_name:
+                tooltip_lines.append("Scroll: Slow")
+            elif 'glue' in func_name:
+                tooltip_lines.append("Scroll: Glue")
+            elif 'rage' in func_name:
+                tooltip_lines.append("Scroll: Rage")
+            else:
+                tooltip_lines.append("Consumable")
     
     # Calculate tooltip dimensions
     tooltip_width = max(len(line) for line in tooltip_lines) + 4  # +4 for padding

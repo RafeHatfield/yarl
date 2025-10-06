@@ -298,11 +298,26 @@ def render_all(
         from death_screen import render_death_screen
         render_death_screen(con, player, screen_width, screen_height, entity_quote)
     
-    # Render tooltip for sidebar items (if hovering)
+    # Render tooltips (if hovering over items)
     # This should be rendered LAST so it appears on top of everything
     if mouse and hasattr(mouse, 'cx') and hasattr(mouse, 'cy'):
-        from ui.tooltip import get_sidebar_item_at_position, render_tooltip
+        from ui.tooltip import get_sidebar_item_at_position, get_ground_item_at_position, render_tooltip
+        
+        # First check if hovering over a sidebar item
         hovered_item = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
+        
+        # If not hovering over sidebar item, check for ground items in viewport
+        if not hovered_item and ui_layout.is_in_viewport(mouse.cx, mouse.cy):
+            # Convert screen coordinates to world coordinates
+            camera_x, camera_y = 0, 0
+            if camera:
+                camera_x, camera_y = camera.x, camera.y
+            
+            world_coords = ui_layout.screen_to_world(mouse.cx, mouse.cy, camera_x, camera_y)
+            if world_coords:
+                world_x, world_y = world_coords
+                hovered_item = get_ground_item_at_position(world_x, world_y, entities, fov_map)
+        
         if hovered_item:
             # Render tooltip on ROOT console (0) so it appears on top of everything
             # Use screen coordinates directly since we're rendering to root
