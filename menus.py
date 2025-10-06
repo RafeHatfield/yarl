@@ -9,6 +9,70 @@ import tcod as libtcod
 from tcod import libtcodpy
 from entity_dialogue import EntityDialogue
 from config.ui_layout import get_ui_layout
+from typing import Optional
+
+
+def get_menu_click_index(mouse_x: int, mouse_y: int, header: str, options: list, 
+                         width: int, screen_width: int, screen_height: int) -> Optional[int]:
+    """Check if mouse click is on a menu item and return the index.
+    
+    Args:
+        mouse_x: Mouse X coordinate (screen space)
+        mouse_y: Mouse Y coordinate (screen space)
+        header: Menu header text
+        options: List of menu option strings
+        width: Width of menu
+        screen_width: Screen width
+        screen_height: Screen height
+    
+    Returns:
+        int: Index of clicked option, or None if click wasn't on an option
+    """
+    if len(options) > 26 or len(options) == 0:
+        return None
+    
+    # Calculate menu position (same logic as menu() function)
+    # Need to calculate header height
+    header_height = libtcodpy.console_get_height_rect(
+        0, 0, 0, width, screen_height, header
+    )
+    
+    height = len(options) + header_height
+    
+    # Calculate menu position
+    if header == "":
+        # Main menu - center on full screen
+        menu_x = int(screen_width / 2 - width / 2)
+        menu_y = int(screen_height / 2 - height / 2)
+    else:
+        # In-game menu - center in viewport area
+        ui_layout = get_ui_layout()
+        viewport_pos = ui_layout.viewport_position
+        
+        # Center within viewport
+        menu_x = viewport_pos[0] + int(ui_layout.viewport_width / 2 - width / 2)
+        menu_y = viewport_pos[1] + int(ui_layout.viewport_height / 2 - height / 2)
+    
+    # Check if click is within menu bounds
+    if mouse_x < menu_x or mouse_x >= menu_x + width:
+        return None
+    if mouse_y < menu_y or mouse_y >= menu_y + height:
+        return None
+    
+    # Calculate which line was clicked
+    relative_y = mouse_y - menu_y
+    
+    # Options start after the header
+    if relative_y < header_height:
+        return None
+    
+    option_line = relative_y - header_height
+    
+    # Check if within options range
+    if option_line < 0 or option_line >= len(options):
+        return None
+    
+    return option_line
 
 
 def menu(con, header, options, width, screen_width, screen_height):

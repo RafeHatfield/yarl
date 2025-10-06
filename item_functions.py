@@ -918,8 +918,9 @@ def cast_yo_mama(*args, **kwargs):
     Args:
         *args: Standard targeting args (caster entity)
         **kwargs: Should contain:
-            - target: The entity to taunt
+            - target_x, target_y: Coordinates to target
             - entities: List of all entities in the game
+            - fov_map: Field of view map
     
     Returns:
         list: List of result dictionaries with consumption and message info
@@ -929,13 +930,26 @@ def cast_yo_mama(*args, **kwargs):
     import os
     
     caster = args[0] if args else None
-    target = kwargs.get("target")
     entities = kwargs.get("entities", [])
+    fov_map = kwargs.get("fov_map")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
     
     results = []
     
+    # Check if target location is in FOV
+    if not map_is_in_fov(fov_map, target_x, target_y):
+        return [{"consumed": False, "message": Message("You cannot target something you cannot see.", (255, 255, 0))}]
+    
+    # Find target entity at coordinates
+    target = None
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.fighter:
+            target = entity
+            break
+    
     if not target:
-        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+        return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
     
     # Load jokes from YAML
     jokes_path = os.path.join(os.path.dirname(__file__), "config", "yo_mama_jokes.yaml")
@@ -1010,20 +1024,36 @@ def cast_slow(*args, **kwargs):
     Args:
         *args: Standard targeting args (caster entity)
         **kwargs: Should contain:
-            - target: The entity to slow
+            - target_x, target_y: Coordinates to target
+            - entities: List of all entities
+            - fov_map: Field of view map
             - duration: How many turns the slow lasts (default 10)
     
     Returns:
         list: List of result dictionaries with consumption and message info
     """
     caster = args[0] if args else None
-    target = kwargs.get("target")
+    entities = kwargs.get("entities", [])
+    fov_map = kwargs.get("fov_map")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
     duration = kwargs.get("duration", 10)
     
     results = []
     
+    # Check if target location is in FOV
+    if not map_is_in_fov(fov_map, target_x, target_y):
+        return [{"consumed": False, "message": Message("You cannot target something you cannot see.", (255, 255, 0))}]
+    
+    # Find target entity at coordinates
+    target = None
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.fighter:
+            target = entity
+            break
+    
     if not target:
-        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+        return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
     
     # Apply SlowedEffect
     from components.status_effects import SlowedEffect, StatusEffectManager
@@ -1050,20 +1080,36 @@ def cast_glue(*args, **kwargs):
     Args:
         *args: Standard targeting args (caster entity)
         **kwargs: Should contain:
-            - target: The entity to immobilize
+            - target_x, target_y: Coordinates to target
+            - entities: List of all entities
+            - fov_map: Field of view map
             - duration: How many turns they're stuck (default 5)
     
     Returns:
         list: List of result dictionaries with consumption and message info
     """
     caster = args[0] if args else None
-    target = kwargs.get("target")
+    entities = kwargs.get("entities", [])
+    fov_map = kwargs.get("fov_map")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
     duration = kwargs.get("duration", 5)
     
     results = []
     
+    # Check if target location is in FOV
+    if not map_is_in_fov(fov_map, target_x, target_y):
+        return [{"consumed": False, "message": Message("You cannot target something you cannot see.", (255, 255, 0))}]
+    
+    # Find target entity at coordinates
+    target = None
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.fighter:
+            target = entity
+            break
+    
     if not target:
-        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+        return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
     
     # Apply ImmobilizedEffect
     from components.status_effects import ImmobilizedEffect, StatusEffectManager
@@ -1093,20 +1139,36 @@ def cast_rage(*args, **kwargs):
     Args:
         *args: Standard targeting args (caster entity)
         **kwargs: Should contain:
-            - target: The entity to enrage
+            - target_x, target_y: Coordinates to target
+            - entities: List of all entities
+            - fov_map: Field of view map
             - duration: How many turns they're enraged (default 8)
     
     Returns:
         list: List of result dictionaries with consumption and message info
     """
     caster = args[0] if args else None
-    target = kwargs.get("target")
+    entities = kwargs.get("entities", [])
+    fov_map = kwargs.get("fov_map")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
     duration = kwargs.get("duration", 8)
     
     results = []
     
+    # Check if target location is in FOV
+    if not map_is_in_fov(fov_map, target_x, target_y):
+        return [{"consumed": False, "message": Message("You cannot target something you cannot see.", (255, 255, 0))}]
+    
+    # Find target entity at coordinates
+    target = None
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y and entity.fighter:
+            target = entity
+            break
+    
     if not target:
-        return [{"consumed": False, "message": Message("No target selected.", (255, 255, 0))}]
+        return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
     
     # Apply EnragedEffect
     from components.status_effects import EnragedEffect, StatusEffectManager

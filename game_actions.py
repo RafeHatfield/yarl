@@ -389,7 +389,10 @@ class ActionProcessor:
                         message_log.add_message(message)
                     
                     item_added = result.get("item_added")
-                    if item_added:
+                    item_consumed = result.get("item_consumed")
+                    
+                    # Remove entity if it was added to inventory OR consumed (e.g., scroll recharged a wand)
+                    if item_added or item_consumed:
                         entities.remove(entity)
                 
                 break
@@ -649,9 +652,63 @@ class ActionProcessor:
         """Handle left mouse click.
         
         Args:
-            click_pos: Tuple of (x, y) click coordinates
+            click_pos: Tuple of (x, y) click coordinates (world coords for targeting, screen coords for menus)
         """
         current_state = self.state_manager.state.current_state
+        
+        # Handle clicks on inventory/drop menus
+        if current_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+            player = self.state_manager.state.player
+            if not player or not hasattr(player, 'inventory'):
+                return
+            
+            # Get menu parameters (same as render_functions.py)
+            from menus import get_menu_click_index
+            from config.ui_layout import get_ui_layout
+            ui_layout = get_ui_layout()
+            
+            # Build options list (same as inventory_menu in menus.py)
+            if len(player.inventory.items) == 0:
+                options = ["Inventory is empty."]
+            else:
+                options = []
+                for item in player.inventory.items:
+                    display_name = item.get_display_name()
+                    
+                    # Check if item is equipped
+                    if player.equipment.main_hand == item:
+                        options.append("{0} (equipped)".format(display_name))
+                    elif player.equipment.off_hand == item:
+                        options.append("{0} (equipped)".format(display_name))
+                    elif player.equipment.head == item:
+                        options.append("{0} (equipped)".format(display_name))
+                    elif player.equipment.chest == item:
+                        options.append("{0} (equipped)".format(display_name))
+                    elif player.equipment.feet == item:
+                        options.append("{0} (equipped)".format(display_name))
+                    else:
+                        options.append(display_name)
+            
+            # Determine header based on state
+            if current_state == GameStates.SHOW_INVENTORY:
+                header = "Press the key next to an item to use it, or Esc to cancel.\n"
+            else:
+                header = "Press the key next to an item to drop it, or Esc to cancel.\n"
+            
+            # Check if click is on a menu item (click_pos is screen coordinates)
+            mouse_x, mouse_y = click_pos
+            clicked_index = get_menu_click_index(
+                mouse_x, mouse_y, header, options, 50, 
+                ui_layout.screen_width, ui_layout.screen_height
+            )
+            
+            if clicked_index is not None and clicked_index < len(player.inventory.items):
+                # User clicked on an inventory item!
+                if current_state == GameStates.SHOW_INVENTORY:
+                    self._handle_inventory_action(clicked_index)
+                else:  # DROP_INVENTORY
+                    self._handle_drop_item(clicked_index)
+            return
         
         if current_state == GameStates.TARGETING:
             target_x, target_y = click_pos

@@ -180,7 +180,8 @@ class InputSystem(System):
             if self.engine and hasattr(self.engine, 'state_manager'):
                 if hasattr(self.engine.state_manager.state, 'camera'):
                     camera = self.engine.state_manager.state.camera
-            return handler(self.current_mouse, camera)
+            # Pass game state to handler for context-aware coordinate translation
+            return handler(self.current_mouse, camera, current_state)
         return {}
 
     def _execute_action_callbacks(self) -> None:

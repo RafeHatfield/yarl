@@ -173,18 +173,30 @@ def handle_player_dead_keys(key, death_frame_counter=None):
     return {}
 
 
-def handle_mouse(mouse, camera=None):
+def handle_mouse(mouse, camera=None, game_state=None):
     """Handle mouse input events with coordinate translation for split-screen layout.
 
     Args:
         mouse: tcod Mouse object containing mouse state information
         camera: Optional Camera object for coordinate translation with viewport scrolling
+        game_state: Optional GameState for context-aware coordinate handling
 
     Returns:
-        dict: Dictionary with mouse action keys (coordinates in world space)
+        dict: Dictionary with mouse action keys (coordinates vary by context)
     """
+    from game_states import GameStates
+    
     # Get raw screen coordinates
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
+    
+    # For menu states (SHOW_INVENTORY, DROP_INVENTORY), return screen coordinates
+    # because menus are rendered as overlays at screen positions
+    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+        if mouse.lbutton_pressed:
+            return {"left_click": (screen_x, screen_y)}
+        elif mouse.rbutton_pressed:
+            return {"right_click": (screen_x, screen_y)}
+        return {}
     
     # Translate screen coordinates to world coordinates
     # This accounts for sidebar offset, viewport positioning, AND camera offset

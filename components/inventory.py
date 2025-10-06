@@ -68,6 +68,7 @@ class Inventory:
                         
                         results.append({
                             "item_added": None,  # Scroll was consumed, not added
+                            "item_consumed": item,  # Signal that scroll should be removed from world
                             "message": Message(
                                 f"Your {item.name} glows brightly and vanishes! "
                                 f"Your {inv_item.name} gains a charge. ({wand.charges} charges)",

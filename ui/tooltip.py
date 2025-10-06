@@ -135,31 +135,33 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
     
     # Draw border
     libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
+    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
     
     # Top and bottom borders
     for x in range(tooltip_width):
-        libtcod.console_put_char(console, tooltip_x + x, tooltip_y, ord('─'), libtcod.BKGND_NONE)
-        libtcod.console_put_char(console, tooltip_x + x, tooltip_y + tooltip_height - 1, ord('─'), libtcod.BKGND_NONE)
+        libtcod.console_put_char(console, tooltip_x + x, tooltip_y, ord('─'), libtcod.BKGND_SET)
+        libtcod.console_put_char(console, tooltip_x + x, tooltip_y + tooltip_height - 1, ord('─'), libtcod.BKGND_SET)
     
     # Side borders
     for y in range(tooltip_height):
-        libtcod.console_put_char(console, tooltip_x, tooltip_y + y, ord('│'), libtcod.BKGND_NONE)
-        libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + y, ord('│'), libtcod.BKGND_NONE)
+        libtcod.console_put_char(console, tooltip_x, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
+        libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
     
     # Corners
-    libtcod.console_put_char(console, tooltip_x, tooltip_y, ord('┌'), libtcod.BKGND_NONE)
-    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y, ord('┐'), libtcod.BKGND_NONE)
-    libtcod.console_put_char(console, tooltip_x, tooltip_y + tooltip_height - 1, ord('└'), libtcod.BKGND_NONE)
-    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + tooltip_height - 1, ord('┘'), libtcod.BKGND_NONE)
+    libtcod.console_put_char(console, tooltip_x, tooltip_y, ord('┌'), libtcod.BKGND_SET)
+    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y, ord('┐'), libtcod.BKGND_SET)
+    libtcod.console_put_char(console, tooltip_x, tooltip_y + tooltip_height - 1, ord('└'), libtcod.BKGND_SET)
+    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + tooltip_height - 1, ord('┘'), libtcod.BKGND_SET)
     
     # Draw tooltip content
     libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
+    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
     for i, line in enumerate(tooltip_lines):
         libtcod.console_print_ex(
             console,
             tooltip_x + 2,  # Padding from left border
             tooltip_y + 1 + i,  # +1 for top border
-            libtcod.BKGND_NONE,
+            libtcod.BKGND_SET,  # BKGND_SET ensures solid background behind text
             libtcod.LEFT,
             line
         )
