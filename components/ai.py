@@ -88,17 +88,34 @@ class BasicMonster:
         results = []
         actions_taken = []
 
+        # Process status effects at the start of turn
+        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
+            effect_results = self.owner.status_effects.process_turn_start()
+            for result in effect_results:
+                # Check if status effect wants to skip this turn (e.g., Slow effect)
+                if result.get('skip_turn'):
+                    from game_messages import Message
+                    results.append(result)
+                    return results  # Skip turn entirely
+                results.append(result)
+
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
+        is_pursuing_taunt = False
         if taunted_target and taunted_target != self.owner:
             # Override normal targeting - attack the taunted entity instead!
             target = taunted_target
+            is_pursuing_taunt = True
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
-        if map_is_in_fov(fov_map, monster.x, monster.y):
-            # Check if target is invisible - if so, can't see them
-            if (hasattr(target, 'has_status_effect') and 
+        
+        # If pursuing a taunted target, act regardless of FOV (entire dungeon hears the insult!)
+        # Otherwise, only act if monster is in player's FOV
+        if is_pursuing_taunt or map_is_in_fov(fov_map, monster.x, monster.y):
+            # Check if target is invisible - but taunt overrides invisibility!
+            if (not is_pursuing_taunt and 
+                hasattr(target, 'has_status_effect') and 
                 callable(target.has_status_effect) and 
                 target.has_status_effect('invisibility') is True):
                 MonsterActionLogger.log_turn_summary(monster, ["cannot_see_invisible_target"])
@@ -326,12 +343,25 @@ class MindlessZombieAI:
         
         results = []
         
+        # Process status effects at the start of turn
+        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
+            effect_results = self.owner.status_effects.process_turn_start()
+            for result in effect_results:
+                # Check if status effect wants to skip this turn (e.g., Slow effect)
+                if result.get('skip_turn'):
+                    from game_messages import Message
+                    results.append(result)
+                    return results  # Skip turn entirely
+                results.append(result)
+        
         # Check if there's a taunted target (Yo Mama spell effect)
         # Even mindless zombies are drawn to the insult!
         taunted_target = find_taunted_target(entities)
+        is_pursuing_taunt = False
         if taunted_target and taunted_target != self.owner:
             # Override current target with taunted target
             self.current_target = taunted_target
+            is_pursuing_taunt = True
         
         # Zombies have limited FOV (radius 5)
         zombie_fov_radius = 5
@@ -344,7 +374,8 @@ class MindlessZombieAI:
             
             if target_in_entities and target_has_fighter:
                 distance = self.owner.distance_to(self.current_target)
-                in_fov = distance <= zombie_fov_radius
+                # If pursuing taunt, always "see" the target (entire dungeon heard the insult!)
+                in_fov = is_pursuing_taunt or distance <= zombie_fov_radius
                 
                 if in_fov:
                     # Target still in FOV!
@@ -577,17 +608,30 @@ class SlimeAI:
         results = []
         monster = self.owner
         
-        # Only act when monster is in player's FOV (prevents off-screen monster-vs-monster)
-        # This keeps the action focused on what the player can see
-        if not map_is_in_fov(fov_map, monster.x, monster.y):
-            return results
+        # Process status effects at the start of turn
+        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
+            effect_results = self.owner.status_effects.process_turn_start()
+            for result in effect_results:
+                # Check if status effect wants to skip this turn (e.g., Slow effect)
+                if result.get('skip_turn'):
+                    from game_messages import Message
+                    results.append(result)
+                    return results  # Skip turn entirely
+                results.append(result)
         
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
+        is_pursuing_taunt = False
         if taunted_target and taunted_target != self.owner:
             # Override normal targeting - slimes are drawn to the insult!
             best_target = taunted_target
+            is_pursuing_taunt = True
         else:
+            # Only act when monster is in player's FOV (prevents off-screen monster-vs-monster)
+            # This keeps the action focused on what the player can see
+            if not map_is_in_fov(fov_map, monster.x, monster.y):
+                return results
+            
             # Find the best target based on faction relationships and distance
             best_target = self._find_best_target(entities, fov_map)
         
