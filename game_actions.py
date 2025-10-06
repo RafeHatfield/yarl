@@ -163,11 +163,13 @@ class ActionProcessor:
             # Handle FOV recompute
             if r.get("fov_recompute"):
                 from fov_functions import recompute_fov
+                from config.game_constants import GAME_CONFIG
+                fov_radius = GAME_CONFIG.fov_radius if hasattr(GAME_CONFIG, 'fov_radius') else 10
                 recompute_fov(
                     self.state_manager.state.fov_map,
                     player.x,
                     player.y,
-                    self.state_manager.state.game_map
+                    fov_radius
                 )
             
             # Handle enemy turn
@@ -965,6 +967,9 @@ class ActionProcessor:
                     message_log.add_message(
                         Message(f"Moving to pick up {target_item.name}...", (100, 200, 255))
                     )
+                    
+                    # Immediately start moving along the path
+                    self._process_pathfinding_movement_action(None)
                 else:
                     from game_messages import Message
                     message_log.add_message(
