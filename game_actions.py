@@ -163,8 +163,8 @@ class ActionProcessor:
             # Handle FOV recompute
             if r.get("fov_recompute"):
                 from fov_functions import recompute_fov
-                from config.game_constants import GAME_CONFIG
-                fov_radius = GAME_CONFIG.fov_radius if hasattr(GAME_CONFIG, 'fov_radius') else 10
+                from config.game_constants import GAME_CONSTANTS
+                fov_radius = GAME_CONSTANTS.rendering.DEFAULT_FOV_RADIUS
                 recompute_fov(
                     self.state_manager.state.fov_map,
                     player.x,
