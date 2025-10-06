@@ -337,7 +337,7 @@ def enhance_weapon(*args, **kwargs):
 
 
 def enhance_armor(*args, **kwargs):
-    """Enhance the equipped armor's defense range.
+    """Enhance a random equipped armor piece's defense range.
     
     Args:
         *args: First argument should be the entity using the scroll
@@ -352,40 +352,59 @@ def enhance_armor(*args, **kwargs):
     
     results = []
     
-    # Check if player has equipment and armor equipped
-    if (hasattr(entity, 'equipment') and entity.equipment and 
-        entity.equipment.off_hand and entity.equipment.off_hand.equippable):
-        
-        armor = entity.equipment.off_hand
-        old_min = armor.equippable.defense_min
-        old_max = armor.equippable.defense_max
-        
-        # Only enhance armor that has defense ranges
-        if old_min > 0 and old_max > 0:
-            armor.equippable.modify_defense_range(min_bonus, max_bonus)
-            
-            results.append({
-                "consumed": True,
-                "message": Message(
-                    f"Your {armor.name} shimmers! Defense enhanced from "
-                    f"({old_min}-{old_max}) to ({armor.equippable.defense_min}-{armor.equippable.defense_max}).",
-                    (0, 255, 0)
-                )
-            })
-        else:
-            results.append({
-                "consumed": False,
-                "message": Message(
-                    f"The {armor.name} cannot be enhanced further.", (255, 255, 0)
-                )
-            })
-    else:
+    # Check if player has equipment
+    if not (hasattr(entity, 'equipment') and entity.equipment):
         results.append({
             "consumed": False,
             "message": Message(
                 "You must have armor equipped to use this scroll.", (255, 255, 0)
             )
         })
+        return results
+    
+    # Collect all equipped armor pieces (any equipment slot with defense)
+    armor_pieces = []
+    equipment_slots = [
+        ('head', entity.equipment.head),
+        ('chest', entity.equipment.chest),
+        ('feet', entity.equipment.feet),
+        ('off_hand', entity.equipment.off_hand),
+    ]
+    
+    for slot_name, item in equipment_slots:
+        if item and hasattr(item, 'equippable') and item.equippable:
+            # Check if this item has defense (armor piece)
+            if hasattr(item.equippable, 'defense_min') and hasattr(item.equippable, 'defense_max'):
+                if item.equippable.defense_min > 0 and item.equippable.defense_max > 0:
+                    armor_pieces.append((slot_name, item))
+    
+    if not armor_pieces:
+        results.append({
+            "consumed": False,
+            "message": Message(
+                "You must have armor equipped to use this scroll.", (255, 255, 0)
+            )
+        })
+        return results
+    
+    # Randomly select one armor piece to enhance
+    import random
+    slot_name, armor = random.choice(armor_pieces)
+    
+    old_min = armor.equippable.defense_min
+    old_max = armor.equippable.defense_max
+    
+    # Enhance the armor
+    armor.equippable.modify_defense_range(min_bonus, max_bonus)
+    
+    results.append({
+        "consumed": True,
+        "message": Message(
+            f"Your {armor.name} shimmers! Defense enhanced from "
+            f"({old_min}-{old_max}) to ({armor.equippable.defense_min}-{armor.equippable.defense_max}).",
+            (0, 255, 0)
+        )
+    })
     
     return results
 
