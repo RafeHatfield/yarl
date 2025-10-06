@@ -230,6 +230,7 @@ class TestMouseMovementHandling(unittest.TestCase):
         
         # Create fighter component for combat tests
         self.player.fighter = Fighter(hp=100, defense=2, power=5)
+        self.player.fighter.owner = self.player  # Set owner for attack_d20
         
         # Create enemy entity
         self.enemy = Entity(
@@ -237,6 +238,7 @@ class TestMouseMovementHandling(unittest.TestCase):
             blocks=True, render_order=RenderOrder.ACTOR
         )
         self.enemy.fighter = Fighter(hp=20, defense=1, power=3)
+        self.enemy.fighter.owner = self.enemy  # Set owner for attack_d20
         
         # Create game map
         self.game_map = Mock()
@@ -317,9 +319,9 @@ class TestMouseMovementHandling(unittest.TestCase):
         # Mock distance calculation
         self.player.distance_to = Mock(return_value=1.0)
         
-        # Mock attack
+        # Mock attack_d20 (the new d20 combat system)
         attack_results = [{"message": Message("You hit the Orc!", (255, 255, 255))}]
-        self.player.fighter.attack = Mock(return_value=attack_results)
+        self.player.fighter.attack_d20 = Mock(return_value=attack_results)
         
         result = handle_mouse_click(6, 5, self.player, self.entities, self.game_map)
         
@@ -333,8 +335,8 @@ class TestMouseMovementHandling(unittest.TestCase):
         self.assertEqual(len(enemy_turn_signals), 1)
         self.assertTrue(enemy_turn_signals[0]["enemy_turn"])
         
-        # Verify attack was called
-        self.player.fighter.attack.assert_called_once_with(self.enemy)
+        # Verify attack_d20 was called (we now use d20 combat)
+        self.player.fighter.attack_d20.assert_called_once_with(self.enemy)
     
     @patch('mouse_movement.get_blocking_entities_at_location')
     def test_click_on_distant_enemy(self, mock_get_blocking):
