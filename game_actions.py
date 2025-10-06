@@ -57,6 +57,7 @@ class ActionProcessor:
             'left_click': self._handle_left_click,
             'right_click': self._handle_right_click,
             'sidebar_click': self._handle_sidebar_click,
+            'sidebar_right_click': self._handle_sidebar_right_click,
         }
     
     def process_actions(self, action: Dict[str, Any], mouse_action: Dict[str, Any]) -> None:
@@ -790,6 +791,57 @@ class ActionProcessor:
                         logger.warning(f"Unknown action type from sidebar: {action_type}")
         else:
             logger.warning(f"No valid action returned from sidebar click")
+    
+    def _handle_sidebar_right_click(self, click_pos: Tuple[int, int]) -> None:
+        """Handle right-click in sidebar (drop inventory items).
+        
+        Args:
+            click_pos: Tuple of (screen_x, screen_y) click coordinates
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"_handle_sidebar_right_click called with {click_pos}")
+        
+        from ui.sidebar_interaction import handle_sidebar_click
+        from config.ui_layout import get_ui_layout
+        from game_messages import Message
+        
+        screen_x, screen_y = click_pos
+        player = self.state_manager.state.player
+        game_map = self.state_manager.state.game_map
+        entities = self.state_manager.state.entities
+        message_log = self.state_manager.state.message_log
+        ui_layout = get_ui_layout()
+        
+        if not all([player, message_log]):
+            return
+        
+        # Check if click is on an inventory item (reuse the same detection logic)
+        action = handle_sidebar_click(screen_x, screen_y, player, ui_layout, game_map, entities)
+        
+        logger.warning(f"handle_sidebar_click returned: {action}")
+        
+        if action and 'inventory_index' in action:
+            # User right-clicked on an inventory item - drop it!
+            inventory_index = action['inventory_index']
+            logger.warning(f"SIDEBAR INVENTORY ITEM RIGHT-CLICKED: dropping index {inventory_index}")
+            
+            # Safety checks (same as _handle_inventory_action)
+            if not player.inventory or not hasattr(player.inventory, 'items'):
+                return
+            
+            if inventory_index < 0 or inventory_index >= len(player.inventory.items):
+                message_log.add_message(
+                    Message(f"Invalid item selection.", (255, 255, 0))
+                )
+                return
+            
+            item = player.inventory.items[inventory_index]
+            
+            # Drop the item!
+            self._drop_inventory_item(item)
+        else:
+            logger.warning(f"Right-click on sidebar but not on an inventory item")
     
     def _handle_mouse_movement(self, click_pos: Tuple[int, int]) -> None:
         """Handle mouse click for movement or combat.

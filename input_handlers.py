@@ -216,8 +216,13 @@ def handle_mouse(mouse, camera=None, game_state=None):
         if mouse.lbutton_pressed:
             import logging
             logger = logging.getLogger(__name__)
-            logger.warning(f"SIDEBAR CLICK detected at screen ({screen_x}, {screen_y})")
+            logger.warning(f"SIDEBAR LEFT-CLICK detected at screen ({screen_x}, {screen_y})")
             return {"sidebar_click": (screen_x, screen_y)}
+        elif mouse.rbutton_pressed:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"SIDEBAR RIGHT-CLICK detected at screen ({screen_x}, {screen_y})")
+            return {"sidebar_right_click": (screen_x, screen_y)}
         return {}
     
     # If click is not in viewport or sidebar, ignore
