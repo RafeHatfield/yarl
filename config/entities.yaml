@@ -326,6 +326,7 @@ weapons:
     damage_dice: "1d6"      # 1-6 damage (avg 3.5)
     to_hit_bonus: 0
     reach: 8                # Can attack up to 8 tiles away!
+    two_handed: true        # Requires both hands
     slot: "main_hand"
     char: "}"
     color: [139, 69, 19]    # Brown wood
@@ -335,6 +336,7 @@ weapons:
     damage_dice: "1d8"      # 1-8 damage (avg 4.5)
     to_hit_bonus: 0
     reach: 10               # Longest range! 10 tiles!
+    two_handed: true        # Requires both hands
     slot: "main_hand"
     char: "}"
     color: [160, 82, 45]    # Sienna brown
@@ -344,6 +346,7 @@ weapons:
     damage_dice: "1d8"      # 1-8 damage (avg 4.5)
     to_hit_bonus: 0
     reach: 8                # Medium range
+    two_handed: true        # Requires both hands
     slot: "main_hand"
     char: "}"
     color: [105, 105, 105]  # Dim gray (metal + wood)

@@ -707,7 +707,7 @@ class ActionProcessor:
                 if current_state == GameStates.SHOW_INVENTORY:
                     self._handle_inventory_action(clicked_index)
                 else:  # DROP_INVENTORY
-                    self._handle_drop_item(clicked_index)
+                    self._handle_drop_inventory(clicked_index)
             return
         
         if current_state == GameStates.TARGETING:

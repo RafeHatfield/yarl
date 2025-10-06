@@ -151,6 +151,15 @@ class BasicMonster:
             
             if distance > weapon_reach:
                 # Too far to attack - move towards target
+                # Check if immobilized (Glue spell)
+                if (hasattr(monster, 'has_status_effect') and 
+                    callable(monster.has_status_effect) and 
+                    monster.has_status_effect('immobilized')):
+                    from game_messages import Message
+                    results.append({'message': Message(f"{monster.name} struggles against the glue!", (139, 69, 19))})
+                    MonsterActionLogger.log_turn_summary(monster, ["immobilized"])
+                    return results
+                
                 MonsterActionLogger.log_action_attempt(monster, "movement", f"moving towards {target.name}")
                 monster.move_astar(target, entities, game_map)
                 actions_taken.append("movement")
@@ -403,6 +412,14 @@ class MindlessZombieAI:
                         return results
                     else:
                         # In FOV but not adjacent - CHASE!
+                        # Check if immobilized (Glue spell)
+                        if (hasattr(self.owner, 'has_status_effect') and 
+                            callable(self.owner.has_status_effect) and 
+                            self.owner.has_status_effect('immobilized')):
+                            from game_messages import Message
+                            results.append({'message': Message(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+                            return results
+                        
                         self.owner.move_astar(self.current_target, entities, game_map)
                         return results
                 else:
@@ -429,10 +446,26 @@ class MindlessZombieAI:
                 return results
             else:
                 # Chase it!
+                # Check if immobilized (Glue spell)
+                if (hasattr(self.owner, 'has_status_effect') and 
+                    callable(self.owner.has_status_effect) and 
+                    self.owner.has_status_effect('immobilized')):
+                    from game_messages import Message
+                    results.append({'message': Message(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+                    return results
+                
                 self.owner.move_astar(closest, entities, game_map)
                 return results
         
         # No visible targets - wander randomly
+        # Check if immobilized (Glue spell) - can't even wander
+        if (hasattr(self.owner, 'has_status_effect') and 
+            callable(self.owner.has_status_effect) and 
+            self.owner.has_status_effect('immobilized')):
+            from game_messages import Message
+            results.append({'message': Message(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+            return results
+        
         dx = randint(-1, 1)
         dy = randint(-1, 1)
         
@@ -642,6 +675,14 @@ class SlimeAI:
             
             if distance > weapon_reach:
                 # Too far to attack - move towards target using A* pathfinding
+                # Check if immobilized (Glue spell)
+                if (hasattr(monster, 'has_status_effect') and 
+                    callable(monster.has_status_effect) and 
+                    monster.has_status_effect('immobilized')):
+                    from game_messages import Message
+                    results.append({'message': Message(f"{monster.name} struggles against the glue!", (139, 69, 19))})
+                    return results
+                
                 monster.move_astar(best_target, entities, game_map)
                 MonsterActionLogger.log_action_attempt(
                     monster, "move", f"moving towards {best_target.name}"
