@@ -38,14 +38,20 @@ level_overrides:
         - type: "teleport_scroll"
           count: 1
         - type: "dragon_fart_scroll"
-          count: 10
+          count: 5
         - type: "shield_scroll"
           count: 1
         - type: "raise_dead_scroll"
-          count: 20
+          count: 2
         - type: "enhance_weapon_scroll"
           count: 1
         - type: "enhance_armor_scroll"
+          count: 1
+        - type: "yo_mama_scroll"
+          count: 10
+        - type: "slow_scroll"
+          count: 1
+        - type: "glue_scroll"
           count: 1
       equipment:
         - type: "dagger"

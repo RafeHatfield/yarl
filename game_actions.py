@@ -780,6 +780,11 @@ class ActionProcessor:
                 # User clicked on an inventory item - use it!
                 logger.warning(f"SIDEBAR INVENTORY ITEM CLICKED: index {action['inventory_index']}")
                 self._handle_inventory_action(action['inventory_index'])
+            elif 'equipment_slot' in action:
+                # User left-clicked on equipment - could show info or do nothing for now
+                logger.warning(f"SIDEBAR EQUIPMENT CLICKED: slot {action['equipment_slot']}")
+                # For now, left-click on equipment does nothing (could add "examine" later)
+                pass
             else:
                 # User clicked on a hotkey button - process it!
                 logger.warning(f"SIDEBAR HOTKEY CLICKED: {action}")
@@ -840,8 +845,25 @@ class ActionProcessor:
             
             # Drop the item!
             self._drop_inventory_item(item)
+        elif action and 'equipment_slot' in action:
+            # User right-clicked on equipment - unequip it!
+            equipment_slot = action['equipment_slot']
+            equipment_item = action['equipment_item']
+            logger.warning(f"SIDEBAR EQUIPMENT RIGHT-CLICKED: unequipping {equipment_slot}")
+            
+            # Unequip the item (toggle_equip will move it to inventory)
+            if player.equipment:
+                results = player.equipment.toggle_equip(equipment_item)
+                for result in results:
+                    message = result.get("message")
+                    if message:
+                        message_log.add_message(message)
+                    
+                    unequipped = result.get("unequipped")
+                    if unequipped:
+                        logger.warning(f"Successfully unequipped {unequipped.name}")
         else:
-            logger.warning(f"Right-click on sidebar but not on an inventory item")
+            logger.warning(f"Right-click on sidebar but not on an inventory item or equipment")
     
     def _handle_mouse_movement(self, click_pos: Tuple[int, int]) -> None:
         """Handle mouse click for movement or combat.

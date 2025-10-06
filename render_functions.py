@@ -301,10 +301,14 @@ def render_all(
     # Render tooltips (if hovering over items)
     # This should be rendered LAST so it appears on top of everything
     if mouse and hasattr(mouse, 'cx') and hasattr(mouse, 'cy'):
-        from ui.tooltip import get_sidebar_item_at_position, get_ground_item_at_position, render_tooltip
+        from ui.tooltip import get_sidebar_item_at_position, get_sidebar_equipment_at_position, get_ground_item_at_position, render_tooltip
         
-        # First check if hovering over a sidebar item
-        hovered_item = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
+        # First check if hovering over equipment in sidebar
+        hovered_item = get_sidebar_equipment_at_position(mouse.cx, mouse.cy, player, ui_layout)
+        
+        # If not hovering over equipment, check if hovering over a sidebar inventory item
+        if not hovered_item:
+            hovered_item = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
         
         # If not hovering over sidebar item, check for ground items in viewport
         if not hovered_item and ui_layout.is_in_viewport(mouse.cx, mouse.cy):

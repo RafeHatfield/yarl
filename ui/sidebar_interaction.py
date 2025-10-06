@@ -137,15 +137,67 @@ def _handle_stairs_click(player: Any, game_map: Optional[Any]) -> Optional[dict]
     return {"take_stairs": True}  # Let game handle the error message
 
 
+def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout: Any) -> Optional[dict]:
+    """Handle clicks on equipment slots in the sidebar.
+    
+    Equipment slots are rendered at Y positions based on sidebar layout:
+      After hotkeys (Y=13), after "EQUIPMENT" header (Y=14), then 5 slots
+    
+    Args:
+        screen_x: X coordinate of click
+        screen_y: Y coordinate of click
+        player: Player entity
+        ui_layout: UI layout configuration
+        
+    Returns:
+        Action dict with equipment_slot if clicked, None otherwise
+    """
+    if not hasattr(player, 'equipment') or not player.equipment:
+        return None
+    
+    padding = ui_layout.sidebar_padding
+    
+    # Calculate equipment section Y positions (must match sidebar.py!)
+    y_cursor = 2   # Starting Y
+    y_cursor += 2  # Title + spacing
+    y_cursor += 2  # Separator + spacing
+    y_cursor += 1  # "HOTKEYS" header
+    y_cursor += 6  # 6 hotkey lines
+    y_cursor += 1  # Spacing after hotkeys
+    y_cursor += 1  # "EQUIPMENT" header
+    equipment_start_y = y_cursor  # Should be 15
+    
+    # Equipment slots (must match sidebar.py order!)
+    equipment_slots = [
+        ("main_hand", player.equipment.main_hand),
+        ("off_hand", player.equipment.off_hand),
+        ("head", player.equipment.head),
+        ("chest", player.equipment.chest),
+        ("feet", player.equipment.feet),
+    ]
+    
+    # Check if click is on any equipment line
+    for i, (slot_name, item) in enumerate(equipment_slots):
+        slot_y = equipment_start_y + i
+        
+        # Check if click is on this equipment line
+        if screen_y == slot_y and screen_x >= padding and screen_x < ui_layout.sidebar_width - padding:
+            if item:  # Only return action if there's an item equipped
+                logger.info(f"Equipment slot clicked: {slot_name} at Y={slot_y}")
+                return {"equipment_slot": slot_name, "equipment_item": item}
+    
+    return None
+
+
 def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_map=None, entities=None) -> Optional[dict]:
     """Handle a mouse click in the sidebar region.
     
-    Detects if click is on a hotkey button or inventory item and returns appropriate action.
+    Detects if click is on a hotkey button, equipment slot, or inventory item and returns appropriate action.
     
     Args:
         screen_x: X coordinate of click (screen space)
         screen_y: Y coordinate of click (screen space)
-        player: Player entity (to access inventory)
+        player: Player entity (to access inventory and equipment)
         ui_layout: UILayoutConfig instance
         game_map: Game map (for context-aware actions like stairs)
         entities: List of entities (for Get action)
@@ -164,6 +216,11 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     hotkey_action = _handle_hotkey_click(screen_x, screen_y, player, ui_layout, game_map, entities)
     if hotkey_action:
         return hotkey_action
+    
+    # Check for equipment slot clicks
+    equipment_action = _handle_equipment_click(screen_x, screen_y, player, ui_layout)
+    if equipment_action:
+        return equipment_action
     
     # Check if player has inventory
     if not hasattr(player, 'inventory') or not player.inventory:

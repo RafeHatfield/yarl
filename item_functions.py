@@ -337,18 +337,17 @@ def enhance_weapon(*args, **kwargs):
 
 
 def enhance_armor(*args, **kwargs):
-    """Enhance a random equipped armor piece's defense range.
+    """Enhance a random equipped armor piece's AC bonus.
     
     Args:
         *args: First argument should be the entity using the scroll
-        **kwargs: Should contain 'min_bonus' and 'max_bonus' for defense enhancement
+        **kwargs: Should contain 'bonus' key for AC enhancement (default +1)
         
     Returns:
         list: List of result dictionaries with consumption and message info
     """
     entity = args[0]
-    min_bonus = kwargs.get("min_bonus", 1)
-    max_bonus = kwargs.get("max_bonus", 1)
+    bonus = kwargs.get("bonus", 1)  # Default +1 AC
     
     results = []
     
@@ -362,7 +361,7 @@ def enhance_armor(*args, **kwargs):
         })
         return results
     
-    # Collect all equipped armor pieces (any equipment slot with defense)
+    # Collect all equipped armor pieces (any equipment slot with armor_class_bonus)
     armor_pieces = []
     equipment_slots = [
         ('head', entity.equipment.head),
@@ -373,10 +372,9 @@ def enhance_armor(*args, **kwargs):
     
     for slot_name, item in equipment_slots:
         if item and hasattr(item, 'equippable') and item.equippable:
-            # Check if this item has defense (armor piece)
-            if hasattr(item.equippable, 'defense_min') and hasattr(item.equippable, 'defense_max'):
-                if item.equippable.defense_min > 0 and item.equippable.defense_max > 0:
-                    armor_pieces.append((slot_name, item))
+            # Check if this item has armor_class_bonus (is an armor piece)
+            if hasattr(item.equippable, 'armor_class_bonus') and item.equippable.armor_class_bonus > 0:
+                armor_pieces.append((slot_name, item))
     
     if not armor_pieces:
         results.append({
@@ -391,17 +389,16 @@ def enhance_armor(*args, **kwargs):
     import random
     slot_name, armor = random.choice(armor_pieces)
     
-    old_min = armor.equippable.defense_min
-    old_max = armor.equippable.defense_max
+    old_ac = armor.equippable.armor_class_bonus
     
-    # Enhance the armor
-    armor.equippable.modify_defense_range(min_bonus, max_bonus)
+    # Enhance the armor's AC bonus
+    armor.equippable.armor_class_bonus += bonus
     
     results.append({
         "consumed": True,
         "message": Message(
-            f"Your {armor.name} shimmers! Defense enhanced from "
-            f"({old_min}-{old_max}) to ({armor.equippable.defense_min}-{armor.equippable.defense_max}).",
+            f"Your {armor.name} shimmers with magical energy! AC bonus increased from "
+            f"+{old_ac} to +{armor.equippable.armor_class_bonus}.",
             (0, 255, 0)
         )
     })

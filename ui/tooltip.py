@@ -44,6 +44,59 @@ def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_
     return None
 
 
+def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_layout) -> Optional[Any]:
+    """Get the equipment item being hovered over in the sidebar equipment section.
+    
+    Args:
+        screen_x: Mouse X position (screen coordinates)
+        screen_y: Mouse Y position (screen coordinates)
+        player: Player entity
+        ui_layout: UILayoutConfig instance
+        
+    Returns:
+        Equipment item entity if hovering over an equipment slot, None otherwise
+    """
+    # Verify mouse is in sidebar
+    if not ui_layout.is_in_sidebar(screen_x, screen_y):
+        return None
+    
+    # Check if player has equipment
+    if not hasattr(player, 'equipment') or not player.equipment:
+        return None
+    
+    padding = ui_layout.sidebar_padding
+    
+    # Calculate equipment section Y positions (must match sidebar.py!)
+    y_cursor = 2   # Starting Y
+    y_cursor += 2  # Title + spacing
+    y_cursor += 2  # Separator + spacing
+    y_cursor += 1  # "HOTKEYS" header
+    y_cursor += 6  # 6 hotkey lines
+    y_cursor += 1  # Spacing after hotkeys
+    y_cursor += 1  # "EQUIPMENT" header
+    equipment_start_y = y_cursor  # Should be 15
+    
+    # Equipment slots (must match sidebar.py order!)
+    equipment_slots = [
+        player.equipment.main_hand,
+        player.equipment.off_hand,
+        player.equipment.head,
+        player.equipment.chest,
+        player.equipment.feet,
+    ]
+    
+    # Check if hovering over any equipment line
+    for i, item in enumerate(equipment_slots):
+        slot_y = equipment_start_y + i
+        
+        # Check if hovering over this equipment line
+        if screen_y == slot_y and screen_x >= padding and screen_x < ui_layout.sidebar_width - padding:
+            if item:  # Only return item if there's something equipped
+                return item
+    
+    return None
+
+
 def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout) -> Optional[Any]:
     """Get the item being hovered over in the sidebar inventory.
     
