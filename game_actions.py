@@ -57,6 +57,7 @@ class ActionProcessor:
             'left_click': self._handle_left_click,
             'right_click': self._handle_right_click,
             'sidebar_click': self._handle_sidebar_click,
+            'double_click': self._handle_double_click,
         }
     
     def process_actions(self, action: Dict[str, Any], mouse_action: Dict[str, Any]) -> None:
@@ -887,6 +888,88 @@ class ActionProcessor:
             else:
                 # Pathfinding completed or interrupted, stay in player turn
                 self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+    
+    def _handle_double_click(self, click_pos: Tuple[int, int]) -> None:
+        """Handle double-click on items (pathfind to and auto-pickup).
+        
+        Args:
+            click_pos: Tuple of (world_x, world_y) click coordinates
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state != GameStates.PLAYERS_TURN:
+            return
+        
+        player = self.state_manager.state.player
+        entities = self.state_manager.state.entities
+        game_map = self.state_manager.state.game_map
+        message_log = self.state_manager.state.message_log
+        fov_map = self.state_manager.state.fov_map
+        
+        if not all([player, entities, game_map, message_log]):
+            return
+        
+        world_x, world_y = click_pos
+        
+        # Check if there's an item at this location
+        target_item = None
+        for entity in entities:
+            if entity.x == world_x and entity.y == world_y:
+                if hasattr(entity, 'item') and entity.item:
+                    target_item = entity
+                    break
+        
+        if not target_item:
+            # No item here - just treat as normal click
+            from mouse_movement import handle_mouse_click
+            from game_messages import Message
+            result = handle_mouse_click(world_x, world_y, player, entities, game_map, fov_map)
+            results = result.get("results", [])
+            
+            for result in results:
+                message = result.get("message")
+                if message:
+                    message_log.add_message(message)
+            return
+        
+        # There's an item! Check if player is adjacent
+        distance = player.distance_to(target_item)
+        if distance <= 1:
+            # Already adjacent - just pick it up
+            if player.inventory:
+                pickup_results = player.inventory.add_item(target_item)
+                for result in pickup_results:
+                    message = result.get("message")
+                    if message:
+                        message_log.add_message(message)
+                    
+                    item_added = result.get("item_added")
+                    item_consumed = result.get("item_consumed")
+                    if item_added or item_consumed:
+                        entities.remove(target_item)
+            
+            # End turn after pickup
+            self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+        else:
+            # Not adjacent - pathfind to it
+            if hasattr(player, 'pathfinding') and player.pathfinding:
+                # Set pathfinding to item location
+                success = player.pathfinding.set_destination(
+                    target_item.x, target_item.y, game_map, entities, fov_map
+                )
+                
+                if success:
+                    # Mark that we want to auto-pickup when we arrive
+                    player.pathfinding.auto_pickup_target = target_item
+                    
+                    from game_messages import Message
+                    message_log.add_message(
+                        Message(f"Moving to pick up {target_item.name}...", (100, 200, 255))
+                    )
+                else:
+                    from game_messages import Message
+                    message_log.add_message(
+                        Message("Cannot path to that location.", (255, 255, 0))
+                    )
     
     def _handle_right_click(self, _) -> None:
         """Handle right mouse click (usually cancels targeting)."""

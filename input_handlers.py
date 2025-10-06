@@ -185,9 +185,32 @@ def handle_mouse(mouse, camera=None, game_state=None):
         dict: Dictionary with mouse action keys (coordinates vary by context)
     """
     from game_states import GameStates
+    import time
     
     # Get raw screen coordinates
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
+    
+    # Track double-clicks (simple implementation)
+    if not hasattr(handle_mouse, '_last_click_time'):
+        handle_mouse._last_click_time = 0
+        handle_mouse._last_click_pos = (0, 0)
+    
+    current_time = time.time()
+    is_double_click = False
+    
+    if mouse.lbutton_pressed:
+        time_since_last = current_time - handle_mouse._last_click_time
+        pos_delta = abs(screen_x - handle_mouse._last_click_pos[0]) + abs(screen_y - handle_mouse._last_click_pos[1])
+        
+        # Double-click if within 0.3 seconds and within 2 pixels
+        if time_since_last < 0.3 and pos_delta <= 2:
+            is_double_click = True
+            # Reset to prevent triple-click
+            handle_mouse._last_click_time = 0
+            handle_mouse._last_click_pos = (0, 0)
+        else:
+            handle_mouse._last_click_time = current_time
+            handle_mouse._last_click_pos = (screen_x, screen_y)
     
     # For menu states (SHOW_INVENTORY, DROP_INVENTORY), return screen coordinates
     # because menus are rendered as overlays at screen positions
@@ -228,7 +251,10 @@ def handle_mouse(mouse, camera=None, game_state=None):
     x, y = world_coords
 
     if mouse.lbutton_pressed:
-        return {"left_click": (x, y)}
+        if is_double_click:
+            return {"double_click": (x, y)}
+        else:
+            return {"left_click": (x, y)}
     elif mouse.rbutton_pressed:
         return {"right_click": (x, y)}
 

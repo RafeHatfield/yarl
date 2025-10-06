@@ -54,6 +54,9 @@ class PlayerPathfinding:
         self.total_moves_planned: int = 0
         self.total_moves_completed: int = 0
         self.interruption_count: int = 0
+        
+        # Auto-pickup for double-click pathfinding
+        self.auto_pickup_target: Optional['Entity'] = None
     
     def set_destination(self, x: int, y: int, game_map: 'GameMap', entities: List['Entity'], 
                         fov_map=None) -> bool:
@@ -134,6 +137,7 @@ class PlayerPathfinding:
             self.is_moving = False
             self.movement_interrupted = True
             self.interruption_count += 1
+            self.auto_pickup_target = None  # Clear auto-pickup on interrupt
             logger.debug(f"Movement interrupted: {reason}")
     
     def cancel_movement(self) -> None:
@@ -143,6 +147,7 @@ class PlayerPathfinding:
         self.destination = None
         self.path_index = 0
         self.movement_interrupted = False
+        self.auto_pickup_target = None  # Clear auto-pickup on cancel
         logger.debug("Movement cancelled")
     
     def is_path_active(self) -> bool:

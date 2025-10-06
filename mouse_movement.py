@@ -276,9 +276,36 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             "continue_pathfinding": True
         })
     else:
+        # Arrived at destination!
         results.append({
             "message": Message("Arrived at destination.", (0, 255, 0))
         })
+        
+        # Check if we were pathfinding to pick up an item
+        if hasattr(pathfinding, 'auto_pickup_target') and pathfinding.auto_pickup_target:
+            target_item = pathfinding.auto_pickup_target
+            
+            # Check if item is at player's location
+            if target_item in entities and target_item.x == player.x and target_item.y == player.y:
+                # Pick it up!
+                if hasattr(player, 'inventory') and player.inventory:
+                    pickup_results = player.inventory.add_item(target_item)
+                    
+                    for pickup_result in pickup_results:
+                        message = pickup_result.get("message")
+                        if message:
+                            results.append({"message": message})
+                        
+                        item_added = pickup_result.get("item_added")
+                        item_consumed = pickup_result.get("item_consumed")
+                        if item_added or item_consumed:
+                            entities.remove(target_item)
+                            results.append({
+                                "message": Message(f"Auto-picked up {target_item.name}!", (100, 255, 100))
+                            })
+            
+            # Clear the auto-pickup target
+            pathfinding.auto_pickup_target = None
     
     return {"results": results}
 
