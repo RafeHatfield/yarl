@@ -245,6 +245,11 @@ class Fighter:
         # Record damage taken (only for player)
         if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
             self.owner.statistics.record_damage_taken(amount)
+        
+        # Flag monster as "in combat" when attacked (stops looting behavior)
+        if self.owner and hasattr(self.owner, 'ai') and self.owner.ai:
+            if hasattr(self.owner.ai, 'in_combat'):
+                self.owner.ai.in_combat = True
 
         if self.hp <= 0:
             results.append({"dead": self.owner, "xp": self.xp})

@@ -69,6 +69,7 @@ class BasicMonster:
     def __init__(self):
         """Initialize a BasicMonster AI."""
         self.owner = None  # Will be set by Entity when component is registered
+        self.in_combat = False  # Tracks if monster has been attacked
 
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of AI behavior.
@@ -131,13 +132,10 @@ class BasicMonster:
                 MonsterActionLogger.log_turn_summary(monster, actions_taken)
                 return results
             
-            # Check weapon reach for attack range
-            distance = monster.distance_to(target)
-            
             # Check for item-seeking behavior (if monster has this capability)
-            # BUT only if player is far away (not in immediate danger)
-            # If player is within 10 tiles, prioritize combat over looting!
-            if distance > 10:
+            # BUT only if monster hasn't been attacked yet (not in combat)
+            # Once attacked, prioritize fighting over looting!
+            if not self.in_combat:
                 item_action = self._try_item_seeking(target, game_map, entities)
                 if item_action:
                     if "pickup_item" in item_action:
@@ -150,6 +148,9 @@ class BasicMonster:
                     actions_taken.append("item_seeking")
                     MonsterActionLogger.log_turn_summary(monster, actions_taken)
                     return results
+
+            # Check weapon reach for attack range
+            distance = monster.distance_to(target)
             weapon_reach = get_weapon_reach(monster)
             
             if distance > weapon_reach:
@@ -330,6 +331,7 @@ class MindlessZombieAI:
         """Initialize a MindlessZombieAI."""
         self.owner = None
         self.current_target = None  # Track current target for sticky behavior
+        self.in_combat = False  # Tracks if zombie has been attacked (for consistency)
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of mindless zombie behavior.
@@ -625,6 +627,7 @@ class SlimeAI:
     def __init__(self):
         """Initialize a SlimeAI."""
         self.owner = None  # Will be set by Entity when component is registered
+        self.in_combat = False  # Tracks if slime has been attacked (for consistency)
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of slime AI behavior.
