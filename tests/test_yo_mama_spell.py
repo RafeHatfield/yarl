@@ -48,15 +48,16 @@ class TestYoMamaSpellCasting(unittest.TestCase):
         
         self.entities = [self.caster, self.target, self.monster1, self.monster2]
     
+    @patch('item_functions.map_is_in_fov', return_value=True)
     @patch('yaml.safe_load')
     @patch('builtins.open', new_callable=mock_open, read_data='jokes:\n  - "Yo mama so test!"')
-    def test_cast_yo_mama_on_monster(self, mock_file, mock_yaml):
+    def test_cast_yo_mama_on_monster(self, mock_file, mock_yaml, mock_fov):
         """Test casting Yo Mama on a monster."""
         # Mock YAML loading
         mock_yaml.return_value = {'jokes': ["Yo mama so ugly!", "Yo mama so fat!"]}
         
-        # Cast spell
-        results = cast_yo_mama(self.caster, target=self.target, entities=self.entities)
+        # Cast spell with FOV map (mocked to return True)
+        results = cast_yo_mama(self.caster, target_x=5, target_y=5, entities=self.entities, fov_map=Mock())
         
         # Verify messages were generated
         self.assertGreater(len(results), 0)
@@ -76,29 +77,31 @@ class TestYoMamaSpellCasting(unittest.TestCase):
         taunt_effect = self.target.status_effects.get_effect('taunted')
         self.assertEqual(taunt_effect.duration, 1000)
     
+    @patch('item_functions.map_is_in_fov', return_value=True)
     @patch('yaml.safe_load')
     @patch('builtins.open', new_callable=mock_open)
-    def test_cast_yo_mama_on_self(self, mock_file, mock_yaml):
+    def test_cast_yo_mama_on_self(self, mock_file, mock_yaml, mock_fov):
         """Test casting Yo Mama on yourself (tactical chaos!)."""
         mock_yaml.return_value = {'jokes': ["Yo mama so strategic!"]}
         
-        # Cast spell on self
-        results = cast_yo_mama(self.caster, target=self.caster, entities=self.entities)
+        # Cast spell on self with FOV
+        results = cast_yo_mama(self.caster, target_x=0, target_y=0, entities=self.entities, fov_map=Mock())
         
         # Should work - you can target yourself
         self.assertGreater(len(results), 0)
         self.assertTrue(hasattr(self.caster, 'status_effects'))
         self.assertTrue(self.caster.status_effects.has_effect('taunted'))
     
+    @patch('item_functions.map_is_in_fov', return_value=True)
     @patch('yaml.safe_load')
     @patch('builtins.open', new_callable=mock_open)
-    def test_yo_mama_fallback_joke_on_error(self, mock_file, mock_yaml):
+    def test_yo_mama_fallback_joke_on_error(self, mock_file, mock_yaml, mock_fov):
         """Test that a fallback joke is used if YAML loading fails."""
         # Simulate YAML loading failure
         mock_yaml.side_effect = Exception("File not found")
         
-        # Cast spell
-        results = cast_yo_mama(self.caster, target=self.target, entities=self.entities)
+        # Cast spell with FOV
+        results = cast_yo_mama(self.caster, target_x=5, target_y=5, entities=self.entities, fov_map=Mock())
         
         # Should still work with fallback joke
         self.assertGreater(len(results), 0)
@@ -268,9 +271,10 @@ class TestAITauntTargeting(unittest.TestCase):
 class TestYoMamaIntegration(unittest.TestCase):
     """Integration tests for Yo Mama spell mechanics."""
     
+    @patch('item_functions.map_is_in_fov', return_value=True)
     @patch('yaml.safe_load')
     @patch('builtins.open', new_callable=mock_open)
-    def test_full_yo_mama_flow(self, mock_file, mock_yaml):
+    def test_full_yo_mama_flow(self, mock_file, mock_yaml, mock_fov):
         """Test complete Yo Mama spell flow."""
         mock_yaml.return_value = {'jokes': ["Yo mama so tactical!"]}
         
@@ -299,8 +303,8 @@ class TestYoMamaIntegration(unittest.TestCase):
         
         entities = [player, orc1, orc2, troll]
         
-        # Cast Yo Mama on Orc 1
-        results = cast_yo_mama(player, target=orc1, entities=entities)
+        # Cast Yo Mama on Orc 1 with FOV
+        results = cast_yo_mama(player, target_x=5, target_y=5, entities=entities, fov_map=Mock())
         
         # Verify spell worked
         self.assertGreater(len(results), 0)
