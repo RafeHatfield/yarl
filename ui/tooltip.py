@@ -156,7 +156,9 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
         
         # Slot information
         if hasattr(eq, 'slot'):
-            slot_name = eq.slot.replace('_', ' ').title()
+            # slot is an EquipmentSlots enum, convert to string
+            slot_str = str(eq.slot.value) if hasattr(eq.slot, 'value') else str(eq.slot)
+            slot_name = slot_str.replace('_', ' ').title()
             tooltip_lines.append(f"Slot: {slot_name}")
     
     elif hasattr(item, 'item') and item.item:
