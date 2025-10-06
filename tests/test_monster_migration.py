@@ -230,7 +230,7 @@ class TestMonsterMigrationIntegration:
              patch('map_objects.game_map.from_dungeon_level') as mock_from_level:
             
             # Set up mocks
-            mock_from_level.side_effect = [1, 0, 15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5]  # 1 monster, no items (includes invisibility_scroll)
+            mock_from_level.side_effect = [2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]  # 1 monster, no items (includes invisibility_scroll)
             mock_randint.return_value = 8  # Position
             mock_choice.return_value = "orc"
             

@@ -249,8 +249,8 @@ class TestInputSystemUpdate:
 
         # Verify handlers were called
         mock_key_handler.assert_called_once_with(self.mock_key)
-        # Mouse handler now receives camera parameter (Phase 2)
-        mock_mouse_handler.assert_called_once_with(self.mock_mouse, self.mock_game_state.camera)
+        # Mouse handler now receives camera parameter and game_state
+        mock_mouse_handler.assert_called_once_with(self.mock_mouse, self.mock_game_state.camera, GameStates.PLAYERS_TURN)
 
         # Verify actions were stored
         self.mock_state_manager.set_extra_data.assert_any_call(
@@ -380,8 +380,8 @@ class TestInputSystemProcessing:
 
         result = self.input_system._process_mouse_input(GameStates.PLAYERS_TURN)
 
-        # Mouse handler now receives camera parameter (None when no engine)
-        mock_handler.assert_called_once_with(mock_mouse, None)
+        # Mouse handler now receives camera parameter and game_state (None camera when no engine)
+        mock_handler.assert_called_once_with(mock_mouse, None, GameStates.PLAYERS_TURN)
         assert result == {"left_click": True}
 
 

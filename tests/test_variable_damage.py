@@ -352,7 +352,8 @@ class TestEnhancementScrolls(unittest.TestCase):
             EquipmentSlots.OFF_HAND,
             defense_bonus=1,
             defense_min=1,
-            defense_max=3
+            defense_max=3,
+            armor_class_bonus=2  # AC bonus for new enhance_armor logic
         )
         self.armor = Mock()
         self.armor.name = "Shield"
@@ -393,24 +394,23 @@ class TestEnhancementScrolls(unittest.TestCase):
         # Equip armor
         self.player.equipment.off_hand = self.armor
         
-        results = enhance_armor(self.player, min_bonus=1, max_bonus=1)
+        results = enhance_armor(self.player, bonus=1)
         
-        # Check armor was enhanced
-        self.assertEqual(self.armor.equippable.defense_min, 2)  # 1 + 1
-        self.assertEqual(self.armor.equippable.defense_max, 4)  # 3 + 1
+        # Check armor was enhanced (AC bonus increased)
+        self.assertEqual(self.armor.equippable.armor_class_bonus, 3)  # 2 + 1
         
         # Check results
         self.assertEqual(len(results), 1)
         result = results[0]
         self.assertTrue(result["consumed"])
-        self.assertIn("enhanced from (1-3) to (2-4)", result["message"].text)
+        self.assertIn("AC bonus increased from +2 to +3", result["message"].text)
     
     def test_enhance_armor_no_armor_equipped(self):
         """Test armor enhancement with no armor equipped."""
         # No armor equipped
         self.player.equipment.off_hand = None
         
-        results = enhance_armor(self.player, min_bonus=1, max_bonus=1)
+        results = enhance_armor(self.player, bonus=1)
         
         # Check results
         self.assertEqual(len(results), 1)

@@ -123,7 +123,7 @@ class TestDifficultyScaling:
                 return_value="healing_potion",
             ):
 
-                # Set up return values for each item type (including equipment)
+                # Set up return values for each item type (including equipment and all wands/scrolls)
                 mock_from_level.side_effect = [
                     2,  # max_monsters_per_room
                     1,  # max_items_per_room
@@ -142,9 +142,23 @@ class TestDifficultyScaling:
                     5,  # wand_of_confusion
                     5,  # wand_of_teleportation
                     5,  # wand_of_dragon_farts
-                    5,  # extra buffer for any additional items
-                    5,  # extra buffer for any additional items
-                    5,  # extra buffer for any additional items
+                    5,  # wand_of_yo_mama
+                    5,  # wand_of_slow
+                    5,  # wand_of_glue
+                    5,  # wand_of_rage
+                    5,  # yo_mama_scroll
+                    5,  # slow_scroll
+                    5,  # glue_scroll
+                    5,  # rage_scroll
+                    5,  # teleport_scroll
+                    5,  # dragon_fart_scroll
+                    5,  # raise_dead_scroll
+                    5,  # disorientation_scroll
+                    5,  # shortbow
+                    5,  # longbow
+                    5,  # crossbow
+                    5,  # extra buffer
+                    5,  # extra buffer
                 ]
 
                 room = Mock()
@@ -297,7 +311,7 @@ class TestItemSpawning:
         """Test healing potion spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="healing_potion",
@@ -324,7 +338,7 @@ class TestItemSpawning:
         """Test lightning scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 25, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="lightning_scroll",
@@ -352,7 +366,7 @@ class TestItemSpawning:
         """Test fireball scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 0, 25, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="fireball_scroll",
@@ -381,7 +395,7 @@ class TestItemSpawning:
         """Test confusion scroll spawning with correct stats."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch("map_objects.game_map.randint", side_effect=[0, 1, 10, 10]), patch(
             "map_objects.game_map.random_choice_from_dict",
             return_value="confusion_scroll",
@@ -408,7 +422,7 @@ class TestItemSpawning:
         """Test spawning multiple items in one room."""
         with patch(
             "map_objects.game_map.from_dungeon_level",
-            side_effect=[2, 2, 15, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+            side_effect=[2, 2, 15, 5, 15, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
         ), patch(
             "map_objects.game_map.randint", side_effect=[0, 2, 8, 8, 9, 9]
         ):  # 2 items, positions
