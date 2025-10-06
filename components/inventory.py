@@ -174,10 +174,16 @@ class Inventory:
                             )
                         })
                     else:
-                        # Use a charge and cast the spell
-                        wand_component.use_charge()
+                        # Cast the spell first to see if it succeeds
                         kwargs = {**item_component.function_kwargs, **kwargs}
                         item_use_results = item_component.use_function(self.owner, **kwargs)
+                        
+                        # Check if spell was successfully consumed (meaning it worked)
+                        spell_consumed = any(r.get("consumed") for r in item_use_results)
+                        
+                        if spell_consumed:
+                            # Spell worked - consume a charge
+                            wand_component.use_charge()
                         
                         # Don't remove the wand - it stays in inventory
                         # Filter out "consumed" results since wands don't get consumed
@@ -185,24 +191,25 @@ class Inventory:
                             if not item_use_result.get("consumed"):
                                 results.append(item_use_result)
                         
-                        # Add a message showing remaining charges
-                        remaining_charges = wand_component.charges
-                        if remaining_charges > 0:
-                            from game_messages import Message
-                            results.append({
-                                "message": Message(
-                                    f"The {item_entity.name} glows. ({remaining_charges} charges remaining)",
-                                    (200, 200, 255)  # Light blue
-                                )
-                            })
-                        else:
-                            from game_messages import Message
-                            results.append({
-                                "message": Message(
-                                    f"The {item_entity.name} dims. (0 charges remaining)",
-                                    (128, 128, 128)  # Gray
-                                )
-                            })
+                        # Add a message showing remaining charges (only if spell was consumed)
+                        if spell_consumed:
+                            remaining_charges = wand_component.charges
+                            if remaining_charges > 0:
+                                from game_messages import Message
+                                results.append({
+                                    "message": Message(
+                                        f"The {item_entity.name} glows. ({remaining_charges} charges remaining)",
+                                        (200, 200, 255)  # Light blue
+                                    )
+                                })
+                            else:
+                                from game_messages import Message
+                                results.append({
+                                    "message": Message(
+                                        f"The {item_entity.name} dims. (0 charges remaining)",
+                                        (128, 128, 128)  # Gray
+                                    )
+                                })
                 else:
                     # Normal item usage (scrolls, potions): consume on use
                     kwargs = {**item_component.function_kwargs, **kwargs}

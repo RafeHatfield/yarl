@@ -131,22 +131,25 @@ class BasicMonster:
                 MonsterActionLogger.log_turn_summary(monster, actions_taken)
                 return results
             
-            # Check for item-seeking behavior (if monster has this capability)
-            item_action = self._try_item_seeking(target, game_map, entities)
-            if item_action:
-                if "pickup_item" in item_action:
-                    MonsterActionLogger.log_action_attempt(monster, "item_pickup", 
-                        f"attempting to pick up {item_action['pickup_item'].name}")
-                elif "move" in item_action:
-                    MonsterActionLogger.log_action_attempt(monster, "item_seeking_movement", 
-                        f"moving towards item")
-                results.extend(self._process_item_action(item_action, entities))
-                actions_taken.append("item_seeking")
-                MonsterActionLogger.log_turn_summary(monster, actions_taken)
-                return results
-
             # Check weapon reach for attack range
             distance = monster.distance_to(target)
+            
+            # Check for item-seeking behavior (if monster has this capability)
+            # BUT only if player is far away (not in immediate danger)
+            # If player is within 10 tiles, prioritize combat over looting!
+            if distance > 10:
+                item_action = self._try_item_seeking(target, game_map, entities)
+                if item_action:
+                    if "pickup_item" in item_action:
+                        MonsterActionLogger.log_action_attempt(monster, "item_pickup", 
+                            f"attempting to pick up {item_action['pickup_item'].name}")
+                    elif "move" in item_action:
+                        MonsterActionLogger.log_action_attempt(monster, "item_seeking_movement", 
+                            f"moving towards item")
+                    results.extend(self._process_item_action(item_action, entities))
+                    actions_taken.append("item_seeking")
+                    MonsterActionLogger.log_turn_summary(monster, actions_taken)
+                    return results
             weapon_reach = get_weapon_reach(monster)
             
             if distance > weapon_reach:

@@ -97,7 +97,7 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
     if distance <= max_attack_distance:
         # Within reach - attack the target
         if player.fighter:
-            attack_results = player.fighter.attack(target)
+            attack_results = player.fighter.attack_d20(target)
             results.extend(attack_results)
             results.append({
                 "enemy_turn": True  # Trigger enemy turn after attack
@@ -252,7 +252,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     if enemy_in_range:
         # Attack the enemy!
         pathfinding.interrupt_movement("Enemy within weapon reach - attacking!")
-        attack_results = player.fighter.attack(enemy_in_range)
+        attack_results = player.fighter.attack_d20(enemy_in_range)
         results.extend(attack_results)
         results.append({
             "enemy_turn": True  # Trigger enemy turn after attack
