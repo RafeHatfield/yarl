@@ -245,7 +245,45 @@ class TestWandRecharge:
         assert self.wand_component.charges == 101
     
     def test_picking_up_wand_consumes_existing_scrolls(self):
-        """Test that picking up a wand consumes matching scrolls already in inventory."""
+        """Test that picking up a wand consumes matching scrolls already in inventory.
+        
+        Note: Due to wand-to-wand merging, if there's already a matching wand in inventory,
+        the new wand will merge into it instead of being added separately.
+        """
+        # Start with 3 fireball scrolls in inventory
+        for i in range(3):
+            scroll = Entity(0, 0, '~', (255, 0, 0), 'Fireball Scroll', blocks=False)
+            scroll.item = Item(use_function=Mock())
+            self.inventory.items.append(scroll)
+        
+        # Create a new wand (not in inventory yet)
+        new_wand = Entity(0, 0, '/', (255, 200, 0), 'Wand of Fireball', blocks=False)
+        new_wand_component = Wand(spell_type="fireball_scroll", charges=2)
+        new_wand.wand = new_wand_component
+        new_wand_component.owner = new_wand
+        
+        # NOTE: There's already a Wand of Fireball (3 charges) in inventory from setup
+        initial_wand_charges = self.wand_component.charges  # Should be 3
+        
+        # Pick up the new wand
+        results = self.inventory.add_item(new_wand)
+        
+        # NEW: The new wand will merge into the existing wand (3 + 2 = 5)
+        # The new wand is consumed, so it never gets to consume scrolls
+        assert self.wand_component.charges == initial_wand_charges + 2  # 3 + 2 = 5
+        
+        # New wand should NOT be in inventory (it was merged)
+        assert new_wand not in self.inventory.items
+        
+        # Scrolls should still be there (the new wand was merged before scroll consumption)
+        scrolls_in_inventory = [item for item in self.inventory.items if 'Scroll' in item.name]
+        assert len(scrolls_in_inventory) == 3
+    
+    def test_picking_up_first_wand_consumes_existing_scrolls(self):
+        """Test that picking up the first wand of a type consumes existing scrolls."""
+        # Remove the existing fireball wand from setup
+        self.inventory.items.remove(self.wand_entity)
+        
         # Start with 3 fireball scrolls in inventory
         for i in range(3):
             scroll = Entity(0, 0, '~', (255, 0, 0), 'Fireball Scroll', blocks=False)
@@ -261,8 +299,8 @@ class TestWandRecharge:
         # Pick up the wand
         results = self.inventory.add_item(new_wand)
         
-        # Wand should have consumed all 3 scrolls
-        assert new_wand_component.charges == 5  # 2 starting + 3 from scrolls
+        # Wand should have consumed all 3 scrolls (2 starting + 3 from scrolls = 5)
+        assert new_wand_component.charges == 5
         
         # Scrolls should be gone from inventory
         scrolls_in_inventory = [item for item in self.inventory.items if 'Scroll' in item.name]
