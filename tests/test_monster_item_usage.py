@@ -348,6 +348,12 @@ class TestBasicMonsterItemUsageIntegration(unittest.TestCase):
         self.monster.fighter = Mock()
         self.monster.fighter.attack = Mock(return_value=[])
         
+        # Mock status effects to prevent iteration errors
+        self.monster.status_effects = None
+        
+        # Mock has_status_effect to prevent immobilized check from failing
+        self.monster.has_status_effect = Mock(return_value=False)
+        
         self.player = Mock()
         self.player.x = 7
         self.player.y = 7

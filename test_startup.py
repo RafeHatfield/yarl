@@ -41,9 +41,10 @@ def test_game_startup():
         class MockConsole:
             pass
         
-        mock_con = MockConsole()
-        mock_panel = MockConsole()
-        engine = create_game_engine(constants, mock_con, mock_panel)
+        mock_sidebar = MockConsole()
+        mock_viewport = MockConsole()
+        mock_status = MockConsole()
+        engine = create_game_engine(constants, mock_sidebar, mock_viewport, mock_status)
         initialize_game_engine(engine, player, entities, game_map, message_log, game_state, constants)
         print("✅ Game engine initialized")
         

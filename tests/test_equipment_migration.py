@@ -56,7 +56,7 @@ class TestEquipmentMigrationCompatibility:
         assert sword is not None
         assert sword.name == "Sword"
         assert sword.char == "/"
-        assert sword.color == (192, 192, 192)  # Silver from YAML
+        assert sword.color == (150, 150, 170)  # Silver from YAML (darker for contrast)
         assert sword.x == 7
         assert sword.y == 12
         
@@ -153,7 +153,7 @@ class TestEquipmentGameMapIntegration:
         assert sword is not None
         assert sword.name == "Sword"
         assert sword.char == "/"
-        assert sword.color == (192, 192, 192)
+        assert sword.color == (150, 150, 170)  # Darker for better contrast
         assert sword.x == 7
         assert sword.y == 7
         assert sword.equippable.power_bonus == 0

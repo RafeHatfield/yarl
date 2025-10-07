@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock, patch, call
 from visual_effect_queue import QueuedEffect, EffectType
 from rendering.camera import Camera
+from config.ui_layout import UILayoutConfig, set_ui_layout
 
 
 class TestVisualEffectsWithCamera(unittest.TestCase):
@@ -15,6 +16,10 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
+        # Set up a known UI layout (other tests might change the global singleton)
+        self.test_layout = UILayoutConfig(sidebar_width=20)
+        set_ui_layout(self.test_layout)
+        
         # Create a camera centered on (60, 40) with 80x45 viewport
         self.camera = Camera(
             viewport_width=80,
@@ -26,6 +31,11 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         
         # Mock console
         self.mock_con = Mock()
+    
+    def tearDown(self):
+        """Clean up after tests."""
+        # Reset UI layout to default
+        set_ui_layout(None)
     
     @patch('visual_effect_queue.libtcodpy.console_flush')
     @patch('visual_effect_queue.libtcodpy.console_put_char')

@@ -27,6 +27,7 @@ class EffectType(Enum):
     DRAGON_FART = auto()
     AREA_EFFECT = auto()
     PATH_EFFECT = auto()
+    WAND_RECHARGE = auto()  # Sparkle effect when wand gains a charge
 
 
 class QueuedEffect:
@@ -109,6 +110,8 @@ class QueuedEffect:
             self._play_area_effect(con, camera)
         elif self.effect_type == EffectType.PATH_EFFECT:
             self._play_path_effect(con, camera)
+        elif self.effect_type == EffectType.WAND_RECHARGE:
+            self._play_wand_recharge(con)
     
     def _play_hit(self, con=0) -> None:
         """Play a hit effect."""
@@ -329,6 +332,28 @@ class QueuedEffect:
         
         libtcodpy.console_flush()
         time.sleep(duration)
+    
+    def _play_wand_recharge(self, con=0) -> None:
+        """Play a wand recharge sparkle effect at screen position.
+        
+        Shows a beautiful sparkle/glow animation to indicate a wand gained a charge.
+        Effect plays at the player's position (self.screen_x, self.screen_y).
+        """
+        # Sparkle sequence: dim → bright → brighter → bright → dim (5 frames)
+        sparkle_sequence = [
+            {'char': ord('·'), 'color': (200, 180, 0), 'duration': 0.04},  # Dim gold dot
+            {'char': ord('*'), 'color': (255, 215, 0), 'duration': 0.06},  # Gold star
+            {'char': ord('✦'), 'color': (255, 255, 150), 'duration': 0.08},  # Bright sparkle
+            {'char': ord('*'), 'color': (255, 215, 0), 'duration': 0.06},  # Gold star
+            {'char': ord('·'), 'color': (200, 180, 0), 'duration': 0.04},  # Dim gold dot
+        ]
+        
+        for frame in sparkle_sequence:
+            # Draw the sparkle at screen coordinates
+            libtcodpy.console_set_default_foreground(con, frame['color'])
+            libtcodpy.console_put_char(con, self.screen_x, self.screen_y, frame['char'], libtcodpy.BKGND_NONE)
+            libtcodpy.console_flush()
+            time.sleep(frame['duration'])
 
 
 class VisualEffectQueue:
@@ -402,6 +427,16 @@ class VisualEffectQueue:
         self.effects.append(QueuedEffect(
             EffectType.DRAGON_FART, x, y, None, tiles=tiles, **kwargs
         ))
+    
+    def queue_wand_recharge(self, x: int, y: int, entity=None) -> None:
+        """Queue a wand recharge sparkle effect.
+        
+        Args:
+            x: X coordinate of player
+            y: Y coordinate of player
+            entity: Player entity
+        """
+        self.effects.append(QueuedEffect(EffectType.WAND_RECHARGE, x, y, entity))
     
     def play_all(self, con=0, camera=None) -> None:
         """Play all queued effects and clear the queue.

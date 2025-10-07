@@ -57,24 +57,34 @@ class Wand:
         return self.charges <= 0
     
     def get_display_name(self, compact: bool = False) -> str:
-        """Get the display name with charge count.
+        """Get the display name with charge count and visual indicator.
         
         Args:
-            compact: If True, return abbreviated name for sidebar (e.g., "Wand Fireball(5)")
+            compact: If True, return abbreviated name for sidebar (e.g., "W.Fireball⚡5")
         
         Returns:
-            str: Wand name with charge count
+            str: Wand name with charge count and visual indicator
         """
+        # Visual charge indicator based on charge level
+        if self.charges == 0:
+            indicator = "○"  # Empty circle - no charges
+        elif self.charges <= 2:
+            indicator = "◐"  # Half-filled - low charges
+        elif self.charges <= 4:
+            indicator = "◕"  # Three-quarter filled - medium charges
+        else:
+            indicator = "●"  # Full circle - high charges
+        
         if self.owner and hasattr(self.owner, 'name'):
             base_name = self.owner.name
             
             if compact:
-                # Abbreviate for sidebar: "Wand of Fireball" -> "Wand Fireball"
+                # Abbreviate for sidebar: "Wand of Fireball" -> "W.Fireball"
                 compact_name = base_name.replace(" of ", " ").replace("Wand ", "W.")
-                return f"{compact_name}({self.charges})"
+                return f"{compact_name}{indicator}{self.charges}"
             else:
-                # Full name for tooltips/inventory: "Wand of Fireball (5)"
-                return f"{base_name} ({self.charges})"
+                # Full name for tooltips/inventory: "Wand of Fireball ● 5"
+                return f"{base_name} {indicator} {self.charges}"
         
-        return f"Wand ({self.charges})" if not compact else f"W.({self.charges})"
+        return f"Wand {indicator} {self.charges}" if not compact else f"W.{indicator}{self.charges}"
 

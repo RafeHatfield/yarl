@@ -472,7 +472,7 @@ class TestDifficultyProgression:
                     5,  # wand_of_confusion
                     5,  # wand_of_teleportation
                     5,  # wand_of_dragon_farts
-                    5, 5, 5,  # extra buffer
+                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,  # extra buffer for new items
                 ]
 
                 with patch("map_objects.game_map.randint", return_value=0), patch(
@@ -514,7 +514,7 @@ class TestDifficultyProgression:
                     5,  # wand_of_confusion
                     5,  # wand_of_teleportation
                     5,  # wand_of_dragon_farts
-                    5, 5, 5,  # extra buffer
+                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,  # extra buffer for new items
                 ]
 
                 with patch("map_objects.game_map.randint", return_value=0), patch(
@@ -555,7 +555,7 @@ class TestDifficultyProgression:
                     5,  # wand_of_confusion
                     5,  # wand_of_teleportation
                     5,  # wand_of_dragon_farts
-                    5, 5, 5,  # extra buffer
+                    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,  # extra buffer for new items
                 ]
 
                 with patch("map_objects.game_map.randint", return_value=0), patch(
@@ -709,7 +709,7 @@ class TestDifficultyScalingIntegration:
             # Get the actual values that would be used
             with patch(
                 "map_objects.game_map.from_dungeon_level",
-                side_effect=[3, 2, 30, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+                side_effect=[3, 2, 30, 5, 15, 5, 25, 25, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
             ) as mock_from_level:
                 with patch("map_objects.game_map.randint", return_value=0), patch(
                     "map_objects.game_map.random_choice_from_dict", return_value="orc"

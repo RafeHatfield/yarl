@@ -315,14 +315,20 @@ def _serialize_equipment(equipment: Equipment) -> Dict[str, Any]:
 
 
 def _serialize_game_map(game_map: GameMap) -> Dict[str, Any]:
-    """Serialize a GameMap."""
-    return {
+    """Serialize a GameMap including hazards."""
+    result = {
         "width": int(game_map.width),
         "height": int(game_map.height),
         "dungeon_level": int(game_map.dungeon_level),
         "tiles": [[_serialize_tile(game_map.tiles[x][y]) for y in range(game_map.height)] 
                   for x in range(game_map.width)]
     }
+    
+    # Serialize ground hazards if present
+    if hasattr(game_map, 'hazard_manager') and game_map.hazard_manager:
+        result["hazards"] = game_map.hazard_manager.to_dict()
+    
+    return result
 
 
 def _serialize_tile(tile: Tile) -> Dict[str, Any]:
@@ -472,7 +478,7 @@ def _deserialize_equipment(data: Dict[str, Any]) -> Equipment:
 
 
 def _deserialize_game_map(data: Dict[str, Any]) -> GameMap:
-    """Deserialize a GameMap."""
+    """Deserialize a GameMap including hazards."""
     game_map = GameMap(
         width=data["width"],
         height=data["height"],
@@ -484,6 +490,11 @@ def _deserialize_game_map(data: Dict[str, Any]) -> GameMap:
         for y in range(game_map.height):
             tile_data = data["tiles"][x][y]
             game_map.tiles[x][y] = _deserialize_tile(tile_data)
+    
+    # Deserialize ground hazards if present
+    if "hazards" in data:
+        from components.ground_hazard import GroundHazardManager
+        game_map.hazard_manager = GroundHazardManager.from_dict(data["hazards"])
     
     return game_map
 
