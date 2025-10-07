@@ -3653,3 +3653,24 @@
 13:34:19 - COMBAT: d20 Combat: Player rolled 8 + 1 (DEX) + 0 (weapon) = 9 vs AC 12 → MISS
 13:34:19 - COMBAT: d20 Combat: Orc rolled 12 + 0 (DEX) + 0 (weapon) = 12 vs AC 12 → HIT | Damage: 5 (base) + 2 (STR) = 7
 13:34:19 - COMBAT: d20 Combat: Orc rolled 19 + 0 (DEX) + 0 (weapon) = 19 vs AC 13 → HIT | Damage: 5 (base) + 2 (STR) = 7
+14:43:11 - COMBAT: d20 Combat: Player rolled 12 + 1 (DEX) + 0 (weapon) = 13 vs AC 10 → HIT | Damage: 6 (base) + 2 (STR) = 8
+14:43:13 - COMBAT: d20 Combat: Player rolled 12 + 1 (DEX) + 0 (weapon) = 13 vs AC 10 → HIT | Damage: 2 (base) + 2 (STR) = 4
+14:45:17 - COMBAT: d20 Combat: Player rolled 16 + 1 (DEX) + 0 (weapon) = 17 vs AC 12 → HIT | Damage: 3 (base) + 2 (STR) = 5
+14:45:37 - COMBAT: d20 Combat: Player rolled 19 + 1 (DEX) + 0 (weapon) = 20 vs AC 12 → HIT | Damage: 4 (base) + 2 (STR) = 6
+14:45:39 - COMBAT: d20 Combat: Player rolled 1 + 1 (DEX) + 0 (weapon) = 2 vs AC 12 → MISS [FUMBLE]
+14:45:41 - COMBAT: d20 Combat: Player rolled 18 + 1 (DEX) + 0 (weapon) = 19 vs AC 12 → HIT | Damage: 1 (base) + 2 (STR) = 3
+14:45:42 - COMBAT: d20 Combat: Player rolled 5 + 1 (DEX) + 0 (weapon) = 6 vs AC 12 → MISS
+14:46:01 - COMBAT: d20 Combat: Orc rolled 2 + 0 (DEX) + 0 (weapon) = 2 vs AC 13 → MISS
+14:46:06 - COMBAT: d20 Combat: Player rolled 10 + 1 (DEX) + 0 (weapon) = 11 vs AC 8 → HIT | Damage: 2 (base) + 2 (STR) = 4
+14:46:06 - COMBAT: d20 Combat: Orc rolled 14 + 0 (DEX) + 0 (weapon) = 14 vs AC 13 → HIT | Damage: 5 (base) + 2 (STR) = 7
+14:46:07 - COMBAT: d20 Combat: Player rolled 10 + 1 (DEX) + 0 (weapon) = 11 vs AC 8 → HIT | Damage: 6 (base) + 2 (STR) = 8
+14:46:07 - COMBAT: d20 Combat: Orc rolled 14 + 0 (DEX) + 0 (weapon) = 14 vs AC 13 → HIT | Damage: 5 (base) + 2 (STR) = 7
+14:46:07 - COMBAT: d20 Combat: Player rolled 17 + 1 (DEX) + 0 (weapon) = 18 vs AC 8 → HIT | Damage: 2 (base) + 2 (STR) = 4
+14:46:07 - COMBAT: d20 Combat: Orc rolled 3 + 0 (DEX) + 0 (weapon) = 3 vs AC 13 → MISS
+14:46:10 - COMBAT: d20 Combat: Orc rolled 6 + 0 (DEX) + 1 (weapon) = 7 vs AC 12 → MISS
+14:46:12 - COMBAT: d20 Combat: Orc rolled 14 + 0 (DEX) + 1 (weapon) = 15 vs AC 12 → HIT | Damage: 2 (base) + 2 (STR) = 4
+14:46:13 - COMBAT: d20 Combat: Orc rolled 13 + 0 (DEX) + 0 (weapon) = 13 vs AC 13 → HIT | Damage: 5 (base) + 2 (STR) = 7
+14:46:15 - COMBAT: d20 Combat: Orc rolled 3 + 0 (DEX) + 1 (weapon) = 4 vs AC 12 → MISS
+14:46:15 - COMBAT: d20 Combat: Orc rolled 18 + 0 (DEX) + 0 (weapon) = 18 vs AC 13 → HIT | Damage: 6 (base) + 2 (STR) = 8
+14:46:16 - COMBAT: d20 Combat: Orc rolled 8 + 0 (DEX) + 1 (weapon) = 9 vs AC 12 → MISS
+14:46:16 - COMBAT: d20 Combat: Orc rolled 19 + 0 (DEX) + 1 (weapon) = 20 vs AC 12 → HIT | Damage: 1 (base) + 2 (STR) = 3

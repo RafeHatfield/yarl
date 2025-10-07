@@ -258,8 +258,10 @@ class PlayerPathfinding:
         # Get pathfinding configuration
         pathfinding_config = get_pathfinding_config()
         
-        # Determine max path length based on whether destination is in FOV
+        # Determine max path length based on tile visibility and exploration status
         destination_in_fov = False
+        destination_explored = game_map.tiles[target_x][target_y].explored
+        
         if fov_map is not None:
             try:
                 destination_in_fov = map_is_in_fov(fov_map, target_x, target_y)
@@ -267,8 +269,16 @@ class PlayerPathfinding:
                 # FOV map might be None or invalid, fall back to conservative limit
                 pass
         
-        max_path_length = (pathfinding_config.MAX_PATH_LENGTH_IN_FOV if destination_in_fov 
-                          else pathfinding_config.MAX_PATH_LENGTH_OUT_FOV)
+        # Choose appropriate path length limit:
+        # - Visible tiles: 40 steps (short, player can see it)
+        # - Explored tiles: 150 steps (long, player has been there before)
+        # - Unexplored tiles: 25 steps (conservative, shouldn't reach here due to validation)
+        if destination_in_fov:
+            max_path_length = pathfinding_config.MAX_PATH_LENGTH_IN_FOV
+        elif destination_explored:
+            max_path_length = pathfinding_config.MAX_PATH_LENGTH_EXPLORED
+        else:
+            max_path_length = pathfinding_config.MAX_PATH_LENGTH_OUT_FOV
         
         logger.debug(f"Computing path to ({target_x}, {target_y}), in_fov={destination_in_fov}, "
                     f"max_length={max_path_length}")
