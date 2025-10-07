@@ -136,9 +136,9 @@ class ActionProcessor:
             self.state_manager.set_extra_data("previous_state", None)
     
     def _process_pathfinding_movement_action(self, _value: Any) -> None:
-        """Process pathfinding movement for ranged weapon auto-attack.
+        """Process pathfinding movement for auto-pickup and ranged weapon auto-attack.
         
-        This method is called automatically each turn if pathfinding is active.
+        This method is called when right-clicking items or when pathfinding is active.
         It enables the player to continue moving along a path while checking
         for enemies to auto-attack when within weapon reach.
         
@@ -159,6 +159,7 @@ class ActionProcessor:
         )
         
         # Process the results
+        end_turn = False
         for r in result.get("results", []):
             # Handle FOV recompute
             if r.get("fov_recompute"):
@@ -172,10 +173,6 @@ class ActionProcessor:
                     fov_radius
                 )
             
-            # Handle enemy turn
-            if r.get("enemy_turn"):
-                self.state_manager.set_game_state(GameStates.ENEMY_TURN)
-            
             # Handle messages
             message = r.get("message")
             if message:
@@ -185,6 +182,14 @@ class ActionProcessor:
             dead_entity = r.get("dead")
             if dead_entity:
                 self._handle_entity_death(dead_entity)
+            
+            # Check if we should end the turn (continue pathfinding or interrupt after movement)
+            if r.get("continue_pathfinding") or r.get("enemy_turn"):
+                end_turn = True
+        
+        # Transition to enemy turn if player moved
+        if end_turn:
+            self.state_manager.set_game_state(GameStates.ENEMY_TURN)
     
     def _handle_movement(self, move_data: Tuple[int, int]) -> None:
         """Handle player movement.

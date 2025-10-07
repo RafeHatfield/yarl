@@ -317,6 +317,79 @@ class TestActionProcessorPathfindingTurns(unittest.TestCase):
         mock_state_manager.set_game_state.assert_called_once_with(GameStates.PLAYERS_TURN)
 
 
+class TestAutoPickupPathfindingTurns(unittest.TestCase):
+    """Test that auto-pickup pathfinding (right-click) triggers enemy turns."""
+    
+    @patch('mouse_movement.process_pathfinding_movement')
+    def test_auto_pickup_pathfinding_triggers_enemy_turn(self, mock_process):
+        """Test that right-click auto-pickup pathfinding gives enemies their turn."""
+        from game_actions import ActionProcessor
+        from state_machine.game_states import GameStates
+        
+        # Mock the movement result (continue pathfinding)
+        mock_process.return_value = {
+            "results": [
+                {"fov_recompute": True},
+                {"continue_pathfinding": True}
+            ]
+        }
+        
+        # Create mock state manager
+        mock_state_manager = Mock()
+        mock_state = Mock()
+        mock_state.player = Mock()
+        mock_state.player.pathfinding = Mock()
+        mock_state.player.pathfinding.is_path_active.return_value = True
+        mock_state.entities = []
+        mock_state.game_map = Mock()
+        mock_state.message_log = Mock()
+        mock_state.fov_map = Mock()
+        mock_state_manager.state = mock_state
+        
+        # Create action processor
+        processor = ActionProcessor(mock_state_manager)
+        
+        # Process auto-pickup pathfinding turn
+        processor._process_pathfinding_movement_action(None)
+        
+        # Should transition to ENEMY_TURN (monsters get their turn)
+        mock_state_manager.set_game_state.assert_called_once_with(GameStates.ENEMY_TURN)
+    
+    @patch('mouse_movement.process_pathfinding_movement')
+    def test_auto_pickup_with_enemy_interrupt_triggers_turn(self, mock_process):
+        """Test that enemy interruption during auto-pickup still gives enemies their turn."""
+        from game_actions import ActionProcessor
+        from state_machine.game_states import GameStates
+        
+        # Mock the movement result (interrupted by enemy)
+        mock_process.return_value = {
+            "results": [
+                {"fov_recompute": True},
+                {"message": Mock()},
+                {"enemy_turn": True}  # Movement interrupted, but player moved
+            ]
+        }
+        
+        # Create mock state manager
+        mock_state_manager = Mock()
+        mock_state = Mock()
+        mock_state.player = Mock()
+        mock_state.entities = []
+        mock_state.game_map = Mock()
+        mock_state.message_log = Mock()
+        mock_state.fov_map = Mock()
+        mock_state_manager.state = mock_state
+        
+        # Create action processor
+        processor = ActionProcessor(mock_state_manager)
+        
+        # Process auto-pickup pathfinding turn
+        processor._process_pathfinding_movement_action(None)
+        
+        # Should transition to ENEMY_TURN
+        mock_state_manager.set_game_state.assert_called_once_with(GameStates.ENEMY_TURN)
+
+
 if __name__ == '__main__':
     unittest.main()
 
