@@ -386,6 +386,79 @@ def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
                     libtcod.console_set_char_background(
                         con, viewport_x, viewport_y, colors.get("dark_ground"), libtcod.BKGND_SET
                     )
+            
+            # Render ground hazard overlay if present
+            _render_hazard_at_tile(con, game_map, x, y, viewport_x, viewport_y, visible, colors)
+
+
+def _render_hazard_at_tile(con, game_map, world_x, world_y, viewport_x, viewport_y, visible, colors):
+    """Render ground hazard visual overlay on a tile.
+    
+    This function renders hazard effects as lingering spell characters on tiles,
+    showing persistent area effects like fire and poison gas. Visual intensity
+    decays as the hazard ages, blending toward the floor color for a natural fade.
+    
+    Args:
+        con: Console to render to
+        game_map: Game map containing hazards
+        world_x: World X coordinate
+        world_y: World Y coordinate
+        viewport_x: Viewport X coordinate for rendering
+        viewport_y: Viewport Y coordinate for rendering
+        visible: Whether the tile is currently visible in FOV
+        colors: Color configuration dictionary for floor colors
+    """
+    # Skip if map doesn't have hazard manager
+    if not hasattr(game_map, 'hazard_manager') or not game_map.hazard_manager:
+        return
+    
+    # Check for hazard at this position
+    hazard = game_map.hazard_manager.get_hazard_at(world_x, world_y)
+    if not hazard:
+        return
+    
+    # Only render hazards on visible or explored tiles
+    if not visible and not game_map.tiles[world_x][world_y].explored:
+        return
+    
+    # Get hazard character and color based on type
+    from components.ground_hazard import HazardType
+    
+    if hazard.hazard_type == HazardType.FIRE:
+        # Fireball leaves burning embers - use * character
+        hazard_char = ord('*')
+        base_color = (255, 100, 0)  # Orange fire
+    elif hazard.hazard_type == HazardType.POISON_GAS:
+        # Dragon Fart leaves toxic gas - use % character
+        hazard_char = ord('%')
+        base_color = (100, 200, 80)  # Green gas
+    else:
+        # Unknown hazard type, use generic character
+        hazard_char = ord('~')
+        base_color = (200, 200, 0)  # Yellow
+    
+    # Get intensity for fading effect
+    intensity = hazard.get_visual_intensity()
+    
+    # Get floor color for blending (instead of fading to black)
+    if visible:
+        floor_color = colors.get("light_ground", (50, 50, 150))
+    else:
+        floor_color = colors.get("dark_ground", (0, 0, 100))
+        intensity *= 0.3  # Dimmer when out of FOV
+    
+    # Blend hazard color with floor color as it ages
+    # intensity=1.0 -> pure hazard color
+    # intensity=0.0 -> pure floor color
+    hazard_color = (
+        int(base_color[0] * intensity + floor_color[0] * (1 - intensity)),
+        int(base_color[1] * intensity + floor_color[1] * (1 - intensity)),
+        int(base_color[2] * intensity + floor_color[2] * (1 - intensity))
+    )
+    
+    # Render the hazard character on the tile
+    libtcod.console_set_default_foreground(con, hazard_color)
+    libtcod.console_put_char(con, viewport_x, viewport_y, hazard_char, libtcod.BKGND_NONE)
 
 
 def clear_all(con, entities):

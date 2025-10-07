@@ -305,6 +305,12 @@ class TestBasicMonsterIntegration(unittest.TestCase):
         # Mock item usage system to prevent interference
         self.monster.item_usage = None
         
+        # Mock status effects to prevent iteration errors
+        self.monster.status_effects = None
+        
+        # Mock has_status_effect to prevent immobilized check from failing
+        self.monster.has_status_effect = Mock(return_value=False)
+        
         self.player = Mock()
         self.player.x = 8
         self.player.y = 8

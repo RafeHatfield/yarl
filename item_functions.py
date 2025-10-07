@@ -142,11 +142,15 @@ def cast_lightning(*args, **kwargs):
 
 def cast_fireball(*args, **kwargs):
     """Cast a fireball spell that damages all entities in a radius.
+    
+    Creates a fiery explosion that deals immediate damage to all entities
+    in the blast radius. Additionally leaves burning ground hazards that
+    persist for 3 turns and deal damage to entities standing on them.
 
     Args:
         *args: First argument should be the caster entity
         **kwargs: Should contain 'entities', 'fov_map', 'damage', 'radius',
-                 'target_x', and 'target_y'
+                 'target_x', 'target_y', and optionally 'game_map'
 
     Returns:
         list: List of result dictionaries with consumption and damage results
@@ -157,6 +161,7 @@ def cast_fireball(*args, **kwargs):
     radius = kwargs.get("radius")
     target_x = kwargs.get("target_x")
     target_y = kwargs.get("target_y")
+    game_map = kwargs.get("game_map")
 
     results = []
 
@@ -200,6 +205,23 @@ def cast_fireball(*args, **kwargs):
     
     # Show the fiery explosion!
     show_fireball(explosion_tiles)
+    
+    # Create persistent fire hazards on all explosion tiles
+    if game_map and hasattr(game_map, 'hazard_manager') and game_map.hazard_manager:
+        from components.ground_hazard import GroundHazard, HazardType
+        
+        for tile_x, tile_y in explosion_tiles:
+            # Create a fire hazard with damage decay over 5 turns
+            fire_hazard = GroundHazard(
+                hazard_type=HazardType.FIRE,
+                x=tile_x,
+                y=tile_y,
+                base_damage=12,  # 12 → 8 → 4 damage over 5 turns
+                remaining_turns=5,
+                max_duration=5,
+                source_name="Fireball"
+            )
+            game_map.hazard_manager.add_hazard(fire_hazard)
 
     for entity in entities:
         # Damage ALL entities in radius, including the caster!
@@ -670,7 +692,8 @@ def cast_dragon_fart(*args, **kwargs):
     
     Creates a directional cone of gas that spreads from the caster.
     All entities in the cone fall asleep for 20 turns (or become confused
-    since we're reusing that AI).
+    since we're reusing that AI). Additionally leaves toxic gas hazards that
+    persist for 4 turns and deal damage to entities standing in them.
     
     Args:
         *args: First argument is the caster entity (self.owner from inventory)
@@ -708,6 +731,23 @@ def cast_dragon_fart(*args, **kwargs):
     
     # VISUAL EFFECT: Show the noxious cone! 💨
     show_dragon_fart(list(cone_tiles))
+    
+    # Create persistent poison gas hazards on all cone tiles
+    if game_map and hasattr(game_map, 'hazard_manager') and game_map.hazard_manager:
+        from components.ground_hazard import GroundHazard, HazardType
+        
+        for tile_x, tile_y in cone_tiles:
+            # Create a poison gas hazard with damage decay over 5 turns
+            gas_hazard = GroundHazard(
+                hazard_type=HazardType.POISON_GAS,
+                x=tile_x,
+                y=tile_y,
+                base_damage=6,  # 6 → 4 → 2 damage over 5 turns (lower than fire)
+                remaining_turns=5,
+                max_duration=5,
+                source_name="Dragon Fart"
+            )
+            game_map.hazard_manager.add_hazard(gas_hazard)
     
     # Track affected entities
     affected_entities = []

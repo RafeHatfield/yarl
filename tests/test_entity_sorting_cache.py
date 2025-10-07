@@ -312,6 +312,15 @@ class TestEntitySortingIntegration(unittest.TestCase):
         mock_player.fighter = Mock()
         mock_player.fighter.hp = 100
         mock_player.fighter.max_hp = 100
+        # Mock inventory and equipment for tooltip rendering
+        mock_player.inventory = Mock()
+        mock_player.inventory.items = []
+        mock_player.equipment = Mock()
+        mock_player.equipment.main_hand = None
+        mock_player.equipment.off_hand = None
+        mock_player.equipment.head = None
+        mock_player.equipment.chest = None
+        mock_player.equipment.feet = None
         mock_game_map = Mock()
         mock_game_map.dungeon_level = 1
         mock_fov_map = Mock()
@@ -333,12 +342,18 @@ class TestEntitySortingIntegration(unittest.TestCase):
         # Mock the tile rendering and entity drawing functions
         with patch('render_functions._render_tiles_original'), \
              patch('render_functions.draw_entity'), \
+             patch('render_functions.get_effect_queue') as mock_effect_queue, \
              patch('tcod.libtcodpy.console_blit'), \
              patch('tcod.libtcodpy.console_clear'), \
              patch('tcod.libtcodpy.console_set_default_background'), \
              patch('tcod.libtcodpy.console_set_default_foreground'), \
              patch('tcod.libtcodpy.console_print_ex'), \
              patch('tcod.libtcodpy.console_rect'):
+            
+            # Mock the effect queue to prevent visual effects from running
+            mock_queue = Mock()
+            mock_queue.has_effects.return_value = False
+            mock_effect_queue.return_value = mock_queue
             
             # Call render_all twice
             render_all(

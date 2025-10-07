@@ -148,7 +148,13 @@ class TestMapRenderingRegression(unittest.TestCase):
             'tcod.libtcodpy.console_rect'
         ]
         
-        with patch.multiple('tcod.libtcodpy', **{p.split('.')[-1]: Mock() for p in patches}):
+        # Mock the effect queue to prevent visual effects from running
+        with patch('render_functions.get_effect_queue') as mock_effect_queue, \
+             patch.multiple('tcod.libtcodpy', **{p.split('.')[-1]: Mock() for p in patches}):
+            
+            mock_queue = Mock()
+            mock_queue.has_effects.return_value = False
+            mock_effect_queue.return_value = mock_queue
             # Test with optimization enabled
             try:
                 render_all(

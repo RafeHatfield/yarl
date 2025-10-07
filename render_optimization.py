@@ -303,6 +303,11 @@ class OptimizedTileRenderer:
             )
         # UNEXPLORED tiles are not rendered (remain black/default)
         
+        # Render ground hazard overlay if present
+        visible = render_state in (TileRenderState.VISIBLE_WALL, TileRenderState.VISIBLE_FLOOR)
+        from render_functions import _render_hazard_at_tile
+        _render_hazard_at_tile(con, game_map, x, y, viewport_x, viewport_y, visible, colors)
+        
         # Update cache
         if update_cache:
             self.tile_cache[cache_key] = TileCache(

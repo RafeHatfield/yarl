@@ -106,7 +106,8 @@ class TestWandDisplayName:
         
         display_name = wand.get_display_name()
         
-        assert display_name == "Wand (5)"
+        # Should include charge indicator (● for 5+ charges)
+        assert display_name == "Wand ● 5"
     
     def test_display_name_with_owner(self):
         """Test display name when wand is attached to an entity."""
@@ -116,21 +117,25 @@ class TestWandDisplayName:
         
         display_name = wand.get_display_name()
         
-        assert display_name == "Wand of Fireball (7)"
+        # Should include charge indicator (● for 5+ charges)
+        assert display_name == "Wand of Fireball ● 7"
     
     def test_display_name_updates_with_charges(self):
-        """Test that display name reflects current charge count."""
+        """Test that display name reflects current charge count and indicator changes."""
         wand = Wand(spell_type="fireball", charges=5)
         entity = Entity(0, 0, '/', (255, 255, 255), 'Wand of Fireball', blocks=False)
         wand.owner = entity
         
-        assert wand.get_display_name() == "Wand of Fireball (5)"
+        # 5 charges = ● (full circle)
+        assert wand.get_display_name() == "Wand of Fireball ● 5"
         
         wand.use_charge()
-        assert wand.get_display_name() == "Wand of Fireball (4)"
+        # 4 charges = ◕ (three-quarter filled)
+        assert wand.get_display_name() == "Wand of Fireball ◕ 4"
         
         wand.add_charge(3)
-        assert wand.get_display_name() == "Wand of Fireball (7)"
+        # 7 charges = ● (full circle, 5+)
+        assert wand.get_display_name() == "Wand of Fireball ● 7"
     
     def test_display_name_with_zero_charges(self):
         """Test display name shows zero for empty wands."""
@@ -140,7 +145,8 @@ class TestWandDisplayName:
         
         display_name = wand.get_display_name()
         
-        assert display_name == "Wand of Fireball (0)"
+        # 0 charges = ○ (empty circle)
+        assert display_name == "Wand of Fireball ○ 0"
 
 
 class TestWandIsEmpty:
@@ -200,24 +206,25 @@ class TestWandIntegration:
         entity = Entity(0, 0, '/', (255, 255, 255), 'Wand of Fireball', blocks=False)
         wand.owner = entity
         
-        # Use charges
-        assert wand.get_display_name() == "Wand of Fireball (2)"
+        # Use charges - 2 charges = ◐ (half-filled)
+        assert wand.get_display_name() == "Wand of Fireball ◐ 2"
         wand.use_charge()
-        assert wand.get_display_name() == "Wand of Fireball (1)"
+        assert wand.get_display_name() == "Wand of Fireball ◐ 1"
         
         # Deplete
         wand.use_charge()
         assert wand.is_empty()
-        assert wand.get_display_name() == "Wand of Fireball (0)"
+        # 0 charges = ○ (empty circle)
+        assert wand.get_display_name() == "Wand of Fireball ○ 0"
         
         # Try to use when empty
         assert wand.use_charge() is False
         assert wand.charges == 0
         
-        # Recharge by picking up scroll
+        # Recharge by picking up scroll - 1 charge = ◐ (half-filled)
         wand.add_charge()
         assert not wand.is_empty()
-        assert wand.get_display_name() == "Wand of Fireball (1)"
+        assert wand.get_display_name() == "Wand of Fireball ◐ 1"
         
         # Continue using
         assert wand.use_charge() is True

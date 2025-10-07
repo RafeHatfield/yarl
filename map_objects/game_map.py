@@ -33,13 +33,15 @@ class GameMap:
     """Manages the game map including tiles, rooms, and entity placement.
 
     Handles dungeon generation using rectangular rooms connected by tunnels,
-    entity spawning based on dungeon level, and map navigation.
+    entity spawning based on dungeon level, map navigation, and persistent
+    ground hazards from area-of-effect spells.
 
     Attributes:
         width (int): Map width in tiles
         height (int): Map height in tiles
         tiles (list): 2D array of Tile objects
         dungeon_level (int): Current dungeon level for scaling difficulty
+        hazard_manager (GroundHazardManager): Manages persistent ground hazards
     """
 
     def __init__(self, width, height, dungeon_level=1):
@@ -53,8 +55,11 @@ class GameMap:
         self.width = width
         self.height = height
         self.tiles = self.initialize_tiles()
-
         self.dungeon_level = dungeon_level
+        
+        # Initialize ground hazard manager for persistent spell effects
+        from components.ground_hazard import GroundHazardManager
+        self.hazard_manager = GroundHazardManager()
 
     def initialize_tiles(self):
         """Initialize the map with blocked wall tiles.

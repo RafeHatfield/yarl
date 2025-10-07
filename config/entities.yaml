@@ -298,7 +298,7 @@ weapons:
     two_handed: true        # Requires both hands, prevents shield use
     slot: "main_hand"
     char: "/"
-    color: [128, 128, 128]  # Gray
+    color: [110, 110, 110]  # Dark gray
   
   # Large two-handed sword
   greatsword:
@@ -307,7 +307,7 @@ weapons:
     two_handed: true        # Requires both hands, prevents shield use
     slot: "main_hand"
     char: "/"
-    color: [211, 211, 211]  # Light gray
+    color: [140, 140, 160]  # Steel gray (darker)
   
   # Legacy weapon (for backward compatibility)
   sword:
@@ -315,7 +315,7 @@ weapons:
     to_hit_bonus: 0
     slot: "main_hand"
     char: "/"
-    color: [192, 192, 192]  # Silver
+    color: [150, 150, 170]  # Silver (darker)
 
   # ═══════════════════════════════════════════════════════════
   # RANGED WEAPONS - Bows & Crossbows
@@ -420,7 +420,7 @@ armor:
     dex_cap: 2  # Max +2 DEX bonus
     slot: "head"
     char: "^"
-    color: [192, 192, 192]  # Silver
+    color: [140, 140, 150]  # Steel (darker)
 
   # CHEST SLOT - Medium
   chain_mail:
@@ -446,7 +446,7 @@ armor:
     dex_cap: 2  # Max +2 DEX bonus
     slot: "feet"
     char: "]"
-    color: [192, 192, 192]  # Silver
+    color: [140, 140, 150]  # Steel (darker)
 
   # ═══════════════════════════════════════════════════════════
   # HEAVY ARMOR (DEX Cap 0 - No DEX Bonus!)
@@ -459,7 +459,7 @@ armor:
     dex_cap: 0  # No DEX bonus to AC
     slot: "head"
     char: "^"
-    color: [211, 211, 211]  # Light gray (polished)
+    color: [160, 160, 180]  # Polished steel (darker)
 
   # CHEST SLOT - Heavy
   plate_mail:
@@ -468,7 +468,7 @@ armor:
     dex_cap: 0  # No DEX bonus to AC
     slot: "chest"
     char: "["
-    color: [220, 220, 220]  # Bright silver
+    color: [155, 155, 175]  # Steel (darker)
   
   full_plate:
     armor_class_bonus: 8  # +8 AC (best armor in game!)
@@ -476,7 +476,7 @@ armor:
     dex_cap: 0  # No DEX bonus to AC
     slot: "chest"
     char: "["
-    color: [230, 230, 230]  # Shining silver
+    color: [170, 170, 190]  # Shining steel (darker)
 
   # FEET SLOT - Heavy
   plate_boots:
@@ -485,7 +485,7 @@ armor:
     dex_cap: 0  # No DEX bonus to AC
     slot: "feet"
     char: "]"
-    color: [211, 211, 211]  # Light gray
+    color: [155, 155, 175]  # Steel
 
 # Spell and consumable definitions
 spells:
@@ -533,20 +533,20 @@ spells:
   invisibility_scroll:
     spell_type: "utility"
     char: "~"
-    color: [200, 200, 255]  # Light blue
+    color: [100, 120, 200]  # Medium blue (darker)
     duration: 10  # Turns of invisibility
 
   # Teleport scroll - teleport to target location (10% misfire chance)
   teleport_scroll:
     spell_type: "utility"
     char: "~"
-    color: [128, 200, 255]  # Light cyan
+    color: [80, 160, 200]  # Cyan (darker)
 
   # Shield scroll - temporary defense boost (monsters have 10% backfire chance)
   shield_scroll:
     spell_type: "utility"
     char: "~"
-    color: [100, 200, 255]  # Light blue
+    color: [60, 140, 200]  # Blue (darker)
     duration: 10  # Turns of shield protection
     defense_bonus: 4  # +4 defense
 
@@ -554,7 +554,7 @@ spells:
   dragon_fart_scroll:
     spell_type: "offensive"
     char: "~"
-    color: [150, 255, 100]  # Bright green
+    color: [100, 200, 80]  # Green (slightly darker)
     duration: 20  # Turns enemies are knocked out
     range: 8  # Maximum cone distance
     cone_width: 45  # Cone width in degrees
@@ -570,7 +570,7 @@ spells:
   yo_mama_scroll:
     spell_type: "utility"
     char: "~"
-    color: [200, 150, 255]  # Entity purple
+    color: [160, 100, 220]  # Purple (darker)
     duration: 1000  # Effectively permanent
     range: 10  # Can target from distance
 
@@ -578,7 +578,7 @@ spells:
   slow_scroll:
     spell_type: "utility"
     char: "~"
-    color: [150, 150, 255]  # Light blue
+    color: [100, 100, 200]  # Blue (darker)
     duration: 10  # Turns of slow
     range: 8  # Targeting range
 
@@ -642,7 +642,7 @@ wands:
     spell_type: "offensive"
     spell_name: "dragon_fart_scroll"
     char: "/"
-    color: [180, 255, 150]  # Bright green (wand)
+    color: [120, 200, 100]  # Green (darker)
     duration: 20
     range: 8
     cone_width: 45
@@ -651,7 +651,7 @@ wands:
     spell_type: "utility"
     spell_name: "yo_mama_scroll"
     char: "/"
-    color: [220, 170, 255]  # Bright purple (wand)
+    color: [180, 120, 220]  # Purple (darker)
     duration: 1000
     range: 10
   
@@ -659,7 +659,7 @@ wands:
     spell_type: "utility"
     spell_name: "slow_scroll"
     char: "/"
-    color: [180, 180, 255]  # Bright light blue (wand)
+    color: [120, 120, 200]  # Blue (darker)
     duration: 10
     range: 8
   

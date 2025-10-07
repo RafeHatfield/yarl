@@ -66,6 +66,11 @@ class Inventory:
                         wand.add_charge()
                         scroll_recharged_wand = True
                         
+                        # Queue a sparkle visual effect at player's position
+                        from visual_effect_queue import get_effect_queue
+                        effect_queue = get_effect_queue()
+                        effect_queue.queue_wand_recharge(self.owner.x, self.owner.y, self.owner)
+                        
                         results.append({
                             "item_added": None,  # Scroll was consumed, not added
                             "item_consumed": item,  # Signal that scroll should be removed from world
@@ -166,7 +171,6 @@ class Inventory:
                     # Wand usage: consume charge instead of destroying item
                     if wand_component.is_empty():
                         # Wand has no charges - can't use it
-                        from game_messages import Message
                         results.append({
                             "message": Message(
                                 f"The {item_entity.name} fizzles uselessly. It has no charges!",
@@ -195,7 +199,6 @@ class Inventory:
                         if spell_consumed:
                             remaining_charges = wand_component.charges
                             if remaining_charges > 0:
-                                from game_messages import Message
                                 results.append({
                                     "message": Message(
                                         f"The {item_entity.name} glows. ({remaining_charges} charges remaining)",
@@ -203,7 +206,6 @@ class Inventory:
                                     )
                                 })
                             else:
-                                from game_messages import Message
                                 results.append({
                                     "message": Message(
                                         f"The {item_entity.name} dims. (0 charges remaining)",

@@ -195,6 +195,12 @@ class TestAISystemRegressions:
         # Ensure no item usage or item seeking to avoid interference
         entity.item_usage = None
         entity.item_seeking_ai = None
+        
+        # Mock status effects to prevent iteration errors
+        entity.status_effects = None
+        
+        # Mock has_status_effect to prevent immobilized check from failing
+        entity.has_status_effect = Mock(return_value=False)
 
         # Create real BasicMonster AI
         basic_ai = BasicMonster()

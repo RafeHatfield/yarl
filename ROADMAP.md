@@ -6,7 +6,36 @@ This roadmap organizes all planned features by implementation complexity and gam
 
 ---
 
-## ✅ **Recently Completed: Mouse-Driven UI & Equipment Enhancements** (v3.5.0)
+## ✅ **Recently Completed: Persistent Ground Effects** (v3.6.0)
+
+**🔥 Hazardous Ground System** (October 2025)
+
+Complete ground hazard system with persistent fire and poison gas effects:
+
+### **What Was Accomplished**
+- **🔥 Persistent Fire:** Fireball leaves burning embers (3 turns, 10→6→3 damage decay)
+- **💨 Persistent Poison Gas:** Dragon Fart creates toxic gas cones (4 turns, 5→3→1 damage)
+- **⏱️ Turn-Based Processing:** Hazards age and damage automatically each turn
+- **✨ Visual Fade Effects:** Beautiful color blending into floor (not to black!)
+- **💾 Full Save/Load:** Hazards persist across game sessions
+- **🧪 Production Quality:** 100+ new tests, 1,813 total tests passing (100%)
+
+### **Technical Achievements**
+- **GroundHazard System:** Clean architecture with hazard manager
+- **Damage Decay:** Linear decay (100% → 66% → 33%) for fading effects
+- **Visual Blending:** Colors fade toward floor color (orange→purple→blue for fire)
+- **FOV Integration:** Hazards dim when out of sight but remain visible
+- **Death Handling:** Proper messages for hazard-caused deaths
+
+### **Benefits Realized**
+- **🎮 Players:** Tactical zone control, area denial, strategic spell usage
+- **🎨 Visual Polish:** Natural color transitions, clear hazard feedback
+- **🏗️ Architecture:** Extensible for future hazard types (acid, ice, lightning)
+- **✨ Quality:** Zero regressions, comprehensive test coverage
+
+---
+
+## ✅ **Previously Completed: Mouse-Driven UI & Equipment Enhancements** (v3.5.0)
 
 **🖱️ Intuitive Right-Click Interactions** (October 2025)
 
@@ -206,7 +235,8 @@ These features build on existing systems and provide immediate gameplay improvem
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
 | **Movement Speed Config** | 1 week | 🔥 High | Makes mouse movement feel perfect for each player | Add animation timing to pathfinding |
-| **Tooltip System** | 1 week | 🔥 High | Hovering items shows tooltip instead of bottom bar text | Tooltip rendering, positioning logic, item info display |
+| **Tooltip System** | ✅ Complete (v3.5) | 🔥 High | Ground & equipment item tooltips on hover | Rich tooltip system with full item details |
+| **Explored Area Pathfinding** | 1 week | 🔥 High | Click any previously explored tile to pathfind back to it | Pathfinding to explored tiles, memory-based navigation |
 | **Player Naming** | 1 week | 🔥 High | Allow players to enter custom names for personalization | Add name input dialog at game start |
 | **More Monster Types** | 1-2 weeks | 🔥 High | Keeps exploration fresh and challenging | AI system supports easy expansion |
 | **Multi-Save Games** | 2-3 weeks | 🔥 High | Multiple save slots with metadata display | Save slot UI, file management, save previews |
@@ -240,7 +270,7 @@ These features add new gameplay dimensions and significantly expand the game's d
 |---------|------|--------|------------|----------------------|
 | **Ranged Weapons** | 2-3 weeks | 🔥 High | Need targeting system extension | Projectile mechanics, line-of-sight calculations |
 | **Boss Encounters** | 3-4 weeks | 🔥 High | Special AI behaviors and mechanics | Custom AI states, unique abilities |
-| **Persistent Spell Effects** | 2-3 weeks | 🔥 High | Lingering ground effects (fireball/dragon fart) | Ground effect tracking, turn duration, area denial |
+| **Persistent Spell Effects** | ✅ Complete (v3.6) | 🔥 High | Lingering ground effects (fireball/dragon fart) | Ground effect tracking, turn duration, area denial |
 | **Spell-Item Interaction** | 1 week | 🔥 High | Fireball destroys items in blast zone | Item destruction system, area effect on ground items |
 | **Environmental Hazards** | 2-4 weeks | 🔥 High | Traps, poison, lava - tactical positioning | New tile types, damage-over-time systems |
 | **Manual Level Design - Tier 1** | ✅ Complete | 🔥 High | Guaranteed spawns for testing (YAML-based) | Template system with mode control (additional/replace) |
@@ -310,7 +340,10 @@ These features require significant architectural changes but provide transformat
 
 | Feature | Time | Impact | Complexity | Technical Requirements |
 |---------|------|--------|------------|----------------------|
-| **Sound Effects** | 6-12 weeks | 🔥 High | New audio system from scratch | Audio engine integration, sound management |
+| **Sound Effects - Phase 1** | 2-3 weeks | 🔥 High | Basic combat & UI sounds | pygame/SDL audio integration, sound file management |
+| **Sound Effects - Phase 2** | 2-3 weeks | 🔥 High | Spell & monster sounds | Expanded sound library, per-entity audio |
+| **Sound Effects - Phase 3** | 2-4 weeks | 🔥 High | Music & ambient sounds | Background music system, audio loops, transitions |
+| **Sound Effects - Phase 4** | 2-3 weeks | 🔥 High | Audio polish & settings | Volume controls, positional audio, audio mixing |
 | **Better Character UI** | 4-8 weeks | 🔥 High | Enhanced inventory and character screens | Major UI redesign, improved UX patterns |
 | **Modern UI Overhaul** | 2-3 months | 🔥 High | Complete interface redesign | Full UI system replacement |
 | **Sprite Graphics** | 3-6 months | 🔥 High | Replace ASCII with sprite rendering | New rendering pipeline, sprite management |

@@ -145,11 +145,17 @@ class TestMonsterMigrationCompatibility:
         """Test that multiple monsters don't spawn on same position."""
         # Mock to spawn 3 monsters
         with patch('map_objects.game_map.from_dungeon_level') as mock_from_level:
-            mock_from_level.side_effect = [
-                3,  # max_monsters_per_room
-                0,  # max_items_per_room (no items for this test)
-                15, 5, 15, 5, 0, 0, 10, 5, 5, 5, 5, 5, 5  # Item chances (includes invisibility_scroll)
-            ]
+            # Use a callable that returns appropriate values
+            call_count = [0]
+            def from_level_side_effect(table, level):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    return 3  # max_monsters_per_room
+                elif call_count[0] == 2:
+                    return 0  # max_items_per_room (no items for this test)
+                else:
+                    return 5  # Default value for any other calls (item chances)
+            mock_from_level.side_effect = from_level_side_effect
             
             # Set up positions - use same position to test collision detection
             self.mock_randint.return_value = 7  # All monsters try to spawn at same position
