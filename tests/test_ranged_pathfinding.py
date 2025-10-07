@@ -46,6 +46,7 @@ class TestRangedPathfindingAutoAttack(unittest.TestCase):
         # Mock game map
         self.game_map = Mock()
         self.game_map.is_blocked = Mock(return_value=False)
+        self.game_map.hazard_manager = None  # No hazards for these tests
         
         # Mock FOV map
         self.fov_map = Mock()

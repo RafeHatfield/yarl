@@ -45,6 +45,13 @@ class TestPlayerPathfinding(unittest.TestCase):
         self.game_map.height = 20
         self.game_map.is_blocked = Mock(return_value=False)
         
+        # Create mock tiles with explored attribute
+        mock_tile = Mock()
+        mock_tile.blocked = False
+        mock_tile.block_sight = False
+        mock_tile.explored = True  # All tiles explored for testing
+        self.game_map.tiles = [[mock_tile for _ in range(20)] for _ in range(20)]
+        
         # Create mock entities list
         self.entities = [self.player]
     
@@ -420,6 +427,7 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         self.game_map.width = 20
         self.game_map.height = 20
         self.game_map.is_blocked = Mock(return_value=False)
+        self.game_map.hazard_manager = None  # No hazards for these tests
         
         # Create FOV map
         self.fov_map = Mock()

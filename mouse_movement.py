@@ -189,13 +189,20 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     This function should be called during the player's turn when they are
     following a pathfinding route. It handles:
     - Moving to the next step in the path
+    - Interrupting on ground hazards (fire, poison gas)
     - Checking for enemies in FOV (interruption)
+    - Auto-attacking enemies within weapon range
     - Completing or continuing movement
+    
+    Movement interrupts when:
+    - Player steps on a ground hazard (damage tile)
+    - Enemy comes into weapon range (auto-attack)
+    - Enemy spotted within threat range (stops movement)
     
     Args:
         player (Entity): The player entity
         entities (List[Entity]): List of all entities
-        game_map (GameMap): The game map
+        game_map (GameMap): The game map (may include hazard_manager)
         fov_map: Field of view map for enemy detection
         
     Returns:
@@ -246,6 +253,23 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     results.append({
         "fov_recompute": True
     })
+    
+    # Check if player stepped on a hazard - interrupt movement if so
+    try:
+        if (hasattr(game_map, 'hazard_manager') and 
+            game_map.hazard_manager is not None):
+            hazard = game_map.hazard_manager.get_hazard_at(player.x, player.y)
+            if hazard and hasattr(hazard, 'hazard_type'):
+                hazard_name = hazard.hazard_type.name.replace('_', ' ').title()
+                pathfinding.interrupt_movement(f"Stepped on {hazard_name}")
+                results.append({
+                    "message": Message(f"Movement stopped - {hazard_name} ahead!", (255, 165, 0))
+                })
+                # Still end turn after stepping on hazard
+                return {"results": results}
+    except (AttributeError, TypeError):
+        # No valid hazard manager or method, skip hazard check
+        pass
     
     # Check if we're within weapon reach of any enemy (auto-attack!)
     enemy_in_range = _check_for_enemy_in_weapon_range(player, entities, fov_map)
