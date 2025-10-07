@@ -22,6 +22,12 @@ class TestMonsterHazardAvoidance(unittest.TestCase):
         """Set up test fixtures."""
         self.game_map = GameMap(width=20, height=20, dungeon_level=1)
         
+        # Unblock all tiles for pathfinding
+        for x in range(20):
+            for y in range(20):
+                self.game_map.tiles[x][y].blocked = False
+                self.game_map.tiles[x][y].block_sight = False
+        
         # Create a monster at (5, 10)
         fighter = Fighter(hp=30, defense=2, power=5)
         ai = BasicMonster()

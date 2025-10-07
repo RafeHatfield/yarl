@@ -947,6 +947,7 @@ class ActionProcessor:
             camera.update(player.x, player.y)
         
         # Process results
+        end_turn = False
         for result in movement_result.get("results", []):
             message = result.get("message")
             if message:
@@ -956,13 +957,17 @@ class ActionProcessor:
             if result.get("fov_recompute"):
                 self.state_manager.request_fov_recompute()
             
-            # Continue pathfinding or end turn
-            if result.get("continue_pathfinding"):
-                # Continue with enemy turn (which will cycle back to player)
-                self.state_manager.set_game_state(GameStates.ENEMY_TURN)
-            else:
-                # Pathfinding completed or interrupted, stay in player turn
-                self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+            # Check if we should end the turn (continue pathfinding or interrupt after movement)
+            if result.get("continue_pathfinding") or result.get("enemy_turn"):
+                end_turn = True
+        
+        # Transition to appropriate state
+        if end_turn:
+            # Player moved, give enemies their turn (which will cycle back to player)
+            self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+        else:
+            # Pathfinding completed/cancelled without movement, stay in player turn
+            self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
     def _handle_right_click(self, click_pos: Tuple[int, int]) -> None:
         """Handle right mouse click (context-aware: pickup items or cancel).

@@ -235,6 +235,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         results.append({
             "message": Message("Path blocked - movement stopped.", (255, 255, 0))
         })
+        # Path blocked before moving, no enemy turn needed
         return {"results": results}
     
     # Check for entities at destination
@@ -244,6 +245,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         results.append({
             "message": Message(f"Path blocked by {blocking_entity.name}.", (255, 255, 0))
         })
+        # Path blocked before moving, no enemy turn needed
         return {"results": results}
     
     # Move player first
@@ -265,7 +267,10 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                 results.append({
                     "message": Message(f"Movement stopped - {hazard_name} ahead!", (255, 165, 0))
                 })
-                # Still end turn after stepping on hazard
+                # Player moved, so give enemies their turn
+                results.append({
+                    "enemy_turn": True
+                })
                 return {"results": results}
     except (AttributeError, TypeError):
         # No valid hazard manager or method, skip hazard check
@@ -291,7 +296,10 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         results.append({
             "message": Message("Movement stopped - enemy spotted!", (255, 255, 0))
         })
-        # Still end turn even though movement was interrupted
+        # Player moved, so give enemies their turn
+        results.append({
+            "enemy_turn": True
+        })
         return {"results": results}
     
     # Continue movement if path is still active
