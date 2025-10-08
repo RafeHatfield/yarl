@@ -321,6 +321,16 @@ class TestEntitySortingIntegration(unittest.TestCase):
         mock_player.equipment.head = None
         mock_player.equipment.chest = None
         mock_player.equipment.feet = None
+        # Mock ComponentRegistry to return inventory and equipment
+        from components.component_registry import ComponentType
+        mock_player.components = Mock()
+        def get_component(comp_type):
+            if comp_type == ComponentType.INVENTORY:
+                return mock_player.inventory
+            elif comp_type == ComponentType.EQUIPMENT:
+                return mock_player.equipment
+            return None
+        mock_player.components.get = Mock(side_effect=get_component)
         mock_game_map = Mock()
         mock_game_map.dungeon_level = 1
         mock_fov_map = Mock()
