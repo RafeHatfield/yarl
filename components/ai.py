@@ -28,9 +28,15 @@ def find_taunted_target(entities: list) -> Optional['Entity']:
     for entity in entities:
         status_effects = entity.components.get(ComponentType.STATUS_EFFECTS)
         if status_effects and status_effects.has_effect('taunted'):
-            # Also check if entity is still alive (has fighter component)
-            if entity.components.has(ComponentType.FIGHTER):
+            # CRITICAL: Check if entity is still ALIVE (hp > 0)
+            # Dead entities keep their fighter component, so we must check hp!
+            fighter = entity.components.get(ComponentType.FIGHTER)
+            if not fighter:
+                fighter = getattr(entity, 'fighter', None)
+            
+            if fighter and fighter.hp > 0:
                 return entity
+            # Target is dead - return None so monsters stop pursuing
     return None
 
 
