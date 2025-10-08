@@ -113,9 +113,11 @@ class BasicMonster:
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         
-        # If pursuing a taunted target, act regardless of FOV (entire dungeon hears the insult!)
-        # Otherwise, only act if monster is in player's FOV
-        if is_pursuing_taunt or map_is_in_fov(fov_map, monster.x, monster.y):
+        # Monsters act if:
+        # 1. Pursuing a taunted target (entire dungeon hears the insult!)
+        # 2. In combat (already engaged, even if out of player's sight)
+        # 3. In player's FOV (player can see them)
+        if is_pursuing_taunt or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
             # Check if target is invisible - but taunt overrides invisibility!
             if (not is_pursuing_taunt and 
                 hasattr(target, 'has_status_effect') and 
