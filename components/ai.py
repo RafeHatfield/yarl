@@ -134,8 +134,53 @@ class BasicMonster:
                 hasattr(target, 'has_status_effect') and 
                 callable(target.has_status_effect) and 
                 target.has_status_effect('invisibility') is True):
-                MonsterActionLogger.log_turn_summary(monster, ["cannot_see_invisible_target"])
-                return results
+                
+                # IMPORTANT: If player is invisible but monster is in combat,
+                # or if player is invisible and there are visible hostile entities,
+                # look for OTHER visible hostiles based on FACTION (e.g., slime attacking us!)
+                if self.in_combat or True:  # Always check for visible hostiles when player invisible
+                    from components.faction import are_factions_hostile, get_target_priority
+                    
+                    # Find nearest visible hostile based on faction relationships
+                    closest_hostile = None
+                    closest_distance = float('inf')
+                    best_priority = 0
+                    
+                    monster_faction = getattr(self.owner, 'faction', None)
+                    
+                    for entity in entities:
+                        if entity == self.owner or entity == target:  # Skip self and invisible player
+                            continue
+                        
+                        # Check if entity is a hostile with fighter
+                        fighter = entity.components.get(ComponentType.FIGHTER)
+                        if not fighter:
+                            fighter = getattr(entity, 'fighter', None)
+                        
+                        if fighter and fighter.hp > 0:
+                            # Check if visible in FOV
+                            if map_is_in_fov(fov_map, entity.x, entity.y):
+                                # Check if hostile based on faction
+                                entity_faction = getattr(entity, 'faction', None)
+                                if monster_faction and entity_faction:
+                                    if are_factions_hostile(monster_faction, entity_faction):
+                                        distance = self.owner.distance_to(entity)
+                                        priority = get_target_priority(monster_faction, entity_faction)
+                                        
+                                        # Pick highest priority target, or closest if same priority
+                                        if (priority > best_priority or 
+                                            (priority == best_priority and distance < closest_distance)):
+                                            closest_distance = distance
+                                            best_priority = priority
+                                            closest_hostile = entity
+                    
+                    if closest_hostile:
+                        # Fight the visible hostile! (e.g., slime that's attacking us)
+                        target = closest_hostile
+                    else:
+                        # No visible targets - can't do anything
+                        MonsterActionLogger.log_turn_summary(monster, ["cannot_see_invisible_target"])
+                        return results
             
             # Check for item usage first (scrolls, potions, etc.)
             item_usage_action = self._try_item_usage(target, game_map, entities)
