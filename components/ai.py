@@ -102,33 +102,6 @@ class BasicMonster:
                     return results  # Skip turn entirely
                 results.append(result)
 
-        # Check if THIS monster is the taunted target
-        # If so, it should attack whoever is closest/attacking it, not the player
-        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
-        if not status_effects:
-            status_effects = getattr(self.owner, 'status_effects', None)
-        
-        if status_effects and status_effects.has_effect('taunted'):
-            # This monster is taunted - it should defend itself, not chase player
-            # Find closest hostile monster (not the player)
-            closest_hostile = None
-            closest_distance = float('inf')
-            for entity in entities:
-                if entity == self.owner or entity == target:  # Skip self and player
-                    continue
-                fighter = entity.components.get(ComponentType.FIGHTER)
-                if not fighter:
-                    fighter = getattr(entity, 'fighter', None)
-                if fighter and fighter.hp > 0:
-                    distance = self.owner.distance_to(entity)
-                    if distance < closest_distance:
-                        closest_distance = distance
-                        closest_hostile = entity
-            
-            # If there's a nearby hostile, attack it instead of player
-            if closest_hostile:
-                target = closest_hostile
-        
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
         is_pursuing_taunt = False
@@ -137,34 +110,13 @@ class BasicMonster:
             # Override normal targeting - attack the taunted entity instead!
             target = taunted_target
             is_pursuing_taunt = True
-            # Track that we're engaged with a taunt (separate from in_combat for item seeking)
-            self._engaged_with_taunt = True
-        elif getattr(self, '_engaged_with_taunt', False):
-            # Taunt ended or target died - stay active for a bit
-            if not hasattr(self, '_taunt_recovery'):
-                self._taunt_recovery = 5  # Stay active for 5 more turns
-            self._engaged_with_taunt = False
-        
-        # Decay taunt recovery
-        if hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0:
-            self._taunt_recovery -= 1
-            # During recovery, monsters ACT to find new targets naturally
-            # But DON'T set in_combat (would block item seeking)
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         
-        # Calculate if monster is engaged with taunt (used in multiple places)
-        engaged_or_recovering = (is_pursuing_taunt or 
-                                 getattr(self, '_engaged_with_taunt', False) or
-                                 (hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0))
-        
-        # Monsters act if:
-        # 1. Pursuing a taunted target (entire dungeon hears the insult!)
-        # 2. Recovering from taunt (finding new targets)
-        # 3. In combat (already engaged, even if out of player's sight)
-        # 4. In player's FOV (player can see them)
-        if engaged_or_recovering or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
+        # Simple AI decision: Act if pursuing taunt, in combat with player, or in player's FOV
+        # When taunt ends, monsters return to normal behavior (only act when in FOV or in combat)
+        if is_pursuing_taunt or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
             # Check if target is invisible - but taunt overrides invisibility!
             if (not is_pursuing_taunt and 
                 hasattr(target, 'has_status_effect') and 
@@ -724,33 +676,12 @@ class SlimeAI:
             # Override normal targeting - slimes are drawn to the insult!
             best_target = taunted_target
             is_pursuing_taunt = True
-            self._engaged_with_taunt = True
-        elif getattr(self, '_engaged_with_taunt', False):
-            # Taunt ended or target died - stay active for a bit
-            if not hasattr(self, '_taunt_recovery'):
-                self._taunt_recovery = 5  # Stay active for 5 more turns
-            self._engaged_with_taunt = False
-        
-        # Decay taunt recovery
-        if hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0:
-            self._taunt_recovery -= 1
-        
-        # Calculate if slime is engaged with taunt
-        engaged_or_recovering = (is_pursuing_taunt or 
-                                 getattr(self, '_engaged_with_taunt', False) or
-                                 (hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0))
-        
-        # Only act when:
-        # 1. Pursuing/recovering from taunt (heard the insult!)
-        # 2. In player's FOV (prevents off-screen monster-vs-monster chaos)
-        if not engaged_or_recovering and not map_is_in_fov(fov_map, monster.x, monster.y):
-            return results
-        
-        # Find best target if not already pursuing taunt
-        if is_pursuing_taunt:
-            # Already have target from taunt
-            pass
         else:
+            # Only act when pursuing taunt or in player's FOV
+            # This prevents off-screen monster-vs-monster chaos
+            if not map_is_in_fov(fov_map, monster.x, monster.y):
+                return results
+            
             # Find the best target based on faction relationships and distance
             best_target = self._find_best_target(entities, fov_map)
         
