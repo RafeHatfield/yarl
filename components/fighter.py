@@ -273,6 +273,9 @@ class Fighter:
         
         # Flag monster as "in combat" when attacked (stops looting behavior)
         ai = self.owner.components.get(ComponentType.AI) if self.owner else None
+        if not ai and self.owner:
+            # Fallback to direct attribute access for backward compatibility
+            ai = getattr(self.owner, 'ai', None)
         if ai and hasattr(ai, 'in_combat'):
             ai.in_combat = True
 

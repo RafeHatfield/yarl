@@ -169,7 +169,7 @@ class BasicMonster:
                 MonsterActionLogger.log_action_attempt(monster, "movement", f"moving towards {target.name}")
                 monster.move_astar(target, entities, game_map)
                 actions_taken.append("movement")
-            elif target.fighter.hp > 0:
+            elif target.fighter and target.fighter.hp > 0:
                 # Within attack range - attack!
                 MonsterActionLogger.log_action_attempt(monster, "combat", f"attacking {target.name}")
                 attack_results = monster.fighter.attack_d20(target)
