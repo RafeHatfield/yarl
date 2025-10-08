@@ -164,12 +164,14 @@ class BasicMonster:
                                     distance = self.owner.distance_to(entity)
                                     priority = get_target_priority(monster_faction, entity_faction)
                                     
-                                    # Pick highest priority target, or closest if same priority
-                                    if (priority > best_priority or 
-                                        (priority == best_priority and distance < closest_distance)):
-                                        closest_distance = distance
-                                        best_priority = priority
-                                        closest_hostile = entity
+                                    # Only consider targets with positive priority (actually hostile)
+                                    if priority > 0:
+                                        # Pick highest priority target, or closest if same priority
+                                        if (priority > best_priority or 
+                                            (priority == best_priority and distance < closest_distance)):
+                                            closest_distance = distance
+                                            best_priority = priority
+                                            closest_hostile = entity
                 
                 if closest_hostile:
                     # Fight back against the nearest attacker!
@@ -213,12 +215,14 @@ class BasicMonster:
                                         distance = self.owner.distance_to(entity)
                                         priority = get_target_priority(monster_faction, entity_faction)
                                         
-                                        # Pick highest priority target, or closest if same priority
-                                        if (priority > best_priority or 
-                                            (priority == best_priority and distance < closest_distance)):
-                                            closest_distance = distance
-                                            best_priority = priority
-                                            closest_hostile = entity
+                                        # Only consider targets with positive priority (actually hostile)
+                                        if priority > 0:
+                                            # Pick highest priority target, or closest if same priority
+                                            if (priority > best_priority or 
+                                                (priority == best_priority and distance < closest_distance)):
+                                                closest_distance = distance
+                                                best_priority = priority
+                                                closest_hostile = entity
                     
                     if closest_hostile:
                         # Fight the visible hostile! (e.g., slime that's attacking us)
