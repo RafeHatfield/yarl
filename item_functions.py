@@ -1037,7 +1037,10 @@ def cast_yo_mama(*args, **kwargs):
     
     # Ensure target has status_effects component
     if not hasattr(target, 'status_effects') or target.status_effects is None:
+        from components.component_registry import ComponentType
         target.status_effects = StatusEffectManager(target)
+        # Also register with ComponentRegistry
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
     # Apply the taunt effect (1000 turns = effectively permanent)
     taunt_effect = TauntedTargetEffect(duration=1000, owner=target)

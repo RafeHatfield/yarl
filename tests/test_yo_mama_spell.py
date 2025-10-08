@@ -26,24 +26,28 @@ class TestYoMamaSpellCasting(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Create caster (player)
-        self.caster = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True)
-        self.caster.fighter = Fighter(hp=100, defense=2, power=5)
+        caster_fighter = Fighter(hp=100, defense=2, power=5)
+        self.caster = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True,
+                           fighter=caster_fighter)
         
         # Create target (monster)
-        self.target = Entity(5, 5, 'o', (63, 127, 63), 'Orc', blocks=True)
-        self.target.fighter = Fighter(hp=20, defense=0, power=4)
-        self.target.ai = BasicMonster()
+        target_fighter = Fighter(hp=20, defense=0, power=4)
+        target_ai = BasicMonster()
+        self.target = Entity(5, 5, 'o', (63, 127, 63), 'Orc', blocks=True,
+                           fighter=target_fighter, ai=target_ai)
         self.target.faction = Faction.HOSTILE_ALL
         
         # Create other monsters
-        self.monster1 = Entity(10, 10, 't', (0, 127, 0), 'Troll', blocks=True)
-        self.monster1.fighter = Fighter(hp=30, defense=1, power=8)
-        self.monster1.ai = BasicMonster()
+        monster1_fighter = Fighter(hp=30, defense=1, power=8)
+        monster1_ai = BasicMonster()
+        self.monster1 = Entity(10, 10, 't', (0, 127, 0), 'Troll', blocks=True,
+                             fighter=monster1_fighter, ai=monster1_ai)
         self.monster1.faction = Faction.HOSTILE_ALL
         
-        self.monster2 = Entity(15, 15, 'o', (63, 127, 63), 'Orc 2', blocks=True)
-        self.monster2.fighter = Fighter(hp=20, defense=0, power=4)
-        self.monster2.ai = BasicMonster()
+        monster2_fighter = Fighter(hp=20, defense=0, power=4)
+        monster2_ai = BasicMonster()
+        self.monster2 = Entity(15, 15, 'o', (63, 127, 63), 'Orc 2', blocks=True,
+                             fighter=monster2_fighter, ai=monster2_ai)
         self.monster2.faction = Faction.HOSTILE_ALL
         
         self.entities = [self.caster, self.target, self.monster1, self.monster2]
@@ -118,9 +122,14 @@ class TestTauntedTargetEffect(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.entity = Entity(5, 5, 'o', (63, 127, 63), 'Orc', blocks=True)
-        self.entity.fighter = Fighter(hp=20, defense=0, power=4)
+        entity_fighter = Fighter(hp=20, defense=0, power=4)
+        self.entity = Entity(5, 5, 'o', (63, 127, 63), 'Orc', blocks=True,
+                           fighter=entity_fighter)
+        # Create StatusEffectManager after entity exists
         self.entity.status_effects = StatusEffectManager(self.entity)
+        # Also register with ComponentRegistry
+        from components.component_registry import ComponentType
+        self.entity.components.add(ComponentType.STATUS_EFFECTS, self.entity.status_effects)
     
     def test_taunt_effect_initialization(self):
         """Test creating a TauntedTargetEffect."""
@@ -160,15 +169,22 @@ class TestAITauntTargeting(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Create player
-        self.player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True)
-        self.player.fighter = Fighter(hp=100, defense=2, power=5)
+        player_fighter = Fighter(hp=100, defense=2, power=5)
+        self.player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True,
+                           fighter=player_fighter)
         self.player.faction = Faction.PLAYER
         
         # Create taunted target (another monster)
-        self.taunted = Entity(10, 10, 'o', (63, 127, 63), 'Taunted Orc', blocks=True)
-        self.taunted.fighter = Fighter(hp=20, defense=0, power=4)
-        self.taunted.status_effects = StatusEffectManager(self.taunted)
+        from components.component_registry import ComponentType
+        
+        taunted_fighter = Fighter(hp=20, defense=0, power=4)
+        self.taunted = Entity(10, 10, 'o', (63, 127, 63), 'Taunted Orc', blocks=True,
+                            fighter=taunted_fighter)
         self.taunted.faction = Faction.HOSTILE_ALL
+        
+        # Create StatusEffectManager after entity exists
+        self.taunted.status_effects = StatusEffectManager(self.taunted)
+        self.taunted.components.add(ComponentType.STATUS_EFFECTS, self.taunted.status_effects)
         
         # Apply taunt effect
         taunt_effect = TauntedTargetEffect(duration=1000, owner=self.taunted)
@@ -220,15 +236,17 @@ class TestAITauntTargeting(unittest.TestCase):
     def test_zombie_ai_redirects_to_taunt(self):
         """Test that MindlessZombieAI redirects to taunted target."""
         # Create zombie
-        zombie = Entity(8, 8, 'Z', (100, 100, 100), 'Zombie', blocks=True)
-        zombie.fighter = Fighter(hp=40, defense=0, power=6)
-        zombie.ai = MindlessZombieAI()
-        zombie.ai.owner = zombie
+        zombie_fighter = Fighter(hp=40, defense=0, power=6)
+        zombie_ai = MindlessZombieAI()
+        zombie = Entity(8, 8, 'Z', (100, 100, 100), 'Zombie', blocks=True,
+                      fighter=zombie_fighter, ai=zombie_ai)
         zombie.faction = Faction.NEUTRAL
         
         entities = [self.player, self.taunted, zombie]
         
         game_map = Mock()
+        game_map.width = 80
+        game_map.height = 45
         fov_map = Mock()
         
         # Mock movement
@@ -279,26 +297,27 @@ class TestYoMamaIntegration(unittest.TestCase):
         mock_yaml.return_value = {'jokes': ["Yo mama so tactical!"]}
         
         # Create scenario: player, 2 orcs, and a troll
-        player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True)
-        player.fighter = Fighter(hp=100, defense=2, power=5)
+        player_fighter = Fighter(hp=100, defense=2, power=5)
+        player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True,
+                      fighter=player_fighter)
         player.faction = Faction.PLAYER
         
-        orc1 = Entity(5, 5, 'o', (63, 127, 63), 'Orc 1', blocks=True)
-        orc1.fighter = Fighter(hp=20, defense=0, power=4)
-        orc1.ai = BasicMonster()
-        orc1.ai.owner = orc1
+        orc1_fighter = Fighter(hp=20, defense=0, power=4)
+        orc1_ai = BasicMonster()
+        orc1 = Entity(5, 5, 'o', (63, 127, 63), 'Orc 1', blocks=True,
+                    fighter=orc1_fighter, ai=orc1_ai)
         orc1.faction = Faction.HOSTILE_ALL
         
-        orc2 = Entity(10, 10, 'o', (63, 127, 63), 'Orc 2', blocks=True)
-        orc2.fighter = Fighter(hp=20, defense=0, power=4)
-        orc2.ai = BasicMonster()
-        orc2.ai.owner = orc2
+        orc2_fighter = Fighter(hp=20, defense=0, power=4)
+        orc2_ai = BasicMonster()
+        orc2 = Entity(10, 10, 'o', (63, 127, 63), 'Orc 2', blocks=True,
+                    fighter=orc2_fighter, ai=orc2_ai)
         orc2.faction = Faction.HOSTILE_ALL
         
-        troll = Entity(15, 15, 't', (0, 127, 0), 'Troll', blocks=True)
-        troll.fighter = Fighter(hp=30, defense=1, power=8)
-        troll.ai = BasicMonster()
-        troll.ai.owner = troll
+        troll_fighter = Fighter(hp=30, defense=1, power=8)
+        troll_ai = BasicMonster()
+        troll = Entity(15, 15, 't', (0, 127, 0), 'Troll', blocks=True,
+                     fighter=troll_fighter, ai=troll_ai)
         troll.faction = Faction.HOSTILE_ALL
         
         entities = [player, orc1, orc2, troll]
