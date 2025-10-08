@@ -2,6 +2,7 @@ import logging
 from game_messages import Message
 from config.testing_config import is_testing_mode
 from visual_effects import show_hit, show_miss
+from components.component_registry import ComponentType
 
 # Set up combat debug logger
 combat_logger = logging.getLogger('combat_debug')
@@ -114,6 +115,28 @@ class Fighter:
         """
         return self.get_stat_modifier(self.constitution)
     
+    def _get_equipment(self, entity):
+        """Get equipment component from entity, with backward compatibility.
+        
+        Args:
+            entity: The entity to get equipment from
+            
+        Returns:
+            Equipment component or None
+        """
+        if not entity:
+            return None
+        
+        # Only use ComponentRegistry if entity is a real Entity (has ComponentRegistry)
+        from components.component_registry import ComponentRegistry
+        if isinstance(getattr(entity, 'components', None), ComponentRegistry):
+            equipment = entity.components.get(ComponentType.EQUIPMENT)
+            if equipment:
+                return equipment
+        
+        # Fall back to direct attribute access
+        return getattr(entity, 'equipment', None)
+    
     @property
     def armor_class(self):
         """Calculate Armor Class (AC) for d20 combat system with DEX caps.
@@ -143,11 +166,12 @@ class Fighter:
         armor_ac_bonus = 0
         most_restrictive_dex_cap = None  # None = no cap
         
-        if self.owner and hasattr(self.owner, 'equipment') and self.owner.equipment:
-            equipment = self.owner.equipment
+        equipment = self._get_equipment(self.owner)
+        if equipment:
             for item in [equipment.main_hand, equipment.off_hand, 
                         equipment.head, equipment.chest, equipment.feet]:
-                if item and hasattr(item, 'equippable'):
+                # Check ComponentRegistry first, fallback to direct attribute for backward compatibility
+                if item and (item.components.has(ComponentType.EQUIPPABLE) or hasattr(item, 'equippable')):
                     equippable = item.equippable
                     
                     # Add AC bonus
@@ -243,13 +267,14 @@ class Fighter:
         self.hp -= amount
         
         # Record damage taken (only for player)
-        if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
-            self.owner.statistics.record_damage_taken(amount)
+        statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+        if statistics:
+            statistics.record_damage_taken(amount)
         
         # Flag monster as "in combat" when attacked (stops looting behavior)
-        if self.owner and hasattr(self.owner, 'ai') and self.owner.ai:
-            if hasattr(self.owner.ai, 'in_combat'):
-                self.owner.ai.in_combat = True
+        ai = self.owner.components.get(ComponentType.AI) if self.owner else None
+        if ai and hasattr(ai, 'in_combat'):
+            ai.in_combat = True
 
         if self.hp <= 0:
             results.append({"dead": self.owner, "xp": self.xp})
@@ -287,8 +312,9 @@ class Fighter:
             self.hp = max_hp
         
         # Record healing (only for player)
-        if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
-            self.owner.statistics.record_healing(actual_healing)
+        statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+        if statistics:
+            statistics.record_healing(actual_healing)
 
     def attack(self, target):
         """Perform an attack against a target entity.
@@ -419,9 +445,9 @@ class Fighter:
         # Get attacker's to-hit bonus
         to_hit_bonus = self.dexterity_mod
         weapon_bonus = 0
-        if self.owner and hasattr(self.owner, 'equipment') and self.owner.equipment:
-            if self.owner.equipment.main_hand and hasattr(self.owner.equipment.main_hand, 'equippable'):
-                weapon_bonus = getattr(self.owner.equipment.main_hand.equippable, 'to_hit_bonus', 0)
+        equipment = self._get_equipment(self.owner)
+        if equipment and equipment.main_hand and (equipment.main_hand.components.has(ComponentType.EQUIPPABLE) or hasattr(equipment.main_hand, 'equippable')):
+            weapon_bonus = getattr(equipment.main_hand.equippable, 'to_hit_bonus', 0)
         
         # Calculate total attack roll
         attack_roll = d20_roll + to_hit_bonus + weapon_bonus
@@ -461,9 +487,10 @@ class Fighter:
             damage = base_damage + self.strength_mod
             
             # Record statistics (only for player)
-            if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
-                self.owner.statistics.record_attack(hit=True, critical=is_critical)
-                self.owner.statistics.record_damage_dealt(max(1, damage if not is_critical else damage * 2))
+            statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+            if statistics:
+                statistics.record_attack(hit=True, critical=is_critical)
+                statistics.record_damage_dealt(max(1, damage if not is_critical else damage * 2))
             
             # Critical hit: double all damage
             if is_critical:
@@ -513,8 +540,9 @@ class Fighter:
                 show_miss(target.x, target.y, entity=target)
             
             # Record miss statistics (only for player)
-            if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
-                self.owner.statistics.record_attack(hit=False, fumble=is_fumble)
+            statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+            if statistics:
+                statistics.record_attack(hit=False, fumble=is_fumble)
             
             # Miss
             if is_fumble:
@@ -594,9 +622,9 @@ class Fighter:
         """
         # Get damage range info for display based on source
         damage_range = ""
-        if damage_source == "weapon" and (hasattr(self.owner, 'equipment') and self.owner.equipment and
-            self.owner.equipment.main_hand and self.owner.equipment.main_hand.equippable):
-            equip = self.owner.equipment.main_hand.equippable
+        equipment = self._get_equipment(self.owner)
+        if damage_source == "weapon" and equipment and equipment.main_hand and equipment.main_hand.equippable:
+            equip = equipment.main_hand.equippable
             if equip.damage_min > 0 and equip.damage_max > 0:
                 damage_range = f" ({equip.damage_min}-{equip.damage_max} dmg)"
         elif damage_source == "base" and self.damage_min > 0 and self.damage_max > 0:
@@ -604,9 +632,9 @@ class Fighter:
             damage_range = f" ({self.damage_min}-{self.damage_max} dmg)"
         
         armor_range = ""
-        if (hasattr(target, 'equipment') and target.equipment and
-            target.equipment.off_hand and target.equipment.off_hand.equippable):
-            equip = target.equipment.off_hand.equippable
+        target_equipment = self._get_equipment(target)
+        if target_equipment and target_equipment.off_hand and target_equipment.off_hand.equippable:
+            equip = target_equipment.off_hand.equippable
             if equip.defense_min > 0 and equip.defense_max > 0:
                 armor_range = f" ({equip.defense_min}-{equip.defense_max} def)"
         
@@ -628,10 +656,9 @@ class Fighter:
         Returns:
             int: Random damage from equipped weapon, or 0 if no weapon
         """
-        if (hasattr(self.owner, 'equipment') and self.owner.equipment and
-            self.owner.equipment.main_hand and 
-            self.owner.equipment.main_hand.equippable):
-            return self.owner.equipment.main_hand.equippable.roll_damage()
+        equipment = self._get_equipment(self.owner)
+        if equipment and equipment.main_hand and equipment.main_hand.equippable:
+            return equipment.main_hand.equippable.roll_damage()
         return 0
     
     def _get_base_variable_damage(self) -> int:
@@ -660,11 +687,9 @@ class Fighter:
             int: Random defense from equipped armor, or 0 if no armor
         """
         try:
-            if (hasattr(self.owner, 'equipment') and self.owner.equipment and
-                hasattr(self.owner.equipment, 'off_hand') and self.owner.equipment.off_hand and 
-                hasattr(self.owner.equipment.off_hand, 'equippable') and
-                self.owner.equipment.off_hand.equippable):
-                return self.owner.equipment.off_hand.equippable.roll_defense()
+            equipment = self._get_equipment(self.owner)
+            if equipment and equipment.off_hand and equipment.off_hand.equippable:
+                return equipment.off_hand.equippable.roll_defense()
         except (AttributeError, TypeError):
             pass
         return 0
@@ -721,9 +746,17 @@ class Fighter:
             return True
         
         # Check faction-based corrosion (slimes)
-        if hasattr(self.owner, 'faction'):
+        if self.owner:
             from components.faction import Faction
-            return self.owner.faction == Faction.HOSTILE_ALL
+            # Try ComponentRegistry first, fallback to direct attribute
+            from components.component_registry import ComponentRegistry
+            if isinstance(getattr(self.owner, 'components', None), ComponentRegistry):
+                faction = self.owner.components.get(ComponentType.FACTION)
+                if faction and faction == Faction.HOSTILE_ALL:
+                    return True
+            # Fallback to direct attribute
+            if hasattr(self.owner, 'faction') and self.owner.faction == Faction.HOSTILE_ALL:
+                return True
         
         return False
     
@@ -738,10 +771,9 @@ class Fighter:
         """
         results = []
         
-        if (hasattr(target, 'equipment') and target.equipment and 
-            target.equipment.main_hand and target.equipment.main_hand.equippable):
-            
-            weapon = target.equipment.main_hand
+        target_equipment = self._get_equipment(target)
+        if target_equipment and target_equipment.main_hand and target_equipment.main_hand.equippable:
+            weapon = target_equipment.main_hand
             equippable = weapon.equippable
             
             # Only corrode if max damage is greater than min damage
@@ -769,10 +801,9 @@ class Fighter:
         """
         results = []
         
-        if (hasattr(target, 'equipment') and target.equipment and 
-            target.equipment.off_hand and target.equipment.off_hand.equippable):
-            
-            armor = target.equipment.off_hand
+        target_equipment = self._get_equipment(target)
+        if target_equipment and target_equipment.off_hand and target_equipment.off_hand.equippable:
+            armor = target_equipment.off_hand
             equippable = armor.equippable
             
             # Only corrode if max defense is greater than min defense
