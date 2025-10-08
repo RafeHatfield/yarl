@@ -336,12 +336,15 @@ class TestBasicMonsterIntegration(unittest.TestCase):
     @patch('components.ai.map_is_in_fov')
     def test_item_seeking_overrides_combat(self, mock_fov):
         """Test that item-seeking overrides normal combat behavior."""
+        from components.component_registry import ComponentType
+        
         mock_fov.return_value = True
         
-        # Mock item-seeking AI that returns an action
+        # Mock item-seeking AI that returns an action and register it with ComponentRegistry
         mock_item_ai = Mock()
         mock_item_ai.get_item_seeking_action.return_value = {"move": (1, 0)}
         self.monster.item_seeking_ai = mock_item_ai
+        self.monster.components.add(ComponentType.ITEM_SEEKING_AI, mock_item_ai)
         
         results = self.ai.take_turn(self.player, self.fov_map, self.game_map, self.entities)
         
@@ -377,10 +380,11 @@ class TestBasicMonsterIntegration(unittest.TestCase):
         item.equippable.slot = Mock()
         item.equippable.slot.value = "main_hand"
         
-        # Mock item-seeking AI that returns pickup action
+        # Mock item-seeking AI that returns pickup action and register it with ComponentRegistry
         mock_item_ai = Mock()
         mock_item_ai.get_item_seeking_action.return_value = {"pickup_item": item}
         self.monster.item_seeking_ai = mock_item_ai
+        self.monster.components.add(ComponentType.ITEM_SEEKING_AI, mock_item_ai)
         
         results = self.ai.take_turn(self.player, self.fov_map, self.game_map, self.entities)
         

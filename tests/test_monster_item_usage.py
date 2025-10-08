@@ -371,9 +371,11 @@ class TestBasicMonsterItemUsageIntegration(unittest.TestCase):
     @patch('components.ai.map_is_in_fov')
     def test_item_usage_overrides_other_actions(self, mock_fov):
         """Test that item usage takes priority over other actions."""
+        from components.component_registry import ComponentType
+        
         mock_fov.return_value = True
         
-        # Mock item usage that returns an action
+        # Mock item usage that returns an action and register it with ComponentRegistry
         mock_item_usage = Mock()
         mock_item_usage.get_item_usage_action.return_value = {
             "use_item": Mock(name="Lightning Scroll"),
@@ -383,6 +385,7 @@ class TestBasicMonsterItemUsageIntegration(unittest.TestCase):
             {"message": Message("Orc uses Lightning Scroll!", (255, 255, 0))}
         ]
         self.monster.item_usage = mock_item_usage
+        self.monster.components.add(ComponentType.ITEM_USAGE, mock_item_usage)
         
         results = self.ai.take_turn(self.player, self.fov_map, self.game_map, self.entities)
         
