@@ -327,6 +327,8 @@ class TestMonsterEquipmentIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up integration test fixtures."""
+        from components.component_registry import ComponentType
+        
         # Create a real monster with equipment component
         self.monster = Mock()
         self.monster.name = "orc"
@@ -338,6 +340,11 @@ class TestMonsterEquipmentIntegration(unittest.TestCase):
         self.monster.equipment.main_hand = None
         self.monster.equipment.off_hand = None
         self.monster.equipment.toggle_equip = Mock()
+        
+        # Mock ComponentRegistry to return equipment
+        self.monster.components = Mock()
+        self.monster.components.get = Mock(side_effect=lambda comp_type: 
+            self.monster.equipment if comp_type == ComponentType.EQUIPMENT else None)
 
     @patch('components.monster_equipment.get_entity_factory')
     @patch('components.monster_equipment.is_testing_mode')
