@@ -719,16 +719,38 @@ class SlimeAI:
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
         is_pursuing_taunt = False
+        
         if taunted_target and taunted_target != self.owner:
             # Override normal targeting - slimes are drawn to the insult!
             best_target = taunted_target
             is_pursuing_taunt = True
+            self._engaged_with_taunt = True
+        elif getattr(self, '_engaged_with_taunt', False):
+            # Taunt ended or target died - stay active for a bit
+            if not hasattr(self, '_taunt_recovery'):
+                self._taunt_recovery = 5  # Stay active for 5 more turns
+            self._engaged_with_taunt = False
+        
+        # Decay taunt recovery
+        if hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0:
+            self._taunt_recovery -= 1
+        
+        # Calculate if slime is engaged with taunt
+        engaged_or_recovering = (is_pursuing_taunt or 
+                                 getattr(self, '_engaged_with_taunt', False) or
+                                 (hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0))
+        
+        # Only act when:
+        # 1. Pursuing/recovering from taunt (heard the insult!)
+        # 2. In player's FOV (prevents off-screen monster-vs-monster chaos)
+        if not engaged_or_recovering and not map_is_in_fov(fov_map, monster.x, monster.y):
+            return results
+        
+        # Find best target if not already pursuing taunt
+        if is_pursuing_taunt:
+            # Already have target from taunt
+            pass
         else:
-            # Only act when monster is in player's FOV (prevents off-screen monster-vs-monster)
-            # This keeps the action focused on what the player can see
-            if not map_is_in_fov(fov_map, monster.x, monster.y):
-                return results
-            
             # Find the best target based on faction relationships and distance
             best_target = self._find_best_target(entities, fov_map)
         
