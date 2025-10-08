@@ -152,6 +152,12 @@ class TestInvisibilityScroll:
     
     def setup_method(self):
         """Set up test fixtures."""
+        # Register spells for spell system
+        from spells import get_spell_registry
+        from spells.spell_catalog import register_all_spells
+        get_spell_registry().clear()
+        register_all_spells()
+        
         self.player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True, 
                            render_order=4, fighter=Fighter(hp=30, defense=2, power=5),
                            faction=Faction.PLAYER)
@@ -160,9 +166,11 @@ class TestInvisibilityScroll:
         """Test successfully casting invisibility."""
         results = cast_invisibility(self.player, duration=10)
         
-        assert len(results) == 2  # Effect application + success message
+        assert len(results) == 2  # Message + consumed
+        # New spell system returns message and consumed separately
+        assert "message" in results[0]
+        assert "becomes invisible" in results[0]["message"].text
         assert results[1]["consumed"] is True
-        assert "becomes invisible" in results[1]["message"].text
         assert self.player.invisible
     
     def test_cast_invisibility_already_invisible(self):
@@ -172,9 +180,14 @@ class TestInvisibilityScroll:
         
         results = cast_invisibility(self.player, duration=10)
         
-        assert len(results) == 1
-        assert results[0]["consumed"] is False
-        assert "already invisible" in results[0]["message"].text
+        # Spell system returns separate message and consumed results
+        assert len(results) >= 1
+        consumed_result = next((r for r in results if "consumed" in r), None)
+        assert consumed_result is not None
+        assert consumed_result["consumed"] is False
+        message_result = next((r for r in results if "message" in r), None)
+        assert message_result is not None
+        assert "already invisible" in message_result["message"].text
     
     def test_cast_invisibility_default_duration(self):
         """Test casting invisibility with default duration."""
