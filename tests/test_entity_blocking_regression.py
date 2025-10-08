@@ -208,16 +208,15 @@ class TestZombieMindlessAIBlocking(unittest.TestCase):
         self.game_map = GameMap(20, 20)
         
         # Create zombie
-        self.zombie = Entity(5, 5, 'Z', (40, 40, 40), 'Zombie', blocks=True)
-        self.zombie.fighter = Fighter(hp=40, defense=0, power=3)
-        self.zombie.fighter.owner = self.zombie
-        self.zombie.ai = MindlessZombieAI()
-        self.zombie.ai.owner = self.zombie
+        zombie_fighter = Fighter(hp=40, defense=0, power=3)
+        zombie_ai = MindlessZombieAI()
+        self.zombie = Entity(5, 5, 'Z', (40, 40, 40), 'Zombie', blocks=True,
+                           fighter=zombie_fighter, ai=zombie_ai)
         
         # Create player
-        self.player = Entity(7, 5, '@', (255, 255, 0), 'Player', blocks=True)
-        self.player.fighter = Fighter(hp=30, defense=0, power=5)
-        self.player.fighter.owner = self.player
+        player_fighter = Fighter(hp=30, defense=0, power=5)
+        self.player = Entity(7, 5, '@', (255, 255, 0), 'Player', blocks=True,
+                           fighter=player_fighter)
         
         self.entities = [self.zombie, self.player]
     

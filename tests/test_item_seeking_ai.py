@@ -357,13 +357,20 @@ class TestBasicMonsterIntegration(unittest.TestCase):
         mock_fov.return_value = True
         
         # Mock inventory and equipment
-        self.monster.inventory = Mock()
-        self.monster.inventory.items = []
-        self.monster.inventory.capacity = 5
-        self.monster.inventory.add_item = Mock()
-        self.monster.equipment = Mock()
-        self.monster.equipment.main_hand = None
-        self.monster.equipment.toggle_equip = Mock()
+        from components.component_registry import ComponentType
+        from components.inventory import Inventory
+        from components.equipment import Equipment
+        
+        # Use real Inventory and Equipment for proper functionality
+        real_inventory = Inventory(capacity=5)
+        real_inventory.owner = self.monster
+        self.monster.inventory = real_inventory
+        self.monster.components.add(ComponentType.INVENTORY, real_inventory)
+        
+        real_equipment = Equipment()
+        real_equipment.owner = self.monster
+        self.monster.equipment = real_equipment
+        self.monster.components.add(ComponentType.EQUIPMENT, real_equipment)
         
         # Mock item
         item = Mock()
