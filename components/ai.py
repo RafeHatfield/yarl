@@ -154,14 +154,16 @@ class BasicMonster:
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         
+        # Calculate if monster is engaged with taunt (used in multiple places)
+        engaged_or_recovering = (is_pursuing_taunt or 
+                                 getattr(self, '_engaged_with_taunt', False) or
+                                 (hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0))
+        
         # Monsters act if:
         # 1. Pursuing a taunted target (entire dungeon hears the insult!)
         # 2. Recovering from taunt (finding new targets)
         # 3. In combat (already engaged, even if out of player's sight)
         # 4. In player's FOV (player can see them)
-        engaged_or_recovering = (is_pursuing_taunt or 
-                                 getattr(self, '_engaged_with_taunt', False) or
-                                 (hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0))
         if engaged_or_recovering or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
             # Check if target is invisible - but taunt overrides invisibility!
             if (not is_pursuing_taunt and 
