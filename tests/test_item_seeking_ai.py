@@ -280,9 +280,13 @@ class TestItemSeekingAICreation(unittest.TestCase):
 
     def test_create_item_seeking_ai_no_inventory(self):
         """Test creation when monster has no inventory."""
+        from components.component_registry import ComponentType
         monster = Mock()
         monster.name = "orc"
         monster.inventory = None
+        # Mock ComponentRegistry to return None for inventory
+        monster.components = Mock()
+        monster.components.get = Mock(return_value=None)
         
         monster_def = Mock()
         monster_def.can_seek_items = True
