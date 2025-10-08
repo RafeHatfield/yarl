@@ -23,12 +23,26 @@ class TestMonsterItemUsage(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Mock monster with inventory
+        from components.component_registry import ComponentType
         self.monster = Mock()
         self.monster.name = "orc"
         self.monster.x = 5
         self.monster.y = 5
         self.monster.inventory = Mock()
         self.monster.inventory.items = []
+        self.monster.equipment = Mock()
+        self.monster.equipment.main_hand = None
+        self.monster.equipment.off_hand = None
+        
+        # Mock ComponentRegistry to return the inventory/equipment
+        self.monster.components = Mock()
+        def get_component(comp_type):
+            if comp_type == ComponentType.INVENTORY:
+                return self.monster.inventory
+            elif comp_type == ComponentType.EQUIPMENT:
+                return self.monster.equipment
+            return None
+        self.monster.components.get = Mock(side_effect=get_component)
         
         # Mock player
         self.player = Mock()
@@ -326,8 +340,11 @@ class TestMonsterItemUsageCreation(unittest.TestCase):
 
     def test_create_monster_item_usage_no_inventory(self):
         """Test creation when monster has no inventory."""
+        from components.component_registry import ComponentType
         monster = Mock()
         monster.inventory = None
+        monster.components = Mock()
+        monster.components.get = Mock(return_value=None)
         
         usage = create_monster_item_usage(monster)
         
@@ -425,14 +442,22 @@ class TestExtensibleDesign(unittest.TestCase):
 
     def test_potion_framework_ready_for_future(self):
         """Test that potion usage framework is ready for future activation."""
+        from components.component_registry import ComponentType
         monster = Mock()
         monster.inventory = Mock()
+        monster.inventory.items = []
+        
+        # Mock ComponentRegistry to return the inventory
+        monster.components = Mock()
+        monster.components.get = Mock(return_value=monster.inventory)
         
         # Create mock potion
         potion = Mock()
         potion.name = "Healing Potion"
         potion.item = Mock()
         potion.item.use_function = Mock()
+        potion.components = Mock()
+        potion.components.has = Mock(return_value=True)
         
         # Set up inventory items list
         monster.inventory.items = [potion]

@@ -11,6 +11,7 @@ from typing import List, Optional, Dict, Any
 from config.game_constants import get_monster_equipment_config
 from game_messages import Message
 from components.monster_action_logger import MonsterActionLogger
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +43,11 @@ class MonsterItemUsage:
         Returns:
             dict: Usage action if monster should use an item, None otherwise
         """
-        if not (hasattr(self.monster, 'inventory') and self.monster.inventory):
+        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        if not inventory:
             return None
             
-        if not self.monster.inventory.items:
+        if not inventory.items:
             return None
             
         # Find usable items in inventory
@@ -70,11 +72,16 @@ class MonsterItemUsage:
         """
         usable_items = []
         
-        for item in self.monster.inventory.items:
-            if not (hasattr(item, 'item') and item.item):
+        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        if not inventory:
+            return usable_items
+        
+        for item in inventory.items:
+            if not item.components.has(ComponentType.ITEM):
                 continue
                 
             # Check item type and permissions
+            # use_function is a direct attribute on Item component
             if hasattr(item.item, 'use_function'):
                 item_name = item.name.lower()
                 
@@ -121,9 +128,10 @@ class MonsterItemUsage:
                     
             # Enhancement scrolls - use immediately if monster has equipment
             elif 'enhance' in item_name:
-                if hasattr(self.monster, 'equipment') and self.monster.equipment:
-                    if ('weapon' in item_name and self.monster.equipment.main_hand) or \
-                       ('armor' in item_name and self.monster.equipment.off_hand):
+                equipment = self.monster.components.get(ComponentType.EQUIPMENT)
+                if equipment:
+                    if ('weapon' in item_name and equipment.main_hand) or \
+                       ('armor' in item_name and equipment.off_hand):
                         return True, item
         
         return False, None
@@ -196,6 +204,7 @@ class MonsterItemUsage:
         results = []
         
         # Use the item's normal function
+        # use_function is a direct attribute on Item component
         if hasattr(item.item, 'use_function') and item.item.use_function:
             try:
                 # Call the item's use function
@@ -302,6 +311,7 @@ class MonsterItemUsage:
         
         # Try to use item on wrong target
         try:
+            # use_function is a direct attribute on Item component
             if hasattr(item.item, 'use_function') and item.item.use_function:
                 use_results = item.item.use_function(
                     inventory=self.monster.inventory,
@@ -343,7 +353,8 @@ class MonsterItemUsage:
         results = []
         
         # Check if monster has equipment to damage
-        if not (hasattr(self.monster, 'equipment') and self.monster.equipment):
+        equipment = self.monster.components.get(ComponentType.EQUIPMENT)
+        if not equipment:
             # No equipment to damage, just fizzle
             results.append({
                 "message": Message(
@@ -374,9 +385,10 @@ class MonsterItemUsage:
         equipment_type, equipment_item = random.choice(equipment_to_damage)
         
         # For enhancement scrolls, reduce the equipment's effectiveness
-        if hasattr(equipment_item, 'equippable') and equipment_item.equippable:
+        if equipment_item.components.has(ComponentType.EQUIPPABLE):
             equippable = equipment_item.equippable
             
+            # damage_min, damage_max, defense_min, defense_max are direct attributes on equippable
             if equipment_type == 'weapon' and hasattr(equippable, 'damage_min'):
                 # Reduce weapon damage
                 if equippable.damage_min > 1:
@@ -425,7 +437,8 @@ def create_monster_item_usage(monster) -> Optional[MonsterItemUsage]:
     Returns:
         MonsterItemUsage: Item usage component if monster has inventory, None otherwise
     """
-    if not (hasattr(monster, 'inventory') and monster.inventory):
+    inventory = monster.components.get(ComponentType.INVENTORY)
+    if not inventory:
         return None
         
     return MonsterItemUsage(monster)
