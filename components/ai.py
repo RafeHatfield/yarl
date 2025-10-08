@@ -137,15 +137,32 @@ class BasicMonster:
             # Override normal targeting - attack the taunted entity instead!
             target = taunted_target
             is_pursuing_taunt = True
+            # Track that we're engaged with a taunt (separate from in_combat for item seeking)
+            self._engaged_with_taunt = True
+        elif getattr(self, '_engaged_with_taunt', False):
+            # Taunt ended or target died - stay active for a bit
+            if not hasattr(self, '_taunt_recovery'):
+                self._taunt_recovery = 5  # Stay active for 5 more turns
+            self._engaged_with_taunt = False
+        
+        # Decay taunt recovery
+        if hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0:
+            self._taunt_recovery -= 1
+            # During recovery, monsters ACT to find new targets naturally
+            # But DON'T set in_combat (would block item seeking)
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         
         # Monsters act if:
         # 1. Pursuing a taunted target (entire dungeon hears the insult!)
-        # 2. In combat (already engaged, even if out of player's sight)
-        # 3. In player's FOV (player can see them)
-        if is_pursuing_taunt or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
+        # 2. Recovering from taunt (finding new targets)
+        # 3. In combat (already engaged, even if out of player's sight)
+        # 4. In player's FOV (player can see them)
+        engaged_or_recovering = (is_pursuing_taunt or 
+                                 getattr(self, '_engaged_with_taunt', False) or
+                                 (hasattr(self, '_taunt_recovery') and self._taunt_recovery > 0))
+        if engaged_or_recovering or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
             # Check if target is invisible - but taunt overrides invisibility!
             if (not is_pursuing_taunt and 
                 hasattr(target, 'has_status_effect') and 
