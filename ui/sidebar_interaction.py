@@ -240,6 +240,10 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     
     inventory_items = [item for item in player.inventory.items if item not in equipped_items]
     
+    # IMPORTANT: Sort alphabetically to match sidebar rendering!
+    # This ensures click coordinates align with displayed items
+    inventory_items = sorted(inventory_items, key=lambda item: item.name.lower())
+    
     if len(inventory_items) == 0:
         return None
     

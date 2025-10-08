@@ -49,6 +49,9 @@ def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_
 def get_monster_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> Optional[Any]:
     """Get the monster at the specified world coordinates.
     
+    Prioritizes LIVING monsters over dead ones (corpses). If a live monster
+    is standing on a corpse, the live monster's tooltip is shown.
+    
     Args:
         world_x: X coordinate in world space
         world_y: Y coordinate in world space
@@ -65,16 +68,27 @@ def get_monster_at_position(world_x: int, world_y: int, entities: list, player, 
         if not map_is_in_fov(fov_map, world_x, world_y):
             return None
     
-    # Find monsters at this position
+    # Find monsters at this position, prioritizing LIVING ones
+    living_monster = None
+    dead_monster = None
+    
     for entity in entities:
         if entity.x == world_x and entity.y == world_y:
             # Check if it's a monster (has fighter and AI, and is not the player)
             if (entity.components.has(ComponentType.FIGHTER) and
                 entity.components.has(ComponentType.AI) and
                 entity != player):
-                return entity
+                
+                fighter = entity.components.get(ComponentType.FIGHTER)
+                if fighter and fighter.hp > 0:
+                    # Living monster - prioritize this!
+                    living_monster = entity
+                elif not dead_monster:
+                    # Dead monster (corpse) - only use if no living monster
+                    dead_monster = entity
     
-    return None
+    # Return living monster if found, otherwise return dead one
+    return living_monster if living_monster else dead_monster
 
 
 def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_layout) -> Optional[Any]:

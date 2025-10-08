@@ -554,7 +554,7 @@ spells:
   dragon_fart_scroll:
     spell_type: "offensive"
     char: "~"
-    color: [100, 200, 80]  # Green (slightly darker)
+    color: [150, 255, 120]  # Bright lime green - more visible
     duration: 20  # Turns enemies are knocked out
     range: 8  # Maximum cone distance
     cone_width: 45  # Cone width in degrees
@@ -642,7 +642,7 @@ wands:
     spell_type: "offensive"
     spell_name: "dragon_fart_scroll"
     char: "/"
-    color: [120, 200, 100]  # Green (darker)
+    color: [150, 255, 120]  # Bright lime green - more visible
     duration: 20
     range: 8
     cone_width: 45

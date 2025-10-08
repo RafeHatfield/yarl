@@ -158,8 +158,11 @@ def inventory_menu(con, header, player, inventory_width, screen_width, screen_he
         options = ["Inventory is empty."]
     else:
         options = []
+        
+        # Sort inventory alphabetically for better UX
+        sorted_items = sorted(player.inventory.items, key=lambda item: item.name.lower())
 
-        for item in player.inventory.items:
+        for item in sorted_items:
             display_name = item.get_display_name()
             
             # Check if item is equipped in any slot
