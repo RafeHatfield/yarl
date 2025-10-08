@@ -105,21 +105,35 @@ class BasicMonster:
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
         is_pursuing_taunt = False
+        was_pursuing_taunt = getattr(self, '_was_pursuing_taunt', False)
+        
         if taunted_target and taunted_target != self.owner:
             # Override normal targeting - attack the taunted entity instead!
             target = taunted_target
             is_pursuing_taunt = True
+            self._was_pursuing_taunt = True
+            # Set a cooldown so monsters stay active after taunt ends
+            self._taunt_cooldown = 10  # Active for 10 turns after taunt ends
+        elif was_pursuing_taunt:
+            # Taunt just ended - monster needs time to re-orient
+            self._was_pursuing_taunt = False
+            if not hasattr(self, '_taunt_cooldown'):
+                self._taunt_cooldown = 10
+        
+        # Decay cooldown
+        if hasattr(self, '_taunt_cooldown') and self._taunt_cooldown > 0:
+            self._taunt_cooldown -= 1
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         
         # Monsters act if:
         # 1. Pursuing a taunted target (entire dungeon hears the insult!)
-        # 2. In combat (already engaged, even if out of player's sight) BUT not pursuing taunt
-        # 3. In player's FOV (player can see them)
-        # Note: When taunt ends, monsters with in_combat flag will still act if in FOV
-        in_combat_not_taunted = self.in_combat and not is_pursuing_taunt
-        if is_pursuing_taunt or in_combat_not_taunted or map_is_in_fov(fov_map, monster.x, monster.y):
+        # 2. Recently was pursuing taunt (cooldown period to re-orient and find targets)
+        # 3. In combat (already engaged, even if out of player's sight)
+        # 4. In player's FOV (player can see them)
+        recently_taunted = hasattr(self, '_taunt_cooldown') and self._taunt_cooldown > 0
+        if is_pursuing_taunt or recently_taunted or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
             # Check if target is invisible - but taunt overrides invisibility!
             if (not is_pursuing_taunt and 
                 hasattr(target, 'has_status_effect') and 
