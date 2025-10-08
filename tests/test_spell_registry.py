@@ -40,12 +40,16 @@ class TestSpellRegistry:
         assert self.registry.has("fireball")
         assert len(self.registry) == 1
     
-    def test_register_duplicate_raises_error(self):
-        """Test that registering duplicate spell_id raises error."""
+    def test_register_duplicate_is_idempotent(self):
+        """Test that registering duplicate spell_id is idempotent (no error)."""
         self.registry.register(self.fireball)
         
-        with pytest.raises(ValueError, match="already registered"):
-            self.registry.register(self.fireball)
+        # Should not raise, just skip silently
+        self.registry.register(self.fireball)
+        
+        # Still only one spell
+        assert len(self.registry) == 1
+        assert self.registry.has("fireball")
     
     def test_get_spell(self):
         """Test retrieving a spell."""

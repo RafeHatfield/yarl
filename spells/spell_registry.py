@@ -37,7 +37,8 @@ class SpellRegistry:
             ValueError: If spell_id already exists
         """
         if spell.spell_id in self._spells:
-            raise ValueError(f"Spell '{spell.spell_id}' already registered")
+            # Already registered, skip silently for idempotency
+            return
         
         self._spells[spell.spell_id] = spell
     

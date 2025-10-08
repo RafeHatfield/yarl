@@ -148,8 +148,6 @@ def enhance_weapon(*args, **kwargs):
     return cast_spell_by_id(
         "enhance_weapon",
         caster,
-        entities=[],
-        fov_map=None,
         min_bonus=min_bonus,
         max_bonus=max_bonus
     )
@@ -157,6 +155,8 @@ def enhance_weapon(*args, **kwargs):
 
 def enhance_armor(*args, **kwargs):
     """Enhance a random equipped armor piece's AC bonus.
+    
+    This function now delegates to the spell registry system.
     
     Args:
         *args: First argument should be the entity using the scroll
@@ -168,28 +168,10 @@ def enhance_armor(*args, **kwargs):
     entity = args[0]
     bonus = kwargs.get("bonus", 1)  # Default +1 AC
     
-    results = []
-    
-    # Check if player has equipment
-    # For backward compatibility, check direct attribute first (for Mock objects in tests)
-    equipment = getattr(entity, 'equipment', None)
-    if not equipment:
-        equipment = entity.components.get(ComponentType.EQUIPMENT)
-    if not equipment:
-        results.append({
-            "consumed": False,
-            "message": Message(
-                "You must have armor equipped to use this scroll.", (255, 255, 0)
-            )
-        })
-        return results
-    
     # Delegate to new spell system
     return cast_spell_by_id(
         "enhance_armor",
         entity,
-        entities=[],
-        fov_map=None,
         bonus=bonus
     )
 

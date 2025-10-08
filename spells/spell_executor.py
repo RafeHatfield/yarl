@@ -785,10 +785,13 @@ class SpellExecutor:
         
         # Find equipped armor pieces
         armor_pieces = []
-        for slot_name in ['head', 'chest', 'hands', 'legs', 'feet']:
+        for slot_name in ['head', 'chest', 'off_hand']:
             armor = getattr(equipment, slot_name, None)
             if armor and (armor.components.has(ComponentType.EQUIPPABLE) or hasattr(armor, 'equippable')):
-                armor_pieces.append((slot_name, armor))
+                # Check if it's armor (not a weapon)
+                equippable = armor.components.get(ComponentType.EQUIPPABLE) or getattr(armor, 'equippable', None)
+                if equippable and hasattr(equippable, 'armor_class_bonus'):
+                    armor_pieces.append((slot_name, armor))
         
         if not armor_pieces:
             return [{
