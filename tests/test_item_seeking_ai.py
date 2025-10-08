@@ -24,6 +24,7 @@ class TestItemSeekingAI(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        from components.component_registry import ComponentType
         # Mock monster with inventory
         self.monster = Mock()
         self.monster.name = "orc"
@@ -32,6 +33,10 @@ class TestItemSeekingAI(unittest.TestCase):
         self.monster.inventory = Mock()
         self.monster.inventory.items = []
         self.monster.inventory.capacity = 5
+        # Mock ComponentRegistry to return inventory
+        self.monster.components = Mock()
+        self.monster.components.get = Mock(side_effect=lambda comp_type: 
+            self.monster.inventory if comp_type == ComponentType.INVENTORY else None)
         
         # Mock player
         self.player = Mock()
