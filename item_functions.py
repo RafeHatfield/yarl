@@ -130,6 +130,8 @@ def cast_confuse(*args, **kwargs):
 def enhance_weapon(*args, **kwargs):
     """Enhance the equipped weapon's damage range.
     
+    This function now delegates to the spell registry system.
+    
     Args:
         *args: First argument should be the entity using the scroll
         **kwargs: Should contain 'min_bonus' and 'max_bonus' for damage enhancement
@@ -137,51 +139,19 @@ def enhance_weapon(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    entity = args[0]
+    # Delegate to new spell system
+    caster = args[0]
     min_bonus = kwargs.get("min_bonus", 1)
     max_bonus = kwargs.get("max_bonus", 2)
     
-    results = []
-    
-    # Check if player has equipment and a weapon equipped
-    # For backward compatibility, check direct attribute first (for Mock objects in tests)
-    equipment = getattr(entity, 'equipment', None)
-    if not equipment:
-        equipment = entity.components.get(ComponentType.EQUIPMENT)
-    if (equipment and equipment.main_hand and 
-        (equipment.main_hand.components.has(ComponentType.EQUIPPABLE) or hasattr(equipment.main_hand, 'equippable'))):
-        weapon = equipment.main_hand
-        old_min = weapon.equippable.damage_min
-        old_max = weapon.equippable.damage_max
-        
-        # Only enhance weapons that have damage ranges
-        if old_min > 0 and old_max > 0:
-            weapon.equippable.modify_damage_range(min_bonus, max_bonus)
-            
-            results.append({
-                "consumed": True,
-                "message": Message(
-                    f"Your {weapon.name} glows briefly! Damage enhanced from "
-                    f"({old_min}-{old_max}) to ({weapon.equippable.damage_min}-{weapon.equippable.damage_max}).",
-                    (0, 255, 0)
-                )
-            })
-        else:
-            results.append({
-                "consumed": False,
-                "message": Message(
-                    f"The {weapon.name} cannot be enhanced further.", (255, 255, 0)
-                )
-            })
-    else:
-        results.append({
-            "consumed": False,
-            "message": Message(
-                "You must have a weapon equipped to use this scroll.", (255, 255, 0)
-            )
-        })
-    
-    return results
+    return cast_spell_by_id(
+        "enhance_weapon",
+        caster,
+        entities=[],
+        fov_map=None,
+        min_bonus=min_bonus,
+        max_bonus=max_bonus
+    )
 
 
 def enhance_armor(*args, **kwargs):
@@ -213,49 +183,14 @@ def enhance_armor(*args, **kwargs):
         })
         return results
     
-    # Collect all equipped armor pieces (any equipment slot with armor_class_bonus)
-    armor_pieces = []
-    equipment_slots = [
-        ('head', entity.equipment.head),
-        ('chest', entity.equipment.chest),
-        ('feet', entity.equipment.feet),
-        ('off_hand', entity.equipment.off_hand),
-    ]
-    
-    for slot_name, item in equipment_slots:
-        if item and item.components.has(ComponentType.EQUIPPABLE):
-            # Check if this item has armor_class_bonus (is an armor piece)
-            if hasattr(item.equippable, 'armor_class_bonus') and item.equippable.armor_class_bonus > 0:
-                armor_pieces.append((slot_name, item))
-    
-    if not armor_pieces:
-        results.append({
-            "consumed": False,
-            "message": Message(
-                "You must have armor equipped to use this scroll.", (255, 255, 0)
-            )
-        })
-        return results
-    
-    # Randomly select one armor piece to enhance
-    import random
-    slot_name, armor = random.choice(armor_pieces)
-    
-    old_ac = armor.equippable.armor_class_bonus
-    
-    # Enhance the armor's AC bonus
-    armor.equippable.armor_class_bonus += bonus
-    
-    results.append({
-        "consumed": True,
-        "message": Message(
-            f"Your {armor.name} shimmers with magical energy! AC bonus increased from "
-            f"+{old_ac} to +{armor.equippable.armor_class_bonus}.",
-            (0, 255, 0)
-        )
-    })
-    
-    return results
+    # Delegate to new spell system
+    return cast_spell_by_id(
+        "enhance_armor",
+        entity,
+        entities=[],
+        fov_map=None,
+        bonus=bonus
+    )
 
 
 def cast_invisibility(*args, **kwargs):
@@ -427,8 +362,7 @@ def cast_teleport(*args, **kwargs):
 def cast_shield(*args, **kwargs):
     """Cast a protective shield that boosts defense.
     
-    Players get a safe +4 defense boost.
-    Monsters have a 10% chance for the spell to backfire and halve their defense.
+    This function now delegates to the spell registry system.
     
     Args:
         *args: First argument should be the entity casting
@@ -437,30 +371,15 @@ def cast_shield(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    entity = args[0]
-    duration = kwargs.get("duration", 10)
-    defense_bonus = kwargs.get("defense_bonus", 4)
+    # Delegate to new spell system
+    caster = args[0]
     
-    results = []
-    
-    # Create and apply the shield effect
-    from components.status_effects import ShieldEffect
-    shield_effect = ShieldEffect(
-        duration=duration,
-        owner=entity,
-        defense_bonus=defense_bonus
+    return cast_spell_by_id(
+        "shield",
+        caster,
+        entities=[],
+        fov_map=None
     )
-    
-    # Add the status effect to the entity
-    if hasattr(entity, 'add_status_effect'):
-        effect_results = entity.add_status_effect(shield_effect)
-        results.extend(effect_results)
-    
-    results.append({
-        "consumed": True
-    })
-    
-    return results
 
 
 def get_cone_tiles(origin_x, origin_y, target_x, target_y, max_range=8, cone_width=45):

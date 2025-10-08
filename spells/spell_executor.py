@@ -592,15 +592,194 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast a buff/enhancement spell.
         
-        For now, delegate to old functions. We'll migrate these next.
+        Handles shield, invisibility, and equipment enhancements.
         """
-        # TODO: Implement buff spell execution
+        # Handle shield spell
+        if spell.spell_id == "shield":
+            return self._cast_shield_spell(spell, caster)
+        
+        # Handle invisibility
+        elif spell.spell_id == "invisibility":
+            return self._cast_invisibility_spell(spell, caster)
+        
+        # Handle equipment enhancements
+        elif spell.spell_id == "enhance_weapon":
+            return self._cast_enhance_weapon_spell(spell, caster, **kwargs)
+        elif spell.spell_id == "enhance_armor":
+            return self._cast_enhance_armor_spell(spell, caster, **kwargs)
+        
         return [
             {
                 "consumed": False,
-                "message": Message("Buff spells not yet implemented in registry!", (255, 0, 0))
+                "message": Message("Unknown buff spell!", (255, 0, 0))
             }
         ]
+    
+    def _cast_shield_spell(
+        self,
+        spell: SpellDefinition,
+        caster
+    ) -> List[Dict[str, Any]]:
+        """Cast shield spell for defense boost."""
+        from components.status_effects import ShieldEffect, StatusEffectManager
+        from components.component_registry import ComponentType
+        
+        results = []
+        
+        # Ensure caster has status_effects component
+        if not caster.components.has(ComponentType.STATUS_EFFECTS):
+            caster.status_effects = StatusEffectManager(caster)
+            caster.components.add(ComponentType.STATUS_EFFECTS, caster.status_effects)
+        
+        # Create shield effect
+        shield_effect = ShieldEffect(
+            duration=spell.duration,
+            owner=caster,
+            defense_bonus=4  # Default +4 defense
+        )
+        
+        effect_results = caster.status_effects.add_effect(shield_effect)
+        results.extend(effect_results)
+        results.append({"consumed": True})
+        
+        return results
+    
+    def _cast_invisibility_spell(
+        self,
+        spell: SpellDefinition,
+        caster
+    ) -> List[Dict[str, Any]]:
+        """Cast invisibility spell."""
+        from components.status_effects import InvisibilityEffect, StatusEffectManager
+        from components.component_registry import ComponentType
+        
+        results = []
+        
+        # Ensure caster has status_effects component
+        if not caster.components.has(ComponentType.STATUS_EFFECTS):
+            caster.status_effects = StatusEffectManager(caster)
+            caster.components.add(ComponentType.STATUS_EFFECTS, caster.status_effects)
+        
+        # Create invisibility effect
+        invisibility_effect = InvisibilityEffect(
+            duration=spell.duration,
+            owner=caster
+        )
+        
+        effect_results = caster.status_effects.add_effect(invisibility_effect)
+        results.extend(effect_results)
+        results.append({"consumed": True})
+        
+        return results
+    
+    def _cast_enhance_weapon_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Enhance equipped weapon's damage."""
+        from components.component_registry import ComponentType
+        
+        min_bonus = kwargs.get("min_bonus", 1)
+        max_bonus = kwargs.get("max_bonus", 2)
+        
+        results = []
+        
+        # Check for equipped weapon
+        equipment = caster.components.get(ComponentType.EQUIPMENT)
+        if not equipment:
+            equipment = getattr(caster, 'equipment', None)
+        
+        if (equipment and equipment.main_hand and 
+            (equipment.main_hand.components.has(ComponentType.EQUIPPABLE) or 
+             hasattr(equipment.main_hand, 'equippable'))):
+            weapon = equipment.main_hand
+            old_min = weapon.equippable.damage_min
+            old_max = weapon.equippable.damage_max
+            
+            if old_min > 0 and old_max > 0:
+                weapon.equippable.modify_damage_range(min_bonus, max_bonus)
+                
+                results.append({
+                    "consumed": True,
+                    "message": Message(
+                        f"Your {weapon.name} glows briefly! Damage enhanced from "
+                        f"({old_min}-{old_max}) to ({weapon.equippable.damage_min}-{weapon.equippable.damage_max}).",
+                        (0, 255, 0)
+                    )
+                })
+            else:
+                results.append({
+                    "consumed": False,
+                    "message": Message(
+                        f"The {weapon.name} cannot be enhanced further.", (255, 255, 0)
+                    )
+                })
+        else:
+            results.append({
+                "consumed": False,
+                "message": Message(
+                    "You must have a weapon equipped to use this scroll.", (255, 255, 0)
+                )
+            })
+        
+        return results
+    
+    def _cast_enhance_armor_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Enhance equipped armor's AC bonus."""
+        from components.component_registry import ComponentType
+        import random
+        
+        bonus = kwargs.get("bonus", 1)
+        
+        results = []
+        
+        # Check for equipment
+        equipment = caster.components.get(ComponentType.EQUIPMENT)
+        if not equipment:
+            equipment = getattr(caster, 'equipment', None)
+        
+        if not equipment:
+            return [{
+                "consumed": False,
+                "message": Message("You have no equipment to enhance!", (255, 255, 0))
+            }]
+        
+        # Find equipped armor pieces
+        armor_pieces = []
+        for slot_name in ['head', 'chest', 'hands', 'legs', 'feet']:
+            armor = getattr(equipment, slot_name, None)
+            if armor and (armor.components.has(ComponentType.EQUIPPABLE) or hasattr(armor, 'equippable')):
+                armor_pieces.append((slot_name, armor))
+        
+        if not armor_pieces:
+            return [{
+                "consumed": False,
+                "message": Message("You have no armor equipped to enhance!", (255, 255, 0))
+            }]
+        
+        # Randomly select an armor piece
+        slot_name, armor = random.choice(armor_pieces)
+        old_bonus = armor.equippable.armor_class_bonus
+        
+        armor.equippable.modify_ac_bonus(bonus)
+        
+        results.append({
+            "consumed": True,
+            "message": Message(
+                f"Your {armor.name} glows with magical energy! "
+                f"AC bonus increased from +{old_bonus} to +{armor.equippable.armor_class_bonus}.",
+                (0, 255, 0)
+            )
+        })
+        
+        return results
     
     def _calculate_damage(self, damage_dice: str) -> int:
         """Calculate damage from dice notation.

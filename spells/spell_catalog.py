@@ -161,6 +161,55 @@ RAGE = SpellDefinition(
 )
 
 
+# === BUFF SPELLS ===
+
+SHIELD = SpellDefinition(
+    spell_id="shield",
+    name="Shield",
+    category=SpellCategory.BUFF,
+    targeting=TargetingType.SELF,
+    duration=10,
+    requires_los=False,
+    requires_target=False,
+    success_message="A magical shield surrounds you!",
+    consumable=True
+)
+
+INVISIBILITY = SpellDefinition(
+    spell_id="invisibility",
+    name="Invisibility",
+    category=SpellCategory.BUFF,
+    targeting=TargetingType.SELF,
+    duration=10,
+    requires_los=False,
+    requires_target=False,
+    success_message="You fade from view!",
+    consumable=True
+)
+
+ENHANCE_WEAPON = SpellDefinition(
+    spell_id="enhance_weapon",
+    name="Enhance Weapon",
+    category=SpellCategory.BUFF,
+    targeting=TargetingType.SELF,
+    requires_los=False,
+    requires_target=False,
+    success_message="Your weapon glows with power!",
+    consumable=True
+)
+
+ENHANCE_ARMOR = SpellDefinition(
+    spell_id="enhance_armor",
+    name="Enhance Armor",
+    category=SpellCategory.BUFF,
+    targeting=TargetingType.SELF,
+    requires_los=False,
+    requires_target=False,
+    success_message="Your armor shimmers with magic!",
+    consumable=True
+)
+
+
 def register_all_spells():
     """Register all spells in the catalog with the global registry.
     
@@ -182,7 +231,9 @@ def register_all_spells():
     register_spell(GLUE)
     register_spell(RAGE)
     
-    # TODO: Add buff spells (shield, enhance_weapon, enhance_armor)
-    # TODO: Add summon spells (raise_dead)
-    # TODO: Add yo_mama (taunt) spell
+    # Buff spells
+    register_spell(SHIELD)
+    register_spell(ENHANCE_WEAPON)
+    register_spell(ENHANCE_ARMOR)
+    register_spell(INVISIBILITY)
 
