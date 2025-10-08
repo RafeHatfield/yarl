@@ -144,9 +144,9 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
             "message": Message("Player pathfinding not available.", (255, 0, 0))
         })
         return {"results": results}
-    
+
     # Attempt to set destination (with FOV awareness)
-    if player.pathfinding.set_destination(click_x, click_y, game_map, entities, fov_map):
+    if pathfinding.set_destination(click_x, click_y, game_map, entities, fov_map):
         # Successfully set path
         distance = player.distance(click_x, click_y)
         results.append({

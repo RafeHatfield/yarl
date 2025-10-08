@@ -18,6 +18,8 @@ class TestPathfindingTurnTransitions(unittest.TestCase):
     
     def setUp(self):
         """Set up test entities and map."""
+        from components.component_registry import ComponentType
+        
         # Create mock player with pathfinding
         self.player = Mock(spec=Entity)
         self.player.x = 5
@@ -32,6 +34,11 @@ class TestPathfindingTurnTransitions(unittest.TestCase):
         self.pathfinding = PlayerPathfinding()
         self.pathfinding.owner = self.player
         self.player.pathfinding = self.pathfinding
+        
+        # Mock ComponentRegistry to return pathfinding
+        self.player.components = Mock()
+        self.player.components.get = Mock(side_effect=lambda comp_type: 
+            self.pathfinding if comp_type == ComponentType.PATHFINDING else None)
         
         # Set up a simple 3-step path
         self.pathfinding.current_path = [(6, 5), (7, 5), (8, 5)]
