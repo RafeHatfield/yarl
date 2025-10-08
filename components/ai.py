@@ -136,12 +136,12 @@ class BasicMonster:
         if is_pursuing_taunt or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
             # If THIS monster is the taunted target, fight back against nearest attacker!
             if is_taunted_target:
-                from components.faction import are_factions_hostile, get_target_priority
+                from components.faction import are_factions_hostile
                 
-                # Find nearest visible hostile (anyone attacking us!)
+                # When taunted, being attacked from all sides - fight the CLOSEST threat!
+                # Don't use priority system here - just find closest hostile
                 closest_hostile = None
                 closest_distance = float('inf')
-                best_priority = 0
                 
                 monster_faction = getattr(self.owner, 'faction', None)
                 
@@ -155,23 +155,17 @@ class BasicMonster:
                         fighter = getattr(entity, 'fighter', None)
                     
                     if fighter and fighter.hp > 0:
-                        # Check if visible in FOV
+                        # Check if visible in FOV (only fight what we can see!)
                         if map_is_in_fov(fov_map, entity.x, entity.y):
                             # Check if hostile based on faction
                             entity_faction = getattr(entity, 'faction', None)
                             if monster_faction and entity_faction:
                                 if are_factions_hostile(monster_faction, entity_faction):
+                                    # Just find CLOSEST hostile - we're surrounded!
                                     distance = self.owner.distance_to(entity)
-                                    priority = get_target_priority(monster_faction, entity_faction)
-                                    
-                                    # Only consider targets with positive priority (actually hostile)
-                                    if priority > 0:
-                                        # Pick highest priority target, or closest if same priority
-                                        if (priority > best_priority or 
-                                            (priority == best_priority and distance < closest_distance)):
-                                            closest_distance = distance
-                                            best_priority = priority
-                                            closest_hostile = entity
+                                    if distance < closest_distance:
+                                        closest_distance = distance
+                                        closest_hostile = entity
                 
                 if closest_hostile:
                     # Fight back against the nearest attacker!
