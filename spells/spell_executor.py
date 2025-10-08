@@ -856,10 +856,11 @@ class SpellExecutor:
         import math
         from entity import get_blocking_entities_at_location
         from components.fighter import Fighter
-        from components.ai import HostileAI
+        from components.ai import MindlessZombieAI
         from config.entity_registry import get_entity_registry
-        from render_order import RenderOrder
+        from render_functions import RenderOrder
         from components.component_registry import ComponentType
+        from components.faction import Faction
         
         results = []
         max_range = kwargs.get("range", spell.max_range)
@@ -955,10 +956,19 @@ class SpellExecutor:
         corpse.fighter.owner = corpse
         corpse.components.add(ComponentType.FIGHTER, corpse.fighter)
         
-        # Add hostile AI (attacks everything)
-        corpse.ai = HostileAI()
+        # Add mindless zombie AI (attacks everything)
+        corpse.ai = MindlessZombieAI()
         corpse.ai.owner = corpse
         corpse.components.add(ComponentType.AI, corpse.ai)
+        
+        # Set faction to NEUTRAL (zombies are hostile to all)
+        corpse.faction = Faction.NEUTRAL
+        
+        # Clear any inventory/equipment from the original monster
+        if corpse.components.has(ComponentType.INVENTORY):
+            corpse.components.remove(ComponentType.INVENTORY)
+        if corpse.components.has(ComponentType.EQUIPMENT):
+            corpse.components.remove(ComponentType.EQUIPMENT)
         
         results.append({
             "consumed": True,
