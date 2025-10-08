@@ -187,7 +187,15 @@ class PlayerPathfinding:
         }
     
     def _is_valid_destination(self, x: int, y: int, game_map: 'GameMap') -> bool:
-        """Check if destination coordinates are valid.
+        """Check if destination coordinates are valid for pathfinding.
+        
+        A valid destination must be:
+        1. Within map bounds
+        2. Not blocked (walkable)
+        3. Explored by the player (visible or previously seen)
+        
+        This allows players to click on any explored tile to automatically
+        pathfind there, enabling quick travel across previously-explored areas.
         
         Args:
             x (int): Target x coordinate
@@ -195,7 +203,7 @@ class PlayerPathfinding:
             game_map (GameMap): The game map
             
         Returns:
-            bool: True if destination is valid
+            bool: True if destination is valid (walkable and explored)
         """
         # Check bounds
         if x < 0 or y < 0 or x >= game_map.width or y >= game_map.height:
@@ -203,6 +211,11 @@ class PlayerPathfinding:
         
         # Check if tile is walkable
         if game_map.is_blocked(x, y):
+            return False
+        
+        # Check if tile has been explored by the player
+        # This allows pathfinding to anywhere the player has previously visited
+        if not game_map.tiles[x][y].explored:
             return False
         
         return True
@@ -245,8 +258,10 @@ class PlayerPathfinding:
         # Get pathfinding configuration
         pathfinding_config = get_pathfinding_config()
         
-        # Determine max path length based on whether destination is in FOV
+        # Determine max path length based on tile visibility and exploration status
         destination_in_fov = False
+        destination_explored = game_map.tiles[target_x][target_y].explored
+        
         if fov_map is not None:
             try:
                 destination_in_fov = map_is_in_fov(fov_map, target_x, target_y)
@@ -254,8 +269,16 @@ class PlayerPathfinding:
                 # FOV map might be None or invalid, fall back to conservative limit
                 pass
         
-        max_path_length = (pathfinding_config.MAX_PATH_LENGTH_IN_FOV if destination_in_fov 
-                          else pathfinding_config.MAX_PATH_LENGTH_OUT_FOV)
+        # Choose appropriate path length limit:
+        # - Visible tiles: 40 steps (short, player can see it)
+        # - Explored tiles: 150 steps (long, player has been there before)
+        # - Unexplored tiles: 25 steps (conservative, shouldn't reach here due to validation)
+        if destination_in_fov:
+            max_path_length = pathfinding_config.MAX_PATH_LENGTH_IN_FOV
+        elif destination_explored:
+            max_path_length = pathfinding_config.MAX_PATH_LENGTH_EXPLORED
+        else:
+            max_path_length = pathfinding_config.MAX_PATH_LENGTH_OUT_FOV
         
         logger.debug(f"Computing path to ({target_x}, {target_y}), in_fov={destination_in_fov}, "
                     f"max_length={max_path_length}")

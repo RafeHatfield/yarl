@@ -28,6 +28,7 @@ class PathfindingConfig:
     DIAGONAL_MOVE_COST: float = 1.41  # Normal diagonal movement cost
     MAX_PATH_LENGTH_IN_FOV: int = 40  # Maximum path length when destination is visible
     MAX_PATH_LENGTH_OUT_FOV: int = 25  # Maximum path length when destination is not visible
+    MAX_PATH_LENGTH_EXPLORED: int = 150  # Maximum path length for explored (but not visible) tiles
     
     # Legacy compatibility
     @property

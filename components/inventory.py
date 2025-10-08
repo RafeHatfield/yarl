@@ -29,8 +29,11 @@ class Inventory:
 
         Attempts to add an item to the inventory if there's space available.
         
-        Special behavior for scrolls: If picking up a scroll and you have a matching
-        wand, the scroll automatically recharges the wand instead of being added.
+        Special merging behavior:
+        - Wand + Wand: If picking up a wand and you have a matching wand (same spell),
+          the new wand's charges are merged into the existing wand and the new wand is consumed.
+        - Scroll + Wand: If picking up a scroll and you have a matching wand,
+          the scroll automatically recharges the wand instead of being added.
 
         Args:
             item (Entity): The item entity to add to inventory
@@ -51,10 +54,42 @@ class Inventory:
                 }
             )
         else:
+            # Check for wand-to-wand merging
+            # If picking up a wand, check if we already have a wand of the same type
+            wand_merged = False
+            pickup_wand = getattr(item, 'wand', None)
+            if pickup_wand:
+                # This is a wand! Look for matching wand in inventory
+                for inv_item in self.items:
+                    inv_wand = getattr(inv_item, 'wand', None)
+                    if inv_wand and inv_wand.spell_type == pickup_wand.spell_type:
+                        # Found a matching wand! Merge charges from new wand into existing wand
+                        charges_gained = pickup_wand.charges
+                        for _ in range(charges_gained):
+                            inv_wand.add_charge()
+                        wand_merged = True
+                        
+                        # Queue a sparkle visual effect at player's position
+                        from visual_effect_queue import get_effect_queue
+                        effect_queue = get_effect_queue()
+                        effect_queue.queue_wand_recharge(self.owner.x, self.owner.y, self.owner)
+                        
+                        charge_word = "charge" if charges_gained == 1 else "charges"
+                        results.append({
+                            "item_added": None,  # New wand was consumed, not added
+                            "item_consumed": item,  # Signal that new wand should be removed from world
+                            "message": Message(
+                                f"Your {item.name} glows brightly and vanishes! "
+                                f"Your {inv_item.name} gains {charges_gained} {charge_word}. ({inv_wand.charges} charges)",
+                                (255, 215, 0)  # Gold
+                            )
+                        })
+                        break
+            
             # Check for scroll-to-wand recharge mechanic
             # If picking up a scroll, check if we have a matching wand
             scroll_recharged_wand = False
-            if item.item and item.item.use_function:  # It's a usable item (likely a scroll)
+            if not wand_merged and item.item and item.item.use_function:  # It's a usable item (likely a scroll)
                 # Get the scroll's spell identifier (e.g., "fireball_scroll")
                 scroll_name = item.name.lower().replace(' ', '_')
                 
@@ -82,9 +117,9 @@ class Inventory:
                         })
                         break
             
-            # If scroll recharged a wand, don't add it to inventory
+            # If wand merged or scroll recharged a wand, don't add it to inventory
             # Otherwise, add normally
-            if not scroll_recharged_wand:
+            if not wand_merged and not scroll_recharged_wand:
                 results.append(
                     {
                         "item_added": item,

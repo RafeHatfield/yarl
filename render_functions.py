@@ -298,20 +298,21 @@ def render_all(
         from death_screen import render_death_screen
         render_death_screen(con, player, screen_width, screen_height, entity_quote)
     
-    # Render tooltips (if hovering over items)
+    # Render tooltips (if hovering over items or monsters)
     # This should be rendered LAST so it appears on top of everything
     if mouse and hasattr(mouse, 'cx') and hasattr(mouse, 'cy'):
-        from ui.tooltip import get_sidebar_item_at_position, get_sidebar_equipment_at_position, get_ground_item_at_position, render_tooltip
+        from ui.tooltip import (get_sidebar_item_at_position, get_sidebar_equipment_at_position, 
+                               get_ground_item_at_position, get_monster_at_position, render_tooltip)
         
         # First check if hovering over equipment in sidebar
-        hovered_item = get_sidebar_equipment_at_position(mouse.cx, mouse.cy, player, ui_layout)
+        hovered_entity = get_sidebar_equipment_at_position(mouse.cx, mouse.cy, player, ui_layout)
         
         # If not hovering over equipment, check if hovering over a sidebar inventory item
-        if not hovered_item:
-            hovered_item = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
+        if not hovered_entity:
+            hovered_entity = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
         
-        # If not hovering over sidebar item, check for ground items in viewport
-        if not hovered_item and ui_layout.is_in_viewport(mouse.cx, mouse.cy):
+        # If not hovering over sidebar item, check viewport for monsters or ground items
+        if not hovered_entity and ui_layout.is_in_viewport(mouse.cx, mouse.cy):
             # Convert screen coordinates to world coordinates
             camera_x, camera_y = 0, 0
             if camera:
@@ -320,12 +321,18 @@ def render_all(
             world_coords = ui_layout.screen_to_world(mouse.cx, mouse.cy, camera_x, camera_y)
             if world_coords:
                 world_x, world_y = world_coords
-                hovered_item = get_ground_item_at_position(world_x, world_y, entities, fov_map)
+                
+                # Check for monsters first (they're more important than items)
+                hovered_entity = get_monster_at_position(world_x, world_y, entities, player, fov_map)
+                
+                # If no monster, check for ground items
+                if not hovered_entity:
+                    hovered_entity = get_ground_item_at_position(world_x, world_y, entities, fov_map)
         
-        if hovered_item:
+        if hovered_entity:
             # Render tooltip on ROOT console (0) so it appears on top of everything
             # Use screen coordinates directly since we're rendering to root
-            render_tooltip(0, hovered_item, mouse.cx, mouse.cy, ui_layout)
+            render_tooltip(0, hovered_entity, mouse.cx, mouse.cy, ui_layout)
 
 
 def _render_tiles_original(con, game_map, fov_map, colors, camera=None):

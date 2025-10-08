@@ -279,12 +279,18 @@ class Entity:
         """Move towards target using A* pathfinding algorithm.
 
         Uses A* pathfinding to find the optimal route to the target,
-        taking into account obstacles and other entities.
+        taking into account obstacles, other entities, and ground hazards.
+        
+        Monsters will prefer safer paths that avoid ground hazards when possible,
+        but will cross hazards if it's the only available route. Hazard damage
+        is added as extra pathfinding cost, making high-damage hazards (like fresh
+        fire at 10 dmg) much less attractive than low-damage hazards (like decaying
+        gas at 1 dmg).
 
         Args:
             target: The target entity to move towards
             entities: List of entities that block movement
-            game_map: The game map for pathfinding
+            game_map: The game map for pathfinding (may include hazard_manager)
         """
         # Create a FOV map using the modern numpy-based API
         import numpy as np
@@ -311,6 +317,23 @@ class Entity:
         
         # Create the cost map for pathfinding (1 = normal cost, 0 = blocked)
         cost = np.where(walkable, 1, 0).astype(np.int8)
+        
+        # Add hazard costs to make monsters avoid dangerous tiles
+        # Hazards add their current damage as extra cost, making monsters prefer safer routes
+        try:
+            if (hasattr(game_map, 'hazard_manager') and 
+                game_map.hazard_manager is not None):
+                for hazard in game_map.hazard_manager.get_all_hazards():
+                    hx, hy = hazard.x, hazard.y
+                    if walkable[hy, hx]:  # Only modify walkable tiles
+                        # Add hazard damage as pathfinding cost
+                        # Fire (10 dmg) adds +10 cost, gas (5 dmg) adds +5 cost
+                        # As hazards decay, they become progressively safer to cross
+                        hazard_cost = hazard.get_current_damage()
+                        cost[hy, hx] = int(cost[hy, hx]) + hazard_cost
+        except (AttributeError, TypeError):
+            # No valid hazard manager or method, skip hazard costs
+            pass
         
         # Create pathfinder using the modern tcod.path API
         # IMPORTANT: cost array is indexed [y, x] but tcod expects (x, y)

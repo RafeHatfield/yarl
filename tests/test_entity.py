@@ -233,6 +233,12 @@ class TestEntityPathfinding:
         mock_tile.blocked = False
         mock_game_map.tiles = [[mock_tile for _ in range(mock_game_map.height)] 
                                for _ in range(mock_game_map.width)]
+        
+        # Mock hazard manager (empty, no hazards)
+        mock_hazard_manager = Mock()
+        mock_hazard_manager.get_all_hazards.return_value = []
+        mock_game_map.hazard_manager = mock_hazard_manager
+        
         entities = []
 
         initial_x, initial_y = entity.x, entity.y
@@ -261,6 +267,12 @@ class TestEntityPathfinding:
         mock_tile.block_sight = False
         mock_tile.blocked = False
         mock_game_map.tiles = [[mock_tile for _ in range(50)] for _ in range(80)]
+        
+        # Mock hazard manager (empty, no hazards)
+        mock_hazard_manager = Mock()
+        mock_hazard_manager.get_all_hazards.return_value = []
+        mock_game_map.hazard_manager = mock_hazard_manager
+        
         entities = []
 
         # Mock tcod pathfinding functions - no path available
@@ -297,6 +309,12 @@ class TestEntityPathfinding:
         mock_tile.block_sight = False
         mock_tile.blocked = False
         mock_game_map.tiles = [[mock_tile for _ in range(50)] for _ in range(80)]
+        
+        # Mock hazard manager (empty, no hazards)
+        mock_hazard_manager = Mock()
+        mock_hazard_manager.get_all_hazards.return_value = []
+        mock_game_map.hazard_manager = mock_hazard_manager
+        
         entities = []
 
         # Mock tcod pathfinding functions - path too long
