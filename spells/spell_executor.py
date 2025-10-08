@@ -374,7 +374,10 @@ class SpellExecutor:
                 }
             ]
         
-        caster.fighter.heal(spell.heal_amount)
+        # Allow amount override from kwargs (for backward compatibility with potions)
+        heal_amount = kwargs.get("amount", spell.heal_amount)
+        
+        caster.fighter.heal(heal_amount)
         results.append(
             {
                 "consumed": True,

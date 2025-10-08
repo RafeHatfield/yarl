@@ -28,6 +28,12 @@ class TestActionValidation(unittest.TestCase):
 
     def setUp(self):
         """Set up comprehensive test scenario."""
+        # Register spells for the spell system
+        from spells.spell_catalog import register_all_spells
+        from spells import get_spell_registry
+        get_spell_registry().clear()  # Clear any previous registrations
+        register_all_spells()
+        
         self.state_manager = GameStateManager()
         
         # Create player with some damage for healing tests

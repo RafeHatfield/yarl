@@ -9,6 +9,8 @@ from components.inventory import Inventory
 from components.item import Item
 from entity import Entity
 from render_functions import RenderOrder
+from spells.spell_catalog import register_all_spells
+from spells import get_spell_registry
 
 
 @pytest.fixture(autouse=True)
@@ -209,3 +211,22 @@ def mock_game_state():
         "target_x": 12,
         "target_y": 12,
     }
+
+
+@pytest.fixture(autouse=True, scope="function")
+def reset_spell_registry():
+    """Reset and re-register spells before each test.
+    
+    This ensures that all spells are available in every test without
+    requiring manual registration, and prevents test pollution.
+    """
+    # Clear any existing spells
+    get_spell_registry().clear()
+    
+    # Register all spells
+    register_all_spells()
+    
+    yield
+    
+    # Cleanup after test (optional - could leave for performance)
+    # get_spell_registry().clear()

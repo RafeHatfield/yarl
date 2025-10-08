@@ -82,6 +82,10 @@ def get_game_variables(constants):
     # Load entity configuration from YAML files
     load_entity_config()
     
+    # Register all spells in the spell registry
+    from spells.spell_catalog import register_all_spells
+    register_all_spells()
+    
     # Get configuration objects for cleaner code
     combat_config = get_combat_config()
     inventory_config = get_inventory_config()
