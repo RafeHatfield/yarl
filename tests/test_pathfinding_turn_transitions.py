@@ -177,8 +177,39 @@ class TestPathfindingTurnTransitions(unittest.TestCase):
         self.assertFalse(enemy_turn, "Should NOT have enemy_turn when blocked before moving")
         self.assertFalse(continue_pathfinding, "Should NOT continue pathfinding when blocked")
     
+    @unittest.skip("Auto-attack disabled per user requirement: Player should never attack unless clicking on target")
     @patch('mouse_movement._check_for_close_enemies')
     @patch('mouse_movement._check_for_enemy_in_weapon_range')
+    def test_ranged_attack_triggers_enemy_turn(self, mock_check_range, mock_check_close):
+        """Test that ranged auto-attack during pathfinding triggers enemy turn."""
+        # Create a mock enemy in range
+        mock_enemy = Mock(spec=Entity)
+        mock_enemy.name = "Orc"
+        mock_check_range.return_value = mock_enemy
+        mock_check_close.return_value = False  # No close enemies (in weapon range for auto-attack)
+        
+        # Mock the attack
+        self.player.fighter.attack_d20 = Mock(return_value=[
+            {"message": Message("You hit the Orc!", (255, 255, 255))}
+        ])
+        
+        result = mouse_movement.process_pathfinding_movement(
+            self.player, self.entities, self.game_map, self.fov_map
+        )
+        
+        # Player should have moved
+        self.player.move.assert_called_once()
+        
+        # Attack should have been triggered
+        self.player.fighter.attack_d20.assert_called_once_with(mock_enemy)
+        
+        # Movement should be interrupted
+        self.assertFalse(self.pathfinding.is_path_active())
+        
+        # Should have enemy_turn flag
+        results = result.get("results", [])
+        enemy_turn = any(r.get("enemy_turn") for r in results)
+        self.assertTrue(enemy_turn, "Should have enemy_turn flag after ranged attack")
 
 
 class TestActionProcessorPathfindingTurns(unittest.TestCase):
