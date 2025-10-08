@@ -537,6 +537,15 @@ class Fighter:
             # Apply corrosion effects if applicable
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
+            
+            # IMPORTANT: Set attacker's in_combat flag too!
+            # When a monster attacks, it's now "in combat" and should continue
+            # fighting even if it moves out of player's FOV
+            attacker_ai = self.owner.components.get(ComponentType.AI) if self.owner else None
+            if not attacker_ai and self.owner:
+                attacker_ai = getattr(self.owner, 'ai', None)
+            if attacker_ai and hasattr(attacker_ai, 'in_combat'):
+                attacker_ai.in_combat = True
         else:
             # Visual feedback: Only show animation on fumbles (critical fails)!
             if is_fumble:
