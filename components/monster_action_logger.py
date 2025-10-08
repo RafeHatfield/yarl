@@ -163,7 +163,8 @@ class MonsterActionLogger:
             return
             
         item_name = getattr(item, 'name', 'Unknown Item')
-        inventory_count = len(getattr(monster, 'inventory', Mock()).items) if hasattr(monster, 'inventory') and monster.inventory else 0
+        inventory = monster.components.get(ComponentType.INVENTORY)
+        inventory_count = len(inventory.items) if inventory else 0
         details = f"{action} {item_name} (inventory: {inventory_count} items)"
         
         MonsterActionLogger.log_action_result(monster, "inventory_change", True, details)
