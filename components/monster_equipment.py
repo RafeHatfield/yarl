@@ -12,6 +12,7 @@ from config.game_constants import get_monster_equipment_config
 from config.testing_config import is_testing_mode
 from config.entity_factory import get_entity_factory
 from components.monster_action_logger import MonsterActionLogger
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
