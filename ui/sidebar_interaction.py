@@ -44,10 +44,10 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
     hotkey_start_y = y_cursor  # Should be 7
     
     # Hotkeys list (must match sidebar.py order!)
+    # NOTE: G - Get/Drop was removed from sidebar.py, so only 5 hotkeys now
     hotkeys = [
         ("C - Character", {"show_character_screen": True}),
         ("I - Inventory", {"show_inventory": True}),
-        ("G - Get/Drop", None),  # Context-aware (handled below)
         ("Z - Wait", {"wait": True}),
         ("<> - Stairs", None),  # Context-aware (handled below)
         ("/ - Look", {"targeting": True, "targeting_type": "look"}),
@@ -62,11 +62,7 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
             logger.info(f"Hotkey clicked: {hotkey_text} at Y={hotkey_y}")
             
             # Handle context-aware hotkeys
-            if hotkey_text == "G - Get/Drop":
-                # Smart Get/Drop: if standing on item, pick up; otherwise drop
-                return _handle_get_drop_click(player, entities)
-            
-            elif hotkey_text == "<> - Stairs":
+            if hotkey_text == "<> - Stairs":
                 # Smart Stairs: go up if on upstairs, down if on downstairs
                 return _handle_stairs_click(player, game_map)
             
@@ -164,10 +160,10 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
     y_cursor += 2  # Title + spacing
     y_cursor += 2  # Separator + spacing
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 6  # 6 hotkey lines
+    y_cursor += 5  # 5 hotkey lines (C, I, Z, <>, /) - G was removed
     y_cursor += 1  # Spacing after hotkeys
     y_cursor += 1  # "EQUIPMENT" header
-    equipment_start_y = y_cursor  # Should be 15
+    equipment_start_y = y_cursor  # Should be 14
     
     # Equipment slots (must match sidebar.py order!)
     equipment_slots = [
@@ -257,7 +253,7 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     y_cursor += 2  # Separator + spacing
     # Hotkeys section in sidebar.py:
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 6  # 6 hotkey lines (Option C layout)
+    y_cursor += 5  # 5 hotkey lines (C, I, Z, <>, /) - G was removed
     y_cursor += 1  # Spacing after hotkeys
     # Equipment section in sidebar.py:
     y_cursor += 1  # "EQUIPMENT" header

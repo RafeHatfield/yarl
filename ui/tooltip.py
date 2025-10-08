@@ -119,10 +119,10 @@ def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_l
     y_cursor += 2  # Title + spacing
     y_cursor += 2  # Separator + spacing
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 6  # 6 hotkey lines
+    y_cursor += 5  # 5 hotkey lines (C, I, Z, <>, /) - G was removed
     y_cursor += 1  # Spacing after hotkeys
     y_cursor += 1  # "EQUIPMENT" header
-    equipment_start_y = y_cursor  # Should be 15
+    equipment_start_y = y_cursor  # Should be 14
     
     # Equipment slots (must match sidebar.py order!)
     equipment_slots = [
@@ -186,7 +186,7 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     y_cursor += 2  # Title spacing + separator
     y_cursor += 2  # Separator spacing
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 6  # 6 hotkey lines
+    y_cursor += 5  # 5 hotkey lines (C, I, Z, <>, /) - G was removed
     y_cursor += 1  # Spacing after hotkeys
     y_cursor += 1  # "EQUIPMENT" header
     y_cursor += 5  # 5 equipment slots
@@ -321,9 +321,12 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
     if tooltip_y < 1:
         tooltip_y = 1
     
-    # Draw tooltip background
+    # Draw tooltip background (set both char AND background to ensure clean rendering)
     for y in range(tooltip_height):
         for x in range(tooltip_width):
+            # Clear the character (replace with space) to prevent text bleed-through
+            libtcod.console_put_char(console, tooltip_x + x, tooltip_y + y, ord(' '), libtcod.BKGND_SET)
+            # Set the background color
             libtcod.console_set_char_background(
                 console,
                 tooltip_x + x,
