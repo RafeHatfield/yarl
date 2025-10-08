@@ -277,19 +277,18 @@ class TestMindlessZombieAI(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.zombie = Entity(5, 5, 'Z', (40, 40, 40), 'Zombified orc', blocks=True)
-        self.zombie.fighter = Fighter(hp=40, defense=0, power=2)
-        self.zombie.fighter.owner = self.zombie  # Set owner!
-        self.zombie.ai = MindlessZombieAI()
-        self.zombie.ai.owner = self.zombie
+        zombie_fighter = Fighter(hp=40, defense=0, power=2)
+        zombie_ai = MindlessZombieAI()
+        self.zombie = Entity(5, 5, 'Z', (40, 40, 40), 'Zombified orc', blocks=True,
+                           fighter=zombie_fighter, ai=zombie_ai)
         
-        self.player = Entity(6, 5, '@', (255, 255, 255), 'Player', blocks=True)
-        self.player.fighter = Fighter(hp=100, defense=2, power=5)
-        self.player.fighter.owner = self.player  # Set owner!
+        player_fighter = Fighter(hp=100, defense=2, power=5)
+        self.player = Entity(6, 5, '@', (255, 255, 255), 'Player', blocks=True,
+                           fighter=player_fighter)
         
-        self.orc = Entity(5, 6, 'o', (63, 127, 63), 'Orc', blocks=True)
-        self.orc.fighter = Fighter(hp=20, defense=0, power=4)
-        self.orc.fighter.owner = self.orc  # Set owner!
+        orc_fighter = Fighter(hp=20, defense=0, power=4)
+        self.orc = Entity(5, 6, 'o', (63, 127, 63), 'Orc', blocks=True,
+                        fighter=orc_fighter)
         
         self.game_map = MagicMock()
         self.game_map.width = 80
@@ -435,6 +434,8 @@ class TestMindlessZombieAI(unittest.TestCase):
     
     def test_zombie_clears_target_when_dead(self):
         """Test that zombie clears target when it dies."""
+        from components.component_registry import ComponentType
+        
         entities = [self.zombie, self.player]
         
         # First attack
@@ -448,7 +449,8 @@ class TestMindlessZombieAI(unittest.TestCase):
         # Should have a target
         self.assertIsNotNone(self.zombie.ai.current_target)
         
-        # Kill the player (remove fighter)
+        # Kill the player (remove fighter from both APIs)
+        self.player.components.remove(ComponentType.FIGHTER)
         self.player.fighter = None
         
         # Next turn - should clear target
@@ -465,9 +467,9 @@ class TestMindlessZombieAI(unittest.TestCase):
     def test_zombie_multiple_adjacent_targets(self):
         """Test that zombie can handle multiple adjacent targets."""
         # Create a troll also adjacent to zombie
-        troll = Entity(4, 5, 'T', (0, 127, 0), 'Troll', blocks=True)
-        troll.fighter = Fighter(hp=30, defense=1, power=8)
-        troll.fighter.owner = troll
+        troll_fighter = Fighter(hp=30, defense=1, power=8)
+        troll = Entity(4, 5, 'T', (0, 127, 0), 'Troll', blocks=True,
+                     fighter=troll_fighter)
         
         entities = [self.zombie, self.player, self.orc, troll]
         
@@ -503,20 +505,20 @@ class TestMindlessZombieAI(unittest.TestCase):
     def test_zombie_find_adjacent_targets_helper(self):
         """Test the _find_adjacent_targets helper method."""
         # Place multiple entities at different distances
-        adjacent1 = Entity(6, 5, '@', (255, 255, 255), 'Player', blocks=True)
-        adjacent1.fighter = Fighter(hp=100, defense=2, power=5)
-        adjacent1.fighter.owner = adjacent1
+        adjacent1_fighter = Fighter(hp=100, defense=2, power=5)
+        adjacent1 = Entity(6, 5, '@', (255, 255, 255), 'Player', blocks=True,
+                         fighter=adjacent1_fighter)
         
-        adjacent2 = Entity(5, 6, 'o', (63, 127, 63), 'Orc', blocks=True)
-        adjacent2.fighter = Fighter(hp=20, defense=0, power=4)
-        adjacent2.fighter.owner = adjacent2
+        adjacent2_fighter = Fighter(hp=20, defense=0, power=4)
+        adjacent2 = Entity(5, 6, 'o', (63, 127, 63), 'Orc', blocks=True,
+                         fighter=adjacent2_fighter)
         
-        far_away = Entity(10, 10, 'T', (0, 127, 0), 'Troll', blocks=True)
-        far_away.fighter = Fighter(hp=30, defense=1, power=8)
-        far_away.fighter.owner = far_away
+        far_away_fighter = Fighter(hp=30, defense=1, power=8)
+        far_away = Entity(10, 10, 'T', (0, 127, 0), 'Troll', blocks=True,
+                        fighter=far_away_fighter)
         
         corpse = Entity(4, 5, '%', (127, 0, 0), 'corpse', blocks=False)
-        corpse.fighter = None  # No fighter
+        # No fighter component - corpse
         
         entities = [self.zombie, adjacent1, adjacent2, far_away, corpse]
         
