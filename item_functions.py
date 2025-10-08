@@ -101,6 +101,8 @@ def cast_fireball(*args, **kwargs):
 def cast_confuse(*args, **kwargs):
     """Cast a confusion spell on a target entity.
 
+    This function now delegates to the spell registry system.
+
     Args:
         *args: First argument should be the caster entity
         **kwargs: Should contain 'entities', 'fov_map', 'target_x', and 'target_y'
@@ -108,56 +110,21 @@ def cast_confuse(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and confusion results
     """
-    entities = kwargs.get("entities")
+    # Delegate to new spell system
+    caster = args[0]
+    entities = kwargs.get("entities", [])
     fov_map = kwargs.get("fov_map")
     target_x = kwargs.get("target_x")
     target_y = kwargs.get("target_y")
-
-    results = []
-
-    if not map_is_in_fov(fov_map, target_x, target_y):
-        results.append(
-            {
-                "consumed": False,
-                "message": Message(
-                    "You cannot target a tile outside your field of view.",
-                    (255, 255, 0),
-                ),
-            }
-        )
-        return results
-
-    for entity in entities:
-        if entity.x == target_x and entity.y == target_y and entity.ai:
-            confused_ai = ConfusedMonster(entity.ai, 10)
-
-            confused_ai.owner = entity
-            entity.ai = confused_ai
-
-            results.append(
-                {
-                    "consumed": True,
-                    "message": Message(
-                        "The eyes of the {0} look vacant, as he starts to stumble around!".format(
-                            entity.name
-                        ),
-                        (63, 255, 63),  # light_green RGB
-                    ),
-                }
-            )
-
-            break
-    else:
-        results.append(
-            {
-                "consumed": False,
-                "message": Message(
-                    "There is no targetable enemy at that location.", (255, 255, 0)
-                ),
-            }
-        )
-
-    return results
+    
+    return cast_spell_by_id(
+        "confusion",
+        caster,
+        entities=entities,
+        fov_map=fov_map,
+        target_x=target_x,
+        target_y=target_y
+    )
 
 
 def enhance_weapon(*args, **kwargs):
@@ -985,13 +952,15 @@ def cast_slow(*args, **kwargs):
         target.status_effects = StatusEffectManager(target)
         target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
-    # Apply the slow effect
-    slow_effect = SlowedEffect(duration=duration, owner=target)
-    effect_results = target.status_effects.add_effect(slow_effect)
-    results.extend(effect_results)
-    
-    results.append({"consumed": True})
-    return results
+    # Delegate to new spell system
+    return cast_spell_by_id(
+        "slow",
+        caster,
+        entities=entities,
+        fov_map=fov_map,
+        target_x=target_x,
+        target_y=target_y
+    )
 
 
 def cast_glue(*args, **kwargs):
@@ -1042,13 +1011,15 @@ def cast_glue(*args, **kwargs):
         target.status_effects = StatusEffectManager(target)
         target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
-    # Apply the immobilize effect
-    immobilize_effect = ImmobilizedEffect(duration=duration, owner=target)
-    effect_results = target.status_effects.add_effect(immobilize_effect)
-    results.extend(effect_results)
-    
-    results.append({"consumed": True})
-    return results
+    # Delegate to new spell system
+    return cast_spell_by_id(
+        "glue",
+        caster,
+        entities=entities,
+        fov_map=fov_map,
+        target_x=target_x,
+        target_y=target_y
+    )
 
 
 def cast_rage(*args, **kwargs):
@@ -1102,10 +1073,12 @@ def cast_rage(*args, **kwargs):
         target.status_effects = StatusEffectManager(target)
         target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
-    # Apply the enrage effect
-    enrage_effect = EnragedEffect(duration=duration, owner=target)
-    effect_results = target.status_effects.add_effect(enrage_effect)
-    results.extend(effect_results)
-    
-    results.append({"consumed": True})
-    return results
+    # Delegate to new spell system
+    return cast_spell_by_id(
+        "rage",
+        caster,
+        entities=entities,
+        fov_map=fov_map,
+        target_x=target_x,
+        target_y=target_y
+    )

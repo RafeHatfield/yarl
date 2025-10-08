@@ -8,7 +8,7 @@ execution engine.
 from typing import List, Dict, Any, Optional
 import math
 from spells.spell_definition import SpellDefinition
-from spells.spell_types import SpellCategory, TargetingType, DamageType
+from spells.spell_types import SpellCategory, TargetingType, DamageType, EffectType
 from game_messages import Message
 from fov_functions import map_is_in_fov
 from dice import roll_dice
@@ -400,13 +400,184 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast a utility spell (confusion, teleport, etc.).
         
-        For now, delegate to old functions. We'll migrate these next.
+        Handles confusion, status effect application, and teleportation.
         """
-        # TODO: Implement utility spell execution
+        results = []
+        
+        # Check line of sight if required
+        if spell.requires_los and target_x is not None and target_y is not None:
+            if not map_is_in_fov(fov_map, target_x, target_y):
+                return [
+                    {
+                        "consumed": False,
+                        "message": Message(
+                            "You cannot target a tile outside your field of view.",
+                            (255, 255, 0),
+                        ),
+                    }
+                ]
+        
+        # Handle different effect types
+        if spell.effect_type == EffectType.CONFUSION:
+            return self._cast_confusion_spell(spell, caster, entities, target_x, target_y)
+        elif spell.effect_type in [EffectType.SLOW, EffectType.GLUE, EffectType.RAGE]:
+            return self._cast_status_effect_spell(spell, caster, entities, fov_map, target_x, target_y)
+        elif spell.spell_id == "teleport":
+            return self._cast_teleport_spell(spell, caster, entities, game_map, target_x, target_y)
+        
         return [
             {
                 "consumed": False,
-                "message": Message("Utility spells not yet implemented in registry!", (255, 0, 0))
+                "message": Message("Unknown utility spell effect!", (255, 0, 0))
+            }
+        ]
+    
+    def _cast_confusion_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        target_x: int,
+        target_y: int
+    ) -> List[Dict[str, Any]]:
+        """Cast confusion spell that replaces target's AI."""
+        from components.ai import ConfusedMonster
+        from components.component_registry import ComponentType
+        
+        # Find target entity at location
+        target = None
+        for entity in entities:
+            if entity.x == target_x and entity.y == target_y and entity.components.has(ComponentType.AI):
+                target = entity
+                break
+        
+        if not target:
+            return [
+                {
+                    "consumed": False,
+                    "message": Message(
+                        spell.no_target_message,
+                        (255, 255, 0)
+                    ),
+                }
+            ]
+        
+        # Replace AI with confused AI
+        confused_ai = ConfusedMonster(target.ai, spell.duration)
+        confused_ai.owner = target
+        target.ai = confused_ai
+        
+        message_text = spell.success_message or f"The eyes of the {target.name} look vacant!"
+        return [
+            {
+                "consumed": True,
+                "message": Message(
+                    message_text.format(target.name),
+                    (63, 255, 63),
+                ),
+            }
+        ]
+    
+    def _cast_status_effect_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        fov_map,
+        target_x: int,
+        target_y: int
+    ) -> List[Dict[str, Any]]:
+        """Cast spell that applies a status effect (slow, glue, rage)."""
+        from components.status_effects import SlowedEffect, GluedEffect, EnragedEffect, StatusEffectManager
+        from components.component_registry import ComponentType
+        
+        # Find target entity
+        target = None
+        for entity in entities:
+            if entity.x == target_x and entity.y == target_y and entity.components.has(ComponentType.FIGHTER):
+                target = entity
+                break
+        
+        if not target:
+            return [
+                {
+                    "consumed": False,
+                    "message": Message(spell.no_target_message, (255, 255, 0))
+                }
+            ]
+        
+        # Ensure target has status_effects component
+        if not target.components.has(ComponentType.STATUS_EFFECTS):
+            target.status_effects = StatusEffectManager(target)
+            target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+        
+        # Create appropriate status effect
+        effect = None
+        if spell.effect_type == EffectType.SLOW:
+            effect = SlowedEffect(duration=spell.duration, owner=target)
+        elif spell.effect_type == EffectType.GLUE:
+            effect = GluedEffect(duration=spell.duration, owner=target)
+        elif spell.effect_type == EffectType.RAGE:
+            effect = EnragedEffect(duration=spell.duration, owner=target)
+        
+        if effect:
+            effect_results = target.status_effects.add_effect(effect)
+            return [{"consumed": True}] + effect_results
+        
+        return [
+            {
+                "consumed": False,
+                "message": Message("Failed to apply status effect!", (255, 0, 0))
+            }
+        ]
+    
+    def _cast_teleport_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        game_map,
+        target_x: int,
+        target_y: int
+    ) -> List[Dict[str, Any]]:
+        """Cast teleport spell to move caster to target location."""
+        # Check if target location is valid
+        if game_map.is_blocked(target_x, target_y):
+            return [
+                {
+                    "consumed": False,
+                    "message": Message(
+                        "You cannot teleport into a wall!",
+                        (255, 255, 0)
+                    ),
+                }
+            ]
+        
+        # Check if location is occupied
+        for entity in entities:
+            if entity.x == target_x and entity.y == target_y and entity != caster:
+                if entity.blocks:
+                    return [
+                        {
+                            "consumed": False,
+                            "message": Message(
+                                "That location is occupied!",
+                                (255, 255, 0)
+                            ),
+                        }
+                    ]
+        
+        # Teleport!
+        old_x, old_y = caster.x, caster.y
+        caster.x = target_x
+        caster.y = target_y
+        
+        message_text = spell.success_message or f"You teleport from ({old_x},{old_y}) to ({target_x},{target_y})!"
+        return [
+            {
+                "consumed": True,
+                "message": Message(message_text, (127, 0, 255)),  # Purple
+                "fov_recompute": True  # Request FOV recomputation
             }
         ]
     

@@ -6,7 +6,7 @@ centralized, declarative catalog.
 """
 
 from spells.spell_definition import SpellDefinition
-from spells.spell_types import SpellCategory, TargetingType, DamageType
+from spells.spell_types import SpellCategory, TargetingType, DamageType, EffectType
 from spells.spell_registry import register_spell
 from visual_effects import show_fireball, show_lightning, show_dragon_fart
 
@@ -86,6 +86,81 @@ HEAL = SpellDefinition(
 )
 
 
+# === UTILITY SPELLS ===
+
+CONFUSION = SpellDefinition(
+    spell_id="confusion",
+    name="Confusion",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SINGLE_ANY,
+    effect_type=EffectType.CONFUSION,
+    duration=10,
+    requires_los=True,
+    requires_target=True,
+    max_range=10,
+    success_message="The eyes of the {0} look vacant, as he starts to stumble around!",
+    no_target_message="There is no targetable enemy at that location.",
+    consumable=True
+)
+
+TELEPORT = SpellDefinition(
+    spell_id="teleport",
+    name="Teleport",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.LOCATION,
+    requires_los=True,
+    requires_target=False,
+    max_range=20,
+    success_message="✨ You teleport in a flash of light!",
+    consumable=True
+)
+
+SLOW = SpellDefinition(
+    spell_id="slow",
+    name="Slow",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SINGLE_ENEMY,
+    effect_type=EffectType.SLOW,
+    duration=10,
+    requires_los=True,
+    requires_target=True,
+    max_range=10,
+    success_message="{0} has been slowed!",
+    no_target_message="There is no valid target there.",
+    consumable=True
+)
+
+GLUE = SpellDefinition(
+    spell_id="glue",
+    name="Glue",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SINGLE_ENEMY,
+    effect_type=EffectType.GLUE,
+    duration=5,
+    requires_los=True,
+    requires_target=True,
+    max_range=10,
+    success_message="{0} is stuck in magical glue!",
+    no_target_message="There is no valid target there.",
+    consumable=True
+)
+
+RAGE = SpellDefinition(
+    spell_id="rage",
+    name="Rage",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SINGLE_ANY,
+    effect_type=EffectType.RAGE,
+    duration=8,
+    requires_los=True,
+    requires_target=True,
+    max_range=10,
+    success_message="{0} goes into a berserker rage!",
+    no_target_message="There is no valid target there.",
+    consumable=True
+)
+
+
 def register_all_spells():
     """Register all spells in the catalog with the global registry.
     
@@ -100,7 +175,14 @@ def register_all_spells():
     # Healing spells
     register_spell(HEAL)
     
-    # TODO: Add utility spells (confusion, teleport, slow, glue, rage)
+    # Utility spells
+    register_spell(CONFUSION)
+    register_spell(TELEPORT)
+    register_spell(SLOW)
+    register_spell(GLUE)
+    register_spell(RAGE)
+    
     # TODO: Add buff spells (shield, enhance_weapon, enhance_armor)
     # TODO: Add summon spells (raise_dead)
+    # TODO: Add yo_mama (taunt) spell
 
