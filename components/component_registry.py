@@ -45,6 +45,8 @@ class ComponentType(Enum):
         GROUND_HAZARD: Persistent ground effect (fire, poison)
         STATISTICS: Combat/gameplay statistics tracking
         FACTION: Allegiance system (player, enemy, neutral)
+        ITEM_USAGE: Monster item usage AI component
+        ITEM_SEEKING_AI: Monster item-seeking behavior
     """
     FIGHTER = auto()
     AI = auto()
@@ -60,6 +62,8 @@ class ComponentType(Enum):
     GROUND_HAZARD = auto()
     STATISTICS = auto()
     FACTION = auto()
+    ITEM_USAGE = auto()
+    ITEM_SEEKING_AI = auto()
 
 
 class ComponentRegistry:

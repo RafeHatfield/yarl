@@ -339,17 +339,18 @@ class TestBasicMonsterItemUsageIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.monster = Mock()
-        self.monster.name = "orc"
-        self.monster.x = 5
-        self.monster.y = 5
+        from entity import Entity
+        from components.fighter import Fighter
+        from components.component_registry import ComponentType
+        
+        # Create a real Entity with Fighter (required by ComponentRegistry patterns)
+        fighter = Fighter(hp=30, defense=2, power=5)
+        self.monster = Entity(5, 5, 'o', (0, 255, 0), 'orc', blocks=True, fighter=fighter)
+        
+        # Mock methods that we need to track
         self.monster.distance_to = Mock(return_value=3)
         self.monster.move_astar = Mock()
-        self.monster.fighter = Mock()
         self.monster.fighter.attack = Mock(return_value=[])
-        
-        # Mock status effects to prevent iteration errors
-        self.monster.status_effects = None
         
         # Mock has_status_effect to prevent immobilized check from failing
         self.monster.has_status_effect = Mock(return_value=False)

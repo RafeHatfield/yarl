@@ -91,8 +91,9 @@ class BasicMonster:
         actions_taken = []
 
         # Process status effects at the start of turn
-        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
-            effect_results = self.owner.status_effects.process_turn_start()
+        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            effect_results = status_effects.process_turn_start()
             for result in effect_results:
                 # Check if status effect wants to skip this turn (e.g., Slow effect)
                 if result.get('skip_turn'):
@@ -190,10 +191,11 @@ class BasicMonster:
             dict: Item usage action if available, None otherwise
         """
         # Check if monster has item usage capability
-        if not (hasattr(self.owner, 'item_usage') and self.owner.item_usage):
+        item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
+        if not item_usage:
             return None
             
-        return self.owner.item_usage.get_item_usage_action(target, game_map, entities)
+        return item_usage.get_item_usage_action(target, game_map, entities)
     
     def _process_item_usage_action(self, action, entities):
         """Process an item usage action.
@@ -212,8 +214,9 @@ class BasicMonster:
             target = action.get("target")
             
             # Use item with failure mechanics
-            if hasattr(self.owner, 'item_usage') and self.owner.item_usage:
-                usage_results = self.owner.item_usage.use_item_with_failure(item, target, entities)
+            item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
+            if item_usage:
+                usage_results = item_usage.use_item_with_failure(item, target, entities)
                 results.extend(usage_results)
             
         return results
@@ -230,10 +233,11 @@ class BasicMonster:
             dict: Item action if available, None otherwise
         """
         # Check if monster has item-seeking AI capability
-        if not (hasattr(self.owner, 'item_seeking_ai') and self.owner.item_seeking_ai):
+        item_seeking_ai = self.owner.components.get(ComponentType.ITEM_SEEKING_AI)
+        if not item_seeking_ai:
             return None
             
-        return self.owner.item_seeking_ai.get_item_seeking_action(game_map, entities, target)
+        return item_seeking_ai.get_item_seeking_action(game_map, entities, target)
     
     def _process_item_action(self, action, entities):
         """Process an item-related action.
@@ -291,7 +295,7 @@ class BasicMonster:
             
         # Try to equip the item if it's equipment
         equipped = False
-        if hasattr(item, 'equippable') and item.equippable:
+        if item.components.has(ComponentType.EQUIPPABLE):
             equipment = self.owner.components.get(ComponentType.EQUIPMENT)
             if equipment:
                 # Simple equipping logic - equip if slot is empty
@@ -361,8 +365,9 @@ class MindlessZombieAI:
         results = []
         
         # Process status effects at the start of turn
-        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
-            effect_results = self.owner.status_effects.process_turn_start()
+        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            effect_results = status_effects.process_turn_start()
             for result in effect_results:
                 # Check if status effect wants to skip this turn (e.g., Slow effect)
                 if result.get('skip_turn'):
@@ -651,8 +656,9 @@ class SlimeAI:
         monster = self.owner
         
         # Process status effects at the start of turn
-        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
-            effect_results = self.owner.status_effects.process_turn_start()
+        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            effect_results = status_effects.process_turn_start()
             for result in effect_results:
                 # Check if status effect wants to skip this turn (e.g., Slow effect)
                 if result.get('skip_turn'):
