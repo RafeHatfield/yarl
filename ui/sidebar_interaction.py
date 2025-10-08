@@ -6,6 +6,7 @@ including clicking on inventory items and hotkey buttons.
 
 import logging
 from typing import Optional, Tuple, Any
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ def _handle_get_drop_click(player: Any, entities: Optional[list]) -> Optional[di
     # Check if standing on an item
     if entities:
         for entity in entities:
-            if entity.x == player.x and entity.y == player.y and hasattr(entity, 'item'):
+            if entity.x == player.x and entity.y == player.y and entity.components.has(ComponentType.ITEM):
                 # Standing on item - pick it up!
                 logger.info(f"Get action: picking up item at player position")
                 return {"pickup": True}
@@ -152,7 +153,8 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
     Returns:
         Action dict with equipment_slot if clicked, None otherwise
     """
-    if not hasattr(player, 'equipment') or not player.equipment:
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if not equipment:
         return None
     
     padding = ui_layout.sidebar_padding
@@ -223,12 +225,14 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
         return equipment_action
     
     # Check if player has inventory
-    if not hasattr(player, 'inventory') or not player.inventory:
+    inventory = player.components.get(ComponentType.INVENTORY)
+    if not inventory:
         return None
     
     # Get unequipped items (same logic as sidebar rendering)
     equipped_items = set()
-    if hasattr(player, 'equipment') and player.equipment:
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if equipment:
         for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
                         player.equipment.head, player.equipment.chest, player.equipment.feet]:
             if slot_item:
