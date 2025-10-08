@@ -8,6 +8,7 @@ from game_messages import Message
 from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger
 from components.faction import Faction, are_factions_hostile, get_target_priority
+from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
     from entity import Entity
@@ -25,10 +26,10 @@ def find_taunted_target(entities: list) -> Optional['Entity']:
         Entity or None: The taunted entity, or None if no entity is taunted
     """
     for entity in entities:
-        if (hasattr(entity, 'status_effects') and entity.status_effects and
-            entity.status_effects.has_effect('taunted')):
+        status_effects = entity.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects and status_effects.has_effect('taunted'):
             # Also check if entity is still alive (has fighter component)
-            if hasattr(entity, 'fighter') and entity.fighter:
+            if entity.components.has(ComponentType.FIGHTER):
                 return entity
     return None
 
@@ -43,8 +44,8 @@ def get_weapon_reach(entity: 'Entity') -> int:
         int: The reach of the weapon in tiles (default 1 for adjacent)
     """
     try:
-        if (hasattr(entity, 'equipment') and entity.equipment and 
-            entity.equipment.main_hand and 
+        equipment = entity.components.get(ComponentType.EQUIPMENT)
+        if (equipment and equipment.main_hand and 
             hasattr(entity.equipment.main_hand, 'equippable')):
             weapon = entity.equipment.main_hand.equippable
             reach = getattr(weapon, 'reach', 1)
@@ -271,16 +272,17 @@ class BasicMonster:
         results = []
         
         # Check if monster has inventory space
-        if not (hasattr(self.owner, 'inventory') and self.owner.inventory):
+        inventory = self.owner.components.get(ComponentType.INVENTORY)
+        if not inventory:
             MonsterActionLogger.log_item_pickup(self.owner, item, False, "no inventory")
             return results
             
-        if len(self.owner.inventory.items) >= self.owner.inventory.capacity:
+        if len(inventory.items) >= inventory.capacity:
             MonsterActionLogger.log_item_pickup(self.owner, item, False, "inventory full")
             return results
             
         # Add item to monster's inventory
-        self.owner.inventory.add_item(item)
+        inventory.add_item(item)
         MonsterActionLogger.log_inventory_change(self.owner, item, "added")
         
         # Remove item from world
@@ -290,14 +292,15 @@ class BasicMonster:
         # Try to equip the item if it's equipment
         equipped = False
         if hasattr(item, 'equippable') and item.equippable:
-            if hasattr(self.owner, 'equipment') and self.owner.equipment:
+            equipment = self.owner.components.get(ComponentType.EQUIPMENT)
+            if equipment:
                 # Simple equipping logic - equip if slot is empty
-                if item.equippable.slot.value == "main_hand" and not self.owner.equipment.main_hand:
+                if item.equippable.slot.value == "main_hand" and not equipment.main_hand:
                     self.owner.equipment.toggle_equip(item)
                     MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
                     equipped = True
-                elif item.equippable.slot.value == "off_hand" and not self.owner.equipment.off_hand:
-                    self.owner.equipment.toggle_equip(item)
+                elif item.equippable.slot.value == "off_hand" and not equipment.off_hand:
+                    equipment.toggle_equip(item)
                     MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
                     equipped = True
         
@@ -384,7 +387,7 @@ class MindlessZombieAI:
         if self.current_target:
             # Is target still alive and in FOV?
             target_in_entities = self.current_target in entities
-            target_has_fighter = hasattr(self.current_target, 'fighter') and self.current_target.fighter
+            target_has_fighter = self.current_target.components.has(ComponentType.FIGHTER)
             
             if target_in_entities and target_has_fighter:
                 distance = self.owner.distance_to(self.current_target)
@@ -514,7 +517,7 @@ class MindlessZombieAI:
                 continue
             
             # Skip non-living entities (corpses, items)
-            if not (hasattr(entity, 'fighter') and entity.fighter):
+            if not entity.components.has(ComponentType.FIGHTER):
                 continue
             
             # Check if adjacent
@@ -541,7 +544,7 @@ class MindlessZombieAI:
                 continue
             
             # Skip non-living entities (corpses, items)
-            if not (hasattr(entity, 'fighter') and entity.fighter):
+            if not entity.components.has(ComponentType.FIGHTER):
                 continue
             
             # Check if within FOV radius
