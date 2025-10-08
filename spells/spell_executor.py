@@ -254,6 +254,7 @@ class SpellExecutor:
             spell.visual_effect(explosion_tiles)
         
         # Deal damage to entities in radius (use override if provided, including 0)
+        # Note: We check "in kwargs" not "is not None" to properly handle damage=0
         if "damage" in kwargs:
             damage = kwargs["damage"]
         else:

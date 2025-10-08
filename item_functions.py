@@ -55,15 +55,7 @@ def cast_lightning(*args, **kwargs):
     """
     # Delegate to new spell system
     caster = args[0]
-    entities = kwargs.get("entities", [])
-    fov_map = kwargs.get("fov_map")
-    
-    return cast_spell_by_id(
-        "lightning",
-        caster,
-        entities=entities,
-        fov_map=fov_map
-    )
+    return cast_spell_by_id("lightning", caster, **kwargs)
 
 
 def cast_fireball(*args, **kwargs):
@@ -81,21 +73,7 @@ def cast_fireball(*args, **kwargs):
     """
     # Delegate to new spell system
     caster = args[0]
-    entities = kwargs.get("entities", [])
-    fov_map = kwargs.get("fov_map")
-    target_x = kwargs.get("target_x")
-    target_y = kwargs.get("target_y")
-    game_map = kwargs.get("game_map")
-    
-    return cast_spell_by_id(
-        "fireball",
-        caster,
-        entities=entities,
-        fov_map=fov_map,
-        game_map=game_map,
-        target_x=target_x,
-        target_y=target_y
-    )
+    return cast_spell_by_id("fireball", caster, **kwargs)
 
 
 def cast_confuse(*args, **kwargs):
@@ -193,22 +171,11 @@ def cast_invisibility(*args, **kwargs):
     entity = args[0]
     duration = kwargs.get("duration", 10)
     
-    results = []
-    
-    # Check if already invisible
-    if hasattr(entity, 'invisible') and entity.invisible:
-        results.append({
-            "consumed": False,
-            "message": Message("You are already invisible!", (255, 255, 0))
-        })
-        return results
-    
     # Delegate to new spell system
     return cast_spell_by_id(
         "invisibility",
         entity,
-        entities=[],
-        fov_map=None
+        duration=duration
     )
 
 
