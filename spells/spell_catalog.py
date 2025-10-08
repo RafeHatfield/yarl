@@ -209,6 +209,37 @@ ENHANCE_ARMOR = SpellDefinition(
     consumable=True
 )
 
+RAISE_DEAD = SpellDefinition(
+    spell_id="raise_dead",
+    name="Raise Dead",
+    category=SpellCategory.SUMMON,
+    targeting=TargetingType.LOCATION,
+    max_range=5,
+    requires_los=False,
+    requires_target=True,
+    cast_message="Dark energy flows into the corpse!",
+    success_message="The corpse rises as an undead servant!",
+    fail_message="There is no corpse at that location!",
+    no_target_message="You must select a corpse to resurrect!",
+    consumable=True
+)
+
+YO_MAMA = SpellDefinition(
+    spell_id="yo_mama",
+    name="Yo Mama",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SINGLE_ANY,
+    max_range=10,
+    requires_los=True,
+    requires_target=True,
+    effect_type=EffectType.TAUNT,
+    duration=1000,  # Effectively permanent
+    cast_message="You prepare a devastating insult!",
+    success_message="All hostile creatures turn their attention!",
+    fail_message="There is no valid target there.",
+    consumable=True
+)
+
 
 def register_all_spells():
     """Register all spells in the catalog with the global registry.
@@ -236,4 +267,8 @@ def register_all_spells():
     register_spell(ENHANCE_WEAPON)
     register_spell(ENHANCE_ARMOR)
     register_spell(INVISIBILITY)
+    
+    # Summon spells
+    register_spell(RAISE_DEAD)
+    register_spell(YO_MAMA)
 

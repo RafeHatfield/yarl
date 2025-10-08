@@ -86,6 +86,8 @@ class SpellExecutor:
             )
         elif spell.category == SpellCategory.BUFF:
             return self._cast_buff_spell(spell, caster, entities, target_x, target_y, **kwargs)
+        elif spell.category == SpellCategory.SUMMON:
+            return self._cast_summon_spell(spell, caster, entities, fov_map, target_x, target_y, **kwargs)
         else:
             return [
                 {
@@ -813,6 +815,253 @@ class SpellExecutor:
                 (0, 255, 0)
             )
         })
+        
+        return results
+    
+    def _cast_summon_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        fov_map,
+        target_x: Optional[int],
+        target_y: Optional[int],
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Cast a summoning spell.
+        
+        Handles spells that create or resurrect entities.
+        """
+        if spell.spell_id == "raise_dead":
+            return self._cast_raise_dead_spell(spell, caster, entities, target_x, target_y, **kwargs)
+        elif spell.spell_id == "yo_mama":
+            # Yo Mama is actually a utility spell (taunt), but categorized here for organization
+            return self._cast_yo_mama_spell(spell, caster, entities, fov_map, target_x, target_y, **kwargs)
+        else:
+            return [{
+                "consumed": False,
+                "message": Message(f"Unsupported summon spell: {spell.spell_id}", (255, 0, 0))
+            }]
+    
+    def _cast_raise_dead_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        target_x: Optional[int],
+        target_y: Optional[int],
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Cast raise dead spell - resurrect a corpse as a zombie."""
+        import math
+        from entity import get_blocking_entities_at_location
+        from components.fighter import Fighter
+        from components.ai import HostileAI
+        from config.entity_registry import get_entity_registry
+        from render_order import RenderOrder
+        from components.component_registry import ComponentType
+        
+        results = []
+        max_range = kwargs.get("range", spell.max_range)
+        
+        # Validate target
+        if target_x is None or target_y is None:
+            return [{
+                "consumed": False,
+                "message": Message(spell.no_target_message or "You must select a corpse!", (255, 255, 0))
+            }]
+        
+        # Check range
+        distance = math.sqrt((target_x - caster.x) ** 2 + (target_y - caster.y) ** 2)
+        if distance > max_range:
+            return [{
+                "consumed": False,
+                "message": Message("That corpse is too far away!", (255, 255, 0))
+            }]
+        
+        # Find corpse at location
+        corpse = None
+        for ent in entities:
+            if (ent.x == target_x and ent.y == target_y and 
+                ent.name.startswith("remains of ")):
+                corpse = ent
+                break
+        
+        if not corpse:
+            return [{
+                "consumed": False,
+                "message": Message(spell.fail_message or "No corpse there!", (255, 255, 0))
+            }]
+        
+        # Check if location is blocked
+        blocking_entity = get_blocking_entities_at_location(entities, corpse.x, corpse.y)
+        if blocking_entity and blocking_entity != corpse:
+            return [{
+                "consumed": False,
+                "message": Message(f"{blocking_entity.name} is in the way!", (255, 255, 0))
+            }]
+        
+        # Resurrect the corpse!
+        original_name = corpse.name.replace("remains of ", "")
+        corpse.name = f"Zombified {original_name}"
+        corpse.color = (40, 40, 40)  # Dark gray/black
+        corpse.blocks = True
+        corpse.render_order = RenderOrder.ACTOR
+        
+        # Get original stats
+        registry = get_entity_registry()
+        monster_id = original_name.lower()
+        original_def = registry.monsters.get(monster_id)
+        
+        if original_def and hasattr(original_def, 'stats'):
+            base_hp = original_def.stats.hp
+            base_defense = original_def.stats.defense
+            base_power = original_def.stats.power
+            base_damage_min = getattr(original_def.stats, 'damage_min', 0)
+            base_damage_max = getattr(original_def.stats, 'damage_max', 0)
+            base_strength = getattr(original_def.stats, 'strength', 10)
+            base_dexterity = getattr(original_def.stats, 'dexterity', 10)
+            base_constitution = getattr(original_def.stats, 'constitution', 10)
+        else:
+            # Fallback defaults
+            base_hp = 10
+            base_defense = 0
+            base_power = 3
+            base_damage_min = 1
+            base_damage_max = 3
+            base_strength = 10
+            base_dexterity = 10
+            base_constitution = 10
+        
+        # Create zombie: 2x HP, 0.5x damage
+        zombie_hp = base_hp * 2
+        zombie_power = max(1, int(base_power * 0.5))
+        zombie_damage_min = max(1, int(base_damage_min * 0.5))
+        zombie_damage_max = max(1, int(base_damage_max * 0.5))
+        zombie_strength = max(6, int(base_strength * 0.75))
+        zombie_dexterity = max(6, int(base_dexterity * 0.5))
+        zombie_constitution = min(18, int(base_constitution * 1.5))
+        
+        corpse.fighter = Fighter(
+            hp=zombie_hp,
+            defense=base_defense,
+            power=zombie_power,
+            damage_min=zombie_damage_min,
+            damage_max=zombie_damage_max,
+            strength=zombie_strength,
+            dexterity=zombie_dexterity,
+            constitution=zombie_constitution
+        )
+        corpse.fighter.owner = corpse
+        corpse.components.add(ComponentType.FIGHTER, corpse.fighter)
+        
+        # Add hostile AI (attacks everything)
+        corpse.ai = HostileAI()
+        corpse.ai.owner = corpse
+        corpse.components.add(ComponentType.AI, corpse.ai)
+        
+        results.append({
+            "consumed": True,
+            "message": Message(spell.success_message or f"{corpse.name} rises!", (0, 255, 0))
+        })
+        
+        return results
+    
+    def _cast_yo_mama_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        fov_map,
+        target_x: Optional[int],
+        target_y: Optional[int],
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Cast Yo Mama spell - target yells a joke and becomes taunted."""
+        import yaml
+        import random
+        import os
+        from components.status_effects import TauntedTargetEffect, StatusEffectManager
+        from components.component_registry import ComponentType
+        
+        results = []
+        
+        # Check if target in FOV
+        if not map_is_in_fov(fov_map, target_x, target_y):
+            return [{
+                "consumed": False,
+                "message": Message("You cannot target something you cannot see.", (255, 255, 0))
+            }]
+        
+        # Find target
+        target = None
+        for entity in entities:
+            if entity.x == target_x and entity.y == target_y and entity.fighter:
+                target = entity
+                break
+        
+        if not target:
+            return [{
+                "consumed": False,
+                "message": Message(spell.fail_message or "No valid target!", (255, 255, 0))
+            }]
+        
+        # Load jokes from YAML
+        jokes_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "yo_mama_jokes.yaml")
+        try:
+            with open(jokes_path, 'r') as f:
+                jokes_data = yaml.safe_load(f)
+                jokes = jokes_data.get('jokes', [])
+        except Exception as e:
+            jokes = ["Yo mama so ugly, even the game couldn't load her jokes!"]
+            print(f"Warning: Could not load yo_mama_jokes.yaml: {e}")
+        
+        if not jokes:
+            jokes = ["Yo mama so forgettable, even the joke list forgot about her!"]
+        
+        # Select random joke
+        joke = random.choice(jokes)
+        
+        # Target yells the joke
+        results.append({
+            "message": Message(
+                f'{target.name} yells: "{joke}"',
+                (200, 150, 255)  # Purple
+            )
+        })
+        
+        # Apply taunt effect
+        if not target.components.has(ComponentType.STATUS_EFFECTS):
+            target.status_effects = StatusEffectManager(target)
+            target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+        
+        taunt_effect = TauntedTargetEffect(duration=spell.duration, owner=target)
+        effect_results = target.status_effects.add_effect(taunt_effect)
+        results.extend(effect_results)
+        
+        # Count affected monsters
+        affected_count = 0
+        for entity in entities:
+            if (entity.components.has(ComponentType.AI) and 
+                entity.components.has(ComponentType.FIGHTER) and 
+                entity != target):
+                affected_count += 1
+        
+        results.append({
+            "consumed": True,
+            "message": Message(
+                spell.success_message or "All hostiles turn their attention!",
+                (255, 100, 100)
+            )
+        })
+        
+        if affected_count > 0:
+            results.append({
+                "message": Message(
+                    f"{affected_count} creature{'s' if affected_count != 1 else ''} now target {target.name}!",
+                    (255, 200, 100)
+                )
+            })
         
         return results
     
