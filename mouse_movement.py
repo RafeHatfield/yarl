@@ -9,6 +9,7 @@ import logging
 
 from game_messages import Message
 from entity import get_blocking_entities_at_location
+from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
     from entity import Entity
