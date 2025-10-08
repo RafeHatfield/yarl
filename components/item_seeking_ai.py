@@ -45,7 +45,7 @@ class ItemSeekingAI:
             dict: Action dictionary if item seeking should occur, None otherwise
         """
         # Only seek items if monster has inventory capability
-        if not (hasattr(self.monster, 'inventory') and self.monster.inventory):
+        if not self.monster.components.get(ComponentType.INVENTORY):
             return None
             
         # Only seek items if inventory has space
@@ -111,7 +111,7 @@ class ItemSeekingAI:
         
         for entity in entities:
             # Only consider items (entities with item component)
-            if not (hasattr(entity, 'item') and entity.item):
+            if not entity.components.has(ComponentType.ITEM):
                 continue
                 
             # Skip items that are being carried
@@ -243,7 +243,7 @@ def create_item_seeking_ai(monster, monster_def) -> Optional[ItemSeekingAI]:
     if not monster_def.can_seek_items:
         return None
         
-    if not (hasattr(monster, 'inventory') and monster.inventory):
+    if not monster.components.get(ComponentType.INVENTORY):
         logger.warning(f"Monster {monster.name} configured to seek items but has no inventory")
         return None
         

@@ -82,7 +82,7 @@ class MonsterItemUsage:
                 
             # Check item type and permissions
             # use_function is a direct attribute on Item component
-            if hasattr(item.item, 'use_function'):
+            if hasattr(item.item, 'use_function'):  # Direct attribute check on item.item
                 item_name = item.name.lower()
                 
                 # Scroll usage (enabled)
@@ -312,7 +312,7 @@ class MonsterItemUsage:
         # Try to use item on wrong target
         try:
             # use_function is a direct attribute on Item component
-            if hasattr(item.item, 'use_function') and item.item.use_function:
+            if hasattr(item.item, 'use_function') and item.item.use_function:  # Direct attribute check
                 use_results = item.item.use_function(
                     inventory=self.monster.inventory,
                     target_entity=new_target,
