@@ -296,8 +296,8 @@ class TestTurnHistory(unittest.TestCase):
         history = self.manager.get_history(last_n=3)
         self.assertEqual(len(history), 3)
         
-        # Should be most recent 3
-        self.assertEqual(history[-1]["to"], "player")  # Most recent
+        # After 10 advances from PLAYER: ends at PLAYER → ENEMY (10th transition)
+        self.assertEqual(history[-1]["to"], "enemy")  # Most recent
 
 
 class TestTurnManagerReset(unittest.TestCase):

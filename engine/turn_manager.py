@@ -139,7 +139,8 @@ class TurnManager:
             raise ValueError(f"Event must be 'start' or 'end', got: {event}")
         
         self._listeners[phase][event].append(callback)
-        logger.debug(f"Registered listener for {phase}.{event}: {callback.__name__}")
+        callback_name = getattr(callback, '__name__', repr(callback))
+        logger.debug(f"Registered listener for {phase}.{event}: {callback_name}")
     
     def unregister_listener(self, phase: TurnPhase, callback: Callable, 
                            event: str = "start") -> bool:
@@ -158,7 +159,8 @@ class TurnManager:
         
         try:
             self._listeners[phase][event].remove(callback)
-            logger.debug(f"Unregistered listener for {phase}.{event}: {callback.__name__}")
+            callback_name = getattr(callback, '__name__', repr(callback))
+            logger.debug(f"Unregistered listener for {phase}.{event}: {callback_name}")
             return True
         except ValueError:
             return False
@@ -229,7 +231,8 @@ class TurnManager:
             try:
                 callback()
             except Exception as e:
-                logger.error(f"Error in {phase}.{event} listener {callback.__name__}: {e}", 
+                callback_name = getattr(callback, '__name__', repr(callback))
+                logger.error(f"Error in {phase}.{event} listener {callback_name}: {e}", 
                            exc_info=True)
     
     def _record_phase_transition(self, from_phase: TurnPhase, to_phase: TurnPhase) -> None:
