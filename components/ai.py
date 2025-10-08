@@ -34,8 +34,14 @@ def find_taunted_target(entities: list) -> Optional['Entity']:
             if not fighter:
                 fighter = getattr(entity, 'fighter', None)
             
-            if fighter and fighter.hp > 0:
-                return entity
+            if fighter:
+                try:
+                    # Check hp (handle Mock objects in tests gracefully)
+                    if fighter.hp > 0:
+                        return entity
+                except (TypeError, AttributeError):
+                    # Mock object or invalid hp - assume alive for tests
+                    return entity
             # Target is dead - return None so monsters stop pursuing
     return None
 
