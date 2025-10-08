@@ -76,7 +76,8 @@ def render_sidebar(console, player, ui_layout) -> None:
     y += 1
         
     # Equipment Section
-    if hasattr(player, 'equipment') and player.equipment:
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if equipment:
         libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
         libtcod.console_print_ex(
             console, padding, y,
@@ -116,10 +117,12 @@ def render_sidebar(console, player, ui_layout) -> None:
         y += 1
         
     # Inventory Section (PERSISTENT!)
-    if hasattr(player, 'inventory') and player.inventory:
+    inventory = player.components.get(ComponentType.INVENTORY)
+    if inventory:
         # Get unequipped items only (equipped items shown in EQUIPMENT section)
         equipped_items = set()
-        if hasattr(player, 'equipment') and player.equipment:
+        equipment = player.components.get(ComponentType.EQUIPMENT)
+        if equipment:
             for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
                             player.equipment.head, player.equipment.chest, player.equipment.feet]:
                 if slot_item:

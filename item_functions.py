@@ -10,6 +10,7 @@ import tcod.libtcodpy as libtcodpy
 import math
 
 from components.ai import ConfusedMonster
+from components.component_registry import ComponentType
 from game_messages import Message
 from fov_functions import map_is_in_fov
 from render_functions import RenderOrder
@@ -321,10 +322,13 @@ def enhance_weapon(*args, **kwargs):
     results = []
     
     # Check if player has equipment and a weapon equipped
-    if (hasattr(entity, 'equipment') and entity.equipment and 
-        entity.equipment.main_hand and entity.equipment.main_hand.equippable):
-        
-        weapon = entity.equipment.main_hand
+    # For backward compatibility, check direct attribute first (for Mock objects in tests)
+    equipment = getattr(entity, 'equipment', None)
+    if not equipment:
+        equipment = entity.components.get(ComponentType.EQUIPMENT)
+    if (equipment and equipment.main_hand and 
+        (equipment.main_hand.components.has(ComponentType.EQUIPPABLE) or hasattr(equipment.main_hand, 'equippable'))):
+        weapon = equipment.main_hand
         old_min = weapon.equippable.damage_min
         old_max = weapon.equippable.damage_max
         
@@ -374,7 +378,11 @@ def enhance_armor(*args, **kwargs):
     results = []
     
     # Check if player has equipment
-    if not (hasattr(entity, 'equipment') and entity.equipment):
+    # For backward compatibility, check direct attribute first (for Mock objects in tests)
+    equipment = getattr(entity, 'equipment', None)
+    if not equipment:
+        equipment = entity.components.get(ComponentType.EQUIPMENT)
+    if not equipment:
         results.append({
             "consumed": False,
             "message": Message(
@@ -393,7 +401,7 @@ def enhance_armor(*args, **kwargs):
     ]
     
     for slot_name, item in equipment_slots:
-        if item and hasattr(item, 'equippable') and item.equippable:
+        if item and item.components.has(ComponentType.EQUIPPABLE):
             # Check if this item has armor_class_bonus (is an armor piece)
             if hasattr(item.equippable, 'armor_class_bonus') and item.equippable.armor_class_bonus > 0:
                 armor_pieces.append((slot_name, item))
@@ -759,7 +767,7 @@ def cast_dragon_fart(*args, **kwargs):
             
         if (other_entity.x, other_entity.y) in cone_tiles:
             # Check if entity has AI (is a monster)
-            if hasattr(other_entity, 'ai') and other_entity.ai:
+            if other_entity.components.has(ComponentType.AI):
                 affected_entities.append(other_entity)
     
     if not affected_entities:
@@ -946,9 +954,10 @@ def cast_raise_dead(*args, **kwargs):
     corpse.faction = Faction.NEUTRAL  # Zombies are hostile to all
     
     # Clear any inventory/equipment from the original monster
-    if hasattr(corpse, 'inventory'):
+    # Check both ComponentRegistry and direct attributes for backward compatibility
+    if corpse.components.has(ComponentType.INVENTORY) or hasattr(corpse, 'inventory'):
         corpse.inventory = None
-    if hasattr(corpse, 'equipment'):
+    if corpse.components.has(ComponentType.EQUIPMENT) or hasattr(corpse, 'equipment'):
         corpse.equipment = None
     
     results.append({
@@ -1036,8 +1045,10 @@ def cast_yo_mama(*args, **kwargs):
     from components.status_effects import TauntedTargetEffect, StatusEffectManager
     
     # Ensure target has status_effects component
-    if not hasattr(target, 'status_effects') or target.status_effects is None:
+    if not target.components.has(ComponentType.STATUS_EFFECTS):
         target.status_effects = StatusEffectManager(target)
+        # Also register with ComponentRegistry
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
     # Apply the taunt effect (1000 turns = effectively permanent)
     taunt_effect = TauntedTargetEffect(duration=1000, owner=target)
@@ -1055,8 +1066,8 @@ def cast_yo_mama(*args, **kwargs):
     # Count how many monsters are affected
     affected_count = 0
     for entity in entities:
-        if (hasattr(entity, 'ai') and entity.ai and 
-            hasattr(entity, 'fighter') and entity.fighter and 
+        if (entity.components.has(ComponentType.AI) and 
+            entity.components.has(ComponentType.FIGHTER) and 
             entity != target):
             affected_count += 1
     
@@ -1115,8 +1126,9 @@ def cast_slow(*args, **kwargs):
     from components.status_effects import SlowedEffect, StatusEffectManager
     
     # Ensure target has status_effects component
-    if not hasattr(target, 'status_effects') or target.status_effects is None:
+    if not target.components.has(ComponentType.STATUS_EFFECTS):
         target.status_effects = StatusEffectManager(target)
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
     # Apply the slow effect
     slow_effect = SlowedEffect(duration=duration, owner=target)
@@ -1171,8 +1183,9 @@ def cast_glue(*args, **kwargs):
     from components.status_effects import ImmobilizedEffect, StatusEffectManager
     
     # Ensure target has status_effects component
-    if not hasattr(target, 'status_effects') or target.status_effects is None:
+    if not target.components.has(ComponentType.STATUS_EFFECTS):
         target.status_effects = StatusEffectManager(target)
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
     # Apply the immobilize effect
     immobilize_effect = ImmobilizedEffect(duration=duration, owner=target)
@@ -1230,8 +1243,9 @@ def cast_rage(*args, **kwargs):
     from components.status_effects import EnragedEffect, StatusEffectManager
     
     # Ensure target has status_effects component
-    if not hasattr(target, 'status_effects') or target.status_effects is None:
+    if not target.components.has(ComponentType.STATUS_EFFECTS):
         target.status_effects = StatusEffectManager(target)
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
     
     # Apply the enrage effect
     enrage_effect = EnragedEffect(duration=duration, owner=target)

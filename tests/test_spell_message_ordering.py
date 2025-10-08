@@ -22,17 +22,16 @@ class TestSpellMessageOrdering(unittest.TestCase):
         self.player = Entity(x=10, y=10, char='@', color=(255, 255, 255), name='Player')
         
         # Create target monsters
-        self.orc1 = Entity(x=12, y=10, char='o', color=(0, 127, 0), name='Orc 1')
-        self.orc1.ai = BasicMonster()
-        self.orc1.ai.owner = self.orc1
-        self.orc1.fighter = Fighter(hp=20, defense=3, power=4)
-        self.orc1.fighter.owner = self.orc1
+        # Create orcs with AI and Fighter components
+        fighter1 = Fighter(hp=20, defense=3, power=4)
+        ai1 = BasicMonster()
+        self.orc1 = Entity(x=12, y=10, char='o', color=(0, 127, 0), name='Orc 1', 
+                          blocks=True, fighter=fighter1, ai=ai1)
         
-        self.orc2 = Entity(x=13, y=10, char='o', color=(0, 127, 0), name='Orc 2')
-        self.orc2.ai = BasicMonster()
-        self.orc2.ai.owner = self.orc2
-        self.orc2.fighter = Fighter(hp=20, defense=3, power=4)
-        self.orc2.fighter.owner = self.orc2
+        fighter2 = Fighter(hp=20, defense=3, power=4)
+        ai2 = BasicMonster()
+        self.orc2 = Entity(x=13, y=10, char='o', color=(0, 127, 0), name='Orc 2',
+                          blocks=True, fighter=fighter2, ai=ai2)
         
         # Create entities list
         self.entities = [self.player, self.orc1, self.orc2]

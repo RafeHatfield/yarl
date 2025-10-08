@@ -20,28 +20,27 @@ class TestRangedAutoAttackFOV(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        # Create player with longbow at (10, 10)
-        self.player = Entity(x=10, y=10, char='@', color=(255, 255, 255), name='Player')
-        self.player.fighter = Fighter(hp=100, defense=5, power=5)
-        self.player.fighter.owner = self.player
-        self.player.equipment = Equipment()
-        self.player.pathfinding = PlayerPathfinding()
-        self.player.pathfinding.owner = self.player
+        # Create player with longbow at (10, 10) with components
+        fighter = Fighter(hp=100, defense=5, power=5)
+        equipment = Equipment()
+        pathfinding = PlayerPathfinding()
+        self.player = Entity(x=10, y=10, char='@', color=(255, 255, 255), name='Player',
+                           blocks=True, fighter=fighter, equipment=equipment, pathfinding=pathfinding)
         
         # Create longbow (reach 10)
-        longbow = Entity(x=0, y=0, char='}', color=(160, 82, 45), name='Longbow')
-        longbow.equippable = Equippable(
+        equippable = Equippable(
             slot=EquipmentSlots.MAIN_HAND,
             damage_dice="1d8",
             reach=10
         )
-        longbow.equippable.owner = longbow
+        longbow = Entity(x=0, y=0, char='}', color=(160, 82, 45), name='Longbow',
+                       equippable=equippable)
         self.player.equipment.main_hand = longbow
         
         # Create orc at (20, 10) = 10 tiles away (at max longbow range)
-        self.orc = Entity(x=20, y=10, char='o', color=(0, 127, 0), name='Orc')
-        self.orc.fighter = Fighter(hp=20, defense=3, power=4)
-        self.orc.fighter.owner = self.orc
+        orc_fighter = Fighter(hp=20, defense=3, power=4)
+        self.orc = Entity(x=20, y=10, char='o', color=(0, 127, 0), name='Orc',
+                         blocks=True, fighter=orc_fighter)
         
         # Mock game map
         self.game_map = Mock()

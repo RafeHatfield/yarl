@@ -13,6 +13,7 @@ import tcod.libtcodpy as libtcodpy
 
 from components.item import Item
 from components.faction import Faction, get_faction_from_string
+from components.component_registry import ComponentRegistry, ComponentType
 from config.game_constants import get_pathfinding_config
 from render_functions import RenderOrder
 
@@ -121,7 +122,10 @@ class Entity:
         # Initialize special abilities
         self.special_abilities = None
         
-        # Initialize all components to None first
+        # Initialize component registry (NEW: Type-safe component system)
+        self.components = ComponentRegistry()
+        
+        # Initialize all components to None first (for backward compatibility)
         self.fighter = None
         self.ai = None
         self.item = None
@@ -138,24 +142,43 @@ class Entity:
         if self.equippable and not self.item:
             self.item = Item()
             self.item.owner = self
+            # Also register with ComponentRegistry
+            self.components.add(ComponentType.ITEM, self.item)
     
     def _register_components(self, components: dict[str, Any]) -> None:
         """Register components and establish ownership relationships.
         
+        This method now uses the ComponentRegistry for type-safe component
+        storage while maintaining backward compatibility with direct attribute
+        access (entity.fighter, entity.ai, etc.).
+        
         Args:
             components: Dictionary of component_name -> component_instance
         """
-        # Valid component names that can be registered
-        valid_components = {
-            'fighter', 'ai', 'item', 'inventory', 'stairs', 
-            'level', 'equipment', 'equippable', 'pathfinding', 'status_effects'
+        # Mapping from component name (string) to ComponentType enum
+        component_type_mapping = {
+            'fighter': ComponentType.FIGHTER,
+            'ai': ComponentType.AI,
+            'item': ComponentType.ITEM,
+            'inventory': ComponentType.INVENTORY,
+            'stairs': ComponentType.STAIRS,
+            'level': ComponentType.LEVEL,
+            'equipment': ComponentType.EQUIPMENT,
+            'equippable': ComponentType.EQUIPPABLE,
+            'pathfinding': ComponentType.PATHFINDING,
+            'status_effects': ComponentType.STATUS_EFFECTS,
         }
         
         for component_name, component in components.items():
-            if component_name not in valid_components:
+            if component_name not in component_type_mapping:
                 raise ValueError(f"Unknown component: {component_name}")
             
-            # Set the component on this entity
+            # NEW: Register with type-safe ComponentRegistry
+            component_type = component_type_mapping[component_name]
+            self.components.add(component_type, component)
+            
+            # BACKWARD COMPATIBILITY: Also set as direct attribute
+            # This allows existing code like "if entity.fighter:" to continue working
             setattr(self, component_name, component)
             
             # Establish ownership if the component supports it

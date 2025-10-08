@@ -182,22 +182,16 @@ class TestAISystemRegressions:
         works end-to-end and catches any signature mismatches.
         """
         # Create a real entity with BasicMonster AI
-        entity = Mock()
-        entity.name = "Integration Test Orc"
-        entity.x = 10
-        entity.y = 10
-        entity.fighter = Mock()
-        entity.fighter.hp = 15
-        entity.fighter.attack = Mock(return_value=[])
+        from entity import Entity
+        from components.fighter import Fighter
+        
+        fighter = Fighter(hp=15, defense=2, power=5)
+        entity = Entity(10, 10, 'o', (0, 255, 0), 'Integration Test Orc', blocks=True, fighter=fighter)
+        
+        # Mock some methods that we need to track
         entity.distance_to = Mock(return_value=5)  # Far from player
         entity.move_astar = Mock()
-        
-        # Ensure no item usage or item seeking to avoid interference
-        entity.item_usage = None
-        entity.item_seeking_ai = None
-        
-        # Mock status effects to prevent iteration errors
-        entity.status_effects = None
+        entity.fighter.attack = Mock(return_value=[])
         
         # Mock has_status_effect to prevent immobilized check from failing
         entity.has_status_effect = Mock(return_value=False)

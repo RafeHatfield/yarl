@@ -29,19 +29,19 @@ class TestHazardDamageApplication(unittest.TestCase):
         self.game_map = GameMap(width=40, height=40, dungeon_level=1)
         self.message_log = MessageLog(x=0, width=40, height=5)
         
-        # Create player entity
+        # Create player entity with fighter component
+        player_fighter = Fighter(hp=100, defense=5, power=10)
         self.player = Entity(
             10, 10, '@', (255, 255, 255), 'Player',
-            blocks=True, render_order=5
+            blocks=True, render_order=5, fighter=player_fighter
         )
-        self.player.fighter = Fighter(hp=100, defense=5, power=10)
         
-        # Create monster entity
+        # Create monster entity with fighter component
+        monster_fighter = Fighter(hp=30, defense=2, power=5)
         self.monster = Entity(
             15, 15, 'g', (0, 255, 0), 'Goblin',
-            blocks=True, render_order=4
+            blocks=True, render_order=4, fighter=monster_fighter
         )
-        self.monster.fighter = Fighter(hp=30, defense=2, power=5)
         
         self.entities = [self.player, self.monster]
         
@@ -227,7 +227,9 @@ class TestHazardDamageApplication(unittest.TestCase):
         self.game_map.hazard_manager.add_hazard(fire)
         
         # Mock death function and entity cache invalidation to avoid side effects
-        with patch('death_functions.kill_monster'), \
+        from game_messages import Message
+        mock_death_message = Message("Monster died!", (255, 0, 0))
+        with patch('death_functions.kill_monster', return_value=mock_death_message), \
              patch('engine.systems.ai_system.invalidate_entity_cache'):
             
             # Process hazard turn

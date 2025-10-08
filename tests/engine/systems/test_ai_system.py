@@ -180,10 +180,16 @@ class TestAISystemUpdate:
         self.mock_game_state.current_state = GameStates.ENEMY_TURN
         
         # Mock player with pathfinding component
+        from components.component_registry import ComponentType
         mock_pathfinding = Mock()
         mock_pathfinding.is_path_active.return_value = False
+        mock_pathfinding.get_next_move.return_value = None
         self.mock_game_state.player = Mock()
         self.mock_game_state.player.pathfinding = mock_pathfinding
+        # Mock ComponentRegistry to return pathfinding
+        self.mock_game_state.player.components = Mock()
+        self.mock_game_state.player.components.get = Mock(side_effect=lambda comp_type: 
+            mock_pathfinding if comp_type == ComponentType.PATHFINDING else None)
         self.mock_game_state.entities = []
 
         self.ai_system.initialize(self.mock_engine)
@@ -224,10 +230,16 @@ class TestAISystemUpdate:
         self.mock_game_state.entities = []
         
         # Mock player with pathfinding component that's not active
+        from components.component_registry import ComponentType
         mock_pathfinding = Mock()
         mock_pathfinding.is_path_active.return_value = False
+        mock_pathfinding.get_next_move.return_value = None
         self.mock_game_state.player = Mock()
         self.mock_game_state.player.pathfinding = mock_pathfinding
+        # Mock ComponentRegistry to return pathfinding
+        self.mock_game_state.player.components = Mock()
+        self.mock_game_state.player.components.get = Mock(side_effect=lambda comp_type: 
+            mock_pathfinding if comp_type == ComponentType.PATHFINDING else None)
 
         self.ai_system.update(0.016)
 

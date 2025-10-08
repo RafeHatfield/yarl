@@ -8,6 +8,7 @@ from game_messages import Message
 from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger
 from components.faction import Faction, are_factions_hostile, get_target_priority
+from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
     from entity import Entity
@@ -25,10 +26,10 @@ def find_taunted_target(entities: list) -> Optional['Entity']:
         Entity or None: The taunted entity, or None if no entity is taunted
     """
     for entity in entities:
-        if (hasattr(entity, 'status_effects') and entity.status_effects and
-            entity.status_effects.has_effect('taunted')):
+        status_effects = entity.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects and status_effects.has_effect('taunted'):
             # Also check if entity is still alive (has fighter component)
-            if hasattr(entity, 'fighter') and entity.fighter:
+            if entity.components.has(ComponentType.FIGHTER):
                 return entity
     return None
 
@@ -43,8 +44,8 @@ def get_weapon_reach(entity: 'Entity') -> int:
         int: The reach of the weapon in tiles (default 1 for adjacent)
     """
     try:
-        if (hasattr(entity, 'equipment') and entity.equipment and 
-            entity.equipment.main_hand and 
+        equipment = entity.components.get(ComponentType.EQUIPMENT)
+        if (equipment and equipment.main_hand and 
             hasattr(entity.equipment.main_hand, 'equippable')):
             weapon = entity.equipment.main_hand.equippable
             reach = getattr(weapon, 'reach', 1)
@@ -90,8 +91,9 @@ class BasicMonster:
         actions_taken = []
 
         # Process status effects at the start of turn
-        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
-            effect_results = self.owner.status_effects.process_turn_start()
+        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            effect_results = status_effects.process_turn_start()
             for result in effect_results:
                 # Check if status effect wants to skip this turn (e.g., Slow effect)
                 if result.get('skip_turn'):
@@ -189,10 +191,11 @@ class BasicMonster:
             dict: Item usage action if available, None otherwise
         """
         # Check if monster has item usage capability
-        if not (hasattr(self.owner, 'item_usage') and self.owner.item_usage):
+        item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
+        if not item_usage:
             return None
             
-        return self.owner.item_usage.get_item_usage_action(target, game_map, entities)
+        return item_usage.get_item_usage_action(target, game_map, entities)
     
     def _process_item_usage_action(self, action, entities):
         """Process an item usage action.
@@ -211,8 +214,9 @@ class BasicMonster:
             target = action.get("target")
             
             # Use item with failure mechanics
-            if hasattr(self.owner, 'item_usage') and self.owner.item_usage:
-                usage_results = self.owner.item_usage.use_item_with_failure(item, target, entities)
+            item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
+            if item_usage:
+                usage_results = item_usage.use_item_with_failure(item, target, entities)
                 results.extend(usage_results)
             
         return results
@@ -229,10 +233,11 @@ class BasicMonster:
             dict: Item action if available, None otherwise
         """
         # Check if monster has item-seeking AI capability
-        if not (hasattr(self.owner, 'item_seeking_ai') and self.owner.item_seeking_ai):
+        item_seeking_ai = self.owner.components.get(ComponentType.ITEM_SEEKING_AI)
+        if not item_seeking_ai:
             return None
             
-        return self.owner.item_seeking_ai.get_item_seeking_action(game_map, entities, target)
+        return item_seeking_ai.get_item_seeking_action(game_map, entities, target)
     
     def _process_item_action(self, action, entities):
         """Process an item-related action.
@@ -271,16 +276,17 @@ class BasicMonster:
         results = []
         
         # Check if monster has inventory space
-        if not (hasattr(self.owner, 'inventory') and self.owner.inventory):
+        inventory = self.owner.components.get(ComponentType.INVENTORY)
+        if not inventory:
             MonsterActionLogger.log_item_pickup(self.owner, item, False, "no inventory")
             return results
             
-        if len(self.owner.inventory.items) >= self.owner.inventory.capacity:
+        if len(inventory.items) >= inventory.capacity:
             MonsterActionLogger.log_item_pickup(self.owner, item, False, "inventory full")
             return results
             
         # Add item to monster's inventory
-        self.owner.inventory.add_item(item)
+        inventory.add_item(item)
         MonsterActionLogger.log_inventory_change(self.owner, item, "added")
         
         # Remove item from world
@@ -289,15 +295,16 @@ class BasicMonster:
             
         # Try to equip the item if it's equipment
         equipped = False
-        if hasattr(item, 'equippable') and item.equippable:
-            if hasattr(self.owner, 'equipment') and self.owner.equipment:
+        if item.components.has(ComponentType.EQUIPPABLE):
+            equipment = self.owner.components.get(ComponentType.EQUIPMENT)
+            if equipment:
                 # Simple equipping logic - equip if slot is empty
-                if item.equippable.slot.value == "main_hand" and not self.owner.equipment.main_hand:
+                if item.equippable.slot.value == "main_hand" and not equipment.main_hand:
                     self.owner.equipment.toggle_equip(item)
                     MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
                     equipped = True
-                elif item.equippable.slot.value == "off_hand" and not self.owner.equipment.off_hand:
-                    self.owner.equipment.toggle_equip(item)
+                elif item.equippable.slot.value == "off_hand" and not equipment.off_hand:
+                    equipment.toggle_equip(item)
                     MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
                     equipped = True
         
@@ -358,8 +365,9 @@ class MindlessZombieAI:
         results = []
         
         # Process status effects at the start of turn
-        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
-            effect_results = self.owner.status_effects.process_turn_start()
+        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            effect_results = status_effects.process_turn_start()
             for result in effect_results:
                 # Check if status effect wants to skip this turn (e.g., Slow effect)
                 if result.get('skip_turn'):
@@ -384,7 +392,7 @@ class MindlessZombieAI:
         if self.current_target:
             # Is target still alive and in FOV?
             target_in_entities = self.current_target in entities
-            target_has_fighter = hasattr(self.current_target, 'fighter') and self.current_target.fighter
+            target_has_fighter = self.current_target.components.has(ComponentType.FIGHTER)
             
             if target_in_entities and target_has_fighter:
                 distance = self.owner.distance_to(self.current_target)
@@ -514,7 +522,7 @@ class MindlessZombieAI:
                 continue
             
             # Skip non-living entities (corpses, items)
-            if not (hasattr(entity, 'fighter') and entity.fighter):
+            if not entity.components.has(ComponentType.FIGHTER):
                 continue
             
             # Check if adjacent
@@ -541,7 +549,7 @@ class MindlessZombieAI:
                 continue
             
             # Skip non-living entities (corpses, items)
-            if not (hasattr(entity, 'fighter') and entity.fighter):
+            if not entity.components.has(ComponentType.FIGHTER):
                 continue
             
             # Check if within FOV radius
@@ -648,8 +656,9 @@ class SlimeAI:
         monster = self.owner
         
         # Process status effects at the start of turn
-        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
-            effect_results = self.owner.status_effects.process_turn_start()
+        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            effect_results = status_effects.process_turn_start()
             for result in effect_results:
                 # Check if status effect wants to skip this turn (e.g., Slow effect)
                 if result.get('skip_turn'):

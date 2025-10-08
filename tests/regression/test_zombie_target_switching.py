@@ -20,23 +20,22 @@ class TestZombieTargetSwitching(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Create zombie
-        self.zombie = Entity(10, 10, 'Z', (0, 0, 0), 'Zombie', blocks=True)
-        self.zombie.fighter = Fighter(hp=40, defense=0, power=3)
-        self.zombie.fighter.owner = self.zombie
-        self.zombie.ai = MindlessZombieAI()
-        self.zombie.ai.owner = self.zombie
+        zombie_fighter = Fighter(hp=40, defense=0, power=3)
+        zombie_ai = MindlessZombieAI()
+        self.zombie = Entity(10, 10, 'Z', (0, 0, 0), 'Zombie', blocks=True,
+                           fighter=zombie_fighter, ai=zombie_ai)
         self.zombie.faction = Faction.NEUTRAL
         
         # Create player
-        self.player = Entity(11, 10, '@', (255, 255, 255), 'Player', blocks=True)
-        self.player.fighter = Fighter(hp=30, defense=1, power=0)
-        self.player.fighter.owner = self.player
+        player_fighter = Fighter(hp=30, defense=1, power=0)
+        self.player = Entity(11, 10, '@', (255, 255, 255), 'Player', blocks=True,
+                           fighter=player_fighter)
         self.player.faction = Faction.PLAYER
         
         # Create orc
-        self.orc = Entity(10, 11, 'o', (0, 255, 0), 'Orc', blocks=True)
-        self.orc.fighter = Fighter(hp=20, defense=0, power=3)
-        self.orc.fighter.owner = self.orc
+        orc_fighter = Fighter(hp=20, defense=0, power=3)
+        self.orc = Entity(10, 11, 'o', (0, 255, 0), 'Orc', blocks=True,
+                        fighter=orc_fighter)
         self.orc.faction = Faction.NEUTRAL
         
         # Create map
@@ -84,9 +83,9 @@ class TestZombieTargetSwitching(unittest.TestCase):
     def test_zombie_can_switch_to_any_adjacent_target(self):
         """REGRESSION: Zombie should be able to switch to any adjacent target."""
         # Create multiple adjacent targets
-        orc2 = Entity(9, 10, 'o', (0, 255, 0), 'Orc2', blocks=True)
-        orc2.fighter = Fighter(hp=20, defense=0, power=3)
-        orc2.fighter.owner = orc2
+        orc2_fighter = Fighter(hp=20, defense=0, power=3)
+        orc2 = Entity(9, 10, 'o', (0, 255, 0), 'Orc2', blocks=True,
+                    fighter=orc2_fighter)
         orc2.faction = Faction.NEUTRAL
         
         entities = [self.zombie, self.player, self.orc, orc2]

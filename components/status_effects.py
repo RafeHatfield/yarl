@@ -71,7 +71,8 @@ class DisorientationEffect(StatusEffect):
         results = super().apply()
         
         # Store the current AI and replace with confused AI
-        if hasattr(self.owner, 'ai') and self.owner.ai:
+        ai = self.owner.components.get(ComponentType.AI)
+        if ai:
             from components.ai import ConfusedMonster
             self.previous_ai = self.owner.ai
             self.owner.ai = ConfusedMonster(self.previous_ai, self.duration)
@@ -90,7 +91,7 @@ class DisorientationEffect(StatusEffect):
         results = super().remove()
         
         # Restore previous AI
-        if self.previous_ai and hasattr(self.owner, 'ai'):
+        if self.previous_ai and self.owner.components.has(ComponentType.AI):
             self.owner.ai = self.previous_ai
             self.previous_ai = None
         
@@ -116,7 +117,8 @@ class ShieldEffect(StatusEffect):
         results = super().apply()
         
         # Check if this is a monster using the scroll
-        is_monster = hasattr(self.owner, 'ai') and self.owner.ai is not None
+        ai = self.owner.components.get(ComponentType.AI)
+        is_monster = ai is not None
         
         if is_monster:
             # 10% chance to backfire for monsters!
@@ -124,7 +126,8 @@ class ShieldEffect(StatusEffect):
             if random() < 0.10:
                 self.backfired = True
                 # Halve base defense (defense property is read-only)
-                if hasattr(self.owner, 'fighter') and self.owner.fighter:
+                fighter = self.owner.components.get(ComponentType.FIGHTER)
+                if fighter:
                     self.original_base_defense = self.owner.fighter.base_defense
                     self.owner.fighter.base_defense = max(0, self.owner.fighter.base_defense // 2)
                     
@@ -138,7 +141,8 @@ class ShieldEffect(StatusEffect):
                 return results
         
         # Normal shield effect (player or non-backfired monster)
-        if hasattr(self.owner, 'fighter') and self.owner.fighter:
+        fighter = self.owner.components.get(ComponentType.FIGHTER)
+        if fighter:
             self.owner.fighter.base_defense += self.defense_bonus
             
             from game_messages import Message
@@ -154,7 +158,8 @@ class ShieldEffect(StatusEffect):
     def remove(self) -> List[Dict[str, Any]]:
         results = super().remove()
         
-        if hasattr(self.owner, 'fighter') and self.owner.fighter:
+        fighter = self.owner.components.get(ComponentType.FIGHTER)
+        if fighter:
             if self.backfired and self.original_base_defense is not None:
                 # Restore original base defense from backfire
                 self.owner.fighter.base_defense = self.original_base_defense
@@ -315,7 +320,8 @@ class EnragedEffect(StatusEffect):
         results = super().apply()
         
         # Store original faction and make entity hostile to all
-        if hasattr(self.owner, 'faction'):
+        faction = self.owner.components.get(ComponentType.FACTION)
+        if faction:
             from components.faction import Faction
             self.stored_faction = self.owner.faction
             self.owner.faction = Faction.HOSTILE_ALL
@@ -333,7 +339,7 @@ class EnragedEffect(StatusEffect):
         results = super().remove()
         
         # Restore original faction
-        if self.stored_faction is not None and hasattr(self.owner, 'faction'):
+        if self.stored_faction is not None and self.owner.components.has(ComponentType.FACTION):
             self.owner.faction = self.stored_faction
         
         from game_messages import Message

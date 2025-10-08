@@ -23,14 +23,13 @@ class TestPlayerExploredPathfinding(unittest.TestCase):
         """Set up test fixtures."""
         self.game_map = GameMap(width=50, height=50, dungeon_level=1)
         
-        # Create player at (5, 5)
+        # Create player at (5, 5) with components
         fighter = Fighter(hp=100, defense=5, power=10)
+        pathfinding = PlayerPathfinding()
         self.player = Entity(
             5, 5, '@', (255, 255, 255), 'Player',
-            blocks=True, fighter=fighter
+            blocks=True, fighter=fighter, pathfinding=pathfinding
         )
-        self.player.pathfinding = PlayerPathfinding()
-        self.player.pathfinding.owner = self.player
         
         self.entities = [self.player]
         
@@ -156,14 +155,13 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
                 self.game_map.tiles[x][y].blocked = False
                 self.game_map.tiles[x][y].block_sight = False
         
-        # Create player
+        # Create player with components
         fighter = Fighter(hp=100, defense=5, power=10)
+        pathfinding = PlayerPathfinding()
         self.player = Entity(
             5, 5, '@', (255, 255, 255), 'Player',
-            blocks=True, fighter=fighter
+            blocks=True, fighter=fighter, pathfinding=pathfinding
         )
-        self.player.pathfinding = PlayerPathfinding()
-        self.player.pathfinding.owner = self.player
         
         self.entities = [self.player]
         

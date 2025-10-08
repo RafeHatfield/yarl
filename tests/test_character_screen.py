@@ -20,11 +20,9 @@ class TestCharacterScreenDisplay:
         self.fighter = Fighter(hp=100, defense=2, power=5)
         self.equipment = Equipment()
         
-        # Create player entity
-        self.player = Entity(0, 0, "@", (255, 255, 255), "Player")
-        self.player.fighter = self.fighter
-        self.player.equipment = self.equipment
-        self.fighter.owner = self.player
+        # Create player entity with components
+        self.player = Entity(0, 0, "@", (255, 255, 255), "Player",
+                           blocks=True, fighter=self.fighter, equipment=self.equipment)
 
     def test_attack_display_no_weapon(self):
         """Test attack display with no weapon equipped."""

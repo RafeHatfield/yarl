@@ -12,6 +12,7 @@ import logging
 from ..system import System
 from game_states import GameStates
 from entity_sorting_cache import invalidate_entity_cache
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +115,8 @@ class AISystem(System):
                 
                 # Check if player has active pathfinding before switching to player turn
                 player = game_state.player
-                if (hasattr(player, 'pathfinding') and player.pathfinding and 
-                    player.pathfinding.is_path_active()):
+                pathfinding = player.components.get(ComponentType.PATHFINDING)
+                if (pathfinding and pathfinding.is_path_active()):
                     # Process pathfinding movement instead of switching to player turn
                     self._process_pathfinding_turn(state_manager)
                 else:
@@ -264,11 +265,12 @@ class AISystem(System):
                         
                         # Generate Entity death quote ONCE (don't regenerate every frame!)
                         player = game_state.player
-                        if hasattr(player, 'statistics') and player.statistics:
+                        statistics = player.components.get(ComponentType.STATISTICS)
+                        if statistics:
                             from entity_dialogue import get_entity_quote_for_death
                             self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
-                                player.statistics, 
-                                player.statistics.deepest_level
+                                statistics, 
+                                statistics.deepest_level
                             )
                         else:
                             self.engine.state_manager.state.death_screen_quote = "How... disappointing."
@@ -327,7 +329,8 @@ class AISystem(System):
         # Apply damage to entities standing on hazards BEFORE aging
         # This ensures entities take damage for the full current turn
         for entity in game_state.entities:
-            if not hasattr(entity, 'fighter') or not entity.fighter:
+            fighter = entity.components.get(ComponentType.FIGHTER)
+            if not fighter:
                 continue
                 
             if entity.fighter.hp <= 0:
@@ -375,11 +378,12 @@ class AISystem(System):
                                     
                                     # Generate death quote
                                     player = game_state.player
-                                    if hasattr(player, 'statistics') and player.statistics:
+                                    statistics = player.components.get(ComponentType.STATISTICS)
+                                    if statistics:
                                         from entity_dialogue import get_entity_quote_for_death
                                         self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
-                                            player.statistics,
-                                            player.statistics.deepest_level
+                                            statistics,
+                                            statistics.deepest_level
                                         )
                                     else:
                                         self.engine.state_manager.state.death_screen_quote = "How... disappointing."

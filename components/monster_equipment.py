@@ -12,6 +12,7 @@ from config.game_constants import get_monster_equipment_config
 from config.testing_config import is_testing_mode
 from config.entity_factory import get_entity_factory
 from components.monster_action_logger import MonsterActionLogger
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -76,10 +77,11 @@ class MonsterEquipmentSpawner:
         if equipment_roll < self.config.WEAPON_SPAWN_WEIGHT:
             # Spawn weapon
             weapon = self._create_weapon_for_level(dungeon_level)
-            if weapon and hasattr(monster, 'equipment') and monster.equipment:
+            equipment = monster.components.get(ComponentType.EQUIPMENT)
+            if weapon and equipment:
                 # Ensure it's actually a weapon before equipping
-                if hasattr(weapon, 'equippable') and weapon.equippable:
-                    monster.equipment.toggle_equip(weapon)
+                if weapon.components.has(ComponentType.EQUIPPABLE):
+                    equipment.toggle_equip(weapon)
                     equipment_list.append(weapon)
                     logger.debug(f"Equipped {monster.name} with {weapon.name}")
                 else:
@@ -88,11 +90,12 @@ class MonsterEquipmentSpawner:
             # Spawn armor
             logger.debug(f"Rolling for armor for {monster.name} at level {dungeon_level}")
             armor = self._create_armor_for_level(dungeon_level)
-            if armor and hasattr(monster, 'equipment') and monster.equipment:
+            equipment = monster.components.get(ComponentType.EQUIPMENT)
+            if armor and equipment:
                 # Ensure it's actually armor before equipping
-                if hasattr(armor, 'equippable') and armor.equippable:
+                if armor.components.has(ComponentType.EQUIPPABLE):
                     logger.debug(f"Attempting to equip {monster.name} with {armor.name}")
-                    monster.equipment.toggle_equip(armor)
+                    equipment.toggle_equip(armor)
                     equipment_list.append(armor)
                     logger.debug(f"Successfully equipped {monster.name} with {armor.name}")
                 else:
@@ -169,10 +172,11 @@ class MonsterLootDropper:
         dropped_items = []
         
         # Drop equipped items
-        if hasattr(monster, 'equipment') and monster.equipment:
+        equipment = monster.components.get(ComponentType.EQUIPMENT)
+        if equipment:
             # Drop main hand weapon
-            if monster.equipment.main_hand:
-                weapon = monster.equipment.main_hand
+            if equipment.main_hand:
+                weapon = equipment.main_hand
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 weapon.x = drop_x
                 weapon.y = drop_y
@@ -180,8 +184,8 @@ class MonsterLootDropper:
                 logger.debug(f"Dropped {weapon.name} from {monster.name} at ({drop_x}, {drop_y})")
             
             # Drop off hand armor
-            if monster.equipment.off_hand:
-                armor = monster.equipment.off_hand
+            if equipment.off_hand:
+                armor = equipment.off_hand
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 armor.x = drop_x
                 armor.y = drop_y
@@ -189,8 +193,9 @@ class MonsterLootDropper:
                 logger.debug(f"Dropped {armor.name} from {monster.name} at ({drop_x}, {drop_y})")
         
         # Drop inventory items (if monster has inventory)
-        if hasattr(monster, 'inventory') and monster.inventory:
-            for item in monster.inventory.items:
+        inventory = monster.components.get(ComponentType.INVENTORY)
+        if inventory:
+            for item in inventory.items:
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 item.x = drop_x
                 item.y = drop_y

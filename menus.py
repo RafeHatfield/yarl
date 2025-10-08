@@ -10,6 +10,7 @@ from tcod import libtcodpy
 from entity_dialogue import EntityDialogue
 from config.ui_layout import get_ui_layout
 from typing import Optional
+from components.component_registry import ComponentType
 
 
 def get_menu_click_index(mouse_x: int, mouse_y: int, header: str, options: list, 
@@ -465,6 +466,7 @@ def character_screen(
     else:
         for item in inventory_items[:10]:  # Show up to 10 items
             item_letter = chr(letter_index)
+            # Check if item has get_display_name method
             item_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
             libtcodpy.console_print_rect_ex(
                 window, 0, y, character_screen_width, character_screen_height,
@@ -512,14 +514,15 @@ def _get_slot_display(equipped_item, slot_name, letter):
     
     # Get item stats for display
     stats = []
-    if hasattr(equipped_item, 'equippable') and equipped_item.equippable:
+    if equipped_item.components.has(ComponentType.EQUIPPABLE):
         equippable = equipped_item.equippable
         
         # Weapon stats (prefer dice notation over damage range)
+        # damage_dice is a direct attribute on equippable
         if hasattr(equippable, 'damage_dice') and equippable.damage_dice:
             # Show dice notation
             stats.append(equippable.damage_dice)
-        elif hasattr(equippable, 'damage_min') and equippable.damage_max > 0:
+        elif hasattr(equippable, 'damage_min') and hasattr(equippable, 'damage_max') and equippable.damage_max > 0:
             # Fall back to damage range for legacy weapons
             if equippable.damage_min == equippable.damage_max:
                 stats.append(f"{equippable.damage_max}")
@@ -527,10 +530,12 @@ def _get_slot_display(equipped_item, slot_name, letter):
                 stats.append(f"{equippable.damage_min}-{equippable.damage_max}")
         
         # Armor stats
+        # armor_class_bonus is a direct attribute on equippable
         if hasattr(equippable, 'armor_class_bonus') and equippable.armor_class_bonus > 0:
             stats.append(f"+{equippable.armor_class_bonus} AC")
         
         # To-hit bonus
+        # to_hit_bonus is a direct attribute on equippable
         if hasattr(equippable, 'to_hit_bonus') and equippable.to_hit_bonus != 0:
             stats.append(f"+{equippable.to_hit_bonus} hit")
     
@@ -554,11 +559,11 @@ def _get_ac_breakdown(player):
     armor_ac_bonus = 0
     most_restrictive_dex_cap = None
     
-    if hasattr(player, 'equipment') and player.equipment:
-        equipment = player.equipment
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if equipment:
         for item in [equipment.main_hand, equipment.off_hand,
                     equipment.head, equipment.chest, equipment.feet]:
-            if item and hasattr(item, 'equippable'):
+            if item and item.components.has(ComponentType.EQUIPPABLE):
                 equippable = item.equippable
                 
                 # Add AC bonus
@@ -608,11 +613,11 @@ def _get_damage_display(player):
     str_mod = player.fighter.strength_mod
     
     # Check for equipped weapon
-    if (hasattr(player, 'equipment') and player.equipment and
-        player.equipment.main_hand and
-        hasattr(player.equipment.main_hand, 'equippable')):
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if (equipment and equipment.main_hand and
+        equipment.main_hand.components.has(ComponentType.EQUIPPABLE)):
         
-        weapon = player.equipment.main_hand.equippable
+        weapon = equipment.main_hand.equippable
         
         # Prefer dice notation if available
         if hasattr(weapon, 'damage_dice') and weapon.damage_dice:
@@ -657,11 +662,11 @@ def _get_attack_display_text(player):
     base_power = player.fighter.base_power
     
     # Check for equipped weapon with damage range
-    if (hasattr(player, 'equipment') and player.equipment and
-        player.equipment.main_hand and 
-        player.equipment.main_hand.equippable):
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if (equipment and equipment.main_hand and 
+        equipment.main_hand.components.has(ComponentType.EQUIPPABLE)):
         
-        weapon = player.equipment.main_hand
+        weapon = equipment.main_hand
         equippable = weapon.equippable
         
         # Get weapon damage range
@@ -717,11 +722,11 @@ def _get_defense_display_text(player):
     base_defense = player.fighter.base_defense
     
     # Check for equipped armor with defense range
-    if (hasattr(player, 'equipment') and player.equipment and
-        player.equipment.off_hand and 
-        player.equipment.off_hand.equippable):
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if (equipment and equipment.off_hand and 
+        equipment.off_hand.components.has(ComponentType.EQUIPPABLE)):
         
-        armor = player.equipment.off_hand
+        armor = equipment.off_hand
         equippable = armor.equippable
         
         # If armor has meaningful defense range, show it

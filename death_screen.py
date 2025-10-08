@@ -23,7 +23,7 @@ def render_death_screen(con, player, screen_width, screen_height, entity_quote=N
     libtcodpy.console_clear(con)
     
     # Get player statistics
-    stats = player.statistics if hasattr(player, 'statistics') and player.statistics else None
+    stats = player.components.get(ComponentType.STATISTICS)
     
     # Title
     title = "YOU DIED"
