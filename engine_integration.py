@@ -176,6 +176,7 @@ def play_game_with_engine(
     
     # Create action processor for clean action handling
     action_processor = ActionProcessor(engine.state_manager)
+    action_processor.turn_manager = engine.turn_manager  # Phase 3: Wire up TurnManager
 
     # Main game loop
     while not libtcod.console_is_window_closed():
