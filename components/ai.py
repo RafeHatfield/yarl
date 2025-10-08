@@ -117,11 +117,16 @@ class BasicMonster:
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
         is_pursuing_taunt = False
+        is_taunted_target = False  # Is THIS monster the taunted one?
         
-        if taunted_target and taunted_target != self.owner:
-            # Override normal targeting - attack the taunted entity instead!
-            target = taunted_target
-            is_pursuing_taunt = True
+        if taunted_target:
+            if taunted_target == self.owner:
+                # THIS monster is taunted - it should fight back against attackers!
+                is_taunted_target = True
+            else:
+                # Another monster is taunted - pursue it!
+                target = taunted_target
+                is_pursuing_taunt = True
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
@@ -129,14 +134,55 @@ class BasicMonster:
         # Simple AI decision: Act if pursuing taunt, in combat with player, or in player's FOV
         # When taunt ends, monsters return to normal behavior (only act when in FOV or in combat)
         if is_pursuing_taunt or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
+            # If THIS monster is the taunted target, fight back against nearest attacker!
+            if is_taunted_target:
+                from components.faction import are_factions_hostile, get_target_priority
+                
+                # Find nearest visible hostile (anyone attacking us!)
+                closest_hostile = None
+                closest_distance = float('inf')
+                best_priority = 0
+                
+                monster_faction = getattr(self.owner, 'faction', None)
+                
+                for entity in entities:
+                    if entity == self.owner:  # Skip self
+                        continue
+                    
+                    # Check if entity is a hostile with fighter
+                    fighter = entity.components.get(ComponentType.FIGHTER)
+                    if not fighter:
+                        fighter = getattr(entity, 'fighter', None)
+                    
+                    if fighter and fighter.hp > 0:
+                        # Check if visible in FOV
+                        if map_is_in_fov(fov_map, entity.x, entity.y):
+                            # Check if hostile based on faction
+                            entity_faction = getattr(entity, 'faction', None)
+                            if monster_faction and entity_faction:
+                                if are_factions_hostile(monster_faction, entity_faction):
+                                    distance = self.owner.distance_to(entity)
+                                    priority = get_target_priority(monster_faction, entity_faction)
+                                    
+                                    # Pick highest priority target, or closest if same priority
+                                    if (priority > best_priority or 
+                                        (priority == best_priority and distance < closest_distance)):
+                                        closest_distance = distance
+                                        best_priority = priority
+                                        closest_hostile = entity
+                
+                if closest_hostile:
+                    # Fight back against the nearest attacker!
+                    target = closest_hostile
+                # If no hostiles found, keep original target (player)
+            
             # Check if target is invisible - but taunt overrides invisibility!
-            if (not is_pursuing_taunt and 
+            if (not is_pursuing_taunt and not is_taunted_target and
                 hasattr(target, 'has_status_effect') and 
                 callable(target.has_status_effect) and 
                 target.has_status_effect('invisibility') is True):
                 
                 # IMPORTANT: If player is invisible but monster is in combat,
-                # or if player is invisible and there are visible hostile entities,
                 # look for OTHER visible hostiles based on FACTION (e.g., slime attacking us!)
                 if self.in_combat or True:  # Always check for visible hostiles when player invisible
                     from components.faction import are_factions_hostile, get_target_priority
