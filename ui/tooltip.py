@@ -8,6 +8,8 @@ import tcod.libtcodpy as libtcod
 from typing import Optional, Any
 import logging
 
+from components.component_registry import ComponentType
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +36,7 @@ def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_
     for entity in entities:
         if entity.x == world_x and entity.y == world_y:
             # Check if it's an item (has item component and not the player)
-            if hasattr(entity, 'item') and entity.item:
+            if entity.components.has(ComponentType.ITEM):
                 items_at_pos.append(entity)
     
     # Return the first item found (if multiple items stacked, show top one)
@@ -67,8 +69,8 @@ def get_monster_at_position(world_x: int, world_y: int, entities: list, player, 
     for entity in entities:
         if entity.x == world_x and entity.y == world_y:
             # Check if it's a monster (has fighter and AI, and is not the player)
-            if (hasattr(entity, 'fighter') and entity.fighter and
-                hasattr(entity, 'ai') and entity.ai and
+            if (entity.components.has(ComponentType.FIGHTER) and
+                entity.components.has(ComponentType.AI) and
                 entity != player):
                 return entity
     
@@ -150,7 +152,8 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     
     # Get unequipped items (same logic as sidebar rendering)
     equipped_items = set()
-    if hasattr(player, 'equipment') and player.equipment:
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if equipment:
         for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
                         player.equipment.head, player.equipment.chest, player.equipment.feet]:
             if slot_item:
@@ -209,8 +212,8 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
     tooltip_lines = [entity_name]
     
     # Check if this is a monster (has fighter and AI)
-    is_monster = (hasattr(entity, 'fighter') and entity.fighter and 
-                  hasattr(entity, 'ai') and entity.ai)
+    is_monster = (entity.components.has(ComponentType.FIGHTER) and 
+                  entity.components.has(ComponentType.AI))
     
     if is_monster:
         # Monster tooltip - show combat stats
@@ -239,7 +242,8 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
         tooltip_lines.append(f"Attack: {fighter.power}")
         
         # Equipment summary (if monster has equipment)
-        if hasattr(entity, 'equipment') and entity.equipment:
+        entity_equipment = entity.components.get(ComponentType.EQUIPMENT)
+        if entity_equipment:
             if entity.equipment.main_hand:
                 weapon_name = entity.equipment.main_hand.name
                 tooltip_lines.append(f"Weapon: {weapon_name}")
@@ -249,16 +253,17 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
                 tooltip_lines.append(f"Armor: {armor_name}")
         
         # Status effects (if any)
-        if hasattr(entity, 'status_effects') and entity.status_effects:
+        status_effects = entity.components.get(ComponentType.STATUS_EFFECTS)
+        if status_effects:
             active_effects = [effect for effect in entity.status_effects if effect.duration > 0]
             if active_effects:
                 effect_names = [effect.name for effect in active_effects]
                 tooltip_lines.append(f"Effects: {', '.join(effect_names)}")
     
     # Otherwise, show item information
-    elif hasattr(entity, 'wand') and entity.wand:
+    elif entity.components.has(ComponentType.WAND):
         tooltip_lines.append(f"Wand ({entity.wand.charges} charges)")
-    elif hasattr(entity, 'equippable') and entity.equippable:
+    elif entity.components.has(ComponentType.EQUIPPABLE):
         eq = entity.equippable
         
         # Weapon information
@@ -292,7 +297,7 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
             slot_name = slot_str.replace('_', ' ').title()
             tooltip_lines.append(f"Slot: {slot_name}")
     
-    elif hasattr(entity, 'item') and entity.item:
+    elif entity.components.has(ComponentType.ITEM):
         if entity.item.use_function:
             # Get function name for better description
             func_name = entity.item.use_function.__name__ if hasattr(entity.item.use_function, '__name__') else 'Unknown'
