@@ -967,8 +967,12 @@ class SpellExecutor:
         # Clear any inventory/equipment from the original monster
         if corpse.components.has(ComponentType.INVENTORY):
             corpse.components.remove(ComponentType.INVENTORY)
+        if hasattr(corpse, 'inventory'):
+            corpse.inventory = None
         if corpse.components.has(ComponentType.EQUIPMENT):
             corpse.components.remove(ComponentType.EQUIPMENT)
+        if hasattr(corpse, 'equipment'):
+            corpse.equipment = None
         
         results.append({
             "consumed": True,
