@@ -154,7 +154,7 @@ class TestCastLightning:
         entities = [player_entity, enemy_entity]
 
         # Act
-        with patch("item_functions.map_is_in_fov", return_value=False):
+        with patch("spells.spell_executor.map_is_in_fov", return_value=False):
             results = cast_lightning(
                 player_entity,
                 entities=entities,
@@ -251,7 +251,7 @@ class TestCastFireball:
         target_x, target_y = 20, 20
 
         # Act
-        with patch("item_functions.map_is_in_fov", return_value=False):
+        with patch("spells.spell_executor.map_is_in_fov", return_value=False):
             results = cast_fireball(
                 player_entity,
                 entities=entities,
@@ -504,7 +504,7 @@ class TestCastConfuse:
         mock_fov_map = Mock()
 
         # Mock FOV check to return False (outside FOV)
-        with patch("item_functions.map_is_in_fov", return_value=False):
+        with patch("spells.spell_executor.map_is_in_fov", return_value=False):
             # Act
             results = cast_confuse(
                 entities=entities,

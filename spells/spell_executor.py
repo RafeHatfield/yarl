@@ -30,8 +30,8 @@ class SpellExecutor:
         self,
         spell: SpellDefinition,
         caster,
-        entities: List,
-        fov_map,
+        entities: List = None,
+        fov_map=None,
         game_map=None,
         target_x: Optional[int] = None,
         target_y: Optional[int] = None,
@@ -47,12 +47,31 @@ class SpellExecutor:
             game_map: Game map (for hazards)
             target_x: X coordinate for targeted spells
             target_y: Y coordinate for targeted spells
-            **kwargs: Additional parameters
+            **kwargs: Additional parameters (damage, maximum_range, etc.)
             
         Returns:
             List of result dictionaries with consumption, messages, etc.
         """
         results = []
+        
+        # Handle entities/fov_map from kwargs for backward compatibility
+        entities = entities if entities is not None else kwargs.get("entities", [])
+        fov_map = fov_map if fov_map is not None else kwargs.get("fov_map")
+        game_map = game_map if game_map is not None else kwargs.get("game_map")
+        target_x = target_x if target_x is not None else kwargs.get("target_x")
+        target_y = target_y if target_y is not None else kwargs.get("target_y")
+        
+        # Validate edge case parameters from kwargs
+        damage_override = kwargs.get("damage")
+        range_override = kwargs.get("maximum_range")
+        
+        # Check for invalid range (negative if specified)
+        if range_override is not None and range_override < 0:
+            return [{"consumed": False, "message": Message("Invalid spell range!", (255, 255, 0))}]
+        
+        # Check for invalid damage (negative only, zero is allowed)
+        if damage_override is not None and damage_override < 0:
+            return [{"consumed": False, "message": Message("Invalid spell parameters!", (255, 255, 0))}]
         
         # Handle different spell categories
         if spell.category == SpellCategory.OFFENSIVE:
@@ -95,18 +114,18 @@ class SpellExecutor:
         # Handle different targeting types
         if spell.targeting == TargetingType.SINGLE_ENEMY:
             # Auto-target closest enemy (like lightning)
-            return self._cast_auto_target_spell(spell, caster, entities, fov_map)
+            return self._cast_auto_target_spell(spell, caster, entities, fov_map, **kwargs)
         
         elif spell.targeting == TargetingType.AOE:
             # Area of effect (like fireball)
             return self._cast_aoe_spell(
-                spell, caster, entities, fov_map, game_map, target_x, target_y
+                spell, caster, entities, fov_map, game_map, target_x, target_y, **kwargs
             )
         
         elif spell.targeting == TargetingType.CONE:
             # Cone attack (like dragon fart)
             return self._cast_cone_spell(
-                spell, caster, entities, fov_map, game_map, target_x, target_y
+                spell, caster, entities, fov_map, game_map, target_x, target_y, **kwargs
             )
         
         return results
@@ -116,7 +135,8 @@ class SpellExecutor:
         spell: SpellDefinition,
         caster,
         entities: List,
-        fov_map
+        fov_map,
+        **kwargs
     ) -> List[Dict[str, Any]]:
         """Cast a spell that auto-targets the closest enemy (e.g., lightning).
         
@@ -125,9 +145,14 @@ class SpellExecutor:
         """
         results = []
         
+        # Get overrides from kwargs (used for item customization)
+        damage_override = kwargs.get("damage")
+        range_override = kwargs.get("maximum_range")
+        
         # Find closest enemy in range
+        max_range = range_override if range_override is not None else spell.max_range
         target = None
-        closest_distance = spell.max_range + 1
+        closest_distance = max_range + 1
         
         for entity in entities:
             if (
@@ -152,8 +177,11 @@ class SpellExecutor:
                 }
             ]
         
-        # Calculate damage
-        damage = self._calculate_damage(spell.damage) if spell.damage else 0
+        # Calculate damage (use override if provided, including 0)
+        if "damage" in kwargs:
+            damage = kwargs["damage"]
+        else:
+            damage = self._calculate_damage(spell.damage) if spell.damage else 0
         
         # Show visual effect if defined
         if spell.visual_effect:
@@ -182,7 +210,8 @@ class SpellExecutor:
         fov_map,
         game_map,
         target_x: int,
-        target_y: int
+        target_y: int,
+        **kwargs
     ) -> List[Dict[str, Any]]:
         """Cast an area-of-effect spell (e.g., fireball).
         
@@ -222,8 +251,11 @@ class SpellExecutor:
                         explosion_tiles.append((target_x + dx, target_y + dy))
             spell.visual_effect(explosion_tiles)
         
-        # Deal damage to entities in radius
-        damage = self._calculate_damage(spell.damage) if spell.damage else 0
+        # Deal damage to entities in radius (use override if provided, including 0)
+        if "damage" in kwargs:
+            damage = kwargs["damage"]
+        else:
+            damage = self._calculate_damage(spell.damage) if spell.damage else 0
         
         for entity in entities:
             if entity.fighter:

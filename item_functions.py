@@ -104,14 +104,15 @@ def cast_confuse(*args, **kwargs):
     This function now delegates to the spell registry system.
 
     Args:
-        *args: First argument should be the caster entity
+        *args: First argument should be the caster entity (optional for backward compat)
         **kwargs: Should contain 'entities', 'fov_map', 'target_x', and 'target_y'
 
     Returns:
         list: List of result dictionaries with consumption and confusion results
     """
     # Delegate to new spell system
-    caster = args[0]
+    # Handle both old and new calling patterns
+    caster = args[0] if args else None
     entities = kwargs.get("entities", [])
     fov_map = kwargs.get("fov_map")
     target_x = kwargs.get("target_x")
