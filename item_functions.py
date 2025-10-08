@@ -72,7 +72,7 @@ def cast_fireball(*args, **kwargs):
         list: List of result dictionaries with consumption and damage results
     """
     # Delegate to new spell system
-    caster = args[0]
+    caster = args[0] if args else None
     return cast_spell_by_id("fireball", caster, **kwargs)
 
 

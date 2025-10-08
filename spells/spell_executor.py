@@ -291,13 +291,17 @@ class SpellExecutor:
                         distance = math.sqrt(dx**2 + dy**2)
                         if distance <= spell.radius:
                             hx, hy = target_x + dx, target_y + dy
-                            game_map.hazard_manager.add_hazard(
+                            from components.ground_hazard import GroundHazard
+                            hazard = GroundHazard(
+                                hazard_type=hazard_type,
                                 x=hx,
                                 y=hy,
-                                hazard_type=hazard_type,
-                                duration=spell.hazard_duration,
-                                damage=spell.hazard_damage
+                                base_damage=spell.hazard_damage,
+                                remaining_turns=spell.hazard_duration,
+                                max_duration=spell.hazard_duration,
+                                source_name=spell.name
                             )
+                            game_map.hazard_manager.add_hazard(hazard)
         
         return results
     
@@ -378,14 +382,18 @@ class SpellExecutor:
             
             hazard_type = hazard_type_map.get(spell.hazard_type)
             if hazard_type:
+                from components.ground_hazard import GroundHazard
                 for hx, hy in cone_tiles:
-                    game_map.hazard_manager.add_hazard(
+                    hazard = GroundHazard(
+                        hazard_type=hazard_type,
                         x=hx,
                         y=hy,
-                        hazard_type=hazard_type,
-                        duration=spell.hazard_duration,
-                        damage=spell.hazard_damage
+                        base_damage=spell.hazard_damage,
+                        remaining_turns=spell.hazard_duration,
+                        max_duration=spell.hazard_duration,
+                        source_name=spell.name
                     )
+                    game_map.hazard_manager.add_hazard(hazard)
         
         return results
     
@@ -689,6 +697,17 @@ class SpellExecutor:
         from components.component_registry import ComponentType
         
         results = []
+        
+        # Check if already invisible
+        if getattr(caster, 'invisible', False):
+            results.append({
+                "message": Message(
+                    f"{caster.name} is already invisible!",
+                    (128, 128, 128)
+                )
+            })
+            results.append({"consumed": False})
+            return results
         
         # Ensure caster has status_effects component
         if not caster.components.has(ComponentType.STATUS_EFFECTS):

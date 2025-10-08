@@ -71,9 +71,10 @@ class TestFireballHazardCreation(unittest.TestCase):
         
         hazard = self.game_map.hazard_manager.get_hazard_at(15, 15)
         
-        self.assertEqual(hazard.base_damage, 12)
-        self.assertEqual(hazard.remaining_turns, 5)
-        self.assertEqual(hazard.max_duration, 5)
+        # New spell system values from spell_catalog.py
+        self.assertEqual(hazard.base_damage, 3)  # FIREBALL.hazard_damage
+        self.assertEqual(hazard.remaining_turns, 3)  # FIREBALL.hazard_duration
+        self.assertEqual(hazard.max_duration, 3)
         self.assertEqual(hazard.source_name, "Fireball")
     
     @patch('item_functions.map_is_in_fov')
@@ -158,7 +159,7 @@ class TestFireballHazardCreation(unittest.TestCase):
         
         # Should have replaced with fresh hazard
         new_hazard = self.game_map.hazard_manager.get_hazard_at(15, 15)
-        self.assertEqual(new_hazard.remaining_turns, 5)  # Fresh, not aged
+        self.assertEqual(new_hazard.remaining_turns, 3)  # Fresh, not aged (FIREBALL.hazard_duration)
 
 
 class TestDragonFartHazardCreation(unittest.TestCase):
@@ -288,7 +289,7 @@ class TestHazardPersistence(unittest.TestCase):
         # Check specific hazard persists
         hazard = self.game_map.hazard_manager.get_hazard_at(20, 20)
         self.assertIsNotNone(hazard)
-        self.assertEqual(hazard.remaining_turns, 5)
+        self.assertEqual(hazard.remaining_turns, 3)  # FIREBALL.hazard_duration
 
 
 if __name__ == '__main__':
