@@ -220,24 +220,13 @@ def cast_invisibility(*args, **kwargs):
         })
         return results
     
-    # Apply invisibility effect
-    from components.status_effects import InvisibilityEffect
-    invisibility_effect = InvisibilityEffect(duration=duration, owner=entity)
-    
-    # Add the status effect to the entity
-    effect_results = entity.add_status_effect(invisibility_effect)
-    results.extend(effect_results)
-    
-    # Add success message
-    results.append({
-        "consumed": True,
-        "message": Message(
-            f"{entity.name} becomes invisible for {duration} turns!",
-            (200, 200, 255)  # Light blue
-        )
-    })
-    
-    return results
+    # Delegate to new spell system
+    return cast_spell_by_id(
+        "invisibility",
+        entity,
+        entities=[],
+        fov_map=None
+    )
 
 
 def cast_teleport(*args, **kwargs):
