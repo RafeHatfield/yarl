@@ -218,53 +218,10 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
                   entity.components.has(ComponentType.AI))
     
     if is_monster:
-        # Monster tooltip - show combat stats
-        fighter = entity.fighter
-        
-        # Check if fighter exists (entity might be a corpse)
-        if not fighter:
-            return  # Don't show tooltip for dead monsters
-        
-        # HP with visual bar
-        hp_percent = (fighter.hp / fighter.max_hp) * 100 if fighter.max_hp > 0 else 0
-        hp_display = f"HP: {fighter.hp}/{fighter.max_hp}"
-        
-        # Add HP color indication
-        if hp_percent >= 75:
-            hp_display += " [Healthy]"
-        elif hp_percent >= 50:
-            hp_display += " [Hurt]"
-        elif hp_percent >= 25:
-            hp_display += " [Wounded]"
-        else:
-            hp_display += " [Critical]"
-        
-        tooltip_lines.append(hp_display)
-        
-        # AC (Armor Class)
-        tooltip_lines.append(f"AC: {fighter.defense}")
-        
-        # Attack power
-        tooltip_lines.append(f"Attack: {fighter.power}")
-        
-        # Equipment summary (if monster has equipment)
-        entity_equipment = entity.components.get(ComponentType.EQUIPMENT)
-        if entity_equipment:
-            if entity.equipment.main_hand:
-                weapon_name = entity.equipment.main_hand.name
-                tooltip_lines.append(f"Weapon: {weapon_name}")
-            
-            if entity.equipment.chest:
-                armor_name = entity.equipment.chest.name
-                tooltip_lines.append(f"Armor: {armor_name}")
-        
-        # Status effects (if any)
-        status_effects = entity.components.get(ComponentType.STATUS_EFFECTS)
-        if status_effects:
-            active_effects = [effect for effect in entity.status_effects if effect.duration > 0]
-            if active_effects:
-                effect_names = [effect.name for effect in active_effects]
-                tooltip_lines.append(f"Effects: {', '.join(effect_names)}")
+        # Monster tooltip - just show the name
+        # TODO: Future enhancement - add a skill/ability that reveals detailed monster stats
+        # (HP, AC, equipment, status effects, etc.)
+        pass  # Name is already added above
     
     # Otherwise, show item information
     elif entity.components.has(ComponentType.WAND):
