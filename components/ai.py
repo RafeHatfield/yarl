@@ -109,6 +109,12 @@ class BasicMonster:
             # Override normal targeting - attack the taunted entity instead!
             target = taunted_target
             is_pursuing_taunt = True
+        elif self.in_combat and not is_pursuing_taunt:
+            # Was pursuing taunt but target died - find nearest hostile to attack
+            # This prevents monsters from freezing when taunted target dies
+            nearest_hostile = self._find_nearest_hostile(entities)
+            if nearest_hostile:
+                target = nearest_hostile
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
@@ -180,6 +186,40 @@ class BasicMonster:
 
         MonsterActionLogger.log_turn_summary(monster, actions_taken)
         return results
+    
+    def _find_nearest_hostile(self, entities):
+        """Find the nearest hostile entity to attack.
+        
+        Used when taunted target dies and monster needs a new target.
+        
+        Args:
+            entities (list): List of all entities
+            
+        Returns:
+            Entity or None: Nearest hostile entity, or None if none found
+        """
+        nearest_entity = None
+        nearest_distance = float('inf')
+        
+        for entity in entities:
+            if entity == self.owner:
+                continue
+            
+            # Check if entity is alive and has a fighter component
+            fighter = entity.components.get(ComponentType.FIGHTER)
+            if not fighter:
+                fighter = getattr(entity, 'fighter', None)
+            
+            if not fighter or fighter.hp <= 0:
+                continue
+            
+            # Calculate distance
+            distance = self.owner.distance_to(entity)
+            if distance < nearest_distance:
+                nearest_distance = distance
+                nearest_entity = entity
+        
+        return nearest_entity
     
     def _try_item_usage(self, target, game_map, entities):
         """Try to get an item usage action for this monster.
