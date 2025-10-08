@@ -46,11 +46,12 @@ class ItemSeekingAI:
         """
         # Only seek items if monster has inventory capability
         from components.component_registry import ComponentType
-        if not self.monster.components.get(ComponentType.INVENTORY):
+        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        if not inventory:
             return None
             
         # Only seek items if inventory has space
-        if len(self.monster.inventory.items) >= self.monster.inventory.capacity:
+        if len(inventory.items) >= inventory.capacity:
             logger.debug(f"{self.monster.name} inventory full, not seeking items")
             return None
             
