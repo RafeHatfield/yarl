@@ -251,7 +251,8 @@ class BasicMonster:
             # Check for item-seeking behavior (if monster has this capability)
             # BUT only if monster hasn't been attacked yet (not in combat)
             # Once attacked, prioritize fighting over looting!
-            if not self.in_combat:
+            # ALSO: Don't seek items when taunted - being attacked from all sides!
+            if not self.in_combat and not is_taunted_target:
                 item_action = self._try_item_seeking(target, game_map, entities)
                 if item_action:
                     if "pickup_item" in item_action:
