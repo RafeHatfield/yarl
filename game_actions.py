@@ -18,6 +18,25 @@ from components.component_registry import ComponentType
 logger = logging.getLogger(__name__)
 
 
+def _transition_to_enemy_turn(state_manager, turn_manager=None) -> None:
+    """Helper function to transition from player turn to enemy turn.
+    
+    Phase 3: Uses TurnManager if available, otherwise falls back to GameStates.
+    This provides a single point of control for turn transitions.
+    
+    Args:
+        state_manager: Game state manager
+        turn_manager: Optional turn manager (Phase 3 integration)
+    """
+    # Use TurnManager if available (Phase 3)
+    if turn_manager:
+        from engine.turn_manager import TurnPhase
+        turn_manager.advance_turn(TurnPhase.ENEMY)
+    
+    # Always keep GameStates in sync (backward compatibility)
+    state_manager.set_game_state(GameStates.ENEMY_TURN)
+
+
 class ActionProcessor:
     """Processes game actions in a modular, maintainable way.
     
@@ -37,6 +56,7 @@ class ActionProcessor:
             state_manager: Game state manager instance
         """
         self.state_manager = state_manager
+        self.turn_manager = None  # Will be set by engine (Phase 3)
         self.constants = get_constants()
         
         # Map action types to their handler methods
@@ -190,7 +210,7 @@ class ActionProcessor:
         
         # Transition to enemy turn if player moved
         if end_turn:
-            self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
     
     def _handle_movement(self, move_data: Tuple[int, int]) -> None:
         """Handle player movement.
@@ -243,7 +263,7 @@ class ActionProcessor:
         self._process_player_status_effects()
         
         # Switch to enemy turn
-        self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
     
     def _handle_combat(self, attacker, target) -> None:
         """Handle combat between attacker and target.
@@ -369,7 +389,7 @@ class ActionProcessor:
         if current_state == GameStates.PLAYERS_TURN:
             # Process status effects at end of player turn
             self._process_player_status_effects()
-            self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
     
     def _handle_pickup(self, _) -> None:
         """Handle item pickup."""
@@ -909,21 +929,21 @@ class ActionProcessor:
             # Handle pathfinding start
             if result.get("start_pathfinding"):
                 # Switch to enemy turn to begin pathfinding movement
-                self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
             
             # Handle pathfinding to enemy
             if result.get("pathfind_to_enemy"):
                 target_x, target_y = result["pathfind_to_enemy"]
                 if player.pathfinding.set_destination(target_x, target_y, game_map, entities):
                     # Successfully set path to enemy
-                    self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                 else:
                     # Could not find path to enemy
                     message_log.add_message(Message("Cannot reach that enemy.", (255, 255, 0)))
             
             # Handle immediate enemy turn (for attacks)
             if result.get("enemy_turn"):
-                self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
     
     def process_pathfinding_turn(self) -> None:
         """Process one step of pathfinding movement during player turn.
@@ -972,7 +992,7 @@ class ActionProcessor:
         # Transition to appropriate state
         if end_turn:
             # Player moved, give enemies their turn (which will cycle back to player)
-            self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
         else:
             # Pathfinding completed/cancelled without movement, stay in player turn
             self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
@@ -1031,7 +1051,7 @@ class ActionProcessor:
                                 entities.remove(target_item)
                     
                     # End turn after pickup
-                    self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                 else:
                     # Not adjacent - pathfind to it
                     pathfinding = player.components.get(ComponentType.PATHFINDING)
