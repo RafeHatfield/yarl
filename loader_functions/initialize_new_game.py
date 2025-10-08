@@ -111,6 +111,7 @@ def get_game_variables(constants):
 
     # Create pathfinding component for mouse movement
     from components.player_pathfinding import PlayerPathfinding
+    from components.component_registry import ComponentType
     pathfinding_component = PlayerPathfinding()
     
     # Use the new Entity.create_player method for cleaner code
@@ -123,10 +124,14 @@ def get_game_variables(constants):
     )
     
     # Add pathfinding and statistics components manually
+    # IMPORTANT: Register with ComponentRegistry AND set as direct attribute
     player.pathfinding = pathfinding_component
     pathfinding_component.owner = player
+    player.components.add(ComponentType.PATHFINDING, pathfinding_component)
+    
     player.statistics = statistics_component
     statistics_component.owner = player
+    player.components.add(ComponentType.STATISTICS, statistics_component)
     entities = [player]
 
     # Create starting equipment using EntityFactory
