@@ -138,8 +138,8 @@ class BasicMonster:
             if is_taunted_target:
                 from components.faction import are_factions_hostile
                 
-                # When taunted, being attacked from all sides - fight the CLOSEST threat!
-                # Don't use priority system here - just find closest hostile
+                # When taunted, being attacked from all sides - fight the CLOSEST threat in FOV!
+                # Only aware of what we can see - no omniscience
                 closest_hostile = None
                 closest_distance = float('inf')
                 
@@ -149,28 +149,40 @@ class BasicMonster:
                     if entity == self.owner:  # Skip self
                         continue
                     
+                    # ONLY check entities in OUR FOV - we can only see what's around us!
+                    if not map_is_in_fov(fov_map, entity.x, entity.y):
+                        continue
+                    
                     # Check if entity is a hostile with fighter
                     fighter = entity.components.get(ComponentType.FIGHTER)
                     if not fighter:
                         fighter = getattr(entity, 'fighter', None)
                     
                     if fighter and fighter.hp > 0:
-                        # Check if visible in FOV (only fight what we can see!)
-                        if map_is_in_fov(fov_map, entity.x, entity.y):
-                            # Check if hostile based on faction
-                            entity_faction = getattr(entity, 'faction', None)
-                            if monster_faction and entity_faction:
-                                if are_factions_hostile(monster_faction, entity_faction):
-                                    # Just find CLOSEST hostile - we're surrounded!
-                                    distance = self.owner.distance_to(entity)
-                                    if distance < closest_distance:
-                                        closest_distance = distance
-                                        closest_hostile = entity
+                        # Check if hostile based on faction (or just check if has fighter for simplicity)
+                        entity_faction = getattr(entity, 'faction', None)
+                        
+                        # Attack anything with a fighter that's in our FOV (we're being attacked!)
+                        # This includes: player, slimes, other factions
+                        # Exclude friendly same-faction entities
+                        if monster_faction and entity_faction:
+                            is_hostile = are_factions_hostile(monster_faction, entity_faction)
+                        else:
+                            # No faction info - assume hostile if they have fighter
+                            is_hostile = True
+                        
+                        if is_hostile:
+                            # Find CLOSEST hostile in FOV
+                            distance = self.owner.distance_to(entity)
+                            if distance < closest_distance:
+                                closest_distance = distance
+                                closest_hostile = entity
                 
                 if closest_hostile:
-                    # Fight back against the nearest attacker!
+                    # Fight back against the nearest visible attacker!
                     target = closest_hostile
-                # If no hostiles found, keep original target (player)
+                    # Note: This might be player, slime, or anything else attacking us
+                # If no hostiles in FOV, keep original target (player)
             
             # Check if target is invisible - but taunt overrides invisibility!
             if (not is_pursuing_taunt and not is_taunted_target and
