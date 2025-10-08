@@ -11,6 +11,7 @@ from collections import OrderedDict
 
 from .system import System
 from .game_state_manager import GameStateManager
+from .turn_manager import TurnManager, TurnPhase
 
 
 class GameEngine:
@@ -41,7 +42,12 @@ class GameEngine:
         self.delta_time = 0.0
         self._last_time = 0.0
         self._frame_time = 1.0 / target_fps if target_fps > 0 else 0.0
+        
+        # State management
         self.state_manager = GameStateManager()
+        
+        # Turn management (Phase 2: Integration)
+        self.turn_manager = TurnManager()
 
     def register_system(self, system: System) -> None:
         """Register a system with the engine.

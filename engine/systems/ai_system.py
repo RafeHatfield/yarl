@@ -96,8 +96,17 @@ class AISystem(System):
             return
 
         # Only process AI during enemy turn
-        if game_state.current_state != GameStates.ENEMY_TURN:
-            return
+        # Phase 2: Use TurnManager instead of GameStates check
+        turn_manager = getattr(self.engine, 'turn_manager', None)
+        if turn_manager:
+            # New system: Check TurnManager
+            from engine.turn_manager import TurnPhase
+            if not turn_manager.is_phase(TurnPhase.ENEMY):
+                return
+        else:
+            # Backward compatibility: Fall back to GameStates check
+            if game_state.current_state != GameStates.ENEMY_TURN:
+                return
 
         # Process AI turns
         self._process_ai_turns(game_state)
@@ -120,7 +129,14 @@ class AISystem(System):
                     # Process pathfinding movement instead of switching to player turn
                     self._process_pathfinding_turn(state_manager)
                 else:
-                    state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    # Phase 2: Use TurnManager to advance turn
+                    if turn_manager:
+                        turn_manager.advance_turn()  # ENEMY → ENVIRONMENT (will be handled later)
+                        # For now, keep GameStates in sync
+                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    else:
+                        # Backward compatibility
+                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
         """Process all AI entity turns.

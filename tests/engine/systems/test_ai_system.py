@@ -211,6 +211,12 @@ class TestAISystemUpdate:
     def test_update_wrong_game_state(self):
         """Test update when not in enemy turn state."""
         self.mock_game_state.current_state = GameStates.PLAYERS_TURN
+        
+        # Phase 2: Add mock turn_manager
+        from engine.turn_manager import TurnManager, TurnPhase
+        mock_turn_manager = Mock(spec=TurnManager)
+        mock_turn_manager.is_phase.return_value = False  # Not ENEMY phase
+        self.mock_engine.turn_manager = mock_turn_manager
 
         with patch.object(self.ai_system, "_process_ai_turns") as mock_process:
             self.ai_system.update(0.016)
