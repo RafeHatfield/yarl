@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock
 
 from components.monster_equipment import MonsterLootDropper
+from components.component_registry import ComponentType
 
 
 class TestLootDropPositions(unittest.TestCase):
@@ -88,6 +89,16 @@ class TestLootDropPositions(unittest.TestCase):
         monster.equipment.main_hand = weapon
         monster.equipment.off_hand = None
         
+        # Mock ComponentRegistry
+        monster.components = Mock()
+        def get_component(comp_type):
+            if comp_type == ComponentType.EQUIPMENT:
+                return monster.equipment
+            elif comp_type == ComponentType.INVENTORY:
+                return monster.inventory
+            return None
+        monster.components.get = Mock(side_effect=get_component)
+        
         # Drop loot
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 5, 5)
         
@@ -112,6 +123,8 @@ class TestLootDropPositions(unittest.TestCase):
         monster.name = "Empty Orc"
         monster.inventory = None
         monster.equipment = None
+        monster.components = Mock()
+        monster.components.get = Mock(return_value=None)
         
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 5, 5)
         
@@ -128,6 +141,14 @@ class TestLootDropPositions(unittest.TestCase):
         monster.inventory = Mock()
         monster.inventory.items = [item]
         monster.equipment = None
+        
+        # Mock ComponentRegistry
+        monster.components = Mock()
+        def get_component(comp_type):
+            if comp_type == ComponentType.INVENTORY:
+                return monster.inventory
+            return None
+        monster.components.get = Mock(side_effect=get_component)
         
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 3, 3)
         
@@ -149,6 +170,14 @@ class TestLootDropPositions(unittest.TestCase):
         monster.equipment = Mock()
         monster.equipment.main_hand = weapon
         monster.equipment.off_hand = armor
+        
+        # Mock ComponentRegistry
+        monster.components = Mock()
+        def get_component(comp_type):
+            if comp_type == ComponentType.EQUIPMENT:
+                return monster.equipment
+            return None
+        monster.components.get = Mock(side_effect=get_component)
         
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 7, 7)
         

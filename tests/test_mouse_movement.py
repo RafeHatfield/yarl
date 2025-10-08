@@ -227,25 +227,24 @@ class TestMouseMovementHandling(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        # Create player entity with pathfinding
+        # Create components first
+        pathfinding = PlayerPathfinding()
+        fighter = Fighter(hp=100, defense=2, power=5)
+        
+        # Create player entity with pathfinding and fighter
         self.player = Entity(
             x=5, y=5, char='@', color=(255, 255, 255), name='Player',
-            blocks=True, render_order=RenderOrder.ACTOR
+            blocks=True, render_order=RenderOrder.ACTOR,
+            pathfinding=pathfinding, fighter=fighter
         )
-        self.player.pathfinding = PlayerPathfinding()
-        self.player.pathfinding.owner = self.player
-        
-        # Create fighter component for combat tests
-        self.player.fighter = Fighter(hp=100, defense=2, power=5)
-        self.player.fighter.owner = self.player  # Set owner for attack_d20
         
         # Create enemy entity
+        enemy_fighter = Fighter(hp=20, defense=1, power=3)
         self.enemy = Entity(
             x=10, y=10, char='o', color=(255, 0, 0), name='Orc',
-            blocks=True, render_order=RenderOrder.ACTOR
+            blocks=True, render_order=RenderOrder.ACTOR,
+            fighter=enemy_fighter
         )
-        self.enemy.fighter = Fighter(hp=20, defense=1, power=3)
-        self.enemy.fighter.owner = self.enemy  # Set owner for attack_d20
         
         # Create game map
         self.game_map = Mock()
@@ -406,21 +405,24 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
+        # Create components first
+        pathfinding = PlayerPathfinding()
+        
         # Create player with pathfinding
         self.player = Entity(
             x=5, y=5, char='@', color=(255, 255, 255), name='Player',
-            blocks=True, render_order=RenderOrder.ACTOR
+            blocks=True, render_order=RenderOrder.ACTOR,
+            pathfinding=pathfinding
         )
-        self.player.pathfinding = PlayerPathfinding()
-        self.player.pathfinding.owner = self.player
         self.player.move = Mock()
         
         # Create enemy
+        enemy_fighter = Fighter(hp=20, defense=1, power=3)
         self.enemy = Entity(
             x=10, y=10, char='o', color=(255, 0, 0), name='Orc',
-            blocks=True, render_order=RenderOrder.ACTOR
+            blocks=True, render_order=RenderOrder.ACTOR,
+            fighter=enemy_fighter
         )
-        self.enemy.fighter = Fighter(hp=20, defense=1, power=3)
         
         # Create game map
         self.game_map = Mock()
