@@ -14,6 +14,7 @@ from components.fighter import Fighter
 from components.equipment import Equipment
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
+from components.component_registry import ComponentType
 
 
 class TestMonsterEquipmentSpawner(unittest.TestCase):
@@ -23,11 +24,15 @@ class TestMonsterEquipmentSpawner(unittest.TestCase):
         """Set up test fixtures."""
         self.spawner = MonsterEquipmentSpawner()
         
-        # Mock monster
+        # Mock monster with ComponentRegistry support
         self.monster = Mock()
         self.monster.name = "orc"
         self.monster.equipment = Mock()
         self.monster.equipment.toggle_equip = Mock()
+        
+        # Mock ComponentRegistry to return equipment
+        self.monster.components = Mock()
+        self.monster.components.get = Mock(return_value=self.monster.equipment)
 
     @patch('components.monster_equipment.is_testing_mode')
     @patch('random.random')
@@ -91,6 +96,8 @@ class TestMonsterEquipmentSpawner(unittest.TestCase):
         # Mock weapon creation
         mock_weapon = Mock()
         mock_weapon.name = "sword"
+        mock_weapon.components = Mock()
+        mock_weapon.components.has = Mock(return_value=True)
         mock_create_weapon.return_value = mock_weapon
         
         result = self.spawner.generate_equipment_for_monster(self.monster, 3)
@@ -158,11 +165,15 @@ class TestMonsterLootDropper(unittest.TestCase):
         self.monster.name = "orc"
         self.monster.x = 5
         self.monster.y = 10
+        
+        # Mock ComponentRegistry for equipment/inventory access
+        self.monster.components = Mock()
 
     def test_drop_loot_no_equipment(self):
         """Test loot dropping when monster has no equipment."""
         self.monster.equipment = None
         self.monster.inventory = None
+        self.monster.components.get = Mock(return_value=None)
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
@@ -178,6 +189,13 @@ class TestMonsterLootDropper(unittest.TestCase):
         self.monster.equipment.main_hand = weapon
         self.monster.equipment.off_hand = None
         self.monster.inventory = None
+        
+        # Mock ComponentRegistry to return equipment but not inventory
+        def get_component(comp_type):
+            if comp_type == ComponentType.EQUIPMENT:
+                return self.monster.equipment
+            return None
+        self.monster.components.get = Mock(side_effect=get_component)
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
@@ -197,6 +215,13 @@ class TestMonsterLootDropper(unittest.TestCase):
         self.monster.equipment.off_hand = armor
         self.monster.inventory = None
         
+        # Mock ComponentRegistry to return equipment but not inventory
+        def get_component(comp_type):
+            if comp_type == ComponentType.EQUIPMENT:
+                return self.monster.equipment
+            return None
+        self.monster.components.get = Mock(side_effect=get_component)
+        
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
         self.assertEqual(len(result), 1)
@@ -215,6 +240,13 @@ class TestMonsterLootDropper(unittest.TestCase):
         self.monster.equipment = None
         self.monster.inventory = Mock()
         self.monster.inventory.items = [potion, scroll]
+        
+        # Mock ComponentRegistry to return inventory but not equipment
+        def get_component(comp_type):
+            if comp_type == ComponentType.INVENTORY:
+                return self.monster.inventory
+            return None
+        self.monster.components.get = Mock(side_effect=get_component)
 
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
 
@@ -244,6 +276,15 @@ class TestMonsterLootDropper(unittest.TestCase):
         self.monster.equipment.off_hand = armor
         self.monster.inventory = Mock()
         self.monster.inventory.items = [potion]
+        
+        # Mock ComponentRegistry to return both equipment and inventory
+        def get_component(comp_type):
+            if comp_type == ComponentType.EQUIPMENT:
+                return self.monster.equipment
+            elif comp_type == ComponentType.INVENTORY:
+                return self.monster.inventory
+            return None
+        self.monster.components.get = Mock(side_effect=get_component)
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
