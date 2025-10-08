@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 from components.ai import MindlessZombieAI
 from components.fighter import Fighter
 from components.faction import Faction
+from components.component_registry import ComponentType
 from entity import Entity
 
 
@@ -18,23 +19,22 @@ class TestZombieMultiTurnSwitching(unittest.TestCase):
     def setUp(self):
         """Set up a realistic combat scenario."""
         # Create zombie at (10, 10)
-        self.zombie = Entity(10, 10, 'Z', (0, 255, 0), 'Zombie', blocks=True)
-        self.zombie.fighter = Fighter(hp=30, defense=0, power=5, strength=10, dexterity=10)
-        self.zombie.fighter.owner = self.zombie
-        self.zombie.ai = MindlessZombieAI()
-        self.zombie.ai.owner = self.zombie
+        zombie_fighter = Fighter(hp=30, defense=0, power=5, strength=10, dexterity=10)
+        zombie_ai = MindlessZombieAI()
+        self.zombie = Entity(10, 10, 'Z', (0, 255, 0), 'Zombie', blocks=True,
+                           fighter=zombie_fighter, ai=zombie_ai)
         self.zombie.faction = Faction.NEUTRAL
         
         # Create player adjacent at (11, 10)
-        self.player = Entity(11, 10, '@', (255, 255, 255), 'Player', blocks=True)
-        self.player.fighter = Fighter(hp=100, defense=10, power=5, strength=14, dexterity=14)
-        self.player.fighter.owner = self.player
+        player_fighter = Fighter(hp=100, defense=10, power=5, strength=14, dexterity=14)
+        self.player = Entity(11, 10, '@', (255, 255, 255), 'Player', blocks=True,
+                           fighter=player_fighter)
         self.player.faction = Faction.PLAYER
         
         # Create orc adjacent at (10, 11)
-        self.orc = Entity(10, 11, 'o', (0, 255, 0), 'Orc', blocks=True)
-        self.orc.fighter = Fighter(hp=20, defense=2, power=4, strength=12, dexterity=10)
-        self.orc.fighter.owner = self.orc
+        orc_fighter = Fighter(hp=20, defense=2, power=4, strength=12, dexterity=10)
+        self.orc = Entity(10, 11, 'o', (0, 255, 0), 'Orc', blocks=True,
+                        fighter=orc_fighter)
         self.orc.faction = Faction.NEUTRAL  # Regular monsters are NEUTRAL
         
         self.game_map = Mock()
