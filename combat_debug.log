@@ -4388,3 +4388,4 @@
 12:11:36 - COMBAT: d20 Combat: Player rolled 10 + 1 (DEX) + 0 (weapon) = 11 vs AC 8 → HIT | Damage: 2 (base) + 2 (STR) = 4
 12:11:36 - COMBAT: d20 Combat: Player rolled 7 + 1 (DEX) + 0 (weapon) = 8 vs AC 8 → HIT | Damage: 4 (base) + 2 (STR) = 6
 12:11:37 - COMBAT: d20 Combat: Player rolled 4 + 1 (DEX) + 0 (weapon) = 5 vs AC 8 → MISS
+12:16:29 - COMBAT: d20 Combat: Player rolled 20 + 1 (DEX) + 0 (weapon) = 21 vs AC 8 → HIT [CRITICAL HIT] | Damage: 1 (base) + 2 (STR) = 6 × 2 (crit)

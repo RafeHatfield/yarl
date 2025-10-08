@@ -279,17 +279,22 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         # No valid hazard manager or method, skip hazard check
         pass
     
-    # Check if we're within weapon reach of any enemy (auto-attack!)
-    enemy_in_range = _check_for_enemy_in_weapon_range(player, entities, fov_map)
-    if enemy_in_range:
-        # Attack the enemy!
-        pathfinding.interrupt_movement("Enemy within weapon reach - attacking!")
-        attack_results = player.fighter.attack_d20(enemy_in_range)
-        results.extend(attack_results)
-        results.append({
-            "enemy_turn": True  # Trigger enemy turn after attack
-        })
-        return {"results": results}
+    # DISABLED: Auto-attack during pathfinding
+    # User requirement: "Player should never attack unless actually clicking on a target"
+    # The auto-attack feature was causing unwanted attacks during movement
+    # 
+    # If re-enabling this feature, it should be:
+    # 1. Optional (config/setting)
+    # 2. Only for ranged weapons
+    # 3. Only when explicitly requested by player
+    #
+    # enemy_in_range = _check_for_enemy_in_weapon_range(player, entities, fov_map)
+    # if enemy_in_range:
+    #     pathfinding.interrupt_movement("Enemy within weapon reach - attacking!")
+    #     attack_results = player.fighter.attack_d20(enemy_in_range)
+    #     results.extend(attack_results)
+    #     results.append({"enemy_turn": True})
+    #     return {"results": results}
     
     # Check for enemies CLOSER than weapon range (threat detection)
     # This allows ranged weapons to keep approaching until in range
