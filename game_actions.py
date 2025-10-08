@@ -13,6 +13,7 @@ from game_states import GameStates
 from config.game_constants import get_constants
 from entity_sorting_cache import invalidate_entity_cache
 from entity_dialogue import EntityDialogue
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +82,8 @@ class ActionProcessor:
         # This enables ranged weapon auto-attack and continuous pathfinding
         if current_state == GameStates.PLAYERS_TURN:
             player = self.state_manager.state.player
-            if (player and hasattr(player, 'pathfinding') and player.pathfinding and 
-                player.pathfinding.is_path_active()):
+            pathfinding = player.components.get(ComponentType.PATHFINDING) if player else None
+            if pathfinding and pathfinding.is_path_active():
                 # Process pathfinding movement automatically
                 self._process_pathfinding_movement_action(None)
                 return  # Don't process other input this turn
@@ -294,11 +295,12 @@ class ActionProcessor:
                 self.state_manager.state.death_frame_counter = 0
             
             # Generate Entity death quote ONCE (don't regenerate every frame!)
-            if hasattr(player, 'statistics') and player.statistics:
+            statistics = player.components.get(ComponentType.STATISTICS)
+            if statistics:
                 from entity_dialogue import get_entity_quote_for_death
                 self.state_manager.state.death_screen_quote = get_entity_quote_for_death(
-                    player.statistics, 
-                    player.statistics.deepest_level
+                    statistics, 
+                    statistics.deepest_level
                 )
             else:
                 self.state_manager.state.death_screen_quote = "How... disappointing."
@@ -312,10 +314,11 @@ class ActionProcessor:
             
             # Record kill statistics (only for player kills)
             player = self.state_manager.state.player
-            if player and hasattr(player, 'statistics') and player.statistics:
+            statistics = player.components.get(ComponentType.STATISTICS) if player else None
+            if statistics:
                 # Track monster type killed
                 monster_name = dead_entity.name.lower()
-                player.statistics.record_kill(monster_name)
+                statistics.record_kill(monster_name)
                 
                 # Entity comments on kills (Phase 1 feature!)
                 message_log = self.state_manager.state.message_log
@@ -595,7 +598,7 @@ class ActionProcessor:
         
         # Check if player is on stairs
         for entity in entities:
-            if (hasattr(entity, 'stairs') and entity.stairs and 
+            if (entity.components.has(ComponentType.STAIRS) and 
                 entity.x == player.x and entity.y == player.y):
                 
                 # Generate next floor
@@ -667,7 +670,7 @@ class ActionProcessor:
         # Handle clicks on inventory/drop menus
         if current_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
             player = self.state_manager.state.player
-            if not player or not hasattr(player, 'inventory'):
+            if not player or not player.components.has(ComponentType.INVENTORY):
                 return
             
             # Get menu parameters (same as render_functions.py)
@@ -939,8 +942,8 @@ class ActionProcessor:
             return
         
         # Check if player has pathfinding and is moving
-        if not (hasattr(player, 'pathfinding') and player.pathfinding and 
-                player.pathfinding.is_path_active()):
+        pathfinding = player.components.get(ComponentType.PATHFINDING)
+        if not (pathfinding and pathfinding.is_path_active()):
             return
         
         # Process pathfinding movement
@@ -1005,7 +1008,7 @@ class ActionProcessor:
             target_item = None
             for entity in entities:
                 if entity.x == world_x and entity.y == world_y:
-                    if hasattr(entity, 'item') and entity.item:
+                    if entity.components.has(ComponentType.ITEM):
                         target_item = entity
                         break
             
@@ -1031,8 +1034,9 @@ class ActionProcessor:
                     self.state_manager.set_game_state(GameStates.ENEMY_TURN)
                 else:
                     # Not adjacent - pathfind to it
-                    if hasattr(player, 'pathfinding') and player.pathfinding:
-                        success = player.pathfinding.set_destination(
+                    pathfinding = player.components.get(ComponentType.PATHFINDING)
+                    if pathfinding:
+                        success = pathfinding.set_destination(
                             target_item.x, target_item.y, game_map, entities, fov_map
                         )
                         
@@ -1054,9 +1058,9 @@ class ActionProcessor:
                             )
             else:
                 # No item at location - cancel pathfinding if active
-                if (hasattr(player, 'pathfinding') and player.pathfinding and 
-                    player.pathfinding.is_path_active()):
-                    player.pathfinding.cancel_movement()
+                pathfinding = player.components.get(ComponentType.PATHFINDING)
+                if pathfinding and pathfinding.is_path_active():
+                    pathfinding.cancel_movement()
                     if message_log:
                         from game_messages import Message
                         message_log.add_message(Message("Movement cancelled.", (255, 255, 0)))

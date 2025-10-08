@@ -181,11 +181,16 @@ class TestProcessGameActions:
 
     def setup_method(self):
         """Set up test fixtures."""
+        from components.component_registry import ComponentType
+        
         self.state_manager = Mock()
         self.state_manager.state.current_state = GameStates.PLAYERS_TURN
         self.state_manager.state.player = Mock()
         # Ensure player has no active pathfinding to avoid triggering pathfinding movement
         self.state_manager.state.player.pathfinding = None
+        # Mock ComponentRegistry to return None for pathfinding (no active pathfinding)
+        self.state_manager.state.player.components.get.return_value = None
+        self.state_manager.state.player.components.has.return_value = False
         self.state_manager.state.entities = []
         self.state_manager.state.game_map = Mock()
         self.targeting_item = None
@@ -237,6 +242,9 @@ class TestProcessGameActions:
         player.y = 10
         player.pathfinding = None  # No active pathfinding
         player.process_status_effects_turn_end.return_value = []  # Return empty list for status effects
+        # Mock ComponentRegistry to return None for pathfinding
+        player.components.get.return_value = None
+        player.components.has.return_value = False
         self.state_manager.state.player = player
         self.state_manager.state.game_map.is_blocked.return_value = False
         mock_get_blocking.return_value = None
