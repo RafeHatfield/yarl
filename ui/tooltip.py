@@ -44,6 +44,37 @@ def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_
     return None
 
 
+def get_monster_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> Optional[Any]:
+    """Get the monster at the specified world coordinates.
+    
+    Args:
+        world_x: X coordinate in world space
+        world_y: Y coordinate in world space
+        entities: List of all entities in the game
+        player: Player entity (to exclude from results)
+        fov_map: Optional FOV map to check visibility
+        
+    Returns:
+        Monster entity if there's a monster at that position, None otherwise
+    """
+    # Check FOV if provided (only show tooltips for visible monsters)
+    if fov_map:
+        from fov_functions import map_is_in_fov
+        if not map_is_in_fov(fov_map, world_x, world_y):
+            return None
+    
+    # Find monsters at this position
+    for entity in entities:
+        if entity.x == world_x and entity.y == world_y:
+            # Check if it's a monster (has fighter and AI, and is not the player)
+            if (hasattr(entity, 'fighter') and entity.fighter and
+                hasattr(entity, 'ai') and entity.ai and
+                entity != player):
+                return entity
+    
+    return None
+
+
 def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_layout) -> Optional[Any]:
     """Get the equipment item being hovered over in the sidebar equipment section.
     
@@ -156,32 +187,79 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     return None
 
 
-def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) -> None:
-    """Render a tooltip for an item near the mouse cursor.
+def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) -> None:
+    """Render a tooltip for an entity (item or monster) near the mouse cursor.
     
-    The tooltip shows the full item name and relevant stats/info.
+    The tooltip shows the full name and relevant stats/info.
     
     Args:
         console: Console to render to (viewport console for proper positioning)
-        item: The item entity to show info for
+        entity: The entity to show info for (item or monster)
         mouse_x: Mouse X position (screen coordinates)
         mouse_y: Mouse Y position (screen coordinates)
         ui_layout: UILayoutConfig instance
     """
-    if not item:
+    if not entity:
         return
     
-    # Get full item information
-    item_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+    # Get full entity name
+    entity_name = entity.get_display_name() if hasattr(entity, 'get_display_name') else entity.name
     
     # Build tooltip lines
-    tooltip_lines = [item_name]
+    tooltip_lines = [entity_name]
     
-    # Add detailed item information
-    if hasattr(item, 'wand') and item.wand:
-        tooltip_lines.append(f"Wand ({item.wand.charges} charges)")
-    elif hasattr(item, 'equippable') and item.equippable:
-        eq = item.equippable
+    # Check if this is a monster (has fighter and AI)
+    is_monster = (hasattr(entity, 'fighter') and entity.fighter and 
+                  hasattr(entity, 'ai') and entity.ai)
+    
+    if is_monster:
+        # Monster tooltip - show combat stats
+        fighter = entity.fighter
+        
+        # HP with visual bar
+        hp_percent = (fighter.hp / fighter.max_hp) * 100 if fighter.max_hp > 0 else 0
+        hp_display = f"HP: {fighter.hp}/{fighter.max_hp}"
+        
+        # Add HP color indication
+        if hp_percent >= 75:
+            hp_display += " [Healthy]"
+        elif hp_percent >= 50:
+            hp_display += " [Hurt]"
+        elif hp_percent >= 25:
+            hp_display += " [Wounded]"
+        else:
+            hp_display += " [Critical]"
+        
+        tooltip_lines.append(hp_display)
+        
+        # AC (Armor Class)
+        tooltip_lines.append(f"AC: {fighter.defense}")
+        
+        # Attack power
+        tooltip_lines.append(f"Attack: {fighter.power}")
+        
+        # Equipment summary (if monster has equipment)
+        if hasattr(entity, 'equipment') and entity.equipment:
+            if entity.equipment.main_hand:
+                weapon_name = entity.equipment.main_hand.name
+                tooltip_lines.append(f"Weapon: {weapon_name}")
+            
+            if entity.equipment.chest:
+                armor_name = entity.equipment.chest.name
+                tooltip_lines.append(f"Armor: {armor_name}")
+        
+        # Status effects (if any)
+        if hasattr(entity, 'status_effects') and entity.status_effects:
+            active_effects = [effect for effect in entity.status_effects if effect.duration > 0]
+            if active_effects:
+                effect_names = [effect.name for effect in active_effects]
+                tooltip_lines.append(f"Effects: {', '.join(effect_names)}")
+    
+    # Otherwise, show item information
+    elif hasattr(entity, 'wand') and entity.wand:
+        tooltip_lines.append(f"Wand ({entity.wand.charges} charges)")
+    elif hasattr(entity, 'equippable') and entity.equippable:
+        eq = entity.equippable
         
         # Weapon information
         if hasattr(eq, 'damage_dice') and eq.damage_dice:
@@ -214,10 +292,10 @@ def render_tooltip(console, item: Any, mouse_x: int, mouse_y: int, ui_layout) ->
             slot_name = slot_str.replace('_', ' ').title()
             tooltip_lines.append(f"Slot: {slot_name}")
     
-    elif hasattr(item, 'item') and item.item:
-        if item.item.use_function:
+    elif hasattr(entity, 'item') and entity.item:
+        if entity.item.use_function:
             # Get function name for better description
-            func_name = item.item.use_function.__name__ if hasattr(item.item.use_function, '__name__') else 'Unknown'
+            func_name = entity.item.use_function.__name__ if hasattr(entity.item.use_function, '__name__') else 'Unknown'
             
             if 'heal' in func_name:
                 tooltip_lines.append("Consumable: Healing")
