@@ -94,7 +94,8 @@ def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_l
         return None
     
     # Check if player has equipment
-    if not hasattr(player, 'equipment') or not player.equipment:
+    equipment = player.components.get(ComponentType.EQUIPMENT)
+    if not equipment:
         return None
     
     padding = ui_layout.sidebar_padding
@@ -111,11 +112,11 @@ def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_l
     
     # Equipment slots (must match sidebar.py order!)
     equipment_slots = [
-        player.equipment.main_hand,
-        player.equipment.off_hand,
-        player.equipment.head,
-        player.equipment.chest,
-        player.equipment.feet,
+        equipment.main_hand,
+        equipment.off_hand,
+        equipment.head,
+        equipment.chest,
+        equipment.feet,
     ]
     
     # Check if hovering over any equipment line
@@ -147,19 +148,20 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
         return None
     
     # Check if player has inventory
-    if not hasattr(player, 'inventory') or not player.inventory:
+    inventory = player.components.get(ComponentType.INVENTORY)
+    if not inventory:
         return None
     
     # Get unequipped items (same logic as sidebar rendering)
     equipped_items = set()
     equipment = player.components.get(ComponentType.EQUIPMENT)
     if equipment:
-        for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
-                        player.equipment.head, player.equipment.chest, player.equipment.feet]:
+        for slot_item in [equipment.main_hand, equipment.off_hand,
+                        equipment.head, equipment.chest, equipment.feet]:
             if slot_item:
                 equipped_items.add(slot_item)
     
-    inventory_items = [item for item in player.inventory.items if item not in equipped_items]
+    inventory_items = [item for item in inventory.items if item not in equipped_items]
     
     if len(inventory_items) == 0:
         return None

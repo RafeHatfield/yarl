@@ -68,10 +68,10 @@ def _get_weapon_reach(entity: 'Entity') -> int:
     Returns:
         int: The reach of the weapon in tiles (default 1 for adjacent)
     """
-    if (hasattr(entity, 'equipment') and entity.equipment and 
-        entity.equipment.main_hand and 
-        hasattr(entity.equipment.main_hand, 'equippable')):
-        weapon = entity.equipment.main_hand.equippable
+    equipment = entity.components.get(ComponentType.EQUIPMENT)
+    if (equipment and equipment.main_hand and 
+        equipment.main_hand.components.has(ComponentType.EQUIPPABLE)):
+        weapon = equipment.main_hand.equippable
         return getattr(weapon, 'reach', 1)
     return 1  # Default reach for unarmed/no weapon
 
@@ -137,7 +137,8 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
         dict: Dictionary containing action results
     """
     # Check if player has pathfinding component
-    if not hasattr(player, 'pathfinding') or not player.pathfinding:
+    pathfinding = player.components.get(ComponentType.PATHFINDING)
+    if not pathfinding:
         results.append({
             "message": Message("Player pathfinding not available.", (255, 0, 0))
         })
@@ -210,10 +211,9 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     """
     results = []
     
-    if not hasattr(player, 'pathfinding') or not player.pathfinding:
+    pathfinding = player.components.get(ComponentType.PATHFINDING)
+    if not pathfinding:
         return {"results": results}
-    
-    pathfinding = player.pathfinding
     
     if not pathfinding.is_path_active():
         return {"results": results}
@@ -258,9 +258,11 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     
     # Check if player stepped on a hazard - interrupt movement if so
     try:
+        # hazard_manager is a direct attribute on game_map
         if (hasattr(game_map, 'hazard_manager') and 
             game_map.hazard_manager is not None):
             hazard = game_map.hazard_manager.get_hazard_at(player.x, player.y)
+            # hazard_type is a direct attribute on hazard
             if hazard and hasattr(hazard, 'hazard_type'):
                 hazard_name = hazard.hazard_type.name.replace('_', ' ').title()
                 pathfinding.interrupt_movement(f"Stepped on {hazard_name}")
@@ -314,14 +316,16 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         })
         
         # Check if we were pathfinding to pick up an item
+        # auto_pickup_target is a direct attribute on pathfinding
         if hasattr(pathfinding, 'auto_pickup_target') and pathfinding.auto_pickup_target:
             target_item = pathfinding.auto_pickup_target
             
             # Check if item is at player's location
             if target_item in entities and target_item.x == player.x and target_item.y == player.y:
                 # Pick it up!
-                if hasattr(player, 'inventory') and player.inventory:
-                    pickup_results = player.inventory.add_item(target_item)
+                inventory = player.components.get(ComponentType.INVENTORY)
+                if inventory:
+                    pickup_results = inventory.add_item(target_item)
                     
                     for pickup_result in pickup_results:
                         message = pickup_result.get("message")
