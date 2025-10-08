@@ -332,22 +332,29 @@ class TestEnhancementScrolls(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        # Create player with equipment
-        self.player = Mock()
-        self.player.equipment = Equipment()
+        # Register spells for spell system
+        from spells import get_spell_registry
+        from spells.spell_catalog import register_all_spells
+        get_spell_registry().clear()
+        register_all_spells()
         
-        # Create weapon
+        # Create player entity with equipment (proper Entity objects)
+        from components.component_registry import ComponentType
+        self.player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True)
+        self.player.equipment = Equipment()
+        self.player.components.add(ComponentType.EQUIPMENT, self.player.equipment)
+        
+        # Create weapon entity
         weapon_equippable = Equippable(
             EquipmentSlots.MAIN_HAND,
             power_bonus=2,
             damage_min=2,
             damage_max=5
         )
-        self.weapon = Mock()
-        self.weapon.name = "Sword"
-        self.weapon.equippable = weapon_equippable
+        self.weapon = Entity(0, 0, '/', (255, 255, 255), 'Sword', blocks=False, 
+                            equippable=weapon_equippable)
         
-        # Create armor
+        # Create armor entity
         armor_equippable = Equippable(
             EquipmentSlots.OFF_HAND,
             defense_bonus=1,
@@ -355,9 +362,8 @@ class TestEnhancementScrolls(unittest.TestCase):
             defense_max=3,
             armor_class_bonus=2  # AC bonus for new enhance_armor logic
         )
-        self.armor = Mock()
-        self.armor.name = "Shield"
-        self.armor.equippable = armor_equippable
+        self.armor = Entity(0, 0, '[', (255, 255, 255), 'Shield', blocks=False,
+                           equippable=armor_equippable)
     
     def test_enhance_weapon_success(self):
         """Test successful weapon enhancement."""
@@ -416,7 +422,8 @@ class TestEnhancementScrolls(unittest.TestCase):
         self.assertEqual(len(results), 1)
         result = results[0]
         self.assertFalse(result["consumed"])
-        self.assertIn("must have armor equipped", result["message"].text)
+        # New spell system message
+        self.assertIn("no armor equipped", result["message"].text)
     
     def test_enhance_weapon_no_damage_range(self):
         """Test enhancing weapon with no damage range."""

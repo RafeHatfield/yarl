@@ -805,8 +805,9 @@ class SpellExecutor:
         # Randomly select an armor piece
         slot_name, armor = random.choice(armor_pieces)
         old_bonus = armor.equippable.armor_class_bonus
-        
-        armor.equippable.modify_ac_bonus(bonus)
+
+        # Directly modify the armor class bonus
+        armor.equippable.armor_class_bonus += bonus
         
         results.append({
             "consumed": True,
