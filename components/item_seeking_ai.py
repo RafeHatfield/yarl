@@ -45,6 +45,7 @@ class ItemSeekingAI:
             dict: Action dictionary if item seeking should occur, None otherwise
         """
         # Only seek items if monster has inventory capability
+        from components.component_registry import ComponentType
         if not self.monster.components.get(ComponentType.INVENTORY):
             return None
             
@@ -109,6 +110,7 @@ class ItemSeekingAI:
         """
         nearby_items = []
         
+        from components.component_registry import ComponentType
         for entity in entities:
             # Only consider items (entities with item component)
             if not entity.components.has(ComponentType.ITEM):
@@ -240,6 +242,7 @@ def create_item_seeking_ai(monster, monster_def) -> Optional[ItemSeekingAI]:
     Returns:
         ItemSeekingAI: AI component if monster can seek items, None otherwise
     """
+    from components.component_registry import ComponentType
     if not monster_def.can_seek_items:
         return None
         
