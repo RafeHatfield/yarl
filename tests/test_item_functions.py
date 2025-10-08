@@ -395,49 +395,28 @@ class TestCastFireball:
         # Enemy should be unharmed
         assert enemy_entity.fighter.hp == original_hp
 
-    def test_fireball_negative_damage(
-        self, player_entity, enemy_entity, mock_fov_map, mock_libtcod
-    ):
-        """Test fireball with negative damage (current implementation heals)."""
-        # Arrange
-        entities = [player_entity, enemy_entity]
-        target_x, target_y = 15, 15
-        original_hp = enemy_entity.fighter.hp
-
-        # Act
-        results = cast_fireball(
-            player_entity,
-            entities=entities,
-            fov_map=mock_fov_map,
-            damage=-5,
-            radius=3,
-            target_x=target_x,
-            target_y=target_y,
-        )
-
-        # Assert
-        assert len(results) >= 1
-        consumed_result = next((r for r in results if "consumed" in r), None)
-        assert consumed_result["consumed"] is True
-        # Note: Current implementation allows negative damage to heal
-        assert enemy_entity.fighter.hp == original_hp + 5  # -(-5) = +5 healing
+    # DELETED: test_fireball_negative_damage
+    # This was testing a bug where negative damage would heal enemies.
+    # The new spell system correctly rejects negative damage as invalid.
 
 
 class TestItemFunctionEdgeCases:
     """Test edge cases and error conditions for item functions."""
 
     def test_functions_with_missing_kwargs(self, player_entity, mock_libtcod):
-        """Test item functions with missing required kwargs."""
+        """Test item functions gracefully handle missing required kwargs."""
         # Test heal without amount on full health entity
         results = heal(player_entity)
         assert len(results) == 1
         assert results[0]["consumed"] is False  # Not consumed when at full health
 
-        # Test lightning without damage/maximum_range - causes TypeError
-        with pytest.raises(TypeError):
-            cast_lightning(player_entity, entities=[])
-
-        # Note: Other functions have similar parameter dependencies
+        # Test lightning without required kwargs - should gracefully handle
+        # New spell system returns error messages instead of raising TypeError
+        results = cast_lightning(player_entity, entities=[])
+        assert len(results) >= 1
+        assert results[0]["consumed"] is False  # Spell not consumed on error
+        
+        # Note: Spell system gracefully handles missing parameters with error messages
 
     def test_functions_with_none_entities(
         self, player_entity, mock_fov_map, mock_libtcod
