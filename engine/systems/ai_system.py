@@ -333,7 +333,7 @@ class AISystem(System):
             if not fighter:
                 continue
                 
-            if entity.fighter.hp <= 0:
+            if fighter.hp <= 0:
                 continue  # Don't damage dead entities
             
             hazard = hazard_manager.get_hazard_at(entity.x, entity.y)
