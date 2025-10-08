@@ -221,6 +221,10 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
         # Monster tooltip - show combat stats
         fighter = entity.fighter
         
+        # Check if fighter exists (entity might be a corpse)
+        if not fighter:
+            return  # Don't show tooltip for dead monsters
+        
         # HP with visual bar
         hp_percent = (fighter.hp / fighter.max_hp) * 100 if fighter.max_hp > 0 else 0
         hp_display = f"HP: {fighter.hp}/{fighter.max_hp}"
