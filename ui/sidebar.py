@@ -11,6 +11,7 @@ The sidebar is always visible and provides persistent game information.
 
 import tcod.libtcodpy as libtcod
 from typing import Optional
+from components.component_registry import ComponentType
 
 
 def render_sidebar(console, player, ui_layout) -> None:
