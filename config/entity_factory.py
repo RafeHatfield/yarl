@@ -89,12 +89,15 @@ class EntityFactory:
             from components.equipment import Equipment
             equipment_component = Equipment()
             
-            # Create inventory component for monsters that can seek items
+            # Create inventory component for monsters that can seek items OR have equipment
             inventory_component = None
-            if monster_def.can_seek_items and monster_def.inventory_size > 0:
+            has_equipment_config = hasattr(monster_def, 'equipment') and monster_def.equipment
+            if (monster_def.can_seek_items and monster_def.inventory_size > 0) or has_equipment_config:
                 from components.inventory import Inventory
-                inventory_component = Inventory(capacity=monster_def.inventory_size)
-                logger.debug(f"Created inventory for {monster_def.name} with {monster_def.inventory_size} slots")
+                # Use configured inventory size, or default to 5 for monsters with equipment
+                inventory_size = monster_def.inventory_size if monster_def.inventory_size > 0 else 5
+                inventory_component = Inventory(capacity=inventory_size)
+                logger.debug(f"Created inventory for {monster_def.name} with {inventory_size} slots")
 
             # Get faction from monster definition
             faction = get_faction_from_string(getattr(monster_def, 'faction', 'neutral'))
@@ -138,6 +141,11 @@ class EntityFactory:
                     logger.debug(f"Added item usage capability to {monster_def.name}")
                 else:
                     logger.warning(f"Failed to create item usage for {monster_def.name}")
+
+            # Spawn equipment on monster if configured
+            if hasattr(monster_def, 'equipment') and monster_def.equipment:
+                self._spawn_monster_equipment(monster, monster_def.equipment)
+                logger.debug(f"Spawned equipment on {monster_def.name}")
 
             logger.debug(f"Created monster: {monster_def.name} at ({x}, {y})")
             return monster
@@ -367,6 +375,91 @@ class EntityFactory:
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()
+
+    def _spawn_monster_equipment(self, monster: Entity, equipment_config: dict):
+        """Spawn equipment on a monster based on configuration.
+        
+        Args:
+            monster: The monster entity to equip
+            equipment_config: Equipment configuration from YAML
+                Format: {
+                    'spawn_chances': {'main_hand': 0.75, 'chest': 0.50},
+                    'equipment_pool': {
+                        'main_hand': [{'item': 'club', 'weight': 40}, ...],
+                        'chest': [{'item': 'leather_armor', 'weight': 100}]
+                    }
+                }
+        """
+        import random
+        
+        spawn_chances = equipment_config.get('spawn_chances', {})
+        equipment_pool = equipment_config.get('equipment_pool', {})
+        
+        # Process each equipment slot
+        for slot_name, spawn_chance in spawn_chances.items():
+            # Roll for this slot
+            if random.random() > spawn_chance:
+                continue  # Didn't spawn equipment in this slot
+            
+            # Get items available for this slot
+            slot_items = equipment_pool.get(slot_name, [])
+            if not slot_items:
+                logger.warning(f"No equipment pool defined for slot '{slot_name}'")
+                continue
+            
+            # Select item using weighted random
+            total_weight = sum(item_def.get('weight', 1) for item_def in slot_items)
+            roll = random.random() * total_weight
+            
+            cumulative_weight = 0
+            selected_item = None
+            for item_def in slot_items:
+                cumulative_weight += item_def.get('weight', 1)
+                if roll <= cumulative_weight:
+                    selected_item = item_def.get('item')
+                    break
+            
+            if not selected_item:
+                logger.warning(f"Failed to select item for slot '{slot_name}'")
+                continue
+            
+            # Create the item (weapon or armor)
+            # Items spawn at monster's position but will be immediately equipped
+            item_entity = None
+            if slot_name == 'main_hand' or slot_name == 'off_hand':
+                item_entity = self.create_weapon(selected_item, monster.x, monster.y)
+            elif slot_name in ['head', 'chest', 'feet']:
+                item_entity = self.create_armor(selected_item, monster.x, monster.y)
+            else:
+                logger.warning(f"Unknown slot type '{slot_name}'")
+                continue
+            
+            if not item_entity:
+                logger.warning(f"Failed to create item '{selected_item}' for slot '{slot_name}'")
+                continue
+            
+            # Equip the item on the monster
+            from components.component_registry import ComponentType
+            equipment = monster.components.get(ComponentType.EQUIPMENT)
+            if not equipment:
+                equipment = getattr(monster, 'equipment', None)
+            
+            if equipment and hasattr(item_entity, 'equippable'):
+                # Add to monster's inventory first (required for equipping)
+                inventory = monster.components.get(ComponentType.INVENTORY)
+                if not inventory:
+                    inventory = getattr(monster, 'inventory', None)
+                
+                if inventory:
+                    # Add to inventory
+                    inventory.add_item(item_entity)
+                    # Equip the item
+                    results = equipment.toggle_equip(item_entity)
+                    logger.debug(f"Equipped {selected_item} on {monster.name} in slot {slot_name}")
+                else:
+                    logger.warning(f"Monster {monster.name} has no inventory, cannot equip items")
+            else:
+                logger.warning(f"Cannot equip {selected_item} on {monster.name}")
 
     def _get_render_order(self, render_order_str: str):
         """Convert render order string to RenderOrder enum.
