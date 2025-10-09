@@ -348,7 +348,11 @@ class BasicMonster:
             dict: Item action if available, None otherwise
         """
         # Check if monster has item-seeking AI capability
+        # Try ComponentRegistry first, then fall back to attribute
         item_seeking_ai = self.owner.components.get(ComponentType.ITEM_SEEKING_AI)
+        if not item_seeking_ai:
+            item_seeking_ai = getattr(self.owner, 'item_seeking_ai', None)
+        
         if not item_seeking_ai:
             return None
             
