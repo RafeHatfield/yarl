@@ -22,8 +22,11 @@ level_overrides:
           count: 1
         - type: "large_slime"
           count: 1
-        - type: "orc"  # For testing monster-vs-monster combat
-          count: 2
+        # Phase 1 Equipment Testing: Spawn multiple orcs to see equipment variation
+        # Orcs have 75% weapon spawn, 50% armor spawn
+        # Expected: ~6 with weapons, ~4 with armor out of 8 orcs
+        - type: "orc"
+          count: 8  # Increased from 2 for better equipment testing
       items:
         - type: "invisibility_scroll"
           count: 2  # Ensure we can test invisibility mechanics
