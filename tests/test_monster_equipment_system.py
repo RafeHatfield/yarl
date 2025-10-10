@@ -250,11 +250,9 @@ class TestMonsterLootDropper(unittest.TestCase):
 
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
 
-        self.assertEqual(len(result), 2)
-        self.assertIn(potion, result)
-        self.assertIn(scroll, result)
-        
-        # Items should be dropped near the target location (within 1 tile)
+        # Inventory items NOT in result (already in world entities)
+        self.assertEqual(len(result), 0)
+        # But items should be repositioned near target location (within 1 tile)
         for item in [potion, scroll]:
             self.assertLessEqual(abs(item.x - 5), 1)
             self.assertLessEqual(abs(item.y - 10), 1)
@@ -288,10 +286,13 @@ class TestMonsterLootDropper(unittest.TestCase):
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
-        self.assertEqual(len(result), 3)
+        # Only equipment items in result (inventory items already in world)
+        self.assertEqual(len(result), 2)
         self.assertIn(weapon, result)
         self.assertIn(armor, result)
-        self.assertIn(potion, result)
+        # Potion not in result, but should be repositioned near target (within 1 tile)
+        self.assertLessEqual(abs(potion.x - 5), 1)
+        self.assertLessEqual(abs(potion.y - 10), 1)
 
 
 class TestConvenienceFunctions(unittest.TestCase):

@@ -102,20 +102,21 @@ class TestLootDropPositions(unittest.TestCase):
         # Drop loot
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 5, 5)
         
-        # Should have 3 items (2 inventory + 1 weapon)
-        self.assertEqual(len(dropped_items), 3)
+        # Should have 1 item (only weapon; inventory items already in world)
+        self.assertEqual(len(dropped_items), 1)
         
-        # Check that items are at different positions
-        positions = [(item.x, item.y) for item in dropped_items]
-        unique_positions = set(positions)
+        # Weapon should be in dropped_items
+        self.assertIn(weapon, dropped_items)
         
-        # Should have at least 2 unique positions (items spread out)
-        self.assertGreaterEqual(len(unique_positions), 2)
+        # Inventory items should be repositioned (but not in dropped_items)
+        self.assertLessEqual(abs(item1.x - 5), 1)
+        self.assertLessEqual(abs(item1.y - 5), 1)
+        self.assertLessEqual(abs(item2.x - 5), 1)
+        self.assertLessEqual(abs(item2.y - 5), 1)
         
-        # All positions should be adjacent to or at the drop location
-        for x, y in positions:
-            distance = max(abs(x - 5), abs(y - 5))
-            self.assertLessEqual(distance, 1, f"Item too far from drop location: ({x}, {y})")
+        # Weapon should also be near the drop location
+        self.assertLessEqual(abs(weapon.x - 5), 1)
+        self.assertLessEqual(abs(weapon.y - 5), 1)
 
     def test_drop_monster_loot_no_items(self):
         """Test dropping loot from monster with no items."""
@@ -131,7 +132,11 @@ class TestLootDropPositions(unittest.TestCase):
         self.assertEqual(len(dropped_items), 0)
 
     def test_drop_monster_loot_inventory_only(self):
-        """Test dropping loot from monster with only inventory items."""
+        """Test dropping loot from monster with only inventory items.
+        
+        NOTE: Inventory items are NOT added to dropped_items because they're
+        already in the world entities list. They're just repositioned.
+        """
         monster = Mock()
         monster.name = "Inventory Orc"
         
@@ -152,9 +157,11 @@ class TestLootDropPositions(unittest.TestCase):
         
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 3, 3)
         
-        self.assertEqual(len(dropped_items), 1)
-        self.assertEqual(dropped_items[0], item)
-        self.assertEqual((item.x, item.y), (3, 3))
+        # Inventory items are NOT in dropped_items (already in world entities)
+        self.assertEqual(len(dropped_items), 0)
+        # But the item should have been repositioned
+        self.assertEqual(item.x, 3)
+        self.assertEqual(item.y, 3)
 
     def test_drop_monster_loot_equipment_only(self):
         """Test dropping loot from monster with only equipped items."""

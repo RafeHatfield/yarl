@@ -77,7 +77,11 @@ class TestMonsterLootDropping:
         assert armor.owner is None
     
     def test_inventory_items_removed_from_inventory_on_drop(self, entity_factory):
-        """Test that inventory items are removed from inventory when dropped."""
+        """Test that inventory items are removed from inventory when dropped.
+        
+        NOTE: Inventory items are NOT in the dropped_items list because they're
+        already in the world entities list! They're just repositioned and unowned.
+        """
         # Create orc with inventory
         orc = entity_factory.create_monster('orc', 10, 10)
         scroll = entity_factory.create_spell_item('lightning_scroll', 10, 10)
@@ -95,15 +99,20 @@ class TestMonsterLootDropping:
         # Drop loot
         dropped_items = drop_loot_from_monster(orc, 10, 10)
         
-        # Verify scroll is in dropped items
-        assert scroll in dropped_items
+        # Verify scroll is NOT in dropped_items (because it was already in world entities)
+        assert scroll not in dropped_items
         
         # Verify scroll is NO LONGER in inventory
         assert scroll not in orc.inventory.items
-        assert len(orc.inventory.items) == 0  # ALL items should be dropped
+        assert len(orc.inventory.items) == 0  # ALL items should be removed from inventory
         
         # Verify scroll ownership is cleared
         assert scroll.owner is None
+        
+        # Verify scroll position was updated (it's been "dropped")
+        # Position should be at or near (10, 10)
+        assert abs(scroll.x - 10) <= 1
+        assert abs(scroll.y - 10) <= 1
     
     def test_dropped_weapon_can_be_picked_up_once(self, entity_factory):
         """Test that a dropped weapon can only be picked up once."""
