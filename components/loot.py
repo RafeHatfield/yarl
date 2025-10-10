@@ -359,9 +359,41 @@ class LootGenerator:
         
         # Normal monsters
         return random() < 0.50
+    
+    def generate_boss_loot(
+        self, 
+        x: int, 
+        y: int, 
+        dungeon_level: int,
+        boss_name: str = "Boss"
+    ) -> Tuple[Entity, Optional[Entity]]:
+        """Generate guaranteed legendary loot for boss kills.
+        
+        Bosses always drop at least one legendary item, with a 50% chance
+        for a second legendary drop. This ensures boss fights are rewarding!
+        
+        Args:
+            x: X coordinate for first drop
+            y: Y coordinate for first drop
+            dungeon_level: Current dungeon level
+            boss_name: Name of boss (for logging)
+            
+        Returns:
+            Tuple[Entity, Optional[Entity]]: Primary legendary + optional second drop
+        """
+        # Always drop legendary weapon
+        primary_drop = self.generate_weapon(x, y, dungeon_level, rarity=LootRarity.LEGENDARY)
+        logger.info(f"{boss_name} dropped LEGENDARY: {primary_drop.name}")
+        
+        # 50% chance for second legendary
+        secondary_drop = None
+        if random() < 0.5:
+            secondary_drop = self.generate_armor(x, y, dungeon_level, rarity=LootRarity.LEGENDARY)
+            logger.info(f"{boss_name} dropped BONUS LEGENDARY: {secondary_drop.name}")
+        
+        return primary_drop, secondary_drop
 
 
-# Global loot generator instance
 _loot_generator = None
 
 def get_loot_generator() -> LootGenerator:

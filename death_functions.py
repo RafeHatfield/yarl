@@ -145,6 +145,8 @@ def kill_monster(monster, game_map=None, entities=None):
 
     Transforms a monster into a non-blocking corpse, removes its
     combat and AI components, drops any equipped items, and returns a death message.
+    
+    For bosses, also triggers death dialogue and marks boss as defeated.
 
     Args:
         monster (Entity): The monster entity that died
@@ -154,6 +156,16 @@ def kill_monster(monster, game_map=None, entities=None):
     Returns:
         Message: Death message to display to the player
     """
+    # Check if this is a boss death (before components are removed)
+    from components.component_registry import ComponentType
+    boss = monster.get_component_optional(ComponentType.BOSS) if monster else None
+    death_dialogue = None
+    
+    if boss:
+        # Get boss death dialogue
+        death_dialogue = boss.get_dialogue("death")
+        boss.mark_defeated()
+    
     # Drop loot before transforming to corpse
     from components.monster_equipment import drop_loot_from_monster
     dropped_items = drop_loot_from_monster(monster, monster.x, monster.y, game_map)
@@ -176,6 +188,12 @@ def kill_monster(monster, game_map=None, entities=None):
             "{0} dies and splits into {1} smaller slimes!".format(
                 monster.name.capitalize(), len(spawned_slimes)
             ), (0, 255, 0)  # Green for special event
+        )
+    elif death_dialogue:
+        # Boss death with dialogue
+        death_message = MB.custom(
+            "{0} falls! \"{1}\"".format(monster.name.capitalize(), death_dialogue),
+            MB.RED  # Epic red for boss death
         )
     else:
         # Normal death message

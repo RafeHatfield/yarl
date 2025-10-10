@@ -1,4 +1,5 @@
 import logging
+import random
 from game_messages import Message
 from message_builder import MessageBuilder as MB
 from config.testing_config import is_testing_mode
@@ -256,12 +257,14 @@ class Fighter:
 
         Reduces current HP by the damage amount. If HP drops to 0 or below,
         marks the fighter as dead and returns XP reward information.
+        
+        For bosses, also checks for enrage and low HP dialogue triggers.
 
         Args:
             amount (int): Amount of damage to apply
 
         Returns:
-            list: List of result dictionaries, may include 'dead' and 'xp' keys
+            list: List of result dictionaries, may include 'dead', 'xp', 'message' keys
         """
         results = []
 
@@ -279,6 +282,30 @@ class Fighter:
             ai = getattr(self.owner, 'ai', None)
         if ai and hasattr(ai, 'in_combat'):
             ai.in_combat = True
+        
+        # Check for boss dialogue triggers (if not dead yet)
+        if self.hp > 0:
+            boss = self.owner.get_component_optional(ComponentType.BOSS) if self.owner else None
+            if boss:
+                # Check for enrage trigger (only triggers once)
+                if boss.check_enrage(self.hp, self.max_hp):
+                    enrage_line = boss.get_dialogue("enrage")
+                    if enrage_line:
+                        results.append({"message": MB.custom(f"{boss.boss_name}: \"{enrage_line}\"", MB.ORANGE)})
+                
+                # Check for low HP dialogue (<20%)
+                hp_percentage = self.hp / self.max_hp if self.max_hp > 0 else 0
+                if hp_percentage < 0.2 and not boss.has_used_dialogue("low_hp"):
+                    low_hp_line = boss.get_dialogue("low_hp")
+                    if low_hp_line:
+                        boss.mark_dialogue_used("low_hp")
+                        results.append({"message": MB.custom(f"{boss.boss_name}: \"{low_hp_line}\"", MB.YELLOW)})
+                
+                # Random "hit" reaction (10% chance when boss takes damage)
+                elif not boss.has_used_dialogue("hit") and random.random() < 0.1:
+                    hit_line = boss.get_dialogue("hit")
+                    if hit_line:
+                        results.append({"message": MB.custom(f"{boss.boss_name}: \"{hit_line}\"", MB.LIGHT_GRAY)})
 
         if self.hp <= 0:
             results.append({"dead": self.owner, "xp": self.xp})
@@ -349,6 +376,12 @@ class Fighter:
             damage_source = "base"
         
         total_attack = base_damage + variable_damage
+        
+        # Apply boss damage multiplier if attacker is an enraged boss
+        boss = self.owner.get_component_optional(ComponentType.BOSS) if self.owner else None
+        if boss and boss.is_enraged:
+            multiplier = boss.get_damage_multiplier()
+            total_attack = int(total_attack * multiplier)
         
         # Get variable armor defense from target
         armor_defense = target.fighter._get_armor_defense()

@@ -210,9 +210,28 @@ class MonsterLootDropper:
                 dropped_items.append(armor)
                 logger.debug(f"Dropped {armor.name} from {monster.name} at ({drop_x}, {drop_y})")
         
-        # Generate additional quality loot based on dungeon level
+        # Check if this is a boss kill - bosses drop guaranteed legendary loot!
+        boss_component = monster.get_component_optional(ComponentType.BOSS)
+        if boss_component:
+            # Boss kill! Always drop 1-2 legendary items
+            drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
+            primary_drop, secondary_drop = loot_gen.generate_boss_loot(
+                drop_x, drop_y, dungeon_level, boss_component.boss_name
+            )
+            dropped_items.append(primary_drop)
+            
+            if secondary_drop:
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
+                secondary_drop.x = drop_x
+                secondary_drop.y = drop_y
+                dropped_items.append(secondary_drop)
+                logger.info(f"Boss {boss_component.boss_name} dropped 2 LEGENDARY items!")
+            else:
+                logger.info(f"Boss {boss_component.boss_name} dropped 1 LEGENDARY item!")
+        
+        # Generate additional quality loot based on dungeon level (non-boss monsters)
         # This is the new loot quality system - monsters can drop magic items!
-        if loot_gen.should_monster_drop_loot(monster.name, dungeon_level):
+        elif loot_gen.should_monster_drop_loot(monster.name, dungeon_level):
             # 70% chance for weapon, 30% chance for armor
             if random() < 0.70:
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)

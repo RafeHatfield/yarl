@@ -114,28 +114,34 @@ class AISystem(System):
 
         # Switch back to player turn when done (unless player died)
         if not self.turn_processing:
-            # Hazards are now processed by EnvironmentSystem during ENVIRONMENT phase
-            # No longer processed here to maintain clean phase separation
-                
-                # Check if player died from hazard damage
-                if state_manager.state.current_state == GameStates.PLAYER_DEAD:
-                    return
-                
-                # Check if player has active pathfinding before switching to player turn
-                player = game_state.player
-                pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
-                if (pathfinding and pathfinding.is_path_active()):
-                    # Process pathfinding movement instead of switching to player turn
-                    self._process_pathfinding_turn(state_manager)
+            # Check if player died during AI turn
+            if state_manager.state.current_state == GameStates.PLAYER_DEAD:
+                return
+            
+            # Check if player has active pathfinding before switching to player turn
+            player = game_state.player
+            pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
+            if (pathfinding and pathfinding.is_path_active()):
+                # Process pathfinding movement instead of switching to player turn
+                self._process_pathfinding_turn(state_manager)
+            else:
+                # Advance to ENVIRONMENT phase
+                if turn_manager:
+                    turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
+                    
+                    # Process environment effects (hazards, etc.)
+                    self._process_environment_phase(game_state)
+                    
+                    # Check if player died from environmental effects
+                    if state_manager.state.current_state == GameStates.PLAYER_DEAD:
+                        return
+                    
+                    # Advance to PLAYER phase
+                    turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
+                    state_manager.set_game_state(GameStates.PLAYERS_TURN)
                 else:
-                    # Phase 2: Use TurnManager to advance turn
-                    if turn_manager:
-                        turn_manager.advance_turn()  # ENEMY → ENVIRONMENT (will be handled later)
-                        # For now, keep GameStates in sync
-                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
-                    else:
-                        # Backward compatibility
-                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    # Backward compatibility
+                    state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
         """Process all AI entity turns.
@@ -317,8 +323,20 @@ class AISystem(System):
                     
                     logger.debug(f"Monster {dead_entity.name} died and transformed to corpse")
     
-    # Hazard processing moved to EnvironmentSystem for clean phase separation
-    # See: engine/systems/environment_system.py
+    def _process_environment_phase(self, game_state) -> None:
+        """Process environmental effects during ENVIRONMENT phase.
+        
+        This is a temporary integration point. In the future, this should be
+        handled by EnvironmentSystem as a registered turn phase listener.
+        
+        Args:
+            game_state: Current game state
+        """
+        from engine.systems.environment_system import EnvironmentSystem
+        
+        # Create environment system and process
+        env_system = EnvironmentSystem(self.engine)
+        env_system.process(game_state)
 
     def _handle_entity_death(self, entity: Any, game_state) -> None:
         """Handle an entity's death during AI processing.

@@ -7,26 +7,28 @@
 version: "1.0"
 
 level_overrides:
-  # Level 1 - Testing configuration for slime features + camera scrolling
+  # Level 1 - BOSS FIGHT TESTING + Equipment Testing
   1:
     parameters:
-      # Larger map to demonstrate camera scrolling (viewport is 80x45)
-      map_width: 160
-      map_height: 100
-      # Keep default values for other parameters (max_monsters_per_room: 3, etc.)
+      # Large map for boss arena + camera scrolling testing
+      map_width: 120
+      map_height: 80
+      # Boss room parameters
+      min_room_size: 12  # Ensure at least one large room for boss
+      max_room_size: 16
+      max_rooms: 8
     
     guaranteed_spawns:
       mode: "additional"  # Add to normal random spawns
       monsters:
+        # BOSS: Dragon Lord for easy testing (no need to descend!)
+        - type: "dragon_lord"
+          count: 1
+        # Some basic enemies for equipment testing
+        - type: "orc"
+          count: 3
         - type: "slime"
           count: 1
-        - type: "large_slime"
-          count: 1
-        # Phase 1 Equipment Testing: Spawn multiple orcs to see equipment variation
-        # Orcs have 75% weapon spawn, 50% armor spawn
-        # Expected: ~6 with weapons, ~4 with armor out of 8 orcs
-        - type: "orc"
-          count: 8  # Increased from 2 for better equipment testing
       items:
         - type: "invisibility_scroll"
           count: 2  # Ensure we can test invisibility mechanics
@@ -71,4 +73,32 @@ level_overrides:
           count: 9  # Test max range (10 tiles)
         - type: "crossbow"
           count: 1  # Test ranged combat (8 tiles)
+
+  # Level 2 - DEMON KING TESTING
+  2:
+    parameters:
+      map_width: 120
+      map_height: 80
+      min_room_size: 12
+      max_room_size: 16
+      max_rooms: 8
+    
+    guaranteed_spawns:
+      mode: "additional"
+      monsters:
+        # BOSS: Demon King
+        - type: "demon_king"
+          count: 1
+        # Troll guards
+        - type: "troll"
+          count: 2
+      items:
+        - type: "healing_potion"
+          count: 5
+        - type: "fireball_scroll"
+          count: 2
+        - type: "confusion_scroll"
+          count: 2
+        - type: "teleport_scroll"
+          count: 1
 

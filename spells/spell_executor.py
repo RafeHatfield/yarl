@@ -501,6 +501,16 @@ class SpellExecutor:
                 }
             ]
         
+        # Check boss immunity
+        boss = target.get_component_optional(ComponentType.BOSS)
+        if boss and boss.is_immune_to("confusion"):
+            return [
+                {
+                    "consumed": True,
+                    "message": MB.custom(f"{boss.boss_name} resists the confusion!", MB.GRAY)
+                }
+            ]
+        
         # Replace AI with confused AI
         confused_ai = ConfusedMonster(target.ai, spell.duration)
         confused_ai.owner = target
@@ -542,6 +552,24 @@ class SpellExecutor:
                     "message": MB.warning(spell.no_target_message)
                 }
             ]
+        
+        # Check boss immunity
+        boss = target.get_component_optional(ComponentType.BOSS)
+        if boss:
+            # Map effect types to immunity names
+            effect_name_map = {
+                EffectType.SLOW: "slow",
+                EffectType.GLUE: "glue",
+                EffectType.RAGE: "rage"
+            }
+            effect_name = effect_name_map.get(spell.effect_type, "")
+            if effect_name and boss.is_immune_to(effect_name):
+                return [
+                    {
+                        "consumed": True,
+                        "message": MB.custom(f"{boss.boss_name} resists the {effect_name}!", MB.GRAY)
+                    }
+                ]
         
         # Ensure target has status_effects component
         if not target.components.has(ComponentType.STATUS_EFFECTS):
@@ -978,6 +1006,10 @@ class SpellExecutor:
             corpse.components.remove(ComponentType.EQUIPMENT)
         if hasattr(corpse, 'equipment'):
             corpse.equipment = None
+        
+        # Invalidate entity cache since we added AI to an existing entity
+        from entity_sorting_cache import invalidate_entity_cache
+        invalidate_entity_cache("raise_dead_zombie_created")
         
         results.append({
             "consumed": True,
