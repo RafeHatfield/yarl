@@ -422,9 +422,8 @@ class BasicMonster:
             
         # Try to equip the item if it's equipment
         equipped = False
-        from components.component_registry import ComponentType as CT
-        if item.components.has(CT.EQUIPPABLE):
-            equipment = self.owner.components.get(CT.EQUIPMENT)
+        if item.components.has(ComponentType.EQUIPPABLE):
+            equipment = self.owner.components.get(ComponentType.EQUIPMENT)
             if equipment:
                 # Simple equipping logic - equip if slot is empty
                 if item.equippable.slot.value == "main_hand" and not equipment.main_hand:
