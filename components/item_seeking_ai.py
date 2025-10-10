@@ -46,7 +46,7 @@ class ItemSeekingAI:
             dict: Action dictionary if item seeking should occur, None otherwise
         """
         # Only seek items if monster has inventory capability
-        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        inventory = self.monster.get_component_optional(ComponentType.INVENTORY)
         if not inventory:
             return None
             
@@ -245,7 +245,7 @@ def create_item_seeking_ai(monster, monster_def) -> Optional[ItemSeekingAI]:
     if not monster_def.can_seek_items:
         return None
         
-    if not monster.components.get(ComponentType.INVENTORY):
+    if not monster.get_component_optional(ComponentType.INVENTORY):
         logger.warning(f"Monster {monster.name} configured to seek items but has no inventory")
         return None
         

@@ -77,7 +77,7 @@ class MonsterEquipmentSpawner:
         if equipment_roll < self.config.WEAPON_SPAWN_WEIGHT:
             # Spawn weapon
             weapon = self._create_weapon_for_level(dungeon_level)
-            equipment = monster.components.get(ComponentType.EQUIPMENT)
+            equipment = monster.get_component_optional(ComponentType.EQUIPMENT)
             if weapon and equipment:
                 # Ensure it's actually a weapon before equipping
                 if weapon.components.has(ComponentType.EQUIPPABLE):
@@ -90,7 +90,7 @@ class MonsterEquipmentSpawner:
             # Spawn armor
             logger.debug(f"Rolling for armor for {monster.name} at level {dungeon_level}")
             armor = self._create_armor_for_level(dungeon_level)
-            equipment = monster.components.get(ComponentType.EQUIPMENT)
+            equipment = monster.get_component_optional(ComponentType.EQUIPMENT)
             if armor and equipment:
                 # Ensure it's actually armor before equipping
                 if armor.components.has(ComponentType.EQUIPPABLE):
@@ -172,7 +172,7 @@ class MonsterLootDropper:
         dropped_items = []
         
         # Drop equipped items
-        equipment = monster.components.get(ComponentType.EQUIPMENT)
+        equipment = monster.get_component_optional(ComponentType.EQUIPMENT)
         if equipment:
             # Drop main hand weapon
             if equipment.main_hand:
@@ -202,7 +202,7 @@ class MonsterLootDropper:
         # NOTE: Items in monster inventory are likely already in the world entities list
         # (from when they were picked up). We just update their position and clear ownership.
         # DO NOT return these items to be added again - they're already in entities!
-        inventory = monster.components.get(ComponentType.INVENTORY)
+        inventory = monster.get_component_optional(ComponentType.INVENTORY)
         if inventory:
             # Create a copy of the items list to avoid modifying while iterating
             items_to_drop = list(inventory.items)

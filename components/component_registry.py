@@ -9,7 +9,7 @@ Example:
     >>> entity = Entity(5, 5, 'o', (255, 0, 0), "Orc", fighter=Fighter(...))
     >>> entity.components.has(ComponentType.FIGHTER)
     True
-    >>> fighter = entity.components.get(ComponentType.FIGHTER)
+    >>> fighter = entity.require_component(ComponentType.FIGHTER)  # or get_component_optional()
     >>> fighter.hp
     10
 

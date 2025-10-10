@@ -175,7 +175,7 @@ class MonsterActionLogger:
             return
             
         item_name = getattr(item, 'name', 'Unknown Item')
-        inventory = monster.components.get(ComponentType.INVENTORY)
+        inventory = monster.get_component_optional(ComponentType.INVENTORY)
         inventory_count = len(inventory.items) if inventory else 0
         details = f"{action} {item_name} (inventory: {inventory_count} items)"
         

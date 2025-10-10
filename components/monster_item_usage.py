@@ -43,7 +43,7 @@ class MonsterItemUsage:
         Returns:
             dict: Usage action if monster should use an item, None otherwise
         """
-        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        inventory = self.monster.get_component_optional(ComponentType.INVENTORY)
         if not inventory:
             return None
             
@@ -72,7 +72,7 @@ class MonsterItemUsage:
         """
         usable_items = []
         
-        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        inventory = self.monster.get_component_optional(ComponentType.INVENTORY)
         if not inventory:
             return usable_items
         
@@ -128,7 +128,7 @@ class MonsterItemUsage:
                     
             # Enhancement scrolls - use immediately if monster has equipment
             elif 'enhance' in item_name:
-                equipment = self.monster.components.get(ComponentType.EQUIPMENT)
+                equipment = self.monster.get_component_optional(ComponentType.EQUIPMENT)
                 if equipment:
                     if ('weapon' in item_name and equipment.main_hand) or \
                        ('armor' in item_name and equipment.off_hand):
@@ -366,7 +366,7 @@ class MonsterItemUsage:
         results = []
         
         # Check if monster has equipment to damage
-        equipment = self.monster.components.get(ComponentType.EQUIPMENT)
+        equipment = self.monster.get_component_optional(ComponentType.EQUIPMENT)
         if not equipment:
             # No equipment to damage, just fizzle
             results.append({
@@ -450,7 +450,7 @@ def create_monster_item_usage(monster) -> Optional[MonsterItemUsage]:
     Returns:
         MonsterItemUsage: Item usage component if monster has inventory, None otherwise
     """
-    inventory = monster.components.get(ComponentType.INVENTORY)
+    inventory = monster.get_component_optional(ComponentType.INVENTORY)
     if not inventory:
         return None
         

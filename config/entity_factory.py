@@ -440,13 +440,13 @@ class EntityFactory:
                 continue
             
             # Equip the item on the monster
-            equipment = monster.components.get(ComponentType.EQUIPMENT)
+            equipment = monster.get_component_optional(ComponentType.EQUIPMENT)
             if not equipment:
                 equipment = getattr(monster, 'equipment', None)
             
             if equipment and hasattr(item_entity, 'equippable'):
                 # Add to monster's inventory first (required for equipping)
-                inventory = monster.components.get(ComponentType.INVENTORY)
+                inventory = monster.get_component_optional(ComponentType.INVENTORY)
                 if not inventory:
                     inventory = getattr(monster, 'inventory', None)
                 
