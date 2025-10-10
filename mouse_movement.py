@@ -69,7 +69,7 @@ def _get_weapon_reach(entity: 'Entity') -> int:
     Returns:
         int: The reach of the weapon in tiles (default 1 for adjacent)
     """
-    equipment = entity.components.get(ComponentType.EQUIPMENT)
+    equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
     if (equipment and equipment.main_hand and 
         equipment.main_hand.components.has(ComponentType.EQUIPPABLE)):
         weapon = equipment.main_hand.equippable
@@ -138,7 +138,7 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
         dict: Dictionary containing action results
     """
     # Check if player has pathfinding component
-    pathfinding = player.components.get(ComponentType.PATHFINDING)
+    pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
     if not pathfinding:
         results.append({
             "message": Message("Player pathfinding not available.", (255, 0, 0))
@@ -212,7 +212,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     """
     results = []
     
-    pathfinding = player.components.get(ComponentType.PATHFINDING)
+    pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
     if not pathfinding:
         return {"results": results}
     
@@ -329,7 +329,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             # Check if item is at player's location
             if target_item in entities and target_item.x == player.x and target_item.y == player.y:
                 # Pick it up!
-                inventory = player.components.get(ComponentType.INVENTORY)
+                inventory = player.get_component_optional(ComponentType.INVENTORY)
                 if inventory:
                     pickup_results = inventory.add_item(target_item)
                     
