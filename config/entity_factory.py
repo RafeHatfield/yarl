@@ -11,7 +11,7 @@ from typing import Optional
 from entity import Entity
 from components.component_registry import ComponentType
 from components.fighter import Fighter
-from components.ai import BasicMonster, SlimeAI
+from components.ai import BasicMonster, SlimeAI, BossAI
 from components.item import Item
 from components.equippable import Equippable
 from components.faction import Faction, get_faction_from_string
@@ -147,6 +147,14 @@ class EntityFactory:
             if hasattr(monster_def, 'equipment') and monster_def.equipment:
                 self._spawn_monster_equipment(monster, monster_def.equipment)
                 logger.debug(f"Spawned equipment on {monster_def.name}")
+            
+            # Create boss component if this is a boss
+            if hasattr(monster_def, 'is_boss') and monster_def.is_boss:
+                boss_component = self._create_boss_component(monster_type, monster_def.boss_name)
+                if boss_component:
+                    monster.boss = boss_component
+                    monster.components.add(ComponentType.BOSS, boss_component)
+                    logger.info(f"Created BOSS: {boss_component.boss_name}")
 
             logger.debug(f"Created monster: {monster_def.name} at ({x}, {y})")
             return monster
@@ -371,11 +379,36 @@ class EntityFactory:
         """
         if ai_type == "basic":
             return BasicMonster()
+        elif ai_type == "boss":
+            return BossAI()
         elif ai_type == "slime":
             return SlimeAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()
+    
+    def _create_boss_component(self, monster_type: str, boss_name: str):
+        """Create a Boss component for a boss monster.
+        
+        Args:
+            monster_type: Type of monster (e.g., "dragon_lord", "demon_king")
+            boss_name: Display name for the boss
+            
+        Returns:
+            Boss component instance
+        """
+        from components.boss import create_dragon_lord_boss, create_demon_king_boss
+        
+        # Use prefab boss configurations
+        if monster_type == "dragon_lord":
+            return create_dragon_lord_boss()
+        elif monster_type == "demon_king":
+            return create_demon_king_boss()
+        else:
+            # Generic boss for unknown types
+            from components.boss import Boss
+            logger.warning(f"Unknown boss type: {monster_type}, using generic boss")
+            return Boss(boss_name=boss_name or monster_type.title())
 
     def _spawn_monster_equipment(self, monster: Entity, equipment_config: dict):
         """Spawn equipment on a monster based on configuration.

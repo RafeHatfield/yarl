@@ -87,6 +87,9 @@ class MonsterDefinition:
     special_abilities: Optional[List[str]] = None
     # Equipment system - monsters can spawn with equipment
     equipment: Optional[Dict[str, Any]] = None  # Equipment configuration
+    # Boss system
+    is_boss: bool = False
+    boss_name: Optional[str] = None
 
 
 @dataclass  
@@ -363,7 +366,10 @@ class EntityRegistry:
                     # Special abilities
                     special_abilities=monster_data.get('special_abilities', None),
                     # Equipment system
-                    equipment=monster_data.get('equipment', None)
+                    equipment=monster_data.get('equipment', None),
+                    # Boss system
+                    is_boss=monster_data.get('is_boss', False),
+                    boss_name=monster_data.get('boss_name', None)
                 )
                 
                 self.monsters[monster_id] = monster_def

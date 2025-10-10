@@ -220,7 +220,7 @@ monsters:
       constitution: 18         # Ancient endurance (+4 HP modifier)
     char: "D"                  # Capital D for Dragon
     color: [255, 50, 0]        # Burning red
-    ai_type: "basic"           # Will upgrade to "boss" AI in Slice 6
+    ai_type: "boss"            # Boss AI for enhanced combat behavior
     render_order: "actor"
     blocks: true
     is_boss: true              # Flag for boss-specific behavior
@@ -248,7 +248,7 @@ monsters:
       constitution: 16         # Demonic vitality (+3 HP modifier)
     char: "K"                  # Capital K for King
     color: [160, 32, 240]      # Dark purple
-    ai_type: "basic"           # Will upgrade to "boss" AI in Slice 6
+    ai_type: "boss"            # Boss AI for enhanced combat behavior
     render_order: "actor"
     blocks: true
     is_boss: true              # Flag for boss-specific behavior
