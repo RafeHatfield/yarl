@@ -201,6 +201,66 @@ monsters:
     special_abilities: ["corrosion", "splitting"]  # Override: can split + corrode
     # Inherits: ai_type: "slime", faction: "hostile_all", can_seek_items: false, etc.
 
+  # ═══════════════════════════════════════════════════════════
+  # BOSS MONSTERS - Unique powerful encounters
+  # ═══════════════════════════════════════════════════════════
+
+  # Dragon Lord - Ancient fire dragon, master of flames
+  dragon_lord:
+    stats:
+      hp: 100                  # Boss-tier health
+      power: 5                 # Magical power for breath attacks
+      defense: 5               # Heavily armored scales
+      xp: 500                  # Massive XP reward
+      damage_min: 10           # Devastating melee: 10-15 + STR modifier
+      damage_max: 15
+      # D&D-style stats - Legendary dragon
+      strength: 20             # Crushing strength (+5 damage modifier)
+      dexterity: 14            # Surprisingly agile (+2 to-hit, +2 AC)
+      constitution: 18         # Ancient endurance (+4 HP modifier)
+    char: "D"                  # Capital D for Dragon
+    color: [255, 50, 0]        # Burning red
+    ai_type: "basic"           # Will upgrade to "boss" AI in Slice 6
+    render_order: "actor"
+    blocks: true
+    is_boss: true              # Flag for boss-specific behavior
+    boss_name: "Dragon Lord"   # Display name for messages
+    # Bosses don't seek items - they're above such things
+    can_seek_items: false
+    inventory_size: 0
+    # Special abilities handled by boss ability system (Slice 7)
+    special_abilities: ["fire_breath", "wing_buffet", "summon_minions"]
+    # No equipment spawning - bosses have natural power
+    equipment: null
+
+  # Demon King - Cursed monarch of the underworld
+  demon_king:
+    stats:
+      hp: 80                   # Boss-tier health (less tanky, more tactical)
+      power: 8                 # High magical power for curses
+      defense: 3               # Moderate defense (relies on magic)
+      xp: 500                  # Massive XP reward
+      damage_min: 8            # Strong melee: 8-12 + STR modifier
+      damage_max: 12
+      # D&D-style stats - Demon lord
+      strength: 16             # Strong (+3 damage modifier)
+      dexterity: 16            # Agile (+3 to-hit, +3 AC)
+      constitution: 16         # Demonic vitality (+3 HP modifier)
+    char: "K"                  # Capital K for King
+    color: [160, 32, 240]      # Dark purple
+    ai_type: "basic"           # Will upgrade to "boss" AI in Slice 6
+    render_order: "actor"
+    blocks: true
+    is_boss: true              # Flag for boss-specific behavior
+    boss_name: "Demon King"    # Display name for messages
+    # Bosses don't seek items - they command minions for that
+    can_seek_items: false
+    inventory_size: 0
+    # Special abilities handled by boss ability system (Slice 7)
+    special_abilities: ["curse", "life_drain", "teleport"]
+    # No equipment spawning - demonic power is innate
+    equipment: null
+
 # Weapon definitions
 #
 # Weapon Properties (D&D-style):
