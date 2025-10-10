@@ -102,7 +102,7 @@ class ActionProcessor:
         # This enables ranged weapon auto-attack and continuous pathfinding
         if current_state == GameStates.PLAYERS_TURN:
             player = self.state_manager.state.player
-            pathfinding = player.components.get(ComponentType.PATHFINDING) if player else None
+            pathfinding = player.get_component_optional(ComponentType.PATHFINDING) if player else None
             if pathfinding and pathfinding.is_path_active():
                 # Process pathfinding movement automatically
                 self._process_pathfinding_movement_action(None)
@@ -315,7 +315,7 @@ class ActionProcessor:
                 self.state_manager.state.death_frame_counter = 0
             
             # Generate Entity death quote ONCE (don't regenerate every frame!)
-            statistics = player.components.get(ComponentType.STATISTICS)
+            statistics = player.get_component_optional(ComponentType.STATISTICS)
             if statistics:
                 from entity_dialogue import get_entity_quote_for_death
                 self.state_manager.state.death_screen_quote = get_entity_quote_for_death(
@@ -334,7 +334,7 @@ class ActionProcessor:
             
             # Record kill statistics (only for player kills)
             player = self.state_manager.state.player
-            statistics = player.components.get(ComponentType.STATISTICS) if player else None
+            statistics = player.get_component_optional(ComponentType.STATISTICS) if player else None
             if statistics:
                 # Track monster type killed
                 monster_name = dead_entity.name.lower()
@@ -962,7 +962,7 @@ class ActionProcessor:
             return
         
         # Check if player has pathfinding and is moving
-        pathfinding = player.components.get(ComponentType.PATHFINDING)
+        pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
         if not (pathfinding and pathfinding.is_path_active()):
             return
         
@@ -1054,7 +1054,7 @@ class ActionProcessor:
                     _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                 else:
                     # Not adjacent - pathfind to it
-                    pathfinding = player.components.get(ComponentType.PATHFINDING)
+                    pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
                     if pathfinding:
                         success = pathfinding.set_destination(
                             target_item.x, target_item.y, game_map, entities, fov_map
@@ -1078,7 +1078,7 @@ class ActionProcessor:
                             )
             else:
                 # No item at location - cancel pathfinding if active
-                pathfinding = player.components.get(ComponentType.PATHFINDING)
+                pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
                 if pathfinding and pathfinding.is_path_active():
                     pathfinding.cancel_movement()
                     if message_log:

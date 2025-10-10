@@ -77,7 +77,7 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
             # Living monster (has fighter + AI + HP > 0)
             if (entity.components.has(ComponentType.FIGHTER) and
                 entity.components.has(ComponentType.AI)):
-                fighter = entity.components.get(ComponentType.FIGHTER)
+                fighter = entity.get_component_optional(ComponentType.FIGHTER)
                 if fighter and fighter.hp > 0:
                     living_monsters.append(entity)
                 else:
@@ -123,7 +123,7 @@ def get_monster_at_position(world_x: int, world_y: int, entities: list, player, 
                 entity.components.has(ComponentType.AI) and
                 entity != player):
                 
-                fighter = entity.components.get(ComponentType.FIGHTER)
+                fighter = entity.get_component_optional(ComponentType.FIGHTER)
                 if fighter and fighter.hp > 0:
                     # Living monster - prioritize this!
                     living_monster = entity
@@ -152,7 +152,7 @@ def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_l
         return None
     
     # Check if player has equipment
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if not equipment:
         return None
     
@@ -206,13 +206,13 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
         return None
     
     # Check if player has inventory
-    inventory = player.components.get(ComponentType.INVENTORY)
+    inventory = player.get_component_optional(ComponentType.INVENTORY)
     if not inventory:
         return None
     
     # Get unequipped items (same logic as sidebar rendering)
     equipped_items = set()
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if equipment:
         for slot_item in [equipment.main_hand, equipment.off_hand,
                         equipment.head, equipment.chest, equipment.feet]:
@@ -283,7 +283,7 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
         # Monster tooltip - show name and equipment
         # Check if monster has equipment
         if entity.components.has(ComponentType.EQUIPMENT):
-            equipment = entity.components.get(ComponentType.EQUIPMENT)
+            equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
             if equipment:
                 # Show wielded weapon
                 if equipment.main_hand:
@@ -464,7 +464,7 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
         if is_monster:
             # Show equipment for monsters
             if entity.components.has(ComponentType.EQUIPMENT):
-                equipment = entity.components.get(ComponentType.EQUIPMENT)
+                equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
                 if equipment:
                     if equipment.main_hand:
                         tooltip_lines.append(f"  Wielding: {equipment.main_hand.name}")
