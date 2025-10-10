@@ -11,6 +11,11 @@ saves/
 *.sav
 *.save
 
+# Log files (runtime debug/error logs)
+errors.log
+monster_actions.log
+combat_debug.log
+
 # Tools
 .pytest_cache/
 .mypy_cache/
