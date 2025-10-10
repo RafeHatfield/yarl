@@ -62,6 +62,7 @@ class ComponentType(Enum):
     GROUND_HAZARD = auto()
     STATISTICS = auto()
     FACTION = auto()
+    BOSS = auto()
     ITEM_USAGE = auto()
     ITEM_SEEKING_AI = auto()
 
