@@ -72,3 +72,69 @@ level_overrides:
         - type: "crossbow"
           count: 1  # Test ranged combat (8 tiles)
 
+  # Level 5 - BOSS FIGHT TESTING
+  5:
+    parameters:
+      # Large map for epic boss arena
+      map_width: 120
+      map_height: 80
+      # Boss room parameters
+      min_room_size: 12  # Ensure at least one large room for boss
+      max_room_size: 16
+      max_rooms: 8  # Fewer rooms, more space for boss arena
+    
+    guaranteed_spawns:
+      mode: "additional"  # Add to normal spawns
+      monsters:
+        # BOSS: Dragon Lord in boss arena
+        - type: "dragon_lord"
+          count: 1
+          # Future: Specify spawn in boss room when room type system ready
+        # Supporting cast for boss level
+        - type: "orc_chieftain"
+          count: 2  # Mini-bosses to warm up player
+        - type: "orc_veteran"
+          count: 3
+      items:
+        # Extra healing for boss fight
+        - type: "healing_potion"
+          count: 5
+        # Combat scrolls
+        - type: "fireball_scroll"
+          count: 2
+        - type: "lightning_scroll"
+          count: 2
+        - type: "shield_scroll"
+          count: 2
+        # Emergency escape
+        - type: "teleport_scroll"
+          count: 1
+
+  # Level 8 - DEMON KING TESTING
+  8:
+    parameters:
+      map_width: 120
+      map_height: 80
+      min_room_size: 12
+      max_room_size: 16
+      max_rooms: 8
+    
+    guaranteed_spawns:
+      mode: "additional"
+      monsters:
+        # BOSS: Demon King
+        - type: "demon_king"
+          count: 1
+        # Troll guards
+        - type: "troll"
+          count: 2
+      items:
+        - type: "healing_potion"
+          count: 5
+        - type: "fireball_scroll"
+          count: 2
+        - type: "confusion_scroll"
+          count: 2
+        - type: "teleport_scroll"
+          count: 1
+
