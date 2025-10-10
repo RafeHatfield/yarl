@@ -153,8 +153,26 @@ class GameMap:
 
                 if num_rooms == 0:
                     # this is the first room, where the player starts at
+                    # Ensure we place player in a walkable tile (safety check)
                     player.x = new_x
                     player.y = new_y
+                    
+                    # Verify the spawn tile is walkable (should always be true, but safety check)
+                    if self.tiles[player.x][player.y].blocked:
+                        logger.error(f"Player spawn at ({player.x}, {player.y}) is blocked! Finding safe spawn...")
+                        # Find nearest walkable tile in first room
+                        for dx in range(-2, 3):
+                            for dy in range(-2, 3):
+                                check_x, check_y = player.x + dx, player.y + dy
+                                if (0 <= check_x < self.width and 0 <= check_y < self.height and
+                                    not self.tiles[check_x][check_y].blocked):
+                                    player.x = check_x
+                                    player.y = check_y
+                                    logger.info(f"Moved player to safe spawn at ({player.x}, {player.y})")
+                                    break
+                            else:
+                                continue
+                            break
                 else:
                     # all rooms after the first:
                     # connect it to the previous room with a tunnel
