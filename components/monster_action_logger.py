@@ -23,12 +23,23 @@ class MonsterActionLogger:
             return
             
         if not monster_logger.handlers:
-            handler = logging.FileHandler('monster_actions.log', mode='a')
-            formatter = logging.Formatter('%(asctime)s - MONSTER: %(message)s', 
+            # File handler - logs everything (DEBUG and above)
+            file_handler = logging.FileHandler('monster_actions.log', mode='a')
+            file_formatter = logging.Formatter('%(asctime)s - MONSTER: %(message)s', 
                                         datefmt='%H:%M:%S')
-            handler.setFormatter(formatter)
-            monster_logger.addHandler(handler)
+            file_handler.setFormatter(file_formatter)
+            file_handler.setLevel(logging.DEBUG)
+            monster_logger.addHandler(file_handler)
+            
+            # Console handler - only INFO and above (excludes DEBUG "no actions")
+            console_handler = logging.StreamHandler()
+            console_formatter = logging.Formatter('%(levelname)s: %(message)s')
+            console_handler.setFormatter(console_formatter)
+            console_handler.setLevel(logging.INFO)
+            monster_logger.addHandler(console_handler)
+            
             monster_logger.setLevel(logging.DEBUG)
+            monster_logger.propagate = False  # Don't propagate to root logger
             print("🤖 Monster action logging enabled: monster_actions.log")
     
     @staticmethod
@@ -180,16 +191,19 @@ class MonsterActionLogger:
         if not is_testing_mode():
             return
             
+        # Ensure logging is set up
+        MonsterActionLogger.setup_logging()
+            
         monster_name = getattr(monster, 'name', 'Unknown Monster')
         location = f"({getattr(monster, 'x', '?')}, {getattr(monster, 'y', '?')})"
         
         if actions_taken:
             actions_str = ", ".join(actions_taken)
             message = f"{monster_name} at {location} turn complete: {actions_str}"
+            monster_logger.info(message)  # Log actual actions at INFO level
         else:
             message = f"{monster_name} at {location} turn complete: no actions taken"
-            
-        monster_logger.info(message)
+            monster_logger.debug(message)  # Log "no actions" at DEBUG level
 
 
 # Logging will be initialized on first use
