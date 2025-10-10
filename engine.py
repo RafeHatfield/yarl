@@ -24,6 +24,17 @@ from config.ui_layout import get_ui_layout
 # Set up basic logging (WARNING level to see exit triggers)
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
+# Set up error file logging to capture all errors for later review
+error_handler = logging.FileHandler('errors.log', mode='a')
+error_handler.setLevel(logging.ERROR)
+error_formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+error_handler.setFormatter(error_formatter)
+logging.getLogger().addHandler(error_handler)
+print("📝 Error logging enabled: errors.log")
+
 # Set up clean console output (suppress TCOD warnings and SDL messages)
 from config.tcod_warnings import setup_clean_console
 setup_clean_console()
