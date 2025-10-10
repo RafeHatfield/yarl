@@ -377,6 +377,12 @@ class Fighter:
         
         total_attack = base_damage + variable_damage
         
+        # Apply boss damage multiplier if attacker is an enraged boss
+        boss = self.owner.get_component_optional(ComponentType.BOSS) if self.owner else None
+        if boss and boss.is_enraged:
+            multiplier = boss.get_damage_multiplier()
+            total_attack = int(total_attack * multiplier)
+        
         # Get variable armor defense from target
         armor_defense = target.fighter._get_armor_defense()
         
