@@ -6,6 +6,7 @@ game state, player character, and game world configuration.
 
 from tcod import libtcodpy
 
+from components.component_registry import ComponentType
 from components.equipment import Equipment
 from components.equippable import Equippable
 from components.fighter import Fighter
@@ -115,7 +116,6 @@ def get_game_variables(constants):
 
     # Create pathfinding component for mouse movement
     from components.player_pathfinding import PlayerPathfinding
-    from components.component_registry import ComponentType
     pathfinding_component = PlayerPathfinding()
     
     # Use the new Entity.create_player method for cleaner code

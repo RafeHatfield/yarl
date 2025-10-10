@@ -9,6 +9,7 @@ import logging
 from typing import Optional
 
 from entity import Entity
+from components.component_registry import ComponentType
 from components.fighter import Fighter
 from components.ai import BasicMonster, SlimeAI
 from components.item import Item
@@ -439,7 +440,6 @@ class EntityFactory:
                 continue
             
             # Equip the item on the monster
-            from components.component_registry import ComponentType
             equipment = monster.components.get(ComponentType.EQUIPMENT)
             if not equipment:
                 equipment = getattr(monster, 'equipment', None)
