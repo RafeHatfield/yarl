@@ -127,14 +127,14 @@ class Fighter:
         if not entity:
             return None
         
-        # Only use ComponentRegistry if entity is a real Entity (has ComponentRegistry)
-        from components.component_registry import ComponentRegistry
-        if isinstance(getattr(entity, 'components', None), ComponentRegistry):
-            equipment = entity.components.get(ComponentType.EQUIPMENT)
-            if equipment:
-                return equipment
+        # Use new component access helper for real Entity objects
+        # Equipment is optional (not all entities have equipment)
+        # Note: Mock objects also pass hasattr/callable checks, so check for Entity type
+        from entity import Entity
+        if isinstance(entity, Entity):
+            return entity.get_component_optional(ComponentType.EQUIPMENT)
         
-        # Fall back to direct attribute access
+        # Fall back to direct attribute access (for Mock objects in tests)
         return getattr(entity, 'equipment', None)
     
     @property
@@ -267,12 +267,12 @@ class Fighter:
         self.hp -= amount
         
         # Record damage taken (only for player)
-        statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+        statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
         if statistics:
             statistics.record_damage_taken(amount)
         
         # Flag monster as "in combat" when attacked (stops looting behavior)
-        ai = self.owner.components.get(ComponentType.AI) if self.owner else None
+        ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
         if not ai and self.owner:
             # Fallback to direct attribute access for backward compatibility
             ai = getattr(self.owner, 'ai', None)
@@ -315,7 +315,7 @@ class Fighter:
             self.hp = max_hp
         
         # Record healing (only for player)
-        statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+        statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
         if statistics:
             statistics.record_healing(actual_healing)
 
@@ -490,7 +490,7 @@ class Fighter:
             damage = base_damage + self.strength_mod
             
             # Record statistics (only for player)
-            statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+            statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
             if statistics:
                 statistics.record_attack(hit=True, critical=is_critical)
                 statistics.record_damage_dealt(max(1, damage if not is_critical else damage * 2))
@@ -542,16 +542,12 @@ class Fighter:
             # This keeps monsters engaged even if they leave FOV
             # But DON'T set it for monster-vs-monster combat (taunt scenarios)
             # so they return to normal AI after taunt ends
-            attacker_ai = self.owner.components.get(ComponentType.AI) if self.owner else None
-            if not attacker_ai and self.owner:
-                attacker_ai = getattr(self.owner, 'ai', None)
+            attacker_ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
             
             # Only set in_combat if attacking the player (not other monsters)
             if attacker_ai and hasattr(attacker_ai, 'in_combat'):
                 # Check if target is the player (has no AI component)
-                target_ai = target.components.get(ComponentType.AI) if target else None
-                if not target_ai:
-                    target_ai = getattr(target, 'ai', None)
+                target_ai = target.get_component_optional(ComponentType.AI) if target else None
                 
                 if not target_ai:
                     # Target has no AI = it's the player
@@ -562,7 +558,7 @@ class Fighter:
                 show_miss(target.x, target.y, entity=target)
             
             # Record miss statistics (only for player)
-            statistics = self.owner.components.get(ComponentType.STATISTICS) if self.owner else None
+            statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
             if statistics:
                 statistics.record_attack(hit=False, fumble=is_fumble)
             
@@ -773,12 +769,9 @@ class Fighter:
             # Try ComponentRegistry first, fallback to direct attribute
             from components.component_registry import ComponentRegistry
             if isinstance(getattr(self.owner, 'components', None), ComponentRegistry):
-                faction = self.owner.components.get(ComponentType.FACTION)
+                faction = self.owner.get_component_optional(ComponentType.FACTION)
                 if faction and faction == Faction.HOSTILE_ALL:
                     return True
-            # Fallback to direct attribute
-            if hasattr(self.owner, 'faction') and self.owner.faction == Faction.HOSTILE_ALL:
-                return True
         
         return False
     
