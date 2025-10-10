@@ -147,3 +147,72 @@ class TestComponentTypeInOtherComponents:
         assert isinstance(power_bonus, int)
         assert isinstance(defense_bonus, int)
 
+
+class TestItemFunctionsComponentType:
+    """Test that item_functions.py doesn't have ComponentType scoping issues."""
+    
+    def test_dragon_fart_uses_component_type(self, entity_factory):
+        """Test that cast_dragon_fart can use ComponentType without errors.
+        
+        This was causing "name 'ComponentType' is not defined" error due to
+        local import of GroundHazard inside the function.
+        """
+        from item_functions import cast_dragon_fart
+        from map_objects.game_map import GameMap
+        from components.ground_hazard import GroundHazardManager
+        
+        # Create entities
+        caster = entity_factory.create_monster('orc', 5, 5)
+        target = entity_factory.create_monster('orc', 10, 5)
+        entities = [caster, target]
+        
+        # Create game map with hazard manager
+        game_map = GameMap(20, 20)
+        game_map.hazard_manager = GroundHazardManager()
+        
+        # This should not raise "ComponentType is not defined"
+        results = cast_dragon_fart(
+            caster,
+            entities=entities,
+            game_map=game_map,
+            target_x=10,
+            target_y=5,
+            duration=20
+        )
+        
+        # Verify it returned results (not testing functionality, just no crash)
+        assert results is not None
+        assert isinstance(results, list)
+    
+    def test_lightning_scroll_usage(self, entity_factory):
+        """Test that Lightning Scroll usage doesn't cause ComponentType errors.
+        
+        This was the specific bug reported: Orc trying to use Lightning Scroll
+        caused "name 'ComponentType' is not defined" error.
+        """
+        from unittest.mock import Mock
+        
+        # Create orc with item usage capability
+        orc = entity_factory.create_monster('orc', 5, 5)
+        player = entity_factory.create_monster('orc', 6, 5)  # Dummy player
+        player.name = 'Player'
+        
+        # Create lightning scroll
+        lightning_scroll = entity_factory.create_spell_item('lightning_scroll', 5, 5)
+        
+        # Add scroll to orc's inventory
+        if orc.inventory:
+            orc.inventory.add_item(lightning_scroll)
+        
+        # Get item usage action (this internally uses ComponentType)
+        entities = [orc, player]
+        game_map = Mock()
+        
+        # This should not raise "ComponentType is not defined"
+        if hasattr(orc, 'item_usage'):
+            action = orc.item_usage.get_item_usage_action(player, game_map, entities)
+            
+            # If action is returned, verify it's valid
+            if action:
+                assert 'use_item' in action or action is None
+

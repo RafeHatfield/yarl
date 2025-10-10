@@ -121,6 +121,11 @@ The following files were identified and fixed for ComponentType scoping issues:
    - Fixed: Added module-level import, removed 3 local imports
    - Uses: Module-level `from components.component_registry import ComponentType`
 
+3. **item_functions.py**
+   - Fixed: Added module-level imports for `GroundHazard`, `HazardType`, and status effects
+   - Removed 5 local imports that caused scoping conflicts
+   - Affected functions: `cast_dragon_fart`, `cast_slow`, `cast_glue`, `cast_rage`, `cast_teleportation`
+
 ## How to Find Violations
 
 Search for local imports of ComponentType:
@@ -135,8 +140,15 @@ Any results from this search indicate a potential scoping issue and should be re
 This issue was discovered when:
 1. An orc tried to pick up a wand → `NameError: name 'ComponentType' is not defined`
 2. An orc tried to pick up a Yo Mama scroll → Same error
+3. An orc tried to use a Lightning Scroll → Same error (item usage failure path)
 
-Both errors occurred in the `_pickup_item` method due to the mixed import pattern. This was a **systemic issue** affecting multiple item types and could have caused crashes for any monster attempting to pick up items.
+These errors occurred due to the mixed import pattern. This was a **systemic issue** affecting:
+- Monster item pickup (all item types)
+- Monster scroll usage (all failure modes)
+- Dragon Fart spell (hazard creation + AI checks)
+- Status effect spells (Slow, Glue, Rage, Teleportation)
+
+The bug could cause crashes during normal gameplay whenever monsters interacted with items or spells.
 
 ## Related Documentation
 
