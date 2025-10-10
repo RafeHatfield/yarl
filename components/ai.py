@@ -26,13 +26,12 @@ def find_taunted_target(entities: list) -> Optional['Entity']:
         Entity or None: The taunted entity, or None if no entity is taunted
     """
     for entity in entities:
-        status_effects = entity.components.get(ComponentType.STATUS_EFFECTS)
+        # Check for taunt effect (optional - not all entities have status effects)
+        status_effects = entity.get_component_optional(ComponentType.STATUS_EFFECTS)
         if status_effects and status_effects.has_effect('taunted'):
             # CRITICAL: Check if entity is still ALIVE (hp > 0)
             # Dead entities keep their fighter component, so we must check hp!
-            fighter = entity.components.get(ComponentType.FIGHTER)
-            if not fighter:
-                fighter = getattr(entity, 'fighter', None)
+            fighter = entity.get_component_optional(ComponentType.FIGHTER)
             
             if fighter:
                 try:
@@ -56,9 +55,9 @@ def get_weapon_reach(entity: 'Entity') -> int:
         int: The reach of the weapon in tiles (default 1 for adjacent)
     """
     try:
-        equipment = entity.components.get(ComponentType.EQUIPMENT)
+        equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
         if (equipment and equipment.main_hand and 
-            hasattr(entity.equipment.main_hand, 'equippable')):
+            hasattr(equipment.main_hand, 'equippable')):
             weapon = entity.equipment.main_hand.equippable
             reach = getattr(weapon, 'reach', 1)
             # Defensive: ensure reach is an int (for tests with Mocks)
@@ -103,7 +102,7 @@ class BasicMonster:
         actions_taken = []
 
         # Process status effects at the start of turn
-        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
         if status_effects:
             effect_results = status_effects.process_turn_start()
             for result in effect_results:
@@ -154,10 +153,7 @@ class BasicMonster:
                         continue
                     
                     # Check if entity is a hostile with fighter
-                    fighter = entity.components.get(ComponentType.FIGHTER)
-                    if not fighter:
-                        fighter = getattr(entity, 'fighter', None)
-                    
+                    fighter = entity.get_component_optional(ComponentType.FIGHTER)
                     if fighter and fighter.hp > 0:
                         # Check if hostile based on faction (or just check if has fighter for simplicity)
                         entity_faction = getattr(entity, 'faction', None)
@@ -207,10 +203,7 @@ class BasicMonster:
                             continue
                         
                         # Check if entity is a hostile with fighter
-                        fighter = entity.components.get(ComponentType.FIGHTER)
-                        if not fighter:
-                            fighter = getattr(entity, 'fighter', None)
-                        
+                        fighter = entity.get_component_optional(ComponentType.FIGHTER)
                         if fighter and fighter.hp > 0:
                             # Check if visible in FOV
                             if map_is_in_fov(fov_map, entity.x, entity.y):
@@ -305,12 +298,8 @@ class BasicMonster:
         Returns:
             dict: Item usage action if available, None otherwise
         """
-        # Check if monster has item usage capability
-        # Try ComponentRegistry first, then fall back to attribute
-        item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
-        if not item_usage:
-            item_usage = getattr(self.owner, 'item_usage', None)
-        
+        # Check if monster has item usage capability (optional)
+        item_usage = self.owner.get_component_optional(ComponentType.ITEM_USAGE)
         if not item_usage:
             return None
             
@@ -333,11 +322,8 @@ class BasicMonster:
             target = action.get("target")
             
             # Use item with failure mechanics
-            # Try ComponentRegistry first, then fall back to attribute
-            item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
-            if not item_usage:
-                item_usage = getattr(self.owner, 'item_usage', None)
-            
+            # Item usage is optional (not all monsters can use items)
+            item_usage = self.owner.get_component_optional(ComponentType.ITEM_USAGE)
             if item_usage:
                 usage_results = item_usage.use_item_with_failure(item, target, entities)
                 results.extend(usage_results)
@@ -355,12 +341,8 @@ class BasicMonster:
         Returns:
             dict: Item action if available, None otherwise
         """
-        # Check if monster has item-seeking AI capability
-        # Try ComponentRegistry first, then fall back to attribute
-        item_seeking_ai = self.owner.components.get(ComponentType.ITEM_SEEKING_AI)
-        if not item_seeking_ai:
-            item_seeking_ai = getattr(self.owner, 'item_seeking_ai', None)
-        
+        # Check if monster has item-seeking AI capability (optional)
+        item_seeking_ai = self.owner.get_component_optional(ComponentType.ITEM_SEEKING_AI)
         if not item_seeking_ai:
             return None
             
@@ -402,11 +384,8 @@ class BasicMonster:
         """
         results = []
         
-        # Check if monster has inventory space
-        inventory = self.owner.components.get(ComponentType.INVENTORY)
-        if not inventory:
-            MonsterActionLogger.log_item_pickup(self.owner, item, False, "no inventory")
-            return results
+        # Check if monster has inventory space (required for pickup)
+        inventory = self.owner.require_component(ComponentType.INVENTORY)
             
         if len(inventory.items) >= inventory.capacity:
             MonsterActionLogger.log_item_pickup(self.owner, item, False, "inventory full")
@@ -423,7 +402,7 @@ class BasicMonster:
         # Try to equip the item if it's equipment
         equipped = False
         if item.components.has(ComponentType.EQUIPPABLE):
-            equipment = self.owner.components.get(ComponentType.EQUIPMENT)
+            equipment = self.owner.get_component_optional(ComponentType.EQUIPMENT)
             if equipment:
                 # Simple equipping logic - equip if slot is empty
                 if item.equippable.slot.value == "main_hand" and not equipment.main_hand:
@@ -491,8 +470,8 @@ class MindlessZombieAI:
         
         results = []
         
-        # Process status effects at the start of turn
-        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        # Process status effects at the start of turn (optional)
+        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
         if status_effects:
             effect_results = status_effects.process_turn_start()
             for result in effect_results:
@@ -782,8 +761,8 @@ class SlimeAI:
         results = []
         monster = self.owner
         
-        # Process status effects at the start of turn
-        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        # Process status effects at the start of turn (optional)
+        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
         if status_effects:
             effect_results = status_effects.process_turn_start()
             for result in effect_results:
