@@ -31,6 +31,15 @@
   - Result: Single source of truth for turn sequencing, easier debugging
   - Status: Core complete, optional Phase 4-5 available
 
+- ✅ **Component Access Standardization** (January 2025)
+  - Migrated 64 instances across 15 files (100% of production code)
+  - Replaced all `.components.get(ComponentType...)` with helpers
+  - Added 3 new Entity methods: require_component(), get_component_optional(), has_component()
+  - Clear required vs optional component semantics throughout codebase
+  - 1955/2004 tests passing (97.6%)
+  - Result: Better error messages, clearer intent, no silent failures
+  - Documentation: Migration guide, best practices, 13 test examples
+
 ### Active
 None - all major tech debt items addressed!
 
