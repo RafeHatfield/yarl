@@ -979,6 +979,10 @@ class SpellExecutor:
         if hasattr(corpse, 'equipment'):
             corpse.equipment = None
         
+        # Invalidate entity cache since we added AI to an existing entity
+        from entity_sorting_cache import invalidate_entity_cache
+        invalidate_entity_cache("raise_dead_zombie_created")
+        
         results.append({
             "consumed": True,
             "message": MB.spell_effect(spell.success_message or f"{corpse.name} rises!")
