@@ -124,7 +124,7 @@ class AISystem(System):
                 
                 # Check if player has active pathfinding before switching to player turn
                 player = game_state.player
-                pathfinding = player.components.get(ComponentType.PATHFINDING)
+                pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
                 if (pathfinding and pathfinding.is_path_active()):
                     # Process pathfinding movement instead of switching to player turn
                     self._process_pathfinding_turn(state_manager)
@@ -281,7 +281,7 @@ class AISystem(System):
                         
                         # Generate Entity death quote ONCE (don't regenerate every frame!)
                         player = game_state.player
-                        statistics = player.components.get(ComponentType.STATISTICS)
+                        statistics = player.get_component_optional(ComponentType.STATISTICS)
                         if statistics:
                             from entity_dialogue import get_entity_quote_for_death
                             self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
@@ -345,7 +345,7 @@ class AISystem(System):
         # Apply damage to entities standing on hazards BEFORE aging
         # This ensures entities take damage for the full current turn
         for entity in game_state.entities:
-            fighter = entity.components.get(ComponentType.FIGHTER)
+            fighter = entity.get_component_optional(ComponentType.FIGHTER)
             if not fighter:
                 continue
                 
@@ -394,7 +394,7 @@ class AISystem(System):
                                     
                                     # Generate death quote
                                     player = game_state.player
-                                    statistics = player.components.get(ComponentType.STATISTICS)
+                                    statistics = player.get_component_optional(ComponentType.STATISTICS)
                                     if statistics:
                                         from entity_dialogue import get_entity_quote_for_death
                                         self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(

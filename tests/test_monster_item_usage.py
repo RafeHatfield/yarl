@@ -34,14 +34,16 @@ class TestMonsterItemUsage(unittest.TestCase):
         self.monster.equipment.main_hand = None
         self.monster.equipment.off_hand = None
         
-        # Mock ComponentRegistry to return the inventory/equipment
-        self.monster.components = Mock()
+        # Mock component access helpers
         def get_component(comp_type):
             if comp_type == ComponentType.INVENTORY:
                 return self.monster.inventory
             elif comp_type == ComponentType.EQUIPMENT:
                 return self.monster.equipment
             return None
+        self.monster.get_component_optional = Mock(side_effect=get_component)
+        # Also mock old method for backward compatibility
+        self.monster.components = Mock()
         self.monster.components.get = Mock(side_effect=get_component)
         
         # Mock player
@@ -343,6 +345,7 @@ class TestMonsterItemUsageCreation(unittest.TestCase):
         from components.component_registry import ComponentType
         monster = Mock()
         monster.inventory = None
+        monster.get_component_optional = Mock(return_value=None)
         monster.components = Mock()
         monster.components.get = Mock(return_value=None)
         
@@ -447,7 +450,8 @@ class TestExtensibleDesign(unittest.TestCase):
         monster.inventory = Mock()
         monster.inventory.items = []
         
-        # Mock ComponentRegistry to return the inventory
+        # Mock component access helpers to return the inventory
+        monster.get_component_optional = Mock(return_value=monster.inventory)
         monster.components = Mock()
         monster.components.get = Mock(return_value=monster.inventory)
         

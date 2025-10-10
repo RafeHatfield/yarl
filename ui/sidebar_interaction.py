@@ -153,7 +153,7 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
     Returns:
         Action dict with equipment_slot if clicked, None otherwise
     """
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if not equipment:
         return None
     
@@ -225,13 +225,13 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
         return equipment_action
     
     # Check if player has inventory
-    inventory = player.components.get(ComponentType.INVENTORY)
+    inventory = player.get_component_optional(ComponentType.INVENTORY)
     if not inventory:
         return None
     
     # Get unequipped items (same logic as sidebar rendering)
     equipped_items = set()
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if equipment:
         for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
                         player.equipment.head, player.equipment.chest, player.equipment.feet]:

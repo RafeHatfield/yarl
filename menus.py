@@ -562,7 +562,7 @@ def _get_ac_breakdown(player):
     armor_ac_bonus = 0
     most_restrictive_dex_cap = None
     
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if equipment:
         for item in [equipment.main_hand, equipment.off_hand,
                     equipment.head, equipment.chest, equipment.feet]:
@@ -616,7 +616,7 @@ def _get_damage_display(player):
     str_mod = player.fighter.strength_mod
     
     # Check for equipped weapon
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if (equipment and equipment.main_hand and
         equipment.main_hand.components.has(ComponentType.EQUIPPABLE)):
         
@@ -665,7 +665,7 @@ def _get_attack_display_text(player):
     base_power = player.fighter.base_power
     
     # Check for equipped weapon with damage range
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if (equipment and equipment.main_hand and 
         equipment.main_hand.components.has(ComponentType.EQUIPPABLE)):
         
@@ -725,7 +725,7 @@ def _get_defense_display_text(player):
     base_defense = player.fighter.base_defense
     
     # Check for equipped armor with defense range
-    equipment = player.components.get(ComponentType.EQUIPMENT)
+    equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if (equipment and equipment.off_hand and 
         equipment.off_hand.components.has(ComponentType.EQUIPPABLE)):
         

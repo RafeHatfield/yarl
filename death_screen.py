@@ -23,7 +23,7 @@ def render_death_screen(con, player, screen_width, screen_height, entity_quote=N
     libtcodpy.console_clear(con)
     
     # Get player statistics
-    stats = player.components.get(ComponentType.STATISTICS)
+    stats = player.get_component_optional(ComponentType.STATISTICS)
     
     # Title
     title = "YOU DIED"

@@ -298,6 +298,72 @@ class Entity:
         """
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
+    # ==================== Component Access Helpers ====================
+    
+    def require_component(self, component_type: ComponentType):
+        """Get a component or raise a clear error if missing.
+        
+        This is the preferred way to access components that MUST exist.
+        Use this when the absence of a component indicates a bug.
+        
+        Args:
+            component_type: The type of component to retrieve
+            
+        Returns:
+            The requested component
+            
+        Raises:
+            ValueError: If the component is not present on this entity
+            
+        Example:
+            fighter = entity.require_component(ComponentType.FIGHTER)
+            # Will raise ValueError if entity has no Fighter component
+        """
+        component = self.components.get(component_type)
+        if component is None:
+            raise ValueError(
+                f"{self.name} is missing required component: {component_type.name}"
+            )
+        return component
+    
+    def get_component_optional(self, component_type: ComponentType):
+        """Get a component or None if not present.
+        
+        This is the preferred way to access components that are optional.
+        Use this when the absence of a component is expected and normal.
+        
+        Args:
+            component_type: The type of component to retrieve
+            
+        Returns:
+            The requested component, or None if not present
+            
+        Example:
+            equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
+            if equipment:
+                # Entity has equipment, do something
+                pass
+        """
+        return self.components.get(component_type)
+    
+    def has_component(self, component_type: ComponentType) -> bool:
+        """Check if entity has a specific component.
+        
+        Args:
+            component_type: The type of component to check for
+            
+        Returns:
+            True if the component is present, False otherwise
+            
+        Example:
+            if entity.has_component(ComponentType.AI):
+                # Entity is an AI-controlled monster
+                pass
+        """
+        return self.components.has(component_type)
+    
+    # ==================================================================
+
     def move_astar(self, target: 'Entity', entities: List['Entity'], game_map: 'GameMap') -> None:
         """Move towards target using A* pathfinding algorithm.
 

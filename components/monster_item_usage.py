@@ -43,7 +43,7 @@ class MonsterItemUsage:
         Returns:
             dict: Usage action if monster should use an item, None otherwise
         """
-        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        inventory = self.monster.get_component_optional(ComponentType.INVENTORY)
         if not inventory:
             return None
             
@@ -72,7 +72,7 @@ class MonsterItemUsage:
         """
         usable_items = []
         
-        inventory = self.monster.components.get(ComponentType.INVENTORY)
+        inventory = self.monster.get_component_optional(ComponentType.INVENTORY)
         if not inventory:
             return usable_items
         
@@ -128,7 +128,7 @@ class MonsterItemUsage:
                     
             # Enhancement scrolls - use immediately if monster has equipment
             elif 'enhance' in item_name:
-                equipment = self.monster.components.get(ComponentType.EQUIPMENT)
+                equipment = self.monster.get_component_optional(ComponentType.EQUIPMENT)
                 if equipment:
                     if ('weapon' in item_name and equipment.main_hand) or \
                        ('armor' in item_name and equipment.off_hand):
@@ -180,8 +180,19 @@ class MonsterItemUsage:
                     break
             MonsterActionLogger.log_item_usage(self.monster, item, target, False, failure_mode)
         else:
-            results.extend(self._handle_item_success(item, target, entities))
-            MonsterActionLogger.log_item_usage(self.monster, item, target, True)
+            success_results = self._handle_item_success(item, target, entities)
+            results.extend(success_results)
+            
+            # Check if item actually failed due to exception (will have "fizzles!" message)
+            item_actually_failed = any(
+                "message" in result and "fizzles" in result["message"].text.lower()
+                for result in success_results
+            )
+            
+            if item_actually_failed:
+                MonsterActionLogger.log_item_usage(self.monster, item, target, False, "exception")
+            else:
+                MonsterActionLogger.log_item_usage(self.monster, item, target, True)
             
         # Remove item from inventory after use (success or failure)
         if item in self.monster.inventory.items:
@@ -208,7 +219,9 @@ class MonsterItemUsage:
         if hasattr(item.item, 'use_function') and item.item.use_function:
             try:
                 # Call the item's use function
+                # Pass monster as first positional argument (caster) to match player usage
                 use_results = item.item.use_function(
+                    self.monster,  # Monster is the caster (first positional arg)
                     inventory=self.monster.inventory,
                     target_entity=target,
                     entities=entities,
@@ -353,7 +366,7 @@ class MonsterItemUsage:
         results = []
         
         # Check if monster has equipment to damage
-        equipment = self.monster.components.get(ComponentType.EQUIPMENT)
+        equipment = self.monster.get_component_optional(ComponentType.EQUIPMENT)
         if not equipment:
             # No equipment to damage, just fizzle
             results.append({
@@ -437,7 +450,7 @@ def create_monster_item_usage(monster) -> Optional[MonsterItemUsage]:
     Returns:
         MonsterItemUsage: Item usage component if monster has inventory, None otherwise
     """
-    inventory = monster.components.get(ComponentType.INVENTORY)
+    inventory = monster.get_component_optional(ComponentType.INVENTORY)
     if not inventory:
         return None
         

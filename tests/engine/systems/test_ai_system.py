@@ -186,9 +186,8 @@ class TestAISystemUpdate:
         mock_pathfinding.get_next_move.return_value = None
         self.mock_game_state.player = Mock()
         self.mock_game_state.player.pathfinding = mock_pathfinding
-        # Mock ComponentRegistry to return pathfinding
-        self.mock_game_state.player.components = Mock()
-        self.mock_game_state.player.components.get = Mock(side_effect=lambda comp_type: 
+        # Mock new component access helper
+        self.mock_game_state.player.get_component_optional = Mock(side_effect=lambda comp_type: 
             mock_pathfinding if comp_type == ComponentType.PATHFINDING else None)
         self.mock_game_state.entities = []
 
@@ -224,6 +223,12 @@ class TestAISystemUpdate:
 
     def test_update_during_enemy_turn(self):
         """Test update during enemy turn state."""
+        # Mock player with no active pathfinding
+        mock_pathfinding = Mock()
+        mock_pathfinding.is_path_active.return_value = False
+        self.mock_game_state.player = Mock()
+        self.mock_game_state.player.get_component_optional = Mock(return_value=mock_pathfinding)
+        
         with patch.object(self.ai_system, "_process_ai_turns") as mock_process:
             self.ai_system.update(0.016)
             mock_process.assert_called_once_with(self.mock_game_state)
@@ -242,9 +247,8 @@ class TestAISystemUpdate:
         mock_pathfinding.get_next_move.return_value = None
         self.mock_game_state.player = Mock()
         self.mock_game_state.player.pathfinding = mock_pathfinding
-        # Mock ComponentRegistry to return pathfinding
-        self.mock_game_state.player.components = Mock()
-        self.mock_game_state.player.components.get = Mock(side_effect=lambda comp_type: 
+        # Mock new component access helper
+        self.mock_game_state.player.get_component_optional = Mock(side_effect=lambda comp_type: 
             mock_pathfinding if comp_type == ComponentType.PATHFINDING else None)
 
         self.ai_system.update(0.016)

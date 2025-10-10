@@ -737,7 +737,7 @@ class SpellExecutor:
         results = []
         
         # Check for equipped weapon
-        equipment = caster.components.get(ComponentType.EQUIPMENT)
+        equipment = caster.get_component_optional(ComponentType.EQUIPMENT)
         if not equipment:
             equipment = getattr(caster, 'equipment', None)
         
@@ -790,7 +790,7 @@ class SpellExecutor:
         results = []
         
         # Check for equipment
-        equipment = caster.components.get(ComponentType.EQUIPMENT)
+        equipment = caster.get_component_optional(ComponentType.EQUIPMENT)
         if not equipment:
             equipment = getattr(caster, 'equipment', None)
         
@@ -806,7 +806,7 @@ class SpellExecutor:
             armor = getattr(equipment, slot_name, None)
             if armor and (armor.components.has(ComponentType.EQUIPPABLE) or hasattr(armor, 'equippable')):
                 # Check if it's armor (not a weapon)
-                equippable = armor.components.get(ComponentType.EQUIPPABLE) or getattr(armor, 'equippable', None)
+                equippable = armor.get_component_optional(ComponentType.EQUIPPABLE) if hasattr(armor, 'get_component_optional') else getattr(armor, 'equippable', None)
                 if equippable and hasattr(equippable, 'armor_class_bonus'):
                     armor_pieces.append((slot_name, armor))
         
