@@ -110,13 +110,8 @@ class BossAI:
         # Get boss component for damage multiplier
         boss = monster.get_component_optional(ComponentType.BOSS)
         
-        # Check if monster can see the target
-        if tcod.map.compute_fov(
-            fov_map,
-            (monster.x, monster.y),
-            radius=10,
-            algorithm=tcod.FOV_RESTRICTIVE
-        )[(target.x, target.y)]:
+        # Check if monster can see the target (use same FOV check as BasicMonster)
+        if map_is_in_fov(fov_map, target.x, target.y):
             
             # Calculate distance to target
             distance = ((monster.x - target.x) ** 2 + (monster.y - target.y) ** 2) ** 0.5
