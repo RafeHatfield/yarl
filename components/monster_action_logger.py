@@ -7,6 +7,7 @@ including item usage, pickup, movement, combat, and equipment changes.
 import logging
 from typing import Any, Dict, List, Optional
 from config.testing_config import is_testing_mode
+from components.component_registry import ComponentType
 
 # Set up monster action logger
 monster_logger = logging.getLogger('monster_actions')
