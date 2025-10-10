@@ -177,6 +177,9 @@ class MonsterLootDropper:
             # Drop main hand weapon
             if equipment.main_hand:
                 weapon = equipment.main_hand
+                # Unequip the weapon first to clear the reference
+                equipment.main_hand = None
+                weapon.owner = None  # Clear ownership
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 weapon.x = drop_x
                 weapon.y = drop_y
@@ -186,6 +189,9 @@ class MonsterLootDropper:
             # Drop off hand armor
             if equipment.off_hand:
                 armor = equipment.off_hand
+                # Unequip the armor first to clear the reference
+                equipment.off_hand = None
+                armor.owner = None  # Clear ownership
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 armor.x = drop_x
                 armor.y = drop_y
@@ -195,7 +201,12 @@ class MonsterLootDropper:
         # Drop inventory items (if monster has inventory)
         inventory = monster.components.get(ComponentType.INVENTORY)
         if inventory:
-            for item in inventory.items:
+            # Create a copy of the items list to avoid modifying while iterating
+            items_to_drop = list(inventory.items)
+            for item in items_to_drop:
+                # Remove from inventory first to clear the reference
+                inventory.items.remove(item)
+                item.owner = None  # Clear ownership
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 item.x = drop_x
                 item.y = drop_y
