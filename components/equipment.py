@@ -5,6 +5,7 @@ and calculates total stat bonuses from all equipped gear.
 """
 
 import logging
+from typing import Optional, List, Dict, Any
 from equipment_slots import EquipmentSlots
 
 logger = logging.getLogger(__name__)
@@ -26,25 +27,26 @@ class Equipment:
         owner (Entity): The entity that owns this equipment component
     """
 
-    def __init__(self, main_hand=None, off_hand=None, head=None, chest=None, feet=None):
+    def __init__(self, main_hand: Optional[Any] = None, off_hand: Optional[Any] = None, 
+                 head: Optional[Any] = None, chest: Optional[Any] = None, feet: Optional[Any] = None) -> None:
         """Initialize the Equipment component.
 
         Args:
-            main_hand (Entity, optional): Initial main hand equipment
-            off_hand (Entity, optional): Initial off hand equipment
-            head (Entity, optional): Initial head equipment
-            chest (Entity, optional): Initial chest equipment
-            feet (Entity, optional): Initial feet equipment
+            main_hand (Optional[Any], optional): Initial main hand equipment (Entity type)
+            off_hand (Optional[Any], optional): Initial off hand equipment (Entity type)
+            head (Optional[Any], optional): Initial head equipment (Entity type)
+            chest (Optional[Any], optional): Initial chest equipment (Entity type)
+            feet (Optional[Any], optional): Initial feet equipment (Entity type)
         """
-        self.main_hand = main_hand
-        self.off_hand = off_hand
-        self.head = head
-        self.chest = chest
-        self.feet = feet
-        self.owner = None  # Will be set by Entity when component is registered
+        self.main_hand: Optional[Any] = main_hand
+        self.off_hand: Optional[Any] = off_hand
+        self.head: Optional[Any] = head
+        self.chest: Optional[Any] = chest
+        self.feet: Optional[Any] = feet
+        self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
 
     @property
-    def max_hp_bonus(self):
+    def max_hp_bonus(self) -> int:
         """Calculate total max HP bonus from all equipped items.
 
         Returns:
@@ -62,7 +64,7 @@ class Equipment:
         return bonus
 
     @property
-    def power_bonus(self):
+    def power_bonus(self) -> int:
         """Calculate total power bonus from all equipped items.
 
         Returns:
@@ -80,7 +82,7 @@ class Equipment:
         return bonus
 
     @property
-    def defense_bonus(self):
+    def defense_bonus(self) -> int:
         """Calculate total defense bonus from all equipped items.
 
         Returns:
@@ -97,7 +99,7 @@ class Equipment:
 
         return bonus
 
-    def toggle_equip(self, equippable_entity):
+    def toggle_equip(self, equippable_entity: Any) -> List[Dict[str, Any]]:
         """Equip, unequip, or replace an item in the appropriate slot.
 
         If the item is already equipped, it will be unequipped.
@@ -109,10 +111,10 @@ class Equipment:
         - Equipping a shield will unequip any two-handed weapon
 
         Args:
-            equippable_entity (Entity): The entity with an equippable component
+            equippable_entity (Any): The entity with an equippable component (Entity type)
 
         Returns:
-            list: List of result dictionaries with 'equipped', 'dequipped', or 'cannot_equip' keys
+            List[Dict[str, Any]]: List of result dictionaries with 'equipped', 'dequipped', or 'cannot_equip' keys
         """
         results = []
         slot = equippable_entity.equippable.slot

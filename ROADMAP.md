@@ -212,8 +212,8 @@ These features build on existing systems and provide immediate gameplay improvem
 | **Chance to Hit/Dodge** | ✅ Complete (v3.0) | 🔥 High | d20 attack rolls vs AC for tactical depth | Full d20 combat with critical hits/fumbles |
 | **Critical Failure Consequences** | 1-2 weeks | 🔥 High | Fumbles cause weapon drops, armor falls off, or prone + free crit | Fumble outcome table, equipment drop mechanics, prone status |
 | **More Spells** | ✅ Complete (v2.7) | 🔥 High | 8 tactical scrolls (teleport, invisibility, etc.) | Comprehensive spell system with status effects |
-| **Monster Equipment & Loot** | 1-2 weeks | 🔥 High | Monsters can wield weapons/armor and drop them | Equipment system for monsters, loot drops |
-| **General Loot Drops** | 1 week | 🔥 High | All monsters drop items when defeated | Death event handling, loot table system |
+| **Monster Equipment & Loot** | ✅ Complete (v3.8) | 🔥 High | Monsters wield weapons/armor and drop quality loot | Equipment system + 4-tier rarity system |
+| **Loot Quality & Scaling** | ✅ Complete (v3.8) | 🔥 High | Level-scaled magic items (Common→Legendary) | LootGenerator with rarity bonuses +0 to +5 |
 
 **Combined Impact:** Transforms combat from predictable to dynamic and tactical.
 

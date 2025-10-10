@@ -567,7 +567,18 @@ class GameConstants:
 
 
 # Global instance for easy access
-GAME_CONSTANTS = GameConstants()
+# Try to load from YAML file first, fall back to defaults if not found
+_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'game_constants.yaml')
+if os.path.exists(_CONFIG_PATH):
+    try:
+        GAME_CONSTANTS = GameConstants.load_from_file(_CONFIG_PATH)
+        logger.info(f"Loaded game constants from {_CONFIG_PATH}")
+    except Exception as e:
+        logger.warning(f"Failed to load game constants from {_CONFIG_PATH}: {e}. Using defaults.")
+        GAME_CONSTANTS = GameConstants()
+else:
+    GAME_CONSTANTS = GameConstants()
+    logger.debug("No game_constants.yaml found, using default values")
 
 # Convenience functions for common access patterns
 def get_constants() -> Dict[str, Any]:

@@ -1,3 +1,6 @@
+from typing import Optional, Callable, Any, Dict
+
+
 class Item:
     """Component that makes an entity usable as an item.
 
@@ -14,19 +17,22 @@ class Item:
     """
 
     def __init__(
-        self, use_function=None, targeting=False, targeting_message=None, **kwargs
-    ):
+        self, use_function: Optional[Callable] = None, targeting: bool = False, 
+        targeting_message: Optional[Any] = None, **kwargs: Any
+    ) -> None:
         """Initialize an Item component.
 
         Args:
-            use_function (callable, optional): Function to call when used
+            use_function (Optional[Callable], optional): Function to call when used
             targeting (bool, optional): Whether item requires targeting. Defaults to False.
-            targeting_message (Message, optional): Message for targeting mode
+            targeting_message (Optional[Any], optional): Message for targeting mode (Message type)
             **kwargs: Additional arguments passed to the use function
+        
+        Returns:
+            None
         """
-
-        self.use_function = use_function
-        self.targeting = targeting
-        self.targeting_message = targeting_message
-        self.function_kwargs = kwargs
-        self.owner = None  # Will be set by Entity when component is registered
+        self.use_function: Optional[Callable] = use_function
+        self.targeting: bool = targeting
+        self.targeting_message: Optional[Any] = targeting_message  # Message type
+        self.function_kwargs: Dict[str, Any] = kwargs
+        self.owner: Optional[Any] = None  # Entity, Will be set when component is registered

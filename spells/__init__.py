@@ -51,6 +51,7 @@ def cast_spell_by_id(spell_id: str, caster, *args, **kwargs):
         ... )
     """
     from game_messages import Message
+    from message_builder import MessageBuilder as MB
     
     registry = get_spell_registry()
     executor = get_spell_executor()
@@ -60,7 +61,7 @@ def cast_spell_by_id(spell_id: str, caster, *args, **kwargs):
         return [
             {
                 "consumed": False,
-                "message": Message(f"Unknown spell: {spell_id}", (255, 0, 0))
+                "message": MB.failure(f"Unknown spell: {spell_id}")
             }
         ]
     

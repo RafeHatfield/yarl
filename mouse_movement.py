@@ -7,7 +7,7 @@ into movement commands for the player pathfinding system.
 from typing import Tuple, Optional, List, TYPE_CHECKING
 import logging
 
-from game_messages import Message
+from message_builder import MessageBuilder as MB
 from entity import get_blocking_entities_at_location
 from components.component_registry import ComponentType
 
@@ -45,7 +45,7 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
     # Validate click coordinates
     if not _is_valid_click(click_x, click_y, game_map):
         results.append({
-            "message": Message("You cannot move there.", (255, 255, 0))
+            "message": MB.warning("You cannot move there.")
         })
         return {"results": results}
     
@@ -105,12 +105,12 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
             })
         else:
             results.append({
-                "message": Message("You cannot attack.", (255, 255, 0))
+                "message": MB.warning("You cannot attack.")
             })
     else:
         # Too far to attack - pathfind toward the enemy instead
         results.append({
-            "message": Message(f"Moving toward the {target.name}...", (255, 255, 0))
+            "message": MB.info(f"Moving toward the {target.name}...")
         })
         # Set pathfinding destination to the enemy's location
         # This will be handled by the movement system
@@ -141,7 +141,7 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
     pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
     if not pathfinding:
         results.append({
-            "message": Message("Player pathfinding not available.", (255, 0, 0))
+            "message": MB.failure("Player pathfinding not available.")
         })
         return {"results": results}
 
@@ -150,7 +150,7 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
         # Successfully set path
         distance = player.distance(click_x, click_y)
         results.append({
-            "message": Message(f"Moving to ({click_x}, {click_y})...", (0, 255, 0))
+            "message": MB.info(f"Moving to ({click_x}, {click_y})...")
         })
         results.append({
             "start_pathfinding": True  # Signal to start pathfinding movement
@@ -159,7 +159,7 @@ def _handle_movement_click(click_x: int, click_y: int, player: 'Entity',
     else:
         # Could not find path
         results.append({
-            "message": Message("Cannot reach that location.", (255, 255, 0))
+            "message": MB.warning("Cannot reach that location.")
         })
         logger.debug(f"No path found to ({click_x}, {click_y})")
     
@@ -224,7 +224,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     if next_pos is None:
         # Movement completed
         results.append({
-            "message": Message("Arrived at destination.", (0, 255, 0))
+            "message": MB.info("Arrived at destination.")
         })
         return {"results": results}
     
@@ -234,7 +234,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     if game_map.is_blocked(next_x, next_y):
         pathfinding.interrupt_movement("Path blocked")
         results.append({
-            "message": Message("Path blocked - movement stopped.", (255, 255, 0))
+            "message": MB.warning("Path blocked - movement stopped.")
         })
         # Path blocked before moving, no enemy turn needed
         return {"results": results}
@@ -244,7 +244,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     if blocking_entity:
         pathfinding.interrupt_movement("Entity blocking path")
         results.append({
-            "message": Message(f"Path blocked by {blocking_entity.name}.", (255, 255, 0))
+            "message": MB.warning(f"Path blocked by {blocking_entity.name}.")
         })
         # Path blocked before moving, no enemy turn needed
         return {"results": results}
@@ -268,7 +268,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                 hazard_name = hazard.hazard_type.name.replace('_', ' ').title()
                 pathfinding.interrupt_movement(f"Stepped on {hazard_name}")
                 results.append({
-                    "message": Message(f"Movement stopped - {hazard_name} ahead!", (255, 165, 0))
+                    "message": MB.warning(f"Movement stopped - {hazard_name} ahead!")
                 })
                 # Player moved, so give enemies their turn
                 results.append({
@@ -302,7 +302,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     if _check_for_close_enemies(player, entities, fov_map, weapon_reach):
         pathfinding.interrupt_movement("Enemy spotted")
         results.append({
-            "message": Message("Movement stopped - enemy spotted!", (255, 255, 0))
+            "message": MB.warning("Movement stopped - enemy spotted!")
         })
         # Player moved, so give enemies their turn
         results.append({
@@ -318,7 +318,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     else:
         # Arrived at destination!
         results.append({
-            "message": Message("Arrived at destination.", (0, 255, 0))
+            "message": MB.info("Arrived at destination.")
         })
         
         # Check if we were pathfinding to pick up an item
@@ -343,7 +343,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                         if item_added or item_consumed:
                             entities.remove(target_item)
                             results.append({
-                                "message": Message(f"Auto-picked up {target_item.name}!", (100, 255, 100))
+                                "message": MB.item_pickup(f"Auto-picked up {target_item.name}!")
                             })
             
             # Clear the auto-pickup target

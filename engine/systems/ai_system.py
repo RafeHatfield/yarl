@@ -10,6 +10,7 @@ from typing import Dict, Any, List, Optional, Callable
 import logging
 
 from ..system import System
+from message_builder import MessageBuilder as MB
 from game_states import GameStates
 from entity_sorting_cache import invalidate_entity_cache
 from components.component_registry import ComponentType
@@ -113,10 +114,8 @@ class AISystem(System):
 
         # Switch back to player turn when done (unless player died)
         if not self.turn_processing:
-            # Check again if player died during AI processing
-            if state_manager.state.current_state != GameStates.PLAYER_DEAD:
-                # Process ground hazards at turn end (age hazards, apply damage)
-                self._process_hazard_turn(game_state)
+            # Hazards are now processed by EnvironmentSystem during ENVIRONMENT phase
+            # No longer processed here to maintain clean phase separation
                 
                 # Check if player died from hazard damage
                 if state_manager.state.current_state == GameStates.PLAYER_DEAD:
@@ -273,9 +272,8 @@ class AISystem(System):
                         self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)
                         
                         # Add death message
-                        death_message = Message(
-                            "You died! Press any key to return to the main menu.",
-                            (255, 30, 30)
+                        death_message = MB.death(
+                            "You died! Press any key to return to the main menu."
                         )
                         game_state.message_log.add_message(death_message)
                         
@@ -319,110 +317,8 @@ class AISystem(System):
                     
                     logger.debug(f"Monster {dead_entity.name} died and transformed to corpse")
     
-    def _process_hazard_turn(self, game_state) -> None:
-        """Process ground hazards at the end of each turn.
-        
-        Ages all active hazards, applies damage to entities standing on hazards,
-        and removes expired hazards. This is called after AI processing and before
-        transitioning back to the player turn.
-        
-        Args:
-            game_state: Current game state containing map and entities
-        """
-        if not game_state.game_map:
-            return
-            
-        if not hasattr(game_state.game_map, 'hazard_manager'):
-            return
-            
-        hazard_manager = game_state.game_map.hazard_manager
-        if not hazard_manager:
-            return
-        
-        from game_messages import Message
-        from game_states import GameStates
-        
-        # Apply damage to entities standing on hazards BEFORE aging
-        # This ensures entities take damage for the full current turn
-        for entity in game_state.entities:
-            fighter = entity.get_component_optional(ComponentType.FIGHTER)
-            if not fighter:
-                continue
-                
-            if fighter.hp <= 0:
-                continue  # Don't damage dead entities
-            
-            hazard = hazard_manager.get_hazard_at(entity.x, entity.y)
-            if hazard:
-                damage = hazard.get_current_damage()
-                if damage > 0:
-                    # Create hazard type name for message
-                    hazard_name = hazard.hazard_type.name.replace('_', ' ').title()
-                    
-                    # Add message for damage
-                    if game_state.message_log:
-                        if entity == game_state.player:
-                            message = Message(
-                                f"The {hazard_name} burns you for {damage} damage!",
-                                (255, 127, 0)
-                            )
-                        else:
-                            message = Message(
-                                f"The {entity.name} takes {damage} damage from the {hazard_name}!",
-                                (255, 200, 150)
-                            )
-                        game_state.message_log.add_message(message)
-                    
-                    # Apply damage
-                    damage_results = entity.fighter.take_damage(damage)
-                    
-                    # Process death if entity died from hazard damage
-                    for result in damage_results:
-                        dead_entity = result.get('dead')
-                        if dead_entity:
-                            if dead_entity == game_state.player:
-                                # Player died from hazard
-                                if self.engine and hasattr(self.engine, 'state_manager'):
-                                    self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)
-                                    
-                                    if game_state.message_log:
-                                        death_message = Message(
-                                            "You died! Press any key to return to the main menu.",
-                                            (255, 30, 30)
-                                        )
-                                        game_state.message_log.add_message(death_message)
-                                    
-                                    # Generate death quote
-                                    player = game_state.player
-                                    statistics = player.get_component_optional(ComponentType.STATISTICS)
-                                    if statistics:
-                                        from entity_dialogue import get_entity_quote_for_death
-                                        self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
-                                            statistics,
-                                            statistics.deepest_level
-                                        )
-                                    else:
-                                        self.engine.state_manager.state.death_screen_quote = "How... disappointing."
-                                    
-                                    logger.info(f"Player killed by {hazard_name}")
-                            else:
-                                # Monster died from hazard
-                                from death_functions import kill_monster
-                                death_message = kill_monster(dead_entity, game_state.game_map, game_state.entities)
-                                if game_state.message_log:
-                                    game_state.message_log.add_message(death_message)
-                                
-                                # Handle dropped loot
-                                if hasattr(dead_entity, '_dropped_loot') and dead_entity._dropped_loot:
-                                    game_state.entities.extend(dead_entity._dropped_loot)
-                                    delattr(dead_entity, '_dropped_loot')
-                                    invalidate_entity_cache("entity_added_loot_hazard")
-                                
-                                logger.debug(f"Monster {dead_entity.name} died from {hazard_name}")
-        
-        # Age all hazards after damage application
-        # This removes expired hazards and decrements remaining_turns
-        hazard_manager.age_all_hazards()
+    # Hazard processing moved to EnvironmentSystem for clean phase separation
+    # See: engine/systems/environment_system.py
 
     def _handle_entity_death(self, entity: Any, game_state) -> None:
         """Handle an entity's death during AI processing.

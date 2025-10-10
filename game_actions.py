@@ -8,7 +8,7 @@ Also integrates Entity dialogue for key game moments (Phase 1 expansion).
 from typing import Dict, Any, Optional, Tuple
 import logging
 
-from game_messages import Message
+from message_builder import MessageBuilder as MB
 from game_states import GameStates
 from config.game_constants import get_constants
 from entity_sorting_cache import invalidate_entity_cache
@@ -304,9 +304,8 @@ class ActionProcessor:
         if dead_entity == player:
             # Player died - transition to death state
             self.state_manager.set_game_state(GameStates.PLAYER_DEAD)
-            death_message = Message(
-                "You died! Press any key to return to the main menu.",
-                (255, 30, 30)
+            death_message = MB.death(
+                "You died! Press any key to return to the main menu."
             )
             self.state_manager.state.message_log.add_message(death_message)
             
@@ -347,13 +346,13 @@ class ActionProcessor:
                 # First kill - Entity mocks basic combat
                 if total_kills == 1:
                     entity_quote = EntityDialogue.get_first_kill_quote()
-                    entity_message = Message(entity_quote, (180, 180, 150))  # Muted gold
+                    entity_message = MB.custom(entity_quote, (180, 180, 150))  # Muted gold
                     message_log.add_message(entity_message)
                 
                 # Kill milestones - Entity tracks your progress
                 elif total_kills in [10, 25, 50, 100]:
                     entity_quote = EntityDialogue.get_milestone_kill_quote(total_kills)
-                    entity_message = Message(entity_quote, (180, 180, 150))  # Muted gold
+                    entity_message = MB.custom(entity_quote, (180, 180, 150))  # Muted gold
                     message_log.add_message(entity_message)
             
             # Handle dropped loot
@@ -408,7 +407,7 @@ class ActionProcessor:
         for entity in entities:
             if entity.item and entity.x == player.x and entity.y == player.y:
                 if not player.inventory:
-                    message = Message("You cannot carry items.", (255, 255, 0))
+                    message = MB.warning("You cannot carry items.")
                     message_log.add_message(message)
                     break
                 
@@ -428,7 +427,7 @@ class ActionProcessor:
                 
                 break
         else:
-            message = Message("There is nothing here to pick up.", (255, 255, 0))
+            message = MB.warning("There is nothing here to pick up.")
             message_log.add_message(message)
     
     def _handle_inventory_action(self, inventory_index: int) -> None:
@@ -446,9 +445,8 @@ class ActionProcessor:
         # Defensive check: ensure inventory_index is an integer
         if inventory_index is None or not isinstance(inventory_index, int):
             logger.warning(f"Invalid inventory_index: {inventory_index} (type: {type(inventory_index)})")
-            message = Message(
-                "Error: Invalid inventory selection. Please try again.",
-                (255, 0, 0)
+            message = MB.failure(
+                "Error: Invalid inventory selection. Please try again."
             )
             self.state_manager.state.message_log.add_message(message)
             return
@@ -456,9 +454,8 @@ class ActionProcessor:
         # Defensive check: ensure inventory items list is valid
         if not hasattr(player.inventory, 'items') or player.inventory.items is None:
             logger.error(f"Player inventory.items is invalid: {player.inventory.items}")
-            message = Message(
-                "Error: Inventory is corrupted. Please report this bug.",
-                (255, 0, 0)
+            message = MB.failure(
+                "Error: Inventory is corrupted. Please report this bug."
             )
             self.state_manager.state.message_log.add_message(message)
             return
@@ -468,9 +465,8 @@ class ActionProcessor:
             inventory_size = len(player.inventory.items)
         except (TypeError, AttributeError) as e:
             logger.error(f"Cannot get inventory size: {e}, items type: {type(player.inventory.items)}")
-            message = Message(
-                "Error: Inventory is corrupted. Please report this bug.",
-                (255, 0, 0)
+            message = MB.failure(
+                "Error: Inventory is corrupted. Please report this bug."
             )
             self.state_manager.state.message_log.add_message(message)
             return
@@ -478,9 +474,8 @@ class ActionProcessor:
         # Extra safety check: ensure inventory_size is a valid integer
         if inventory_size is None or not isinstance(inventory_size, int):
             logger.error(f"Inventory size is not an integer! type={type(inventory_size)}, value={inventory_size}")
-            message = Message(
-                "Error: Inventory is corrupted (invalid size). Please report this bug.",
-                (255, 0, 0)
+            message = MB.failure(
+                "Error: Inventory is corrupted (invalid size). Please report this bug."
             )
             self.state_manager.state.message_log.add_message(message)
             return
@@ -488,9 +483,8 @@ class ActionProcessor:
         # Check if index is in valid range
         if inventory_index < 0 or inventory_index >= inventory_size:
             logger.warning(f"Inventory index {inventory_index} out of range (inventory size: {inventory_size})")
-            message = Message(
-                f"Inventory slot '{chr(ord('a') + inventory_index)}' is empty.",
-                (255, 255, 0)
+            message = MB.warning(
+                f"Inventory slot '{chr(ord('a') + inventory_index)}' is empty."
             )
             self.state_manager.state.message_log.add_message(message)
             return
@@ -596,10 +590,10 @@ class ActionProcessor:
             dequipped = equip_result.get("dequipped")
             
             if equipped:
-                message = Message(f"You equip the {equipped.name}.", (0, 255, 0))
+                message = MB.item_equipped(f"You equip the {equipped.name}.")
                 self.state_manager.state.message_log.add_message(message)
             elif dequipped:
-                message = Message(f"You unequip the {dequipped.name}.", (255, 255, 0))
+                message = MB.item_unequipped(f"You unequip the {dequipped.name}.")
                 self.state_manager.state.message_log.add_message(message)
     
     def _handle_stairs(self, _) -> None:
@@ -633,12 +627,12 @@ class ActionProcessor:
                 
                 # Entity comments on level transition (Phase 1 feature!)
                 entity_quote = EntityDialogue.get_level_transition_quote(game_map.dungeon_level)
-                entity_message = Message(entity_quote, (180, 180, 150))  # Muted gold for Entity
+                entity_message = MB.custom(entity_quote, (180, 180, 150))  # Muted gold for Entity
                 message_log.add_message(entity_message)
                 
                 break
         else:
-            message = Message("There are no stairs here.", (255, 255, 0))
+            message = MB.warning("There are no stairs here.")
             message_log.add_message(message)
     
     def _handle_level_up(self, level_up_choice: str) -> None:
@@ -661,16 +655,16 @@ class ActionProcessor:
         if level_up_choice == "hp":
             player.fighter.base_max_hp += 20
             player.fighter.hp += 20
-            message = Message("Your health increases!", (0, 255, 0))
+            message = MB.level_up("Your health increases!")
         elif level_up_choice == "str":
             player.fighter.base_power += 1
-            message = Message("You feel stronger!", (0, 255, 0))
+            message = MB.level_up("You feel stronger!")
         elif level_up_choice == "def":
             player.fighter.base_defense += 1
-            message = Message("Your movements are getting swifter!", (0, 255, 0))
+            message = MB.level_up("Your movements are getting swifter!")
         else:
             # Invalid choice, don't apply any bonuses
-            message = Message("Invalid level up choice.", (255, 255, 0))
+            message = MB.warning("Invalid level up choice.")
             message_log.add_message(message)
             return
         
@@ -837,7 +831,6 @@ class ActionProcessor:
         
         from ui.sidebar_interaction import handle_sidebar_click
         from config.ui_layout import get_ui_layout
-        from game_messages import Message
         
         screen_x, screen_y = click_pos
         player = self.state_manager.state.player
@@ -865,7 +858,7 @@ class ActionProcessor:
             
             if inventory_index < 0 or inventory_index >= len(player.inventory.items):
                 message_log.add_message(
-                    Message(f"Invalid item selection.", (255, 255, 0))
+                    MB.warning(f"Invalid item selection.")
                 )
                 return
             
@@ -939,7 +932,7 @@ class ActionProcessor:
                     _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                 else:
                     # Could not find path to enemy
-                    message_log.add_message(Message("Cannot reach that enemy.", (255, 255, 0)))
+                    message_log.add_message(MB.warning("Cannot reach that enemy."))
             
             # Handle immediate enemy turn (for attacks)
             if result.get("enemy_turn"):
@@ -1064,17 +1057,15 @@ class ActionProcessor:
                             # Mark that we want to auto-pickup when we arrive
                             player.pathfinding.auto_pickup_target = target_item
                             
-                            from game_messages import Message
                             message_log.add_message(
-                                Message(f"Moving to pick up {target_item.name}...", (100, 200, 255))
+                                MB.info(f"Moving to pick up {target_item.name}...")
                             )
                             
                             # Immediately start moving along the path
                             self._process_pathfinding_movement_action(None)
                         else:
-                            from game_messages import Message
                             message_log.add_message(
-                                Message("Cannot path to that location.", (255, 255, 0))
+                                MB.warning("Cannot path to that location.")
                             )
             else:
                 # No item at location - cancel pathfinding if active
@@ -1082,8 +1073,7 @@ class ActionProcessor:
                 if pathfinding and pathfinding.is_path_active():
                     pathfinding.cancel_movement()
                     if message_log:
-                        from game_messages import Message
-                        message_log.add_message(Message("Movement cancelled.", (255, 255, 0)))
+                        message_log.add_message(MB.warning("Movement cancelled."))
     
     def _process_player_status_effects(self) -> None:
         """Process status effects at the end of the player's turn."""

@@ -10,6 +10,7 @@ import random
 from typing import List, Optional, Dict, Any
 from config.game_constants import get_monster_equipment_config
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 from components.monster_action_logger import MonsterActionLogger
 from components.component_registry import ComponentType
 
@@ -232,18 +233,16 @@ class MonsterItemUsage:
                     results.extend(use_results)
                     
                 results.append({
-                    "message": Message(
-                        f"{self.monster.name.capitalize()} uses {item.name}!",
-                        (255, 255, 0)
+                    "message": MB.item_use(
+                        f"{self.monster.name.capitalize()} uses {item.name}!"
                     )
                 })
                 
             except Exception as e:
                 logger.error(f"Error using item {item.name}: {e}")
                 results.append({
-                    "message": Message(
-                        f"{self.monster.name.capitalize()}'s {item.name} fizzles!",
-                        (128, 128, 128)
+                    "message": MB.spell_fail(
+                        f"{self.monster.name.capitalize()}'s {item.name} fizzles!"
                     )
                 })
                 
@@ -270,9 +269,8 @@ class MonsterItemUsage:
         if failure_mode == 'fizzle':
             # Item does nothing
             results.append({
-                "message": Message(
-                    f"{self.monster.name.capitalize()}'s {item.name} fizzles harmlessly!",
-                    (128, 128, 128)
+                "message": MB.spell_fail(
+                    f"{self.monster.name.capitalize()}'s {item.name} fizzles harmlessly!"
                 )
             })
             
@@ -315,9 +313,8 @@ class MonsterItemUsage:
         else:
             # Unknown scroll type, just fizzle
             results.append({
-                "message": Message(
-                    f"{self.monster.name.capitalize()}'s {item.name} backfires and fizzles!",
-                    (255, 128, 0)
+                "message": MB.spell_fail(
+                    f"{self.monster.name.capitalize()}'s {item.name} backfires and fizzles!"
                 )
             })
             return results
@@ -337,18 +334,17 @@ class MonsterItemUsage:
                     results.extend(use_results)
                     
             results.append({
-                "message": Message(
+                "message": MB.custom(
                     f"{self.monster.name.capitalize()}'s {item.name} backfires on {target_name}!",
-                    (255, 128, 0)
+                    MB.ORANGE
                 )
             })
             
         except Exception as e:
             logger.error(f"Error in wrong target failure for {item.name}: {e}")
             results.append({
-                "message": Message(
-                    f"{self.monster.name.capitalize()}'s {item.name} backfires chaotically!",
-                    (255, 128, 0)
+                "message": MB.spell_fail(
+                    f"{self.monster.name.capitalize()}'s {item.name} backfires chaotically!"
                 )
             })
             
@@ -370,9 +366,8 @@ class MonsterItemUsage:
         if not equipment:
             # No equipment to damage, just fizzle
             results.append({
-                "message": Message(
-                    f"{self.monster.name.capitalize()}'s {item.name} backfires harmlessly!",
-                    (255, 128, 0)
+                "message": MB.spell_fail(
+                    f"{self.monster.name.capitalize()}'s {item.name} backfires harmlessly!"
                 )
             })
             return results
@@ -387,9 +382,8 @@ class MonsterItemUsage:
         if not equipment_to_damage:
             # No equipment equipped, just fizzle
             results.append({
-                "message": Message(
-                    f"{self.monster.name.capitalize()}'s {item.name} backfires but finds no equipment to damage!",
-                    (255, 128, 0)
+                "message": MB.spell_fail(
+                    f"{self.monster.name.capitalize()}'s {item.name} backfires but finds no equipment to damage!"
                 )
             })
             return results
@@ -410,9 +404,9 @@ class MonsterItemUsage:
                     equippable.damage_max -= 1
                     
                 results.append({
-                    "message": Message(
+                    "message": MB.custom(
                         f"{self.monster.name.capitalize()}'s {equipment_item.name} is weakened by the backfire!",
-                        (255, 64, 64)
+                        MB.LIGHT_RED
                     )
                 })
                 
@@ -424,17 +418,17 @@ class MonsterItemUsage:
                     equippable.defense_max -= 1
                     
                 results.append({
-                    "message": Message(
+                    "message": MB.custom(
                         f"{self.monster.name.capitalize()}'s {equipment_item.name} is damaged by the backfire!",
-                        (255, 64, 64)
+                        MB.LIGHT_RED
                     )
                 })
             else:
                 # Equipment doesn't have variable stats, just show message
                 results.append({
-                    "message": Message(
+                    "message": MB.custom(
                         f"{self.monster.name.capitalize()}'s {equipment_item.name} sparks from the backfire!",
-                        (255, 128, 0)
+                        MB.ORANGE
                     )
                 })
         

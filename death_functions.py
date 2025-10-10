@@ -8,6 +8,7 @@ import random
 from typing import List, Optional
 
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 from game_states import GameStates
 from render_functions import RenderOrder
 
@@ -28,7 +29,7 @@ def kill_player(player):
     player.color = (127, 0, 0)
 
     # return 'You died!', GameStates.PLAYER_DEAD
-    return Message("You died!", (255, 0, 0)), GameStates.PLAYER_DEAD
+    return MB.death("You died!"), GameStates.PLAYER_DEAD
 
 
 def _handle_slime_splitting(monster, game_map, entities=None) -> List:
@@ -171,15 +172,15 @@ def kill_monster(monster, game_map=None, entities=None):
         monster._spawned_entities = spawned_slimes
         
         # Create special death message for splitting
-        death_message = Message(
+        death_message = MB.custom(
             "{0} dies and splits into {1} smaller slimes!".format(
                 monster.name.capitalize(), len(spawned_slimes)
             ), (0, 255, 0)  # Green for special event
         )
     else:
         # Normal death message
-        death_message = Message(
-            "{0} is dead!".format(monster.name.capitalize()), (255, 127, 0)
+        death_message = MB.custom(
+            "{0} is dead!".format(monster.name.capitalize()), MB.ORANGE
         )
 
     monster.char = "%"

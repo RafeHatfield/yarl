@@ -23,6 +23,7 @@ from components.status_effects import (
     StatusEffectManager
 )
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 from fov_functions import map_is_in_fov
 from render_functions import RenderOrder
 from visual_effects import show_fireball, show_lightning, show_dragon_fart
@@ -245,9 +246,9 @@ def cast_teleport(*args, **kwargs):
                     
                     results.append({
                         "consumed": True,
-                        "message": Message(
+                        "message": MB.custom(
                             "The teleport spell misfires!",
-                            (255, 165, 0)  # Orange - warning color
+                            MB.ORANGE  # Orange - warning color
                         )
                     })
                     return results
@@ -255,9 +256,8 @@ def cast_teleport(*args, **kwargs):
         # Couldn't find valid random location - fail safely
         results.append({
             "consumed": False,
-            "message": Message(
-                "The teleport spell fizzles and fails!",
-                (255, 255, 0)  # Yellow
+            "message": MB.spell_fail(
+                "The teleport spell fizzles and fails!"
             )
         })
         return results
@@ -266,7 +266,7 @@ def cast_teleport(*args, **kwargs):
     if not target_x or not target_y:
         results.append({
             "consumed": False,
-            "message": Message("You must select a target location.", (255, 255, 0))
+            "message": MB.warning("You must select a target location.")
         })
         return results
     
@@ -274,7 +274,7 @@ def cast_teleport(*args, **kwargs):
     if game_map.tiles[target_x][target_y].blocked:
         results.append({
             "consumed": False,
-            "message": Message("You cannot teleport to a blocked location.", (255, 255, 0))
+            "message": MB.warning("You cannot teleport to a blocked location.")
         })
         return results
     
@@ -283,9 +283,8 @@ def cast_teleport(*args, **kwargs):
         if other_entity.blocks and other_entity.x == target_x and other_entity.y == target_y:
             results.append({
                 "consumed": False,
-                "message": Message(
-                    f"You cannot teleport to a location occupied by {other_entity.name}.",
-                    (255, 255, 0)
+                "message": MB.warning(
+                    f"You cannot teleport to a location occupied by {other_entity.name}."
                 )
             })
             return results
@@ -296,9 +295,8 @@ def cast_teleport(*args, **kwargs):
     
     results.append({
         "consumed": True,
-        "message": Message(
-            "You teleport across space!",
-            (128, 200, 255)  # Light cyan
+        "message": MB.spell_effect(
+            "You teleport across space!"
         )
     })
     
@@ -409,9 +407,8 @@ def cast_dragon_fart(*args, **kwargs):
     if not target_x or not target_y:
         results.append({
             "consumed": False,
-            "message": Message(
-                "You must select a direction for the dragon fart!",
-                (255, 255, 0)
+            "message": MB.warning(
+                "You must select a direction for the dragon fart!"
             )
         })
         return results
@@ -458,9 +455,8 @@ def cast_dragon_fart(*args, **kwargs):
     if not affected_entities:
         results.append({
             "consumed": False,
-            "message": Message(
-                "The noxious gas dissipates harmlessly...",
-                (150, 150, 150)  # Gray
+            "message": MB.spell_fail(
+                "The noxious gas dissipates harmlessly..."
             )
         })
         return results
@@ -468,7 +464,7 @@ def cast_dragon_fart(*args, **kwargs):
     # Epic dragon fart message FIRST! 💨
     results.append({
         "consumed": True,
-        "message": Message(
+        "message": MB.custom(
             f"💨 {entity.name} unleashes a MIGHTY DRAGON FART! A cone of noxious gas spreads outward!",
             (150, 255, 100)  # Bright green
         )
@@ -482,9 +478,8 @@ def cast_dragon_fart(*args, **kwargs):
         target_entity.ai = confused_ai
         
         results.append({
-            "message": Message(
-                f"{target_entity.name} is overwhelmed by the noxious fumes and passes out!",
-                (100, 255, 100)  # Green
+            "message": MB.spell_effect(
+                f"{target_entity.name} is overwhelmed by the noxious fumes and passes out!"
             )
         })
     
@@ -555,7 +550,7 @@ def cast_slow(*args, **kwargs):
     
     # Check if target location is in FOV
     if not map_is_in_fov(fov_map, target_x, target_y):
-        return [{"consumed": False, "message": Message("You cannot target something you cannot see.", (255, 255, 0))}]
+        return [{"consumed": False, "message": MB.warning("You cannot target something you cannot see.")}]
     
     # Find target entity at coordinates
     target = None
@@ -565,7 +560,7 @@ def cast_slow(*args, **kwargs):
             break
     
     if not target:
-        return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
+        return [{"consumed": False, "message": MB.warning("There is no valid target there.")}]
     
     # Apply SlowedEffect
     # Ensure target has status_effects component
@@ -612,7 +607,7 @@ def cast_glue(*args, **kwargs):
     
     # Check if target location is in FOV
     if not map_is_in_fov(fov_map, target_x, target_y):
-        return [{"consumed": False, "message": Message("You cannot target something you cannot see.", (255, 255, 0))}]
+        return [{"consumed": False, "message": MB.warning("You cannot target something you cannot see.")}]
     
     # Find target entity at coordinates
     target = None
@@ -622,7 +617,7 @@ def cast_glue(*args, **kwargs):
             break
     
     if not target:
-        return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
+        return [{"consumed": False, "message": MB.warning("There is no valid target there.")}]
     
     # Apply ImmobilizedEffect
     # Ensure target has status_effects component
@@ -672,7 +667,7 @@ def cast_rage(*args, **kwargs):
     
     # Check if target location is in FOV
     if not map_is_in_fov(fov_map, target_x, target_y):
-        return [{"consumed": False, "message": Message("You cannot target something you cannot see.", (255, 255, 0))}]
+        return [{"consumed": False, "message": MB.warning("You cannot target something you cannot see.")}]
     
     # Find target entity at coordinates
     target = None
@@ -682,7 +677,7 @@ def cast_rage(*args, **kwargs):
             break
     
     if not target:
-        return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
+        return [{"consumed": False, "message": MB.warning("There is no valid target there.")}]
     
     # Apply EnragedEffect
     # Ensure target has status_effects component

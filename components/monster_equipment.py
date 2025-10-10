@@ -156,6 +156,9 @@ class MonsterLootDropper:
     def drop_monster_loot(monster, x: int, y: int, game_map=None) -> List:
         """Drop all items from a monster's inventory at the specified location.
         
+        Uses the new loot quality system to generate level-scaled magical items.
+        Chance of drops and quality scale with dungeon level.
+        
         Args:
             monster: Monster entity that died
             x: X coordinate where to drop loot
@@ -163,13 +166,22 @@ class MonsterLootDropper:
             game_map: Game map to check for valid drop locations (optional)
             
         Returns:
-            List: List of dropped item entities
+            List: List of dropped item entities (includes both equipped and generated loot)
         """
+        from components.loot import get_loot_generator
+        from random import random
+        
         # Slimes are just blobs - they don't carry items!
         if 'slime' in monster.name.lower():
             return []
         
         dropped_items = []
+        loot_gen = get_loot_generator()
+        
+        # Get dungeon level for scaling
+        dungeon_level = 1
+        if game_map and hasattr(game_map, 'dungeon_level'):
+            dungeon_level = game_map.dungeon_level
         
         # Drop equipped items
         equipment = monster.get_component_optional(ComponentType.EQUIPMENT)
@@ -197,6 +209,21 @@ class MonsterLootDropper:
                 armor.y = drop_y
                 dropped_items.append(armor)
                 logger.debug(f"Dropped {armor.name} from {monster.name} at ({drop_x}, {drop_y})")
+        
+        # Generate additional quality loot based on dungeon level
+        # This is the new loot quality system - monsters can drop magic items!
+        if loot_gen.should_monster_drop_loot(monster.name, dungeon_level):
+            # 70% chance for weapon, 30% chance for armor
+            if random() < 0.70:
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
+                magic_weapon = loot_gen.generate_weapon(drop_x, drop_y, dungeon_level)
+                dropped_items.append(magic_weapon)
+                logger.info(f"{monster.name} dropped BONUS {magic_weapon.loot.rarity.display_name} weapon: {magic_weapon.name}")
+            else:
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
+                magic_armor = loot_gen.generate_armor(drop_x, drop_y, dungeon_level)
+                dropped_items.append(magic_armor)
+                logger.info(f"{monster.name} dropped BONUS {magic_armor.loot.rarity.display_name} armor: {magic_armor.name}")
         
         # Drop inventory items (if monster has inventory)
         # NOTE: Items in monster inventory are likely already in the world entities list

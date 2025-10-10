@@ -1,0 +1,199 @@
+"""Environment System - Handles environmental effects during ENVIRONMENT turn phase.
+
+This system processes:
+- Ground hazards (fire, poison gas, etc.)
+- Environmental damage and aging
+- Future: Weather effects, traps, timed events
+
+Separated from AISystem for cleaner architecture and turn phase management.
+"""
+
+import logging
+from typing import Any
+
+from ..system import System
+from components.component_registry import ComponentType
+from message_builder import MessageBuilder as MB
+from entity_sorting_cache import invalidate_entity_cache
+
+logger = logging.getLogger(__name__)
+
+
+class EnvironmentSystem(System):
+    """System for processing environmental effects.
+    
+    Handles all environmental effects during the ENVIRONMENT turn phase:
+    - Ground hazards (fire, poison, etc.)
+    - Hazard aging and expiration
+    - Environmental damage to entities
+    - Death handling from environmental effects
+    
+    Future enhancements:
+    - Weather effects (rain weakening fire, etc.)
+    - Trap activation
+    - Timed dungeon events
+    """
+    
+    def __init__(self, engine=None):
+        """Initialize environment system.
+        
+        Args:
+            engine: Game engine reference for state management
+        """
+        super().__init__("Environment System")
+        self._engine = engine
+        logger.info(f"{self.name} initialized")
+    
+    def update(self, dt: float) -> None:
+        """Update the environment system for one frame.
+        
+        Required by System base class. For environment system,
+        actual processing happens in process() during ENVIRONMENT phase.
+        
+        Args:
+            dt: Delta time since last update in seconds
+        """
+        # Environment system processes during ENVIRONMENT turn phase
+        # Actual work is done in process() method when called by turn manager
+        pass
+    
+    def process(self, game_state) -> None:
+        """Process all environmental effects for the current turn.
+        
+        Called during the ENVIRONMENT phase of the turn cycle.
+        Processes hazards, applies damage, handles deaths, and ages effects.
+        
+        Args:
+            game_state: Current game state containing map, entities, and message log
+        """
+        if not game_state:
+            return
+        
+        # Process ground hazards
+        self._process_hazards(game_state)
+        
+        # Future: Add weather processing
+        # self._process_weather(game_state)
+        
+        # Future: Add trap processing
+        # self._process_traps(game_state)
+    
+    def _process_hazards(self, game_state) -> None:
+        """Process ground hazards for the current turn.
+        
+        Ages all active hazards, applies damage to entities standing on hazards,
+        and removes expired hazards.
+        
+        Args:
+            game_state: Current game state containing map and entities
+        """
+        if not game_state.game_map:
+            return
+            
+        if not hasattr(game_state.game_map, 'hazard_manager'):
+            return
+            
+        hazard_manager = game_state.game_map.hazard_manager
+        if not hazard_manager:
+            return
+        
+        from game_states import GameStates
+        
+        # Apply damage to entities standing on hazards BEFORE aging
+        # This ensures entities take damage for the full current turn
+        for entity in game_state.entities:
+            fighter = entity.get_component_optional(ComponentType.FIGHTER)
+            if not fighter:
+                continue
+                
+            if fighter.hp <= 0:
+                continue  # Don't damage dead entities
+            
+            hazard = hazard_manager.get_hazard_at(entity.x, entity.y)
+            if hazard:
+                damage = hazard.get_current_damage()
+                if damage > 0:
+                    # Create hazard type name for message
+                    hazard_name = hazard.hazard_type.name.replace('_', ' ').title()
+                    
+                    # Add message for damage
+                    if game_state.message_log:
+                        if entity == game_state.player:
+                            message = MB.custom(
+                                f"The {hazard_name} burns you for {damage} damage!",
+                                MB.ORANGE
+                            )
+                        else:
+                            message = MB.custom(
+                                f"The {entity.name} takes {damage} damage from the {hazard_name}!",
+                                (255, 200, 150)
+                            )
+                        game_state.message_log.add_message(message)
+                    
+                    # Apply damage
+                    damage_results = entity.fighter.take_damage(damage)
+                    
+                    # Process death if entity died from hazard damage
+                    for result in damage_results:
+                        dead_entity = result.get('dead')
+                        if dead_entity:
+                            self._handle_hazard_death(dead_entity, hazard_name, game_state)
+        
+        # Age all hazards after damage application
+        # This removes expired hazards and decrements remaining_turns
+        hazard_manager.age_all_hazards()
+        logger.debug("Hazard processing complete for turn")
+    
+    def _handle_hazard_death(self, entity: Any, hazard_name: str, game_state) -> None:
+        """Handle entity death from environmental hazard.
+        
+        Args:
+            entity: The entity that died
+            hazard_name: Name of the hazard that killed the entity
+            game_state: Current game state
+        """
+        if entity == game_state.player:
+            # Player died from hazard
+            if self.engine and hasattr(self.engine, 'state_manager'):
+                from game_states import GameStates
+                self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)
+                
+                if game_state.message_log:
+                    death_message = MB.death(
+                        "You died! Press any key to return to the main menu."
+                    )
+                    game_state.message_log.add_message(death_message)
+                
+                # Generate death quote
+                statistics = entity.get_component_optional(ComponentType.STATISTICS)
+                if statistics:
+                    from entity_dialogue import get_entity_quote_for_death
+                    self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
+                        statistics,
+                        statistics.deepest_level
+                    )
+                else:
+                    self.engine.state_manager.state.death_screen_quote = "How... disappointing."
+                
+                logger.info(f"Player killed by {hazard_name}")
+        else:
+            # Monster died from hazard
+            from death_functions import kill_monster
+            death_message = kill_monster(entity, game_state.game_map, game_state.entities)
+            if game_state.message_log:
+                game_state.message_log.add_message(death_message)
+            
+            # Handle dropped loot
+            if hasattr(entity, '_dropped_loot') and entity._dropped_loot:
+                game_state.entities.extend(entity._dropped_loot)
+                delattr(entity, '_dropped_loot')
+                invalidate_entity_cache("entity_added_loot_hazard")
+            
+            # Handle spawned entities (e.g., slime splitting)
+            if hasattr(entity, '_spawned_entities') and entity._spawned_entities:
+                game_state.entities.extend(entity._spawned_entities)
+                delattr(entity, '_spawned_entities')
+                invalidate_entity_cache("entity_added_spawned_hazard")
+            
+            logger.debug(f"Monster {entity.name} died from {hazard_name}")
+

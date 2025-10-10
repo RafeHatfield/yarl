@@ -1,4 +1,6 @@
 from typing import List, Dict, Any, TYPE_CHECKING, Optional
+from message_builder import MessageBuilder as MB
+from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
     from entity import Entity
@@ -42,15 +44,13 @@ class InvisibilityEffect(StatusEffect):
     def apply(self) -> List[Dict[str, Any]]:
         results = super().apply()
         self.owner.invisible = True
-        from game_messages import Message
-        results.append({'message': Message(f"{self.owner.name} becomes invisible!", (150, 200, 255))})
+        results.append({'message': MB.status_effect(f"{self.owner.name} becomes invisible!")})
         return results
 
     def remove(self) -> List[Dict[str, Any]]:
         results = super().remove()
         self.owner.invisible = False
-        from game_messages import Message
-        results.append({'message': Message(f"{self.owner.name} is no longer invisible.", (150, 200, 255))})
+        results.append({'message': MB.status_effect(f"{self.owner.name} is no longer invisible.")})
         return results
 
     def break_invisibility(self) -> List[Dict[str, Any]]:
@@ -80,9 +80,8 @@ class DisorientationEffect(StatusEffect):
         
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} feels disoriented!",
-                (255, 165, 0)  # Orange
+            'message': MB.status_effect(
+                f"{self.owner.name} feels disoriented!"
             )
         })
         return results
@@ -95,11 +94,9 @@ class DisorientationEffect(StatusEffect):
             self.owner.ai = self.previous_ai
             self.previous_ai = None
         
-        from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} is no longer disoriented.",
-                (200, 200, 200)  # Gray
+            'message': MB.status_effect(
+                f"{self.owner.name} is no longer disoriented."
             )
         })
         return results
@@ -133,9 +130,8 @@ class ShieldEffect(StatusEffect):
                     
                     from game_messages import Message
                     results.append({
-                        'message': Message(
-                            f"The shield spell backfires on {self.owner.name}!",
-                            (255, 100, 100)  # Red
+                        'message': MB.spell_fail(
+                            f"The shield spell backfires on {self.owner.name}!"
                         )
                     })
                 return results
@@ -147,9 +143,8 @@ class ShieldEffect(StatusEffect):
             
             from game_messages import Message
             results.append({
-                'message': Message(
-                    f"{self.owner.name} is surrounded by a protective shield! (+{self.defense_bonus} defense)",
-                    (100, 200, 255)  # Light blue
+                'message': MB.status_effect(
+                    f"{self.owner.name} is surrounded by a protective shield! (+{self.defense_bonus} defense)"
                 )
             })
         
@@ -165,9 +160,8 @@ class ShieldEffect(StatusEffect):
                 self.owner.fighter.base_defense = self.original_base_defense
                 from game_messages import Message
                 results.append({
-                    'message': Message(
-                        f"{self.owner.name}'s defense returns to normal.",
-                        (200, 200, 200)  # Gray
+                    'message': MB.status_effect(
+                        f"{self.owner.name}'s defense returns to normal."
                     )
                 })
             else:
@@ -175,9 +169,8 @@ class ShieldEffect(StatusEffect):
                 self.owner.fighter.base_defense -= self.defense_bonus
                 from game_messages import Message
                 results.append({
-                    'message': Message(
-                        f"The protective shield around {self.owner.name} fades.",
-                        (150, 150, 200)  # Light gray-blue
+                    'message': MB.status_effect(
+                        f"The protective shield around {self.owner.name} fades."
                     )
                 })
         
@@ -203,9 +196,8 @@ class TauntedTargetEffect(StatusEffect):
         results = super().remove()
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"Monsters stop focusing on {self.owner.name}.",
-                (200, 200, 200)  # Gray
+            'message': MB.status_effect(
+                f"Monsters stop focusing on {self.owner.name}."
             )
         })
         return results
@@ -228,9 +220,8 @@ class SlowedEffect(StatusEffect):
         results = super().apply()
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} moves sluggishly!",
-                (150, 150, 255)  # Light blue
+            'message': MB.status_effect(
+                f"{self.owner.name} moves sluggishly!"
             )
         })
         return results
@@ -239,9 +230,8 @@ class SlowedEffect(StatusEffect):
         results = super().remove()
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} regains normal speed.",
-                (200, 200, 200)  # Gray
+            'message': MB.status_effect(
+                f"{self.owner.name} regains normal speed."
             )
         })
         return results
@@ -255,9 +245,8 @@ class SlowedEffect(StatusEffect):
         if self.turn_counter % 2 == 1:
             from game_messages import Message
             results.append({
-                'message': Message(
-                    f"{self.owner.name} is too slow to act!",
-                    (100, 100, 200)  # Darker blue
+                'message': MB.status_effect(
+                    f"{self.owner.name} is too slow to act!"
                 ),
                 'skip_turn': True  # Signal to AI/player that this turn is skipped
             })
@@ -278,9 +267,8 @@ class ImmobilizedEffect(StatusEffect):
         results = super().apply()
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} is stuck in place!",
-                (139, 69, 19)  # Brown (glue color)
+            'message': MB.status_effect(
+                f"{self.owner.name} is stuck in place!"
             )
         })
         return results
@@ -289,9 +277,8 @@ class ImmobilizedEffect(StatusEffect):
         results = super().remove()
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} breaks free!",
-                (200, 200, 200)  # Gray
+            'message': MB.status_effect(
+                f"{self.owner.name} breaks free!"
             )
         })
         return results
@@ -328,9 +315,8 @@ class EnragedEffect(StatusEffect):
         
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} flies into a rage!",
-                (255, 50, 50)  # Bright red
+            'message': MB.status_effect(
+                f"{self.owner.name} flies into a rage!"
             )
         })
         return results
@@ -344,9 +330,8 @@ class EnragedEffect(StatusEffect):
         
         from game_messages import Message
         results.append({
-            'message': Message(
-                f"{self.owner.name} calms down.",
-                (200, 200, 200)  # Gray
+            'message': MB.status_effect(
+                f"{self.owner.name} calms down."
             )
         })
         return results
@@ -362,8 +347,7 @@ class StatusEffectManager:
         results = []
         if effect.name in self.active_effects:
             # Replace existing effect if new one is added
-            from game_messages import Message
-            results.append({'message': Message(f"{self.owner.name}'s {effect.name} effect is refreshed.", (150, 200, 255))})
+            results.append({'message': MB.status_effect(f"{self.owner.name}'s {effect.name} effect is refreshed.")})
             self.active_effects[effect.name].remove() # Remove old effect
         
         self.active_effects[effect.name] = effect

@@ -18,6 +18,7 @@ from entity import Entity
 from entity_sorting_cache import invalidate_entity_cache
 from equipment_slots import EquipmentSlots
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 from item_functions import heal
 from map_objects.rectangle import Rect
 from map_objects.tile import Tile
@@ -446,7 +447,7 @@ class GameMap:
         player.fighter.heal(player.fighter.max_hp // 2)
 
         message_log.add_message(
-            Message(
+            MB.custom(
                 "You take a moment to rest, and recover your strength.", (159, 63, 255)
             )
         )

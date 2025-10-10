@@ -5,6 +5,7 @@ import tcod as libtcod
 import tcod.libtcodpy as libtcodpy
 
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger
 from components.faction import Faction, are_factions_hostile, get_target_priority
@@ -269,8 +270,7 @@ class BasicMonster:
                 if (hasattr(monster, 'has_status_effect') and 
                     callable(monster.has_status_effect) and 
                     monster.has_status_effect('immobilized')):
-                    from game_messages import Message
-                    results.append({'message': Message(f"{monster.name} struggles against the glue!", (139, 69, 19))})
+                    results.append({'message': MB.custom(f"{monster.name} struggles against the glue!", (139, 69, 19))})
                     MonsterActionLogger.log_turn_summary(monster, ["immobilized"])
                     return results
                 
@@ -419,7 +419,7 @@ class BasicMonster:
         MonsterActionLogger.log_item_pickup(self.owner, item, True, pickup_details)
         
         results.append({
-            "message": Message(f"{self.owner.name.capitalize()} picks up the {item.name}!", (255, 255, 0))
+            "message": MB.item_pickup(f"{self.owner.name.capitalize()} picks up the {item.name}!")
         })
         
         return results
@@ -535,8 +535,7 @@ class MindlessZombieAI:
                         if (hasattr(self.owner, 'has_status_effect') and 
                             callable(self.owner.has_status_effect) and 
                             self.owner.has_status_effect('immobilized')):
-                            from game_messages import Message
-                            results.append({'message': Message(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+                            results.append({'message': MB.custom(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
                             return results
                         
                         self.owner.move_astar(self.current_target, entities, game_map)
@@ -569,8 +568,7 @@ class MindlessZombieAI:
                 if (hasattr(self.owner, 'has_status_effect') and 
                     callable(self.owner.has_status_effect) and 
                     self.owner.has_status_effect('immobilized')):
-                    from game_messages import Message
-                    results.append({'message': Message(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+                    results.append({'message': MB.custom(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
                     return results
                 
                 self.owner.move_astar(closest, entities, game_map)
@@ -581,8 +579,7 @@ class MindlessZombieAI:
         if (hasattr(self.owner, 'has_status_effect') and 
             callable(self.owner.has_status_effect) and 
             self.owner.has_status_effect('immobilized')):
-            from game_messages import Message
-            results.append({'message': Message(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+            results.append({'message': MB.custom(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
             return results
         
         dx = randint(-1, 1)
@@ -717,9 +714,8 @@ class ConfusedMonster:
             self.owner.ai = self.previous_ai
             results.append(
                 {
-                    "message": Message(
-                        "The {0} is no longer confused!".format(self.owner.name),
-                        (255, 0, 0),
+                    "message": MB.status_effect(
+                        "The {0} is no longer confused!".format(self.owner.name)
                     )
                 }
             )
@@ -801,8 +797,7 @@ class SlimeAI:
                 if (hasattr(monster, 'has_status_effect') and 
                     callable(monster.has_status_effect) and 
                     monster.has_status_effect('immobilized')):
-                    from game_messages import Message
-                    results.append({'message': Message(f"{monster.name} struggles against the glue!", (139, 69, 19))})
+                    results.append({'message': MB.custom(f"{monster.name} struggles against the glue!", (139, 69, 19))})
                     return results
                 
                 monster.move_astar(best_target, entities, game_map)

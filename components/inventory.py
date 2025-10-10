@@ -1,4 +1,6 @@
+from typing import List, Dict, Any, Optional
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 
 
 class Inventory:
@@ -14,17 +16,17 @@ class Inventory:
         owner (Entity): The entity that owns this inventory component
     """
 
-    def __init__(self, capacity):
+    def __init__(self, capacity: int) -> None:
         """Initialize an Inventory component.
 
         Args:
             capacity (int): Maximum number of items this inventory can hold
         """
-        self.capacity = capacity
-        self.items = []
-        self.owner = None  # Will be set by Entity when component is registered
+        self.capacity: int = capacity
+        self.items: List[Any] = []  # List of Entity objects
+        self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
 
-    def add_item(self, item):
+    def add_item(self, item: Any) -> List[Dict[str, Any]]:
         """Add an item to the inventory.
 
         Attempts to add an item to the inventory if there's space available.
@@ -36,10 +38,10 @@ class Inventory:
           the scroll automatically recharges the wand instead of being added.
 
         Args:
-            item (Entity): The item entity to add to inventory
+            item (Any): The item entity to add to inventory (Entity type)
 
         Returns:
-            list: List of result dictionaries with 'item_added' and 'message' keys
+            List[Dict[str, Any]]: List of result dictionaries with 'item_added' and 'message' keys
         """
         results = []
 
@@ -47,9 +49,8 @@ class Inventory:
             results.append(
                 {
                     "item_added": None,
-                    "message": Message(
-                        "You cannot carry any more, your inventory is full",
-                        (255, 255, 0),
+                    "message": MB.warning(
+                        "You cannot carry any more, your inventory is full"
                     ),
                 }
             )
@@ -78,10 +79,9 @@ class Inventory:
                         results.append({
                             "item_added": None,  # New wand was consumed, not added
                             "item_consumed": item,  # Signal that new wand should be removed from world
-                            "message": Message(
+                            "message": MB.item_effect(
                                 f"Your {item.name} glows brightly and vanishes! "
-                                f"Your {inv_item.name} gains {charges_gained} {charge_word}. ({inv_wand.charges} charges)",
-                                (255, 215, 0)  # Gold
+                                f"Your {inv_item.name} gains {charges_gained} {charge_word}. ({inv_wand.charges} charges)"
                             )
                         })
                         break
@@ -109,10 +109,9 @@ class Inventory:
                         results.append({
                             "item_added": None,  # Scroll was consumed, not added
                             "item_consumed": item,  # Signal that scroll should be removed from world
-                            "message": Message(
+                            "message": MB.item_effect(
                                 f"Your {item.name} glows brightly and vanishes! "
-                                f"Your {inv_item.name} gains a charge. ({wand.charges} charges)",
-                                (255, 215, 0)  # Gold
+                                f"Your {inv_item.name} gains a charge. ({wand.charges} charges)"
                             )
                         })
                         break
@@ -123,8 +122,8 @@ class Inventory:
                 results.append(
                     {
                         "item_added": item,
-                        "message": Message(
-                            "You pick up the {0}!".format(item.name), (0, 0, 255)
+                        "message": MB.item_pickup(
+                            "You pick up the {0}!".format(item.name)
                         ),
                     }
                 )
@@ -153,27 +152,26 @@ class Inventory:
                         
                         scroll_word = "scroll" if len(scrolls_to_consume) == 1 else "scrolls"
                         results.append({
-                            "message": Message(
+                            "message": MB.item_effect(
                                 f"Your {item.name} hungrily absorbs {len(scrolls_to_consume)} {scroll_word}! "
-                                f"({wand.charges} charges)",
-                                (255, 215, 0)  # Gold
+                                f"({wand.charges} charges)"
                             )
                         })
 
         return results
 
-    def use(self, item_entity, **kwargs):
+    def use(self, item_entity: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Use an item from the inventory.
 
         Attempts to use an item, either by calling its use function (for consumables)
         or by equipping it (for equippable items). Handles both cases appropriately.
 
         Args:
-            item_entity (Entity): The item entity to use
+            item_entity (Any): The item entity to use (Entity type)
             **kwargs: Additional arguments passed to item use functions
 
         Returns:
-            list: List of result dictionaries with usage results and messages
+            List[Dict[str, Any]]: List of result dictionaries with usage results and messages
         """
         results = []
 
@@ -187,9 +185,8 @@ class Inventory:
             else:
                 results.append(
                     {
-                        "message": Message(
-                            "The {0} cannot be used".format(item_entity.name),
-                            (255, 255, 0),
+                        "message": MB.warning(
+                            "The {0} cannot be used".format(item_entity.name)
                         )
                     }
                 )
@@ -207,9 +204,8 @@ class Inventory:
                     if wand_component.is_empty():
                         # Wand has no charges - can't use it
                         results.append({
-                            "message": Message(
-                                f"The {item_entity.name} fizzles uselessly. It has no charges!",
-                                (128, 128, 128)  # Gray
+                            "message": MB.warning(
+                                f"The {item_entity.name} fizzles uselessly. It has no charges!"
                             )
                         })
                     else:
@@ -235,16 +231,14 @@ class Inventory:
                             remaining_charges = wand_component.charges
                             if remaining_charges > 0:
                                 results.append({
-                                    "message": Message(
-                                        f"The {item_entity.name} glows. ({remaining_charges} charges remaining)",
-                                        (200, 200, 255)  # Light blue
+                                    "message": MB.item_charge(
+                                        f"The {item_entity.name} glows. ({remaining_charges} charges remaining)"
                                     )
                                 })
                             else:
                                 results.append({
-                                    "message": Message(
-                                        f"The {item_entity.name} dims. (0 charges remaining)",
-                                        (128, 128, 128)  # Gray
+                                    "message": MB.item_charge(
+                                        f"The {item_entity.name} dims. (0 charges remaining)"
                                     )
                                 })
                 else:
@@ -263,19 +257,18 @@ class Inventory:
 
         return results
 
-    def remove_item(self, item):
+    def remove_item(self, item: Any) -> List[Dict[str, Any]]:
         """Remove an item from the inventory.
 
         Removes the specified item from the inventory if it exists.
         Returns appropriate success or error messages.
 
         Args:
-            item (Entity): The item entity to remove
+            item (Any): The item entity to remove (Entity type)
 
         Returns:
-            list: List of result dictionaries with removal results and messages
+            List[Dict[str, Any]]: List of result dictionaries with removal results and messages
         """
-        """Remove item from inventory. Returns results instead of raising errors."""
         results = []
 
         if item and item in self.items:
@@ -286,28 +279,26 @@ class Inventory:
             results.append(
                 {
                     "item_removed": None,
-                    "message": Message(
-                        "Cannot remove {0}: not in inventory".format(item_name),
-                        (255, 255, 0),
+                    "message": MB.warning(
+                        "Cannot remove {0}: not in inventory".format(item_name)
                     ),
                 }
             )
 
         return results
 
-    def drop_item(self, item):
+    def drop_item(self, item: Any) -> List[Dict[str, Any]]:
         """Drop an item from the inventory onto the ground.
 
         Removes an item from inventory and places it at the owner's location.
         Automatically unequips the item if it was equipped.
 
         Args:
-            item (Entity): The item entity to drop
+            item (Any): The item entity to drop (Entity type)
 
         Returns:
-            list: List of result dictionaries with drop results and messages
+            List[Dict[str, Any]]: List of result dictionaries with drop results and messages
         """
-        """Drop item from inventory."""
         results = []
 
         # Check if item is equipped and unequip it
@@ -329,8 +320,8 @@ class Inventory:
             results.append(
                 {
                     "item_dropped": item,
-                    "message": Message(
-                        "You dropped the {0}".format(item.name), (255, 255, 0)
+                    "message": MB.item_drop(
+                        "You dropped the {0}".format(item.name)
                     ),
                 }
             )

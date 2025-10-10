@@ -10,6 +10,7 @@ import math
 from spells.spell_definition import SpellDefinition
 from spells.spell_types import SpellCategory, TargetingType, DamageType, EffectType
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 from fov_functions import map_is_in_fov
 from dice import roll_dice
 from components.component_registry import ComponentType
@@ -68,11 +69,11 @@ class SpellExecutor:
         
         # Check for invalid range (negative if specified)
         if range_override is not None and range_override < 0:
-            return [{"consumed": False, "message": Message("Invalid spell range!", (255, 255, 0))}]
+            return [{"consumed": False, "message": MB.warning("Invalid spell range!")}]
         
         # Check for invalid damage (negative only, zero is allowed)
         if damage_override is not None and damage_override < 0:
-            return [{"consumed": False, "message": Message("Invalid spell parameters!", (255, 255, 0))}]
+            return [{"consumed": False, "message": MB.warning("Invalid spell parameters!")}]
         
         # Handle different spell categories
         if spell.category == SpellCategory.OFFENSIVE:
@@ -93,7 +94,7 @@ class SpellExecutor:
             return [
                 {
                     "consumed": False,
-                    "message": Message("Unknown spell category!", (255, 0, 0))
+                    "message": MB.failure("Unknown spell category!")
                 }
             ]
     
@@ -173,9 +174,8 @@ class SpellExecutor:
                 {
                     "consumed": False,
                     "target": None,
-                    "message": Message(
-                        spell.fail_message or "No enemy is close enough to strike.",
-                        (255, 0, 0)
+                    "message": MB.spell_fail(
+                        spell.fail_message or "No enemy is close enough to strike."
                     ),
                 }
             ]
@@ -198,7 +198,7 @@ class SpellExecutor:
             {
                 "consumed": True,
                 "target": target,
-                "message": Message(message_text.format(target.name, damage)),
+                "message": MB.spell_effect(message_text.format(target.name, damage)),
             }
         )
         results.extend(target.fighter.take_damage(damage))
@@ -228,9 +228,8 @@ class SpellExecutor:
             return [
                 {
                     "consumed": False,
-                    "message": Message(
-                        "You cannot target a tile outside your field of view.",
-                        (255, 255, 0),
+                    "message": MB.warning(
+                        "You cannot target a tile outside your field of view."
                     ),
                 }
             ]
@@ -240,7 +239,7 @@ class SpellExecutor:
         results.append(
             {
                 "consumed": True,
-                "message": Message(cast_msg, (255, 127, 0)),
+                "message": MB.spell_cast(cast_msg),
             }
         )
         
@@ -269,7 +268,7 @@ class SpellExecutor:
                 if distance <= spell.radius:
                     results.append(
                         {
-                            "message": Message(
+                            "message": MB.spell_effect(
                                 f"The {entity.name} gets burned for {damage} hit points."
                             )
                         }
@@ -330,9 +329,8 @@ class SpellExecutor:
             return [
                 {
                     "consumed": False,
-                    "message": Message(
-                        "You cannot target a tile outside your field of view.",
-                        (255, 255, 0),
+                    "message": MB.warning(
+                        "You cannot target a tile outside your field of view."
                     ),
                 }
             ]
@@ -350,7 +348,7 @@ class SpellExecutor:
         results.append(
             {
                 "consumed": True,
-                "message": Message(cast_msg, (100, 255, 100)),
+                "message": MB.spell_cast(cast_msg),
             }
         )
         
@@ -365,7 +363,7 @@ class SpellExecutor:
             if entity.fighter and (entity.x, entity.y) in cone_tiles:
                 results.append(
                     {
-                        "message": Message(
+                        "message": MB.spell_effect(
                             f"The {entity.name} is caught in the blast for {damage} hit points!"
                         )
                     }
@@ -414,7 +412,7 @@ class SpellExecutor:
             return [
                 {
                     "consumed": False,
-                    "message": Message("You are already at full health", (255, 255, 0)),
+                    "message": MB.warning("You are already at full health"),
                 }
             ]
         
@@ -425,7 +423,7 @@ class SpellExecutor:
         results.append(
             {
                 "consumed": True,
-                "message": Message("Your wounds start to feel better!", (0, 255, 0)),
+                "message": MB.healing("Your wounds start to feel better!"),
             }
         )
         
@@ -454,9 +452,8 @@ class SpellExecutor:
                 return [
                     {
                         "consumed": False,
-                        "message": Message(
-                            "You cannot target a tile outside your field of view.",
-                            (255, 255, 0),
+                        "message": MB.warning(
+                            "You cannot target a tile outside your field of view."
                         ),
                     }
                 ]
@@ -472,7 +469,7 @@ class SpellExecutor:
         return [
             {
                 "consumed": False,
-                "message": Message("Unknown utility spell effect!", (255, 0, 0))
+                "message": MB.failure("Unknown utility spell effect!")
             }
         ]
     
@@ -498,9 +495,8 @@ class SpellExecutor:
             return [
                 {
                     "consumed": False,
-                    "message": Message(
-                        spell.no_target_message,
-                        (255, 255, 0)
+                    "message": MB.warning(
+                        spell.no_target_message
                     ),
                 }
             ]
@@ -514,9 +510,8 @@ class SpellExecutor:
         return [
             {
                 "consumed": True,
-                "message": Message(
-                    message_text.format(target.name),
-                    (63, 255, 63),
+                "message": MB.spell_effect(
+                    message_text.format(target.name)
                 ),
             }
         ]
@@ -544,7 +539,7 @@ class SpellExecutor:
             return [
                 {
                     "consumed": False,
-                    "message": Message(spell.no_target_message, (255, 255, 0))
+                    "message": MB.warning(spell.no_target_message)
                 }
             ]
         
@@ -569,7 +564,7 @@ class SpellExecutor:
         return [
             {
                 "consumed": False,
-                "message": Message("Failed to apply status effect!", (255, 0, 0))
+                "message": MB.failure("Failed to apply status effect!")
             }
         ]
     
@@ -588,9 +583,8 @@ class SpellExecutor:
             return [
                 {
                     "consumed": False,
-                    "message": Message(
-                        "You cannot teleport into a wall!",
-                        (255, 255, 0)
+                    "message": MB.warning(
+                        "You cannot teleport into a wall!"
                     ),
                 }
             ]
@@ -602,9 +596,8 @@ class SpellExecutor:
                     return [
                         {
                             "consumed": False,
-                            "message": Message(
-                                "That location is occupied!",
-                                (255, 255, 0)
+                            "message": MB.warning(
+                                "That location is occupied!"
                             ),
                         }
                     ]
@@ -618,7 +611,7 @@ class SpellExecutor:
         return [
             {
                 "consumed": True,
-                "message": Message(message_text, (127, 0, 255)),  # Purple
+                "message": MB.spell_effect(message_text),
                 "fov_recompute": True  # Request FOV recomputation
             }
         ]
@@ -653,7 +646,7 @@ class SpellExecutor:
         return [
             {
                 "consumed": False,
-                "message": Message("Unknown buff spell!", (255, 0, 0))
+                "message": MB.failure("Unknown buff spell!")
             }
         ]
     
@@ -698,9 +691,8 @@ class SpellExecutor:
         # Check if already invisible
         if getattr(caster, 'invisible', False):
             results.append({
-                "message": Message(
-                    f"{caster.name} is already invisible!",
-                    (128, 128, 128)
+                "message": MB.spell_fail(
+                    f"{caster.name} is already invisible!"
                 )
             })
             results.append({"consumed": False})
@@ -753,24 +745,23 @@ class SpellExecutor:
                 
                 results.append({
                     "consumed": True,
-                    "message": Message(
+                    "message": MB.item_effect(
                         f"Your {weapon.name} glows briefly! Damage enhanced from "
-                        f"({old_min}-{old_max}) to ({weapon.equippable.damage_min}-{weapon.equippable.damage_max}).",
-                        (0, 255, 0)
+                        f"({old_min}-{old_max}) to ({weapon.equippable.damage_min}-{weapon.equippable.damage_max})."
                     )
                 })
             else:
                 results.append({
                     "consumed": False,
-                    "message": Message(
-                        f"The {weapon.name} cannot be enhanced further.", (255, 255, 0)
+                    "message": MB.warning(
+                        f"The {weapon.name} cannot be enhanced further."
                     )
                 })
         else:
             results.append({
                 "consumed": False,
-                "message": Message(
-                    "You must have a weapon equipped to use this scroll.", (255, 255, 0)
+                "message": MB.warning(
+                    "You must have a weapon equipped to use this scroll."
                 )
             })
         
@@ -797,7 +788,7 @@ class SpellExecutor:
         if not equipment:
             return [{
                 "consumed": False,
-                "message": Message("You have no equipment to enhance!", (255, 255, 0))
+                "message": MB.warning("You have no equipment to enhance!")
             }]
         
         # Find equipped armor pieces
@@ -813,7 +804,7 @@ class SpellExecutor:
         if not armor_pieces:
             return [{
                 "consumed": False,
-                "message": Message("You have no armor equipped to enhance!", (255, 255, 0))
+                "message": MB.warning("You have no armor equipped to enhance!")
             }]
         
         # Randomly select an armor piece
@@ -825,10 +816,9 @@ class SpellExecutor:
         
         results.append({
             "consumed": True,
-            "message": Message(
+            "message": MB.item_effect(
                 f"Your {armor.name} glows with magical energy! "
-                f"AC bonus increased from +{old_bonus} to +{armor.equippable.armor_class_bonus}.",
-                (0, 255, 0)
+                f"AC bonus increased from +{old_bonus} to +{armor.equippable.armor_class_bonus}."
             )
         })
         
@@ -856,7 +846,7 @@ class SpellExecutor:
         else:
             return [{
                 "consumed": False,
-                "message": Message(f"Unsupported summon spell: {spell.spell_id}", (255, 0, 0))
+                "message": MB.failure(f"Unsupported summon spell: {spell.spell_id}")
             }]
     
     def _cast_raise_dead_spell(
@@ -884,7 +874,7 @@ class SpellExecutor:
         if target_x is None or target_y is None:
             return [{
                 "consumed": False,
-                "message": Message(spell.no_target_message or "You must select a corpse!", (255, 255, 0))
+                "message": MB.warning(spell.no_target_message or "You must select a corpse!")
             }]
         
         # Check range
@@ -892,7 +882,7 @@ class SpellExecutor:
         if distance > max_range:
             return [{
                 "consumed": False,
-                "message": Message("That corpse is too far away!", (255, 255, 0))
+                "message": MB.warning("That corpse is too far away!")
             }]
         
         # Find corpse at location
@@ -906,7 +896,7 @@ class SpellExecutor:
         if not corpse:
             return [{
                 "consumed": False,
-                "message": Message(spell.fail_message or "No corpse there!", (255, 255, 0))
+                "message": MB.warning(spell.fail_message or "No corpse there!")
             }]
         
         # Check if location is blocked
@@ -914,7 +904,7 @@ class SpellExecutor:
         if blocking_entity and blocking_entity != corpse:
             return [{
                 "consumed": False,
-                "message": Message(f"{blocking_entity.name} is in the way!", (255, 255, 0))
+                "message": MB.warning(f"{blocking_entity.name} is in the way!")
             }]
         
         # Resurrect the corpse!
@@ -991,7 +981,7 @@ class SpellExecutor:
         
         results.append({
             "consumed": True,
-            "message": Message(spell.success_message or f"{corpse.name} rises!", (0, 255, 0))
+            "message": MB.spell_effect(spell.success_message or f"{corpse.name} rises!")
         })
         
         return results
@@ -1018,7 +1008,7 @@ class SpellExecutor:
         if not map_is_in_fov(fov_map, target_x, target_y):
             return [{
                 "consumed": False,
-                "message": Message("You cannot target something you cannot see.", (255, 255, 0))
+                "message": MB.warning("You cannot target something you cannot see.")
             }]
         
         # Find target
@@ -1031,7 +1021,7 @@ class SpellExecutor:
         if not target:
             return [{
                 "consumed": False,
-                "message": Message(spell.fail_message or "No valid target!", (255, 255, 0))
+                "message": MB.warning(spell.fail_message or "No valid target!")
             }]
         
         # Load jokes from YAML
@@ -1052,9 +1042,9 @@ class SpellExecutor:
         
         # Target yells the joke
         results.append({
-            "message": Message(
+            "message": MB.custom(
                 f'{target.name} yells: "{joke}"',
-                (200, 150, 255)  # Purple
+                MB.PURPLE  # Purple
             )
         })
         
@@ -1077,17 +1067,15 @@ class SpellExecutor:
         
         results.append({
             "consumed": True,
-            "message": Message(
-                spell.success_message or "All hostiles turn their attention!",
-                (255, 100, 100)
+            "message": MB.spell_effect(
+                spell.success_message or "All hostiles turn their attention!"
             )
         })
         
         if affected_count > 0:
             results.append({
-                "message": Message(
-                    f"{affected_count} creature{'s' if affected_count != 1 else ''} now target {target.name}!",
-                    (255, 200, 100)
+                "message": MB.spell_effect(
+                    f"{affected_count} creature{'s' if affected_count != 1 else ''} now target {target.name}!"
                 )
             })
         

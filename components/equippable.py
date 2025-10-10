@@ -4,6 +4,8 @@ This module defines the Equippable component which makes items
 equippable and defines their stat bonuses and equipment slot.
 """
 
+from typing import Optional, Any
+
 
 class Equippable:
     """Component that makes an entity equippable with stat bonuses.
@@ -29,15 +31,15 @@ class Equippable:
         owner (Entity): The entity that owns this component
     """
 
-    def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0,
-                 armor_class_bonus=0, to_hit_bonus=0,
-                 damage_min=0, damage_max=0, defense_min=0, defense_max=0,
-                 armor_type=None, dex_cap=None, damage_dice=None,
-                 two_handed=False, reach=1):
+    def __init__(self, slot: Any, power_bonus: int = 0, defense_bonus: int = 0, max_hp_bonus: int = 0,
+                 armor_class_bonus: int = 0, to_hit_bonus: int = 0,
+                 damage_min: int = 0, damage_max: int = 0, defense_min: int = 0, defense_max: int = 0,
+                 armor_type: Optional[str] = None, dex_cap: Optional[int] = None, damage_dice: Optional[str] = None,
+                 two_handed: bool = False, reach: int = 1) -> None:
         """Initialize an Equippable component.
 
         Args:
-            slot (EquipmentSlots): The equipment slot this item fits in
+            slot (Any): The equipment slot this item fits in (EquipmentSlots type)
             power_bonus (int, optional): Attack power bonus. Defaults to 0.
             defense_bonus (int, optional): Defense bonus. Defaults to 0.
             max_hp_bonus (int, optional): Maximum HP bonus. Defaults to 0.
@@ -47,28 +49,28 @@ class Equippable:
             damage_max (int, optional): Maximum weapon damage. Defaults to 0.
             defense_min (int, optional): Minimum armor defense. Defaults to 0.
             defense_max (int, optional): Maximum armor defense. Defaults to 0.
-            armor_type (str, optional): Armor type (light/medium/heavy). Defaults to None.
-            dex_cap (int, optional): Max DEX modifier for AC (None = no cap). Defaults to None.
-            damage_dice (str, optional): Dice notation for damage (e.g., "1d4", "2d6"). Defaults to None.
+            armor_type (Optional[str], optional): Armor type (light/medium/heavy). Defaults to None.
+            dex_cap (Optional[int], optional): Max DEX modifier for AC (None = no cap). Defaults to None.
+            damage_dice (Optional[str], optional): Dice notation for damage (e.g., "1d4", "2d6"). Defaults to None.
             two_handed (bool, optional): Requires both hands, prevents shield use. Defaults to False.
             reach (int, optional): Attack range in tiles (1 = adjacent, 2 = spear). Defaults to 1.
         """
-        self.slot = slot
-        self.power_bonus = power_bonus
-        self.defense_bonus = defense_bonus
-        self.max_hp_bonus = max_hp_bonus
-        self.armor_class_bonus = armor_class_bonus
-        self.to_hit_bonus = to_hit_bonus
-        self.damage_min = damage_min if damage_min > 0 else 0
-        self.damage_max = damage_max if damage_max >= damage_min else damage_min
-        self.defense_min = defense_min if defense_min > 0 else 0
-        self.defense_max = defense_max if defense_max >= defense_min else defense_min
-        self.armor_type = armor_type  # light, medium, heavy, shield, or weapon
-        self.dex_cap = dex_cap  # Maximum DEX modifier that applies to AC (None = no cap)
-        self.damage_dice = damage_dice  # Dice notation like "1d4", "1d6", "2d6"
-        self.two_handed = two_handed  # Requires both hands, prevents shield use
-        self.reach = reach  # Attack range in tiles (1 = adjacent, 2 = spear reach)
-        self.owner = None  # Will be set by Entity when component is registered
+        self.slot: Any = slot
+        self.power_bonus: int = power_bonus
+        self.defense_bonus: int = defense_bonus
+        self.max_hp_bonus: int = max_hp_bonus
+        self.armor_class_bonus: int = armor_class_bonus
+        self.to_hit_bonus: int = to_hit_bonus
+        self.damage_min: int = damage_min if damage_min > 0 else 0
+        self.damage_max: int = damage_max if damage_max >= damage_min else damage_min
+        self.defense_min: int = defense_min if defense_min > 0 else 0
+        self.defense_max: int = defense_max if defense_max >= defense_min else defense_min
+        self.armor_type: Optional[str] = armor_type  # light, medium, heavy, shield, or weapon
+        self.dex_cap: Optional[int] = dex_cap  # Maximum DEX modifier that applies to AC (None = no cap)
+        self.damage_dice: Optional[str] = damage_dice  # Dice notation like "1d4", "1d6", "2d6"
+        self.two_handed: bool = two_handed  # Requires both hands, prevents shield use
+        self.reach: int = reach  # Attack range in tiles (1 = adjacent, 2 = spear reach)
+        self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
     
     def get_damage_range_text(self) -> str:
         """Get formatted damage range text for display.
@@ -133,6 +135,9 @@ class Equippable:
         Args:
             min_bonus (int): Amount to add to minimum damage
             max_bonus (int): Amount to add to maximum damage
+        
+        Returns:
+            None
         """
         if self.damage_min > 0 or self.damage_max > 0:
             self.damage_min = max(1, self.damage_min + min_bonus)
@@ -144,6 +149,9 @@ class Equippable:
         Args:
             min_bonus (int): Amount to add to minimum defense
             max_bonus (int): Amount to add to maximum defense
+        
+        Returns:
+            None
         """
         if self.defense_min > 0 or self.defense_max > 0:
             self.defense_min = max(1, self.defense_min + min_bonus)

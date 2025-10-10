@@ -1,5 +1,6 @@
 import logging
 from game_messages import Message
+from message_builder import MessageBuilder as MB
 from config.testing_config import is_testing_mode
 from visual_effects import show_hit, show_miss
 from components.component_registry import ComponentType
@@ -379,7 +380,7 @@ class Fighter:
             )
             
             results.append({
-                "message": Message(message_text, (255, 255, 255))
+                "message": MB.combat(message_text)
             })
             
             # Log detailed combat breakdown in testing mode
@@ -412,7 +413,7 @@ class Fighter:
             )
             
             results.append({
-                "message": Message(message_text, (255, 255, 255))
+                "message": MB.combat(message_text)
             })
             
             # Log detailed combat breakdown for blocked attacks in testing mode
@@ -506,7 +507,7 @@ class Fighter:
                     damage
                 )
                 results.append({
-                    "message": Message(message_text, (255, 215, 0))  # Gold color for crits
+                    "message": MB.combat_critical(message_text)
                 })
             else:
                 # Normal hit
@@ -523,7 +524,7 @@ class Fighter:
                     damage
                 )
                 results.append({
-                    "message": Message(message_text, (255, 255, 255))
+                    "message": MB.combat(message_text)
                 })
             
             # Log detailed combat info in testing mode
@@ -569,7 +570,7 @@ class Fighter:
                     target.name
                 )
                 results.append({
-                    "message": Message(message_text, (200, 200, 200))  # Gray for fumble
+                    "message": MB.combat_fumble(message_text)
                 })
             else:
                 # Calculate hit percentage for display
@@ -582,7 +583,7 @@ class Fighter:
                     hit_percentage
                 )
                 results.append({
-                    "message": Message(message_text, (180, 180, 180))
+                    "message": MB.combat_miss(message_text)
                 })
             
             # Log miss in testing mode
@@ -795,11 +796,10 @@ class Fighter:
             if equippable.damage_max > equippable.damage_min:
                 equippable.damage_max -= 1
                 
-                from game_messages import Message
                 results.append({
-                    'message': Message(
+                    'message': MB.custom(
                         f'The {self.owner.name} corrodes {target.name}\'s {weapon.name}!',
-                        color=(255, 165, 0)  # Orange warning
+                        MB.ORANGE
                     )
                 })
         
@@ -825,11 +825,10 @@ class Fighter:
             if equippable.defense_max > equippable.defense_min:
                 equippable.defense_max -= 1
                 
-                from game_messages import Message
                 results.append({
-                    'message': Message(
+                    'message': MB.custom(
                         f'{target.name}\'s {armor.name} is corroded by acid!',
-                        color=(255, 165, 0)  # Orange warning
+                        MB.ORANGE
                     )
                 })
         

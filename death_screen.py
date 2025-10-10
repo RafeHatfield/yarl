@@ -6,6 +6,7 @@ Includes Entity dialogue to establish the bound soul narrative.
 
 import tcod.libtcodpy as libtcodpy
 from entity_dialogue import get_entity_quote_for_death
+from components.component_registry import ComponentType
 
 
 def render_death_screen(con, player, screen_width, screen_height, entity_quote=None):
