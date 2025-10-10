@@ -180,8 +180,19 @@ class MonsterItemUsage:
                     break
             MonsterActionLogger.log_item_usage(self.monster, item, target, False, failure_mode)
         else:
-            results.extend(self._handle_item_success(item, target, entities))
-            MonsterActionLogger.log_item_usage(self.monster, item, target, True)
+            success_results = self._handle_item_success(item, target, entities)
+            results.extend(success_results)
+            
+            # Check if item actually failed due to exception (will have "fizzles!" message)
+            item_actually_failed = any(
+                "message" in result and "fizzles" in result["message"].text.lower()
+                for result in success_results
+            )
+            
+            if item_actually_failed:
+                MonsterActionLogger.log_item_usage(self.monster, item, target, False, "exception")
+            else:
+                MonsterActionLogger.log_item_usage(self.monster, item, target, True)
             
         # Remove item from inventory after use (success or failure)
         if item in self.monster.inventory.items:
@@ -208,7 +219,9 @@ class MonsterItemUsage:
         if hasattr(item.item, 'use_function') and item.item.use_function:
             try:
                 # Call the item's use function
+                # Pass monster as first positional argument (caster) to match player usage
                 use_results = item.item.use_function(
+                    self.monster,  # Monster is the caster (first positional arg)
                     inventory=self.monster.inventory,
                     target_entity=target,
                     entities=entities,
