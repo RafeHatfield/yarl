@@ -62,6 +62,22 @@ monsters:
     can_seek_items: true      # Whether monster actively seeks items on the ground
     inventory_size: 5         # Maximum items monster can carry (0 = no inventory)
     seek_distance: 5          # Maximum distance to detect and pursue items
+    # Equipment system - orcs spawn with basic weapons/armor
+    equipment:
+      spawn_chances:
+        main_hand: 0.75  # 75% chance of weapon
+        chest: 0.50      # 50% chance of armor
+      equipment_pool:
+        main_hand:
+          - item: "club"
+            weight: 40
+          - item: "dagger"
+            weight: 30
+          - item: "shortsword"
+            weight: 30
+        chest:
+          - item: "leather_armor"
+            weight: 100
 
   # Elite orc variant using inheritance system
   orc_chieftain:

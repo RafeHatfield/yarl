@@ -12,6 +12,7 @@ from spells.spell_types import SpellCategory, TargetingType, DamageType, EffectT
 from game_messages import Message
 from fov_functions import map_is_in_fov
 from dice import roll_dice
+from components.component_registry import ComponentType
 
 
 class SpellExecutor:
@@ -485,7 +486,6 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast confusion spell that replaces target's AI."""
         from components.ai import ConfusedMonster
-        from components.component_registry import ComponentType
         
         # Find target entity at location
         target = None
@@ -532,7 +532,6 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast spell that applies a status effect (slow, glue, rage)."""
         from components.status_effects import SlowedEffect, GluedEffect, EnragedEffect, StatusEffectManager
-        from components.component_registry import ComponentType
         
         # Find target entity
         target = None
@@ -665,7 +664,6 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast shield spell for defense boost."""
         from components.status_effects import ShieldEffect, StatusEffectManager
-        from components.component_registry import ComponentType
         
         results = []
         
@@ -694,7 +692,6 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast invisibility spell."""
         from components.status_effects import InvisibilityEffect, StatusEffectManager
-        from components.component_registry import ComponentType
         
         results = []
         
@@ -733,7 +730,6 @@ class SpellExecutor:
         **kwargs
     ) -> List[Dict[str, Any]]:
         """Enhance equipped weapon's damage."""
-        from components.component_registry import ComponentType
         
         min_bonus = kwargs.get("min_bonus", 1)
         max_bonus = kwargs.get("max_bonus", 2)
@@ -787,7 +783,6 @@ class SpellExecutor:
         **kwargs
     ) -> List[Dict[str, Any]]:
         """Enhance equipped armor's AC bonus."""
-        from components.component_registry import ComponentType
         import random
         
         bonus = kwargs.get("bonus", 1)
@@ -880,7 +875,6 @@ class SpellExecutor:
         from components.ai import MindlessZombieAI
         from config.entity_registry import get_entity_registry
         from render_functions import RenderOrder
-        from components.component_registry import ComponentType
         from components.faction import Faction
         
         results = []
@@ -1017,7 +1011,6 @@ class SpellExecutor:
         import random
         import os
         from components.status_effects import TauntedTargetEffect, StatusEffectManager
-        from components.component_registry import ComponentType
         
         results = []
         

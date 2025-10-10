@@ -311,8 +311,11 @@ def render_all(
         if not hovered_entity:
             hovered_entity = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
         
-        # If not hovering over sidebar item, check viewport for monsters or ground items
-        if not hovered_entity and ui_layout.is_in_viewport(mouse.cx, mouse.cy):
+        # If hovering over sidebar item, show single-entity tooltip
+        if hovered_entity:
+            render_tooltip(0, hovered_entity, mouse.cx, mouse.cy, ui_layout)
+        # Otherwise check viewport for monsters/items
+        elif ui_layout.is_in_viewport(mouse.cx, mouse.cy):
             # Convert screen coordinates to world coordinates
             camera_x, camera_y = 0, 0
             if camera:
@@ -322,17 +325,19 @@ def render_all(
             if world_coords:
                 world_x, world_y = world_coords
                 
-                # Check for monsters first (they're more important than items)
-                hovered_entity = get_monster_at_position(world_x, world_y, entities, player, fov_map)
+                # Import the new function for multiple entities
+                from ui.tooltip import get_all_entities_at_position, render_multi_entity_tooltip
                 
-                # If no monster, check for ground items
-                if not hovered_entity:
-                    hovered_entity = get_ground_item_at_position(world_x, world_y, entities, fov_map)
-        
-        if hovered_entity:
-            # Render tooltip on ROOT console (0) so it appears on top of everything
-            # Use screen coordinates directly since we're rendering to root
-            render_tooltip(0, hovered_entity, mouse.cx, mouse.cy, ui_layout)
+                # Get ALL entities at this position
+                entities_at_position = get_all_entities_at_position(world_x, world_y, entities, player, fov_map)
+                
+                if entities_at_position:
+                    # Show multi-entity tooltip if there are multiple entities
+                    if len(entities_at_position) > 1:
+                        render_multi_entity_tooltip(0, entities_at_position, mouse.cx, mouse.cy, ui_layout)
+                    else:
+                        # Single entity - use regular tooltip
+                        render_tooltip(0, entities_at_position[0], mouse.cx, mouse.cy, ui_layout)
 
 
 def _render_tiles_original(con, game_map, fov_map, colors, camera=None):

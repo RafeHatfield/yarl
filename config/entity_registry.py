@@ -85,6 +85,8 @@ class MonsterDefinition:
     seek_distance: int = 5
     # Special abilities
     special_abilities: Optional[List[str]] = None
+    # Equipment system - monsters can spawn with equipment
+    equipment: Optional[Dict[str, Any]] = None  # Equipment configuration
 
 
 @dataclass  
@@ -359,7 +361,9 @@ class EntityRegistry:
                     inventory_size=monster_data.get('inventory_size', 0),
                     seek_distance=monster_data.get('seek_distance', 5),
                     # Special abilities
-                    special_abilities=monster_data.get('special_abilities', None)
+                    special_abilities=monster_data.get('special_abilities', None),
+                    # Equipment system
+                    equipment=monster_data.get('equipment', None)
                 )
                 
                 self.monsters[monster_id] = monster_def

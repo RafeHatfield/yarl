@@ -46,6 +46,50 @@ def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_
     return None
 
 
+def get_all_entities_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> list:
+    """Get ALL entities at the specified world coordinates.
+    
+    Returns living monsters, corpses, and items at the position, prioritized
+    in that order for display purposes.
+    
+    Args:
+        world_x: X coordinate in world space
+        world_y: Y coordinate in world space
+        entities: List of all entities in the game
+        player: Player entity (to exclude from results)
+        fov_map: Optional FOV map to check visibility
+        
+    Returns:
+        List of entities at this position, ordered by priority (monsters first, then items, then corpses)
+    """
+    # Check FOV if provided
+    if fov_map:
+        from fov_functions import map_is_in_fov
+        if not map_is_in_fov(fov_map, world_x, world_y):
+            return []
+    
+    living_monsters = []
+    items = []
+    corpses = []
+    
+    for entity in entities:
+        if entity.x == world_x and entity.y == world_y and entity != player:
+            # Living monster (has fighter + AI + HP > 0)
+            if (entity.components.has(ComponentType.FIGHTER) and
+                entity.components.has(ComponentType.AI)):
+                fighter = entity.components.get(ComponentType.FIGHTER)
+                if fighter and fighter.hp > 0:
+                    living_monsters.append(entity)
+                else:
+                    corpses.append(entity)
+            # Item (has item component)
+            elif entity.components.has(ComponentType.ITEM):
+                items.append(entity)
+    
+    # Return in priority order: living monsters, then items, then corpses
+    return living_monsters + items + corpses
+
+
 def get_monster_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> Optional[Any]:
     """Get the monster at the specified world coordinates.
     
@@ -236,10 +280,23 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
                   entity.components.has(ComponentType.AI))
     
     if is_monster:
-        # Monster tooltip - just show the name
-        # TODO: Future enhancement - add a skill/ability that reveals detailed monster stats
-        # (HP, AC, equipment, status effects, etc.)
-        pass  # Name is already added above
+        # Monster tooltip - show name and equipment
+        # Check if monster has equipment
+        if entity.components.has(ComponentType.EQUIPMENT):
+            equipment = entity.components.get(ComponentType.EQUIPMENT)
+            if equipment:
+                # Show wielded weapon
+                if equipment.main_hand:
+                    weapon_name = equipment.main_hand.name
+                    tooltip_lines.append(f"Wielding: {weapon_name}")
+                
+                # Show worn armor
+                if equipment.off_hand:
+                    armor_name = equipment.off_hand.name
+                    tooltip_lines.append(f"Wearing: {armor_name}")
+                elif equipment.chest:
+                    armor_name = equipment.chest.name
+                    tooltip_lines.append(f"Wearing: {armor_name}")
     
     # Otherwise, show item information
     elif entity.components.has(ComponentType.WAND):
@@ -368,6 +425,122 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
             tooltip_x + 2,  # Padding from left border
             tooltip_y + 1 + i,  # +1 for top border
             libtcod.BKGND_SET,  # BKGND_SET ensures solid background behind text
+            libtcod.LEFT,
+            line
+        )
+
+
+def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: int, ui_layout) -> None:
+    """Render a tooltip showing multiple entities at the same location.
+    
+    Shows all entities at a tile: living monsters, items, and corpses.
+    
+    Args:
+        console: Console to render to (usually root console 0)
+        entities: List of entities to show (already filtered to same position)
+        mouse_x: Mouse X position (screen coordinates)
+        mouse_y: Mouse Y position (screen coordinates)
+        ui_layout: UILayoutConfig instance
+    """
+    if not entities:
+        return
+    
+    # Build tooltip lines showing all entities
+    tooltip_lines = []
+    
+    for i, entity in enumerate(entities):
+        # Add separator between entities (except before first)
+        if i > 0:
+            tooltip_lines.append("---")
+        
+        # Get entity name
+        entity_name = entity.get_display_name() if hasattr(entity, 'get_display_name') else entity.name
+        tooltip_lines.append(entity_name)
+        
+        # Check if this is a monster
+        is_monster = (entity.components.has(ComponentType.FIGHTER) and 
+                      entity.components.has(ComponentType.AI))
+        
+        if is_monster:
+            # Show equipment for monsters
+            if entity.components.has(ComponentType.EQUIPMENT):
+                equipment = entity.components.get(ComponentType.EQUIPMENT)
+                if equipment:
+                    if equipment.main_hand:
+                        tooltip_lines.append(f"  Wielding: {equipment.main_hand.name}")
+                    if equipment.off_hand:
+                        tooltip_lines.append(f"  Wearing: {equipment.off_hand.name}")
+                    elif equipment.chest:
+                        tooltip_lines.append(f"  Wearing: {equipment.chest.name}")
+        
+        # Show item information (abbreviated for multi-entity display)
+        elif entity.components.has(ComponentType.WAND):
+            tooltip_lines.append(f"  Wand ({entity.wand.charges} charges)")
+        elif entity.components.has(ComponentType.EQUIPPABLE):
+            eq = entity.equippable
+            if hasattr(eq, 'damage_dice') and eq.damage_dice:
+                tooltip_lines.append(f"  {eq.damage_dice} damage")
+            elif hasattr(eq, 'defense_bonus') and eq.defense_bonus:
+                tooltip_lines.append(f"  +{eq.defense_bonus} AC")
+        elif entity.components.has(ComponentType.ITEM):
+            # Just show it's consumable (abbreviated)
+            tooltip_lines.append(f"  Consumable")
+    
+    # Calculate tooltip dimensions
+    tooltip_width = max(len(line) for line in tooltip_lines) + 4
+    tooltip_height = len(tooltip_lines) + 2
+    
+    # Position tooltip near mouse, but keep it on screen
+    tooltip_x = mouse_x + 2
+    tooltip_y = mouse_y + 1
+    
+    if tooltip_x + tooltip_width > ui_layout.screen_width:
+        tooltip_x = ui_layout.screen_width - tooltip_width - 1
+    if tooltip_y + tooltip_height > ui_layout.screen_height:
+        tooltip_y = ui_layout.screen_height - tooltip_height - 1
+    if tooltip_x < 1:
+        tooltip_x = 1
+    if tooltip_y < 1:
+        tooltip_y = 1
+    
+    # Draw tooltip background
+    for y in range(tooltip_height):
+        for x in range(tooltip_width):
+            libtcod.console_put_char(console, tooltip_x + x, tooltip_y + y, ord(' '), libtcod.BKGND_SET)
+            libtcod.console_set_char_background(
+                console,
+                tooltip_x + x,
+                tooltip_y + y,
+                libtcod.Color(40, 40, 40),
+                libtcod.BKGND_SET
+            )
+    
+    # Draw border
+    libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
+    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
+    
+    for x in range(tooltip_width):
+        libtcod.console_put_char(console, tooltip_x + x, tooltip_y, ord('─'), libtcod.BKGND_SET)
+        libtcod.console_put_char(console, tooltip_x + x, tooltip_y + tooltip_height - 1, ord('─'), libtcod.BKGND_SET)
+    
+    for y in range(tooltip_height):
+        libtcod.console_put_char(console, tooltip_x, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
+        libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
+    
+    libtcod.console_put_char(console, tooltip_x, tooltip_y, ord('┌'), libtcod.BKGND_SET)
+    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y, ord('┐'), libtcod.BKGND_SET)
+    libtcod.console_put_char(console, tooltip_x, tooltip_y + tooltip_height - 1, ord('└'), libtcod.BKGND_SET)
+    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + tooltip_height - 1, ord('┘'), libtcod.BKGND_SET)
+    
+    # Draw tooltip content
+    libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
+    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
+    for i, line in enumerate(tooltip_lines):
+        libtcod.console_print_ex(
+            console,
+            tooltip_x + 2,
+            tooltip_y + 1 + i,
+            libtcod.BKGND_SET,
             libtcod.LEFT,
             line
         )

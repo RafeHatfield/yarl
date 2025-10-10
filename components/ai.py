@@ -306,7 +306,11 @@ class BasicMonster:
             dict: Item usage action if available, None otherwise
         """
         # Check if monster has item usage capability
+        # Try ComponentRegistry first, then fall back to attribute
         item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
+        if not item_usage:
+            item_usage = getattr(self.owner, 'item_usage', None)
+        
         if not item_usage:
             return None
             
@@ -329,7 +333,11 @@ class BasicMonster:
             target = action.get("target")
             
             # Use item with failure mechanics
+            # Try ComponentRegistry first, then fall back to attribute
             item_usage = self.owner.components.get(ComponentType.ITEM_USAGE)
+            if not item_usage:
+                item_usage = getattr(self.owner, 'item_usage', None)
+            
             if item_usage:
                 usage_results = item_usage.use_item_with_failure(item, target, entities)
                 results.extend(usage_results)
@@ -348,7 +356,11 @@ class BasicMonster:
             dict: Item action if available, None otherwise
         """
         # Check if monster has item-seeking AI capability
+        # Try ComponentRegistry first, then fall back to attribute
         item_seeking_ai = self.owner.components.get(ComponentType.ITEM_SEEKING_AI)
+        if not item_seeking_ai:
+            item_seeking_ai = getattr(self.owner, 'item_seeking_ai', None)
+        
         if not item_seeking_ai:
             return None
             

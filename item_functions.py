@@ -14,6 +14,14 @@ import math
 
 from components.ai import ConfusedMonster
 from components.component_registry import ComponentType
+from components.ground_hazard import GroundHazard, HazardType
+from components.status_effects import (
+    DisorientationEffect,
+    SlowedEffect,
+    ImmobilizedEffect,
+    EnragedEffect,
+    StatusEffectManager
+)
 from game_messages import Message
 from fov_functions import map_is_in_fov
 from render_functions import RenderOrder
@@ -225,7 +233,6 @@ def cast_teleport(*args, **kwargs):
                     
                     # Apply disorientation effect (3-5 turns of random movement)
                     disorientation_duration = randint(3, 5)
-                    from components.status_effects import DisorientationEffect
                     disorientation_effect = DisorientationEffect(
                         duration=disorientation_duration,
                         owner=entity
@@ -422,8 +429,6 @@ def cast_dragon_fart(*args, **kwargs):
     
     # Create persistent poison gas hazards on all cone tiles
     if game_map and hasattr(game_map, 'hazard_manager') and game_map.hazard_manager:
-        from components.ground_hazard import GroundHazard, HazardType
-        
         for tile_x, tile_y in cone_tiles:
             # Create a poison gas hazard with damage decay over 5 turns
             gas_hazard = GroundHazard(
@@ -563,8 +568,6 @@ def cast_slow(*args, **kwargs):
         return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
     
     # Apply SlowedEffect
-    from components.status_effects import SlowedEffect, StatusEffectManager
-    
     # Ensure target has status_effects component
     if not target.components.has(ComponentType.STATUS_EFFECTS):
         target.status_effects = StatusEffectManager(target)
@@ -622,8 +625,6 @@ def cast_glue(*args, **kwargs):
         return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
     
     # Apply ImmobilizedEffect
-    from components.status_effects import ImmobilizedEffect, StatusEffectManager
-    
     # Ensure target has status_effects component
     if not target.components.has(ComponentType.STATUS_EFFECTS):
         target.status_effects = StatusEffectManager(target)
@@ -684,8 +685,6 @@ def cast_rage(*args, **kwargs):
         return [{"consumed": False, "message": Message("There is no valid target there.", (255, 255, 0))}]
     
     # Apply EnragedEffect
-    from components.status_effects import EnragedEffect, StatusEffectManager
-    
     # Ensure target has status_effects component
     if not target.components.has(ComponentType.STATUS_EFFECTS):
         target.status_effects = StatusEffectManager(target)

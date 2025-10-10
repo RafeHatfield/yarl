@@ -175,7 +175,7 @@ class TestMonsterItemUsage(unittest.TestCase):
     @patch('random.random')
     def test_successful_item_usage(self, mock_random):
         """Test successful item usage (no failure)."""
-        mock_random.return_value = 0.6  # Above failure rate (0.5)
+        mock_random.return_value = 0.8  # Above failure rate (0.75)
         
         # Mock scroll
         scroll = Mock()

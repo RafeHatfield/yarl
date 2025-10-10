@@ -9,6 +9,7 @@ import logging
 import math
 from typing import List, Optional, Tuple, Any
 from config.game_constants import get_monster_equipment_config
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,6 @@ class ItemSeekingAI:
             dict: Action dictionary if item seeking should occur, None otherwise
         """
         # Only seek items if monster has inventory capability
-        from components.component_registry import ComponentType
         inventory = self.monster.components.get(ComponentType.INVENTORY)
         if not inventory:
             return None
@@ -111,7 +111,6 @@ class ItemSeekingAI:
         """
         nearby_items = []
         
-        from components.component_registry import ComponentType
         for entity in entities:
             # Only consider items (entities with item component)
             if not entity.components.has(ComponentType.ITEM):
@@ -243,7 +242,6 @@ def create_item_seeking_ai(monster, monster_def) -> Optional[ItemSeekingAI]:
     Returns:
         ItemSeekingAI: AI component if monster can seek items, None otherwise
     """
-    from components.component_registry import ComponentType
     if not monster_def.can_seek_items:
         return None
         

@@ -177,6 +177,9 @@ class MonsterLootDropper:
             # Drop main hand weapon
             if equipment.main_hand:
                 weapon = equipment.main_hand
+                # Unequip the weapon first to clear the reference
+                equipment.main_hand = None
+                weapon.owner = None  # Clear ownership
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 weapon.x = drop_x
                 weapon.y = drop_y
@@ -186,6 +189,9 @@ class MonsterLootDropper:
             # Drop off hand armor
             if equipment.off_hand:
                 armor = equipment.off_hand
+                # Unequip the armor first to clear the reference
+                equipment.off_hand = None
+                armor.owner = None  # Clear ownership
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 armor.x = drop_x
                 armor.y = drop_y
@@ -193,14 +199,22 @@ class MonsterLootDropper:
                 logger.debug(f"Dropped {armor.name} from {monster.name} at ({drop_x}, {drop_y})")
         
         # Drop inventory items (if monster has inventory)
+        # NOTE: Items in monster inventory are likely already in the world entities list
+        # (from when they were picked up). We just update their position and clear ownership.
+        # DO NOT return these items to be added again - they're already in entities!
         inventory = monster.components.get(ComponentType.INVENTORY)
         if inventory:
-            for item in inventory.items:
+            # Create a copy of the items list to avoid modifying while iterating
+            items_to_drop = list(inventory.items)
+            for item in items_to_drop:
+                # Remove from inventory first to clear the reference
+                inventory.items.remove(item)
+                item.owner = None  # Clear ownership
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 item.x = drop_x
                 item.y = drop_y
-                dropped_items.append(item)
-                logger.debug(f"Dropped {item.name} from {monster.name} inventory at ({drop_x}, {drop_y})")
+                # DON'T add to dropped_items - these items are already in entities!
+                logger.debug(f"Repositioned {item.name} from {monster.name} inventory at ({drop_x}, {drop_y})")
         
         if dropped_items:
             logger.info(f"{monster.name} dropped {len(dropped_items)} items around ({x}, {y})")
