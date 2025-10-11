@@ -25,6 +25,47 @@ class Inventory:
         self.capacity: int = capacity
         self.items: List[Any] = []  # List of Entity objects
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
+    
+    def _can_stack_with(self, item1: Any, item2: Any) -> bool:
+        """Check if two items can be stacked together.
+        
+        Items can stack if they have:
+        - Same base name
+        - Same identification status
+        - Same appearance (if unidentified)
+        - Both are stackable
+        
+        Args:
+            item1: First item entity
+            item2: Second item entity
+            
+        Returns:
+            bool: True if items can stack
+        """
+        # Must both have item components
+        if not (hasattr(item1, 'item') and hasattr(item2, 'item')):
+            return False
+        
+        item1_comp = item1.item
+        item2_comp = item2.item
+        
+        # Must both be stackable
+        if not (item1_comp.stackable and item2_comp.stackable):
+            return False
+        
+        # Must have same name
+        if item1.name != item2.name:
+            return False
+        
+        # Must have same identification status
+        if item1_comp.identified != item2_comp.identified:
+            return False
+        
+        # If unidentified, must have same appearance
+        if not item1_comp.identified and item1_comp.appearance != item2_comp.appearance:
+            return False
+        
+        return True
 
     def add_item(self, item: Any) -> List[Dict[str, Any]]:
         """Add an item to the inventory.
@@ -117,18 +158,45 @@ class Inventory:
                         break
             
             # If wand merged or scroll recharged a wand, don't add it to inventory
-            # Otherwise, add normally
+            # Otherwise, check for stacking or add normally
             if not wand_merged and not scroll_recharged_wand:
-                results.append(
-                    {
-                        "item_added": item,
-                        "message": MB.item_pickup(
-                            "You pick up the {0}!".format(item.name)
-                        ),
-                    }
-                )
+                # Check for stacking: Can we merge this with an existing item?
+                stacked = False
+                if item.item and item.item.stackable:
+                    for inv_item in self.items:
+                        # Check if this is a stackable match
+                        if (inv_item.item and inv_item.item.stackable and
+                            self._can_stack_with(item, inv_item)):
+                            # Stack them! Increment quantity
+                            quantity_to_add = item.item.quantity
+                            inv_item.item.quantity += quantity_to_add
+                            stacked = True
+                            
+                            results.append({
+                                "item_added": inv_item,  # Reference to the stack we added to
+                                "item_consumed": item,   # Signal to remove the picked-up item
+                                "message": MB.item_pickup(
+                                    "You pick up {0}x {1}! (now have {2})".format(
+                                        quantity_to_add,
+                                        item.name,
+                                        inv_item.item.quantity
+                                    )
+                                ),
+                            })
+                            break
+                
+                # If not stacked, add as new item
+                if not stacked:
+                    results.append(
+                        {
+                            "item_added": item,
+                            "message": MB.item_pickup(
+                                "You pick up the {0}!".format(item.name)
+                            ),
+                        }
+                    )
 
-                self.items.append(item)
+                    self.items.append(item)
                 
                 # NEW: If we just picked up a wand, check for matching scrolls to consume
                 wand = getattr(item, 'wand', None)
