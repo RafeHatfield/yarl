@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1462%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-2091%20passing-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](tests/)
 [![Startup Tests](https://img.shields.io/badge/startup%20tests-automated-blue.svg)](tests/smoke/)
 
@@ -265,7 +265,7 @@ grep "turn complete" monster_actions.log | tail -5
 
 ### Test Suite
 
-This project maintains **100% test coverage** with a comprehensive test suite covering all game systems.
+This project maintains comprehensive test coverage with 2,091 tests covering all game systems.
 
 ### Running Tests
 
@@ -273,7 +273,7 @@ This project maintains **100% test coverage** with a comprehensive test suite co
 # Install test dependencies
 pip install -r requirements-dev.txt
 
-# Run all tests (1,462 tests)
+# Run all tests (2,091 tests)
 pytest
 
 # Run with coverage reporting
@@ -296,7 +296,7 @@ pytest tests/comprehensive/ -v               # Comprehensive end-to-end tests
 ```
 
 ### Test Coverage
-- **1,462 tests** with **100% pass rate**
+- **2,091 tests** with comprehensive pass rate
 - **Entity System** - Movement, pathfinding, A* algorithm
 - **Combat System** - Attack, defense, healing, death mechanics, XP rewards
 - **Equipment System** - Equipment slots, stat bonuses, equip/unequip mechanics
@@ -484,7 +484,7 @@ python test_startup.py
 This verifies that all core systems can initialize correctly without running the full test suite.
 
 ### Comprehensive Test Suite
-Run the full test suite with 1,103 tests:
+Run the full test suite with 2,091 tests:
 ```bash
 # Run all tests
 pytest
@@ -646,7 +646,7 @@ config/
 - [x] **More Scrolls** - Teleport, Shield, Raise Dead, Dragon Fart (4 new scrolls)
 - [x] **Configuration Management** - Centralized game constants with file loading
 - [x] **Clean Console Output** - TCOD deprecation warnings suppressed
-- [x] **Comprehensive Testing** - 1,462 tests with 100% coverage
+- [x] **Comprehensive Testing** - 2,091 tests with comprehensive coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 - [x] **Debug Logging System** - Comprehensive monster action and combat logging
 - [x] **Turn Phase Management** - Structured turn system with environment phase
