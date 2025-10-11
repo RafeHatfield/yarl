@@ -50,19 +50,75 @@ Every legendary roguelike has unidentified items. It creates:
   
 - **Rings/Wands (future):** Similar system
 
+#### Configuration Options
+**IMPORTANT: Implement with configurable toggle for accessibility**
+
+Add to `config/game_constants.yaml`:
+```yaml
+identification_system:
+  enabled: true  # Master toggle for entire identification system
+  auto_identify_scrolls: false  # If true, all scrolls start identified
+  auto_identify_potions: false  # If true, all potions start identified
+  auto_identify_rings: false    # If true, all rings start identified (future)
+  auto_identify_wands: false    # If true, all wands start identified (future)
+```
+
+**Use Cases:**
+- `enabled: false` - Traditional gameplay (all items identified by default)
+- `enabled: true, auto_identify_scrolls: true` - Only scrolls need identification
+- `enabled: true` (all auto_identify: false) - Full roguelike experience
+
+**Why This Matters:**
+- Accessibility for players who don't want uncertainty
+- Difficulty mode foundation (Easy = auto-identify ON, Hard = OFF)
+- Matches modern roguelikes (DCSS has similar option)
+- Allows gradual feature rollout (enable for scrolls first, then expand)
+
 #### Implementation
+**Core System:**
 - Add `identified` boolean to Item component
 - Add `appearance` field (random per game, saved with run)
-- Modify rendering to show appearance vs real name
-- Add identification methods:
-  - Use item (auto-identifies)
-  - Read scroll of identify
-  - Visit shop (shopkeeper IDs for fee)
+- Add `item_type` field ("scroll", "potion", "ring", "wand")
+- Modify rendering to show appearance vs real name based on `identified` flag
+
+**Identification Configuration:**
+- Load settings from `game_constants.yaml`
+- Store in `GameState` for runtime access
+- Check `identification_system.enabled` before applying unidentified state
+- Check item-specific auto-identify flags when creating items
+
+**Item Creation Flow:**
+```python
+def create_scroll(scroll_type, x, y):
+    scroll = Item(...)
+    
+    # Check if identification system is enabled
+    if game_constants.identification_system.enabled:
+        # Check if this item type should auto-identify
+        if not game_constants.identification_system.auto_identify_scrolls:
+            scroll.identified = False
+            scroll.appearance = get_random_scroll_appearance()
+        else:
+            scroll.identified = True
+    else:
+        # Identification system disabled, all items start identified
+        scroll.identified = True
+    
+    return scroll
+```
+
+**Identification Methods:**
+- Use item (auto-identifies)
+- Read scroll of identify
+- Visit shop (shopkeeper IDs for fee)
+- **Configuration can bypass all of this if enabled**
 
 #### Technical Notes
 - Appearance mapping stored in game state
 - Persists across save/load
-- New game = new randomization
+- New game = new randomization (if enabled)
+- Configuration file allows runtime toggle without code changes
+- Easy to extend with difficulty modes later
 
 ---
 

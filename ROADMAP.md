@@ -599,20 +599,39 @@ This roadmap should be updated:
 
 ## 📈 **Success Metrics**
 
-### **Phase 1 Success:**
-- Combat feels more dynamic and unpredictable
-- Players spend more time exploring for better loot
-- Mouse movement feels perfectly responsive
+### **Phase 1 Success: Core Roguelike Identity**
+Target: Players say "Now this feels like a REAL roguelike!"
+- Players excitedly identify unknown potions/scrolls
+- "I wonder what this does?" moments every run
+- Item discovery creates risk/reward tension
+- Players throw potions tactically in combat
 
-### **Phase 2 Success:**
-- Players create multiple characters with different builds
-- Combat encounters feel varied and strategic
-- Exploration rewards feel meaningful
+### **Phase 2 Success: Resource Management**
+Target: "I have to manage everything carefully!"
+- Hunger creates urgency to keep exploring
+- Wand charges are precious resources
+- Ring choices define character builds
+- Vault discoveries create memorable moments
 
-### **Phase 3 Success:**
-- Game attracts new audiences through modern presentation
-- Mobile version expands player base significantly
-- Audio/visual polish creates memorable experiences
+### **Phase 3 Success: Meta-Progression**
+Target: "Every run feels unique!"
+- God choice significantly impacts playstyle
+- Cursed items create "oh no!" moments
+- Shop economics add resource conversion
+- Trap encounters add danger and caution
+
+### **Phase 4 Success: Legendary Status**
+Target: "Remember that amazing run when..."
+- Players share wish stories
+- Polymorph creates power fantasy moments
+- Artifact discoveries are celebrated
+- Players create emergent solutions with item interactions
+
+### **Overall Success: Best Traditional Roguelike**
+- Depth Score: 9/10+ across all categories (Discovery, Resource Management, Build Diversity, Emergent Gameplay)
+- Players compare favorably to NetHack/DCSS/Brogue
+- "One more run" factor is extremely high
+- Community shares legendary moments
 
 ---
 
