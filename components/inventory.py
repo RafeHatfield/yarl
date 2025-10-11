@@ -245,6 +245,20 @@ class Inventory:
                     # Normal item usage (scrolls, potions): consume on use
                     kwargs = {**item_component.function_kwargs, **kwargs}
                     item_use_results = item_component.use_function(self.owner, **kwargs)
+                    
+                    # Check if item was successfully used (consumed)
+                    item_consumed = any(r.get("consumed") for r in item_use_results)
+                    
+                    # Identify item on successful use (before removal)
+                    if item_consumed and hasattr(item_component, 'identify'):
+                        was_unidentified = item_component.identify()
+                        if was_unidentified:
+                            # Add identification message
+                            results.append({
+                                "message": MB.item_pickup(
+                                    f"You now recognize this as {item_entity.name}!"
+                                )
+                            })
 
                     for item_use_result in item_use_results:
                         if item_use_result.get("consumed"):

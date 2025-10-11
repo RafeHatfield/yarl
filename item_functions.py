@@ -31,6 +31,9 @@ from visual_effects import show_fireball, show_lightning, show_dragon_fart
 # New spell system imports
 from spells import cast_spell_by_id
 
+# For identify spell
+from components.item import Item
+
 
 def heal(*args, **kwargs):
     """Heal the target entity by a specified amount.
@@ -694,3 +697,65 @@ def cast_rage(*args, **kwargs):
         target_x=target_x,
         target_y=target_y
     )
+
+
+def cast_identify(*args, **kwargs):
+    """Identify an unidentified item in the player's inventory.
+    
+    Shows a menu of unidentified items and identifies the selected one.
+    This is a special spell that doesn't use targeting.
+    
+    Args:
+        *args: First argument should be the caster (player)
+        **kwargs: Additional arguments (not used for identify)
+    
+    Returns:
+        list: List of result dictionaries with identification results
+    """
+    caster = args[0]
+    results = []
+    
+    # Get player's inventory
+    if not hasattr(caster, 'inventory') or not caster.inventory:
+        results.append({
+            "consumed": False,
+            "message": MB.warning("You have no inventory!")
+        })
+        return results
+    
+    # Find all unidentified items
+    unidentified_items = []
+    for item in caster.inventory.items:
+        item_comp = getattr(item, 'item', None)
+        if item_comp and hasattr(item_comp, 'identified') and not item_comp.identified:
+            unidentified_items.append(item)
+    
+    if len(unidentified_items) == 0:
+        results.append({
+            "consumed": False,
+            "message": MB.info("You have no unidentified items!")
+        })
+        return results
+    
+    # For now, identify the first unidentified item
+    # TODO: In future, this should show a menu to let player choose
+    item_to_identify = unidentified_items[0]
+    item_comp = item_to_identify.item
+    
+    # Identify the item
+    was_unidentified = item_comp.identify()
+    
+    if was_unidentified:
+        results.append({
+            "consumed": True,
+            "message": MB.item_pickup(
+                f"You identify the {item_comp.appearance} as {item_to_identify.name}!"
+            )
+        })
+    else:
+        results.append({
+            "consumed": False,
+            "message": MB.warning("The item was already identified!")
+        })
+    
+    return results
