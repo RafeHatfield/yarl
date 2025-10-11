@@ -739,7 +739,7 @@ config/
 | Lockable Chests | 🟡 Medium | 2-3 weeks | Key/lockpicking mechanics |
 | Trap System | 🟡 Medium | 3-4 weeks | Detection, disarmament, and damage |
 | Skill System | 🟡 Medium | 3-5 weeks | Multiple abilities with progression |
-| Boss Encounters | 🟡 Medium | 3-4 weeks | Special AI behaviors needed |
+| **Boss Encounters** | ✅ Complete (v3.9) | 3-4 weeks | Multi-phase bosses with dialogue, enrage, immunities |
 | Environmental Hazards | 🟡 Medium | 2-4 weeks | New tile types and mechanics |
 | PC/Mac Distribution | 🟡 Medium | 2-3 weeks | Packaging and build setup |
 | **Automated Player** | 🔴 Hard | 4-8 weeks | Complex AI system, decision trees, game state analysis |
