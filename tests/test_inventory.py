@@ -107,17 +107,19 @@ class TestInventoryAddItem:
         assert len(results2) == 1
 
     def test_add_same_item_twice(self, basic_inventory, healing_potion):
-        """Test adding the same item instance twice."""
+        """Test adding the same item instance twice (now stacks)."""
         # Act
         results1 = basic_inventory.add_item(healing_potion)
         results2 = basic_inventory.add_item(healing_potion)
 
         # Assert
-        # Allow duplicates - same item can appear multiple times
-        assert basic_inventory.items.count(healing_potion) == 2
-        assert len(basic_inventory.items) == 2
+        # With stacking: same item stacks with itself, increasing quantity
+        assert len(basic_inventory.items) == 1  # Only one stack
+        assert basic_inventory.items[0] == healing_potion
+        assert healing_potion.item.quantity == 2  # Quantity increased
         assert results1[0]["item_added"] == healing_potion
-        assert results2[0]["item_added"] == healing_potion
+        # Second add should return item_consumed (stacking occurred)
+        assert results2[0].get("item_consumed") == healing_potion
 
     def test_add_item_none(self, basic_inventory):
         """Test adding None as an item."""
@@ -464,8 +466,7 @@ class TestInventoryEdgeCases:
         basic_inventory.add_item(potion1)
         basic_inventory.add_item(potion2)
 
-        # Assert
-        assert len(basic_inventory.items) == 2
-        assert potion1 in basic_inventory.items
-        assert potion2 in basic_inventory.items
-        assert potion1 != potion2  # Different instances
+        # Assert - items should stack into one entry
+        assert len(basic_inventory.items) == 1  # Stacked
+        assert potion1 in basic_inventory.items  # First item is the stack
+        assert potion1.item.quantity == 2  # Quantity increased
