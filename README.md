@@ -33,32 +33,48 @@
 - **🎯 Progressive item availability** - Better items unlock as you go deeper
 
 ### Equipment System
-- **⚔️ Variable Damage Weapons** - Swords (2-5 dmg) and daggers (1-3 dmg) with exciting damage ranges
-- **🛡️ Variable Defense Armor** - Shields (1-3 def) that provide dynamic protection
-- **🎲 Dual-Stat System** - Weapons combine base power + variable damage for unpredictable combat
-- **📊 Enhancement Scrolls** - Improve weapon damage and armor defense ranges
-- **🔄 Equipment Slots** - Main hand and off hand equipment management
-- **🎒 Inventory Integration** - Seamless equip/unequip with detailed damage/defense displays
-- **📈 Progressive Equipment** - Better gear unlocks on deeper levels
-- **✨ Loot Quality System** - Magic items with rarity tiers (Common, Uncommon, Rare, Legendary)
-- **🎯 Level-Scaled Drops** - Better loot at deeper dungeon levels
-- **💎 Magic Item Naming** - Flaming Swords, Reinforced Shields, and other epic gear
+- **⚔️ 12 Weapon Types** - From daggers (1d4) to greatswords (2d6), each with unique properties
+  - Light weapons (daggers, shortswords) with finesse bonuses
+  - Heavy weapons (battleaxes, greataxes) with power but penalties
+  - Varied damage dice for tactical choices
+- **🛡️ Armor System** - Light, medium, and heavy armor with DEX caps and AC bonuses
+- **🎲 D&D-Style Combat** - Dice notation (1d4, 2d6+3), d20 attack rolls, critical hits
+- **📊 Enhancement Scrolls** - Improve weapon damage and armor defense permanently
+- **🔄 Multiple Equipment Slots** - Weapon, Shield, Head, Chest, Feet slots
+- **🎒 Right-Click Equipment** - Intuitive mouse-driven equip/unequip system
+- **📈 Progressive Loot** - Better gear unlocks at deeper dungeon levels
+- **✨ Loot Quality System** - 4 rarity tiers with level-scaled magic bonuses
+  - Common: Standard gear (no bonus)
+  - Uncommon: +1 bonuses (green items)
+  - Rare: +2-3 bonuses (blue items)
+  - Legendary: +4-5 bonuses (orange items) - boss drops!
+- **💎 Magic Item Names** - Flaming Longsword +2, Reinforced Shield +3, Sturdy Leather Armor +1
+- **⚙️ Weapon Properties** - Finesse (+1 to-hit), Unwieldy (-1 to-hit), two-handed requirements
 
 ### AI & Monsters
-- **🎲 Variable Monster Damage** - Orcs (3 power + 1-3 natural) and Trolls (6 power + 2-6 natural) for dynamic combat
-- **BasicMonster AI** - Tracks and attacks the player using A* pathfinding
-- **BossAI** - Enhanced AI for boss monsters with smarter targeting and enrage mechanics
-- **ConfusedMonster AI** - Random movement with automatic recovery
-- **SlimeAI** - Monster-vs-monster combat with faction-based targeting
-- **MindlessZombieAI** - Resurrected undead that hunt anything in FOV
-- **Invisibility Mechanics** - Monsters can't detect invisible targets
-- **Dynamic AI switching** - Spells can temporarily alter monster behavior
-- **Progressive monster scaling** - More and stronger monsters on deeper levels
-- **🧌 Orcs** - Basic enemies with balanced variable damage (total range: 4-6)
-- **👹 Trolls** - Stronger enemies with high variable damage (total range: 8-12)
-- **🟢 Slimes** - Corrosive monsters that attack everything (weapons/armor degrade)
-- **🟢 Large Slimes** - Powerful slimes that split into smaller slimes on death
-- **🐉 Boss Monsters** - Unique powerful encounters with phases, dialogue, enrage mechanics, and legendary loot
+- **Multiple AI Systems** - Sophisticated behaviors for different monster types
+  - **BasicMonster AI** - A* pathfinding, player tracking, equipment usage
+  - **BossAI** - Enhanced combat, enrage mechanics, status immunities
+  - **SlimeAI** - Faction-based combat, attacks everything in sight
+  - **MindlessZombieAI** - Resurrected undead hunting anything in FOV
+  - **ConfusedMonster AI** - Temporary random movement from confusion spells
+- **Monster Variety** - 8+ unique monster types with distinct abilities
+  - **🧌 Orcs** - Basic melee enemies, can use equipment and items
+  - **👹 Trolls** - Tough brutes with high damage and HP regeneration
+  - **🟢 Slimes** - Corrosive monsters that cause equipment degradation
+  - **🟢 Large Slimes** - Elite slimes that split into smaller ones on death
+  - **🐉 Dragon Lord** - Fire-breathing boss with enrage and phases
+  - **👑 Demon King** - Cursing boss with teleportation and life drain
+  - Plus various other creatures at different difficulty levels
+- **Boss Mechanics** - Epic encounters with unique features
+  - Multi-phase combat with dialogue and story
+  - Enrage at low HP for increased damage
+  - Status effect immunities (confusion, slow, etc.)
+  - Guaranteed legendary loot drops
+- **Monster Equipment** - Enemies spawn with weapons/armor and drop them on death
+- **Smart Item Usage** - Monsters pick up and use scrolls, potions, and equipment
+- **Progressive Scaling** - Stronger monsters and more spawns at deeper levels
+- **Invisibility & Detection** - Monsters can't detect invisible targets
 
 ### Technical Features
 - **Entity-Component-System (ECS)** architecture
@@ -127,10 +143,15 @@
   - Click on empty space: Player automatically moves to that location
   - Click on adjacent enemy: Attack that enemy
   - Movement stops automatically if enemies are spotted
-- **Right Mouse Click** - Cancel pathfinding movement
+- **Right Mouse Click** - Context-aware actions
+  - Click ground items: Auto-pathfind and pick up
+  - Click sidebar inventory: Drop item at your location
+  - Click equipped gear: Unequip to inventory
+  - Cancel pathfinding movement
 
 #### Spells & Targeting
 - **Mouse Click** - Target spells (fireball, confusion) when in targeting mode
+- **Mouse Hover** - View detailed tooltips for items and equipment
 
 #### Items & Inventory
 - **g** - Pick up items
