@@ -674,41 +674,52 @@ config/
 
 ### 🔮 Development Roadmap
 
-#### 🟢 **Phase 1: Core Gameplay Enhancements** (Easy - 1-2 weeks each)
-- [ ] **Player Naming** - Allow players to enter custom names for personalization
-- [ ] **Weapon Speed** - Different attack speeds per weapon type (daggers fast, swords medium, axes slow)
-- [x] **More Spells** - ✅ Complete (v2.7) - 8 tactical scrolls including teleport, shield, raise dead, dragon fart
-- [x] **Extended Equipment** - ✅ Complete (v3.0) - 12 weapon types with D&D-style dice notation
-- [x] **Chance to Hit/Dodge** - ✅ Complete (v3.0) - D20 attack rolls, AC system, critical hits/fumbles
-- [ ] **Stat Boosting Potions** - Temporary and permanent stat enhancement items
-- [x] **JSON Save/Load** - ✅ Complete (v2.4) - Human-readable saves with legacy compatibility
-- [ ] **Movement Speed Configuration** - Adjustable mouse movement animation speed
+**📖 See [ROADMAP.md](ROADMAP.md) and [TRADITIONAL_ROGUELIKE_FEATURES.md](TRADITIONAL_ROGUELIKE_FEATURES.md) for detailed design documentation.**
 
-#### 🟡 **Phase 2: Advanced Systems** (Medium - 2-4 weeks each)
-- [ ] **Gear Durability** - Equipment degrades with use and can break, requiring repair
-- [ ] **Monster Speed Variations** - Different movement speeds for different monster types
-- [ ] **Ranged Weapons** - Bows, crossbows with projectile mechanics
-- [ ] **More Equipment Slots** - Rings, amulets, boots, helmets
-- [ ] **Equipment Sets** - Bonuses for wearing matching equipment pieces
-- [ ] **Complex Leveling System** - Feats, skill trees, and character specialization
-- [ ] **Player Classes** - Barbarian (high power), Wizard (magical focus), Warrior (balanced) with unique stats and abilities
-- [ ] **Entity Inheritance System** - YAML `extends` keyword for creating monster variants and elite versions
-- [ ] **Pet System** - Companions that follow and assist the player
-- [ ] **Lockable Treasure Chests** - Containers requiring keys or lockpicking
-- [ ] **Trap System** - Hidden dangers with detection and disarmament mechanics
-- [ ] **Skill System** - Lockpicking, trap detection, stealth, and other abilities
-- [ ] **Skill Scrolls** - Consumable items that teach or enhance abilities
-- [x] **Boss Encounters** - ✅ Complete (v3.9.0) - Multi-phase bosses with dialogue, enrage, and legendary loot
-- [x] **Environmental Hazards** - ✅ Partial (v3.6.0) - Ground hazards complete (fire, poison gas), traps pending
-- [x] **Manual Level Design** - ✅ Complete (Tier 1 & 2) - YAML-based guaranteed spawns and level parameters
-- [ ] **PC/Mac Distribution** - Packaging and build system setup
+*Goal:* Transform Yarl into one of the best traditional roguelikes ever made by adding the beloved mechanics from NetHack, DCSS, Brogue, and Caves of Qud.
 
-#### 🔴 **Phase 3: Major Overhauls** (Hard - 1-3 months each)
-- [ ] **Automated Player** - AI that can play the game automatically for testing and demonstration
-- [ ] **Better Character UI** - Enhanced inventory and character management
+#### 🟢 **Phase 1: Essential Roguelike Features** (1-2 weeks each)
+- [ ] **Item Identification System** ⭐ - THE defining roguelike mechanic - "What does this blue potion do?"
+- [ ] **Item Stacking** - Group similar items (5x healing potion) for clean inventory management
+- [ ] **Scroll/Potion Variety** - Expand from 8 to 20 scrolls, add 15 potion types
+- [ ] **Resistance System** - Fire/cold/poison/electric resistances for build diversity
+- [ ] **Throwing System** - Throw potions, daggers, rocks for emergent tactical gameplay
+- [x] **D&D Combat System** - ✅ Complete (v3.0) - d20 attack rolls, AC, dice notation, critical hits
+- [x] **More Spells** - ✅ Complete (v2.7) - 8 tactical scrolls
+- [x] **Boss Fights** - ✅ Complete (v3.9.0) - Multi-phase bosses with dialogue, enrage, legendary loot
+- [x] **Loot Quality System** - ✅ Complete (v3.8.0) - 4 rarity tiers with level-scaled magic items
+
+**Why First:** Item identification is THE core roguelike experience. Without it, we're just an action RPG.
+
+#### 🟡 **Phase 2: Resource Management & Build Depth** (2-4 weeks each)
+- [ ] **Wand System** ⭐ - 15 wand types with limited charges (component already exists!)
+- [ ] **Ring System** ⭐ - 15 ring types, 2 slots, massive build customization
+- [ ] **Hunger/Food System** ⭐ - Creates time pressure, prevents grinding (core roguelike mechanic)
+- [ ] **Corpse System** - Eat dead monsters for effects, risks, and nutrition
+- [ ] **Blessed/Cursed Items** ⭐ - Equipment puzzle layer, cursed items can't be removed!
+- [ ] **Vaults & Secret Doors** - Special treasure rooms with challenges, hidden passages
+- [ ] **Trap System** - 10 trap types, search/disarm, danger rewards caution
+- [x] **Environmental Hazards** - ✅ Partial (v3.6.0) - Ground hazards complete
+
+**Why Next:** These add the resource management and strategic depth that make every decision matter.
+
+#### 🔴 **Phase 3: Meta-Progression & Legendary Features** (3-6 weeks each)
+- [ ] **Religion/God System** ⭐ - Multiple gods with different personalities, prayers, divine gifts
+- [ ] **Shop System** - Buy/sell economy, identification services, tough shopkeepers
+- [ ] **Amulet System** - 10 amulet types with powerful unique effects
+- [ ] **Polymorph System** 🌟 - Transform into monsters, gain abilities (legendary moments)
+- [ ] **Wish/Genie System** 🌟 - Rare wishes players remember forever
+- [ ] **Item Interaction System** 🌟 - Dip weapons in potions, alchemy, emergent depth
+- [ ] **Unique Artifacts** - Excalibur, Mjolnir, Stormbringer (chase items)
+- [ ] **Victory Condition/Ascension** - Clear goal, retrieve amulet, hall of fame
+- [ ] **Player Classes** - Warrior/Mage/Rogue with unique stats and abilities
+
+**Why Later:** These create the "Remember that run when..." moments that players talk about for years.
+
+#### 📊 **Long-term Polish** (6+ months)
 - [ ] **Sound Effects System** - Audio feedback and atmospheric sounds
-- [ ] **Modern UI Overhaul** - Complete interface redesign
-- [ ] **Sprite-Based Graphics** - Replace ASCII with sprite rendering
+- [ ] **Better Character UI** - Enhanced inventory and character management
+- [ ] **PC/Mac Distribution** - Packaging and build system setup
 - [ ] **Mobile Distribution** - iOS/Android platform adaptation
 
 #### 📊 **Implementation Difficulty Assessment**
