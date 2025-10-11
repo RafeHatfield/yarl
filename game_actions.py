@@ -71,6 +71,7 @@ class ActionProcessor:
             'inventory_index': self._handle_inventory_action,
             'take_stairs': self._handle_stairs,
             'level_up': self._handle_level_up,
+            'start_auto_explore': self._handle_start_auto_explore,
         }
         
         # Map mouse actions to their handlers
@@ -98,10 +99,26 @@ class ActionProcessor:
         if current_state == GameStates.PLAYER_DEAD:
             return
         
-        # AUTO-PROCESS: Handle pathfinding movement if active (before processing input)
-        # This enables ranged weapon auto-attack and continuous pathfinding
+        # AUTO-PROCESS: Handle auto-explore or pathfinding movement if active (before processing input)
+        # This enables auto-exploration and continuous pathfinding
         if current_state == GameStates.PLAYERS_TURN:
             player = self.state_manager.state.player
+            
+            # Check for auto-explore first (higher priority)
+            auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
+            if auto_explore and auto_explore.is_active():
+                # Process auto-explore movement automatically
+                self._process_auto_explore_turn()
+                # Check if any key was pressed to cancel
+                if action or mouse_action:
+                    # Any input cancels auto-explore
+                    auto_explore.stop("Cancelled")
+                    self.state_manager.state.message_log.add_message(
+                        MB.info("Auto-explore cancelled")
+                    )
+                return  # Don't process other input this turn
+            
+            # Fall back to pathfinding if no auto-explore
             pathfinding = player.get_component_optional(ComponentType.PATHFINDING) if player else None
             if pathfinding and pathfinding.is_path_active():
                 # Process pathfinding movement automatically
@@ -139,6 +156,40 @@ class ActionProcessor:
         """Handle showing the character screen."""
         self.state_manager.set_game_state(GameStates.CHARACTER_SCREEN)
     
+    def _handle_start_auto_explore(self, _) -> None:
+        """Handle starting auto-exploration.
+        
+        Initializes the auto-explore component on the player and starts exploring.
+        Displays a pithy adventure quote and system message.
+        """
+        player = self.state_manager.state.player
+        if not player:
+            logger.error("No player found for auto-explore")
+            return
+        
+        # Get or create auto-explore component
+        auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+        if not auto_explore:
+            from components.auto_explore import AutoExplore
+            auto_explore = AutoExplore()
+            auto_explore.owner = player
+            player.auto_explore = auto_explore
+            player.components.add(ComponentType.AUTO_EXPLORE, auto_explore)
+        
+        # Start exploring
+        quote = auto_explore.start(
+            self.state_manager.state.game_map,
+            self.state_manager.state.entities
+        )
+        
+        # Add messages
+        self.state_manager.state.message_log.add_message(MB.info(quote))
+        self.state_manager.state.message_log.add_message(
+            MB.system("You begin exploring the dungeon")
+        )
+        
+        logger.info("Auto-explore started")
+    
     def _handle_exit(self, _) -> None:
         """Handle exit actions based on current game state."""
         current_state = self.state_manager.state.current_state
@@ -155,6 +206,44 @@ class ActionProcessor:
             self.state_manager.set_game_state(previous_state)
             self.state_manager.set_extra_data("targeting_item", None)
             self.state_manager.set_extra_data("previous_state", None)
+    
+    def _process_auto_explore_turn(self) -> None:
+        """Process one turn of auto-exploration.
+        
+        Gets the next movement action from the auto-explore component and executes it.
+        Handles stop conditions and messages. If auto-explore stops, a message is added
+        to the log explaining why.
+        """
+        player = self.state_manager.state.player
+        if not player:
+            return
+        
+        auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+        if not auto_explore or not auto_explore.is_active():
+            return
+        
+        # Get next action from auto-explore
+        action = auto_explore.get_next_action(
+            self.state_manager.state.game_map,
+            self.state_manager.state.entities,
+            self.state_manager.state.fov_map
+        )
+        
+        if action is None:
+            # Auto-explore stopped
+            reason = auto_explore.stop_reason or "Unknown reason"
+            self.state_manager.state.message_log.add_message(
+                MB.system(f"Auto-explore stopped: {reason}")
+            )
+            return
+        
+        # Execute the movement
+        dx = action.get('dx', 0)
+        dy = action.get('dy', 0)
+        
+        if dx != 0 or dy != 0:
+            # Use the normal movement handler
+            self._handle_movement((dx, dy))
     
     def _process_pathfinding_movement_action(self, _value: Any) -> None:
         """Process pathfinding movement for auto-pickup and ranged weapon auto-attack.

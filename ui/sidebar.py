@@ -61,6 +61,7 @@ def render_sidebar(console, player, ui_layout) -> None:
     hotkeys = [
         "C - Character",
         "I - Inventory",
+        "O - Auto-Explore",
         "G - Get/Drop",
         "Z - Wait",
         "<> - Stairs",

@@ -47,6 +47,7 @@ class ComponentType(Enum):
         FACTION: Allegiance system (player, enemy, neutral)
         ITEM_USAGE: Monster item usage AI component
         ITEM_SEEKING_AI: Monster item-seeking behavior
+        AUTO_EXPLORE: Automated dungeon exploration for player
     """
     FIGHTER = auto()
     AI = auto()
@@ -65,6 +66,7 @@ class ComponentType(Enum):
     BOSS = auto()
     ITEM_USAGE = auto()
     ITEM_SEEKING_AI = auto()
+    AUTO_EXPLORE = auto()
 
 
 class ComponentRegistry:
