@@ -87,6 +87,24 @@ def get_game_variables(constants):
     from spells.spell_catalog import register_all_spells
     register_all_spells()
     
+    # Initialize appearance generator for item identification system
+    from config.item_appearances import reset_appearance_generator
+    appearance_gen = reset_appearance_generator()
+    
+    # Register all item types that need identification
+    appearance_gen.initialize({
+        'scroll': [
+            'lightning_scroll', 'fireball_scroll', 'confusion_scroll',
+            'invisibility_scroll', 'teleport_scroll', 'enhance_weapon_scroll',
+            'enhance_armor_scroll', 'shield_scroll', 'dragon_fart_scroll',
+            'raise_dead_scroll', 'yo_mama_scroll', 'slow_scroll',
+            'glue_scroll', 'rage_scroll'
+        ],
+        'potion': [
+            'healing_potion'
+        ]
+    })
+    
     # Get configuration objects for cleaner code
     combat_config = get_combat_config()
     inventory_config = get_inventory_config()

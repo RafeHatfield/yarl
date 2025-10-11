@@ -11,7 +11,6 @@ import logging
 from components.ai import BasicMonster
 from components.equippable import Equippable
 from components.fighter import Fighter
-from components.item import Item
 from config.entity_factory import get_entity_factory
 from config.level_template_registry import get_level_template_registry
 from entity import Entity
@@ -19,7 +18,6 @@ from entity_sorting_cache import invalidate_entity_cache
 from equipment_slots import EquipmentSlots
 from game_messages import Message
 from message_builder import MessageBuilder as MB
-from item_functions import heal
 from map_objects.rectangle import Rect
 from map_objects.tile import Tile
 from random_utils import from_dungeon_level, random_choice_from_dict
@@ -358,18 +356,9 @@ class GameMap:
                 # Get entity factory for equipment creation
                 entity_factory = get_entity_factory()
                 
-                # base stats for items
+                # Create all items using EntityFactory for consistent identification
                 if item_choice == "healing_potion":
-                    item_component = Item(use_function=heal, amount=40)
-                    item = Entity(
-                        x,
-                        y,
-                        "!",
-                        (127, 0, 255),
-                        "Healing Potion",
-                        render_order=RenderOrder.ITEM,
-                        item=item_component,
-                    )
+                    item = entity_factory.create_spell_item("healing_potion", x, y)
                 elif item_choice == "sword":
                     item = entity_factory.create_weapon("sword", x, y)
                 elif item_choice == "shield":
