@@ -667,8 +667,9 @@ class AutoExplore:
         import numpy as np
         cost_array = np.array(cost, dtype=np.int8).T  # Transpose for tcod
         
-        # Create pathfinder
-        pathfinder = tcod.path.Pathfinder(cost_array)
+        # Create graph and pathfinder (modern tcod API)
+        graph = tcod.path.SimpleGraph(cost=cost_array, cardinal=2, diagonal=3)
+        pathfinder = tcod.path.Pathfinder(graph)
         pathfinder.add_root((self.owner.x, self.owner.y))
         
         # Find path
