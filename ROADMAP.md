@@ -1,12 +1,44 @@
 # 🗺️ **Yarl Development Roadmap: Sorted by Complexity & Impact**
 
-*Last Updated: October 2025 - Mouse-Driven UI Complete*
+*Last Updated: October 2025 - Boss Fights & Loot Quality Complete (v3.9.0)*
 
 This roadmap organizes all planned features by implementation complexity and gameplay impact, helping prioritize development efforts for maximum player enjoyment.
 
 ---
 
-## ✅ **Recently Completed: Persistent Ground Effects** (v3.6.0)
+## ✅ **Recently Completed: Boss Fights & Loot Quality** (v3.8.0 - v3.9.0)
+
+**🐉 Epic Boss Encounters & Magic Items** (October 2025)
+
+Complete boss fight system with multi-phase combat, dialogue, and legendary loot:
+
+### **What Was Accomplished (v3.9.0 - Boss Fights)**
+- **🐉 Boss Monsters:** Dragon Lord and Demon King with unique abilities
+- **💬 Boss Dialogue:** Story-driven combat with spawn, hit, enrage, low HP, and death dialogue
+- **😡 Enrage System:** Bosses deal 50% more damage when below 30% HP
+- **🛡️ Status Immunities:** Bosses resist confusion, slow, and other debilitating effects
+- **🎯 BossAI:** Smarter targeting and enhanced combat behavior
+- **💎 Legendary Loot:** Guaranteed legendary item drops from boss kills
+- **🧪 Production Quality:** 28 boss-specific tests, 2,091 total tests passing
+
+### **What Was Accomplished (v3.8.0 - Loot Quality)**
+- **✨ 4 Rarity Tiers:** Common, Uncommon (+1), Rare (+2-3), Legendary (+4-5)
+- **📈 Level-Scaled Drops:** Better loot at deeper dungeon levels
+- **💎 Magic Item Names:** Flaming Longsword +2, Reinforced Shield +3, etc.
+- **🎲 Rarity Chances:** Level-based probability for magic item drops
+- **🧌 Monster Loot:** All monsters can drop magic items based on dungeon level
+
+### **Benefits Realized**
+- **🎮 Players:** Epic memorable fights, exciting loot rewards, progression satisfaction
+- **🎨 Story:** Dialogue adds narrative depth to combat encounters
+- **🏗️ Architecture:** Extensible boss component for future encounters
+- **✨ Quality:** Comprehensive test coverage, zero regressions
+
+---
+
+---
+
+## ✅ **Previously Completed: Persistent Ground Effects** (v3.6.0)
 
 **🔥 Hazardous Ground System** (October 2025)
 
@@ -18,20 +50,12 @@ Complete ground hazard system with persistent fire and poison gas effects:
 - **⏱️ Turn-Based Processing:** Hazards age and damage automatically each turn
 - **✨ Visual Fade Effects:** Beautiful color blending into floor (not to black!)
 - **💾 Full Save/Load:** Hazards persist across game sessions
-- **🧪 Production Quality:** 100+ new tests, 1,813 total tests passing (100%)
-
-### **Technical Achievements**
-- **GroundHazard System:** Clean architecture with hazard manager
-- **Damage Decay:** Linear decay (100% → 66% → 33%) for fading effects
-- **Visual Blending:** Colors fade toward floor color (orange→purple→blue for fire)
-- **FOV Integration:** Hazards dim when out of sight but remain visible
-- **Death Handling:** Proper messages for hazard-caused deaths
+- **⚙️ Environment Turn Phase:** Dedicated system for environmental effects
 
 ### **Benefits Realized**
 - **🎮 Players:** Tactical zone control, area denial, strategic spell usage
 - **🎨 Visual Polish:** Natural color transitions, clear hazard feedback
 - **🏗️ Architecture:** Extensible for future hazard types (acid, ice, lightning)
-- **✨ Quality:** Zero regressions, comprehensive test coverage
 
 ---
 
@@ -269,12 +293,12 @@ These features add new gameplay dimensions and significantly expand the game's d
 | Feature | Time | Impact | Complexity | Technical Requirements |
 |---------|------|--------|------------|----------------------|
 | **Ranged Weapons** | 2-3 weeks | 🔥 High | Need targeting system extension | Projectile mechanics, line-of-sight calculations |
-| **Boss Encounters** | 3-4 weeks | 🔥 High | Special AI behaviors and mechanics | Custom AI states, unique abilities |
+| **Boss Encounters** | ✅ Complete (v3.9) | 🔥 High | Multi-phase bosses with dialogue and enrage | BossAI, Boss component, dialogue system, immunities |
 | **Persistent Spell Effects** | ✅ Complete (v3.6) | 🔥 High | Lingering ground effects (fireball/dragon fart) | Ground effect tracking, turn duration, area denial |
 | **Spell-Item Interaction** | 1 week | 🔥 High | Fireball destroys items in blast zone | Item destruction system, area effect on ground items |
 | **Environmental Hazards** | 2-4 weeks | 🔥 High | Traps, poison, lava - tactical positioning | New tile types, damage-over-time systems |
 | **Manual Level Design - Tier 1** | ✅ Complete | 🔥 High | Guaranteed spawns for testing (YAML-based) | Template system with mode control (additional/replace) |
-| **Manual Level Design - Tier 2** | 2-3 weeks | 🔥 High | Level parameters & special rooms | Room count/size control, themed room types |
+| **Manual Level Design - Tier 2** | ✅ Complete | 🔥 High | Level parameters & special rooms (YAML-based) | Room count/size control, map dimensions, guaranteed spawns |
 | **Manual Level Design - Tier 3** | 3-4 weeks | 🔥 High | Full level crafting with ASCII maps | Custom maps, precise entity placement, boss arenas |
 
 **Combined Impact:** Adds strategic depth and memorable encounters.

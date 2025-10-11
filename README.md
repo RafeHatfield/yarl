@@ -677,11 +677,11 @@ config/
 #### 🟢 **Phase 1: Core Gameplay Enhancements** (Easy - 1-2 weeks each)
 - [ ] **Player Naming** - Allow players to enter custom names for personalization
 - [ ] **Weapon Speed** - Different attack speeds per weapon type (daggers fast, swords medium, axes slow)
-- [ ] **More Spells** - Teleport, invisibility, more tactical options
-- [ ] **Extended Equipment** - More weapon types, armor pieces, rings, amulets
-- [ ] **Chance to Hit/Dodge** - Enhanced combat mechanics with RNG
+- [x] **More Spells** - ✅ Complete (v2.7) - 8 tactical scrolls including teleport, shield, raise dead, dragon fart
+- [x] **Extended Equipment** - ✅ Complete (v3.0) - 12 weapon types with D&D-style dice notation
+- [x] **Chance to Hit/Dodge** - ✅ Complete (v3.0) - D20 attack rolls, AC system, critical hits/fumbles
 - [ ] **Stat Boosting Potions** - Temporary and permanent stat enhancement items
-- [x] **JSON Save/Load** - ✅ Complete - Human-readable saves with legacy compatibility
+- [x] **JSON Save/Load** - ✅ Complete (v2.4) - Human-readable saves with legacy compatibility
 - [ ] **Movement Speed Configuration** - Adjustable mouse movement animation speed
 
 #### 🟡 **Phase 2: Advanced Systems** (Medium - 2-4 weeks each)
@@ -698,8 +698,9 @@ config/
 - [ ] **Trap System** - Hidden dangers with detection and disarmament mechanics
 - [ ] **Skill System** - Lockpicking, trap detection, stealth, and other abilities
 - [ ] **Skill Scrolls** - Consumable items that teach or enhance abilities
-- [ ] **Boss Encounters** - Special monsters with unique mechanics
-- [ ] **Environmental Hazards** - Poison gas, lava, ice, pressure plates
+- [x] **Boss Encounters** - ✅ Complete (v3.9.0) - Multi-phase bosses with dialogue, enrage, and legendary loot
+- [x] **Environmental Hazards** - ✅ Partial (v3.6.0) - Ground hazards complete (fire, poison gas), traps pending
+- [x] **Manual Level Design** - ✅ Complete (Tier 1 & 2) - YAML-based guaranteed spawns and level parameters
 - [ ] **PC/Mac Distribution** - Packaging and build system setup
 
 #### 🔴 **Phase 3: Major Overhauls** (Hard - 1-3 months each)
@@ -714,11 +715,11 @@ config/
 
 | Feature | Difficulty | Time Estimate | Reason |
 |---------|------------|---------------|---------|
-| More Spells | 🟢 Easy | 1-2 weeks | Framework exists, just add functions |
-| Extended Equipment | 🟢 Easy | 1-2 weeks | System designed for expansion |
-| Variable Damage | 🟢 Easy | 1 week | Simple RNG modification to combat |
-| Variable Defense | 🟢 Easy | 1 week | Similar to variable damage implementation |
-| Chance to Hit/Dodge | 🟢 Easy | 1 week | Simple RNG in combat calculations |
+| More Spells | ✅ Complete (v2.7) | 1-2 weeks | 8 tactical scrolls with status effects |
+| Extended Equipment | ✅ Complete (v3.0) | 1-2 weeks | 12 weapon types with D&D dice |
+| Variable Damage | ✅ Complete (v3.0) | 1 week | D&D dice notation (1d4, 2d6+3) |
+| Variable Defense | ✅ Complete (v3.0) | 1 week | Armor provides variable AC bonuses |
+| Chance to Hit/Dodge | ✅ Complete (v3.0) | 1 week | D20 attack rolls, AC, critical hits/fumbles |
 | Stat Boosting Potions | 🟢 Easy | 1-2 weeks | Extend existing item system |
 | Movement Speed Config | 🟢 Easy | 1 week | Add animation timing to pathfinding |
 | Mouse Movement | ✅ Complete | 1 week | Pathfinding exists, add click handling |
