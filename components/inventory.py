@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
 from game_messages import Message
 from message_builder import MessageBuilder as MB
+from components.component_registry import ComponentType
 
 
 class Inventory:
@@ -330,10 +331,16 @@ class Inventory:
 
                     for item_use_result in item_use_results:
                         if item_use_result.get("consumed"):
-                            remove_results = self.remove_item(item_entity)
-                            # If removal failed, add the error to results
-                            if not remove_results[0].get("item_removed"):
-                                results.extend(remove_results)
+                            # Handle stacked items: decrement quantity instead of removing
+                            if item_component.stackable and item_component.quantity > 1:
+                                item_component.quantity -= 1
+                                # Don't remove, just decrement
+                            else:
+                                # Last one or not stackable - remove from inventory
+                                remove_results = self.remove_item(item_entity)
+                                # If removal failed, add the error to results
+                                if not remove_results[0].get("item_removed"):
+                                    results.extend(remove_results)
 
                     results.extend(item_use_results)
 
@@ -369,21 +376,23 @@ class Inventory:
 
         return results
 
-    def drop_item(self, item: Any) -> List[Dict[str, Any]]:
+    def drop_item(self, item: Any, quantity: int = 1) -> List[Dict[str, Any]]:
         """Drop an item from the inventory onto the ground.
 
-        Removes an item from inventory and places it at the owner's location.
+        For stacked items, drops the specified quantity (defaults to 1).
+        Creates a new entity for the dropped portion.
         Automatically unequips the item if it was equipped.
 
         Args:
             item (Any): The item entity to drop (Entity type)
+            quantity (int): How many to drop from a stack (defaults to 1)
 
         Returns:
             List[Dict[str, Any]]: List of result dictionaries with drop results and messages
         """
         results = []
 
-        # Check if item is equipped and unequip it
+        # Check if item is equipped and unequip it (only if dropping entire stack)
         if (
             item
             and self.owner.equipment
@@ -392,23 +401,80 @@ class Inventory:
                 or self.owner.equipment.off_hand == item
             )
         ):
-            self.owner.equipment.toggle_equip(item)
+            # Can only unequip if dropping the entire stack
+            if not (hasattr(item, 'item') and item.item.stackable and item.item.quantity > quantity):
+                self.owner.equipment.toggle_equip(item)
+            else:
+                # Can't drop part of an equipped stack
+                results.append({
+                    "item_dropped": None,
+                    "message": MB.warning(
+                        "You must unequip the {0} before dropping it".format(item.name)
+                    )
+                })
+                return results
 
-        remove_results = self.remove_item(item)
-        if remove_results[0].get("item_removed"):
-            # Item was successfully removed
-            item.x = self.owner.x
-            item.y = self.owner.y
-            results.append(
-                {
+        # Handle stacked items
+        if hasattr(item, 'item') and item.item.stackable and item.item.quantity > 1:
+            drop_quantity = min(quantity, item.item.quantity)
+            
+            if drop_quantity < item.item.quantity:
+                # Dropping part of the stack - create new entity for dropped portion
+                from entity import Entity
+                from copy import copy
+                
+                # Create a new entity with the same properties but quantity=drop_quantity
+                dropped_item = Entity(
+                    self.owner.x, self.owner.y,
+                    item.char, item.color, item.name,
+                    render_order=item.render_order
+                )
+                
+                # Copy the item component
+                dropped_item_component = copy(item.item)
+                dropped_item_component.quantity = drop_quantity
+                dropped_item_component.owner = dropped_item
+                dropped_item.item = dropped_item_component
+                dropped_item.components.add(ComponentType.ITEM, dropped_item_component)
+                
+                # Decrease quantity in inventory stack
+                item.item.quantity -= drop_quantity
+                
+                quantity_word = f"{drop_quantity}x" if drop_quantity > 1 else "1"
+                remaining = item.item.quantity
+                results.append({
+                    "item_dropped": dropped_item,
+                    "message": MB.item_drop(
+                        f"You dropped {quantity_word} {item.name} ({remaining} remaining)"
+                    )
+                })
+            else:
+                # Dropping entire stack - remove from inventory
+                remove_results = self.remove_item(item)
+                if remove_results[0].get("item_removed"):
+                    item.x = self.owner.x
+                    item.y = self.owner.y
+                    results.append({
+                        "item_dropped": item,
+                        "message": MB.item_drop(
+                            f"You dropped {item.item.quantity}x {item.name}"
+                        )
+                    })
+                else:
+                    results.extend(remove_results)
+        else:
+            # Non-stacked item - drop normally
+            remove_results = self.remove_item(item)
+            if remove_results[0].get("item_removed"):
+                item.x = self.owner.x
+                item.y = self.owner.y
+                results.append({
                     "item_dropped": item,
                     "message": MB.item_drop(
                         "You dropped the {0}".format(item.name)
-                    ),
-                }
-            )
-        else:
-            # Item removal failed, pass through the error
-            results.extend(remove_results)
+                    )
+                })
+            else:
+                results.extend(remove_results)
 
         return results
