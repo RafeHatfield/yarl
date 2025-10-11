@@ -6,6 +6,7 @@ configuration data and actual game entities.
 """
 
 import logging
+import random
 from typing import Optional
 
 from entity import Entity
@@ -25,6 +26,8 @@ from config.entity_registry import (
     SpellDefinition,
     EntityStats
 )
+from config.game_constants import GameConstants
+from config.item_appearances import get_appearance_generator
 
 logger = logging.getLogger(__name__)
 
@@ -43,15 +46,85 @@ class EntityFactory:
     - Spell/item creation with appropriate functions
     - Player stat retrieval for character creation
     - Fallback behavior for missing definitions
+    - Item identification system integration
     """
 
-    def __init__(self, entity_registry=None):
+    def __init__(self, entity_registry=None, game_constants=None, difficulty_level="medium"):
         """Initialize the entity factory.
         
         Args:
             entity_registry: EntityRegistry instance. If None, uses global registry.
+            game_constants: GameConstants instance. If None, loads from default path.
+            difficulty_level: Difficulty level for item identification ("easy", "medium", "hard")
         """
         self.registry = entity_registry or get_entity_registry()
+        self.game_constants = game_constants or GameConstants.load_from_file("config/game_constants.yaml")
+        self.difficulty_level = difficulty_level
+        self.appearance_generator = get_appearance_generator()
+    
+    def _apply_identification_logic(self, item: Item, item_type: str, item_category: str) -> None:
+        """Apply identification logic to an item based on game settings.
+        
+        This method determines if an item should start identified or unidentified
+        based on:
+        1. Master toggle (identification_system.enabled)
+        2. Difficulty settings (percentage of items pre-identified)
+        3. Item category (scroll, potion, ring, wand)
+        
+        Args:
+            item: The Item component to configure
+            item_type: Internal item type name (e.g., "healing_potion")
+            item_category: Category for identification ("scroll", "potion", "ring", "wand", "other")
+        """
+        # Set item category for future identification checks
+        item.item_category = item_category
+        
+        # Check master toggle - if disabled, all items are identified
+        if not self.game_constants.identification_system.enabled:
+            item.identified = True
+            item.appearance = None
+            return
+        
+        # Get difficulty settings
+        try:
+            difficulty_settings = self.game_constants.difficulty.get_difficulty(self.difficulty_level)
+        except ValueError:
+            logger.warning(f"Unknown difficulty level: {self.difficulty_level}, using medium")
+            difficulty_settings = self.game_constants.difficulty.medium
+        
+        # Determine pre-identification percentage based on category
+        pre_id_percent = 0
+        if item_category == "scroll":
+            pre_id_percent = difficulty_settings.scrolls_pre_identified_percent
+        elif item_category == "potion":
+            pre_id_percent = difficulty_settings.potions_pre_identified_percent
+        elif item_category == "ring":
+            pre_id_percent = difficulty_settings.rings_pre_identified_percent
+        elif item_category == "wand":
+            pre_id_percent = difficulty_settings.wands_pre_identified_percent
+        else:
+            # "other" items are always identified
+            item.identified = True
+            item.appearance = None
+            return
+        
+        # Roll for pre-identification
+        roll = random.random() * 100
+        if roll < pre_id_percent:
+            # Item starts identified
+            item.identified = True
+            item.appearance = None
+        else:
+            # Item starts unidentified - get appearance
+            item.identified = False
+            appearance = self.appearance_generator.get_appearance(item_type, item_category)
+            if appearance:
+                item.appearance = appearance
+            else:
+                # Fallback if appearance not found
+                logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
+                item.identified = True
+                item.appearance = None
 
     def create_monster(self, monster_type: str, x: int, y: int) -> Optional[Entity]:
         """Create a monster entity from configuration.
@@ -274,6 +347,16 @@ class EntityFactory:
         try:
             # Create item component with appropriate function
             item_component = self._create_item_component(spell_def)
+            
+            # Determine item category for identification
+            item_category = "other"  # default
+            if "scroll" in spell_type.lower():
+                item_category = "scroll"
+            elif "potion" in spell_type.lower():
+                item_category = "potion"
+            
+            # Apply identification logic
+            self._apply_identification_logic(item_component, spell_type, item_category)
 
             # Create entity
             spell_item = Entity(
@@ -285,7 +368,7 @@ class EntityFactory:
                 item=item_component
             )
 
-            logger.debug(f"Created spell item: {spell_def.name} at ({x}, {y})")
+            logger.debug(f"Created spell item: {spell_def.name} at ({x}, {y}) [identified: {item_component.identified}]")
             return spell_item
 
         except Exception as e:
