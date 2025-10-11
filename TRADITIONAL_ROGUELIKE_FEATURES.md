@@ -51,28 +51,70 @@ Every legendary roguelike has unidentified items. It creates:
 - **Rings/Wands (future):** Similar system
 
 #### Configuration Options
-**IMPORTANT: Implement with configurable toggle for accessibility**
+**IMPORTANT: Implement with DUAL toggle system for maximum flexibility**
 
 Add to `config/game_constants.yaml`:
 ```yaml
+# MASTER TOGGLE - Can completely disable identification system
 identification_system:
-  enabled: true  # Master toggle for entire identification system
-  auto_identify_scrolls: false  # If true, all scrolls start identified
-  auto_identify_potions: false  # If true, all potions start identified
-  auto_identify_rings: false    # If true, all rings start identified (future)
-  auto_identify_wands: false    # If true, all wands start identified (future)
+  enabled: true  # If false, ALL items always identified (no ID mechanic at all)
+
+# DIFFICULTY INTEGRATION - When enabled, difficulty determines pre-ID percentages
+difficulty:
+  easy:
+    item_identification:
+      scrolls_pre_identified: 80%  # Most scrolls known
+      potions_pre_identified: 80%
+      rings_pre_identified: 90%
+      wands_pre_identified: 75%
+    
+  medium:
+    item_identification:
+      scrolls_pre_identified: 40%  # Common ones known
+      potions_pre_identified: 50%
+      rings_pre_identified: 40%
+      wands_pre_identified: 30%
+    
+  hard:
+    item_identification:
+      scrolls_pre_identified: 5%   # Almost nothing known
+      potions_pre_identified: 5%
+      rings_pre_identified: 0%
+      wands_pre_identified: 0%
+
+# PROGRESSIVE LEARNING - QoL for veterans
+meta_progression:
+  auto_identify_after_first_win: true  # Veterans don't re-ID every run
+  common_items_learned: true           # Basic items stay identified
 ```
 
 **Use Cases:**
-- `enabled: false` - Traditional gameplay (all items identified by default)
-- `enabled: true, auto_identify_scrolls: true` - Only scrolls need identification
-- `enabled: true` (all auto_identify: false) - Full roguelike experience
+1. **No ID Mechanic (identification_system.enabled = false)**
+   - All items always identified
+   - For players who don't like uncertainty
+   - Traditional action-RPG experience
+
+2. **Easy Mode (enabled = true, difficulty = easy)**
+   - 80% items pre-identified
+   - Learn the game without overwhelming ID
+   - New player friendly
+
+3. **Medium Mode (enabled = true, difficulty = medium)**
+   - 40-50% items pre-identified
+   - Balanced challenge
+   - Common items known
+
+4. **Hard Mode (enabled = true, difficulty = hard)**
+   - 0-5% items pre-identified
+   - Full traditional roguelike experience
+   - For veterans
 
 **Why This Matters:**
-- Accessibility for players who don't want uncertainty
-- Difficulty mode foundation (Easy = auto-identify ON, Hard = OFF)
-- Matches modern roguelikes (DCSS has similar option)
-- Allows gradual feature rollout (enable for scrolls first, then expand)
+- **Maximum Player Agency** - Both master toggle AND difficulty scaling
+- **Accessibility** - Can completely opt-out of ID mechanic
+- **Challenge Options** - Veterans can crank it up
+- **Gradual Learning** - Meta-progression helps veterans
+- **Matches Best Practices** - DCSS has similar flexibility
 
 #### Implementation
 **Core System:**
@@ -92,17 +134,27 @@ identification_system:
 def create_scroll(scroll_type, x, y):
     scroll = Item(...)
     
-    # Check if identification system is enabled
-    if game_constants.identification_system.enabled:
-        # Check if this item type should auto-identify
-        if not game_constants.identification_system.auto_identify_scrolls:
-            scroll.identified = False
-            scroll.appearance = get_random_scroll_appearance()
-        else:
-            scroll.identified = True
-    else:
-        # Identification system disabled, all items start identified
+    # Check master toggle first
+    if not game_constants.identification_system.enabled:
+        # ID system completely disabled - all items identified
         scroll.identified = True
+        return scroll
+    
+    # ID system enabled - check difficulty settings
+    difficulty = game_state.difficulty_level  # "easy", "medium", "hard"
+    pre_id_chance = game_constants.difficulty[difficulty].item_identification.scrolls_pre_identified
+    
+    # Random roll to see if this item spawns identified
+    if random.random() < pre_id_chance:
+        scroll.identified = True
+    else:
+        scroll.identified = False
+        scroll.appearance = get_random_scroll_appearance()
+    
+    # Check meta-progression overrides
+    if game_state.has_won_before and game_constants.meta_progression.auto_identify_after_first_win:
+        if scroll_type in COMMON_SCROLLS:
+            scroll.identified = True
     
     return scroll
 ```
@@ -340,18 +392,30 @@ Special rooms that create stories:
 
 ## TIER 2: Major Systems (Core Depth)
 
-### 9. Hunger/Food System ⭐⭐⭐⭐⭐
+### 9. Hunger/Food System ⚠️ **OPTIONAL - CONTROVERSIAL**
 
-**Impact:** CRITICAL - Tension, prevents grinding
+**Impact:** DEBATED - Was removed from DCSS in v0.26 (2020)
 **Effort:** 2-3 weeks
-**Priority:** #6
+**Priority:** #6 (SKIP OR MAKE OPTIONAL)
 
-#### Why This Matters
+**⚠️ WARNING:** This is the MOST CONTROVERSIAL roguelike mechanic. DCSS removed it entirely after finding it added "tedium without depth."
+
+#### Why This Matters (Traditional View)
 Creates time pressure:
 - Can't rest forever
 - Can't grind same level repeatedly
 - Must balance exploration vs hunger
 - Food becomes a resource to manage
+
+#### Why Players HATE It (Modern View)
+From player research and DCSS removal:
+- "Just tedious busywork, not meaningful decisions"
+- "Forces grinding for food instead of exploring"
+- "Die to starvation more than combat"
+- Created "food scumming" (grinding easy areas)
+- No strategic depth - just "do I have enough food?"
+
+**DCSS Developer Quote:** "Hunger added tedium without depth. Players spent time hunting food, not playing the game."
 
 #### Design
 - Hunger states: Satiated > Normal > Hungry > Weak > Fainting > Starving
@@ -366,13 +430,31 @@ Creates time pressure:
   - Fruit (50 nutrition)
   - Bread (150 nutrition)
 
-#### Implementation
+#### Implementation Options
+
+**Option 1: SKIP (Recommended)**
+- Design against grinding instead (finite monsters, no respawns)
+- No hunger system needed
+- Respects player time
+
+**Option 2: Make OPTIONAL (Difficulty Setting)**
+- Easy/Medium: No hunger
+- Hard/Ironman: Optional hunger
+- Let players choose
+
+**Option 3: "Buff-Only" System (Compromise)**
+- Eating gives temporary buffs (+damage, +defense, +regen)
+- NOT eating has NO penalty
+- Food becomes a bonus resource, not requirement
+- Removes tedium, keeps resource management
+
+**If Implementing Traditional Hunger:**
 - Hunger component on player
-- Tick every turn
-- Status effects at thresholds
-- Food items restore nutrition
-- UI hunger indicator
-- Balance: ~500 turns between meals
+- SLOW decay (200+ turns between meals, not 50)
+- NEVER instant death (just penalties, not death)
+- Food is ABUNDANT (not scarce)
+- Warning messages well before critical
+- Balance: Should feel like background pressure, not main concern
 
 ---
 
@@ -612,24 +694,33 @@ Mixed/Cursed:
 
 ---
 
-### 16. Trap System ⭐⭐⭐⭐
+### 16. Trap System ⭐⭐⭐⭐ **NO INSTANT DEATH**
 
 **Impact:** HIGH - Danger, rewards caution
 **Effort:** 2-3 weeks
 **Priority:** #10
 
+**⚠️ CRITICAL:** NO instant death traps. Player death should feel earned, never random/unfair.
+
 #### Design
-**Trap Types (10 total):**
-- Dart Trap (1d4 damage)
-- Pit Trap (1d6 damage, fall to lower level)
-- Teleport Trap (random teleport)
-- Polymorph Trap (transform temporarily)
-- Fire Trap (2d6 fire damage, burns items)
-- Sleeping Gas (paralysis 5-10 turns)
-- Arrow Trap (1d8 damage)
-- Bear Trap (stuck for 1d4 turns)
-- Rust Trap (damages equipment)
-- Magic Trap (random effect)
+**Trap Types (10 total) - ALL SURVIVABLE:**
+- Dart Trap (1d4 damage) - Hurts but won't one-shot
+- Pit Trap (1d6 damage, OPTION to fall to lower level) - Player chooses
+- Teleport Trap (random teleport) - Tactical repositioning, not death
+- Polymorph Trap (transform temporarily) - **WARNING before bad forms**
+- Fire Trap (2d6 fire damage) - Survivable, doesn't destroy all items
+- Sleeping Gas (paralysis 3-5 turns) - Short enough to survive
+- Arrow Trap (1d8 damage) - Significant but not lethal
+- Bear Trap (stuck for 1d4 turns) - Can fight while stuck
+- Rust Trap (damages 1 piece of equipment) - Not destroy, just -1
+- Magic Trap (random MINOR effect) - No instant death effects
+
+**Safety Rules:**
+- **Warning System:** "You feel a draft" before pit trap
+- **Passive Discovery:** 10% chance to spot when adjacent
+- **Search Command:** Reveals all traps in radius
+- **No Instant Death:** Even stacking traps is survivable
+- **Escape Options:** Can teleport/blink away from bad situations
 
 #### Mechanics
 - Hidden until triggered or searched
@@ -676,11 +767,13 @@ Invisibility, Confusion, Shield, Disorientation
 
 ---
 
-### 18. Polymorph System ⭐⭐⭐⭐
+### 18. Polymorph System ⭐⭐⭐⭐ **NO INSTANT DEATH**
 
 **Impact:** HIGH - Unique mechanic, power fantasy
 **Effort:** 3-4 weeks
 **Priority:** #17
+
+**⚠️ CRITICAL:** NO instant death from polymorph. NetHack's "polymorph into newt" = rage quit.
 
 #### Why This Matters
 Legendary roguelike moments:
@@ -693,8 +786,22 @@ Legendary roguelike moments:
 - Duration: 50-200 turns
 - Gain monster's abilities
 - Keep items (drop if incompatible)
-- Return to normal after duration or death
+- Return to normal after duration
 - Sources: Wand, potion, trap, scroll
+
+**Safety Features:**
+- **Warning System:** "This might transform you into something weak!" message
+- **NO DEATH WHILE POLYMORPHED:** If HP hits 0, revert to normal form instead
+- **Minimum HP:** Weak forms have minimum 10 HP (never 1 HP newts)
+- **Cancel Option:** "Are you sure?" for risky polymorphs
+- **Good Forms More Common:** 70% chance of neutral-to-good form
+- **Trap Warnings:** "You feel strange magic" before polymorph trap
+
+**Never Add:**
+- Instant death from weak form
+- Polymorph into 1 HP creatures
+- Unrecoverable bad transformations
+- System shock death from polymorph
 
 #### Implementation
 - Store original form

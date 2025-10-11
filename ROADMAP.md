@@ -232,13 +232,15 @@ This establishes the **gold standard** for data-driven game development in Pytho
 
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
-| **Item Identification System** | 1-2 weeks | 🔥 CRITICAL | THE defining roguelike mechanic - "What does this blue potion do?" | Unidentified scrolls/potions, random appearances, identify methods |
+| **Item Identification System** | 1-2 weeks | 🔥 CRITICAL | THE defining roguelike mechanic - "What does this blue potion do?" | **DUAL TOGGLE:** Master disable + difficulty integration (Easy=80% pre-ID, Hard=5%) |
 | **Item Stacking** | 1 week | 🔥 High | Quality of life standard - "5x healing potion" | Stack similar items, quantity display, merge logic |
 | **Scroll/Potion Variety** | 1-2 weeks | 🔥 High | Expand from 8 to 20 scrolls, add 15 potions | More content for identification system, variety |
 | **Resistance System** | 1-2 weeks | 🔥 High | Fire/cold/poison/electric - build diversity | Equipment grants resistances, tactical choices |
 | **Throwing System** | 1 week | 🔥 High | Throw potions/daggers - emergent gameplay | Target system, potion shattering, tactical depth |
 
-**Combined Impact:** Creates the core roguelike experience of discovery, risk/reward decisions, and "should I drink this?" moments.
+**🎚️ Difficulty Integration:** Item ID percentages scale with difficulty (Easy/Medium/Hard), PLUS master toggle to disable entirely for accessibility.
+
+**Combined Impact:** Creates the core roguelike experience with maximum player agency. Can opt-out completely or scale challenge.
 
 ### **🎯 Combat & Mechanics (Already Strong)**
 
@@ -321,23 +323,29 @@ This establishes the **gold standard** for data-driven game development in Pytho
 
 **Goal:** Add the major systems that define traditional roguelikes - resource management, equipment depth, and economic systems.
 
-### **🍖 Resource Management (Time Pressure & Tension)**
+### **🍖 Resource Management (Strategic Depth Without Tedium)**
 
 | Feature | Time | Impact | Why Critical | Technical Requirements |
 |---------|------|--------|--------------|----------------------|
-| **Hunger/Food System** | 2-3 weeks | 🔥 CRITICAL | Creates time pressure, prevents grinding - core roguelike mechanic | Hunger states, nutrition, food items, corpse integration |
-| **Wand Charges** | (with Wand System) | 🔥 CRITICAL | Limited charges add resource management | Charge tracking, recharge scroll (risky) |
+| **Wand System with Charges** | 2 weeks | 🔥 CRITICAL | Primary resource management - reusable magic | Charge tracking, recharge scroll (risky), 15 wand types |
+| **Item Identification Economy** | (with ID System) | 🔥 HIGH | Identify scrolls valuable, shop services | Scroll of identify, shop identification fees |
+| **Anti-Grinding Design** | 1 week | 🔥 HIGH | Prevents safe grinding without hunger tedium | Finite monsters per floor, no respawns |
+| ~~**Hunger/Food System**~~ | ~~2-3 weeks~~ | ⚠️ SKIP/OPTIONAL | DCSS removed this in v0.26 - "tedium without depth" | Make optional difficulty setting if added |
 
-**Combined Impact:** Adds tension and prevents safe grinding. You MUST keep moving and exploring.
+**⚠️ DESIGN DECISION:** Skipping mandatory hunger system based on player research. DCSS removed it after finding it added busywork without meaningful decisions. Resource management comes from wands, ID economy, and anti-grinding design instead.
+
+**Combined Impact:** Strategic resource management without tedious busywork. Respects player time.
 
 ### **⚔️ Equipment Depth (The Equipment Puzzle)**
 
 | Feature | Time | Impact | Why Critical | Technical Requirements |
 |---------|------|--------|--------------|----------------------|
-| **Blessed/Cursed Items** | 2-3 weeks | 🔥 CRITICAL | Equipment risk/reward - can't remove cursed! | BUC states, altar interactions, remove curse scrolls |
-| **More Status Effects** | 2-3 weeks | 🔥 High | Poison, paralysis, blindness, levitation - tactical depth | Extend status system, new effect types, cures |
+| **Blessed/Cursed Items** | 2-3 weeks | 🔥 CRITICAL | Equipment risk/reward - can't remove cursed! **WITH clear visual indicators** | BUC states, visual cues (red glow), cursed items have UPSIDES, remove curse scrolls |
+| **More Status Effects** | 2-3 weeks | 🔥 High | Poison, paralysis, blindness, levitation **- NO instant death** | Extend status system, survivable effects only, clear cures |
 
-**Combined Impact:** Makes equipment decisions meaningful and sometimes dangerous. Cursed items create memorable "oh no!" moments.
+**⚠️ SAFETY NETS:** Cursed items have upsides (cursed sword: -1 AC, +3 damage). No instant death effects. Clear visual indicators.
+
+**Combined Impact:** Makes equipment decisions meaningful WITHOUT unfair punishment. Drama without rage quits.
 
 ### **🙏 Divine & Economic Systems (Meta-Progression)**
 
@@ -353,11 +361,15 @@ This establishes the **gold standard** for data-driven game development in Pytho
 | Feature | Time | Impact | Status | Technical Requirements |
 |---------|------|--------|--------|----------------------|
 | **Ranged Weapons** | 2-3 weeks | 🔥 High | Pending | Bows, crossbows, ammo - projectile mechanics |
-| **Boss Encounters** | ✅ Complete (v3.9) | 🔥 High | Done | Multi-phase bosses with dialogue |
-| **Persistent Spell Effects** | ✅ Complete (v3.6) | 🔥 High | Done | Ground effects (fire, poison gas) |
+| **Boss Encounters** | ✅ Complete (v3.9) | 🔥 High | Done | Multi-phase bosses with dialogue, NO instant death |
+| **Persistent Spell Effects** | ✅ Complete (v3.6) | 🔥 High | Done | Ground effects (fire, poison gas), survivable damage |
 | **Manual Level Design - Tier 3** | 3-4 weeks | 🔥 High | Pending | ASCII map crafting, boss arenas |
+| **Trap System** | 2-3 weeks | 🔥 High | Pending | **NO instant death** - warnings, passive discovery, all survivable |
+| **Vaults & Secret Doors** | 1-2 weeks | 🔥 High | Pending | Special treasure rooms, **passive 75% discovery** for secret doors |
 
-**Combined Impact:** Adds combat variety and memorable encounters.
+**⚠️ NO INSTANT DEATH:** All features designed with warnings, safety nets, and survivability. Fair challenge, not "gotcha" moments.
+
+**Combined Impact:** Adds combat variety and memorable encounters WITHOUT frustrating deaths.
 
 ### **🎭 Character Depth (3-6 weeks)**
 

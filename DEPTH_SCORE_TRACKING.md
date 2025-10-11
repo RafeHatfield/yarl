@@ -48,17 +48,25 @@
 - Equipment has weight limits ✅
 
 **Missing Critical Elements:**
-- ❌ No hunger system (can rest forever, no time pressure)
 - ❌ No wand charges (reusable magic missing)
 - ❌ No identify scroll economy (identification is free)
-- ❌ No corpse/food management
+- ❌ No ring/amulet slot competition
 - ❌ No blessing/cursing resources
+- ❌ No anti-grinding measures (can rest forever)
 
-**To reach 9/10:**
-- Add Hunger/Food System (+3) - Creates time pressure
-- Add Wand System with Charges (+2) - Reusable magic management
-- Add Item Identification Economy (+1) - Identify scrolls are valuable
-- Add Corpse/Food System (+1)
+**⚠️ NOTE:** Hunger system is OPTIONAL/CONTROVERSIAL (DCSS removed it in v0.26). Resource management will come from:
+- **Wand Charges** - Primary reusable magic system
+- **Item Identification Economy** - Identify scrolls are valuable
+- **Anti-Grinding Design** - Finite monsters, no respawns
+- **Blessing/Curse Economy** - Altars and removal scrolls
+
+**To reach 9/10 (WITHOUT mandatory hunger):**
+- Add Wand System with Charges (+3) - Primary resource management
+- Add Item Identification Economy (+2) - Identify scrolls, shop services
+- Add Anti-Grinding Design (+1) - Finite XP per floor
+- Add Blessing/Curse Resources (+1) - Remove curse scrolls, altars
+- Add Ring/Amulet Competition (+1) - Limited slots, hard choices
+- (Optional) Hunger as difficulty toggle (+1 if chosen)
 
 ---
 
@@ -216,17 +224,17 @@ Features:
 Features:
 - ✅ Wand System (charges, recharging)
 - ✅ Ring System (2 slots, 15 types)
-- ✅ Hunger/Food System
-- ✅ Corpse System
+- ✅ Anti-Grinding Design (finite monsters, no respawns)
 - ✅ Vaults & Secret Doors
-- ✅ Trap System
+- ✅ Trap System (NO instant death)
+- ⚠️ Hunger/Food System (OPTIONAL - may skip based on DCSS lessons)
 
 **Expected Scores:**
 - Discovery: 5 → 7 (+2)
-- Resource Management: 4 → 8 (+4)
+- Resource Management: 4 → 8 (+4) - From wands, ID economy, rings
 - Build Diversity: 6 → 8 (+2)
 
-**Player Feedback Target:** "I have to manage everything carefully!"
+**Player Feedback Target:** "I have to manage everything carefully!" (without tedious hunger busywork)
 
 ---
 
@@ -322,9 +330,15 @@ After completing each feature, update:
 - Resource Management improves from identify scroll economy
 - Build Diversity improves from strategic identification choices (identify rings vs potions)
 
+**Configuration:**
+- **Master Toggle:** Can completely disable ID system (accessibility)
+- **Difficulty Integration:** Easy=80% pre-ID, Medium=40%, Hard=5%
+- **Meta-Progression:** Common items auto-ID after first win
+
 **Validation Method:**
-- Playtest 10+ runs
-- Track player feedback quotes
+- Playtest 10+ runs across all difficulty levels
+- Track player feedback quotes by difficulty
 - Measure "identification moment" frequency
-- Compare to NetHack/DCSS player experiences
+- Compare Easy mode accessibility vs Hard mode challenge
+- Monitor toggle usage (how many disable ID completely?)
 
