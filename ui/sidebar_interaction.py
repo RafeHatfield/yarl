@@ -18,10 +18,11 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
     Hotkeys are rendered at Y positions based on sidebar layout:
       Y=7:  C - Character
       Y=8:  I - Inventory
-      Y=9:  G - Get/Drop
-      Y=10: Z - Wait
-      Y=11: <> - Stairs
-      Y=12: / - Look
+      Y=9:  O - Auto-Explore
+      Y=10: G - Get/Drop
+      Y=11: Z - Wait
+      Y=12: <> - Stairs
+      Y=13: / - Look
     
     Args:
         screen_x: X coordinate of click
@@ -47,6 +48,7 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
     hotkeys = [
         ("C - Character", {"show_character_screen": True}),
         ("I - Inventory", {"show_inventory": True}),
+        ("O - Auto-Explore", {"start_auto_explore": True}),
         ("G - Get/Drop", None),  # Context-aware (handled below)
         ("Z - Wait", {"wait": True}),
         ("<> - Stairs", None),  # Context-aware (handled below)
