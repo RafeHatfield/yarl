@@ -17,6 +17,8 @@ class Item:
         identified (bool): Whether the item has been identified
         appearance (Optional[str]): Unidentified name (e.g., "cyan potion", "KIRJE XIXAXA scroll")
         item_category (str): Category for identification ("scroll", "potion", "ring", "wand", "other")
+        stackable (bool): Whether this item can stack with identical items
+        quantity (int): Number of items in this stack
     """
 
     def __init__(
@@ -27,6 +29,8 @@ class Item:
         identified: bool = True,
         appearance: Optional[str] = None,
         item_category: str = "other",
+        stackable: bool = True,
+        quantity: int = 1,
         **kwargs: Any
     ) -> None:
         """Initialize an Item component.
@@ -38,6 +42,8 @@ class Item:
             identified (bool, optional): Whether item starts identified. Defaults to True.
             appearance (Optional[str], optional): Unidentified display name. Defaults to None.
             item_category (str, optional): Category for identification. Defaults to "other".
+            stackable (bool, optional): Whether item can stack. Defaults to True.
+            quantity (int, optional): Number of items in stack. Defaults to 1.
             **kwargs: Additional arguments passed to the use function
         
         Returns:
@@ -53,29 +59,42 @@ class Item:
         self.identified: bool = identified
         self.appearance: Optional[str] = appearance
         self.item_category: str = item_category
+        
+        # Item stacking system
+        self.stackable: bool = stackable
+        self.quantity: int = max(1, quantity)  # Ensure quantity is at least 1
     
-    def get_display_name(self, compact: bool = False) -> str:
+    def get_display_name(self, compact: bool = False, show_quantity: bool = True) -> str:
         """Get the display name for this item.
         
         Returns the appearance if unidentified, otherwise returns the owner's name.
-        The compact parameter can be used for abbreviated names (e.g., wands).
+        Includes quantity prefix if stacked (e.g., "5x Healing Potion").
         
         Args:
             compact: If True, returns a shorter version of the name for UI space constraints
+            show_quantity: If True, includes quantity prefix for stacked items
         
         Returns:
             str: The name to display to the player
         """
+        # Get base name
+        base_name = ""
         if not self.identified and self.appearance:
-            return self.appearance
-        
-        if self.owner:
+            base_name = self.appearance
+        elif self.owner:
             # Check if owner has get_display_name for compact wand names
             if compact and hasattr(self.owner, 'get_display_name'):
-                return self.owner.get_display_name(compact=True)
-            return self.owner.name
+                base_name = self.owner.get_display_name(compact=True)
+            else:
+                base_name = self.owner.name
+        else:
+            base_name = "Unknown Item"
         
-        return "Unknown Item"
+        # Add quantity prefix if stacked
+        if show_quantity and self.stackable and self.quantity > 1:
+            return f"{self.quantity}x {base_name}"
+        
+        return base_name
     
     def identify(self) -> bool:
         """Identify this item.
