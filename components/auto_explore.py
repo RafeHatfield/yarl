@@ -172,8 +172,11 @@ class AutoExplore:
         if not self.active or not self.owner:
             return None
         
-        # Check stop conditions (implemented in Slice 2)
-        # For now, just basic completion check
+        # Check stop conditions
+        stop_reason = self._check_stop_conditions(game_map, entities, fov_map)
+        if stop_reason:
+            self.stop(stop_reason)
+            return None
         
         # If we have a current path, follow it
         if self.current_path:
@@ -204,6 +207,203 @@ class AutoExplore:
         dx = next_pos[0] - self.owner.x
         dy = next_pos[1] - self.owner.y
         return {'dx': dx, 'dy': dy}
+    
+    def _check_stop_conditions(
+        self,
+        game_map: 'GameMap',
+        entities: List['Entity'],
+        fov_map
+    ) -> Optional[str]:
+        """Check if any stop condition is met.
+        
+        Stop conditions (in priority order):
+        1. Monster in FOV
+        2. Valuable item in FOV
+        3. Standing on stairs
+        4. Took damage
+        5. Has status effect
+        6. Trap triggered (detected via damage)
+        
+        Args:
+            game_map: Current game map
+            entities: All entities on the map
+            fov_map: Field-of-view map for visibility checks
+            
+        Returns:
+            str: Human-readable stop reason, or None to continue
+        """
+        if not self.owner:
+            return "Error: No owner"
+        
+        # 1. Check for monsters in FOV
+        monster = self._monster_in_fov(entities, fov_map)
+        if monster:
+            return f"Monster spotted: {monster.name}"
+        
+        # 2. Check for valuable items in FOV
+        item = self._valuable_item_in_fov(entities, fov_map)
+        if item:
+            return f"Found {item.name}"
+        
+        # 3. Check if standing on stairs
+        if self._on_stairs(entities):
+            return "Stairs found"
+        
+        # 4. Check for damage taken
+        if self._took_damage():
+            return "Took damage"
+        
+        # 5. Check for status effects
+        effect_name = self._has_status_effect()
+        if effect_name:
+            return f"Affected by {effect_name}"
+        
+        # 6. Trap triggered - detected via damage check (already covered by #4)
+        
+        return None  # Continue exploring
+    
+    def _monster_in_fov(self, entities: List['Entity'], fov_map) -> Optional['Entity']:
+        """Check if any hostile monster is visible.
+        
+        Args:
+            entities: All entities on the map
+            fov_map: Field-of-view map
+            
+        Returns:
+            Entity: First hostile monster found, or None
+        """
+        if not self.owner or not fov_map:
+            return None
+        
+        from fov_functions import map_is_in_fov
+        from components.component_registry import ComponentType
+        
+        for entity in entities:
+            # Skip non-monsters
+            if not entity.components.has(ComponentType.AI):
+                continue
+            
+            # Skip self
+            if entity == self.owner:
+                continue
+            
+            # Check if in FOV
+            if map_is_in_fov(fov_map, entity.x, entity.y):
+                # Check if hostile (has fighter component = can be attacked)
+                if entity.components.has(ComponentType.FIGHTER):
+                    return entity
+        
+        return None
+    
+    def _valuable_item_in_fov(
+        self, entities: List['Entity'], fov_map
+    ) -> Optional['Entity']:
+        """Check if any valuable item is visible.
+        
+        Valuable items: equipment, scrolls, potions, wands, rings
+        Not valuable: corpses, gold (if we add it), junk
+        
+        Args:
+            entities: All entities on the map
+            fov_map: Field-of-view map
+            
+        Returns:
+            Entity: First valuable item found, or None
+        """
+        if not self.owner or not fov_map:
+            return None
+        
+        from fov_functions import map_is_in_fov
+        from components.component_registry import ComponentType
+        
+        for entity in entities:
+            # Must have item component
+            if not entity.components.has(ComponentType.ITEM):
+                continue
+            
+            # Check if in FOV
+            if map_is_in_fov(fov_map, entity.x, entity.y):
+                # Check if valuable
+                # Equipment: has equippable component
+                if entity.components.has(ComponentType.EQUIPPABLE):
+                    return entity
+                
+                # Consumables: has item component with use_function
+                item_comp = entity.components.get(ComponentType.ITEM)
+                if item_comp and item_comp.use_function:
+                    return entity
+                
+                # Wands: has wand component
+                if entity.components.has(ComponentType.WAND):
+                    return entity
+        
+        return None
+    
+    def _on_stairs(self, entities: List['Entity']) -> bool:
+        """Check if player is standing on stairs.
+        
+        Args:
+            entities: All entities on the map
+            
+        Returns:
+            bool: True if on stairs
+        """
+        if not self.owner:
+            return False
+        
+        from components.component_registry import ComponentType
+        
+        # Check for stairs entity at player position
+        for entity in entities:
+            if entity.components.has(ComponentType.STAIRS):
+                if entity.x == self.owner.x and entity.y == self.owner.y:
+                    return True
+        
+        return False
+    
+    def _took_damage(self) -> bool:
+        """Check if player took damage since last turn.
+        
+        Returns:
+            bool: True if HP decreased
+        """
+        if not self.owner or not hasattr(self.owner, 'fighter'):
+            return False
+        
+        current_hp = self.owner.fighter.hp
+        took_damage = current_hp < self.last_hp
+        
+        # Update last_hp for next check
+        self.last_hp = current_hp
+        
+        return took_damage
+    
+    def _has_status_effect(self) -> Optional[str]:
+        """Check if player has any negative status effects.
+        
+        Returns:
+            str: Name of status effect, or None
+        """
+        if not self.owner:
+            return None
+        
+        from components.component_registry import ComponentType
+        
+        if not self.owner.components.has(ComponentType.STATUS_EFFECTS):
+            return None
+        
+        status_effects = self.owner.components.get(ComponentType.STATUS_EFFECTS)
+        
+        # Check for any active negative effects
+        negative_effects = ['poisoned', 'confused', 'slowed', 'blinded', 'stuck']
+        
+        for effect_name in negative_effects:
+            if hasattr(status_effects, effect_name):
+                effect = getattr(status_effects, effect_name)
+                if effect and effect > 0:  # Effect is active
+                    return effect_name.capitalize()
+        
+        return None
     
     def _find_next_unexplored_tile(self, game_map: 'GameMap') -> Optional[Tuple[int, int]]:
         """Find the nearest unexplored tile using room-by-room priority.
