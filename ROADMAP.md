@@ -1,8 +1,10 @@
 # 🗺️ **Yarl Development Roadmap: Sorted by Complexity & Impact**
 
-*Last Updated: October 2025 - Boss Fights & Loot Quality Complete (v3.9.0)*
+*Last Updated: October 2025 - Traditional Roguelike Feature Analysis Complete*
 
-This roadmap organizes all planned features by implementation complexity and gameplay impact, helping prioritize development efforts for maximum player enjoyment.
+This roadmap organizes all planned features by implementation complexity and gameplay impact, prioritizing the beloved mechanics from legendary roguelikes (NetHack, DCSS, Brogue, Caves of Qud, ADOM).
+
+**📖 See [TRADITIONAL_ROGUELIKE_FEATURES.md](TRADITIONAL_ROGUELIKE_FEATURES.md) for detailed design documentation of each system.**
 
 ---
 
@@ -222,53 +224,84 @@ This establishes the **gold standard** for data-driven game development in Pytho
 
 ---
 
-## 🟢 **Phase 1: Quick Wins & High Impact** (1-2 weeks each)
+## 🟢 **Phase 1: Essential Roguelike Features** (1-2 weeks each)
 
-These features build on existing systems and provide immediate gameplay improvements with minimal risk.
+**Goal:** Add THE defining roguelike mechanics that create discovery, risk/reward, and depth.
 
-### **🎯 Combat & Mechanics (Immediate Fun)**
-
-| Feature | Time | Impact | Why Now | Technical Notes |
-|---------|------|--------|---------|-----------------|
-| **Variable Damage** | ✅ Complete (v3.0) | 🔥 High | D&D dice notation (1d4, 2d6) for dynamic combat | Dice rolling system with full notation support |
-| **Variable Defense** | ✅ Complete (v3.0) | 🔥 High | Armor provides variable protection | Defense ranges integrated with dice system |
-| **Variable Monster Damage** | ✅ Complete (v3.0) | 🔥 High | Monsters use dice-based damage like players | All entities use unified dice combat system |
-| **Chance to Hit/Dodge** | ✅ Complete (v3.0) | 🔥 High | d20 attack rolls vs AC for tactical depth | Full d20 combat with critical hits/fumbles |
-| **Critical Failure Consequences** | 1-2 weeks | 🔥 High | Fumbles cause weapon drops, armor falls off, or prone + free crit | Fumble outcome table, equipment drop mechanics, prone status |
-| **More Spells** | ✅ Complete (v2.7) | 🔥 High | 8 tactical scrolls (teleport, invisibility, etc.) | Comprehensive spell system with status effects |
-| **Monster Equipment & Loot** | ✅ Complete (v3.8) | 🔥 High | Monsters wield weapons/armor and drop quality loot | Equipment system + 4-tier rarity system |
-| **Loot Quality & Scaling** | ✅ Complete (v3.8) | 🔥 High | Level-scaled magic items (Common→Legendary) | LootGenerator with rarity bonuses +0 to +5 |
-
-**Combined Impact:** Transforms combat from predictable to dynamic and tactical.
-
-### **🎒 Equipment & Progression (Player Retention)**
+### **🔍 Discovery & Identification (Core Roguelike Experience)**
 
 | Feature | Time | Impact | Why Now | Technical Notes |
 |---------|------|--------|---------|-----------------|
-| **Rings & Amulets** | 1 week | 🔥 High | 2 new equipment slots for magical effects | Slots exist, just add items with special effects |
-| **Extended Equipment** | 1-2 weeks | 🔥 High | More loot variety = more exploration motivation | System designed for easy expansion |
-| **More Stats on Equipment** | 1 week | 🔥 High | Makes loot more interesting and build diversity | Add to existing stat system |
+| **Item Identification System** | 1-2 weeks | 🔥 CRITICAL | THE defining roguelike mechanic - "What does this blue potion do?" | Unidentified scrolls/potions, random appearances, identify methods |
+| **Item Stacking** | 1 week | 🔥 High | Quality of life standard - "5x healing potion" | Stack similar items, quantity display, merge logic |
+| **Scroll/Potion Variety** | 1-2 weeks | 🔥 High | Expand from 8 to 20 scrolls, add 15 potions | More content for identification system, variety |
+| **Resistance System** | 1-2 weeks | 🔥 High | Fire/cold/poison/electric - build diversity | Equipment grants resistances, tactical choices |
+| **Throwing System** | 1 week | 🔥 High | Throw potions/daggers - emergent gameplay | Target system, potion shattering, tactical depth |
+
+**Combined Impact:** Creates the core roguelike experience of discovery, risk/reward decisions, and "should I drink this?" moments.
+
+### **🎯 Combat & Mechanics (Already Strong)**
+
+| Feature | Time | Impact | Status | Technical Notes |
+|---------|------|--------|--------|-----------------|
+| **Variable Damage** | ✅ Complete (v3.0) | 🔥 High | Done | D&D dice notation (1d4, 2d6) |
+| **Variable Defense** | ✅ Complete (v3.0) | 🔥 High | Done | Armor provides variable protection |
+| **Variable Monster Damage** | ✅ Complete (v3.0) | 🔥 High | Done | Monsters use dice-based damage |
+| **Chance to Hit/Dodge** | ✅ Complete (v3.0) | 🔥 High | Done | d20 attack rolls vs AC |
+| **More Spells** | ✅ Complete (v2.7) | 🔥 High | Done | 8 tactical scrolls |
+| **Monster Equipment & Loot** | ✅ Complete (v3.8) | 🔥 High | Done | Monsters wield and drop gear |
+| **Loot Quality & Scaling** | ✅ Complete (v3.8) | 🔥 High | Done | 4 rarity tiers (Common→Legendary) |
+| **Boss Encounters** | ✅ Complete (v3.9) | 🔥 High | Done | Multi-phase bosses with dialogue |
+| **Critical Failure Consequences** | 1-2 weeks | 🔥 High | Pending | Fumbles cause weapon drops, prone |
+
+**Combined Impact:** Strong combat foundation - focus now on adding roguelike depth systems.
+
+### **💍 Equipment & Magic Items (Build Diversity)**
+
+| Feature | Time | Impact | Why Now | Technical Notes |
+|---------|------|--------|---------|-----------------|
+| **Wand System** | 2 weeks | 🔥 CRITICAL | Rechargeable magic - component ALREADY EXISTS in codebase! | 15 wand types, limited charges, recharge mechanic |
+| **Ring System** | 2-3 weeks | 🔥 CRITICAL | 15 ring types, 2 slots - build customization | Passive effects, some with drawbacks, rings alter playstyle |
+| **Amulet System** | 2 weeks | 🔥 High | 10 amulet types, 1 slot - power spikes | Life saving, reflection, ESP - build-defining |
 | **Stat Boosting Potions** | 1-2 weeks | 🔥 High | Tactical consumables add resource management | Extend existing item system |
 
-**Combined Impact:** Creates meaningful loot progression and tactical resource decisions.
+**Combined Impact:** Massive build diversity through passive effects and reusable magic. Wands especially critical as component already exists!
 
-**Note on Rings & Amulets:** Equipment system is ready for 2 more slots. These would provide magical bonuses (HP regen, resistance, special abilities). Low complexity since infrastructure exists - just need item definitions and slot UI updates.
+### **🗺️ World Depth (Discovery & Exploration)**
+
+| Feature | Time | Impact | Why Now | Technical Notes |
+|---------|------|--------|---------|-----------------|
+| **Vaults** | 1-2 weeks | 🔥 High | Special treasure rooms with challenges - memorable moments | 10-15 vault templates, pre-designed, tough guards |
+| **Secret Doors** | 1 week | 🔥 High | Hidden passages revealed by searching - exploration rewards | Search action, passive discovery, bonus areas |
+| **Corpse System** | 1-2 weeks | 🔥 High | Dead monsters leave corpses - eat for effects | Nutrition, gain abilities, get sick, decay |
+| **Trap System** | 2-3 weeks | 🔥 CRITICAL | 10 trap types - danger rewards caution | Hidden until triggered, search/disarm, intentional use |
+| **Fountain Effects** | 1-2 weeks | 🔥 High | Random effects from drinking - risk/reward | Restore HP, detect treasure, water demons, 1% wish! |
+
+**Combined Impact:** Transforms exploration from walking to discovery-filled adventure with memorable moments.
+
+### **🎮 Meta-Progression & Replayability**
+
+| Feature | Time | Impact | Why Now | Technical Notes |
+|---------|------|--------|---------|-----------------|
+| **Difficulty Selection** | 1-2 weeks | 🔥 High | Player choice for game challenge level (Easy/Normal/Hard/Ironman) | Startup menu, scaling config for monsters/loot |
+| **Player Profiles/Achievements** | 2-3 weeks | 🔥 High | Persistent player stats across runs, multiple profiles | Profile management, aggregate statistics tracking |
+| **Multi-Save Games** | 2-3 weeks | 🔥 High | Multiple save slots with metadata display | Save slot UI, file management, save previews |
+| **Morgue Files** | 1-2 weeks | 🔥 High | Post-death character dumps - community, learning | Text file with complete run statistics |
+| **Victory Condition/Ascension** | 2-3 weeks | 🔥 CRITICAL | Clear goal - retrieve amulet, escape | Win screen, hall of fame, score system |
+| **Player Naming** | 1 week | 🔥 High | Allow players to enter custom names for personalization | Add name input dialog at game start |
+
+**Combined Impact:** Gives players reasons to play "one more run" and sense of progression/completion.
 
 ### **🎮 Quality of Life (Polish)**
 
-| Feature | Time | Impact | Why Now | Technical Notes |
-|---------|------|--------|---------|-----------------|
-| **Movement Speed Config** | 1 week | 🔥 High | Makes mouse movement feel perfect for each player | Add animation timing to pathfinding |
-| **Tooltip System** | ✅ Complete (v3.5) | 🔥 High | Ground & equipment item tooltips on hover | Rich tooltip system with full item details |
-| **Explored Area Pathfinding** | 1 week | 🔥 High | Click any previously explored tile to pathfind back to it | Pathfinding to explored tiles, memory-based navigation |
-| **Player Naming** | 1 week | 🔥 High | Allow players to enter custom names for personalization | Add name input dialog at game start |
-| **More Monster Types** | 1-2 weeks | 🔥 High | Keeps exploration fresh and challenging | AI system supports easy expansion |
-| **Multi-Save Games** | 2-3 weeks | 🔥 High | Multiple save slots with metadata display | Save slot UI, file management, save previews |
-| **JSON Save/Load** | ✅ Complete | 🔶 Medium | Human-readable saves, easier debugging | Replace existing shelve serialization |
-| **Difficulty Selection** | 1-2 weeks | 🔥 High | Player choice for game challenge level (Easy/Normal/Hard/Ironman) | Startup menu, scaling config for monsters/loot |
-| **Player Profiles** | 2-3 weeks | 🔥 High | Persistent player stats across runs, multiple profiles | Profile management, aggregate statistics tracking |
+| Feature | Time | Impact | Status | Technical Notes |
+|---------|------|--------|--------|-----------------|
+| **Movement Speed Config** | 1 week | 🔥 High | Pending | Makes mouse movement feel perfect for each player |
+| **Tooltip System** | ✅ Complete (v3.5) | 🔥 High | Done | Ground & equipment item tooltips on hover |
+| **Explored Area Pathfinding** | 1 week | 🔥 High | Pending | Click any previously explored tile to pathfind back to it |
+| **JSON Save/Load** | ✅ Complete | 🔶 Medium | Done | Human-readable saves |
 
-**Combined Impact:** Polishes the core experience and improves development workflow.
+**Combined Impact:** Polishes the core experience.
 
 ### **📷 Camera System (Optional Polish)**
 
@@ -284,24 +317,47 @@ These features build on existing systems and provide immediate gameplay improvem
 
 ---
 
-## 🟡 **Phase 2: Game-Changing Systems** (2-6 weeks each)
+## 🟡 **Phase 2: Core Roguelike Systems** (2-4 weeks each)
 
-These features add new gameplay dimensions and significantly expand the game's depth.
+**Goal:** Add the major systems that define traditional roguelikes - resource management, equipment depth, and economic systems.
 
-### **🏹 Advanced Combat (2-4 weeks)**
+### **🍖 Resource Management (Time Pressure & Tension)**
 
-| Feature | Time | Impact | Complexity | Technical Requirements |
-|---------|------|--------|------------|----------------------|
-| **Ranged Weapons** | 2-3 weeks | 🔥 High | Need targeting system extension | Projectile mechanics, line-of-sight calculations |
-| **Boss Encounters** | ✅ Complete (v3.9) | 🔥 High | Multi-phase bosses with dialogue and enrage | BossAI, Boss component, dialogue system, immunities |
-| **Persistent Spell Effects** | ✅ Complete (v3.6) | 🔥 High | Lingering ground effects (fireball/dragon fart) | Ground effect tracking, turn duration, area denial |
-| **Spell-Item Interaction** | 1 week | 🔥 High | Fireball destroys items in blast zone | Item destruction system, area effect on ground items |
-| **Environmental Hazards** | 2-4 weeks | 🔥 High | Traps, poison, lava - tactical positioning | New tile types, damage-over-time systems |
-| **Manual Level Design - Tier 1** | ✅ Complete | 🔥 High | Guaranteed spawns for testing (YAML-based) | Template system with mode control (additional/replace) |
-| **Manual Level Design - Tier 2** | ✅ Complete | 🔥 High | Level parameters & special rooms (YAML-based) | Room count/size control, map dimensions, guaranteed spawns |
-| **Manual Level Design - Tier 3** | 3-4 weeks | 🔥 High | Full level crafting with ASCII maps | Custom maps, precise entity placement, boss arenas |
+| Feature | Time | Impact | Why Critical | Technical Requirements |
+|---------|------|--------|--------------|----------------------|
+| **Hunger/Food System** | 2-3 weeks | 🔥 CRITICAL | Creates time pressure, prevents grinding - core roguelike mechanic | Hunger states, nutrition, food items, corpse integration |
+| **Wand Charges** | (with Wand System) | 🔥 CRITICAL | Limited charges add resource management | Charge tracking, recharge scroll (risky) |
 
-**Combined Impact:** Adds strategic depth and memorable encounters.
+**Combined Impact:** Adds tension and prevents safe grinding. You MUST keep moving and exploring.
+
+### **⚔️ Equipment Depth (The Equipment Puzzle)**
+
+| Feature | Time | Impact | Why Critical | Technical Requirements |
+|---------|------|--------|--------------|----------------------|
+| **Blessed/Cursed Items** | 2-3 weeks | 🔥 CRITICAL | Equipment risk/reward - can't remove cursed! | BUC states, altar interactions, remove curse scrolls |
+| **More Status Effects** | 2-3 weeks | 🔥 High | Poison, paralysis, blindness, levitation - tactical depth | Extend status system, new effect types, cures |
+
+**Combined Impact:** Makes equipment decisions meaningful and sometimes dangerous. Cursed items create memorable "oh no!" moments.
+
+### **🙏 Divine & Economic Systems (Meta-Progression)**
+
+| Feature | Time | Impact | Why Critical | Technical Requirements |
+|---------|------|--------|--------------|----------------------|
+| **Religion/God System** | 3-4 weeks | 🔥 CRITICAL | Multiple gods, favor, prayers, divine gifts - massive replay value | God definitions, altars, favor tracking, divine powers |
+| **Shop System** | 2-3 weeks | 🔥 High | Buy/sell economy, identification services, tough shopkeepers | Shopkeeper NPCs, inventory, pricing, theft detection |
+
+**Combined Impact:** Adds strategic meta-progression and economic resource conversion.
+
+### **🏹 Advanced Combat & World**
+
+| Feature | Time | Impact | Status | Technical Requirements |
+|---------|------|--------|--------|----------------------|
+| **Ranged Weapons** | 2-3 weeks | 🔥 High | Pending | Bows, crossbows, ammo - projectile mechanics |
+| **Boss Encounters** | ✅ Complete (v3.9) | 🔥 High | Done | Multi-phase bosses with dialogue |
+| **Persistent Spell Effects** | ✅ Complete (v3.6) | 🔥 High | Done | Ground effects (fire, poison gas) |
+| **Manual Level Design - Tier 3** | 3-4 weeks | 🔥 High | Pending | ASCII map crafting, boss arenas |
+
+**Combined Impact:** Adds combat variety and memorable encounters.
 
 ### **🎭 Character Depth (3-6 weeks)**
 
@@ -356,95 +412,178 @@ These features add new gameplay dimensions and significantly expand the game's d
 
 ---
 
-## 🔴 **Phase 3: Major Transformations** (1-6 months each)
+## 🔴 **Phase 3: Legendary Features** (3-6 weeks each)
 
-These features require significant architectural changes but provide transformative improvements.
+**Goal:** Add the most memorable and talked-about roguelike mechanics - the features that create player stories.
+
+### **✨ Emergent Gameplay (The "Did you know you can..." moments)**
+
+| Feature | Time | Impact | Why Legendary | Technical Requirements |
+|---------|------|--------|---------------|----------------------|
+| **Polymorph System** | 3-4 weeks | 🔥 LEGENDARY | Transform into monsters, gain abilities - creates unforgettable moments | Polymorph effects, monster form system, ability transfer |
+| **Item Interaction System** | 3-4 weeks | 🔥 LEGENDARY | Dip weapons in potions, mix potions, alchemy - emergent depth | Dipping mechanics, combination system, effect tables |
+| **Wish/Genie System** | 1-2 weeks | 🔥 LEGENDARY | Rare wishes players remember forever - "I wished for Excalibur!" | Text input, item parser, wish granting logic |
+| **Unique Artifacts** | 2-3 weeks | 🔥 High | 10 legendary items (Excalibur, Mjolnir, Stormbringer) - chase items | Unique item definitions, special abilities, special spawning |
+| **Digging/Tunneling** | 2-3 weeks | 🔥 High | Create paths through walls - player agency, creative solutions | Dig action, wall replacement, pickaxe/wand |
+| **Monster Special Abilities** | 2-4 weeks | 🔥 High | Stealing, stat draining, summoning, rust attacks - threat variety | New monster behaviors, special attack effects |
+| **Swarm Mechanics** | 1-2 weeks | 🔥 High | Groups of 5-15 weak monsters (rats, bats) - tactical variety | Swarm spawning, flee AI, balance |
+
+**Combined Impact:** Creates the legendary roguelike moments that players talk about for years. "Remember when I polymorphed into a dragon and got a wish?"
+
+### **🏆 Character Development (Long-term Systems)**
+
+| Feature | Time | Impact | Priority | Technical Requirements |
+|---------|------|--------|----------|----------------------|
+| **Player Classes** | 4-6 weeks | 🔥 CRITICAL | High | Warrior/Mage/Rogue - different starting equipment/stats/abilities |
+| **Complex Leveling System** | 3-4 weeks | 🔥 High | Medium | Feats, skill trees, specialization |
+| **Skill System** | 3-5 weeks | 🔥 High | Medium | Lockpicking, stealth, trap detection with progression |
+
+**Combined Impact:** Massive replayability through build variety.
+
+---
+
+## 🔴 **Phase 4: Polish & Long-term** (1-6 months each)
 
 ### **🎨 Visual & Audio Overhauls**
 
-| Feature | Time | Impact | Complexity | Technical Requirements |
-|---------|------|--------|------------|----------------------|
-| **Sound Effects - Phase 1** | 2-3 weeks | 🔥 High | Basic combat & UI sounds | pygame/SDL audio integration, sound file management |
-| **Sound Effects - Phase 2** | 2-3 weeks | 🔥 High | Spell & monster sounds | Expanded sound library, per-entity audio |
-| **Sound Effects - Phase 3** | 2-4 weeks | 🔥 High | Music & ambient sounds | Background music system, audio loops, transitions |
-| **Sound Effects - Phase 4** | 2-3 weeks | 🔥 High | Audio polish & settings | Volume controls, positional audio, audio mixing |
-| **Better Character UI** | 4-8 weeks | 🔥 High | Enhanced inventory and character screens | Major UI redesign, improved UX patterns |
-| **Modern UI Overhaul** | 2-3 months | 🔥 High | Complete interface redesign | Full UI system replacement |
-| **Sprite Graphics** | 3-6 months | 🔥 High | Replace ASCII with sprite rendering | New rendering pipeline, sprite management |
+| Feature | Time | Impact | Priority | Technical Requirements |
+|---------|------|--------|----------|----------------------|
+| **Sound Effects System** | 6-12 weeks | 🔥 High | Low | Audio integration, sound library, volume controls |
+| **Better Character UI** | 4-8 weeks | 🔥 High | Low | Enhanced inventory and character screens |
+| **Modern UI Overhaul** | 2-3 months | 🔥 High | Low | Complete interface redesign |
+| **Sprite Graphics** | 3-6 months | 🔥 High | Low | Replace ASCII with sprite rendering |
 
-**Combined Impact:** Modern, polished presentation that attracts new players.
+**Combined Impact:** Modern presentation. Note: ASCII is fine for traditional roguelike - low priority.
 
 ### **🌍 Platform Expansion**
 
-| Feature | Time | Impact | Complexity | Technical Requirements |
-|---------|------|--------|------------|----------------------|
-| **Mobile Distribution** | 3-6 months | 🔥 High | iOS/Android platform adaptation | Touch controls, platform-specific optimizations |
+| Feature | Time | Impact | Priority | Technical Requirements |
+|---------|------|--------|----------|----------------------|
+| **PC/Mac Distribution** | 2-3 weeks | 🔶 Medium | Medium | Packaging, installers, build system |
+| **Mobile Distribution** | 3-6 months | 🔥 High | Low | iOS/Android adaptation, touch controls |
 
-**Combined Impact:** Massive audience expansion.
+**Combined Impact:** Easier sharing and broader audience.
 
 ---
 
 ## 🎯 **Recommended Development Path**
 
-### **🚀 Immediate High-Impact Wins (Next 4-6 weeks)**
+**Based on research of NetHack, DCSS, Brogue, Caves of Qud, and ADOM**
+
+### **🚀 Phase 1: Core Roguelike Identity (Weeks 1-8)**
+
+**Goal:** Transform into a true roguelike with THE defining mechanics
 
 **Priority Order:**
-1. ✅ **Variable Damage** (Complete) - Instant combat excitement
-2. ✅ **Variable Defense** (Complete) - Completes the dynamic combat system  
-3. ✅ **Variable Monster Damage** (Complete) - Monsters get exciting damage ranges too
-4. **Monster Equipment & Loot** (1-2 weeks) - Monsters drop their weapons/armor
-5. **General Loot Drops** (1 week) - All monsters drop items when defeated
-6. **Chance to Hit/Dodge** (1 week) - Adds tactical tension
-7. **More Spells** (1-2 weeks) - Teleport and invisibility for tactical depth
+1. **Item Identification System** (2 weeks) - THE roguelike mechanic. Everything else waits for this.
+2. **Item Stacking** (1 week) - Quality of life to support identification
+3. **Scroll/Potion Variety** (2 weeks) - Expand to 20 scrolls, 15 potions for identification content
+4. **Resistance System** (2 weeks) - Build diversity foundation
+5. **Throwing System** (1 week) - Tactical depth, emergent gameplay
 
-**Why This Order:** Building on the variable damage foundation, adding monster equipment and loot drops creates a complete dynamic combat and reward system.
+**Why These First:**
+- Item identification is THE defining roguelike feature - without it, we're just an action RPG
+- These create the core "I wonder what this does?" experience
+- Foundation for all other systems
+- Quick wins (1-2 weeks each)
 
-### **🎮 Medium-Term Game Changers (Next 2-3 months)**
+**Expected Player Impact:** "Now THIS feels like a real roguelike!"
+
+### **📈 Phase 2: Resource Management & Build Depth (Weeks 9-18)**
+
+**Goal:** Add tension and strategic equipment decisions
 
 **Priority Order:**
-8. **Player Classes** (4-6 weeks) - Massive replayability boost
-9. **Ranged Weapons** (2-3 weeks) - New combat dimension
-10. **Pet System** (3-4 weeks) - Companions add emotional attachment
-11. **More Equipment Slots** (2-3 weeks) - Deeper equipment strategy
+1. **Wand System** (2 weeks) - Component ALREADY EXISTS! Rechargeable magic.
+2. **Ring System** (2-3 weeks) - 2 slots, 15 types, build customization
+3. **Hunger/Food System** (2-3 weeks) - Time pressure, prevents grinding
+4. **Corpse System** (1 week) - Integration with hunger, risk/reward
+5. **Vaults & Secret Doors** (2 weeks) - Discovery rewards
 
-**Why This Order:** Player classes provide the biggest replayability impact, while ranged weapons and pets add new gameplay dimensions.
+**Why Next:**
+- Wands are already coded - just need implementation
+- Hunger creates tension (core roguelike mechanic)
+- Rings enable build diversity
+- Vaults create memorable moments
 
-### **🏗️ Long-Term Vision (6+ months)**
+**Expected Player Impact:** "I have to manage resources and every decision matters!"
+
+### **🏆 Phase 3: Meta-Progression & Depth (Weeks 19-32)**
+
+**Goal:** Add the systems that create replay value and strategic depth
+
+**Priority Order:**
+1. **Trap System** (2-3 weeks) - Danger, caution rewarded
+2. **Blessed/Cursed Items** (2-3 weeks) - Equipment puzzle layer
+3. **Religion/God System** (3-4 weeks) - Meta-progression, massive replay value
+4. **Shop System** (2-3 weeks) - Economy, identification services
+5. **Amulet System** (2 weeks) - Power spikes
+6. **More Status Effects** (2-3 weeks) - Poison, paralysis, blindness
+
+**Expected Player Impact:** "Every run feels different based on my god choice and equipment luck!"
+
+### **🌟 Phase 4: Legendary Features (Weeks 33-48)**
+
+**Goal:** Add the features players talk about for years
+
+**Priority Order:**
+1. **Victory Condition/Ascension** (2-3 weeks) - Clear goal, hall of fame
+2. **Item Interaction System** (3-4 weeks) - Dipping, alchemy, emergent gameplay
+3. **Polymorph System** (3-4 weeks) - Legendary moments
+4. **Unique Artifacts** (2-3 weeks) - Chase items (Excalibur, Mjolnir)
+5. **Wish/Genie System** (1-2 weeks) - "I got a wish!" moments
+6. **Monster Special Abilities** (2-4 weeks) - Stealing, stat drain, summoning
+
+**Expected Player Impact:** "Remember that run when I polymorphed into a dragon, got a wish, and found Excalibur?!"
+
+### **🏗️ Long-Term: Polish & Distribution (6+ months)**
 
 **Focus Areas:**
+- **Player Classes** (4-6 weeks) - After core roguelike systems
+- **Ranged Weapons** (2-3 weeks) - After throwing system
 - **Audio/Visual Polish** - Sound effects and improved UI
-- **Platform Expansion** - Mobile and broader PC distribution
-- **Advanced Systems** - Complex skill trees and environmental systems
+- **Platform Expansion** - PC/Mac distribution, then mobile
+- **Advanced Systems** - Skill trees, complex leveling
 
 ---
 
-## 📊 **Impact vs Effort Matrix**
+## 📊 **Impact vs Effort Matrix** (Traditional Roguelike Focus)
 
-### **High Impact, Low Effort (Do First)**
-- ✅ Variable Damage/Defense (Complete)
-- ✅ Variable Monster Damage
-- Monster Equipment & Loot Drops
-- General Loot Drops
-- Chance to Hit/Dodge
-- More Spells
-- Extended Equipment
-- Multi-Save Games
+### **🔥 CRITICAL Impact, Low-Medium Effort (Do First)**
+- **Item Identification System** (2 weeks) - THE defining roguelike feature
+- **Item Stacking** (1 week) - Quality of life standard
+- **Throwing System** (1 week) - Emergent gameplay
+- **Scroll/Potion Variety** (2 weeks) - Content for identification
+- **Resistance System** (2 weeks) - Build diversity
 
-### **High Impact, Medium Effort (Do Second)**
-- Player Classes
-- Ranged Weapons
-- Pet System
-- Equipment Sets
+### **🔥 CRITICAL Impact, Medium Effort (Do Second)**
+- **Hunger/Food System** (2-3 weeks) - Time pressure core to roguelikes
+- **Wand System** (2 weeks) - Component exists, rechargeable magic
+- **Ring System** (2-3 weeks) - Massive build customization
+- **Blessed/Cursed Items** (2-3 weeks) - Equipment puzzle layer
+- **Religion/God System** (3-4 weeks) - Meta-progression, replay value
+- **Trap System** (2-3 weeks) - Danger and caution rewarded
 
-### **High Impact, High Effort (Long-term Goals)**
-- Sound Effects System
-- Sprite Graphics
-- Mobile Distribution
+### **🔥 High Impact, Medium Effort (Do Third)**
+- **Shop System** (2-3 weeks) - Economy and resource conversion
+- **Vaults & Secret Doors** (2 weeks) - Discovery and exploration
+- **More Status Effects** (2-3 weeks) - Tactical depth
+- **Amulet System** (2 weeks) - Power spikes
+- **Victory Condition/Ascension** (2-3 weeks) - Clear goal
 
-### **Medium Impact, Low Effort (Fill-in Work)**
-- Movement Speed Config
-- ✅ JSON Save/Load (Complete)
-- More Monster Types
+### **🌟 LEGENDARY Impact, Higher Effort (Do Fourth)**
+- **Wish/Genie System** (1-2 weeks) - Unforgettable moments
+- **Polymorph System** (3-4 weeks) - Power fantasy
+- **Item Interaction System** (3-4 weeks) - Emergent depth
+- **Unique Artifacts** (2-3 weeks) - Chase items
+
+### **✅ Already Complete**
+- Variable Damage/Defense (v3.0)
+- D20 Combat System (v3.0)
+- Boss Fights (v3.9)
+- Loot Quality System (v3.8)
+- 8 Tactical Scrolls (v2.7)
+- Ground Hazards (v3.6)
 
 ---
 
