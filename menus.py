@@ -159,10 +159,11 @@ def inventory_menu(con, header, player, inventory_width, screen_width, screen_he
     else:
         options = []
         
-        # Sort inventory alphabetically for better UX
-        sorted_items = sorted(player.inventory.items, key=lambda item: item.name.lower())
+        # Sort inventory alphabetically for better UX (use display name for unidentified items)
+        sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
 
         for item in sorted_items:
+            # Get display name (Entity.get_display_name handles identification automatically)
             display_name = item.get_display_name()
             
             # Check if item is equipped in any slot

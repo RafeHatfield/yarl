@@ -54,10 +54,14 @@ class Item:
         self.appearance: Optional[str] = appearance
         self.item_category: str = item_category
     
-    def get_display_name(self) -> str:
+    def get_display_name(self, compact: bool = False) -> str:
         """Get the display name for this item.
         
         Returns the appearance if unidentified, otherwise returns the owner's name.
+        The compact parameter can be used for abbreviated names (e.g., wands).
+        
+        Args:
+            compact: If True, returns a shorter version of the name for UI space constraints
         
         Returns:
             str: The name to display to the player
@@ -66,6 +70,9 @@ class Item:
             return self.appearance
         
         if self.owner:
+            # Check if owner has get_display_name for compact wand names
+            if compact and hasattr(self.owner, 'get_display_name'):
+                return self.owner.get_display_name(compact=True)
             return self.owner.name
         
         return "Unknown Item"

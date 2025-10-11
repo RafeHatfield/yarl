@@ -242,7 +242,8 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     
     # IMPORTANT: Sort alphabetically to match sidebar rendering!
     # This ensures click coordinates align with displayed items
-    inventory_items = sorted(inventory_items, key=lambda item: item.name.lower())
+    # Use display name for proper sorting of unidentified items
+    inventory_items = sorted(inventory_items, key=lambda item: item.get_display_name().lower())
     
     if len(inventory_items) == 0:
         return None

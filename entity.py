@@ -480,6 +480,7 @@ class Entity:
     def get_display_name(self, compact: bool = False) -> str:
         """Get the display name with damage/defense ranges if applicable.
         
+        For items with identification system, shows appearance if unidentified.
         For wands, includes charge count.
         
         Args:
@@ -488,6 +489,12 @@ class Entity:
         Returns:
             str: Display name with damage/defense info in brackets, or charge count for wands
         """
+        # Check if this has an item component with identification
+        item_comp = getattr(self, 'item', None)
+        if item_comp and not item_comp.identified and item_comp.appearance:
+            # Return unidentified appearance directly (no need for extra formatting)
+            return item_comp.appearance
+        
         # Check if this is a wand - if so, use the wand's display name
         wand = getattr(self, 'wand', None)
         if wand:

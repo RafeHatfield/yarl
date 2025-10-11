@@ -132,8 +132,8 @@ def render_sidebar(console, player, ui_layout) -> None:
         # Filter out equipped items
         inventory_items = [item for item in player.inventory.items if item not in equipped_items]
         
-        # Sort alphabetically for better UX
-        inventory_items = sorted(inventory_items, key=lambda item: item.name.lower())
+        # Sort alphabetically for better UX (use display name for proper sorting of unidentified items)
+        inventory_items = sorted(inventory_items, key=lambda item: item.get_display_name().lower())
         
         # Header with count
         libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
