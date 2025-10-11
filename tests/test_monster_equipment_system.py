@@ -33,6 +33,8 @@ class TestMonsterEquipmentSpawner(unittest.TestCase):
         # Mock ComponentRegistry to return equipment
         self.monster.components = Mock()
         self.monster.components.get = Mock(return_value=self.monster.equipment)
+        # Add get_component_optional support (used by monster_equipment.py)
+        self.monster.get_component_optional = Mock(return_value=self.monster.equipment)
 
     @patch('components.monster_equipment.is_testing_mode')
     @patch('random.random')
@@ -117,6 +119,7 @@ class TestMonsterEquipmentSpawner(unittest.TestCase):
         # Mock armor creation
         mock_armor = Mock()
         mock_armor.name = "shield"
+        mock_armor.components.has = Mock(return_value=True)  # Must have EQUIPPABLE component
         mock_create_armor.return_value = mock_armor
         
         result = self.spawner.generate_equipment_for_monster(self.monster, 2)
@@ -169,18 +172,31 @@ class TestMonsterLootDropper(unittest.TestCase):
         # Mock ComponentRegistry for equipment/inventory access
         self.monster.components = Mock()
 
-    def test_drop_loot_no_equipment(self):
+    @patch('components.loot.get_loot_generator')
+    def test_drop_loot_no_equipment(self, mock_get_loot_gen):
         """Test loot dropping when monster has no equipment."""
+        # Mock the loot generator to not drop bonus loot
+        mock_loot_gen = Mock()
+        mock_loot_gen.should_monster_drop_loot.return_value = False
+        mock_get_loot_gen.return_value = mock_loot_gen
+        
         self.monster.equipment = None
         self.monster.inventory = None
         self.monster.components.get = Mock(return_value=None)
+        self.monster.get_component_optional = Mock(return_value=None)
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
         self.assertEqual(result, [])
 
-    def test_drop_equipped_weapon(self):
+    @patch('components.loot.get_loot_generator')
+    def test_drop_equipped_weapon(self, mock_get_loot_gen):
         """Test dropping equipped weapon."""
+        # Mock the loot generator to not drop bonus loot
+        mock_loot_gen = Mock()
+        mock_loot_gen.should_monster_drop_loot.return_value = False
+        mock_get_loot_gen.return_value = mock_loot_gen
+        
         # Mock equipped weapon
         weapon = Mock()
         weapon.name = "sword"
@@ -196,6 +212,7 @@ class TestMonsterLootDropper(unittest.TestCase):
                 return self.monster.equipment
             return None
         self.monster.components.get = Mock(side_effect=get_component)
+        self.monster.get_component_optional = Mock(side_effect=get_component)
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
@@ -204,8 +221,14 @@ class TestMonsterLootDropper(unittest.TestCase):
         self.assertEqual(weapon.x, 5)
         self.assertEqual(weapon.y, 10)
 
-    def test_drop_equipped_armor(self):
+    @patch('components.loot.get_loot_generator')
+    def test_drop_equipped_armor(self, mock_get_loot_gen):
         """Test dropping equipped armor."""
+        # Mock the loot generator to not drop bonus loot
+        mock_loot_gen = Mock()
+        mock_loot_gen.should_monster_drop_loot.return_value = False
+        mock_get_loot_gen.return_value = mock_loot_gen
+        
         # Mock equipped armor
         armor = Mock()
         armor.name = "shield"
@@ -221,6 +244,7 @@ class TestMonsterLootDropper(unittest.TestCase):
                 return self.monster.equipment
             return None
         self.monster.components.get = Mock(side_effect=get_component)
+        self.monster.get_component_optional = Mock(side_effect=get_component)
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
@@ -229,8 +253,14 @@ class TestMonsterLootDropper(unittest.TestCase):
         self.assertEqual(armor.x, 5)
         self.assertEqual(armor.y, 10)
 
-    def test_drop_inventory_items(self):
+    @patch('components.loot.get_loot_generator')
+    def test_drop_inventory_items(self, mock_get_loot_gen):
         """Test dropping items from monster inventory."""
+        # Mock the loot generator to not drop bonus loot
+        mock_loot_gen = Mock()
+        mock_loot_gen.should_monster_drop_loot.return_value = False
+        mock_get_loot_gen.return_value = mock_loot_gen
+        
         # Mock inventory items
         potion = Mock()
         potion.name = "healing_potion"
@@ -247,6 +277,7 @@ class TestMonsterLootDropper(unittest.TestCase):
                 return self.monster.inventory
             return None
         self.monster.components.get = Mock(side_effect=get_component)
+        self.monster.get_component_optional = Mock(side_effect=get_component)
 
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
 
@@ -257,8 +288,14 @@ class TestMonsterLootDropper(unittest.TestCase):
             self.assertLessEqual(abs(item.x - 5), 1)
             self.assertLessEqual(abs(item.y - 10), 1)
 
-    def test_drop_all_items(self):
+    @patch('components.loot.get_loot_generator')
+    def test_drop_all_items(self, mock_get_loot_gen):
         """Test dropping both equipped and inventory items."""
+        # Mock the loot generator to not drop bonus loot
+        mock_loot_gen = Mock()
+        mock_loot_gen.should_monster_drop_loot.return_value = False
+        mock_get_loot_gen.return_value = mock_loot_gen
+        
         # Mock equipped items
         weapon = Mock()
         weapon.name = "sword"
@@ -283,6 +320,7 @@ class TestMonsterLootDropper(unittest.TestCase):
                 return self.monster.inventory
             return None
         self.monster.components.get = Mock(side_effect=get_component)
+        self.monster.get_component_optional = Mock(side_effect=get_component)
         
         result = MonsterLootDropper.drop_monster_loot(self.monster, 5, 10)
         
@@ -346,6 +384,8 @@ class TestMonsterEquipmentIntegration(unittest.TestCase):
         self.monster.components = Mock()
         self.monster.components.get = Mock(side_effect=lambda comp_type: 
             self.monster.equipment if comp_type == ComponentType.EQUIPMENT else None)
+        self.monster.get_component_optional = Mock(side_effect=lambda comp_type: 
+            self.monster.equipment if comp_type == ComponentType.EQUIPMENT else None)
 
     @patch('components.monster_equipment.get_entity_factory')
     @patch('components.monster_equipment.is_testing_mode')
@@ -359,6 +399,7 @@ class TestMonsterEquipmentIntegration(unittest.TestCase):
         mock_factory = Mock()
         mock_weapon = Mock()
         mock_weapon.name = "sword"
+        mock_weapon.components.has = Mock(return_value=True)  # Has EQUIPPABLE component
         mock_factory.create_weapon.return_value = mock_weapon
         mock_get_factory.return_value = mock_factory
         
@@ -370,8 +411,14 @@ class TestMonsterEquipmentIntegration(unittest.TestCase):
         self.assertEqual(result[0], mock_weapon)
         self.monster.equipment.toggle_equip.assert_called_once_with(mock_weapon)
 
-    def test_full_loot_drop_flow(self):
+    @patch('components.loot.get_loot_generator')
+    def test_full_loot_drop_flow(self, mock_get_loot_gen):
         """Test complete loot dropping flow."""
+        # Mock the loot generator to not drop bonus loot
+        mock_loot_gen = Mock()
+        mock_loot_gen.should_monster_drop_loot.return_value = False
+        mock_get_loot_gen.return_value = mock_loot_gen
+        
         # Setup equipped items
         weapon = Mock()
         weapon.name = "sword"
@@ -380,7 +427,18 @@ class TestMonsterEquipmentIntegration(unittest.TestCase):
 
         self.monster.equipment.main_hand = weapon
         self.monster.equipment.off_hand = armor
-        self.monster.inventory = None
+        self.monster.inventory = Mock()
+        self.monster.inventory.items = []  # Empty but iterable
+
+        # Update get_component_optional to return inventory too
+        def get_component(comp_type):
+            from components.component_registry import ComponentType
+            if comp_type == ComponentType.EQUIPMENT:
+                return self.monster.equipment
+            elif comp_type == ComponentType.INVENTORY:
+                return self.monster.inventory
+            return None
+        self.monster.get_component_optional = Mock(side_effect=get_component)
 
         # Drop loot
         result = drop_loot_from_monster(self.monster, 8, 12)
