@@ -14,11 +14,20 @@ class Item:
         targeting_message (Message): Message to show during targeting
         function_kwargs (dict): Additional arguments for the use function
         owner (Entity): The entity that owns this component
+        identified (bool): Whether the item has been identified
+        appearance (Optional[str]): Unidentified name (e.g., "cyan potion", "KIRJE XIXAXA scroll")
+        item_category (str): Category for identification ("scroll", "potion", "ring", "wand", "other")
     """
 
     def __init__(
-        self, use_function: Optional[Callable] = None, targeting: bool = False, 
-        targeting_message: Optional[Any] = None, **kwargs: Any
+        self, 
+        use_function: Optional[Callable] = None, 
+        targeting: bool = False, 
+        targeting_message: Optional[Any] = None,
+        identified: bool = True,
+        appearance: Optional[str] = None,
+        item_category: str = "other",
+        **kwargs: Any
     ) -> None:
         """Initialize an Item component.
 
@@ -26,6 +35,9 @@ class Item:
             use_function (Optional[Callable], optional): Function to call when used
             targeting (bool, optional): Whether item requires targeting. Defaults to False.
             targeting_message (Optional[Any], optional): Message for targeting mode (Message type)
+            identified (bool, optional): Whether item starts identified. Defaults to True.
+            appearance (Optional[str], optional): Unidentified display name. Defaults to None.
+            item_category (str, optional): Category for identification. Defaults to "other".
             **kwargs: Additional arguments passed to the use function
         
         Returns:
@@ -36,3 +48,34 @@ class Item:
         self.targeting_message: Optional[Any] = targeting_message  # Message type
         self.function_kwargs: Dict[str, Any] = kwargs
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
+        
+        # Item identification system
+        self.identified: bool = identified
+        self.appearance: Optional[str] = appearance
+        self.item_category: str = item_category
+    
+    def get_display_name(self) -> str:
+        """Get the display name for this item.
+        
+        Returns the appearance if unidentified, otherwise returns the owner's name.
+        
+        Returns:
+            str: The name to display to the player
+        """
+        if not self.identified and self.appearance:
+            return self.appearance
+        
+        if self.owner:
+            return self.owner.name
+        
+        return "Unknown Item"
+    
+    def identify(self) -> bool:
+        """Identify this item.
+        
+        Returns:
+            bool: True if item was previously unidentified, False if already identified
+        """
+        was_unidentified = not self.identified
+        self.identified = True
+        return was_unidentified
