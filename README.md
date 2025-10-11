@@ -40,10 +40,14 @@
 - **🔄 Equipment Slots** - Main hand and off hand equipment management
 - **🎒 Inventory Integration** - Seamless equip/unequip with detailed damage/defense displays
 - **📈 Progressive Equipment** - Better gear unlocks on deeper levels
+- **✨ Loot Quality System** - Magic items with rarity tiers (Common, Uncommon, Rare, Legendary)
+- **🎯 Level-Scaled Drops** - Better loot at deeper dungeon levels
+- **💎 Magic Item Naming** - Flaming Swords, Reinforced Shields, and other epic gear
 
 ### AI & Monsters
 - **🎲 Variable Monster Damage** - Orcs (3 power + 1-3 natural) and Trolls (6 power + 2-6 natural) for dynamic combat
 - **BasicMonster AI** - Tracks and attacks the player using A* pathfinding
+- **BossAI** - Enhanced AI for boss monsters with smarter targeting and enrage mechanics
 - **ConfusedMonster AI** - Random movement with automatic recovery
 - **SlimeAI** - Monster-vs-monster combat with faction-based targeting
 - **MindlessZombieAI** - Resurrected undead that hunt anything in FOV
@@ -54,13 +58,16 @@
 - **👹 Trolls** - Stronger enemies with high variable damage (total range: 8-12)
 - **🟢 Slimes** - Corrosive monsters that attack everything (weapons/armor degrade)
 - **🟢 Large Slimes** - Powerful slimes that split into smaller slimes on death
+- **🐉 Boss Monsters** - Unique powerful encounters with phases, dialogue, enrage mechanics, and legendary loot
 
 ### Technical Features
 - **Entity-Component-System (ECS)** architecture
 - **Data-Driven Entity System** - All entities configured via YAML with validation
 - **Manual Level Design System** - Template-based level customization with guaranteed spawns and special rooms
+- **Boss Fight System** - Multi-phase bosses with dialogue, enrage mechanics, and status immunities
 - **A* pathfinding** for intelligent monster movement
 - **Equipment system** with stat bonuses and slot management
+- **Loot Quality & Scaling** - Rarity-based magic items with level-scaled drops
 - **Status Effect System** - Invisibility, confusion, disorientation, shield buffs
 - **Faction System** - Monster-vs-monster combat and affiliations
 - **Equipment Corrosion** - Weapons and armor can degrade during combat
@@ -68,10 +75,11 @@
 - **Dynamic difficulty scaling** with configurable progression curves
 - **Weighted random selection** for balanced item/monster distribution
 - **JSON Save/Load system** with human-readable saves and legacy shelve compatibility
-- **Message logging system** for game events
+- **Message logging system** for game events with categorized formatting
 - **Character screen** with level, XP, and detailed stat display including variable damage/defense ranges
 - **Robust error handling** throughout the codebase
 - **Configuration Management** - Centralized game constants with file loading support
+- **Turn Phase System** - Structured turn management (PLAYER → ENEMY → ENVIRONMENT)
 
 ## 🚀 Quick Start
 
@@ -626,6 +634,8 @@ config/
 - [x] **Variable Monster Damage** - Dynamic monster combat with natural damage ranges
 - [x] **Monster Equipment & Loot** - Monsters spawn with equipment, seek items, use scrolls, and drop loot
 - [x] **General Loot Drops** - All monsters drop equipped items and inventory contents
+- [x] **Loot Quality & Scaling** - Magic items with rarity tiers and level-scaled drops (v3.8.0)
+- [x] **Boss Fights** - Epic encounters with phases, dialogue, enrage, and legendary loot (v3.9.0)
 - [x] **Data-Driven Entity System** - YAML configuration for all entities
 - [x] **Manual Level Design Tier 1** - Guaranteed spawns via YAML templates
 - [x] **Manual Level Design Tier 2** - Level parameters and special themed rooms
@@ -639,6 +649,7 @@ config/
 - [x] **Comprehensive Testing** - 1,462 tests with 100% coverage
 - [x] **FOV Rendering System** - Robust field-of-view with regression testing
 - [x] **Debug Logging System** - Comprehensive monster action and combat logging
+- [x] **Turn Phase Management** - Structured turn system with environment phase
 
 ### 🔮 Development Roadmap
 
