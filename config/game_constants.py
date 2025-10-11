@@ -297,6 +297,92 @@ class GameplayConfig:
 
 
 @dataclass
+class IdentificationConfig:
+    """Configuration for the item identification system.
+    
+    This system allows for dual-toggle control:
+    1. Master toggle: Can completely disable identification mechanic
+    2. Difficulty integration: When enabled, difficulty affects pre-identification percentages
+    """
+    enabled: bool = True  # Master toggle - if False, all items always identified
+
+
+@dataclass
+class DifficultyItemIdentification:
+    """Item identification percentages for a specific difficulty level."""
+    scrolls_pre_identified_percent: int = 40
+    potions_pre_identified_percent: int = 50
+    rings_pre_identified_percent: int = 40
+    wands_pre_identified_percent: int = 30
+
+
+@dataclass
+class DifficultyConfig:
+    """Configuration for difficulty-based game settings.
+    
+    Currently focuses on item identification, but can be expanded for other
+    difficulty-related settings (monster health, damage, spawn rates, etc.)
+    """
+    easy: DifficultyItemIdentification = None
+    medium: DifficultyItemIdentification = None
+    hard: DifficultyItemIdentification = None
+    
+    def __post_init__(self):
+        """Initialize difficulty levels with default values."""
+        if self.easy is None:
+            self.easy = DifficultyItemIdentification(
+                scrolls_pre_identified_percent=80,
+                potions_pre_identified_percent=80,
+                rings_pre_identified_percent=90,
+                wands_pre_identified_percent=75
+            )
+        if self.medium is None:
+            self.medium = DifficultyItemIdentification(
+                scrolls_pre_identified_percent=40,
+                potions_pre_identified_percent=50,
+                rings_pre_identified_percent=40,
+                wands_pre_identified_percent=30
+            )
+        if self.hard is None:
+            self.hard = DifficultyItemIdentification(
+                scrolls_pre_identified_percent=5,
+                potions_pre_identified_percent=5,
+                rings_pre_identified_percent=0,
+                wands_pre_identified_percent=0
+            )
+    
+    def get_difficulty(self, difficulty_name: str) -> DifficultyItemIdentification:
+        """Get difficulty settings by name.
+        
+        Args:
+            difficulty_name: One of "easy", "medium", "hard"
+            
+        Returns:
+            DifficultyItemIdentification for the specified difficulty
+            
+        Raises:
+            ValueError: If difficulty_name is not recognized
+        """
+        difficulty_map = {
+            "easy": self.easy,
+            "medium": self.medium,
+            "hard": self.hard
+        }
+        
+        if difficulty_name.lower() not in difficulty_map:
+            raise ValueError(f"Unknown difficulty: {difficulty_name}. Valid options: easy, medium, hard")
+        
+        return difficulty_map[difficulty_name.lower()]
+
+
+@dataclass
+class MetaProgressionConfig:
+    """Configuration for meta-progression features that persist across runs."""
+    auto_identify_after_first_win: bool = True  # Auto-ID common items after first win
+    common_items_learned: bool = True  # Basic items stay identified
+
+
+@dataclass
 class GameConstants:
     """Main configuration container for all game constants."""
     
@@ -309,6 +395,9 @@ class GameConstants:
     entities: EntityConfig = None
     monster_equipment: MonsterEquipmentConfig = None
     item_spawns: ItemSpawnConfig = None
+    identification_system: IdentificationConfig = None
+    difficulty: DifficultyConfig = None
+    meta_progression: MetaProgressionConfig = None
     
     def __post_init__(self):
         """Initialize default values after dataclass creation."""
@@ -330,6 +419,12 @@ class GameConstants:
             self.monster_equipment = MonsterEquipmentConfig()
         if self.item_spawns is None:
             self.item_spawns = ItemSpawnConfig()
+        if self.identification_system is None:
+            self.identification_system = IdentificationConfig()
+        if self.difficulty is None:
+            self.difficulty = DifficultyConfig()
+        if self.meta_progression is None:
+            self.meta_progression = MetaProgressionConfig()
     
     @classmethod
     def load_from_file(cls, config_path: str = None) -> 'GameConstants':
@@ -456,6 +551,36 @@ class GameConstants:
                 for key, value in monster_equipment_data.items():
                     if hasattr(instance.monster_equipment, key):
                         setattr(instance.monster_equipment, key, value)
+        
+        # Update identification system config
+        if 'identification_system' in config_data:
+            id_data = config_data['identification_system']
+            if isinstance(id_data, dict):
+                for key, value in id_data.items():
+                    if hasattr(instance.identification_system, key):
+                        setattr(instance.identification_system, key, value)
+        
+        # Update difficulty config
+        if 'difficulty' in config_data:
+            difficulty_data = config_data['difficulty']
+            if isinstance(difficulty_data, dict):
+                # Load each difficulty level
+                for difficulty_level in ['easy', 'medium', 'hard']:
+                    if difficulty_level in difficulty_data:
+                        level_data = difficulty_data[difficulty_level]
+                        if isinstance(level_data, dict):
+                            difficulty_obj = getattr(instance.difficulty, difficulty_level)
+                            for key, value in level_data.items():
+                                if hasattr(difficulty_obj, key):
+                                    setattr(difficulty_obj, key, value)
+        
+        # Update meta progression config
+        if 'meta_progression' in config_data:
+            meta_data = config_data['meta_progression']
+            if isinstance(meta_data, dict):
+                for key, value in meta_data.items():
+                    if hasattr(instance.meta_progression, key):
+                        setattr(instance.meta_progression, key, value)
         
         logger.info(f"Loaded configuration with {len(config_data)} sections")
         return instance

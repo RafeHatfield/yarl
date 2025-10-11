@@ -1,3 +1,36 @@
+# ============================================================================
+# ITEM IDENTIFICATION SYSTEM - DUAL TOGGLE DESIGN
+# ============================================================================
+# Master toggle: Can completely disable ID system for accessibility
+identification_system:
+  enabled: true  # If false, ALL items always identified (no ID mechanic at all)
+
+# Difficulty integration: When ID system enabled, difficulty affects pre-ID percentages
+difficulty:
+  easy:
+    scrolls_pre_identified_percent: 80  # Most scrolls known (80%)
+    potions_pre_identified_percent: 80
+    rings_pre_identified_percent: 90
+    wands_pre_identified_percent: 75
+  medium:
+    scrolls_pre_identified_percent: 40  # Common ones known (40%)
+    potions_pre_identified_percent: 50
+    rings_pre_identified_percent: 40
+    wands_pre_identified_percent: 30
+  hard:
+    scrolls_pre_identified_percent: 5  # Almost nothing known (5%)
+    potions_pre_identified_percent: 5
+    rings_pre_identified_percent: 0
+    wands_pre_identified_percent: 0
+
+# Meta-progression: QoL for veterans
+meta_progression:
+  auto_identify_after_first_win: true  # Veterans don't re-ID every run
+  common_items_learned: true           # Basic items stay identified
+
+# ============================================================================
+# COMBAT SYSTEM
+# ============================================================================
 combat:
   DEFAULT_DEFENSE: 0
   DEFAULT_HP: 1
