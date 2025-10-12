@@ -16,6 +16,7 @@ from components.equipment import Equipment
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
 from entity import Entity
+from components.component_registry import ComponentType
 
 
 class TestFighterEquipmentIntegration:
@@ -215,6 +216,8 @@ class TestFighterEquipmentCombat:
         self.attacker.name = "Attacker"
         self.attacker.equipment = self.attacker_equipment
         self.attacker_fighter.owner = self.attacker
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.attacker.get_component_optional = Mock(return_value=None)
 
         # Create target with equipment
         self.target_fighter = Fighter(hp=50, defense=2, power=3)
@@ -226,6 +229,8 @@ class TestFighterEquipmentCombat:
             self.target_fighter
         )  # Add fighter reference for attack method
         self.target_fighter.owner = self.target
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.target.get_component_optional = Mock(return_value=None)
 
     def test_combat_with_weapon_bonus(self):
         """Test combat damage calculation with weapon bonus."""
