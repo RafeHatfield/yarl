@@ -13,6 +13,7 @@ from components.equipment import Equipment
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
 from game_messages import Message
+from components.component_registry import ComponentType
 
 
 class TestVariableDefenseCombat:
@@ -28,6 +29,8 @@ class TestVariableDefenseCombat:
         # Equipment for attacker (empty for simpler testing)
         self.attacker.equipment = Equipment()
         self.attacker.equipment.owner = self.attacker
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.attacker.get_component_optional = Mock(return_value=None)
         
         # Create target with equipment
         self.target = Mock()
@@ -38,6 +41,8 @@ class TestVariableDefenseCombat:
         # Create equipment component for target
         self.target.equipment = Equipment()
         self.target.equipment.owner = self.target
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.target.get_component_optional = Mock(return_value=None)
 
     def test_variable_defense_applied_in_combat(self):
         """Test that variable defense from armor is applied during combat."""
@@ -232,11 +237,15 @@ class TestVariableDefenseIntegration:
         self.attacker.fighter.owner = self.attacker
         self.attacker.equipment = Equipment()
         self.attacker.equipment.owner = self.attacker
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.attacker.get_component_optional = Mock(return_value=None)
         
         self.target = Mock()
         self.target.name = "player"
         self.target.fighter = Fighter(hp=100, defense=1, power=3)
         self.target.fighter.owner = self.target
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.target.get_component_optional = Mock(return_value=None)
         
         self.target.equipment = Equipment()
         self.target.equipment.owner = self.target
@@ -350,11 +359,15 @@ class TestVariableDefenseEdgeCases:
         attacker.fighter.owner = attacker
         attacker.equipment = Equipment()
         attacker.equipment.owner = attacker
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        attacker.get_component_optional = Mock(return_value=None)
         
         # Create a target with no equipment by using a real object with None equipment
         target = Mock()
         target.name = "goblin"
         target.fighter = Fighter(hp=10, defense=0, power=2)
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        target.get_component_optional = Mock(return_value=None)
         target.fighter.owner = target
         target.equipment = None  # Explicitly set to None instead of missing
         
@@ -374,6 +387,7 @@ class TestVariableDefenseEdgeCases:
         attacker.fighter.owner = attacker
         attacker.equipment = Equipment()
         attacker.equipment.owner = attacker
+        attacker.get_component_optional = Mock(return_value=None)
         
         target = Mock()
         target.name = "player"
@@ -381,6 +395,7 @@ class TestVariableDefenseEdgeCases:
         target.fighter.owner = target
         target.equipment = Equipment()
         target.equipment.owner = target
+        target.get_component_optional = Mock(return_value=None)
         
         # Equipment with no off_hand
         target.equipment = Equipment()
@@ -402,6 +417,7 @@ class TestVariableDefenseEdgeCases:
         attacker.fighter.owner = attacker
         attacker.equipment = Equipment()
         attacker.equipment.owner = attacker
+        attacker.get_component_optional = Mock(return_value=None)
         
         target = Mock()
         target.name = "player"
@@ -409,6 +425,7 @@ class TestVariableDefenseEdgeCases:
         target.fighter.owner = target
         target.equipment = Equipment()
         target.equipment.owner = target
+        target.get_component_optional = Mock(return_value=None)
         
         # Equipment with off_hand item that has no equippable component
         off_hand_item = Mock()
@@ -434,12 +451,14 @@ class TestVariableDefenseEdgeCases:
         attacker.fighter.owner = attacker
         attacker.equipment = Equipment()
         attacker.equipment.owner = attacker
+        attacker.get_component_optional = Mock(return_value=None)
         
         # Strong target with good armor
         target = Mock()
         target.name = "armored_knight"
         target.fighter = Fighter(hp=50, defense=2, power=5)
         target.fighter.owner = target
+        target.get_component_optional = Mock(return_value=None)
         
         # Strong armor
         armor = Mock()
@@ -475,6 +494,8 @@ class TestArmorDefenseMethod:
         
         self.entity.equipment = Equipment()
         self.entity.equipment.owner = self.entity
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.entity.get_component_optional = Mock(return_value=None)
 
     def test_get_armor_defense_with_armor(self):
         """Test _get_armor_defense returns roll_defense value."""
