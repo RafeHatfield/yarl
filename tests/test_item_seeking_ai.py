@@ -37,6 +37,9 @@ class TestItemSeekingAI(unittest.TestCase):
         self.monster.components = Mock()
         self.monster.components.get = Mock(side_effect=lambda comp_type: 
             self.monster.inventory if comp_type == ComponentType.INVENTORY else None)
+        # Also mock get_component_optional for new API
+        self.monster.get_component_optional = Mock(side_effect=lambda comp_type: 
+            self.monster.inventory if comp_type == ComponentType.INVENTORY else None)
         
         # Mock player
         self.player = Mock()
