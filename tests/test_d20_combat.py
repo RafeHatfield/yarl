@@ -12,11 +12,12 @@ This test suite ensures that:
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 from components.fighter import Fighter
 from entity import Entity
 from components.equipment import Equipment
 from components.equippable import Equippable
+from components.component_registry import ComponentType
 
 
 class TestArmorClass(unittest.TestCase):

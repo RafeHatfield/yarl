@@ -10,6 +10,7 @@ from components.fighter import Fighter
 from components.equipment import Equipment
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
+from components.component_registry import ComponentType
 
 
 class TestBaseDamageSystem(unittest.TestCase):
@@ -22,12 +23,16 @@ class TestBaseDamageSystem(unittest.TestCase):
         self.player.name = "player"
         self.player.fighter = Fighter(hp=100, defense=1, power=2, damage_min=1, damage_max=2)
         self.player.fighter.owner = self.player
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.player.get_component_optional = Mock(return_value=None)
         
         # Create monster with natural attacks
         self.orc = Mock()
         self.orc.name = "orc"
         self.orc.fighter = Fighter(hp=20, defense=0, power=3, damage_min=1, damage_max=3)
         self.orc.fighter.owner = self.orc
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.orc.get_component_optional = Mock(return_value=None)
         
         # Mock equipment for both entities
         self.player.equipment = Mock()

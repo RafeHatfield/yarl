@@ -10,6 +10,7 @@ from components.faction import Faction
 from death_functions import kill_monster, _handle_slime_splitting, _can_monster_split, _get_valid_spawn_positions
 from config.entity_registry import load_entity_config
 from config.entity_factory import EntityFactory
+from components.component_registry import ComponentType
 
 
 class TestSlimeSplitting(unittest.TestCase):
