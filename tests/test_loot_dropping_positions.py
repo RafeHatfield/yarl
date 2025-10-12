@@ -98,6 +98,8 @@ class TestLootDropPositions(unittest.TestCase):
                 return monster.inventory
             return None
         monster.components.get = Mock(side_effect=get_component)
+        # Also mock get_component_optional for new API
+        monster.get_component_optional = Mock(side_effect=get_component)
         
         # Drop loot
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 5, 5)
@@ -126,6 +128,8 @@ class TestLootDropPositions(unittest.TestCase):
         monster.equipment = None
         monster.components = Mock()
         monster.components.get = Mock(return_value=None)
+        # Also mock get_component_optional for new API
+        monster.get_component_optional = Mock(return_value=None)
         
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 5, 5)
         
@@ -154,6 +158,8 @@ class TestLootDropPositions(unittest.TestCase):
                 return monster.inventory
             return None
         monster.components.get = Mock(side_effect=get_component)
+        # Also mock get_component_optional for new API
+        monster.get_component_optional = Mock(side_effect=get_component)
         
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 3, 3)
         
@@ -173,7 +179,9 @@ class TestLootDropPositions(unittest.TestCase):
         armor = Mock()
         armor.name = "Test Armor"
         
-        monster.inventory = None
+        # Create mock inventory with empty list
+        monster.inventory = Mock()
+        monster.inventory.items = []  # Must be a list, not None
         monster.equipment = Mock()
         monster.equipment.main_hand = weapon
         monster.equipment.off_hand = armor
@@ -183,8 +191,12 @@ class TestLootDropPositions(unittest.TestCase):
         def get_component(comp_type):
             if comp_type == ComponentType.EQUIPMENT:
                 return monster.equipment
+            elif comp_type == ComponentType.INVENTORY:
+                return monster.inventory
             return None
         monster.components.get = Mock(side_effect=get_component)
+        # Also mock get_component_optional for new API
+        monster.get_component_optional = Mock(side_effect=get_component)
         
         dropped_items = MonsterLootDropper.drop_monster_loot(monster, 7, 7)
         
