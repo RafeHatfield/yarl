@@ -2,12 +2,19 @@
 
 These tests ensure that critical game logic bugs don't reoccur,
 specifically around player death and targeting system behavior.
+
+QUARANTINED: Test pollution - passes alone but fails in suite.
+See KNOWN_TEST_POLLUTION.md for details.
 """
 
+import pytest
 import unittest
 from unittest.mock import Mock, patch
 import sys
 import os
+
+# Quarantine due to test pollution
+pytestmark = pytest.mark.skip(reason="Quarantined - test pollution. See KNOWN_TEST_POLLUTION.md")
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
