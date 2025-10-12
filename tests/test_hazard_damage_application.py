@@ -12,13 +12,14 @@ of each turn, including:
 import unittest
 from unittest.mock import Mock, MagicMock, patch
 
-from engine.systems.ai_system import AISystem
+from engine.systems.environment_system import EnvironmentSystem
 from engine.game_state_manager import GameState
 from map_objects.game_map import GameMap
 from components.ground_hazard import GroundHazard, HazardType
 from components.fighter import Fighter
 from entity import Entity
 from game_messages import MessageLog
+from components.component_registry import ComponentType
 
 
 class TestHazardDamageApplication(unittest.TestCase):
@@ -53,11 +54,11 @@ class TestHazardDamageApplication(unittest.TestCase):
             message_log=self.message_log
         )
         
-        # Create AI system
-        self.ai_system = AISystem()
-        self.ai_system._engine = Mock()
-        self.ai_system._engine.state_manager = Mock()
-        self.ai_system._engine.state_manager.state = self.game_state
+        # Create Environment system (replaces old AI system hazard processing)
+        self.env_system = EnvironmentSystem()
+        self.env_system._engine = Mock()
+        self.env_system._engine.state_manager = Mock()
+        self.env_system._engine.state_manager.state = self.game_state
     
     def test_entity_takes_damage_from_hazard(self):
         """Test that an entity takes damage when standing on a hazard."""
@@ -75,7 +76,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_hp = self.player.fighter.hp
         
         # Process hazard turn
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # Player should have taken damage
         self.assertLess(self.player.fighter.hp, initial_hp)
@@ -96,20 +97,20 @@ class TestHazardDamageApplication(unittest.TestCase):
         
         # Turn 1: Full damage (12)
         initial_hp = self.player.fighter.hp
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         damage_turn1 = initial_hp - self.player.fighter.hp
         self.assertEqual(damage_turn1, 12)  # 100% damage
         
         # Turn 2: Reduced damage (8)
         hp_turn2 = self.player.fighter.hp
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         damage_turn2 = hp_turn2 - self.player.fighter.hp
         self.assertLess(damage_turn2, damage_turn1)  # Less than turn 1
         self.assertEqual(damage_turn2, 8)  # 66% damage
         
         # Turn 3: Further reduced damage (4)
         hp_turn3 = self.player.fighter.hp
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         damage_turn3 = hp_turn3 - self.player.fighter.hp
         self.assertLess(damage_turn3, damage_turn2)  # Less than turn 2
         self.assertEqual(damage_turn3, 4)  # 33% damage
@@ -127,10 +128,10 @@ class TestHazardDamageApplication(unittest.TestCase):
         self.game_map.hazard_manager.add_hazard(fire)
         
         # Process turns until hazard expires
-        self.ai_system._process_hazard_turn(self.game_state)  # Turn 1
+        self.env_system.process(self.game_state)  # Turn 1
         self.assertTrue(self.game_map.hazard_manager.has_hazard_at(10, 10))
         
-        self.ai_system._process_hazard_turn(self.game_state)  # Turn 2
+        self.env_system.process(self.game_state)  # Turn 2
         self.assertFalse(self.game_map.hazard_manager.has_hazard_at(10, 10))
     
     def test_multiple_entities_take_damage(self):
@@ -159,7 +160,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         monster_initial_hp = self.monster.fighter.hp
         
         # Process hazard turn
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # Both entities should have taken damage
         self.assertEqual(self.player.fighter.hp, player_initial_hp - 10)
@@ -182,7 +183,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         monster_initial_hp = self.monster.fighter.hp
         
         # Process hazard turn
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # No entities should have taken damage
         self.assertEqual(self.player.fighter.hp, player_initial_hp)
@@ -205,7 +206,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         self.game_map.hazard_manager.add_hazard(fire)
         
         # Process hazard turn (should not crash)
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # Dead monster HP stays at 0
         self.assertEqual(self.monster.fighter.hp, 0)
@@ -233,7 +234,7 @@ class TestHazardDamageApplication(unittest.TestCase):
              patch('engine.systems.ai_system.invalidate_entity_cache'):
             
             # Process hazard turn
-            self.ai_system._process_hazard_turn(self.game_state)
+            self.env_system.process(self.game_state)
             
             # Monster should have died (HP <= 0)
             self.assertLessEqual(self.monster.fighter.hp, 0)
@@ -253,7 +254,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_message_count = len(self.message_log.messages)
         
         # Process hazard turn
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # Message should have been added
         self.assertGreater(len(self.message_log.messages), initial_message_count)
@@ -278,7 +279,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_hp = self.player.fighter.hp
         
         # Process hazard turn
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # Player should have taken damage
         self.assertEqual(self.player.fighter.hp, initial_hp - 5)
@@ -306,7 +307,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_hp = self.player.fighter.hp
         
         # Process hazard turn
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # Player should have taken lethal damage (HP <= 0)
         self.assertLessEqual(self.player.fighter.hp, 0)
@@ -326,8 +327,8 @@ class TestHazardAgingWithoutEntities(unittest.TestCase):
             message_log=None
         )
         
-        self.ai_system = AISystem()
-        self.ai_system._engine = Mock()
+        self.env_system = EnvironmentSystem()
+        self.env_system._engine = Mock()
     
     def test_hazards_age_without_entities(self):
         """Test that hazards age even if no entities are on them."""
@@ -342,7 +343,7 @@ class TestHazardAgingWithoutEntities(unittest.TestCase):
         self.game_map.hazard_manager.add_hazard(fire)
         
         # Process turn
-        self.ai_system._process_hazard_turn(self.game_state)
+        self.env_system.process(self.game_state)
         
         # Hazard should have aged
         hazard = self.game_map.hazard_manager.get_hazard_at(10, 10)
