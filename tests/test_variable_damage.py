@@ -21,6 +21,7 @@ from equipment_slots import EquipmentSlots
 from item_functions import enhance_weapon, enhance_armor
 from game_messages import Message
 from render_functions import RenderOrder
+from components.component_registry import ComponentType
 
 
 class TestEquippableVariableDamage(unittest.TestCase):
@@ -238,6 +239,8 @@ class TestVariableDamageCombat(unittest.TestCase):
         self.attacker.name = "Player"
         self.attacker.equipment = self.attacker_equipment
         self.attacker_fighter.owner = self.attacker
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.attacker.get_component_optional = Mock(return_value=None)
         
         # Create weapon with variable damage
         weapon_equippable = Equippable(
@@ -257,6 +260,8 @@ class TestVariableDamageCombat(unittest.TestCase):
         self.target.equipment = self.target_equipment
         self.target.fighter = self.target_fighter
         self.target_fighter.owner = self.target
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.target.get_component_optional = Mock(return_value=None)
     
     @patch('components.equippable.Equippable.roll_damage')
     def test_attack_with_weapon_damage(self, mock_roll_damage):

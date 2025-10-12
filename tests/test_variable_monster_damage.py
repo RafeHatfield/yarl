@@ -14,6 +14,7 @@ from components.fighter import Fighter
 from config.entity_factory import EntityFactory
 from config.entity_registry import EntityRegistry, EntityStats, MonsterDefinition
 from entity import Entity
+from components.component_registry import ComponentType
 
 
 class TestMonsterVariableDamage(unittest.TestCase):
@@ -32,6 +33,8 @@ class TestMonsterVariableDamage(unittest.TestCase):
         self.player.equipment.defense_bonus = 0
         self.player.equipment.main_hand = None
         self.player.equipment.off_hand = None
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.player.get_component_optional = Mock(return_value=None)
 
     def test_fighter_init_with_damage_range(self):
         """Test Fighter initialization with damage_min/damage_max."""
@@ -86,6 +89,8 @@ class TestMonsterVariableDamage(unittest.TestCase):
         monster.equipment = Mock()
         monster.equipment.power_bonus = 0
         monster.equipment.main_hand = None
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        monster.get_component_optional = Mock(return_value=None)
         
         # Mock variable damage roll
         mock_randint.return_value = 2  # Roll 2 from 1-3 range
@@ -147,6 +152,8 @@ class TestMonsterVariableDamage(unittest.TestCase):
         monster.equipment = Mock()
         monster.equipment.power_bonus = 0
         monster.equipment.main_hand = None
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        monster.get_component_optional = Mock(return_value=None)
         
         mock_randint.return_value = 4  # Roll 4 from 2-6 range
         
@@ -172,6 +179,8 @@ class TestMonsterVariableDamage(unittest.TestCase):
         monster.equipment = Mock()
         monster.equipment.power_bonus = 0
         monster.equipment.main_hand = None
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        monster.get_component_optional = Mock(return_value=None)
         
         # Capture debug log output
         with patch('components.fighter.combat_logger') as mock_logger:
@@ -307,6 +316,8 @@ class TestBackwardCompatibility(unittest.TestCase):
         player.fighter = Fighter(hp=100, defense=1, power=2)
         player.fighter.owner = player
         player.fighter.take_damage = Mock(return_value=[{"dead": False}])
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        player.get_component_optional = Mock(return_value=None)
         player.equipment = Mock()
         player.equipment.power_bonus = 0  # Add this line
         player.equipment.main_hand = Mock()
@@ -321,6 +332,8 @@ class TestBackwardCompatibility(unittest.TestCase):
         monster.fighter = Fighter(hp=20, defense=0, power=3, damage_min=1, damage_max=3)
         monster.fighter.owner = monster
         monster.fighter.take_damage = Mock(return_value=[{"dead": False}])
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        monster.get_component_optional = Mock(return_value=None)
         monster.equipment = Mock()
         monster.equipment.power_bonus = 0  # Add this line
         monster.equipment.defense_bonus = 0
