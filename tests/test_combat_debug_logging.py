@@ -15,6 +15,7 @@ from components.equipment import Equipment
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
 from config.testing_config import set_testing_mode, is_testing_mode
+from components.component_registry import ComponentType
 
 
 class TestCombatDebugLogging:
@@ -32,6 +33,8 @@ class TestCombatDebugLogging:
         self.attacker.fighter.owner = self.attacker
         self.attacker.equipment = Equipment()
         self.attacker.equipment.owner = self.attacker
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.attacker.get_component_optional = Mock(return_value=None)
         
         # Create target with equipment
         self.target = Mock()
@@ -40,6 +43,8 @@ class TestCombatDebugLogging:
         self.target.fighter.owner = self.target
         self.target.equipment = Equipment()
         self.target.equipment.owner = self.target
+        # Mock get_component_optional to return None for BOSS (not a boss)
+        self.target.get_component_optional = Mock(return_value=None)
 
     def teardown_method(self):
         """Clean up after tests."""
