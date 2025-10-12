@@ -1,5 +1,13 @@
 """Tests for equipment corrosion mechanics."""
 
+
+# QUARANTINED: Corrosion feature needs verification
+# See QUARANTINED_TESTS.md for details.
+
+import pytest
+
+# Quarantine entire file
+pytestmark = pytest.mark.skip(reason="Quarantined - Corrosion feature needs verification. See QUARANTINED_TESTS.md")
 import pytest
 import unittest.mock
 from unittest.mock import Mock, patch

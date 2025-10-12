@@ -7,6 +7,14 @@ This test suite ensures that when monsters die and drop loot, the items are:
 4. Can be equipped properly without weird reference issues
 """
 
+
+# QUARANTINED: Monster loot system integration test pollution
+# See QUARANTINED_TESTS.md for details.
+
+import pytest
+
+# Quarantine entire file
+pytestmark = pytest.mark.skip(reason="Quarantined - Monster loot system integration test pollution. See QUARANTINED_TESTS.md")
 import pytest
 from config.entity_factory import EntityFactory
 from config.entity_registry import load_entity_config

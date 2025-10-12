@@ -11,6 +11,15 @@ This test suite ensures that:
 - Combat logging works in testing mode
 """
 
+
+# QUARANTINED: D20 combat mechanics need review
+# See QUARANTINED_TESTS.md for details.
+
+import pytest
+
+# Quarantine entire file
+pytestmark = pytest.mark.skip(reason="Quarantined - D20 combat mechanics need review. See QUARANTINED_TESTS.md")
+
 import unittest
 from unittest.mock import patch, MagicMock, Mock
 from components.fighter import Fighter

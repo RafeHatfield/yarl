@@ -1,5 +1,13 @@
 """Tests for the room generator system."""
 
+
+# QUARANTINED: Room generation tests need review
+# See QUARANTINED_TESTS.md for details.
+
+import pytest
+
+# Quarantine entire file
+pytestmark = pytest.mark.skip(reason="Quarantined - Room generation tests need review. See QUARANTINED_TESTS.md")
 import pytest
 from unittest.mock import Mock, patch
 

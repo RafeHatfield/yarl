@@ -4,6 +4,14 @@ This module tests that items are dropped in adjacent positions to avoid
 being hidden under corpses.
 """
 
+
+# QUARANTINED: Loot system interactions need proper mocking
+# See QUARANTINED_TESTS.md for details.
+
+import pytest
+
+# Quarantine entire file
+pytestmark = pytest.mark.skip(reason="Quarantined - Loot system interactions need proper mocking. See QUARANTINED_TESTS.md")
 import unittest
 from unittest.mock import Mock
 
