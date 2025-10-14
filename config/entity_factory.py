@@ -631,6 +631,17 @@ class EntityFactory:
             enhance_weapon, enhance_armor
         )
 
+        # NEW: If effect_function is specified, dynamically import and use it
+        if hasattr(spell_def, 'effect_function') and spell_def.effect_function:
+            try:
+                import item_functions
+                use_function = getattr(item_functions, spell_def.effect_function)
+                logger.debug(f"Using effect_function: {spell_def.effect_function} for {spell_def.name}")
+                return Item(use_function=use_function)
+            except AttributeError:
+                logger.error(f"Effect function '{spell_def.effect_function}' not found in item_functions")
+                # Fall through to legacy mapping below
+
         # Map spell types to functions and parameters
         if spell_def.name.lower().replace(' ', '_') == "healing_potion":
             return Item(use_function=heal, amount=spell_def.heal_amount)

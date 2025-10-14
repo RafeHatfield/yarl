@@ -172,7 +172,7 @@ class ArmorDefinition:
 class SpellDefinition:
     """Definition for a spell/consumable item."""
     name: str
-    spell_type: str  # "damage", "heal", "utility"
+    spell_type: str  # "damage", "heal", "utility", "potion"
     damage: int = 0
     heal_amount: int = 0
     maximum_range: int = 0
@@ -180,6 +180,7 @@ class SpellDefinition:
     char: str = "?"
     color: Tuple[int, int, int] = (255, 255, 0)  # Yellow
     extends: Optional[str] = None
+    effect_function: Optional[str] = None  # For potions and custom effects
 
     def __post_init__(self):
         """Validate spell definition."""
