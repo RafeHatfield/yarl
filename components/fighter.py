@@ -377,6 +377,19 @@ class Fighter:
         
         total_attack = base_damage + variable_damage
         
+        # Apply status effect bonuses/penalties to attack
+        if hasattr(self.owner, 'status_effects'):
+            # Heroism: +attack_bonus to attack
+            heroism = self.owner.status_effects.get_effect('heroism')
+            if heroism:
+                total_attack += heroism.attack_bonus
+            
+            # Weakness: -damage_penalty to attack
+            weakness = self.owner.status_effects.get_effect('weakness')
+            if weakness:
+                total_attack -= weakness.damage_penalty
+                total_attack = max(0, total_attack)  # Can't go negative
+        
         # Apply boss damage multiplier if attacker is an enraged boss
         boss = self.owner.get_component_optional(ComponentType.BOSS) if self.owner else None
         if boss and boss.is_enraged:
