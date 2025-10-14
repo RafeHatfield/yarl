@@ -268,6 +268,7 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     y_cursor += 1  # Spacing after equipment
     # Inventory section in sidebar.py:
     y_cursor += 1  # "INVENTORY (N/20)" header
+    y_cursor += 1  # Header is printed, then y increments before items are rendered
     
     # Now y_cursor is at first inventory item
     inventory_start_y = y_cursor
