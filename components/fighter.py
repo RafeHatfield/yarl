@@ -197,7 +197,7 @@ class Fighter:
         
         # Apply status effect bonuses
         status_ac_bonus = 0
-        if hasattr(self.owner, 'status_effects'):
+        if hasattr(self.owner, 'status_effects') and self.owner.status_effects is not None:
             # Protection: +ac_bonus to AC
             protection = self.owner.status_effects.get_effect('protection')
             if protection:
@@ -386,7 +386,7 @@ class Fighter:
         total_attack = base_damage + variable_damage
         
         # Apply status effect bonuses/penalties to attack
-        if hasattr(self.owner, 'status_effects'):
+        if hasattr(self.owner, 'status_effects') and self.owner.status_effects is not None:
             # Heroism: +attack_bonus to attack
             heroism = self.owner.status_effects.get_effect('heroism')
             if heroism:
