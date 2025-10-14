@@ -68,8 +68,9 @@ class EntityFactory:
         This method determines if an item should start identified or unidentified
         based on:
         1. Master toggle (identification_system.enabled)
-        2. Difficulty settings (percentage of items pre-identified)
-        3. Item category (scroll, potion, ring, wand)
+        2. Global identification state (has this TYPE been identified before?)
+        3. Difficulty settings (percentage of items pre-identified)
+        4. Item category (scroll, potion, ring, wand)
         
         Args:
             item: The Item component to configure
@@ -81,6 +82,15 @@ class EntityFactory:
         
         # Check master toggle - if disabled, all items are identified
         if not self.game_constants.identification_system.enabled:
+            item.identified = True
+            item.appearance = None
+            return
+        
+        # CRITICAL: Check if this item TYPE has been identified globally
+        # If you've identified one healing potion, ALL healing potions are identified
+        from config.identification_manager import get_identification_manager
+        id_manager = get_identification_manager()
+        if id_manager.is_identified(item_type):
             item.identified = True
             item.appearance = None
             return
@@ -111,9 +121,10 @@ class EntityFactory:
         # Roll for pre-identification
         roll = random.random() * 100
         if roll < pre_id_percent:
-            # Item starts identified
+            # Item starts identified - register type globally
             item.identified = True
             item.appearance = None
+            id_manager.identify_type(item_type)  # Register globally
         else:
             # Item starts unidentified - get appearance
             item.identified = False
@@ -125,6 +136,7 @@ class EntityFactory:
                 logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
                 item.identified = True
                 item.appearance = None
+                id_manager.identify_type(item_type)  # Register globally
 
     def create_monster(self, monster_type: str, x: int, y: int) -> Optional[Entity]:
         """Create a monster entity from configuration.

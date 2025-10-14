@@ -290,16 +290,36 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
             if equipment:
                 # Show wielded weapon
                 if equipment.main_hand:
-                    weapon_name = equipment.main_hand.name
+                    weapon_name = (equipment.main_hand.get_display_name() 
+                                 if hasattr(equipment.main_hand, 'get_display_name') 
+                                 else equipment.main_hand.name.replace('_', ' ').title())
                     tooltip_lines.append(f"Wielding: {weapon_name}")
                 
-                # Show worn armor
+                # Show worn armor (check all armor slots)
+                armor_pieces = []
                 if equipment.off_hand:
-                    armor_name = equipment.off_hand.name
-                    tooltip_lines.append(f"Wearing: {armor_name}")
-                elif equipment.chest:
-                    armor_name = equipment.chest.name
-                    tooltip_lines.append(f"Wearing: {armor_name}")
+                    armor_name = (equipment.off_hand.get_display_name() 
+                                if hasattr(equipment.off_hand, 'get_display_name') 
+                                else equipment.off_hand.name.replace('_', ' ').title())
+                    armor_pieces.append(armor_name)
+                if equipment.chest:
+                    armor_name = (equipment.chest.get_display_name() 
+                                if hasattr(equipment.chest, 'get_display_name') 
+                                else equipment.chest.name.replace('_', ' ').title())
+                    armor_pieces.append(armor_name)
+                if equipment.head:
+                    armor_name = (equipment.head.get_display_name() 
+                                if hasattr(equipment.head, 'get_display_name') 
+                                else equipment.head.name.replace('_', ' ').title())
+                    armor_pieces.append(armor_name)
+                if equipment.feet:
+                    armor_name = (equipment.feet.get_display_name() 
+                                if hasattr(equipment.feet, 'get_display_name') 
+                                else equipment.feet.name.replace('_', ' ').title())
+                    armor_pieces.append(armor_name)
+                
+                if armor_pieces:
+                    tooltip_lines.append(f"Wearing: {', '.join(armor_pieces)}")
     
     # Otherwise, show item information
     elif entity.components.has(ComponentType.WAND):

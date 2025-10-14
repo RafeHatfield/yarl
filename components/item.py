@@ -97,11 +97,23 @@ class Item:
         return base_name
     
     def identify(self) -> bool:
-        """Identify this item.
+        """Identify this item and register its type globally.
+        
+        When one instance of an item type is identified, ALL instances of that
+        type should become identified. This method registers the type globally.
         
         Returns:
             bool: True if item was previously unidentified, False if already identified
         """
         was_unidentified = not self.identified
         self.identified = True
+        
+        # Register this item type globally if we have owner information
+        if was_unidentified and self.owner:
+            from config.identification_manager import get_identification_manager
+            id_manager = get_identification_manager()
+            # Get the item type from the owner's name (e.g., "healing_potion")
+            item_type = self.owner.name.lower().replace(' ', '_')
+            id_manager.identify_type(item_type)
+        
         return was_unidentified

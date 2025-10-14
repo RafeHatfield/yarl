@@ -198,17 +198,50 @@ class MonsterLootDropper:
                 dropped_items.append(weapon)
                 logger.debug(f"Dropped {weapon.name} from {monster.name} at ({drop_x}, {drop_y})")
             
-            # Drop off hand armor
+            # Drop off hand (shield)
             if equipment.off_hand:
-                armor = equipment.off_hand
-                # Unequip the armor first to clear the reference
+                shield = equipment.off_hand
+                # Unequip the shield first to clear the reference
                 equipment.off_hand = None
-                armor.owner = None  # Clear ownership
+                shield.owner = None  # Clear ownership
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
+                shield.x = drop_x
+                shield.y = drop_y
+                dropped_items.append(shield)
+                logger.debug(f"Dropped {shield.name} from {monster.name} at ({drop_x}, {drop_y})")
+            
+            # Drop chest armor
+            if equipment.chest:
+                armor = equipment.chest
+                equipment.chest = None
+                armor.owner = None
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 armor.x = drop_x
                 armor.y = drop_y
                 dropped_items.append(armor)
                 logger.debug(f"Dropped {armor.name} from {monster.name} at ({drop_x}, {drop_y})")
+            
+            # Drop head armor
+            if equipment.head:
+                helmet = equipment.head
+                equipment.head = None
+                helmet.owner = None
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
+                helmet.x = drop_x
+                helmet.y = drop_y
+                dropped_items.append(helmet)
+                logger.debug(f"Dropped {helmet.name} from {monster.name} at ({drop_x}, {drop_y})")
+            
+            # Drop feet armor
+            if equipment.feet:
+                boots = equipment.feet
+                equipment.feet = None
+                boots.owner = None
+                drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
+                boots.x = drop_x
+                boots.y = drop_y
+                dropped_items.append(boots)
+                logger.debug(f"Dropped {boots.name} from {monster.name} at ({drop_x}, {drop_y})")
         
         # Check if this is a boss kill - bosses drop guaranteed legendary loot!
         boss_component = monster.get_component_optional(ComponentType.BOSS)

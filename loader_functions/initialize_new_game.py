@@ -91,6 +91,10 @@ def get_game_variables(constants):
     from config.item_appearances import reset_appearance_generator
     appearance_gen = reset_appearance_generator()
     
+    # Reset the identification manager (tracks which item types are identified)
+    from config.identification_manager import reset_identification_manager
+    reset_identification_manager()
+    
     # Register all item types that need identification
     appearance_gen.initialize({
         'scroll': [
