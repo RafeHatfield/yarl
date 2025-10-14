@@ -370,7 +370,7 @@ class RegenerationEffect(StatusEffect):
         if fighter and fighter.hp < fighter.max_hp:
             heal_amount = min(self.heal_per_turn, fighter.max_hp - fighter.hp)
             fighter.hp += heal_amount
-            results.append({'message': MB.heal(f"{self.owner.name} regenerates {heal_amount} HP.")})
+            results.append({'message': MB.healing(f"{self.owner.name} regenerates {heal_amount} HP.")})
         return results
     
     def remove(self) -> List[Dict[str, Any]]:
@@ -440,7 +440,7 @@ class WeaknessEffect(StatusEffect):
     
     def apply(self) -> List[Dict[str, Any]]:
         results = super().apply()
-        results.append({'message': MB.damage(f"{self.owner.name} feels weak!")})
+        results.append({'message': MB.warning(f"{self.owner.name} feels weak!")})
         return results
     
     def remove(self) -> List[Dict[str, Any]]:
@@ -462,7 +462,7 @@ class BlindnessEffect(StatusEffect):
         fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
         if fighter and hasattr(fighter, 'fov_radius'):
             self.original_fov_radius = fighter.fov_radius
-        results.append({'message': MB.damage(f"{self.owner.name} is blinded!")})
+        results.append({'message': MB.warning(f"{self.owner.name} is blinded!")})
         return results
     
     def remove(self) -> List[Dict[str, Any]]:
@@ -479,7 +479,7 @@ class ParalysisEffect(StatusEffect):
     def apply(self) -> List[Dict[str, Any]]:
         results = super().apply()
         self.owner.paralyzed = True
-        results.append({'message': MB.damage(f"{self.owner.name} is paralyzed!")})
+        results.append({'message': MB.warning(f"{self.owner.name} is paralyzed!")})
         return results
     
     def remove(self) -> List[Dict[str, Any]]:

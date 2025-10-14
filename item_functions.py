@@ -781,7 +781,7 @@ def drink_speed_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply speed effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply speed effect to!")}]
     
     results = []
     
@@ -814,7 +814,7 @@ def drink_regeneration_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply regeneration effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply regeneration effect to!")}]
     
     results = []
     
@@ -850,7 +850,7 @@ def drink_invisibility_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply invisibility effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply invisibility effect to!")}]
     
     results = []
     
@@ -885,7 +885,7 @@ def drink_levitation_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply levitation effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply levitation effect to!")}]
     
     results = []
     
@@ -920,7 +920,7 @@ def drink_protection_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply protection effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply protection effect to!")}]
     
     results = []
     
@@ -955,7 +955,7 @@ def drink_heroism_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply heroism effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply heroism effect to!")}]
     
     results = []
     
@@ -995,7 +995,7 @@ def drink_weakness_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply weakness effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply weakness effect to!")}]
     
     results = []
     
@@ -1030,7 +1030,7 @@ def drink_slowness_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply slowness effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply slowness effect to!")}]
     
     results = []
     
@@ -1065,7 +1065,7 @@ def drink_blindness_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply blindness effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply blindness effect to!")}]
     
     results = []
     
@@ -1102,7 +1102,7 @@ def drink_paralysis_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to apply paralysis effect to!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to apply paralysis effect to!")}]
     
     results = []
     
@@ -1143,7 +1143,7 @@ def drink_experience_potion(*args, **kwargs):
     
     entity = args[0] if args else None
     if not entity:
-        return [{"consumed": False, "message": MB.error("No entity to gain experience!")}]
+        return [{"consumed": False, "message": MB.failure("No entity to gain experience!")}]
     
     results = []
     
