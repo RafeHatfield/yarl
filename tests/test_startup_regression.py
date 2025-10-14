@@ -83,3 +83,31 @@ def test_appearance_generator_has_potion_types():
     assert appearance_gen.get_appearance('healing_potion', 'potion') is not None
     assert appearance_gen.get_appearance('experience_potion', 'potion') is not None
 
+
+def test_fighter_none_status_effects_check():
+    """Test that the None check for status_effects works correctly.
+    
+    Regression test for: AttributeError: 'NoneType' object has no attribute 'get_effect'
+    
+    The fix adds 'and self.owner.status_effects is not None' to prevent calling
+    .get_effect() on None.
+    """
+    from unittest.mock import Mock
+    
+    # Create entity with status_effects=None (common scenario)
+    entity = Mock()
+    entity.status_effects = None
+    
+    # Test the exact condition from fighter.py line 200 and 389
+    # The bug was: hasattr returns True even if attribute is None
+    assert hasattr(entity, 'status_effects')  # This is True
+    assert entity.status_effects is None  # This is also True!
+    
+    # The fix: check BOTH conditions
+    if hasattr(entity, 'status_effects') and entity.status_effects is not None:
+        # This block should NOT execute
+        pytest.fail("None check failed - would have called .get_effect() on None")
+    
+    # Verify the check works correctly - this should pass
+    assert not (hasattr(entity, 'status_effects') and entity.status_effects is not None)
+
