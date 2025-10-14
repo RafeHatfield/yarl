@@ -163,7 +163,7 @@ class TestEntityFactoryUsesGlobalRegistry:
         
         # Create a healing potion
         with patch('config.identification_manager.get_identification_manager', return_value=manager):
-            potion = factory.create_spell("healing_potion", 0, 0)
+            potion = factory.create_spell_item("healing_potion", 0, 0)
         
         # Should start identified (because type is globally identified)
         assert potion.item.identified is True
@@ -181,7 +181,7 @@ class TestEntityFactoryUsesGlobalRegistry:
         unidentified_found = False
         with patch('config.identification_manager.get_identification_manager', return_value=manager):
             for _ in range(20):  # Create multiple to account for randomness
-                potion = factory.create_spell("speed_potion", 0, 0)
+                potion = factory.create_spell_item("speed_potion", 0, 0)
                 if not potion.item.identified:
                     unidentified_found = True
                     break
@@ -211,7 +211,7 @@ class TestGlobalIdentificationScenario:
         # Patch the factory to use our manager
         with patch('config.identification_manager.get_identification_manager', return_value=manager):
             # Step 1: Find first healing potion (unidentified)
-            potion1 = factory.create_spell("healing_potion", 0, 0)
+            potion1 = factory.create_spell_item("healing_potion", 0, 0)
             
             # Force it to be unidentified (might be pre-ID'd by chance)
             potion1.item.identified = False
@@ -231,7 +231,7 @@ class TestGlobalIdentificationScenario:
             assert manager.is_identified("healing_potion")
             
             # Step 3: Pick up another healing potion
-            potion2 = factory.create_spell("healing_potion", 5, 5)
+            potion2 = factory.create_spell_item("healing_potion", 5, 5)
             
             # Step 4: NEW POTION SHOULD BE AUTOMATICALLY IDENTIFIED!
             assert potion2.item.identified is True, \
@@ -247,14 +247,14 @@ class TestGlobalIdentificationScenario:
         
         with patch('config.identification_manager.get_identification_manager', return_value=manager):
             # Identify healing potion
-            healing = factory.create_spell("healing_potion", 0, 0)
+            healing = factory.create_spell_item("healing_potion", 0, 0)
             healing.item.identified = False  # Force unidentified
             healing.item.identify()
             
             assert manager.is_identified("healing_potion")
             
             # Speed potion should still be unidentified
-            speed = factory.create_spell("speed_potion", 0, 0)
+            speed = factory.create_spell_item("speed_potion", 0, 0)
             
             # Might be pre-ID'd by difficulty, but type should not be globally identified yet
             if not speed.item.identified:
