@@ -223,7 +223,8 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     
     # IMPORTANT: Sort alphabetically to match sidebar rendering!
     # This ensures tooltip coordinates align with displayed items
-    inventory_items = sorted(inventory_items, key=lambda item: item.name.lower())
+    # Use display name for proper sorting of unidentified items
+    inventory_items = sorted(inventory_items, key=lambda item: item.get_display_name().lower())
     
     if len(inventory_items) == 0:
         return None
@@ -240,6 +241,7 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     y_cursor += 5  # 5 equipment slots
     y_cursor += 1  # Spacing after equipment
     y_cursor += 1  # "INVENTORY (N/20)" header
+    y_cursor += 1  # Header is printed, then y increments before items are rendered
     
     inventory_start_y = y_cursor
     
