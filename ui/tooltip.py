@@ -337,29 +337,56 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
     
     elif entity.components.has(ComponentType.ITEM):
         if entity.item.use_function:
-            # Get function name for better description
-            func_name = entity.item.use_function.__name__ if hasattr(entity.item.use_function, '__name__') else 'Unknown'
-            
-            if 'heal' in func_name:
-                tooltip_lines.append("Consumable: Healing")
-            elif 'lightning' in func_name:
-                tooltip_lines.append("Scroll: Lightning Bolt")
-            elif 'fireball' in func_name:
-                tooltip_lines.append("Scroll: Fireball")
-            elif 'confuse' in func_name:
-                tooltip_lines.append("Scroll: Confusion")
-            elif 'teleport' in func_name:
-                tooltip_lines.append("Scroll: Teleportation")
-            elif 'yo_mama' in func_name:
-                tooltip_lines.append("Scroll: Yo Mama")
-            elif 'slow' in func_name:
-                tooltip_lines.append("Scroll: Slow")
-            elif 'glue' in func_name:
-                tooltip_lines.append("Scroll: Glue")
-            elif 'rage' in func_name:
-                tooltip_lines.append("Scroll: Rage")
+            # Only reveal function details if item is identified
+            if entity.item.identified:
+                # Get function name for better description
+                func_name = entity.item.use_function.__name__ if hasattr(entity.item.use_function, '__name__') else 'Unknown'
+                
+                if 'heal' in func_name:
+                    tooltip_lines.append("Consumable: Healing")
+                elif 'lightning' in func_name:
+                    tooltip_lines.append("Scroll: Lightning Bolt")
+                elif 'fireball' in func_name:
+                    tooltip_lines.append("Scroll: Fireball")
+                elif 'confuse' in func_name:
+                    tooltip_lines.append("Scroll: Confusion")
+                elif 'teleport' in func_name:
+                    tooltip_lines.append("Scroll: Teleportation")
+                elif 'yo_mama' in func_name:
+                    tooltip_lines.append("Scroll: Yo Mama")
+                elif 'slow' in func_name:
+                    tooltip_lines.append("Scroll: Slow")
+                elif 'glue' in func_name:
+                    tooltip_lines.append("Scroll: Glue")
+                elif 'rage' in func_name:
+                    tooltip_lines.append("Scroll: Rage")
+                elif 'speed' in func_name:
+                    tooltip_lines.append("Potion: Speed")
+                elif 'regeneration' in func_name:
+                    tooltip_lines.append("Potion: Regeneration")
+                elif 'invisibility' in func_name:
+                    tooltip_lines.append("Potion: Invisibility")
+                elif 'levitation' in func_name:
+                    tooltip_lines.append("Potion: Levitation")
+                elif 'protection' in func_name:
+                    tooltip_lines.append("Potion: Protection")
+                elif 'heroism' in func_name:
+                    tooltip_lines.append("Potion: Heroism")
+                elif 'weakness' in func_name:
+                    tooltip_lines.append("Potion: Weakness")
+                elif 'slowness' in func_name:
+                    tooltip_lines.append("Potion: Slowness")
+                elif 'blindness' in func_name:
+                    tooltip_lines.append("Potion: Blindness")
+                elif 'paralysis' in func_name:
+                    tooltip_lines.append("Potion: Paralysis")
+                elif 'experience' in func_name:
+                    tooltip_lines.append("Potion: Experience")
+                else:
+                    tooltip_lines.append("Consumable")
             else:
-                tooltip_lines.append("Consumable")
+                # Unidentified - don't reveal what it does!
+                tooltip_lines.append("Unidentified")
     
     # Calculate tooltip dimensions
     tooltip_width = max(len(line) for line in tooltip_lines) + 4  # +4 for padding
