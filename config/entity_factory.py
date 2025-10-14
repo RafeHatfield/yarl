@@ -86,13 +86,29 @@ class EntityFactory:
             item.appearance = None
             return
         
-        # CRITICAL: Check if this item TYPE has been identified globally
-        # If you've identified one healing potion, ALL healing potions are identified
+        # CRITICAL: Check if this item TYPE has had a decision made
+        # All items of the same type must have the same identification state
         from config.identification_manager import get_identification_manager
         id_manager = get_identification_manager()
+        
+        # If this type is already identified, make this item identified
         if id_manager.is_identified(item_type):
             item.identified = True
             item.appearance = None
+            return
+        
+        # If this type is already decided to be unidentified, make this item unidentified
+        if id_manager.is_unidentified(item_type):
+            item.identified = False
+            appearance = self.appearance_generator.get_appearance(item_type, item_category)
+            if appearance:
+                item.appearance = appearance
+            else:
+                # Fallback if appearance not found
+                logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
+                item.identified = True
+                item.appearance = None
+                id_manager.identify_type(item_type)  # Register as identified
             return
         
         # Get difficulty settings
@@ -118,25 +134,29 @@ class EntityFactory:
             item.appearance = None
             return
         
-        # Roll for pre-identification
+        # Roll for pre-identification (FIRST TIME for this type)
+        # This decision will apply to ALL future items of this type
         roll = random.random() * 100
         if roll < pre_id_percent:
             # Item starts identified - register type globally
             item.identified = True
             item.appearance = None
-            id_manager.identify_type(item_type)  # Register globally
+            id_manager.identify_type(item_type)  # Register as identified
+            logger.debug(f"Pre-identified {item_type} (rolled {roll:.1f} < {pre_id_percent})")
         else:
-            # Item starts unidentified - get appearance
+            # Item starts unidentified - get appearance and register decision
             item.identified = False
             appearance = self.appearance_generator.get_appearance(item_type, item_category)
             if appearance:
                 item.appearance = appearance
+                id_manager.mark_unidentified(item_type)  # Register as unidentified
+                logger.debug(f"Unidentified {item_type} (rolled {roll:.1f} >= {pre_id_percent})")
             else:
                 # Fallback if appearance not found
                 logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
                 item.identified = True
                 item.appearance = None
-                id_manager.identify_type(item_type)  # Register globally
+                id_manager.identify_type(item_type)  # Register as identified
 
     def create_monster(self, monster_type: str, x: int, y: int) -> Optional[Entity]:
         """Create a monster entity from configuration.

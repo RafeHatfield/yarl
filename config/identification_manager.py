@@ -23,13 +23,17 @@ class IdentificationManager:
     have been identified in the current game session. When one instance of an item
     type is identified, all instances of that type become identified.
     
+    Also tracks which types are DECIDED to be unidentified for consistency.
+    
     Attributes:
         _identified_types: Set of item type names that have been identified
+        _unidentified_types: Set of item type names that are decided to be unidentified
     """
     
     def __init__(self):
         """Initialize an empty identification registry."""
         self._identified_types: Set[str] = set()
+        self._unidentified_types: Set[str] = set()
     
     def is_identified(self, item_type: str) -> bool:
         """Check if an item type has been identified.
@@ -41,6 +45,28 @@ class IdentificationManager:
             bool: True if this type has been identified, False otherwise
         """
         return item_type in self._identified_types
+    
+    def is_unidentified(self, item_type: str) -> bool:
+        """Check if an item type has been decided to be unidentified.
+        
+        Args:
+            item_type: Internal item type name (e.g., "healing_potion")
+        
+        Returns:
+            bool: True if this type is decided to be unidentified, False otherwise
+        """
+        return item_type in self._unidentified_types
+    
+    def has_decision(self, item_type: str) -> bool:
+        """Check if an identification decision has been made for this type.
+        
+        Args:
+            item_type: Internal item type name
+        
+        Returns:
+            bool: True if a decision (identified or unidentified) has been made
+        """
+        return item_type in self._identified_types or item_type in self._unidentified_types
     
     def identify_type(self, item_type: str) -> bool:
         """Mark an item type as identified.
@@ -54,9 +80,25 @@ class IdentificationManager:
         if item_type in self._identified_types:
             return False  # Already identified
         
+        # Remove from unidentified if it was there
+        self._unidentified_types.discard(item_type)
+        
         self._identified_types.add(item_type)
         logger.info(f"Item type identified: {item_type}")
         return True  # Newly identified
+    
+    def mark_unidentified(self, item_type: str) -> None:
+        """Mark an item type as decided to be unidentified.
+        
+        This is used during pre-identification to record that a type
+        rolled "unidentified", so future items of this type are also unidentified.
+        
+        Args:
+            item_type: Internal item type name to mark as unidentified
+        """
+        if item_type not in self._identified_types:
+            self._unidentified_types.add(item_type)
+            logger.info(f"Item type marked as unidentified: {item_type}")
     
     def get_identified_types(self) -> Set[str]:
         """Get a copy of all identified item types.
@@ -76,8 +118,9 @@ class IdentificationManager:
         logger.info(f"Loaded {len(identified_types)} identified types from save")
     
     def reset(self) -> None:
-        """Clear all identified types (for new game)."""
+        """Clear all identified and unidentified types (for new game)."""
         self._identified_types.clear()
+        self._unidentified_types.clear()
         logger.info("Identification registry reset")
     
     def to_dict(self) -> Dict[str, Any]:
@@ -87,7 +130,8 @@ class IdentificationManager:
             Dictionary containing identification state
         """
         return {
-            "identified_types": list(self._identified_types)
+            "identified_types": list(self._identified_types),
+            "unidentified_types": list(self._unidentified_types)
         }
     
     def from_dict(self, data: Dict[str, Any]) -> None:
@@ -98,7 +142,12 @@ class IdentificationManager:
         """
         identified_list = data.get("identified_types", [])
         self._identified_types = set(identified_list)
-        logger.info(f"Loaded {len(self._identified_types)} identified types")
+        
+        unidentified_list = data.get("unidentified_types", [])
+        self._unidentified_types = set(unidentified_list)
+        
+        logger.info(f"Loaded {len(self._identified_types)} identified types, "
+                   f"{len(self._unidentified_types)} unidentified types")
 
 
 # Global singleton instance
