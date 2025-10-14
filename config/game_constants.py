@@ -161,6 +161,23 @@ class ItemSpawnConfig:
     HEALING_POTION_LEVEL_1: int = 50  # Higher rate on level 1 for balance (reduced from 55)
     HEALING_POTION_DEFAULT: int = 25  # Standard rate for other levels (reduced from 28)
     
+    # NEW BUFF POTIONS - Utility and combat buffs
+    SPEED_POTION_SPAWN: list = None  # [[15, 2]] - Common, early access
+    REGENERATION_POTION_SPAWN: list = None  # [[12, 3]] - Healing over time
+    INVISIBILITY_POTION_SPAWN: list = None  # [[10, 4]] - Longer than scroll
+    LEVITATION_POTION_SPAWN: list = None  # [[10, 5]] - Hazard navigation
+    PROTECTION_POTION_SPAWN: list = None  # [[12, 4]] - Defensive buff
+    HEROISM_POTION_SPAWN: list = None  # [[8, 6]] - Powerful offensive buff
+    
+    # NEW DEBUFF POTIONS - Identification risk/reward
+    WEAKNESS_POTION_SPAWN: list = None  # [[5, 3]] - Rare debuff
+    SLOWNESS_POTION_SPAWN: list = None  # [[4, 4]] - Rare debuff
+    BLINDNESS_POTION_SPAWN: list = None  # [[3, 5]] - Very rare debuff
+    PARALYSIS_POTION_SPAWN: list = None  # [[2, 6]] - Extremely rare debuff
+    
+    # NEW SPECIAL POTIONS - Game-changing effects
+    EXPERIENCE_POTION_SPAWN: list = None  # [[1, 8]] - Extremely rare, instant level-up
+    
     # Equipment spawn rates (format: [[chance, min_level], ...])
     # Note: These are used by from_dungeon_level() function
     SWORD_SPAWN: list = None  # [[5, 4]] - 5% from level 4
@@ -238,6 +255,30 @@ class ItemSpawnConfig:
             self.GLUE_SCROLL_SPAWN = [[12, 5]]
         if self.RAGE_SCROLL_SPAWN is None:
             self.RAGE_SCROLL_SPAWN = [[10, 6]]
+        
+        # Initialize new potion spawn rates
+        if self.SPEED_POTION_SPAWN is None:
+            self.SPEED_POTION_SPAWN = [[15, 2]]
+        if self.REGENERATION_POTION_SPAWN is None:
+            self.REGENERATION_POTION_SPAWN = [[12, 3]]
+        if self.INVISIBILITY_POTION_SPAWN is None:
+            self.INVISIBILITY_POTION_SPAWN = [[10, 4]]
+        if self.LEVITATION_POTION_SPAWN is None:
+            self.LEVITATION_POTION_SPAWN = [[10, 5]]
+        if self.PROTECTION_POTION_SPAWN is None:
+            self.PROTECTION_POTION_SPAWN = [[12, 4]]
+        if self.HEROISM_POTION_SPAWN is None:
+            self.HEROISM_POTION_SPAWN = [[8, 6]]
+        if self.WEAKNESS_POTION_SPAWN is None:
+            self.WEAKNESS_POTION_SPAWN = [[5, 3]]
+        if self.SLOWNESS_POTION_SPAWN is None:
+            self.SLOWNESS_POTION_SPAWN = [[4, 4]]
+        if self.BLINDNESS_POTION_SPAWN is None:
+            self.BLINDNESS_POTION_SPAWN = [[3, 5]]
+        if self.PARALYSIS_POTION_SPAWN is None:
+            self.PARALYSIS_POTION_SPAWN = [[2, 6]]
+        if self.EXPERIENCE_POTION_SPAWN is None:
+            self.EXPERIENCE_POTION_SPAWN = [[1, 8]]
     
     def get_item_spawn_chances(self, dungeon_level: int) -> dict:
         """Get item spawn chances for normal gameplay.
@@ -253,8 +294,24 @@ class ItemSpawnConfig:
         
         return {
             "healing_potion": healing_potion_chance,
+            # NEW POTIONS - Buff potions
+            "speed_potion": self.SPEED_POTION_SPAWN,
+            "regeneration_potion": self.REGENERATION_POTION_SPAWN,
+            "invisibility_potion": self.INVISIBILITY_POTION_SPAWN,
+            "levitation_potion": self.LEVITATION_POTION_SPAWN,
+            "protection_potion": self.PROTECTION_POTION_SPAWN,
+            "heroism_potion": self.HEROISM_POTION_SPAWN,
+            # NEW POTIONS - Debuff potions (identification risk)
+            "weakness_potion": self.WEAKNESS_POTION_SPAWN,
+            "slowness_potion": self.SLOWNESS_POTION_SPAWN,
+            "blindness_potion": self.BLINDNESS_POTION_SPAWN,
+            "paralysis_potion": self.PARALYSIS_POTION_SPAWN,
+            # NEW POTIONS - Special
+            "experience_potion": self.EXPERIENCE_POTION_SPAWN,
+            # Equipment
             "sword": self.SWORD_SPAWN,
             "shield": self.SHIELD_SPAWN,
+            # Scrolls
             "lightning_scroll": self.LIGHTNING_SCROLL_SPAWN,
             "fireball_scroll": self.FIREBALL_SCROLL_SPAWN,
             "confusion_scroll": self.CONFUSION_SCROLL_SPAWN,
@@ -271,6 +328,7 @@ class ItemSpawnConfig:
             "wand_of_slow": self.WAND_OF_SLOW_SPAWN,
             "wand_of_glue": self.WAND_OF_GLUE_SPAWN,
             "wand_of_rage": self.WAND_OF_RAGE_SPAWN,
+            # Tactical scrolls
             "yo_mama_scroll": self.YO_MAMA_SCROLL_SPAWN,
             "slow_scroll": self.SLOW_SCROLL_SPAWN,
             "glue_scroll": self.GLUE_SCROLL_SPAWN,
