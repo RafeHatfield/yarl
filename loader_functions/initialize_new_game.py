@@ -101,7 +101,15 @@ def get_game_variables(constants):
             'glue_scroll', 'rage_scroll'
         ],
         'potion': [
-            'healing_potion'
+            'healing_potion',
+            # New buff potions
+            'speed_potion', 'regeneration_potion', 'invisibility_potion',
+            'levitation_potion', 'protection_potion', 'heroism_potion',
+            # New debuff potions
+            'weakness_potion', 'slowness_potion', 'blindness_potion',
+            'paralysis_potion',
+            # Special potion
+            'experience_potion'
         ]
     })
     

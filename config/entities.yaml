@@ -572,6 +572,78 @@ spells:
     char: "!"
     color: [127, 0, 255]  # Purple
 
+  # === NEW POTIONS - Buff Potions ===
+  
+  speed_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 200, 0]  # Golden yellow
+    effect_function: "drink_speed_potion"
+  
+  regeneration_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [0, 255, 100]  # Bright green
+    effect_function: "drink_regeneration_potion"
+  
+  invisibility_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [150, 150, 255]  # Light blue
+    effect_function: "drink_invisibility_potion"
+  
+  levitation_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [200, 220, 255]  # Sky blue
+    effect_function: "drink_levitation_potion"
+  
+  protection_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [100, 150, 255]  # Blue
+    effect_function: "drink_protection_potion"
+  
+  heroism_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 215, 0]  # Gold
+    effect_function: "drink_heroism_potion"
+  
+  # === NEW POTIONS - Debuff Potions ===
+  
+  weakness_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [100, 100, 100]  # Dark gray
+    effect_function: "drink_weakness_potion"
+  
+  slowness_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [139, 90, 43]  # Brown
+    effect_function: "drink_slowness_potion"
+  
+  blindness_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [50, 50, 50]  # Very dark gray
+    effect_function: "drink_blindness_potion"
+  
+  paralysis_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [80, 80, 120]  # Dark blue-gray
+    effect_function: "drink_paralysis_potion"
+  
+  # === NEW POTIONS - Special ===
+  
+  experience_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 100, 255]  # Bright magenta
+    effect_function: "drink_experience_potion"
+
   # Damage spell with range
   lightning_scroll:
     spell_type: "damage"
