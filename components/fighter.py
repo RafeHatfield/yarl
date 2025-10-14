@@ -195,7 +195,15 @@ class Fighter:
         if most_restrictive_dex_cap is not None:
             dex_bonus = min(dex_bonus, most_restrictive_dex_cap)
         
-        return base_ac + dex_bonus + armor_ac_bonus
+        # Apply status effect bonuses
+        status_ac_bonus = 0
+        if hasattr(self.owner, 'status_effects'):
+            # Protection: +ac_bonus to AC
+            protection = self.owner.status_effects.get_effect('protection')
+            if protection:
+                status_ac_bonus += protection.ac_bonus
+        
+        return base_ac + dex_bonus + armor_ac_bonus + status_ac_bonus
 
     @property
     def max_hp(self):
