@@ -231,14 +231,18 @@ def get_appearance_generator() -> AppearanceGenerator:
     return _appearance_generator
 
 
-def reset_appearance_generator(seed: Optional[int] = None) -> None:
+def reset_appearance_generator(seed: Optional[int] = None) -> AppearanceGenerator:
     """Reset the global appearance generator with a new seed.
     
     Used when starting a new game.
     
     Args:
         seed: Optional random seed for deterministic generation
+        
+    Returns:
+        The newly created AppearanceGenerator instance
     """
     global _appearance_generator
     _appearance_generator = AppearanceGenerator(seed=seed)
+    return _appearance_generator
 
