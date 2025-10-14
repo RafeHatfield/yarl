@@ -457,7 +457,8 @@ class EntityRegistry:
                     radius=spell_data.get('radius', 0),
                     char=spell_data.get('char', '?'),
                     color=tuple(spell_data.get('color', [255, 255, 0])),
-                    extends=None  # Clear extends after resolution
+                    extends=None,  # Clear extends after resolution
+                    effect_function=spell_data.get('effect_function', None)  # For potions and custom effects
                 )
                 
                 self.spells[spell_id] = spell_def
