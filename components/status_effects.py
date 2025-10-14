@@ -337,6 +337,158 @@ class EnragedEffect(StatusEffect):
         return results
 
 
+class SpeedEffect(StatusEffect):
+    """Doubles the owner's movement speed."""
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("speed", duration, owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"{self.owner.name} feels incredibly fast!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name} returns to normal speed.")})
+        return results
+
+
+class RegenerationEffect(StatusEffect):
+    """Heals the owner over time."""
+    def __init__(self, duration: int, owner: 'Entity', heal_per_turn: int = 1):
+        super().__init__("regeneration", duration, owner)
+        self.heal_per_turn = heal_per_turn
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"{self.owner.name} begins regenerating!")})
+        return results
+    
+    def process_turn_start(self) -> List[Dict[str, Any]]:
+        results = super().process_turn_start()
+        fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+        if fighter and fighter.hp < fighter.max_hp:
+            heal_amount = min(self.heal_per_turn, fighter.max_hp - fighter.hp)
+            fighter.hp += heal_amount
+            results.append({'message': MB.heal(f"{self.owner.name} regenerates {heal_amount} HP.")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name} stops regenerating.")})
+        return results
+
+
+class LevitationEffect(StatusEffect):
+    """Allows the owner to float over ground hazards."""
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("levitation", duration, owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        self.owner.levitating = True
+        results.append({'message': MB.status_effect(f"{self.owner.name} begins to levitate!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        self.owner.levitating = False
+        results.append({'message': MB.status_effect(f"{self.owner.name} gently floats back to the ground.")})
+        return results
+
+
+class ProtectionEffect(StatusEffect):
+    """Provides a temporary AC bonus."""
+    def __init__(self, duration: int, owner: 'Entity', ac_bonus: int = 4):
+        super().__init__("protection", duration, owner)
+        self.ac_bonus = ac_bonus
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"{self.owner.name} is surrounded by a protective aura!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name}'s protective aura fades.")})
+        return results
+
+
+class HeroismEffect(StatusEffect):
+    """Provides temporary attack and damage bonuses."""
+    def __init__(self, duration: int, owner: 'Entity', attack_bonus: int = 3, damage_bonus: int = 3):
+        super().__init__("heroism", duration, owner)
+        self.attack_bonus = attack_bonus
+        self.damage_bonus = damage_bonus
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"{self.owner.name} feels heroic!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name}'s heroism fades.")})
+        return results
+
+
+class WeaknessEffect(StatusEffect):
+    """Reduces the owner's damage output."""
+    def __init__(self, duration: int, owner: 'Entity', damage_penalty: int = 2):
+        super().__init__("weakness", duration, owner)
+        self.damage_penalty = damage_penalty
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.damage(f"{self.owner.name} feels weak!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name} feels stronger again.")})
+        return results
+
+
+class BlindnessEffect(StatusEffect):
+    """Severely limits the owner's field of view."""
+    def __init__(self, duration: int, owner: 'Entity', fov_radius: int = 1):
+        super().__init__("blindness", duration, owner)
+        self.fov_radius = fov_radius
+        self.original_fov_radius = None
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        # Store original FOV radius if entity has fighter component
+        fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+        if fighter and hasattr(fighter, 'fov_radius'):
+            self.original_fov_radius = fighter.fov_radius
+        results.append({'message': MB.damage(f"{self.owner.name} is blinded!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name} can see again.")})
+        return results
+
+
+class ParalysisEffect(StatusEffect):
+    """Prevents the owner from taking any action."""
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("paralysis", duration, owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        self.owner.paralyzed = True
+        results.append({'message': MB.damage(f"{self.owner.name} is paralyzed!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        self.owner.paralyzed = False
+        results.append({'message': MB.status_effect(f"{self.owner.name} can move again.")})
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):
