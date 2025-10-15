@@ -42,6 +42,7 @@ class ComponentType(Enum):
         PATHFINDING: Player click-to-move pathfinding state
         STATUS_EFFECTS: Temporary buffs/debuffs (poison, confusion, etc.)
         WAND: Multi-charge magical item
+        RING: Passive effect ring
         GROUND_HAZARD: Persistent ground effect (fire, poison)
         STATISTICS: Combat/gameplay statistics tracking
         FACTION: Allegiance system (player, enemy, neutral)
@@ -60,6 +61,7 @@ class ComponentType(Enum):
     PATHFINDING = auto()
     STATUS_EFFECTS = auto()
     WAND = auto()
+    RING = auto()
     GROUND_HAZARD = auto()
     STATISTICS = auto()
     FACTION = auto()
