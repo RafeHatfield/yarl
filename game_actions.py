@@ -481,7 +481,7 @@ class ActionProcessor:
             _transition_to_enemy_turn(self.state_manager, self.turn_manager)
     
     def _handle_pickup(self, _) -> None:
-        """Handle item pickup."""
+        """Handle item pickup. TAKES 1 TURN."""
         current_state = self.state_manager.state.current_state
         if current_state != GameStates.PLAYERS_TURN:
             return
@@ -494,8 +494,10 @@ class ActionProcessor:
             return
         
         # Look for items at player's position
+        item_found = False
         for entity in entities:
             if entity.item and entity.x == player.x and entity.y == player.y:
+                item_found = True
                 if not player.inventory:
                     message = MB.warning("You cannot carry items.")
                     message_log.add_message(message)
@@ -514,11 +516,17 @@ class ActionProcessor:
                     # Remove entity if it was added to inventory OR consumed (e.g., scroll recharged a wand)
                     if item_added or item_consumed:
                         entities.remove(entity)
+                        
+                        # TURN ECONOMY: Picking up an item takes 1 turn
+                        self._process_player_status_effects()
+                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                 
                 break
-        else:
+        
+        if not item_found:
             message = MB.warning("There is nothing here to pick up.")
             message_log.add_message(message)
+            # No item to pick up = no turn consumed
     
     def _handle_inventory_action(self, inventory_index: int) -> None:
         """Handle inventory item usage or dropping.
@@ -593,7 +601,7 @@ class ActionProcessor:
             self._use_inventory_item(item)
     
     def _use_inventory_item(self, item) -> None:
-        """Use an item from inventory.
+        """Use an item from inventory. TAKES 1 TURN (unless entering targeting mode).
         
         Args:
             item: The item entity to use
@@ -609,6 +617,8 @@ class ActionProcessor:
         )
         
         player_died = False
+        entered_targeting = False
+        item_consumed = False
         
         for result in item_use_results:
             message = result.get("message")
@@ -627,22 +637,35 @@ class ActionProcessor:
             # Handle targeting
             targeting = result.get("targeting")
             if targeting:
+                entered_targeting = True
                 self.state_manager.set_game_state(GameStates.TARGETING)
                 self.state_manager.set_extra_data("targeting_item", item)
                 self.state_manager.set_extra_data("previous_state", GameStates.SHOW_INVENTORY)
-                return
+                return  # Don't end turn yet - wait for target selection
+            
+            # Check if item was consumed
+            if result.get("consumed"):
+                item_consumed = True
             
             # Handle equipment
             equip = result.get("equip")
             if equip and player.equipment:
                 self._handle_equipment(equip)
+                # TURN ECONOMY: Equipping takes 1 turn
+                item_consumed = True
         
-        # Return to player turn if no targeting AND player didn't die
-        if not any(result.get("targeting") for result in item_use_results) and not player_died:
-            self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+        # TURN ECONOMY: Using an item takes 1 turn if not entering targeting mode
+        if not entered_targeting and not player_died:
+            if item_consumed:
+                # Item was used/consumed - end turn
+                self._process_player_status_effects()
+                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            else:
+                # Just return to player turn (e.g., examining item)
+                self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
     def _drop_inventory_item(self, item) -> None:
-        """Drop an item from inventory.
+        """Drop an item from inventory. TAKES 1 TURN.
         
         Args:
             item: The item entity to drop
@@ -650,18 +673,26 @@ class ActionProcessor:
         player = self.state_manager.state.player
         drop_results = player.inventory.drop_item(item)
         
+        item_dropped = False
         for result in drop_results:
             message = result.get("message")
             if message:
                 self.state_manager.state.message_log.add_message(message)
             
-            item_dropped = result.get("item_dropped")
-            if item_dropped:
-                item_dropped.x = player.x
-                item_dropped.y = player.y
-                self.state_manager.state.entities.append(item_dropped)
+            item_dropped_entity = result.get("item_dropped")
+            if item_dropped_entity:
+                item_dropped = True
+                item_dropped_entity.x = player.x
+                item_dropped_entity.y = player.y
+                self.state_manager.state.entities.append(item_dropped_entity)
         
-        self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+        # TURN ECONOMY: Dropping an item takes 1 turn
+        if item_dropped:
+            self._process_player_status_effects()
+            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+        else:
+            # Failed to drop (shouldn't happen, but be safe)
+            self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
     def _handle_equipment(self, equip_item) -> None:
         """Handle equipment equipping/unequipping.
