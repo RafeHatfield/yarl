@@ -16,8 +16,9 @@
 2. Target detection: `hasattr(entity, 'fighter')` ❌ → Should be `entity.components.has(ComponentType.FIGHTER)` ✅
 3. Damage access: `weapon.item.equipment` ❌ → Should be `weapon.components.get(ComponentType.EQUIPPABLE)` ✅
 4. Fighter access: `target.fighter` ❌ → Should be `target.components.get(ComponentType.FIGHTER)` ✅
+5. **BONUS:** Wrong import: `from components.fighter import roll_dice` ❌ → Should be `from dice import roll_dice` ✅
 
-**Fix:** Migrate all throwing code to use modern ComponentRegistry
+**Fix:** Migrate all throwing code to use modern ComponentRegistry + correct imports
 **Result:** Thrown weapons now properly detect targets, deal damage, and show correct messages!
 - Hit: "The Dagger hits Orc for 5 damage!"
 - Kill: "Orc is killed by the thrown Dagger!"
