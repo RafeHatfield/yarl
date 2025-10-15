@@ -1348,7 +1348,8 @@ class ActionProcessor:
                     # Start auto-explore
                     if not auto_explore:
                         from components.auto_explore import AutoExplore
-                        auto_explore = AutoExplore(player)
+                        auto_explore = AutoExplore()
+                        auto_explore.owner = player
                         player.components.register(ComponentType.AUTO_EXPLORE, auto_explore)
                     
                     # Start exploring
