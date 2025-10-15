@@ -96,9 +96,10 @@ class TestAutoExplorePathfinding:
         game_map.width = width
         game_map.height = height
         
-        # Create tiles (all walkable except a wall at x=5)
+        # Create tiles (all walkable except a wall at x=5, y=2-7)
+        # This leaves passages at top (y=0,1) and bottom (y=8,9)
         game_map.tiles = [[Mock(blocked=False) for _ in range(height)] for _ in range(width)]
-        for y in range(height):
+        for y in range(2, 8):  # Wall from y=2 to y=7 (not full height)
             game_map.tiles[5][y].blocked = True
         
         game_map.hazard_manager = Mock()
@@ -113,12 +114,14 @@ class TestAutoExplorePathfinding:
         target = (7, 5)
         path = auto_explore._calculate_path_to(target, game_map, [player])
         
-        # Should find a path that goes around the wall
+        # Should find a path that goes around the wall (via top or bottom)
         assert path is not None
-        assert len(path) > 0
-        # Path should not include any position at x=5
+        assert len(path) > 0, "No path found around wall"
+        # Path should go around the wall (not through the blocked section)
         for x, y in path:
-            assert x != 5, "Path went through wall!"
+            if x == 5:
+                # If path crosses x=5, it must be at y < 2 or y >= 8
+                assert y < 2 or y >= 8, f"Path went through wall at ({x}, {y})"
     
     def test_pathfinding_handles_out_of_bounds_gracefully(self):
         """Verify out-of-bounds player position doesn't crash, returns empty path."""
@@ -167,14 +170,14 @@ class TestAutoExploreStopConditions:
         
         # Create dead orc (corpse)
         orc = Entity(15, 15, '%', (100, 100, 100), 'Orc Corpse', blocks=False)
-        orc.fighter = Fighter(hp=0, max_hp=10, strength=10, dexterity=10, constitution=10, owner=orc)
+        orc.fighter = Mock(hp=0)  # Dead - hp is 0
         orc.ai = BasicMonster()
         orc.components = Mock()
         orc.components.has = Mock(side_effect=lambda t: t in [ComponentType.AI, ComponentType.FIGHTER])
         orc.get_component_optional = Mock(return_value=orc.fighter)
         
         # Mock FOV to see the corpse
-        with patch('components.auto_explore.map_is_in_fov', return_value=True):
+        with patch('fov_functions.map_is_in_fov', return_value=True):
             auto_explore = AutoExplore()
             auto_explore.owner = player
             
@@ -196,14 +199,14 @@ class TestAutoExploreStopConditions:
         
         # Create living orc
         orc = Entity(15, 15, 'o', (0, 128, 0), 'Orc', blocks=True)
-        orc.fighter = Fighter(hp=10, max_hp=10, strength=10, dexterity=10, constitution=10, owner=orc)
+        orc.fighter = Mock(hp=10)  # Alive - hp > 0
         orc.ai = BasicMonster()
         orc.components = Mock()
         orc.components.has = Mock(side_effect=lambda t: t in [ComponentType.AI, ComponentType.FIGHTER])
         orc.get_component_optional = Mock(return_value=orc.fighter)
         
         # Mock FOV to see the orc
-        with patch('components.auto_explore.map_is_in_fov', return_value=True):
+        with patch('fov_functions.map_is_in_fov', return_value=True):
             auto_explore = AutoExplore()
             auto_explore.owner = player
             
@@ -231,7 +234,7 @@ class TestAutoExploreStopConditions:
         potion.components.get = Mock(return_value=potion.item)
         
         # Mock FOV
-        with patch('components.auto_explore.map_is_in_fov', return_value=True):
+        with patch('fov_functions.map_is_in_fov', return_value=True):
             auto_explore = AutoExplore()
             auto_explore.owner = player
             
@@ -265,11 +268,11 @@ class TestAutoExploreStopConditions:
         auto_explore.owner = player
         
         # Start exploration with no items visible
-        with patch('components.auto_explore.map_is_in_fov', return_value=False):
+        with patch('fov_functions.map_is_in_fov', return_value=False):
             auto_explore.start(game_map, [player, potion], fov_map)
         
         # Now potion comes into view
-        with patch('components.auto_explore.map_is_in_fov', return_value=True):
+        with patch('fov_functions.map_is_in_fov', return_value=True):
             item = auto_explore._valuable_item_in_fov([player, potion], fov_map)
             
             # Should stop for new item
@@ -307,7 +310,7 @@ class TestAutoExploreStopConditions:
         entities = [player, potion1, potion2, scroll]
         
         # Mock FOV - all items visible
-        with patch('components.auto_explore.map_is_in_fov', return_value=True):
+        with patch('fov_functions.map_is_in_fov', return_value=True):
             auto_explore = AutoExplore()
             auto_explore.owner = player
             
@@ -337,7 +340,7 @@ class TestAutoExploreIntegration:
         auto_explore.owner = player
         
         # Start exploration
-        with patch('components.auto_explore.map_is_in_fov', return_value=False):
+        with patch('fov_functions.map_is_in_fov', return_value=False):
             quote = auto_explore.start(game_map, [player], fov_map)
         
         assert auto_explore.active is True
@@ -368,12 +371,12 @@ class TestAutoExploreIntegration:
         auto_explore.owner = player
         
         # First exploration with potion visible
-        with patch('components.auto_explore.map_is_in_fov', return_value=True):
+        with patch('fov_functions.map_is_in_fov', return_value=True):
             auto_explore.start(game_map, [player, potion], fov_map)
             assert len(auto_explore.known_items) == 1
         
         # Second exploration should reset
-        with patch('components.auto_explore.map_is_in_fov', return_value=False):
+        with patch('fov_functions.map_is_in_fov', return_value=False):
             auto_explore.start(game_map, [player, potion], fov_map)
             assert len(auto_explore.known_items) == 0
 

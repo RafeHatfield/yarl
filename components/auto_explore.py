@@ -674,21 +674,22 @@ class AutoExplore:
         
         # Use A* pathfinding with hazard avoidance
         import tcod
+        import numpy as np
         
-        # Create cost map
-        # Note: We create as [x][y] then transpose to match tcod's (x, y) expectations
-        cost = [[0 for _ in range(game_map.height)] for _ in range(game_map.width)]
+        # Create cost map using numpy (indexed as [y, x])
+        # This matches entity.py's approach (lines 392-395)
+        cost = np.zeros((game_map.height, game_map.width), dtype=np.int8)
         
-        for x in range(game_map.width):
-            for y in range(game_map.height):
+        for y in range(game_map.height):
+            for x in range(game_map.width):
                 # Blocked tiles are impassable
                 if game_map.tiles[x][y].blocked:
-                    cost[x][y] = 0
+                    cost[y, x] = 0
                 # Hazards are treated as impassable
                 elif game_map.hazard_manager.has_hazard_at(x, y):
-                    cost[x][y] = 0
+                    cost[y, x] = 0
                 else:
-                    cost[x][y] = 1
+                    cost[y, x] = 1
         
         # Entities block movement (except target tile)
         for entity in entities:
@@ -696,12 +697,11 @@ class AutoExplore:
                 ex, ey = entity.x, entity.y
                 if 0 <= ex < game_map.width and 0 <= ey < game_map.height:
                     if (ex, ey) != target:  # Allow moving to target even if entity there
-                        cost[ex][ey] = 0
+                        cost[ey, ex] = 0
         
-        # Convert to numpy array for tcod
-        # IMPORTANT: Transpose from [x, y] to match tcod's internal indexing
-        import numpy as np
-        cost_array = np.array(cost, dtype=np.int8).T
+        # Transpose cost array from [y, x] to [x, y] for tcod
+        # This matches entity.py line 431
+        cost_array = cost.T
         
         # Bounds check for player position (prevent IndexError)
         start_x, start_y = self.owner.x, self.owner.y
