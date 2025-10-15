@@ -28,6 +28,7 @@ class EffectType(Enum):
     AREA_EFFECT = auto()
     PATH_EFFECT = auto()
     WAND_RECHARGE = auto()  # Sparkle effect when wand gains a charge
+    PROJECTILE = auto()  # Animated flying projectile (arrows, thrown items)
 
 
 class QueuedEffect:
@@ -112,6 +113,8 @@ class QueuedEffect:
             self._play_path_effect(con, camera)
         elif self.effect_type == EffectType.WAND_RECHARGE:
             self._play_wand_recharge(con)
+        elif self.effect_type == EffectType.PROJECTILE:
+            self._play_projectile(con, camera)
     
     def _play_hit(self, con=0) -> None:
         """Play a hit effect."""
@@ -354,6 +357,49 @@ class QueuedEffect:
             libtcodpy.console_put_char(con, self.screen_x, self.screen_y, frame['char'], libtcodpy.BKGND_NONE)
             libtcodpy.console_flush()
             time.sleep(frame['duration'])
+    
+    def _play_projectile(self, con=0, camera=None) -> None:
+        """Play animated projectile flying from source to target.
+        
+        Shows item/arrow traveling tile-by-tile with smooth animation.
+        Used for: arrows, thrown potions, thrown weapons, and any other projectiles.
+        
+        Params (from self.params):
+            - path: List[(x, y)] of tiles projectile travels through
+            - char: Character to display (arrow, potion char, etc.)
+            - color: RGB tuple for projectile color
+            - frame_duration: Time per tile (default 0.04s = 40ms)
+        """
+        path = self.params.get('path', [])
+        char = self.params.get('char', ord('*'))
+        color = self.params.get('color', (255, 255, 255))
+        frame_duration = self.params.get('frame_duration', 0.04)  # 40ms per tile
+        
+        # Get viewport offset for coordinate translation
+        from config.ui_layout import get_ui_layout
+        ui_layout = get_ui_layout()
+        viewport_offset = ui_layout.viewport_position
+        
+        # Animate projectile along path tile-by-tile
+        for world_x, world_y in path:
+            # Step 1: Translate world → viewport via camera
+            if camera:
+                if not camera.is_in_viewport(world_x, world_y):
+                    continue  # Skip tiles outside viewport
+                viewport_x, viewport_y = camera.world_to_viewport(world_x, world_y)
+            else:
+                viewport_x, viewport_y = world_x, world_y
+            
+            # Step 2: Translate viewport → screen
+            screen_x = viewport_x + viewport_offset[0]
+            screen_y = viewport_y + viewport_offset[1]
+            
+            # Draw projectile at this position
+            libtcodpy.console_set_default_foreground(con, color)
+            libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
+            libtcodpy.console_flush()
+            
+            time.sleep(frame_duration)
 
 
 class VisualEffectQueue:
@@ -437,6 +483,30 @@ class VisualEffectQueue:
             entity: Player entity
         """
         self.effects.append(QueuedEffect(EffectType.WAND_RECHARGE, x, y, entity))
+    
+    def queue_projectile(
+        self,
+        path: List[Tuple[int, int]],
+        char: int,
+        color: Tuple[int, int, int],
+        **kwargs
+    ) -> None:
+        """Queue an animated projectile effect.
+        
+        Shows a projectile (arrow, thrown item, etc.) flying along a path
+        with tile-by-tile animation.
+        
+        Args:
+            path: List of (x, y) coordinates projectile travels through
+            char: Character to display (arrow, item char, etc.)
+            color: RGB color tuple for the projectile
+            **kwargs: Additional params (frame_duration, etc.)
+        """
+        x, y = path[-1] if path else (0, 0)  # Target position
+        self.effects.append(QueuedEffect(
+            EffectType.PROJECTILE, x, y, None,
+            path=path, char=char, color=color, **kwargs
+        ))
     
     def play_all(self, con=0, camera=None) -> None:
         """Play all queued effects and clear the queue.
