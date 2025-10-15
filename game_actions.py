@@ -1350,7 +1350,7 @@ class ActionProcessor:
                         from components.auto_explore import AutoExplore
                         auto_explore = AutoExplore()
                         auto_explore.owner = player
-                        player.components.register(ComponentType.AUTO_EXPLORE, auto_explore)
+                        player.components.add(ComponentType.AUTO_EXPLORE, auto_explore)
                     
                     # Start exploring
                     auto_explore.start(game_map, entities, fov_map)
