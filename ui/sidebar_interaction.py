@@ -178,6 +178,8 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
         ("head", player.equipment.head),
         ("chest", player.equipment.chest),
         ("feet", player.equipment.feet),
+        ("left_ring", player.equipment.left_ring),
+        ("right_ring", player.equipment.right_ring),
     ]
     
     # Check if click is on any equipment line
@@ -236,7 +238,8 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if equipment:
         for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
-                        player.equipment.head, player.equipment.chest, player.equipment.feet]:
+                        player.equipment.head, player.equipment.chest, player.equipment.feet,
+                        player.equipment.left_ring, player.equipment.right_ring]:
             if slot_item:
                 equipped_items.add(slot_item)
     
@@ -264,7 +267,7 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     y_cursor += 1  # Spacing after hotkeys
     # Equipment section in sidebar.py:
     y_cursor += 1  # "EQUIPMENT" header
-    y_cursor += 5  # 5 equipment slots
+    y_cursor += 7  # 7 equipment slots (added rings!)
     y_cursor += 1  # Spacing after equipment
     # Inventory section in sidebar.py:
     y_cursor += 1  # "INVENTORY (N/20)" header
