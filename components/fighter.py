@@ -92,30 +92,57 @@ class Fighter:
     
     @property
     def strength_mod(self):
-        """Get strength modifier.
+        """Get strength modifier including ring bonuses.
         
         Returns:
-            int: Strength modifier
+            int: Strength modifier (including Ring of Strength bonus)
         """
-        return self.get_stat_modifier(self.strength)
+        base_str = self.strength
+        
+        # Add ring bonuses
+        equipment = self._get_equipment(self.owner)
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    base_str += ring.ring.get_stat_bonus('strength')
+        
+        return self.get_stat_modifier(base_str)
     
     @property
     def dexterity_mod(self):
-        """Get dexterity modifier.
+        """Get dexterity modifier including ring bonuses.
         
         Returns:
-            int: Dexterity modifier
+            int: Dexterity modifier (including Ring of Dexterity bonus)
         """
-        return self.get_stat_modifier(self.dexterity)
+        base_dex = self.dexterity
+        
+        # Add ring bonuses
+        equipment = self._get_equipment(self.owner)
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    base_dex += ring.ring.get_stat_bonus('dexterity')
+        
+        return self.get_stat_modifier(base_dex)
     
     @property
     def constitution_mod(self):
-        """Get constitution modifier.
+        """Get constitution modifier including ring bonuses.
         
         Returns:
-            int: Constitution modifier
+            int: Constitution modifier (including Ring of Constitution bonus)
         """
-        return self.get_stat_modifier(self.constitution)
+        base_con = self.constitution
+        
+        # Add ring bonuses
+        equipment = self._get_equipment(self.owner)
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    base_con += ring.ring.get_stat_bonus('constitution')
+        
+        return self.get_stat_modifier(base_con)
     
     def _get_equipment(self, entity):
         """Get equipment component from entity, with backward compatibility.
@@ -203,7 +230,14 @@ class Fighter:
             if protection:
                 status_ac_bonus += protection.ac_bonus
         
-        return base_ac + dex_bonus + armor_ac_bonus + status_ac_bonus
+        # Apply ring bonuses (Ring of Protection)
+        ring_ac_bonus = 0
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    ring_ac_bonus += ring.ring.get_ac_bonus()
+        
+        return base_ac + dex_bonus + armor_ac_bonus + status_ac_bonus + ring_ac_bonus
 
     @property
     def max_hp(self):
@@ -282,6 +316,14 @@ class Fighter:
         statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
         if statistics:
             statistics.record_damage_taken(amount)
+        
+        # Check for ring triggers when taking damage (Ring of Teleportation)
+        equipment = self._get_equipment(self.owner)
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    ring_results = ring.ring.on_take_damage(self.owner, amount)
+                    results.extend(ring_results)
         
         # Flag monster as "in combat" when attacked (stops looting behavior)
         ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
@@ -410,6 +452,22 @@ class Fighter:
             if weakness:
                 total_attack -= weakness.damage_penalty
                 total_attack = max(0, total_attack)  # Can't go negative
+        
+        # Apply ring damage bonuses (Ring of Might)
+        equipment = self._get_equipment(self.owner)
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    damage_bonus_dice = ring.ring.get_damage_bonus()
+                    if damage_bonus_dice:
+                        # Parse dice notation (e.g., "1d4") and roll
+                        import random
+                        parts = damage_bonus_dice.split('d')
+                        if len(parts) == 2:
+                            num_dice = int(parts[0])
+                            die_size = int(parts[1])
+                            bonus_damage = sum(random.randint(1, die_size) for _ in range(num_dice))
+                            total_attack += bonus_damage
         
         # Apply boss damage multiplier if attacker is an enraged boss
         boss = self.owner.get_component_optional(ComponentType.BOSS) if self.owner else None
