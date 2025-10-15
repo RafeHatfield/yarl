@@ -195,9 +195,9 @@ def handle_mouse(mouse, camera=None, game_state=None):
     # Get raw screen coordinates
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
     
-    # For menu states (SHOW_INVENTORY, DROP_INVENTORY), return screen coordinates
+    # For menu states (SHOW_INVENTORY, DROP_INVENTORY, THROW_SELECT_ITEM), return screen coordinates
     # because menus are rendered as overlays at screen positions
-    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.THROW_SELECT_ITEM):
         if mouse.lbutton_pressed:
             return {"left_click": (screen_x, screen_y)}
         elif mouse.rbutton_pressed:

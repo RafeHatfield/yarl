@@ -882,8 +882,8 @@ class ActionProcessor:
         """
         current_state = self.state_manager.state.current_state
         
-        # Handle clicks on inventory/drop menus
-        if current_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+        # Handle clicks on inventory/drop/throw menus
+        if current_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.THROW_SELECT_ITEM):
             player = self.state_manager.state.player
             if not player or not player.components.has(ComponentType.INVENTORY):
                 return
@@ -918,7 +918,9 @@ class ActionProcessor:
             # Determine header based on state
             if current_state == GameStates.SHOW_INVENTORY:
                 header = "Press the key next to an item to use it, or Esc to cancel.\n"
-            else:
+            elif current_state == GameStates.THROW_SELECT_ITEM:
+                header = "Select an item to throw, or Esc to cancel.\n"
+            else:  # DROP_INVENTORY
                 header = "Press the key next to an item to drop it, or Esc to cancel.\n"
             
             # Check if click is on a menu item (click_pos is screen coordinates)
@@ -932,6 +934,8 @@ class ActionProcessor:
                 # User clicked on an inventory item!
                 if current_state == GameStates.SHOW_INVENTORY:
                     self._handle_inventory_action(clicked_index)
+                elif current_state == GameStates.THROW_SELECT_ITEM:
+                    self._handle_inventory_action(clicked_index)  # Uses same handler
                 else:  # DROP_INVENTORY
                     self._handle_drop_inventory(clicked_index)
             return

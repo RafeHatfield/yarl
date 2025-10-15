@@ -96,11 +96,15 @@ class Item:
         
         return base_name
     
-    def identify(self) -> bool:
+    def identify(self, entities=None) -> bool:
         """Identify this item and register its type globally.
         
         When one instance of an item type is identified, ALL instances of that
-        type should become identified. This method registers the type globally.
+        type should become identified. This method registers the type globally
+        and updates all other items of the same type.
+        
+        Args:
+            entities: Optional list of all game entities to update
         
         Returns:
             bool: True if item was previously unidentified, False if already identified
@@ -115,5 +119,14 @@ class Item:
             # Get the item type from the owner's name (e.g., "healing_potion")
             item_type = self.owner.name.lower().replace(' ', '_')
             id_manager.identify_type(item_type)
+            
+            # Update all other items of the same type
+            if entities:
+                for entity in entities:
+                    if hasattr(entity, 'item') and entity.item and entity != self.owner:
+                        # Check if this item is the same type
+                        other_item_type = entity.name.lower().replace(' ', '_')
+                        if other_item_type == item_type:
+                            entity.item.identified = True
         
         return was_unidentified

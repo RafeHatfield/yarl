@@ -320,7 +320,9 @@ class Inventory:
                     
                     # Identify item on successful use (before removal)
                     if item_consumed and hasattr(item_component, 'identify'):
-                        was_unidentified = item_component.identify()
+                        # Pass entities to identify so ALL items of this type get identified
+                        entities = kwargs.get('entities', None)
+                        was_unidentified = item_component.identify(entities=entities)
                         if was_unidentified:
                             # Add identification message
                             results.append({
