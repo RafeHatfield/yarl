@@ -96,6 +96,8 @@ def render_sidebar(console, player, ui_layout) -> None:
             ("Helm", player.equipment.head),
             ("Armor", player.equipment.chest),
             ("Boots", player.equipment.feet),
+            ("L Ring", player.equipment.left_ring),
+            ("R Ring", player.equipment.right_ring),
         ]
         
         for slot_name, item in equipment_slots:
@@ -126,7 +128,8 @@ def render_sidebar(console, player, ui_layout) -> None:
         equipment = player.get_component_optional(ComponentType.EQUIPMENT)
         if equipment:
             for slot_item in [player.equipment.main_hand, player.equipment.off_hand,
-                            player.equipment.head, player.equipment.chest, player.equipment.feet]:
+                            player.equipment.head, player.equipment.chest, player.equipment.feet,
+                            player.equipment.left_ring, player.equipment.right_ring]:
                 if slot_item:
                     equipped_items.add(slot_item)
         

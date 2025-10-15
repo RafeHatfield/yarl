@@ -176,6 +176,8 @@ def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_l
         equipment.head,
         equipment.chest,
         equipment.feet,
+        equipment.left_ring,
+        equipment.right_ring,
     ]
     
     # Check if hovering over any equipment line
@@ -216,7 +218,8 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if equipment:
         for slot_item in [equipment.main_hand, equipment.off_hand,
-                        equipment.head, equipment.chest, equipment.feet]:
+                        equipment.head, equipment.chest, equipment.feet,
+                        equipment.left_ring, equipment.right_ring]:
             if slot_item:
                 equipped_items.add(slot_item)
     
@@ -239,7 +242,7 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     y_cursor += 6  # 6 hotkey lines (C, I, G, Z, <>, /)
     y_cursor += 1  # Spacing after hotkeys
     y_cursor += 1  # "EQUIPMENT" header
-    y_cursor += 5  # 5 equipment slots
+    y_cursor += 7  # 7 equipment slots (added rings)
     y_cursor += 1  # Spacing after equipment
     y_cursor += 1  # "INVENTORY (N/20)" header
     y_cursor += 1  # Header is printed, then y increments before items are rendered
@@ -317,6 +320,16 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
                                 if hasattr(equipment.feet, 'get_display_name') 
                                 else equipment.feet.name.replace('_', ' ').title())
                     armor_pieces.append(armor_name)
+                if equipment.left_ring:
+                    ring_name = (equipment.left_ring.get_display_name() 
+                                if hasattr(equipment.left_ring, 'get_display_name') 
+                                else equipment.left_ring.name.replace('_', ' ').title())
+                    armor_pieces.append(f"L:{ring_name}")
+                if equipment.right_ring:
+                    ring_name = (equipment.right_ring.get_display_name() 
+                                if hasattr(equipment.right_ring, 'get_display_name') 
+                                else equipment.right_ring.name.replace('_', ' ').title())
+                    armor_pieces.append(f"R:{ring_name}")
                 
                 if armor_pieces:
                     tooltip_lines.append(f"Wearing: {', '.join(armor_pieces)}")
