@@ -10,7 +10,7 @@ Used by game_actions.py when player throws an item (press 't').
 """
 
 from typing import List, Dict, Any, Tuple
-import tcod.line
+import tcod
 from message_builder import MessageBuilder as MB
 
 

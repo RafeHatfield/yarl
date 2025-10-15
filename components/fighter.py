@@ -561,7 +561,7 @@ class Fighter:
             target (Entity): Target being attacked
             weapon (Entity): Ranged weapon being used
         """
-        import tcod.line
+        import tcod
         from visual_effect_queue import get_effect_queue
         
         # Calculate arrow path using Bresenham's line algorithm

@@ -159,9 +159,12 @@ def render_sidebar(console, player, ui_layout) -> None:
             letter_index = ord('a')
             
             for item in inventory_items:
-                # Format: "a) Potion"
-                # Use compact name for wands to fit in sidebar
-                if hasattr(item, 'get_display_name'):
+                # Format: "a) 5x Potion" or "a) Potion"
+                # Use item component's display name to include quantity for stacks
+                if hasattr(item, 'item') and item.item:
+                    # Use item component's get_display_name which handles quantity
+                    item_name = item.item.get_display_name(compact=True, show_quantity=True)
+                elif hasattr(item, 'get_display_name'):
                     item_name = item.get_display_name(compact=True)
                 else:
                     item_name = item.name
