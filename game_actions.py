@@ -872,6 +872,7 @@ class ActionProcessor:
                         target_y=target_y
                     )
                     
+                    player_died = False
                     for result in item_use_results:
                         message = result.get("message")
                         if message:
@@ -881,11 +882,17 @@ class ActionProcessor:
                         if dead_entity:
                             # Targeting/spell deaths should transform to corpse (not remove)
                             self._handle_entity_death(dead_entity, remove_from_entities=False)
+                            if dead_entity == player:
+                                player_died = True
                     
-                    # Return to player turn after targeting
-                    self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    # Clear targeting state
                     self.state_manager.set_extra_data("targeting_item", None)
                     self.state_manager.set_extra_data("previous_state", None)
+                    
+                    # TURN ECONOMY: Completing targeting (using targeted item) takes 1 turn
+                    if not player_died:
+                        self._process_player_status_effects()
+                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
         
         elif current_state == GameStates.PLAYERS_TURN:
             # Handle mouse movement/combat during player turn
