@@ -72,6 +72,7 @@ class ActionProcessor:
             'take_stairs': self._handle_stairs,
             'level_up': self._handle_level_up,
             'start_auto_explore': self._handle_start_auto_explore,
+            'throw': self._handle_throw_action,
         }
         
         # Map mouse actions to their handlers
@@ -155,6 +156,29 @@ class ActionProcessor:
     def _handle_show_character_screen(self, _) -> None:
         """Handle showing the character screen."""
         self.state_manager.set_game_state(GameStates.CHARACTER_SCREEN)
+    
+    def _handle_throw_action(self, _) -> None:
+        """Handle throw action - select item then target.
+        
+        Opens inventory selection for choosing an item to throw.
+        After item is selected, enters throw targeting mode.
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state != GameStates.PLAYERS_TURN:
+            return
+        
+        player = self.state_manager.state.player
+        message_log = self.state_manager.state.message_log
+        
+        if not player or not player.inventory or not player.inventory.items:
+            from message_builder import MessageBuilder as MB
+            message = MB.warning("You have nothing to throw.")
+            if message_log:
+                message_log.add_message(message)
+            return
+        
+        # Show inventory selection screen for throwing
+        self.state_manager.set_game_state(GameStates.THROW_SELECT_ITEM)
     
     def _handle_start_auto_explore(self, _) -> None:
         """Handle starting auto-exploration.
@@ -595,6 +619,10 @@ class ActionProcessor:
             self._use_inventory_item(item)
         elif current_state == GameStates.DROP_INVENTORY:
             self._drop_inventory_item(item)
+        elif current_state == GameStates.THROW_SELECT_ITEM:
+            # Selected item to throw - enter throw targeting mode
+            self.state_manager.state.targeting_item = item
+            self.state_manager.set_game_state(GameStates.THROW_TARGETING)
         elif current_state == GameStates.PLAYERS_TURN:
             # Sidebar click during normal gameplay - use the item!
             logger.warning(f"Using item from sidebar during PLAYERS_TURN")
@@ -890,6 +918,49 @@ class ActionProcessor:
                     self.state_manager.set_extra_data("previous_state", None)
                     
                     # TURN ECONOMY: Completing targeting (using targeted item) takes 1 turn
+                    if not player_died:
+                        self._process_player_status_effects()
+                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+        
+        elif current_state == GameStates.THROW_TARGETING:
+            # Handle throw targeting completion
+            target_x, target_y = click_pos
+            targeting_item = self.state_manager.state.targeting_item
+            
+            if targeting_item:
+                player = self.state_manager.state.player
+                if player and player.inventory:
+                    # Remove item from inventory (it's being thrown)
+                    player.inventory.remove_item(targeting_item)
+                    
+                    # Execute throw (Phase 3 will implement throwing.py)
+                    from throwing import throw_item
+                    throw_results = throw_item(
+                        thrower=player,
+                        item=targeting_item,
+                        target_x=target_x,
+                        target_y=target_y,
+                        entities=self.state_manager.state.entities,
+                        game_map=self.state_manager.state.game_map,
+                        fov_map=self.state_manager.state.fov_map
+                    )
+                    
+                    player_died = False
+                    for result in throw_results:
+                        message = result.get("message")
+                        if message:
+                            self.state_manager.state.message_log.add_message(message)
+                        
+                        dead_entity = result.get("dead")
+                        if dead_entity:
+                            self._handle_entity_death(dead_entity, remove_from_entities=False)
+                            if dead_entity == player:
+                                player_died = True
+                    
+                    # Clear targeting state
+                    self.state_manager.state.targeting_item = None
+                    
+                    # TURN ECONOMY: Throwing takes 1 turn
                     if not player_died:
                         self._process_player_status_effects()
                         _transition_to_enemy_turn(self.state_manager, self.turn_manager)

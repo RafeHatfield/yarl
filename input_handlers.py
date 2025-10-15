@@ -27,8 +27,10 @@ def handle_keys(key, game_state, death_frame_counter=None):
         return handle_player_dead_keys(key, death_frame_counter)
     elif game_state == GameStates.TARGETING:
         return handle_targeting_keys(key)
-    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.THROW_SELECT_ITEM):
         return handle_inventory_keys(key)
+    elif game_state == GameStates.THROW_TARGETING:
+        return handle_targeting_keys(key)
     elif game_state == GameStates.LEVEL_UP:
         return handle_level_up_menu(key)
     elif game_state == GameStates.CHARACTER_SCREEN:
@@ -115,6 +117,8 @@ def handle_player_turn_keys(key):
         return {"show_inventory": True}
     elif key_char == "d":
         return {"drop_inventory": True}
+    elif key_char == "t":
+        return {"throw": True}
     elif key.vk == libtcod.KEY_ENTER:
         return {"take_stairs": True}
     elif key_char == "c":

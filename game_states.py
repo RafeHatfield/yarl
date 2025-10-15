@@ -22,3 +22,5 @@ class GameStates(Enum):
     TARGETING = 6
     LEVEL_UP = 7
     CHARACTER_SCREEN = 8
+    THROW_SELECT_ITEM = 9  # Selecting item to throw
+    THROW_TARGETING = 10   # Targeting throw location
