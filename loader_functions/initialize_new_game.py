@@ -98,11 +98,15 @@ def get_game_variables(constants):
     # Register all item types that need identification
     appearance_gen.initialize({
         'scroll': [
+            # Existing scrolls
             'lightning_scroll', 'fireball_scroll', 'confusion_scroll',
             'invisibility_scroll', 'teleport_scroll', 'enhance_weapon_scroll',
             'enhance_armor_scroll', 'shield_scroll', 'dragon_fart_scroll',
             'raise_dead_scroll', 'yo_mama_scroll', 'slow_scroll',
-            'glue_scroll', 'rage_scroll'
+            'glue_scroll', 'rage_scroll',
+            # New scrolls (v3.11.0+)
+            'haste_scroll', 'blink_scroll', 'light_scroll',
+            'magic_mapping_scroll', 'earthquake_scroll', 'identify_scroll'
         ],
         'potion': [
             'healing_potion',
