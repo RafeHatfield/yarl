@@ -266,7 +266,7 @@ def _throw_weapon(
     
     if target:
         # Hit! Roll damage
-        from components.fighter import roll_dice
+        from dice import roll_dice
         from components.component_registry import ComponentType
         
         # Get weapon damage (reduced for throwing vs melee)
