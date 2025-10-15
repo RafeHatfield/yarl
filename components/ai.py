@@ -150,7 +150,7 @@ class BossAI:
         return results
     
     def _get_path_to(self, target, game_map, entities):
-        """Calculate A* path to target.
+        """Calculate A* path to target using modern tcod.path API.
         
         Args:
             target (Entity): Target to path to
@@ -160,26 +160,33 @@ class BossAI:
         Returns:
             list: List of (x, y) tuples representing the path, or empty list if no path
         """
-        # Use A* pathfinding (same as BasicMonster)
-        from map_objects.pathfinding import compute_path
+        import tcod.path
         
-        # Create cost map (walls = high cost, walkable = low cost)
-        cost = np.array(game_map.tiles["walkable"], dtype=np.int8)
+        # Create walkable map from tiles (indexed [y, x])
+        walkable = np.array(game_map.tiles["walkable"], dtype=bool)
         
-        # Add entity positions to cost map (other entities block movement)
+        # Block entity positions (other entities block movement)
         for entity in entities:
             if entity.blocks and entity != self.owner and entity != target:
                 if 0 <= entity.x < game_map.width and 0 <= entity.y < game_map.height:
-                    cost[entity.x, entity.y] = 0  # Blocked
+                    walkable[entity.y, entity.x] = False
         
-        # Compute path
-        path = compute_path(
-            cost,
-            (self.owner.x, self.owner.y),
-            (target.x, target.y)
-        )
+        # Create cost map (1 = walkable, 0 = blocked)
+        cost = np.where(walkable, 1, 0).astype(np.int8)
         
-        return path[1:] if len(path) > 1 else []
+        # Transpose from [y, x] to [x, y] for tcod
+        cost_transposed = cost.T
+        
+        # Create pathfinder using modern tcod.path API
+        graph = tcod.path.SimpleGraph(cost=cost_transposed, cardinal=2, diagonal=3)
+        pf = tcod.path.Pathfinder(graph)
+        pf.add_root((self.owner.x, self.owner.y))
+        
+        # Compute path to target
+        path = pf.path_to((target.x, target.y))
+        
+        # Return path excluding starting position
+        return [(x, y) for x, y in path[1:]]
 
 
 class BasicMonster:
