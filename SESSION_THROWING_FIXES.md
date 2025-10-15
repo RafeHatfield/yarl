@@ -29,6 +29,16 @@ item = sorted_items[inventory_index]
 ```
 **Result:** Menu selection now matches what's displayed!
 
+### **2b. Sidebar Click Wrong Item (Same Bug!)** ✅
+**Problem:** Clicking healing potion in sidebar kept equipping/unequipping armor  
+**Root Cause:** Same sorting mismatch! Sidebar displayed sorted items, returned index into unsorted list, action handler looked up in sorted list  
+**Fix:** Make sidebar return index into sorted list (same sorting as action handler):
+```python
+full_sorted_inventory = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+actual_inventory_index = full_sorted_inventory.index(clicked_item)
+```
+**Result:** Sidebar clicks now select the correct item!
+
 ### **3. Auto-Explore Quote Error** ✅
 **Problem:** `AttributeError: type object 'EntityDialogue' has no attribute 'get_adventure_quote'`  
 **Root Cause:** Tried calling nonexistent method  
