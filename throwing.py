@@ -144,8 +144,8 @@ def throw_item(
             item, thrower, target_entity, final_x, final_y, 
             entities, game_map, fov_map
         ))
-    elif hasattr(item, 'item') and item.item and hasattr(item.item, 'equipment'):
-        # It's a weapon - deal damage and drop at final position
+    elif item.components.has(ComponentType.EQUIPPABLE):
+        # It's a weapon/armor - deal damage and drop at final position
         weapon_results = _throw_weapon(item, thrower, target_entity, final_x, final_y)
         results.extend(weapon_results)
         
@@ -267,18 +267,20 @@ def _throw_weapon(
     if target:
         # Hit! Roll damage
         from components.fighter import roll_dice
+        from components.component_registry import ComponentType
         
         # Get weapon damage (reduced for throwing vs melee)
-        equipment = weapon.item.equipment
-        damage_dice = equipment.damage_dice if equipment else "1d4"
+        equippable = weapon.components.get(ComponentType.EQUIPPABLE)
+        damage_dice = equippable.damage_dice if equippable else "1d4"
         
         # Throwing penalty: -2 to damage (min 1)
         base_damage = roll_dice(damage_dice)
         throw_damage = max(1, base_damage - 2)
         
         # Apply damage to target
-        if target.fighter:
-            target.fighter.take_damage(throw_damage)
+        target_fighter = target.components.get(ComponentType.FIGHTER)
+        if target_fighter:
+            target_fighter.take_damage(throw_damage)
             
             results.append({
                 "message": MB.damage(
@@ -287,7 +289,7 @@ def _throw_weapon(
             })
             
             # Check if target died
-            if target.fighter.hp <= 0:
+            if target_fighter.hp <= 0:
                 results.append({
                     "dead": target,
                     "message": MB.kill(f"{target.name} is killed by the thrown {weapon.name}!")
