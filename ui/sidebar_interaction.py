@@ -297,11 +297,14 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
         # User clicked on an item!
         logger.warning(f"ITEM CLICKED! Index: {clicked_item_index}")
         
-        # Return action to use this item
-        # The index corresponds to the unequipped items, so we need to find
-        # the actual inventory index
+        # IMPORTANT: We need to return the index into the FULL SORTED inventory
+        # (including equipped items), not just the unequipped items shown in sidebar!
+        # This matches what _handle_inventory_action expects.
         clicked_item = inventory_items[clicked_item_index]
-        actual_inventory_index = player.inventory.items.index(clicked_item)
+        
+        # Create full sorted inventory (same as game_actions.py does)
+        full_sorted_inventory = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+        actual_inventory_index = full_sorted_inventory.index(clicked_item)
         
         logger.warning(f"Returning inventory_index={actual_inventory_index}")
         
