@@ -996,6 +996,23 @@ class ActionProcessor:
                         self._process_player_status_effects()
                         _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                     return
+        
+        # Continue with regular TARGETING handling
+        if current_state == GameStates.TARGETING:
+            target_x, target_y = click_pos
+            targeting_item = self.state_manager.get_extra_data("targeting_item")
+            
+            if targeting_item and targeting_item.item:
+                player = self.state_manager.state.player
+                if player and player.inventory:
+                    item_use_results = player.inventory.use(
+                        targeting_item,
+                        entities=self.state_manager.state.entities,
+                        fov_map=self.state_manager.state.fov_map,
+                        game_map=self.state_manager.state.game_map,
+                        target_x=target_x,
+                        target_y=target_y
+                    )
                     
                     player_died = False
                     for result in item_use_results:
