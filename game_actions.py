@@ -617,11 +617,15 @@ class ActionProcessor:
             self.state_manager.state.message_log.add_message(message)
             return
         
-        item = player.inventory.items[inventory_index]
+        # IMPORTANT: Inventory menu sorts items alphabetically!
+        # We must use the same sorted order here or indices won't match
+        sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+        item = sorted_items[inventory_index]
         
         logger.warning(f"Current state: {current_state}, item: {item.name if item else None}")
         print(f"DEBUG INVENTORY: index={inventory_index}, item={item.name}, inventory_size={inventory_size}")
-        print(f"DEBUG INVENTORY: Full inventory: {[i.name for i in player.inventory.items]}")
+        print(f"DEBUG INVENTORY: Sorted inventory (as shown in menu): {[i.name for i in sorted_items]}")
+        print(f"DEBUG INVENTORY: Unsorted inventory (internal): {[i.name for i in player.inventory.items]}")
         
         if current_state == GameStates.SHOW_INVENTORY:
             self._use_inventory_item(item)
@@ -1359,12 +1363,10 @@ class ActionProcessor:
                         auto_explore.owner = player
                         player.components.add(ComponentType.AUTO_EXPLORE, auto_explore)
                     
-                    # Start exploring
-                    auto_explore.start(game_map, entities, fov_map)
+                    # Start exploring (returns adventure quote)
+                    adventure_quote = auto_explore.start(game_map, entities, fov_map)
                     
                     # Show adventure quote
-                    from entity_dialogue import EntityDialogue
-                    adventure_quote = EntityDialogue.get_adventure_quote()
                     message_log.add_message(MB.custom(f'"{adventure_quote}"', MB.CYAN))
                     message_log.add_message(MB.info("Auto-exploring... (any key to cancel)"))
     
