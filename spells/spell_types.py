@@ -45,4 +45,5 @@ class EffectType(Enum):
     SHIELD = auto()  # Defense buff
     TAUNT = auto()  # Forced targeting
     INVISIBLE = auto()
+    FEAR = auto()  # Causes enemies to flee
 

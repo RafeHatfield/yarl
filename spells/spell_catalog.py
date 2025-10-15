@@ -241,6 +241,112 @@ YO_MAMA = SpellDefinition(
 )
 
 
+# === NEW UTILITY SCROLLS (v3.11.0) ===
+
+HASTE = SpellDefinition(
+    spell_id="haste",
+    name="Haste",
+    category=SpellCategory.BUFF,
+    targeting=TargetingType.SELF,
+    duration=30,  # Longer than speed potion
+    requires_los=False,
+    requires_target=False,
+    success_message="✨ You feel incredibly fast!",
+    consumable=True
+)
+
+FEAR = SpellDefinition(
+    spell_id="fear",
+    name="Fear",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.AOE,
+    radius=10,  # Large AOE
+    requires_los=True,
+    requires_target=False,
+    effect_type=EffectType.FEAR,
+    duration=15,
+    cast_message="A wave of terror emanates from you!",
+    success_message="Nearby enemies flee in terror!",
+    consumable=True
+)
+
+BLINK = SpellDefinition(
+    spell_id="blink",
+    name="Blink",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.LOCATION,
+    max_range=5,  # Short range tactical teleport
+    requires_los=True,
+    requires_target=False,
+    success_message="⚡ You blink to the new location!",
+    fail_message="You cannot blink there!",
+    consumable=True
+)
+
+LIGHT = SpellDefinition(
+    spell_id="light",
+    name="Light",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SELF,
+    requires_los=False,
+    requires_target=False,
+    success_message="💡 The area is bathed in magical light!",
+    consumable=True
+)
+
+DETECT_MONSTER = SpellDefinition(
+    spell_id="detect_monster",
+    name="Detect Monster",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SELF,
+    duration=20,  # Temporary detection
+    requires_los=False,
+    requires_target=False,
+    success_message="👁️ You sense the presence of monsters nearby!",
+    consumable=True
+)
+
+MAGIC_MAPPING = SpellDefinition(
+    spell_id="magic_mapping",
+    name="Magic Mapping",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SELF,
+    requires_los=False,
+    requires_target=False,
+    success_message="📜 The dungeon layout is revealed to you!",
+    consumable=True
+)
+
+EARTHQUAKE = SpellDefinition(
+    spell_id="earthquake",
+    name="Earthquake",
+    category=SpellCategory.OFFENSIVE,
+    targeting=TargetingType.AOE,
+    radius=3,
+    damage="3d6",  # Damages all creatures
+    damage_type=DamageType.PHYSICAL,
+    requires_los=False,
+    requires_target=False,
+    cast_message="🌋 The ground shakes violently!",
+    success_message="Walls crumble and creatures are thrown about!",
+    consumable=True
+)
+
+# Identify scroll will need special handling in spell_executor
+# for now, defined as SELF targeting with custom logic
+IDENTIFY = SpellDefinition(
+    spell_id="identify",
+    name="Identify",
+    category=SpellCategory.UTILITY,
+    targeting=TargetingType.SELF,
+    requires_los=False,
+    requires_target=False,
+    success_message="✨ The item's true nature is revealed!",
+    fail_message="You have no unidentified items.",
+    consumable=True
+)
+
+
 def register_all_spells():
     """Register all spells in the catalog with the global registry.
     
@@ -251,6 +357,7 @@ def register_all_spells():
     register_spell(LIGHTNING_BOLT)
     register_spell(FIREBALL)
     register_spell(DRAGON_FART)
+    register_spell(EARTHQUAKE)
     
     # Healing spells
     register_spell(HEAL)
@@ -261,12 +368,19 @@ def register_all_spells():
     register_spell(SLOW)
     register_spell(GLUE)
     register_spell(RAGE)
+    register_spell(FEAR)
+    register_spell(BLINK)
+    register_spell(LIGHT)
+    register_spell(DETECT_MONSTER)
+    register_spell(MAGIC_MAPPING)
+    register_spell(IDENTIFY)
     
     # Buff spells
     register_spell(SHIELD)
     register_spell(ENHANCE_WEAPON)
     register_spell(ENHANCE_ARMOR)
     register_spell(INVISIBILITY)
+    register_spell(HASTE)
     
     # Summon spells
     register_spell(RAISE_DEAD)
