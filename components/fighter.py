@@ -360,6 +360,8 @@ class Fighter:
 
         Calculates damage based on attacker's power vs target's defense,
         including variable damage from equipped weapons and variable defense from armor.
+        
+        For ranged weapons (bow/crossbow), animates projectile flight before applying damage.
 
         Args:
             target (Entity): The target entity to attack
@@ -368,6 +370,17 @@ class Fighter:
             list: List of result dictionaries with combat messages and effects
         """
         results = []
+        
+        # Check if using ranged weapon and animate projectile
+        if self.owner and hasattr(self.owner, 'equipment') and self.owner.equipment:
+            main_hand = self.owner.equipment.main_hand
+            if main_hand and hasattr(main_hand, 'item') and hasattr(main_hand.item, 'equipment'):
+                equipment = main_hand.item.equipment
+                reach = getattr(equipment, 'reach', None)
+                
+                # If reach > 1, it's a ranged weapon (bow/crossbow) - animate projectile!
+                if reach and reach > 1:
+                    self._animate_ranged_attack(target, main_hand)
 
         # Calculate base damage from attacker's power
         base_damage = self.power
@@ -475,6 +488,62 @@ class Fighter:
                 self._log_combat_debug(target, total_attack, variable_damage, damage_source, total_defense, armor_defense, final_damage)
 
         return results
+    
+    def _animate_ranged_attack(self, target, weapon):
+        """Animate arrow/bolt flying from attacker to target.
+        
+        Creates a projectile animation showing an arrow or bolt traveling
+        from the attacker's position to the target. The projectile character
+        is chosen based on the direction of flight:
+        - Horizontal: '-'
+        - Vertical: '|'
+        - Diagonal: '/' or '\'
+        
+        Args:
+            target (Entity): Target being attacked
+            weapon (Entity): Ranged weapon being used
+        """
+        import tcod.line
+        from visual_effect_queue import get_effect_queue
+        
+        # Calculate arrow path using Bresenham's line algorithm
+        path = list(tcod.line.bresenham(
+            self.owner.x, self.owner.y,
+            target.x, target.y
+        ))
+        
+        if not path:
+            return  # No path to animate
+        
+        # Calculate direction for arrow character
+        dx = target.x - self.owner.x
+        dy = target.y - self.owner.y
+        
+        # Choose arrow character based on direction
+        abs_dx = abs(dx)
+        abs_dy = abs(dy)
+        
+        if abs_dx > abs_dy * 1.5:
+            # Mostly horizontal
+            arrow_char = ord('-')
+        elif abs_dy > abs_dx * 1.5:
+            # Mostly vertical
+            arrow_char = ord('|')
+        elif (dx > 0 and dy > 0) or (dx < 0 and dy < 0):
+            # Diagonal: top-left to bottom-right
+            arrow_char = ord('\\')
+        else:
+            # Diagonal: bottom-left to top-right
+            arrow_char = ord('/')
+        
+        # Queue arrow animation
+        effect_queue = get_effect_queue()
+        effect_queue.queue_projectile(
+            path=path,
+            char=arrow_char,
+            color=(139, 69, 19),  # Brown arrow/bolt
+            frame_duration=0.03  # Fast! 30ms per tile
+        )
     
     def attack_d20(self, target):
         """Perform a d20-based attack against a target entity.
