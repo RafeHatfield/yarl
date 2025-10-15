@@ -650,6 +650,130 @@ class SpellExecutor:
             }
         ]
     
+    def _cast_blink_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        game_map,
+        fov_map,
+        target_x: int,
+        target_y: int
+    ) -> List[Dict[str, Any]]:
+        """Cast blink spell - short-range tactical teleport.
+        
+        Like teleport but requires line of sight and has shorter range (5 tiles).
+        Used for tactical repositioning in combat.
+        """
+        # Check range
+        distance = ((target_x - caster.x) ** 2 + (target_y - caster.y) ** 2) ** 0.5
+        if distance > spell.max_range:
+            return [
+                {
+                    "consumed": False,
+                    "message": MB.warning(
+                        f"That location is too far! (max {spell.max_range} tiles)"
+                    ),
+                }
+            ]
+        
+        # Check line of sight
+        if spell.requires_los and not map_is_in_fov(fov_map, target_x, target_y):
+            return [
+                {
+                    "consumed": False,
+                    "message": MB.warning(
+                        "You cannot blink to a location you cannot see!"
+                    ),
+                }
+            ]
+        
+        # Check if target is blocked
+        if game_map.is_blocked(target_x, target_y):
+            return [
+                {
+                    "consumed": False,
+                    "message": MB.warning(spell.fail_message or "You cannot blink there!"),
+                }
+            ]
+        
+        # Check if location is occupied
+        for entity in entities:
+            if entity.x == target_x and entity.y == target_y and entity != caster:
+                if entity.blocks:
+                    return [
+                        {
+                            "consumed": False,
+                            "message": MB.warning("That location is occupied!"),
+                        }
+                    ]
+        
+        # Blink!
+        caster.x = target_x
+        caster.y = target_y
+        
+        return [
+            {
+                "consumed": True,
+                "message": MB.spell_effect(spell.success_message),
+                "fov_recompute": True  # Request FOV recomputation
+            }
+        ]
+    
+    def _cast_magic_mapping_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        game_map
+    ) -> List[Dict[str, Any]]:
+        """Cast magic mapping spell - reveals entire dungeon level.
+        
+        Sets all tiles on the current level to explored, revealing the full map layout.
+        Classic roguelike utility spell.
+        """
+        # Reveal entire map
+        for y in range(game_map.height):
+            for x in range(game_map.width):
+                game_map.tiles[x][y].explored = True
+        
+        return [
+            {
+                "consumed": True,
+                "message": MB.spell_effect(spell.success_message),
+            }
+        ]
+    
+    def _cast_light_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        game_map,
+        fov_map
+    ) -> List[Dict[str, Any]]:
+        """Cast light spell - permanently reveals all visible tiles.
+        
+        Makes all tiles currently in the caster's FOV permanently explored.
+        Useful for mapping out the current area.
+        """
+        # Reveal all tiles in current FOV
+        revealed_count = 0
+        for y in range(game_map.height):
+            for x in range(game_map.width):
+                if map_is_in_fov(fov_map, x, y) and not game_map.tiles[x][y].explored:
+                    game_map.tiles[x][y].explored = True
+                    revealed_count += 1
+        
+        message = spell.success_message
+        if revealed_count > 0:
+            message += f" ({revealed_count} tiles revealed)"
+        
+        return [
+            {
+                "consumed": True,
+                "message": MB.spell_effect(message),
+            }
+        ]
+    
     def _cast_buff_spell(
         self,
         spell: SpellDefinition,
