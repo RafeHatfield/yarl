@@ -205,14 +205,24 @@ def _throw_potion(
         })
         
         # Apply potion effect to target
-        # Call the potion's use_function with target as the entity
-        use_results = potion.item.use_function(
-            target,
-            entities=entities,
-            game_map=game_map,
-            fov_map=fov_map
-        )
-        results.extend(use_results)
+        # IMPORTANT: Temporarily set potion's owner to the target so effect applies to them!
+        # This is needed because most potion functions use item.owner to determine who to affect
+        original_owner = potion.item.owner if hasattr(potion.item, 'owner') else None
+        potion.item.owner = target
+        
+        try:
+            # Call the potion's use_function
+            # The function will use potion.item.owner (now set to target)
+            use_results = potion.item.use_function(
+                target,  # Pass target as caster for compatibility
+                entities=entities,
+                game_map=game_map,
+                fov_map=fov_map
+            )
+            results.extend(use_results)
+        finally:
+            # Restore original owner (though item is consumed anyway)
+            potion.item.owner = original_owner
         
     else:
         # Missed - potion breaks on ground

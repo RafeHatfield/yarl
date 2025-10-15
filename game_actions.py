@@ -620,6 +620,8 @@ class ActionProcessor:
         item = player.inventory.items[inventory_index]
         
         logger.warning(f"Current state: {current_state}, item: {item.name if item else None}")
+        print(f"DEBUG INVENTORY: index={inventory_index}, item={item.name}, inventory_size={inventory_size}")
+        print(f"DEBUG INVENTORY: Full inventory: {[i.name for i in player.inventory.items]}")
         
         if current_state == GameStates.SHOW_INVENTORY:
             self._use_inventory_item(item)
