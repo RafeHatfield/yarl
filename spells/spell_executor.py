@@ -747,6 +747,37 @@ class SpellExecutor:
         
         return results
     
+    def _cast_identify_spell(
+        self,
+        spell: SpellDefinition,
+        caster
+    ) -> List[Dict[str, Any]]:
+        """Cast identify spell - grants temporary identification powers.
+        
+        Grants the player a 10-turn buff that allows identifying 1 item per turn.
+        This is the core mechanic for the Identify scroll.
+        """
+        from components.status_effects import IdentifyModeEffect, StatusEffectManager
+        
+        results = []
+        
+        # Ensure caster has status_effects component
+        if not caster.components.has(ComponentType.STATUS_EFFECTS):
+            caster.status_effects = StatusEffectManager(caster)
+            caster.components.add(ComponentType.STATUS_EFFECTS, caster.status_effects)
+        
+        # Create identify mode effect
+        identify_effect = IdentifyModeEffect(
+            duration=spell.duration,  # 10 turns
+            owner=caster
+        )
+        
+        effect_results = caster.status_effects.add_effect(identify_effect)
+        results.extend(effect_results)
+        results.append({"consumed": True})
+        
+        return results
+    
     def _cast_enhance_weapon_spell(
         self,
         spell: SpellDefinition,
