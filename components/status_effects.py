@@ -554,6 +554,21 @@ class StatusEffectManager:
 
     def add_effect(self, effect: StatusEffect) -> List[Dict[str, Any]]:
         results = []
+        
+        # Check for ring immunities
+        from components.component_registry import ComponentType
+        equipment = self.owner.equipment if hasattr(self.owner, 'equipment') else None
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    if ring.ring.provides_immunity(effect.name):
+                        results.append({
+                            'message': MB.status_effect(
+                                f"{self.owner.name}'s ring protects them from {effect.name}!"
+                            )
+                        })
+                        return results  # Immunity blocks the effect
+        
         if effect.name in self.active_effects:
             # Replace existing effect if new one is added
             results.append({'message': MB.status_effect(f"{self.owner.name}'s {effect.name} effect is refreshed.")})
@@ -577,6 +592,17 @@ class StatusEffectManager:
 
     def process_turn_start(self) -> List[Dict[str, Any]]:
         results = []
+        
+        # Process ring effects first (Ring of Regeneration)
+        from components.component_registry import ComponentType
+        equipment = self.owner.equipment if hasattr(self.owner, 'equipment') else None
+        if equipment:
+            for ring in [equipment.left_ring, equipment.right_ring]:
+                if ring and ring.components.has(ComponentType.RING):
+                    ring_results = ring.ring.process_turn(self.owner)
+                    results.extend(ring_results)
+        
+        # Then process status effects
         for effect_name in list(self.active_effects.keys()): # Iterate over a copy
             effect = self.active_effects[effect_name]
             results.extend(effect.process_turn_start())
