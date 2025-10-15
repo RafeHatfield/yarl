@@ -263,12 +263,16 @@ def render_all(
             0, sidebar_pos[0], sidebar_pos[1]
         )
 
-    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.THROW_SELECT_ITEM):
         if game_state == GameStates.SHOW_INVENTORY:
             inventory_title = (
                 "Press the key next to an item to use it, or Esc to cancel.\n"
             )
-        else:
+        elif game_state == GameStates.THROW_SELECT_ITEM:
+            inventory_title = (
+                "Select an item to throw, or Esc to cancel.\n"
+            )
+        else:  # DROP_INVENTORY
             inventory_title = (
                 "Press the key next to an item to drop it, or Esc to cancel.\n"
             )
