@@ -558,10 +558,16 @@ class ActionProcessor:
         Args:
             inventory_index: Index of item in inventory
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         current_state = self.state_manager.state.current_state
         player = self.state_manager.state.player
         
+        logger.warning(f"_handle_inventory_action called: index={inventory_index}, state={current_state}")
+        
         if not player or not player.inventory:
+            logger.warning(f"No player or inventory!")
             return
         
         # Defensive check: ensure inventory_index is an integer
