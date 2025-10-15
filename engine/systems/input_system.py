@@ -55,6 +55,8 @@ class InputSystem(System):
             GameStates.TARGETING: handle_targeting_keys,
             GameStates.SHOW_INVENTORY: handle_inventory_keys,
             GameStates.DROP_INVENTORY: handle_inventory_keys,
+            GameStates.THROW_SELECT_ITEM: handle_inventory_keys,  # Use same handler as inventory
+            GameStates.THROW_TARGETING: handle_targeting_keys,     # Use same handler as targeting
             GameStates.LEVEL_UP: handle_level_up_menu,
             GameStates.CHARACTER_SCREEN: handle_character_screen,
         }
