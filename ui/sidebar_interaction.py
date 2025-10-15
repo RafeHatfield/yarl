@@ -332,7 +332,7 @@ def get_sidebar_inventory_bounds(ui_layout) -> Tuple[int, int, int, int]:
     y_cursor += 2  # Separator + spacing  
     y_cursor += 3  # Hotkeys
     y_cursor += 1  # Spacing
-    y_cursor += 7  # Equipment
+    y_cursor += 9  # Equipment (7 slots + header + spacing)
     y_cursor += 1  # Inventory header
     
     inventory_start_y = y_cursor
