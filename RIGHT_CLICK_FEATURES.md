@@ -42,7 +42,10 @@ Right-click is now **context-aware** and does the smart thing based on what you 
 | **Hotkeys** | Click hotkey buttons in sidebar ✅ |
 
 **Only keyboard-required actions:**
-- Menu selection (a, b, c, etc.)
+- **Menu selection (a, b, c, etc.)** - Clicking on menu items is not yet implemented
+  - Press letter keys to select from inventory/throw menus
+  - This is actually the standard roguelike interface!
+  - Super fast: Right-click enemy → Press 'a' → Done! ⚡
 - Character movement with keyboard (optional - mouse works too!)
 - Opening menus (i, d, c, etc.) - but these have sidebar buttons too!
 
