@@ -271,7 +271,8 @@ def _throw_weapon(
         
         # Get weapon damage (reduced for throwing vs melee)
         equippable = weapon.components.get(ComponentType.EQUIPPABLE)
-        damage_dice = equippable.damage_dice if equippable else "1d4"
+        # Fallback to 1d4 if no equippable OR if damage_dice is None
+        damage_dice = (equippable.damage_dice if equippable and equippable.damage_dice else "1d4")
         
         # Throwing penalty: -2 to damage (min 1)
         base_damage = roll_dice(damage_dice)
