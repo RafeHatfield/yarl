@@ -9,7 +9,17 @@
 
 ## 🐛 Bugs Fixed
 
-### **1. Thrown Potions Heal Wrong Target** ✅
+### **1. Thrown Weapons Not Hitting Targets** ✅
+**Problem:** Throwing dagger at enemy, it just "landed at a spot" instead of hitting  
+**Root Cause:** Target detection using OLD attribute system (`hasattr(entity, 'fighter')`) instead of new ComponentRegistry  
+**Fix:** Use modern component system:
+```python
+if entity.components.has(ComponentType.FIGHTER):
+    target_entity = entity
+```
+**Result:** Thrown weapons now properly detect and hit enemies!
+
+### **2. Thrown Potions Heal Wrong Target** ✅
 **Problem:** Throwing healing potion at orc healed the player instead of the orc  
 **Root Cause:** `potion.item.owner` was still set to player (from being in inventory)  
 **Fix:** Temporarily swap `potion.item.owner = target` before applying effect  
