@@ -283,7 +283,7 @@ def _throw_weapon(
             target_fighter.take_damage(throw_damage)
             
             results.append({
-                "message": MB.damage(
+                "message": MB.combat_hit(
                     f"The {weapon.name} hits {target.name} for {throw_damage} damage!"
                 )
             })
@@ -292,7 +292,7 @@ def _throw_weapon(
             if target_fighter.hp <= 0:
                 results.append({
                     "dead": target,
-                    "message": MB.kill(f"{target.name} is killed by the thrown {weapon.name}!")
+                    "message": MB.death(f"{target.name} is killed by the thrown {weapon.name}!")
                 })
     else:
         # Missed - weapon lands on ground
