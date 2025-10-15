@@ -2,54 +2,65 @@
 
 *Goal: Transform Yarl into one of the best traditional roguelikes by tracking progress toward legendary status.*
 
-## Current Depth Scores (v3.9.0 - Post Boss Fights)
+## Current Depth Scores (v3.10.0 - Potion Variety + Identification)
 
 | Category | Current | Target | Gap | Priority Features to Close Gap |
 |----------|---------|--------|-----|-------------------------------|
-| **Discovery** | 2/10 | 10/10 | -8 | Item Identification, Vaults, Secret Doors, Unique Artifacts |
-| **Resource Management** | 3/10 | 9/10 | -6 | Hunger System, Wand Charges, Identify Scrolls, Corpse System |
+| **Discovery** | 3/10 | 10/10 | -7 | Vaults, Secret Doors, Unique Artifacts, More Scroll Variety |
+| **Resource Management** | 4/10 | 9/10 | -5 | Wand Charges, Hunger System (optional), Corpse System |
 | **Build Diversity** | 5/10 | 9/10 | -4 | Rings, Amulets, Resistances, Blessed/Cursed Items |
-| **Emergent Gameplay** | 4/10 | 9/10 | -5 | Throwing, Item Interactions, Polymorph, Digging |
+| **Emergent Gameplay** | 5/10 | 9/10 | -4 | Throwing, Item Interactions, Polymorph, Digging |
 | **Memorable Moments** | 6/10 | 10/10 | -4 | Wishes, Polymorph, Divine Intervention, Artifacts |
 | **Combat System** | 8/10 | 9/10 | -1 | (Strong foundation - add fumble effects, swarm mechanics) |
 | **Progression** | 7/10 | 9/10 | -2 | Victory Condition, Hall of Fame, Morgue Files, Classes |
 
-**Overall Depth Score: 35/64 (55%)** → **Target: 64/74 (86%)**
+**Overall Depth Score: 38/64 (59%)** → **Target: 64/74 (86%)**
+*Progress: +3 points from v3.9.0 (55% → 59%)*
 
 ---
 
 ## What Each Score Means
 
-### Discovery (2/10) - "Do I feel excited to explore?"
+### Discovery (3/10) - "Do I feel excited to explore?"
 **Current Strengths:**
 - Boss encounters with guaranteed legendary loot ✅
 - 4-tier loot quality system (Common → Legendary) ✅
 - Manual level design with special rooms ✅
+- Item identification system for potions ✅
+- 19 potion types (11 new in v3.10) ✅
+
+**Recently Completed (v3.10):**
+- ✅ Item Identification System (partial - potions only)
+- ✅ Expanded Potion Variety (8 → 19 types)
 
 **Missing Critical Elements:**
-- ❌ No item identification ("What does this blue potion do?")
+- ⚠️ Limited identification (potions only, need scrolls/wands/rings)
 - ❌ No vaults (special treasure rooms with challenges)
 - ❌ No secret doors (hidden passages)
 - ❌ No unique artifacts (chase items like Excalibur)
-- ❌ Limited scroll/potion variety (8 scrolls, need 20+)
+- ⚠️ Limited scroll variety (8 types, need 15+)
 
 **To reach 10/10:**
-- Add Item Identification System (+3)
+- Expand Identification to Scrolls/Wands (+2)
 - Add Vaults & Secret Doors (+2)
-- Expand Scroll/Potion Variety (+2)
-- Add Unique Artifacts (+1)
+- Expand Scroll Variety (+1)
+- Add Unique Artifacts (+2)
 
 ---
 
-### Resource Management (3/10) - "Do resources feel precious?"
+### Resource Management (4/10) - "Do resources feel precious?"
 **Current Strengths:**
 - Healing potions are limited ✅
 - Scrolls are consumable ✅
 - Equipment has weight limits ✅
+- 19 potion types create strategic choices ✅
+
+**Recently Completed (v3.10):**
+- ✅ Expanded consumable variety (potions: 8 → 19)
 
 **Missing Critical Elements:**
 - ❌ No wand charges (reusable magic missing)
-- ❌ No identify scroll economy (identification is free)
+- ⚠️ No identify scroll economy yet (potions auto-ID on use)
 - ❌ No ring/amulet slot competition
 - ❌ No blessing/cursing resources
 - ❌ No anti-grinding measures (can rest forever)
@@ -96,13 +107,18 @@
 
 ---
 
-### Emergent Gameplay (4/10) - "Can I create creative solutions?"
+### Emergent Gameplay (5/10) - "Can I create creative solutions?"
 **Current Strengths:**
 - Teleport scroll for positioning ✅
 - Invisibility for stealth ✅
 - Raise dead for allies ✅
 - Dragon fart for area denial ✅
 - Equipment swapping mid-combat ✅
+- 10 status effect types for tactical play ✅
+
+**Recently Completed (v3.10):**
+- ✅ Status Effect Expansion (invisibility → 10 types)
+- ✅ Buff/Debuff Potions (speed, heroism, weakness, blindness, etc.)
 
 **Missing Critical Elements:**
 - ❌ No throwing system (can't throw potions at enemies)
@@ -284,7 +300,42 @@ Features:
 
 ## Version History
 
-### v3.9.0 (Current - October 2025)
+### v3.10.0 (Current - October 2025)
+**Overall: 38/64 (59%)** ⬆️ +3 from v3.9.0
+
+Completed:
+- Item Identification System (potions) ✅
+- Potion Variety Expansion (19 types) ✅
+- 10 New Status Effects ✅
+- Combat Integration (buffs/debuffs) ✅
+- Auto-Explore Bug Fixes ✅
+- 12 Critical Bug Fixes ✅
+
+Depth Scores:
+- Discovery: 2/10 → 3/10 (+1) ✅
+- Resource Management: 3/10 → 4/10 (+1) ✅
+- Build Diversity: 5/10 (unchanged)
+- Emergent Gameplay: 4/10 → 5/10 (+1) ✅
+- Memorable Moments: 6/10 (unchanged)
+- Combat System: 8/10 (unchanged)
+- Progression: 7/10 (unchanged)
+
+**New Potions Added:**
+- Speed, Regeneration, Invisibility, Levitation
+- Protection, Heroism, Experience
+- Weakness, Slowness, Blindness, Paralysis
+
+**Bug Fixes:**
+- Auto-explore pathfinding (IndexError fixes)
+- Auto-explore stops on corpses
+- Auto-explore stops on visible items
+- Item identification consistency
+- Equipment names with underscores
+- Tooltip alignment issues (3 separate bugs)
+- Monster equipment drops
+- Startup crashes
+
+### v3.9.0 (October 2025)
 **Overall: 35/64 (55%)**
 
 Completed:
@@ -317,28 +368,28 @@ After completing each feature, update:
 
 ---
 
-## Next Update: Item Identification System
+## Next Update: Scroll Identification + Variety
 
 **Expected Impact:**
-- Discovery: 2 → 5 (+3)
-- Resource Management: 3 → 4 (+1)
+- Discovery: 3 → 5 (+2)
+- Resource Management: 4 → 5 (+1)
 - Build Diversity: 5 → 6 (+1)
-- Overall: 35/64 → 41/64 (64%)
+- Overall: 38/64 → 44/64 (69%)
 
 **Why These Changes:**
-- Discovery gets major boost from "What does this do?" moments
-- Resource Management improves from identify scroll economy
-- Build Diversity improves from strategic identification choices (identify rings vs potions)
+- Discovery: Add identification to scrolls (currently only potions)
+- Discovery: Expand scroll variety (8 → 15+ types)
+- Resource Management: Identify scrolls become valuable resource
+- Build Diversity: More tactical options with scroll variety
+
+**Remaining Work:**
+- Expand scroll catalog (8 → 15 types)
+- Add scroll identification system (like potions)
+- Add identify scroll as meta-item
+- Integrate with difficulty settings
 
 **Configuration:**
-- **Master Toggle:** Can completely disable ID system (accessibility)
-- **Difficulty Integration:** Easy=80% pre-ID, Medium=40%, Hard=5%
-- **Meta-Progression:** Common items auto-ID after first win
-
-**Validation Method:**
-- Playtest 10+ runs across all difficulty levels
-- Track player feedback quotes by difficulty
-- Measure "identification moment" frequency
-- Compare Easy mode accessibility vs Hard mode challenge
-- Monitor toggle usage (how many disable ID completely?)
+- Use existing master toggle (works for scrolls too)
+- Use existing difficulty integration
+- Meta-progression for veterans
 
