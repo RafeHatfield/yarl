@@ -128,11 +128,12 @@ def throw_item(
     )
     
     # Check what we hit at final position
+    from components.component_registry import ComponentType
     target_entity = None
     for entity in entities:
         if entity.x == final_x and entity.y == final_y and entity != thrower:
             # Check if entity is a valid target (has fighter component = can be hit)
-            if hasattr(entity, 'fighter') and entity.fighter:
+            if entity.components.has(ComponentType.FIGHTER):
                 target_entity = entity
                 break
     
@@ -143,7 +144,7 @@ def throw_item(
             item, thrower, target_entity, final_x, final_y, 
             entities, game_map, fov_map
         ))
-    elif hasattr(item, 'item') and hasattr(item.item, 'equipment'):
+    elif hasattr(item, 'item') and item.item and hasattr(item.item, 'equipment'):
         # It's a weapon - deal damage and drop at final position
         weapon_results = _throw_weapon(item, thrower, target_entity, final_x, final_y)
         results.extend(weapon_results)
