@@ -746,6 +746,49 @@ spells:
     duration: 8  # Turns enraged
     range: 8  # Targeting range
 
+  # NEW SCROLLS (v3.11.0+)
+  
+  # Haste scroll - grants increased movement speed
+  haste_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 200, 0]  # Golden yellow
+    duration: 30  # Turns of haste
+  
+  # Blink scroll - short-range tactical teleport
+  blink_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [150, 150, 255]  # Light blue
+    maximum_range: 5  # Max blink distance
+  
+  # Light scroll - reveals all tiles in FOV
+  light_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 255, 200]  # Bright yellow-white
+  
+  # Magic Mapping scroll - reveals entire dungeon level
+  magic_mapping_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [200, 200, 255]  # Light purple
+  
+  # Earthquake scroll - AOE damage to all creatures
+  earthquake_scroll:
+    spell_type: "damage"
+    char: "~"
+    color: [139, 69, 19]  # Brown
+    damage: 20  # Base damage (3d6 in spell def)
+    radius: 3  # AOE radius
+  
+  # Identify scroll - grants temporary identification powers
+  identify_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 215, 0]  # Gold
+    duration: 10  # Turns of identify mode
+
 # ═══════════════════════════════════════════════════════════
 # WANDS - Multi-charge reusable magic items
 # ═══════════════════════════════════════════════════════════
