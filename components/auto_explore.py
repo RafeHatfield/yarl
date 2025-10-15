@@ -289,8 +289,10 @@ class AutoExplore:
             
             # Check if in FOV
             if map_is_in_fov(fov_map, entity.x, entity.y):
-                # Check if hostile (has fighter component = can be attacked)
-                if entity.components.has(ComponentType.FIGHTER):
+                # Check if hostile (has fighter component AND is alive)
+                fighter = entity.get_component_optional(ComponentType.FIGHTER)
+                if fighter and fighter.hp > 0:
+                    # Living, hostile monster found
                     return entity
         
         return None
@@ -667,10 +669,17 @@ class AutoExplore:
         import numpy as np
         cost_array = np.array(cost, dtype=np.int8).T  # Transpose for tcod
         
+        # Bounds check for player position (prevent IndexError)
+        start_x, start_y = self.owner.x, self.owner.y
+        if start_x < 0 or start_x >= game_map.width or start_y < 0 or start_y >= game_map.height:
+            logger.error(f"Player position ({start_x}, {start_y}) out of map bounds "
+                        f"({game_map.width}x{game_map.height})")
+            return []  # Cannot pathfind from invalid position
+        
         # Create graph and pathfinder (modern tcod API)
         graph = tcod.path.SimpleGraph(cost=cost_array, cardinal=2, diagonal=3)
         pathfinder = tcod.path.Pathfinder(graph)
-        pathfinder.add_root((self.owner.x, self.owner.y))
+        pathfinder.add_root((start_x, start_y))
         
         # Find path
         path = pathfinder.path_to((target[0], target[1]))
