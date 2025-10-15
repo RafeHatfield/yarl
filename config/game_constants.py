@@ -209,6 +209,14 @@ class ItemSpawnConfig:
     GLUE_SCROLL_SPAWN: list = None  # [[12, 5]] - zoning/control spell
     RAGE_SCROLL_SPAWN: list = None  # [[10, 6]] - chaos spell
     
+    # New scrolls (v3.11.0+)
+    HASTE_SCROLL_SPAWN: list = None  # [[15, 3]] - buff scroll, common
+    BLINK_SCROLL_SPAWN: list = None  # [[12, 4]] - tactical teleport
+    LIGHT_SCROLL_SPAWN: list = None  # [[20, 1]] - utility, very common
+    MAGIC_MAPPING_SCROLL_SPAWN: list = None  # [[8, 5]] - powerful utility
+    EARTHQUAKE_SCROLL_SPAWN: list = None  # [[10, 7]] - high-level offensive
+    IDENTIFY_SCROLL_SPAWN: list = None  # [[18, 2]] - important utility
+    
     def __post_init__(self):
         """Initialize list values after dataclass creation."""
         if self.SWORD_SPAWN is None:
@@ -255,6 +263,20 @@ class ItemSpawnConfig:
             self.GLUE_SCROLL_SPAWN = [[12, 5]]
         if self.RAGE_SCROLL_SPAWN is None:
             self.RAGE_SCROLL_SPAWN = [[10, 6]]
+        
+        # Initialize new scroll spawn rates (v3.11.0+)
+        if self.HASTE_SCROLL_SPAWN is None:
+            self.HASTE_SCROLL_SPAWN = [[15, 3]]
+        if self.BLINK_SCROLL_SPAWN is None:
+            self.BLINK_SCROLL_SPAWN = [[12, 4]]
+        if self.LIGHT_SCROLL_SPAWN is None:
+            self.LIGHT_SCROLL_SPAWN = [[20, 1]]  # Very common utility
+        if self.MAGIC_MAPPING_SCROLL_SPAWN is None:
+            self.MAGIC_MAPPING_SCROLL_SPAWN = [[8, 5]]
+        if self.EARTHQUAKE_SCROLL_SPAWN is None:
+            self.EARTHQUAKE_SCROLL_SPAWN = [[10, 7]]
+        if self.IDENTIFY_SCROLL_SPAWN is None:
+            self.IDENTIFY_SCROLL_SPAWN = [[18, 2]]  # Important for item ID
         
         # Initialize new potion spawn rates
         if self.SPEED_POTION_SPAWN is None:
@@ -333,6 +355,13 @@ class ItemSpawnConfig:
             "slow_scroll": self.SLOW_SCROLL_SPAWN,
             "glue_scroll": self.GLUE_SCROLL_SPAWN,
             "rage_scroll": self.RAGE_SCROLL_SPAWN,
+            # New scrolls (v3.11.0+)
+            "haste_scroll": self.HASTE_SCROLL_SPAWN,
+            "blink_scroll": self.BLINK_SCROLL_SPAWN,
+            "light_scroll": self.LIGHT_SCROLL_SPAWN,
+            "magic_mapping_scroll": self.MAGIC_MAPPING_SCROLL_SPAWN,
+            "earthquake_scroll": self.EARTHQUAKE_SCROLL_SPAWN,
+            "identify_scroll": self.IDENTIFY_SCROLL_SPAWN,
         }
 
 
