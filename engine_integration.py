@@ -288,15 +288,16 @@ def _should_exit_game(action, mouse_action, current_state):
         if current_state in (
             GameStates.SHOW_INVENTORY,
             GameStates.DROP_INVENTORY,
+            GameStates.THROW_SELECT_ITEM,
             GameStates.CHARACTER_SCREEN,
             GameStates.LEVEL_UP,
         ):
             # Exit menu, don't exit game
             logger.debug(f"Exit from menu state {current_state} - closing menu, not exiting game")
             return False
-        elif current_state == GameStates.TARGETING:
+        elif current_state in (GameStates.TARGETING, GameStates.THROW_TARGETING):
             # Exit targeting mode
-            logger.debug("Exit from targeting - closing targeting, not exiting game")
+            logger.debug("Exit from targeting/throw targeting - closing targeting, not exiting game")
             return False
         else:
             # Exit game

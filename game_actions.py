@@ -951,6 +951,51 @@ class ActionProcessor:
                         target_x=target_x,
                         target_y=target_y
                     )
+        
+        elif current_state == GameStates.THROW_TARGETING:
+            # Handle throw targeting click
+            target_x, target_y = click_pos
+            targeting_item = self.state_manager.state.targeting_item
+            
+            if targeting_item:
+                player = self.state_manager.state.player
+                if player and player.inventory:
+                    # Remove item from inventory
+                    player.inventory.remove_item(targeting_item)
+                    
+                    # Execute throw
+                    from throwing import throw_item
+                    throw_results = throw_item(
+                        thrower=player,
+                        item=targeting_item,
+                        target_x=target_x,
+                        target_y=target_y,
+                        entities=self.state_manager.state.entities,
+                        game_map=self.state_manager.state.game_map,
+                        fov_map=self.state_manager.state.fov_map
+                    )
+                    
+                    # Process results
+                    player_died = False
+                    for result in throw_results:
+                        message = result.get("message")
+                        if message:
+                            self.state_manager.state.message_log.add_message(message)
+                        
+                        dead_entity = result.get("dead")
+                        if dead_entity:
+                            self._handle_entity_death(dead_entity, remove_from_entities=False)
+                            if dead_entity == player:
+                                player_died = True
+                    
+                    # Clear targeting state
+                    self.state_manager.state.targeting_item = None
+                    
+                    # TURN ECONOMY: Throwing takes 1 turn
+                    if not player_died:
+                        self._process_player_status_effects()
+                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                    return
                     
                     player_died = False
                     for result in item_use_results:
@@ -1273,8 +1318,11 @@ class ActionProcessor:
             for entity in entities:
                 if entity.x == world_x and entity.y == world_y:
                     if entity.components.has(ComponentType.FIGHTER) and entity != player:
-                        target_enemy = entity
-                        break
+                        # Only target LIVING enemies (hp > 0)
+                        fighter = entity.components.get(ComponentType.FIGHTER)
+                        if fighter and fighter.hp > 0:
+                            target_enemy = entity
+                            break
             
             if target_enemy:
                 # Right-click on enemy → throw item shortcut!
