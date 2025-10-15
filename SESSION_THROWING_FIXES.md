@@ -9,7 +9,33 @@
 
 ## 🐛 Bugs Fixed
 
-### **1. Input System Missing Throw Handlers** ✅
+### **1. Thrown Potions Heal Wrong Target** ✅
+**Problem:** Throwing healing potion at orc healed the player instead of the orc  
+**Root Cause:** `potion.item.owner` was still set to player (from being in inventory)  
+**Fix:** Temporarily swap `potion.item.owner = target` before applying effect  
+**Result:** Thrown potions now affect whoever they hit! (Heal enemies if you throw healing potions at them!)
+
+### **2. Wrong Item Thrown from Menu** ✅
+**Problem:** Pressing 'b' in throw menu threw Leather Armor instead of Healing Potion  
+**Root Cause:** Inventory menu SORTS items alphabetically for display, but action handler used UNSORTED list!
+- Menu showed: a) Dagger, **b) Healing Potion**, c) Leather Armor
+- Player pressed 'b' (index 1)
+- Code got `unsorted_inventory[1]` = Leather Armor ❌
+
+**Fix:** Use same sorted order in action handler:
+```python
+sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+item = sorted_items[inventory_index]
+```
+**Result:** Menu selection now matches what's displayed!
+
+### **3. Auto-Explore Quote Error** ✅
+**Problem:** `AttributeError: type object 'EntityDialogue' has no attribute 'get_adventure_quote'`  
+**Root Cause:** Tried calling nonexistent method  
+**Fix:** Use return value from `auto_explore.start()` which already returns a quote  
+**Result:** Auto-explore shows adventure quotes correctly!
+
+### **4. Input System Missing Throw Handlers** ✅
 **Problem:** Keyboard selection (a, b, c) not working in throw menu  
 **Root Cause:** `InputSystem` missing handlers for `THROW_SELECT_ITEM` and `THROW_TARGETING` states  
 **Fix:** Added both states to `key_handlers` dict in `engine/systems/input_system.py`  
