@@ -142,10 +142,14 @@ def throw_item(
             entities, game_map, fov_map
         ))
     elif hasattr(item, 'item') and hasattr(item.item, 'equipment'):
-        # It's a weapon - deal damage
-        results.extend(_throw_weapon(
-            item, thrower, target_entity, final_x, final_y
-        ))
+        # It's a weapon - deal damage and drop at final position
+        weapon_results = _throw_weapon(item, thrower, target_entity, final_x, final_y)
+        results.extend(weapon_results)
+        
+        # Add weapon back to entities list so it can be picked up
+        item.x = final_x
+        item.y = final_y
+        entities.append(item)
     else:
         # Generic throwable (e.g., wand, ring, misc item)
         item.x = final_x
@@ -286,12 +290,8 @@ def _throw_weapon(
     weapon.x = final_x
     weapon.y = final_y
     
-    # Make sure weapon is in entities list so it can be seen/picked up
-    # (it was removed from inventory, need to add back to world)
-    from state_manager import get_state_manager
-    state_manager = get_state_manager()
-    if state_manager and state_manager.state.entities is not None:
-        state_manager.state.entities.append(weapon)
+    # Note: Weapon will be added back to entities list by throw_item() caller
+    # (game_actions.py already has access to entities list)
     
     return results
 
