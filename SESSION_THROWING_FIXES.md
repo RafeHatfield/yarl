@@ -10,14 +10,18 @@
 ## 🐛 Bugs Fixed
 
 ### **1. Thrown Weapons Not Hitting Targets** ✅
-**Problem:** Throwing dagger at enemy, it just "landed at a spot" instead of hitting  
-**Root Cause:** Target detection using OLD attribute system (`hasattr(entity, 'fighter')`) instead of new ComponentRegistry  
-**Fix:** Use modern component system:
-```python
-if entity.components.has(ComponentType.FIGHTER):
-    target_entity = entity
-```
-**Result:** Thrown weapons now properly detect and hit enemies!
+**Problem:** Throwing dagger at enemy, message just says "lands at a spot", no damage dealt  
+**Root Cause:** **Multiple issues** with old attribute system instead of ComponentRegistry:
+1. Weapon detection: `hasattr(item.item, 'equipment')` ❌ → Should be `item.components.has(ComponentType.EQUIPPABLE)` ✅
+2. Target detection: `hasattr(entity, 'fighter')` ❌ → Should be `entity.components.has(ComponentType.FIGHTER)` ✅
+3. Damage access: `weapon.item.equipment` ❌ → Should be `weapon.components.get(ComponentType.EQUIPPABLE)` ✅
+4. Fighter access: `target.fighter` ❌ → Should be `target.components.get(ComponentType.FIGHTER)` ✅
+
+**Fix:** Migrate all throwing code to use modern ComponentRegistry
+**Result:** Thrown weapons now properly detect targets, deal damage, and show correct messages!
+- Hit: "The Dagger hits Orc for 5 damage!"
+- Kill: "Orc is killed by the thrown Dagger!"
+- Miss: "The Dagger clatters to the ground."
 
 ### **2. Thrown Potions Heal Wrong Target** ✅
 **Problem:** Throwing healing potion at orc healed the player instead of the orc  
