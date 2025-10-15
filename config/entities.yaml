@@ -869,3 +869,121 @@ wands:
     color: [255, 100, 100]  # Bright red (wand)
     duration: 8
     range: 8
+
+# ═══════════════════════════════════════════════════════════
+# RINGS - Passive effect jewelry
+# ═══════════════════════════════════════════════════════════
+# Rings provide continuous bonuses while equipped in left or right ring slots.
+# All rings start unidentified and must be identified to reveal their effects.
+# Players can wear 2 rings simultaneously.
+
+rings:
+  # ──────────────────────────────────────────────────────────
+  # DEFENSIVE RINGS - Protection and survival
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_protection:
+    char: "="
+    color: [180, 180, 180]  # Silver
+    ring_effect: "protection"
+    effect_strength: 2  # +2 AC
+  
+  ring_of_regeneration:
+    char: "="
+    color: [100, 255, 100]  # Bright green
+    ring_effect: "regeneration"
+    effect_strength: 5  # Heal 1 HP every 5 turns
+  
+  ring_of_resistance:
+    char: "="
+    color: [200, 150, 255]  # Purple
+    ring_effect: "resistance"
+    effect_strength: 10  # +10% all resistances
+  
+  # ──────────────────────────────────────────────────────────
+  # OFFENSIVE RINGS - Combat bonuses
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_strength:
+    char: "="
+    color: [255, 100, 100]  # Red
+    ring_effect: "strength"
+    effect_strength: 2  # +2 STR
+  
+  ring_of_dexterity:
+    char: "="
+    color: [100, 200, 255]  # Light blue
+    ring_effect: "dexterity"
+    effect_strength: 2  # +2 DEX
+  
+  ring_of_might:
+    char: "="
+    color: [255, 150, 0]  # Orange
+    ring_effect: "might"
+    effect_strength: 4  # +1d4 damage
+  
+  # ──────────────────────────────────────────────────────────
+  # UTILITY RINGS - Special abilities
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_teleportation:
+    char: "="
+    color: [255, 255, 100]  # Yellow
+    ring_effect: "teleportation"
+    effect_strength: 20  # 20% chance on hit
+  
+  ring_of_invisibility:
+    char: "="
+    color: [150, 150, 200]  # Faint blue
+    ring_effect: "invisibility"
+    effect_strength: 5  # 5 turns invisible per level
+  
+  ring_of_searching:
+    char: "="
+    color: [255, 215, 0]  # Gold
+    ring_effect: "searching"
+    effect_strength: 3  # 3 tile radius
+  
+  ring_of_free_action:
+    char: "="
+    color: [200, 255, 200]  # Light green
+    ring_effect: "free_action"
+    effect_strength: 1  # Immune to paralysis/slow
+  
+  # ──────────────────────────────────────────────────────────
+  # MAGIC RINGS - Spell enhancement
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_wizardry:
+    char: "="
+    color: [150, 100, 255]  # Deep purple
+    ring_effect: "wizardry"
+    effect_strength: 1  # +1 to spell effects
+  
+  ring_of_clarity:
+    char: "="
+    color: [200, 200, 255]  # Pale blue
+    ring_effect: "clarity"
+    effect_strength: 1  # Immune to confusion
+  
+  ring_of_speed:
+    char: "="
+    color: [255, 255, 255]  # White/bright
+    ring_effect: "speed"
+    effect_strength: 10  # +10% speed
+  
+  # ──────────────────────────────────────────────────────────
+  # SPECIAL RINGS - Unique effects
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_constitution:
+    char: "="
+    color: [100, 255, 200]  # Cyan
+    ring_effect: "constitution"
+    effect_strength: 2  # +2 CON (+20 max HP)
+  
+  ring_of_luck:
+    char: "="
+    color: [255, 215, 180]  # Rose gold
+    ring_effect: "luck"
+    effect_strength: 5  # +5% crit chance, better loot

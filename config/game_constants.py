@@ -217,6 +217,31 @@ class ItemSpawnConfig:
     EARTHQUAKE_SCROLL_SPAWN: list = None  # [[10, 7]] - high-level offensive
     IDENTIFY_SCROLL_SPAWN: list = None  # [[18, 2]] - important utility
     
+    # Ring spawn rates (format: [[chance%, min_level], ...])
+    # Rings are rare, powerful items that provide passive bonuses
+    # Common rings (Level 3-4)
+    RING_OF_REGENERATION_SPAWN: list = None  # [[8, 3]] - useful survival ring
+    RING_OF_CLARITY_SPAWN: list = None  # [[8, 3]] - anti-confusion
+    RING_OF_SEARCHING_SPAWN: list = None  # [[7, 4]] - utility ring
+    
+    # Uncommon rings (Level 5-6)
+    RING_OF_PROTECTION_SPAWN: list = None  # [[10, 5]] - popular defensive ring
+    RING_OF_STRENGTH_SPAWN: list = None  # [[8, 5]] - combat stat boost
+    RING_OF_DEXTERITY_SPAWN: list = None  # [[8, 5]] - combat stat boost
+    RING_OF_SPEED_SPAWN: list = None  # [[6, 6]] - powerful utility
+    
+    # Rare rings (Level 7-8)
+    RING_OF_CONSTITUTION_SPAWN: list = None  # [[8, 7]] - major HP boost
+    RING_OF_MIGHT_SPAWN: list = None  # [[7, 7]] - damage boost
+    RING_OF_FREE_ACTION_SPAWN: list = None  # [[6, 7]] - paralysis immunity
+    RING_OF_RESISTANCE_SPAWN: list = None  # [[6, 8]] - all-around defense
+    
+    # Very rare rings (Level 9+)
+    RING_OF_WIZARDRY_SPAWN: list = None  # [[5, 9]] - spell power boost
+    RING_OF_TELEPORTATION_SPAWN: list = None  # [[4, 9]] - emergency escape
+    RING_OF_INVISIBILITY_SPAWN: list = None  # [[4, 10]] - stealth power
+    RING_OF_LUCK_SPAWN: list = None  # [[5, 9]] - crit chance + loot
+    
     def __post_init__(self):
         """Initialize list values after dataclass creation."""
         if self.SWORD_SPAWN is None:
@@ -301,6 +326,38 @@ class ItemSpawnConfig:
             self.PARALYSIS_POTION_SPAWN = [[2, 6]]
         if self.EXPERIENCE_POTION_SPAWN is None:
             self.EXPERIENCE_POTION_SPAWN = [[1, 8]]
+        
+        # Initialize ring spawn rates
+        if self.RING_OF_REGENERATION_SPAWN is None:
+            self.RING_OF_REGENERATION_SPAWN = [[8, 3]]
+        if self.RING_OF_CLARITY_SPAWN is None:
+            self.RING_OF_CLARITY_SPAWN = [[8, 3]]
+        if self.RING_OF_SEARCHING_SPAWN is None:
+            self.RING_OF_SEARCHING_SPAWN = [[7, 4]]
+        if self.RING_OF_PROTECTION_SPAWN is None:
+            self.RING_OF_PROTECTION_SPAWN = [[10, 5]]
+        if self.RING_OF_STRENGTH_SPAWN is None:
+            self.RING_OF_STRENGTH_SPAWN = [[8, 5]]
+        if self.RING_OF_DEXTERITY_SPAWN is None:
+            self.RING_OF_DEXTERITY_SPAWN = [[8, 5]]
+        if self.RING_OF_SPEED_SPAWN is None:
+            self.RING_OF_SPEED_SPAWN = [[6, 6]]
+        if self.RING_OF_CONSTITUTION_SPAWN is None:
+            self.RING_OF_CONSTITUTION_SPAWN = [[8, 7]]
+        if self.RING_OF_MIGHT_SPAWN is None:
+            self.RING_OF_MIGHT_SPAWN = [[7, 7]]
+        if self.RING_OF_FREE_ACTION_SPAWN is None:
+            self.RING_OF_FREE_ACTION_SPAWN = [[6, 7]]
+        if self.RING_OF_RESISTANCE_SPAWN is None:
+            self.RING_OF_RESISTANCE_SPAWN = [[6, 8]]
+        if self.RING_OF_WIZARDRY_SPAWN is None:
+            self.RING_OF_WIZARDRY_SPAWN = [[5, 9]]
+        if self.RING_OF_TELEPORTATION_SPAWN is None:
+            self.RING_OF_TELEPORTATION_SPAWN = [[4, 9]]
+        if self.RING_OF_INVISIBILITY_SPAWN is None:
+            self.RING_OF_INVISIBILITY_SPAWN = [[4, 10]]
+        if self.RING_OF_LUCK_SPAWN is None:
+            self.RING_OF_LUCK_SPAWN = [[5, 9]]
     
     def get_item_spawn_chances(self, dungeon_level: int) -> dict:
         """Get item spawn chances for normal gameplay.
@@ -362,6 +419,22 @@ class ItemSpawnConfig:
             "magic_mapping_scroll": self.MAGIC_MAPPING_SCROLL_SPAWN,
             "earthquake_scroll": self.EARTHQUAKE_SCROLL_SPAWN,
             "identify_scroll": self.IDENTIFY_SCROLL_SPAWN,
+            # Rings (v3.12.0+)
+            "ring_of_protection": self.RING_OF_PROTECTION_SPAWN,
+            "ring_of_regeneration": self.RING_OF_REGENERATION_SPAWN,
+            "ring_of_resistance": self.RING_OF_RESISTANCE_SPAWN,
+            "ring_of_strength": self.RING_OF_STRENGTH_SPAWN,
+            "ring_of_dexterity": self.RING_OF_DEXTERITY_SPAWN,
+            "ring_of_might": self.RING_OF_MIGHT_SPAWN,
+            "ring_of_teleportation": self.RING_OF_TELEPORTATION_SPAWN,
+            "ring_of_invisibility": self.RING_OF_INVISIBILITY_SPAWN,
+            "ring_of_searching": self.RING_OF_SEARCHING_SPAWN,
+            "ring_of_free_action": self.RING_OF_FREE_ACTION_SPAWN,
+            "ring_of_wizardry": self.RING_OF_WIZARDRY_SPAWN,
+            "ring_of_clarity": self.RING_OF_CLARITY_SPAWN,
+            "ring_of_speed": self.RING_OF_SPEED_SPAWN,
+            "ring_of_constitution": self.RING_OF_CONSTITUTION_SPAWN,
+            "ring_of_luck": self.RING_OF_LUCK_SPAWN,
         }
 
 
