@@ -620,9 +620,52 @@ class ActionProcessor:
         elif current_state == GameStates.DROP_INVENTORY:
             self._drop_inventory_item(item)
         elif current_state == GameStates.THROW_SELECT_ITEM:
-            # Selected item to throw - enter throw targeting mode
+            # Selected item to throw - check if we have a pre-selected target from right-click
+            throw_target = self.state_manager.get_extra_data("throw_target")
             self.state_manager.state.targeting_item = item
-            self.state_manager.set_game_state(GameStates.THROW_TARGETING)
+            
+            if throw_target:
+                # Auto-throw at the pre-selected target (from right-click on enemy)
+                target_x, target_y = throw_target
+                
+                # Remove item from inventory (it's being thrown)
+                player.inventory.remove_item(item)
+                
+                # Execute throw
+                from throwing import throw_item
+                throw_results = throw_item(
+                    thrower=player,
+                    item=item,
+                    target_x=target_x,
+                    target_y=target_y,
+                    entities=self.state_manager.state.entities,
+                    game_map=self.state_manager.state.game_map,
+                    fov_map=self.state_manager.state.fov_map
+                )
+                
+                player_died = False
+                for result in throw_results:
+                    message = result.get("message")
+                    if message:
+                        self.state_manager.state.message_log.add_message(message)
+                    
+                    dead_entity = result.get("dead")
+                    if dead_entity:
+                        self._handle_entity_death(dead_entity, remove_from_entities=False)
+                        if dead_entity == player:
+                            player_died = True
+                
+                # Clear targeting state
+                self.state_manager.state.targeting_item = None
+                self.state_manager.set_extra_data("throw_target", None)
+                
+                # TURN ECONOMY: Throwing takes 1 turn
+                if not player_died:
+                    self._process_player_status_effects()
+                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            else:
+                # No pre-selected target - enter throw targeting mode
+                self.state_manager.set_game_state(GameStates.THROW_TARGETING)
         elif current_state == GameStates.PLAYERS_TURN:
             # Sidebar click during normal gameplay - use the item!
             logger.warning(f"Using item from sidebar during PLAYERS_TURN")
@@ -1215,6 +1258,26 @@ class ActionProcessor:
                 return
             
             world_x, world_y = click_pos
+            
+            # Check if there's an enemy at this location first (higher priority for throw shortcut)
+            target_enemy = None
+            for entity in entities:
+                if entity.x == world_x and entity.y == world_y:
+                    if entity.components.has(ComponentType.FIGHTER) and entity != player:
+                        target_enemy = entity
+                        break
+            
+            if target_enemy:
+                # Right-click on enemy → throw item shortcut!
+                if not player.inventory or not player.inventory.items:
+                    message_log.add_message(MB.warning("You have nothing to throw."))
+                    return
+                
+                # Enter throw item selection mode
+                self.state_manager.set_game_state(GameStates.THROW_SELECT_ITEM)
+                # Store the target for after item selection
+                self.state_manager.set_extra_data("throw_target", (world_x, world_y))
+                return
             
             # Check if there's an item at this location
             target_item = None
