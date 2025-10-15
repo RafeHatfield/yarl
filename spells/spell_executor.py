@@ -465,6 +465,12 @@ class SpellExecutor:
             return self._cast_status_effect_spell(spell, caster, entities, fov_map, target_x, target_y)
         elif spell.spell_id == "teleport":
             return self._cast_teleport_spell(spell, caster, entities, game_map, target_x, target_y)
+        elif spell.spell_id == "blink":
+            return self._cast_blink_spell(spell, caster, entities, game_map, fov_map, target_x, target_y)
+        elif spell.spell_id == "magic_mapping":
+            return self._cast_magic_mapping_spell(spell, caster, game_map)
+        elif spell.spell_id == "light":
+            return self._cast_light_spell(spell, caster, game_map, fov_map)
         
         return [
             {
