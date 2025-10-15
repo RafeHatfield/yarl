@@ -655,7 +655,7 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast a buff/enhancement spell.
         
-        Handles shield, invisibility, and equipment enhancements.
+        Handles shield, invisibility, identify mode, and equipment enhancements.
         """
         # Handle shield spell
         if spell.spell_id == "shield":
@@ -664,6 +664,10 @@ class SpellExecutor:
         # Handle invisibility
         elif spell.spell_id == "invisibility":
             return self._cast_invisibility_spell(spell, caster)
+        
+        # Handle identify mode
+        elif spell.spell_id == "identify":
+            return self._cast_identify_spell(spell, caster)
         
         # Handle equipment enhancements
         elif spell.spell_id == "enhance_weapon":
