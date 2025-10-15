@@ -46,4 +46,5 @@ class EffectType(Enum):
     TAUNT = auto()  # Forced targeting
     INVISIBLE = auto()
     FEAR = auto()  # Causes enemies to flee
+    IDENTIFY_MODE = auto()  # Can identify 1 item per turn
 

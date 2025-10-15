@@ -332,17 +332,18 @@ EARTHQUAKE = SpellDefinition(
     consumable=True
 )
 
-# Identify scroll will need special handling in spell_executor
-# for now, defined as SELF targeting with custom logic
+# Identify scroll - grants temporary ability to identify items
+# Player can identify 1 item per turn for the duration
 IDENTIFY = SpellDefinition(
     spell_id="identify",
     name="Identify",
-    category=SpellCategory.UTILITY,
+    category=SpellCategory.BUFF,
     targeting=TargetingType.SELF,
+    duration=10,  # 10 turns of identification power
     requires_los=False,
     requires_target=False,
-    success_message="✨ The item's true nature is revealed!",
-    fail_message="You have no unidentified items.",
+    success_message="✨ Your mind expands with knowledge! You can now identify items for 10 turns.",
+    effect_type=EffectType.IDENTIFY_MODE,
     consumable=True
 )
 
