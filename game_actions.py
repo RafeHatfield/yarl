@@ -1264,6 +1264,7 @@ class ActionProcessor:
                 return
             
             world_x, world_y = click_pos
+            print(f"DEBUG: Right-click at world ({world_x}, {world_y})")
             
             # Check if there's an enemy at this location first (higher priority for throw shortcut)
             target_enemy = None
@@ -1273,6 +1274,7 @@ class ActionProcessor:
                         target_enemy = entity
                         break
             
+            print(f"DEBUG: target_enemy = {target_enemy}")
             if target_enemy:
                 # Right-click on enemy → throw item shortcut!
                 if not player.inventory or not player.inventory.items:
@@ -1293,6 +1295,7 @@ class ActionProcessor:
                         target_item = entity
                         break
             
+            print(f"DEBUG: target_item = {target_item}")
             if target_item:
                 # Right-click on item → pathfind and auto-pickup!
                 distance = player.distance_to(target_item)
@@ -1338,7 +1341,9 @@ class ActionProcessor:
             else:
                 # No item or enemy at location - start auto-explore!
                 # This gives full mouse control - right-click anywhere to explore
+                print("DEBUG: No item/enemy found, checking auto-explore...")
                 auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                print(f"DEBUG: auto_explore = {auto_explore}, is_active = {auto_explore.is_active() if auto_explore else 'N/A'}")
                 
                 if auto_explore and auto_explore.is_active():
                     # Already exploring - cancel it
