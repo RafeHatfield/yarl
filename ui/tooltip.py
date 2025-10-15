@@ -517,11 +517,20 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
                 equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
                 if equipment:
                     if equipment.main_hand:
-                        tooltip_lines.append(f"  Wielding: {equipment.main_hand.name}")
+                        weapon_name = (equipment.main_hand.get_display_name() 
+                                     if hasattr(equipment.main_hand, 'get_display_name') 
+                                     else equipment.main_hand.name.replace('_', ' ').title())
+                        tooltip_lines.append(f"  Wielding: {weapon_name}")
                     if equipment.off_hand:
-                        tooltip_lines.append(f"  Wearing: {equipment.off_hand.name}")
+                        armor_name = (equipment.off_hand.get_display_name() 
+                                    if hasattr(equipment.off_hand, 'get_display_name') 
+                                    else equipment.off_hand.name.replace('_', ' ').title())
+                        tooltip_lines.append(f"  Wearing: {armor_name}")
                     elif equipment.chest:
-                        tooltip_lines.append(f"  Wearing: {equipment.chest.name}")
+                        armor_name = (equipment.chest.get_display_name() 
+                                    if hasattr(equipment.chest, 'get_display_name') 
+                                    else equipment.chest.name.replace('_', ' ').title())
+                        tooltip_lines.append(f"  Wearing: {armor_name}")
         
         # Show item information (abbreviated for multi-entity display)
         elif entity.components.has(ComponentType.WAND):
