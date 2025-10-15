@@ -94,6 +94,30 @@ POTION_ADJECTIVES = [
     "milky",
 ]
 
+# Ring materials inspired by NetHack and traditional roguelikes
+RING_MATERIALS = [
+    "wooden",
+    "iron",
+    "copper",
+    "bronze",
+    "brass",
+    "silver",
+    "gold",
+    "platinum",
+    "steel",
+    "obsidian",
+    "jade",
+    "pearl",
+    "opal",
+    "ruby",
+    "sapphire",
+    "emerald",
+    "diamond",
+    "moonstone",
+    "ivory",
+    "bone",
+]
+
 
 class AppearanceGenerator:
     """Generates and manages unidentified item appearances for a game session.
@@ -160,8 +184,16 @@ class AppearanceGenerator:
                 for item_type, appearance in zip(potion_types, appearances)
             }
         
-        # TODO: Add ring and wand appearances when those systems are implemented
-        # Rings: "wooden ring", "iron ring", "copper ring", etc.
+        # Generate ring appearances
+        if "ring" in item_types:
+            ring_types = item_types["ring"]
+            ring_materials = rng.sample(RING_MATERIALS, min(len(ring_types), len(RING_MATERIALS)))
+            self._ring_appearances = {
+                item_type: f"{material} ring"
+                for item_type, material in zip(ring_types, ring_materials)
+            }
+        
+        # TODO: Add wand appearances when those systems are implemented
         # Wands: "oak wand", "pine wand", "balsa wand", etc.
         
         self._initialized = True

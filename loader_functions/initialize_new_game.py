@@ -118,6 +118,19 @@ def get_game_variables(constants):
             'paralysis_potion',
             # Special potion
             'experience_potion'
+        ],
+        'ring': [
+            # Defensive rings
+            'ring_of_protection', 'ring_of_regeneration', 'ring_of_resistance',
+            # Offensive rings
+            'ring_of_strength', 'ring_of_dexterity', 'ring_of_might',
+            # Utility rings
+            'ring_of_teleportation', 'ring_of_invisibility', 'ring_of_searching',
+            'ring_of_free_action',
+            # Magic rings
+            'ring_of_wizardry', 'ring_of_clarity', 'ring_of_speed',
+            # Special rings
+            'ring_of_constitution', 'ring_of_luck'
         ]
     })
     
