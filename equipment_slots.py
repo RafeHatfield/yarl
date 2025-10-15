@@ -19,6 +19,9 @@ class EquipmentSlots(Enum):
         HEAD: Helmet/hat slot
         CHEST: Chest armor slot
         FEET: Boots/shoes slot
+        LEFT_RING: Left ring slot
+        RIGHT_RING: Right ring slot
+        RING: Generic ring slot (will auto-select left or right)
     """
 
     MAIN_HAND = 1
@@ -26,3 +29,6 @@ class EquipmentSlots(Enum):
     HEAD = 3
     CHEST = 4
     FEET = 5
+    LEFT_RING = 6
+    RIGHT_RING = 7
+    RING = 8  # Auto-selects left or right slot

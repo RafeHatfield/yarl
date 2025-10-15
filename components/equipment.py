@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Equipment:
     """Component that manages equipped items and their stat bonuses.
 
-    This component handles equipment slots (weapons, shields, armor) and
+    This component handles equipment slots (weapons, shields, armor, rings) and
     calculates the total stat bonuses provided by all equipped items.
     It supports equipping, unequipping, and replacing items.
 
@@ -24,11 +24,14 @@ class Equipment:
         head (Entity): Item equipped in the head slot (helmet)
         chest (Entity): Item equipped in the chest slot (armor)
         feet (Entity): Item equipped in the feet slot (boots)
+        left_ring (Entity): Item equipped in the left ring slot
+        right_ring (Entity): Item equipped in the right ring slot
         owner (Entity): The entity that owns this equipment component
     """
 
     def __init__(self, main_hand: Optional[Any] = None, off_hand: Optional[Any] = None, 
-                 head: Optional[Any] = None, chest: Optional[Any] = None, feet: Optional[Any] = None) -> None:
+                 head: Optional[Any] = None, chest: Optional[Any] = None, feet: Optional[Any] = None,
+                 left_ring: Optional[Any] = None, right_ring: Optional[Any] = None) -> None:
         """Initialize the Equipment component.
 
         Args:
@@ -37,12 +40,16 @@ class Equipment:
             head (Optional[Any], optional): Initial head equipment (Entity type)
             chest (Optional[Any], optional): Initial chest equipment (Entity type)
             feet (Optional[Any], optional): Initial feet equipment (Entity type)
+            left_ring (Optional[Any], optional): Initial left ring equipment (Entity type)
+            right_ring (Optional[Any], optional): Initial right ring equipment (Entity type)
         """
         self.main_hand: Optional[Any] = main_hand
         self.off_hand: Optional[Any] = off_hand
         self.head: Optional[Any] = head
         self.chest: Optional[Any] = chest
         self.feet: Optional[Any] = feet
+        self.left_ring: Optional[Any] = left_ring
+        self.right_ring: Optional[Any] = right_ring
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
 
     @property
@@ -54,7 +61,7 @@ class Equipment:
         """
         bonus = 0
 
-        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
+        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet, self.left_ring, self.right_ring]:
             if item and item.equippable:
                 item_bonus = item.equippable.max_hp_bonus
                 # Defensive: treat None as 0
@@ -72,7 +79,7 @@ class Equipment:
         """
         bonus = 0
 
-        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
+        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet, self.left_ring, self.right_ring]:
             if item and item.equippable:
                 item_bonus = item.equippable.power_bonus
                 # Defensive: treat None as 0
@@ -90,7 +97,7 @@ class Equipment:
         """
         bonus = 0
 
-        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet]:
+        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet, self.left_ring, self.right_ring]:
             if item and item.equippable:
                 item_bonus = item.equippable.defense_bonus
                 # Defensive: treat None as 0
@@ -125,12 +132,25 @@ class Equipment:
             EquipmentSlots.OFF_HAND: 'off_hand',
             EquipmentSlots.HEAD: 'head',
             EquipmentSlots.CHEST: 'chest',
-            EquipmentSlots.FEET: 'feet'
+            EquipmentSlots.FEET: 'feet',
+            EquipmentSlots.LEFT_RING: 'left_ring',
+            EquipmentSlots.RIGHT_RING: 'right_ring'
         }
 
         slot_attr = slot_map.get(slot)
         if not slot_attr:
             return results  # Unknown slot
+        
+        # Special handling for rings: if RING slot specified, choose left or right
+        if slot == EquipmentSlots.RING:
+            # Try left ring first, then right ring
+            if self.left_ring is None:
+                slot_attr = 'left_ring'
+            elif self.right_ring is None:
+                slot_attr = 'right_ring'
+            else:
+                # Both slots full, replace left ring
+                slot_attr = 'left_ring'
 
         current_item = getattr(self, slot_attr)
 
