@@ -561,14 +561,13 @@ class Fighter:
             target (Entity): Target being attacked
             weapon (Entity): Ranged weapon being used
         """
-        from tcod.line import bresenham
+        from tcod.los import bresenham
         from visual_effect_queue import get_effect_queue
         
         # Calculate arrow path using Bresenham's line algorithm
-        path = list(bresenham(
-            self.owner.x, self.owner.y,
-            target.x, target.y
-        ))
+        # bresenham returns numpy array of shape (length, 2), convert to list of tuples
+        path_array = bresenham((self.owner.x, self.owner.y), (target.x, target.y))
+        path = [(int(x), int(y)) for x, y in path_array]
         
         if not path:
             return  # No path to animate
