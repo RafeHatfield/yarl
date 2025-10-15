@@ -655,7 +655,7 @@ class SpellExecutor:
     ) -> List[Dict[str, Any]]:
         """Cast a buff/enhancement spell.
         
-        Handles shield, invisibility, identify mode, and equipment enhancements.
+        Handles shield, invisibility, haste, identify mode, and equipment enhancements.
         """
         # Handle shield spell
         if spell.spell_id == "shield":
@@ -664,6 +664,10 @@ class SpellExecutor:
         # Handle invisibility
         elif spell.spell_id == "invisibility":
             return self._cast_invisibility_spell(spell, caster)
+        
+        # Handle haste
+        elif spell.spell_id == "haste":
+            return self._cast_haste_spell(spell, caster)
         
         # Handle identify mode
         elif spell.spell_id == "identify":
@@ -773,6 +777,36 @@ class SpellExecutor:
         )
         
         effect_results = caster.status_effects.add_effect(identify_effect)
+        results.extend(effect_results)
+        results.append({"consumed": True})
+        
+        return results
+    
+    def _cast_haste_spell(
+        self,
+        spell: SpellDefinition,
+        caster
+    ) -> List[Dict[str, Any]]:
+        """Cast haste spell - grants increased movement speed.
+        
+        Uses SpeedEffect to double movement speed for the duration.
+        """
+        from components.status_effects import SpeedEffect, StatusEffectManager
+        
+        results = []
+        
+        # Ensure caster has status_effects component
+        if not caster.components.has(ComponentType.STATUS_EFFECTS):
+            caster.status_effects = StatusEffectManager(caster)
+            caster.components.add(ComponentType.STATUS_EFFECTS, caster.status_effects)
+        
+        # Create speed effect
+        speed_effect = SpeedEffect(
+            duration=spell.duration,  # 30 turns
+            owner=caster
+        )
+        
+        effect_results = caster.status_effects.add_effect(speed_effect)
         results.extend(effect_results)
         results.append({"consumed": True})
         
