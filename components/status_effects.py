@@ -489,6 +489,63 @@ class ParalysisEffect(StatusEffect):
         return results
 
 
+class IdentifyModeEffect(StatusEffect):
+    """Allows the owner to identify 1 item per turn for the duration.
+    
+    Used by the Identify scroll - grants temporary identification powers.
+    Player can identify 1 unidentified item per turn while this effect is active.
+    """
+    
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("identify_mode", duration, owner)
+        self.identifies_used_this_turn = 0
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply the identification buff."""
+        results = super().apply()
+        results.append({
+            'message': MB.status_effect(
+                f"✨ {self.owner.name}'s mind expands with knowledge! "
+                f"You can identify items for {self.duration} turns."
+            )
+        })
+        return results
+    
+    def can_identify_item(self) -> bool:
+        """Check if the owner can identify an item this turn.
+        
+        Returns:
+            bool: True if an identify action is available this turn
+        """
+        return self.identifies_used_this_turn < 1
+    
+    def use_identify(self) -> None:
+        """Mark that an identify action was used this turn."""
+        self.identifies_used_this_turn += 1
+    
+    def process_turn_start(self) -> List[Dict[str, Any]]:
+        """Reset identify counter at the start of each turn."""
+        results = super().process_turn_start()
+        self.identifies_used_this_turn = 0  # Reset for new turn
+        
+        if self.duration > 0:
+            results.append({
+                'message': MB.info(f"🔍 Identify Mode: {self.duration} turns remaining")
+            })
+        
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove the identification buff."""
+        results = super().remove()
+        results.append({
+            'message': MB.status_effect(
+                f"{self.owner.name}'s identification powers fade."
+            )
+        })
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):
