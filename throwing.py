@@ -10,7 +10,7 @@ Used by game_actions.py when player throws an item (press 't').
 """
 
 from typing import List, Dict, Any, Tuple
-import tcod
+from tcod.line import bresenham
 from message_builder import MessageBuilder as MB
 
 
@@ -41,7 +41,7 @@ def calculate_throw_path(
         >>> # Returns: [(5,5), (6,5), (7,5), (8,5), (9,5), (10,5)]
     """
     # Get line from start to target using Bresenham's algorithm
-    line = list(tcod.line.bresenham(start_x, start_y, target_x, target_y))
+    line = list(bresenham(start_x, start_y, target_x, target_y))
     
     # Limit to max range
     if len(line) > max_range:

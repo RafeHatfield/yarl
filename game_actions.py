@@ -1336,12 +1336,29 @@ class ActionProcessor:
                                 MB.warning("Cannot path to that location.")
                             )
             else:
-                # No item at location - cancel pathfinding if active
-                pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
-                if pathfinding and pathfinding.is_path_active():
-                    pathfinding.cancel_movement()
-                    if message_log:
-                        message_log.add_message(MB.warning("Movement cancelled."))
+                # No item or enemy at location - start auto-explore!
+                # This gives full mouse control - right-click anywhere to explore
+                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                
+                if auto_explore and auto_explore.is_active():
+                    # Already exploring - cancel it
+                    auto_explore.stop("Cancelled")
+                    message_log.add_message(MB.info("Auto-explore cancelled"))
+                else:
+                    # Start auto-explore
+                    if not auto_explore:
+                        from components.auto_explore import AutoExplore
+                        auto_explore = AutoExplore(player)
+                        player.components.register(ComponentType.AUTO_EXPLORE, auto_explore)
+                    
+                    # Start exploring
+                    auto_explore.start(game_map, entities, fov_map)
+                    
+                    # Show adventure quote
+                    from entity_dialogue import EntityDialogue
+                    adventure_quote = EntityDialogue.get_adventure_quote()
+                    message_log.add_message(MB.custom(f'"{adventure_quote}"', MB.CYAN))
+                    message_log.add_message(MB.info("Auto-exploring... (any key to cancel)"))
     
     def _process_player_status_effects(self) -> None:
         """Process status effects at the end of the player's turn."""
