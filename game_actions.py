@@ -179,7 +179,8 @@ class ActionProcessor:
         # Start exploring
         quote = auto_explore.start(
             self.state_manager.state.game_map,
-            self.state_manager.state.entities
+            self.state_manager.state.entities,
+            self.state_manager.state.fov_map
         )
         
         # Add messages

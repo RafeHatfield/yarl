@@ -93,8 +93,9 @@ class AutoExplore:
         self.stop_reason: Optional[str] = None
         self.last_hp: int = 0
         self.target_tile: Optional[Tuple[int, int]] = None
+        self.known_items: Set[int] = set()  # IDs of items visible when exploration started
     
-    def start(self, game_map: 'GameMap', entities: List['Entity']) -> str:
+    def start(self, game_map: 'GameMap', entities: List['Entity'], fov_map=None) -> str:
         """Begin auto-exploring the dungeon.
         
         Initializes exploration state and returns a random adventure quote
@@ -103,6 +104,7 @@ class AutoExplore:
         Args:
             game_map: Current dungeon level
             entities: All entities on the map
+            fov_map: Field-of-view map (optional, for tracking visible items)
             
         Returns:
             str: Random pithy adventure quote
@@ -116,12 +118,25 @@ class AutoExplore:
         self.current_room = None
         self.stop_reason = None
         self.target_tile = None
+        self.known_items = set()  # Reset known items
         
         # Store initial HP for damage detection
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
             self.last_hp = self.owner.fighter.hp
         else:
             self.last_hp = 0
+        
+        # Record items already visible (so we don't stop for them)
+        if fov_map:
+            from fov_functions import map_is_in_fov
+            from components.component_registry import ComponentType
+            
+            for entity in entities:
+                if entity.components.has(ComponentType.ITEM):
+                    if map_is_in_fov(fov_map, entity.x, entity.y):
+                        self.known_items.add(id(entity))
+            
+            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items in FOV")
         
         logger.info(f"Auto-explore started for {self.owner.name}")
         return random.choice(ADVENTURE_QUOTES)
@@ -302,6 +317,9 @@ class AutoExplore:
     ) -> Optional['Entity']:
         """Check if any valuable item is visible.
         
+        Only returns NEW items that weren't visible when auto-explore started.
+        This allows exploring past items already on the ground.
+        
         Valuable items: equipment, scrolls, potions, wands, rings
         Not valuable: corpses, gold (if we add it), junk
         
@@ -310,7 +328,7 @@ class AutoExplore:
             fov_map: Field-of-view map
             
         Returns:
-            Entity: First valuable item found, or None
+            Entity: First valuable NEW item found, or None
         """
         if not self.owner or not fov_map:
             return None
@@ -325,18 +343,32 @@ class AutoExplore:
             
             # Check if in FOV
             if map_is_in_fov(fov_map, entity.x, entity.y):
+                entity_id = id(entity)
+                
+                # Skip items we already knew about
+                if entity_id in self.known_items:
+                    continue
+                
                 # Check if valuable
+                is_valuable = False
+                
                 # Equipment: has equippable component
                 if entity.components.has(ComponentType.EQUIPPABLE):
-                    return entity
+                    is_valuable = True
                 
                 # Consumables: has item component with use_function
                 item_comp = entity.components.get(ComponentType.ITEM)
                 if item_comp and item_comp.use_function:
-                    return entity
+                    is_valuable = True
                 
                 # Wands: has wand component
                 if entity.components.has(ComponentType.WAND):
+                    is_valuable = True
+                
+                if is_valuable:
+                    # Found a new valuable item! Mark it as known and return it
+                    self.known_items.add(entity_id)
+                    logger.debug(f"New valuable item found: {entity.name}")
                     return entity
         
         return None
@@ -643,19 +675,19 @@ class AutoExplore:
         # Use A* pathfinding with hazard avoidance
         import tcod
         
-        # Create cost map
-        cost = [[0 for _ in range(game_map.height)] for _ in range(game_map.width)]
+        # Create cost map (tcod expects [y][x] indexing, shape: height x width)
+        cost = [[0 for _ in range(game_map.width)] for _ in range(game_map.height)]
         
         for x in range(game_map.width):
             for y in range(game_map.height):
                 # Blocked tiles are impassable
                 if game_map.tiles[x][y].blocked:
-                    cost[x][y] = 0
+                    cost[y][x] = 0
                 # Hazards are treated as impassable
                 elif game_map.hazard_manager.has_hazard_at(x, y):
-                    cost[x][y] = 0
+                    cost[y][x] = 0
                 else:
-                    cost[x][y] = 1
+                    cost[y][x] = 1
         
         # Entities block movement (except target tile)
         for entity in entities:
@@ -663,18 +695,31 @@ class AutoExplore:
                 ex, ey = entity.x, entity.y
                 if 0 <= ex < game_map.width and 0 <= ey < game_map.height:
                     if (ex, ey) != target:  # Allow moving to target even if entity there
-                        cost[ex][ey] = 0
+                        cost[ey][ex] = 0
         
-        # Convert to numpy array for tcod
+        # Convert to numpy array for tcod (no transpose - already in correct format)
         import numpy as np
-        cost_array = np.array(cost, dtype=np.int8).T  # Transpose for tcod
+        cost_array = np.array(cost, dtype=np.int8)
         
         # Bounds check for player position (prevent IndexError)
         start_x, start_y = self.owner.x, self.owner.y
+        
+        # Log dimensions for debugging
+        logger.debug(f"Map dimensions: {game_map.width}x{game_map.height}, "
+                    f"Player position: ({start_x}, {start_y}), "
+                    f"Target: {target}, "
+                    f"Cost array shape: {cost_array.shape}")
+        
         if start_x < 0 or start_x >= game_map.width or start_y < 0 or start_y >= game_map.height:
             logger.error(f"Player position ({start_x}, {start_y}) out of map bounds "
                         f"({game_map.width}x{game_map.height})")
             return []  # Cannot pathfind from invalid position
+        
+        # Double-check array bounds (cost_array shape is [height, width])
+        if start_y >= cost_array.shape[0] or start_x >= cost_array.shape[1]:
+            logger.error(f"Player position ({start_x}, {start_y}) out of cost_array bounds "
+                        f"(shape: {cost_array.shape} = [height, width])")
+            return []
         
         # Create graph and pathfinder (modern tcod API)
         graph = tcod.path.SimpleGraph(cost=cost_array, cardinal=2, diagonal=3)
