@@ -675,19 +675,20 @@ class AutoExplore:
         # Use A* pathfinding with hazard avoidance
         import tcod
         
-        # Create cost map (tcod expects [y][x] indexing, shape: height x width)
-        cost = [[0 for _ in range(game_map.width)] for _ in range(game_map.height)]
+        # Create cost map
+        # Note: We create as [x][y] then transpose to match tcod's (x, y) expectations
+        cost = [[0 for _ in range(game_map.height)] for _ in range(game_map.width)]
         
         for x in range(game_map.width):
             for y in range(game_map.height):
                 # Blocked tiles are impassable
                 if game_map.tiles[x][y].blocked:
-                    cost[y][x] = 0
+                    cost[x][y] = 0
                 # Hazards are treated as impassable
                 elif game_map.hazard_manager.has_hazard_at(x, y):
-                    cost[y][x] = 0
+                    cost[x][y] = 0
                 else:
-                    cost[y][x] = 1
+                    cost[x][y] = 1
         
         # Entities block movement (except target tile)
         for entity in entities:
@@ -695,11 +696,12 @@ class AutoExplore:
                 ex, ey = entity.x, entity.y
                 if 0 <= ex < game_map.width and 0 <= ey < game_map.height:
                     if (ex, ey) != target:  # Allow moving to target even if entity there
-                        cost[ey][ex] = 0
+                        cost[ex][ey] = 0
         
-        # Convert to numpy array for tcod (no transpose - already in correct format)
+        # Convert to numpy array for tcod
+        # IMPORTANT: Transpose from [x, y] to match tcod's internal indexing
         import numpy as np
-        cost_array = np.array(cost, dtype=np.int8)
+        cost_array = np.array(cost, dtype=np.int8).T
         
         # Bounds check for player position (prevent IndexError)
         start_x, start_y = self.owner.x, self.owner.y
@@ -708,18 +710,13 @@ class AutoExplore:
         logger.debug(f"Map dimensions: {game_map.width}x{game_map.height}, "
                     f"Player position: ({start_x}, {start_y}), "
                     f"Target: {target}, "
-                    f"Cost array shape: {cost_array.shape}")
+                    f"Cost array shape after transpose: {cost_array.shape}")
         
+        # Validate player position is within map bounds
         if start_x < 0 or start_x >= game_map.width or start_y < 0 or start_y >= game_map.height:
             logger.error(f"Player position ({start_x}, {start_y}) out of map bounds "
                         f"({game_map.width}x{game_map.height})")
             return []  # Cannot pathfind from invalid position
-        
-        # Double-check array bounds (cost_array shape is [height, width])
-        if start_y >= cost_array.shape[0] or start_x >= cost_array.shape[1]:
-            logger.error(f"Player position ({start_x}, {start_y}) out of cost_array bounds "
-                        f"(shape: {cost_array.shape} = [height, width])")
-            return []
         
         # Create graph and pathfinder (modern tcod API)
         graph = tcod.path.SimpleGraph(cost=cost_array, cardinal=2, diagonal=3)
