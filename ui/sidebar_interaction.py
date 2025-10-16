@@ -263,7 +263,7 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     y_cursor += 2  # Separator + spacing
     # Hotkeys section in sidebar.py:
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 6  # 6 hotkey lines (C, I, G, Z, <>, /)
+    y_cursor += 6  # 6 hotkey lines rendered (even though there are 7 in the list - see git history)
     y_cursor += 1  # Spacing after hotkeys
     # Equipment section in sidebar.py:
     y_cursor += 1  # "EQUIPMENT" header
