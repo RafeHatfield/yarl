@@ -157,6 +157,35 @@ class ActionProcessor:
         """Handle showing the character screen."""
         self.state_manager.set_game_state(GameStates.CHARACTER_SCREEN)
     
+    def _handle_exit(self, _) -> None:
+        """Handle exit action - close menus and return to previous state.
+        
+        This is called when ESC is pressed in menu states like:
+        - SHOW_INVENTORY
+        - DROP_INVENTORY
+        - THROW_SELECT_ITEM
+        - CHARACTER_SCREEN
+        - etc.
+        
+        Returns to PLAYERS_TURN state.
+        """
+        current_state = self.state_manager.state.current_state
+        
+        # Clear any targeting state data
+        if current_state == GameStates.THROW_SELECT_ITEM:
+            # Clear throw target if it was set
+            self.state_manager.set_extra_data("throw_target", None)
+        elif current_state == GameStates.THROW_TARGETING:
+            # Clear throw item if it was set
+            self.state_manager.set_extra_data("throw_item", None)
+            self.state_manager.set_extra_data("throw_target", None)
+        elif current_state == GameStates.TARGETING:
+            # Clear targeting item
+            self.state_manager.set_extra_data("targeting_item", None)
+        
+        # Return to player's turn
+        self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+    
     def _handle_throw_action(self, _) -> None:
         """Handle throw action - select item then target.
         
