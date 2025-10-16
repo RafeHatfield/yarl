@@ -1202,13 +1202,19 @@ class ActionProcessor:
             if not player.inventory or not hasattr(player.inventory, 'items'):
                 return
             
-            if inventory_index < 0 or inventory_index >= len(player.inventory.items):
+            # CRITICAL: Must use FULL sorted inventory, same as _handle_inventory_action!
+            # The sidebar_click handler returns an index into the FULL sorted inventory,
+            # NOT just the unequipped items (even though sidebar only displays unequipped).
+            sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+            
+            if inventory_index < 0 or inventory_index >= len(sorted_items):
                 message_log.add_message(
                     MB.warning(f"Invalid item selection.")
                 )
                 return
             
-            item = player.inventory.items[inventory_index]
+            # Get the correct item from the sorted list
+            item = sorted_items[inventory_index]
             
             # Drop the item!
             self._drop_inventory_item(item)

@@ -165,3 +165,60 @@ def test_sidebar_click_excludes_equipped_items():
     result = handle_sidebar_click(click_x, third_item_y, player, ui_layout)
     assert result is None, "No third item since Sword is equipped"
 
+
+def test_sidebar_right_click_drop_with_equipped_item():
+    """Test that right-clicking to drop correctly identifies items when some are equipped.
+    
+    Regression test for bug where right-clicking "Reinforced Tower Shield" would drop
+    "Blessed Shield" (which was equipped) instead.
+    
+    This happens when the click handler returns an index into the sorted/filtered inventory,
+    but the drop handler uses that index on the unsorted/unfiltered inventory.
+    """
+    # Create player with multiple shields
+    player = create_test_player_with_items([
+        'Blessed Shield',
+        'Reinforced Tower Shield', 
+        'Wooden Shield'
+    ])
+    ui_layout = UILayoutConfig()
+    
+    # Equip Blessed Shield
+    blessed_shield = player.inventory.items[0]
+    from components.equippable import Equippable
+    from equipment_slots import EquipmentSlots
+    blessed_shield.equippable = Equippable(slot=EquipmentSlots.OFF_HAND)
+    player.equipment.off_hand = blessed_shield
+    
+    # Now the inventory display should show (alphabetically, excluding equipped):
+    # a) Reinforced Tower Shield (index 0 in display)
+    # b) Wooden Shield (index 1 in display)
+    
+    # Click on "Reinforced Tower Shield" (first displayed item)
+    first_item_y = 25
+    click_x = 5
+    
+    result = handle_sidebar_click(click_x, first_item_y, player, ui_layout)
+    assert result is not None
+    
+    # The returned index should point into the FULL sorted inventory (including equipped)
+    # Full sorted inventory is: Blessed Shield, Reinforced Tower Shield, Wooden Shield
+    # So Reinforced Tower Shield should be at index 1
+    returned_index = result['inventory_index']
+    
+    # Now verify that this index, when used on the FULL sorted inventory, gives us the correct item
+    # This simulates what the drop handler should do:
+    sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+    
+    # The index should point to "Reinforced Tower Shield" not "Blessed Shield"
+    item_at_index = sorted_items[returned_index]
+    assert item_at_index.name == 'Reinforced Tower Shield', \
+        f"Index {returned_index} should refer to Reinforced Tower Shield, got {item_at_index.name}"
+    assert item_at_index != blessed_shield, \
+        "Should not drop equipped item when clicking on unequipped item"
+    
+    # Verify the full sorted inventory order for clarity
+    assert sorted_items[0].name == 'Blessed Shield', "First in full sorted list"
+    assert sorted_items[1].name == 'Reinforced Tower Shield', "Second in full sorted list"
+    assert sorted_items[2].name == 'Wooden Shield', "Third in full sorted list"
+
