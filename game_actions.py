@@ -366,7 +366,7 @@ class ActionProcessor:
             logger.error("No player found for movement")
             return
         
-        # Check for paralysis - completely prevents all actions
+        # Check for paralysis - completely prevents all actions BUT still consumes a turn
         if (hasattr(player, 'has_status_effect') and 
             callable(player.has_status_effect) and 
             player.has_status_effect('paralysis')):
@@ -374,6 +374,9 @@ class ActionProcessor:
             self.state_manager.state.message_log.add_message(
                 MB.warning("You are paralyzed and cannot move!")
             )
+            # IMPORTANT: Consume the turn so paralysis duration decrements
+            self._process_player_status_effects()
+            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
             return
         
         destination_x = player.x + dx
