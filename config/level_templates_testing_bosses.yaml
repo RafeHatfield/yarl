@@ -1,0 +1,104 @@
+# Level Templates Testing Configuration
+# 
+# This file defines overrides and guaranteed spawns for testing mode.
+# Only loaded when YARL_TESTING_MODE=1 environment variable is set.
+# Takes precedence over level_templates.yaml.
+
+version: "1.0"
+
+level_overrides:
+  # Level 1 - BOSS FIGHT TESTING + Equipment Testing
+  1:
+    parameters:
+      # Large map for boss arena + camera scrolling testing
+      map_width: 120
+      map_height: 80
+      # Boss room parameters
+      min_room_size: 12  # Ensure at least one large room for boss
+      max_room_size: 16
+      max_rooms: 8
+    
+    guaranteed_spawns:
+      mode: "additional"  # Add to normal random spawns
+      monsters:
+        # BOSS: Dragon Lord for easy testing (no need to descend!)
+        - type: "dragon_lord"
+          count: 1
+        # Some basic enemies for equipment testing
+        - type: "orc"
+          count: 3
+        - type: "slime"
+          count: 1
+      items:
+        - type: "invisibility_scroll"
+          count: 2  # Ensure we can test invisibility mechanics
+        - type: "healing_potion"
+          count: 3
+        - type: "lightning_scroll"
+          count: 1
+        - type: "fireball_scroll"
+          count: 1
+        - type: "confusion_scroll"
+          count: 1
+        - type: "teleport_scroll"
+          count: 1
+        - type: "dragon_fart_scroll"
+          count: 5
+        - type: "shield_scroll"
+          count: 1
+        - type: "raise_dead_scroll"
+          count: 2
+        - type: "enhance_weapon_scroll"
+          count: 1
+        - type: "enhance_armor_scroll"
+          count: 1
+        - type: "yo_mama_scroll"
+          count: 10
+        - type: "slow_scroll"
+          count: 1
+        - type: "glue_scroll"
+          count: 1
+      equipment:
+        - type: "dagger"
+          count: 1
+        - type: "shield"
+          count: 1
+        - type: "spear"
+          count: 1  # Test reach property (2 tiles)
+        - type: "greatsword"
+          count: 1  # Test two-handed property
+        - type: "shortbow"
+          count: 1  # Test ranged combat (8 tile reach)
+        - type: "longbow"
+          count: 9  # Test max range (10 tiles)
+        - type: "crossbow"
+          count: 1  # Test ranged combat (8 tiles)
+
+  # Level 2 - DEMON KING TESTING
+  2:
+    parameters:
+      map_width: 120
+      map_height: 80
+      min_room_size: 12
+      max_room_size: 16
+      max_rooms: 8
+    
+    guaranteed_spawns:
+      mode: "additional"
+      monsters:
+        # BOSS: Demon King
+        - type: "demon_king"
+          count: 1
+        # Troll guards
+        - type: "troll"
+          count: 2
+      items:
+        - type: "healing_potion"
+          count: 5
+        - type: "fireball_scroll"
+          count: 2
+        - type: "confusion_scroll"
+          count: 2
+        - type: "teleport_scroll"
+          count: 1
+
