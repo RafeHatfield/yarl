@@ -401,8 +401,22 @@ class GameMap:
                 elif item_choice == "wand_of_rage":
                     item = entity_factory.create_wand("wand_of_rage", x, y, self.dungeon_level)
                 else:
-                    # Default to lightning scroll
-                    item = entity_factory.create_spell_item("lightning_scroll", x, y)
+                    # Smart fallback: try different creation methods until one works
+                    # This handles any items added to spawn tables without explicit elif blocks
+                    item = entity_factory.create_weapon(item_choice, x, y)
+                    if not item:
+                        item = entity_factory.create_armor(item_choice, x, y)
+                    if not item:
+                        # Try as spell item (potions, scrolls)
+                        item = entity_factory.create_spell_item(item_choice, x, y)
+                    if not item:
+                        # Try as wand
+                        item = entity_factory.create_wand(item_choice, x, y, self.dungeon_level)
+                    
+                    # Final fallback if everything fails
+                    if not item:
+                        logger.warning(f"Failed to create item: {item_choice}, falling back to healing potion")
+                        item = entity_factory.create_spell_item("healing_potion", x, y)
 
                 entities.append(item)
                 # Invalidate entity sorting cache when new entities are added
