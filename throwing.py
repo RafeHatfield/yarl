@@ -225,7 +225,9 @@ def _throw_potion(
                 target,  # Pass target as caster for compatibility
                 entities=entities,
                 game_map=game_map,
-                fov_map=fov_map
+                fov_map=fov_map,
+                target_x=target.x,  # Pass target coordinates for targeting spells (e.g., confusion)
+                target_y=target.y
             )
             results.extend(use_results)
         finally:
