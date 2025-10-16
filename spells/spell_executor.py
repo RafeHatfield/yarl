@@ -542,7 +542,7 @@ class SpellExecutor:
         target_y: int
     ) -> List[Dict[str, Any]]:
         """Cast spell that applies a status effect (slow, glue, rage)."""
-        from components.status_effects import SlowedEffect, GluedEffect, EnragedEffect, StatusEffectManager
+        from components.status_effects import SlowedEffect, ImmobilizedEffect, EnragedEffect, StatusEffectManager
         
         # Find target entity
         target = None
@@ -587,7 +587,7 @@ class SpellExecutor:
         if spell.effect_type == EffectType.SLOW:
             effect = SlowedEffect(duration=spell.duration, owner=target)
         elif spell.effect_type == EffectType.GLUE:
-            effect = GluedEffect(duration=spell.duration, owner=target)
+            effect = ImmobilizedEffect(duration=spell.duration, owner=target)
         elif spell.effect_type == EffectType.RAGE:
             effect = EnragedEffect(duration=spell.duration, owner=target)
         

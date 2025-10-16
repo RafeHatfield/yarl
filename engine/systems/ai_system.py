@@ -138,9 +138,24 @@ class AISystem(System):
                     
                     # Advance to PLAYER phase
                     turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
+                    
+                    # Process player status effects at start of their turn
+                    self._process_player_status_effects(game_state)
+                    
+                    # Check if player died from status effects
+                    if state_manager.state.current_state == GameStates.PLAYER_DEAD:
+                        return
+                    
                     state_manager.set_game_state(GameStates.PLAYERS_TURN)
                 else:
                     # Backward compatibility
+                    # Process player status effects at start of their turn
+                    self._process_player_status_effects(game_state)
+                    
+                    # Check if player died from status effects
+                    if state_manager.state.current_state == GameStates.PLAYER_DEAD:
+                        return
+                    
                     state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
@@ -337,6 +352,34 @@ class AISystem(System):
         # Create environment system and process
         env_system = EnvironmentSystem(self.engine)
         env_system.process(game_state)
+    
+    def _process_player_status_effects(self, game_state) -> None:
+        """Process player status effects at the start of their turn.
+        
+        This handles effects like:
+        - IdentifyModeEffect (auto-identify items)
+        - RegenerationEffect (heal over time)
+        - Status effect durations and expiration
+        
+        Args:
+            game_state: Current game state
+        """
+        player = game_state.player
+        if not player or not hasattr(player, 'status_effects') or not player.status_effects:
+            return
+        
+        # Process status effects at turn start
+        status_results = player.status_effects.process_turn_start()
+        
+        # Add any messages to the message log
+        for result in status_results:
+            if 'message' in result:
+                game_state.message_log.add_message(result['message'])
+            
+            # Check for player death from status effects (e.g., poison, bleeding)
+            if result.get('dead'):
+                from game_states import GameStates
+                self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)
 
     def _handle_entity_death(self, entity: Any, game_state) -> None:
         """Handle an entity's death during AI processing.
