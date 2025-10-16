@@ -118,12 +118,16 @@ class Inventory:
                         effect_queue.queue_wand_recharge(self.owner.x, self.owner.y, self.owner)
                         
                         charge_word = "charge" if charges_gained == 1 else "charges"
+                        # Get display names (respects identification)
+                        item_display_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+                        inv_item_display_name = inv_item.get_display_name() if hasattr(inv_item, 'get_display_name') else inv_item.name
+                        
                         results.append({
                             "item_added": None,  # New wand was consumed, not added
                             "item_consumed": item,  # Signal that new wand should be removed from world
                             "message": MB.item_effect(
-                                f"Your {item.name} glows brightly and vanishes! "
-                                f"Your {inv_item.name} gains {charges_gained} {charge_word}. ({inv_wand.charges} charges)"
+                                f"Your {item_display_name} glows brightly and vanishes! "
+                                f"Your {inv_item_display_name} gains {charges_gained} {charge_word}. ({inv_wand.charges} charges)"
                             )
                         })
                         break
@@ -148,12 +152,16 @@ class Inventory:
                         effect_queue = get_effect_queue()
                         effect_queue.queue_wand_recharge(self.owner.x, self.owner.y, self.owner)
                         
+                        # Get display names (respects identification)
+                        item_display_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+                        inv_item_display_name = inv_item.get_display_name() if hasattr(inv_item, 'get_display_name') else inv_item.name
+                        
                         results.append({
                             "item_added": None,  # Scroll was consumed, not added
                             "item_consumed": item,  # Signal that scroll should be removed from world
                             "message": MB.item_effect(
-                                f"Your {item.name} glows brightly and vanishes! "
-                                f"Your {inv_item.name} gains a charge. ({wand.charges} charges)"
+                                f"Your {item_display_name} glows brightly and vanishes! "
+                                f"Your {inv_item_display_name} gains a charge. ({wand.charges} charges)"
                             )
                         })
                         break
@@ -173,13 +181,16 @@ class Inventory:
                             inv_item.item.quantity += quantity_to_add
                             stacked = True
                             
+                            # Get display name (respects identification)
+                            item_display_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+                            
                             results.append({
                                 "item_added": inv_item,  # Reference to the stack we added to
                                 "item_consumed": item,   # Signal to remove the picked-up item
                                 "message": MB.item_pickup(
                                     "You pick up {0}x {1}! (now have {2})".format(
                                         quantity_to_add,
-                                        item.name,
+                                        item_display_name,
                                         inv_item.item.quantity
                                     )
                                 ),
@@ -188,11 +199,14 @@ class Inventory:
                 
                 # If not stacked, add as new item
                 if not stacked:
+                    # Get display name (respects identification for rings, potions, scrolls)
+                    item_display_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+                    
                     results.append(
                         {
                             "item_added": item,
                             "message": MB.item_pickup(
-                                "You pick up the {0}!".format(item.name)
+                                "You pick up the {0}!".format(item_display_name)
                             ),
                         }
                     )

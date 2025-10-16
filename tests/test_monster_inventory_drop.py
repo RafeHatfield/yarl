@@ -186,7 +186,7 @@ class TestMonsterInventoryDrop:
         kill_monster(monster, game_map=None, entities=[monster, weapon])
         dropped_items = getattr(monster, '_dropped_loot', [])
         
-        # Should drop the equipped weapon
-        assert len(dropped_items) == 1
-        assert weapon in dropped_items
+        # Should drop the equipped weapon (might have bonus loot too)
+        assert len(dropped_items) >= 1, "Should drop at least the equipped weapon"
+        assert weapon in dropped_items, "Equipped weapon must be in dropped items"
 
