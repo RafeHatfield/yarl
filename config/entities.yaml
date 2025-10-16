@@ -682,7 +682,7 @@ spells:
     spell_type: "utility"
     char: "~"
     color: [100, 120, 200]  # Medium blue (darker)
-    duration: 10  # Turns of invisibility
+    duration: 30  # Turns of invisibility
 
   # Teleport scroll - teleport to target location (10% misfire chance)
   teleport_scroll:

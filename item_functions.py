@@ -825,7 +825,7 @@ def drink_regeneration_potion(*args, **kwargs):
 def drink_invisibility_potion(*args, **kwargs):
     """Drink a potion of invisibility - become invisible for 30 turns.
     
-    Note: Duration is longer than invisibility scroll (30 vs 10 turns).
+    Note: Same duration as invisibility scroll (both 30 turns).
     Future: Can be thrown at enemies to make them invisible too.
     
     Args:

@@ -440,13 +440,34 @@ class GameMap:
         self.dungeon_level += 1
         entities = [player]
 
+        # Check for level template overrides that might change map dimensions
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        # Get map dimensions (with potential overrides)
+        map_width = constants["map_width"]
+        map_height = constants["map_height"]
+        
+        if level_override and level_override.has_parameters():
+            params = level_override.parameters
+            if params.map_width is not None:
+                map_width = params.map_width
+                logger.info(f"Level {self.dungeon_level}: Overriding map_width = {map_width}")
+            if params.map_height is not None:
+                map_height = params.map_height
+                logger.info(f"Level {self.dungeon_level}: Overriding map_height = {map_height}")
+        
+        # Update map dimensions before reinitializing tiles
+        self.width = map_width
+        self.height = map_height
+        
         self.tiles = self.initialize_tiles()
         self.make_map(
             constants["max_rooms"],
             constants["room_min_size"],
             constants["room_max_size"],
-            constants["map_width"],
-            constants["map_height"],
+            map_width,
+            map_height,
             player,
             entities,
         )
