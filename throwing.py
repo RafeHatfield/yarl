@@ -211,6 +211,13 @@ def _throw_potion(
         original_owner = potion.item.owner if hasattr(potion.item, 'owner') else None
         potion.item.owner = target
         
+        # Ensure target has status_effects component for status effect potions
+        from components.component_registry import ComponentType
+        if not target.components.has(ComponentType.STATUS_EFFECTS):
+            from components.status_effects import StatusEffectManager
+            target.status_effects = StatusEffectManager(target)
+            target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+        
         try:
             # Call the potion's use_function
             # The function will use potion.item.owner (now set to target)
