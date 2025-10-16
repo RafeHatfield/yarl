@@ -366,6 +366,16 @@ class ActionProcessor:
             logger.error("No player found for movement")
             return
         
+        # Check for paralysis - completely prevents all actions
+        if (hasattr(player, 'has_status_effect') and 
+            callable(player.has_status_effect) and 
+            player.has_status_effect('paralysis')):
+            from message_builder import MessageBuilder as MB
+            self.state_manager.state.message_log.add_message(
+                MB.warning("You are paralyzed and cannot move!")
+            )
+            return
+        
         destination_x = player.x + dx
         destination_y = player.y + dy
         
@@ -916,7 +926,9 @@ class ActionProcessor:
                 options = ["Inventory is empty."]
             else:
                 options = []
-                for item in player.inventory.items:
+                # IMPORTANT: Sort inventory alphabetically to match menu display!
+                sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+                for item in sorted_items:
                     display_name = item.get_display_name()
                     
                     # Check if item is equipped
@@ -950,12 +962,8 @@ class ActionProcessor:
             
             if clicked_index is not None and clicked_index < len(player.inventory.items):
                 # User clicked on an inventory item!
-                if current_state == GameStates.SHOW_INVENTORY:
-                    self._handle_inventory_action(clicked_index)
-                elif current_state == GameStates.THROW_SELECT_ITEM:
-                    self._handle_inventory_action(clicked_index)  # Uses same handler
-                else:  # DROP_INVENTORY
-                    self._handle_drop_inventory(clicked_index)
+                # All menu states use the same handler which properly sorts items
+                self._handle_inventory_action(clicked_index)
             return
         
         if current_state == GameStates.TARGETING:
