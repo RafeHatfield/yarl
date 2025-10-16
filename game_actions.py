@@ -128,9 +128,11 @@ class ActionProcessor:
         
         # Process keyboard actions
         for action_type, value in action.items():
+            logger.warning(f"Processing action: {action_type} = {value}, in handlers: {action_type in self.action_handlers}")
             # Use 'is not None' instead of just 'value' to handle inventory_index=0
             if value is not None and action_type in self.action_handlers:
                 try:
+                    logger.warning(f"Calling handler for {action_type}")
                     self.action_handlers[action_type](value)
                 except Exception as e:
                     logger.error(f"Error processing action {action_type}: {e}", exc_info=True)
@@ -169,7 +171,10 @@ class ActionProcessor:
         
         Returns to PLAYERS_TURN state.
         """
+        import logging
+        logger = logging.getLogger(__name__)
         current_state = self.state_manager.state.current_state
+        logger.warning(f"_handle_exit called! Current state: {current_state}")
         
         # Clear any targeting state data
         if current_state == GameStates.THROW_SELECT_ITEM:
