@@ -721,10 +721,20 @@ class ActionProcessor:
             return
         
         player = self.state_manager.state.player
+        
+        # Check if item requires targeting - if so, enter targeting mode
+        if item.item.targeting:
+            # Enter targeting mode for this item
+            self.state_manager.state.targeting_item = item
+            self.state_manager.set_game_state(GameStates.TARGETING)
+            return  # Don't consume turn yet - wait for targeting
+        
+        # Use item directly (no targeting required)
         item_use_results = player.inventory.use(
             item,
             entities=self.state_manager.state.entities,
-            fov_map=self.state_manager.state.fov_map
+            fov_map=self.state_manager.state.fov_map,
+            game_map=self.state_manager.state.game_map  # CRITICAL: Pass game_map for spells like magic mapping
         )
         
         player_died = False
