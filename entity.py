@@ -202,16 +202,21 @@ class Entity:
             Entity: Configured player entity
         """
         # Auto-create StatusEffectManager if not provided
+        # Create a placeholder that will be initialized after player entity exists
         if status_effects is None:
             from components.status_effects import StatusEffectManager
-            status_effects = StatusEffectManager()
+            # Pass None as owner temporarily - will be set by _register_components
+            status_effects = StatusEffectManager(owner=None)
         
-        return cls(
+        # Create player entity with status_effects component
+        player = cls(
             x=x, y=y, char='@', color=(255, 255, 255), name='Player',
             blocks=True, render_order=RenderOrder.ACTOR, faction=Faction.PLAYER,
             fighter=fighter, inventory=inventory, level=level, equipment=equipment,
             status_effects=status_effects
         )
+        
+        return player
     
     @classmethod
     def create_monster(cls, x, y, char, color, name, fighter, ai):

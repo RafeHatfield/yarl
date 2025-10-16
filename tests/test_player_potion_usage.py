@@ -287,7 +287,12 @@ class TestPlayerComponentDefaults:
     
     def test_create_player_accepts_custom_status_effects(self):
         """If status_effects provided, should use it."""
-        custom_status_manager = StatusEffectManager()
+        # Create a temporary player to be the owner
+        temp_player = Entity(
+            x=5, y=5, char='@', color=(255, 255, 255), name='TempPlayer',
+            fighter=Fighter(100, 2, 5, 100, 2, 5)
+        )
+        custom_status_manager = StatusEffectManager(temp_player)
         
         player = Entity.create_player(
             x=5, y=5,
@@ -298,8 +303,10 @@ class TestPlayerComponentDefaults:
             status_effects=custom_status_manager
         )
         
-        # Should use the provided one
+        # Should use the provided one (owner will be updated by Entity)
         assert player.status_effects is custom_status_manager
+        # Owner should be updated to the new player
+        assert player.status_effects.owner is player
 
 
 if __name__ == '__main__':
