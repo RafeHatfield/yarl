@@ -128,11 +128,9 @@ class ActionProcessor:
         
         # Process keyboard actions
         for action_type, value in action.items():
-            logger.warning(f"Processing action: {action_type} = {value}, in handlers: {action_type in self.action_handlers}")
             # Use 'is not None' instead of just 'value' to handle inventory_index=0
             if value is not None and action_type in self.action_handlers:
                 try:
-                    logger.warning(f"Calling handler for {action_type}")
                     self.action_handlers[action_type](value)
                 except Exception as e:
                     logger.error(f"Error processing action {action_type}: {e}", exc_info=True)
@@ -158,41 +156,6 @@ class ActionProcessor:
     def _handle_show_character_screen(self, _) -> None:
         """Handle showing the character screen."""
         self.state_manager.set_game_state(GameStates.CHARACTER_SCREEN)
-    
-    def _handle_exit(self, _) -> None:
-        """Handle exit action - close menus and return to previous state.
-        
-        This is called when ESC is pressed in menu states like:
-        - SHOW_INVENTORY
-        - DROP_INVENTORY
-        - THROW_SELECT_ITEM
-        - CHARACTER_SCREEN
-        - etc.
-        
-        Returns to PLAYERS_TURN state.
-        """
-        print("=== _HANDLE_EXIT ENTERED ===")  # DEBUG: Verify function is called
-        import logging
-        logger = logging.getLogger(__name__)
-        print(f"=== LOGGER CREATED ===")  # DEBUG: Verify logger works
-        current_state = self.state_manager.state.current_state
-        print(f"=== CURRENT STATE: {current_state} ===")  # DEBUG: Verify state access
-        logger.warning(f"_handle_exit called! Current state: {current_state}")
-        
-        # Clear any targeting state data
-        if current_state == GameStates.THROW_SELECT_ITEM:
-            # Clear throw target if it was set
-            self.state_manager.set_extra_data("throw_target", None)
-        elif current_state == GameStates.THROW_TARGETING:
-            # Clear throw item if it was set
-            self.state_manager.set_extra_data("throw_item", None)
-            self.state_manager.set_extra_data("throw_target", None)
-        elif current_state == GameStates.TARGETING:
-            # Clear targeting item
-            self.state_manager.set_extra_data("targeting_item", None)
-        
-        # Return to player's turn
-        self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
     def _handle_throw_action(self, _) -> None:
         """Handle throw action - select item then target.
@@ -253,21 +216,39 @@ class ActionProcessor:
         logger.info("Auto-explore started")
     
     def _handle_exit(self, _) -> None:
-        """Handle exit actions based on current game state."""
+        """Handle exit actions based on current game state.
+        
+        Closes menus and returns to appropriate previous state.
+        """
         current_state = self.state_manager.state.current_state
         
         if current_state in (
             GameStates.SHOW_INVENTORY,
             GameStates.DROP_INVENTORY,
+            GameStates.THROW_SELECT_ITEM,  # ← ADDED!
             GameStates.CHARACTER_SCREEN,
             GameStates.LEVEL_UP,
         ):
+            # Close menu and return to gameplay
             self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
-        elif current_state == GameStates.TARGETING:
+            
+            # Clear throw target if exiting throw menu
+            if current_state == GameStates.THROW_SELECT_ITEM:
+                self.state_manager.set_extra_data("throw_target", None)
+        
+        elif current_state in (GameStates.TARGETING, GameStates.THROW_TARGETING):  # ← ADDED THROW_TARGETING!
+            # Exit targeting mode
             previous_state = self.state_manager.get_extra_data("previous_state", GameStates.PLAYERS_TURN)
             self.state_manager.set_game_state(previous_state)
+            
+            # Clear targeting data
             self.state_manager.set_extra_data("targeting_item", None)
             self.state_manager.set_extra_data("previous_state", None)
+            
+            # Clear throw-specific data if exiting throw targeting
+            if current_state == GameStates.THROW_TARGETING:
+                self.state_manager.set_extra_data("throw_item", None)
+                self.state_manager.set_extra_data("throw_target", None)
     
     def _process_auto_explore_turn(self) -> None:
         """Process one turn of auto-exploration.
