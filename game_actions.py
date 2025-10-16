@@ -717,10 +717,28 @@ class ActionProcessor:
         Args:
             item: The item entity to use
         """
-        if not item.item:
+        player = self.state_manager.state.player
+        message_log = self.state_manager.state.message_log
+        
+        # Check if this is equipment (weapon, armor, ring) - EQUIP instead of USE
+        from components.component_registry import ComponentType
+        if item.components.has(ComponentType.EQUIPPABLE):
+            # This is equipment - toggle equip/unequip
+            if player.equipment:
+                equip_results = player.equipment.toggle_equip(item)
+                for result in equip_results:
+                    message = result.get("message")
+                    if message:
+                        message_log.add_message(message)
+                
+                # TURN ECONOMY: Equipping/unequipping takes 1 turn
+                self._process_player_status_effects()
+                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
             return
         
-        player = self.state_manager.state.player
+        # Not equipment - treat as consumable
+        if not item.item:
+            return
         
         # Check if item requires targeting - if so, enter targeting mode
         if item.item.targeting:
