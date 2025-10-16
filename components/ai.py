@@ -381,7 +381,9 @@ class BasicMonster:
                     return results
 
             # Check weapon reach for attack range
-            distance = monster.distance_to(target)
+            # Use Chebyshev distance (chessboard/king's move) for melee range
+            # This treats all 8 surrounding tiles as distance 1
+            distance = monster.chebyshev_distance_to(target)
             weapon_reach = get_weapon_reach(monster)
             
             if distance > weapon_reach:
@@ -621,12 +623,15 @@ class MindlessZombieAI:
             target_has_fighter = self.current_target.components.has(ComponentType.FIGHTER)
             
             if target_in_entities and target_has_fighter:
-                distance = self.owner.distance_to(self.current_target)
+                # Use Euclidean distance for FOV check (sight range)
+                sight_distance = self.owner.distance_to(self.current_target)
                 # If pursuing taunt, always "see" the target (entire dungeon heard the insult!)
-                in_fov = is_pursuing_taunt or distance <= zombie_fov_radius
+                in_fov = is_pursuing_taunt or sight_distance <= zombie_fov_radius
                 
                 if in_fov:
                     # Target still in FOV!
+                    # Use Chebyshev distance for melee range (treats diagonal as adjacent)
+                    distance = self.owner.chebyshev_distance_to(self.current_target)
                     weapon_reach = get_weapon_reach(self.owner)
                     if distance <= weapon_reach:
                         # Within attack range - ATTACK!
@@ -673,12 +678,14 @@ class MindlessZombieAI:
         visible_targets = self._find_visible_targets(entities, zombie_fov_radius)
         
         if visible_targets:
-            # Pick closest target and lock onto it
+            # Pick closest target and lock onto it (Euclidean distance for "closest")
             closest = min(visible_targets, key=lambda e: self.owner.distance_to(e))
             self.current_target = closest
             
-            # If adjacent, attack immediately (use new d20 system)
-            if self.owner.distance_to(closest) == 1:
+            # If adjacent, attack immediately (use Chebyshev for melee range)
+            melee_distance = self.owner.chebyshev_distance_to(closest)
+            weapon_reach = get_weapon_reach(self.owner)
+            if melee_distance <= weapon_reach:
                 attack_results = self.owner.fighter.attack_d20(closest)
                 results.extend(attack_results)
                 return results
@@ -748,8 +755,8 @@ class MindlessZombieAI:
             if not entity.components.has(ComponentType.FIGHTER):
                 continue
             
-            # Check if adjacent
-            if self.owner.distance_to(entity) == 1:
+            # Check if adjacent using Chebyshev distance (treats diagonals as adjacent)
+            if self.owner.chebyshev_distance_to(entity) <= 1:
                 adjacent.append(entity)
         
         return adjacent
@@ -907,8 +914,8 @@ class SlimeAI:
             best_target = self._find_best_target(entities, fov_map)
         
         if best_target:
-            # Calculate distance to target
-            distance = monster.distance_to(best_target)
+            # Calculate distance to target using Chebyshev for melee range
+            distance = monster.chebyshev_distance_to(best_target)
             weapon_reach = get_weapon_reach(monster)
             
             if distance > weapon_reach:

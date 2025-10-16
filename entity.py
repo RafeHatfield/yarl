@@ -465,7 +465,7 @@ class Entity:
             self.move_towards(target.x, target.y, game_map, entities)
 
     def distance_to(self, other: 'Entity') -> float:
-        """Calculate the distance to another entity.
+        """Calculate the Euclidean distance to another entity.
 
         Args:
             other: The other entity
@@ -476,6 +476,28 @@ class Entity:
         dx = other.x - self.x
         dy = other.y - self.y
         return math.sqrt(dx**2 + dy**2)
+    
+    def chebyshev_distance_to(self, other: 'Entity') -> int:
+        """Calculate the Chebyshev distance (chessboard distance) to another entity.
+        
+        Chebyshev distance is the maximum of the absolute differences in coordinates.
+        This treats all 8 surrounding tiles as distance 1, making it ideal for
+        melee range checks in roguelikes where diagonal movement is allowed.
+        
+        Examples:
+            - Orthogonal neighbor (1, 0): max(1, 0) = 1
+            - Diagonal neighbor (1, 1): max(1, 1) = 1
+            - Knight's move (2, 1): max(2, 1) = 2
+        
+        Args:
+            other: The other entity
+        
+        Returns:
+            int: The Chebyshev distance (number of king moves in chess)
+        """
+        dx = abs(other.x - self.x)
+        dy = abs(other.y - self.y)
+        return max(dx, dy)
     
     def get_display_name(self, compact: bool = False) -> str:
         """Get the display name with damage/defense ranges if applicable.
