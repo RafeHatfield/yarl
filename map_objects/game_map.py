@@ -407,6 +407,9 @@ class GameMap:
                     if not item:
                         item = entity_factory.create_armor(item_choice, x, y)
                     if not item:
+                        # Try as ring
+                        item = entity_factory.create_ring(item_choice, x, y)
+                    if not item:
                         # Try as spell item (potions, scrolls)
                         item = entity_factory.create_spell_item(item_choice, x, y)
                     if not item:

@@ -25,13 +25,13 @@ level_overrides:
   # Focus: Buff potions (Speed, Regen, Invis, Levitation, Protection, Heroism)
   #        Debuff potions (Weakness, Blindness, Paralysis)
   #        Identify potion functionality
-  1:
+  3:
     parameters:
       map_width: 60
       map_height: 45
       min_room_size: 8
       max_room_size: 12
-      max_rooms: 6
+      max_rooms: 3
     
     guaranteed_spawns:
       mode: "additional"
@@ -90,7 +90,7 @@ level_overrides:
       map_height: 45
       min_room_size: 8
       max_room_size: 12
-      max_rooms: 6
+      max_rooms: 3
     
     guaranteed_spawns:
       mode: "additional"
@@ -98,7 +98,7 @@ level_overrides:
         - type: "orc"
           count: 4
         - type: "troll"
-          count: 2
+          count: 1
       
       items:
         # NEW SCROLLS
@@ -146,21 +146,21 @@ level_overrides:
   # ============================================================================
   # Test all 15 ring types + dual ring slots
   # Focus: AC rings, stat rings, special effect rings, immunities
-  3:
+  1:
     parameters:
       map_width: 60
       map_height: 45
       min_room_size: 8
       max_room_size: 12
-      max_rooms: 6
+      max_rooms: 3
     
     guaranteed_spawns:
       mode: "additional"
       monsters:
         - type: "orc"
-          count: 5
+          count: 3
         - type: "troll"
-          count: 2
+          count: 1
       
       items:
         # ALL 15 RING TYPES
@@ -216,15 +216,15 @@ level_overrides:
       map_height: 45
       min_room_size: 8
       max_room_size: 12
-      max_rooms: 6
+      max_rooms: 3
     
     guaranteed_spawns:
       mode: "additional"
       monsters:
         - type: "orc"
-          count: 8  # Lots of targets for wand testing
+          count: 3  # Lots of targets for wand testing
         - type: "troll"
-          count: 2
+          count: 1
       
       items:
         # WANDS (various types)
@@ -264,16 +264,16 @@ level_overrides:
       map_height: 45
       min_room_size: 10  # Large open rooms for throwing
       max_room_size: 15
-      max_rooms: 5
+      max_rooms: 3
     
     guaranteed_spawns:
       mode: "additional"
       monsters:
         # Spread out enemies for throwing practice
         - type: "orc"
-          count: 10
+          count: 4
         - type: "troll"
-          count: 3
+          count: 1
       
       items:
         # POTIONS TO THROW
@@ -313,7 +313,7 @@ level_overrides:
       map_height: 50
       min_room_size: 10
       max_room_size: 15
-      max_rooms: 6
+      max_rooms: 3
     
     guaranteed_spawns:
       mode: "additional"

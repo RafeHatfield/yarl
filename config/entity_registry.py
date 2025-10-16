@@ -195,6 +195,22 @@ class SpellDefinition:
 
 
 @dataclass
+class RingDefinition:
+    """Definition for a ring item (passive effect jewelry).
+    
+    Rings provide continuous bonuses while equipped in left or right ring slots.
+    Effects can include AC bonuses, stat bonuses, damage bonuses, immunities,
+    regeneration, and triggered effects.
+    """
+    name: str
+    ring_effect: str  # Type of effect (e.g., "protection", "strength", "regeneration")
+    effect_strength: int  # Magnitude of the effect (e.g., +2 AC, +2 STR, heal every N turns)
+    char: str = "="
+    color: Tuple[int, int, int] = (200, 200, 200)
+    extends: Optional[str] = None  # For inheritance
+
+
+@dataclass
 class WandDefinition:
     """Definition for a wand item (multi-charge spell caster).
     
@@ -248,6 +264,7 @@ class EntityRegistry:
         self.armor: Dict[str, ArmorDefinition] = {}
         self.spells: Dict[str, SpellDefinition] = {}
         self.wands: Dict[str, WandDefinition] = {}
+        self.rings: Dict[str, RingDefinition] = {}
         self.player_stats: Optional[EntityStats] = None
         self._loaded = False
 
@@ -285,6 +302,7 @@ class EntityRegistry:
             logger.info(f"  Weapons: {len(self.weapons)}")
             logger.info(f"  Armor: {len(self.armor)}")
             logger.info(f"  Spells: {len(self.spells)}")
+            logger.info(f"  Rings: {len(self.rings)}")
 
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML in entity configuration: {e}")
@@ -328,6 +346,10 @@ class EntityRegistry:
         # Load wands - process inheritance-aware
         if 'wands' in config_data:
             self._process_wands_with_inheritance(config_data['wands'])
+        
+        # Load rings - process inheritance-aware
+        if 'rings' in config_data:
+            self._process_rings_with_inheritance(config_data['rings'])
 
     def _process_monsters_with_inheritance(self, monsters_data: Dict[str, Any]) -> None:
         """Process monster data with inheritance-aware creation.
@@ -396,7 +418,7 @@ class EntityRegistry:
                     damage_min, damage_max = get_dice_min_max(damage_dice)
                 
                 weapon_def = WeaponDefinition(
-                    name=weapon_id.title(),
+                    name=weapon_id.replace('_', ' ').title(),
                     power_bonus=weapon_data.get('power_bonus', 0),
                     damage_min=damage_min,
                     damage_max=damage_max,
@@ -423,7 +445,7 @@ class EntityRegistry:
         for armor_id, armor_data in resolved_armor_data.items():
             try:
                 armor_def = ArmorDefinition(
-                    name=armor_id.title(),
+                    name=armor_id.replace('_', ' ').title(),
                     defense_bonus=armor_data.get('defense_bonus', 0),
                     defense_min=armor_data.get('defense_min', 0),
                     defense_max=armor_data.get('defense_max', 0),
@@ -495,6 +517,27 @@ class EntityRegistry:
             except Exception as e:
                 logger.error(f"Error creating resolved wand '{wand_id}': {e}")
                 raise ValueError(f"Invalid resolved wand configuration for '{wand_id}': {e}")
+
+    def _process_rings_with_inheritance(self, rings_data: Dict[str, Any]) -> None:
+        """Process ring data with inheritance-aware creation."""
+        resolved_rings_data = self._resolve_raw_inheritance(rings_data, 'ring')
+        
+        for ring_id, ring_data in resolved_rings_data.items():
+            try:
+                ring_def = RingDefinition(
+                    name=ring_id.replace('_', ' ').title(),
+                    ring_effect=ring_data.get('ring_effect', 'unknown'),
+                    effect_strength=ring_data.get('effect_strength', 0),
+                    char=ring_data.get('char', '='),
+                    color=tuple(ring_data.get('color', [200, 200, 200])),
+                    extends=None  # Clear extends after resolution
+                )
+                
+                self.rings[ring_id] = ring_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved ring '{ring_id}': {e}")
+                raise ValueError(f"Invalid resolved ring configuration for '{ring_id}': {e}")
 
     def _resolve_raw_inheritance(self, entities_data: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
         """Resolve inheritance at the raw data level before entity creation.
@@ -828,6 +871,17 @@ class EntityRegistry:
         """
         return self.wands.get(wand_id)
 
+    def get_ring(self, ring_id: str) -> Optional[RingDefinition]:
+        """Get a ring definition by ID.
+        
+        Args:
+            ring_id: The ring identifier
+            
+        Returns:
+            RingDefinition if found, None otherwise
+        """
+        return self.rings.get(ring_id)
+
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get the player starting stats.
         
@@ -910,4 +964,5 @@ def load_entity_config(config_path: str = None) -> None:
     _entity_registry.load_from_file(str(config_path))
     
     logger.info(f"Entity configuration loaded: {len(_entity_registry.weapons)} weapons, "
-               f"{len(_entity_registry.monsters)} monsters, {len(_entity_registry.armor)} armor")
+               f"{len(_entity_registry.monsters)} monsters, {len(_entity_registry.armor)} armor, "
+               f"{len(_entity_registry.rings)} rings")

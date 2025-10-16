@@ -472,6 +472,94 @@ class EntityFactory:
             logger.error(f"Error creating wand {wand_type}: {e}")
             return None
 
+    def create_ring(self, ring_type: str, x: int, y: int) -> Optional[Entity]:
+        """Create a ring item entity from configuration.
+        
+        Rings provide passive effects when equipped in left or right ring slots.
+        All rings start unidentified and must be identified to reveal their effects.
+        
+        Args:
+            ring_type: The type of ring to create (e.g., "ring_of_protection")
+            x: X coordinate for the ring
+            y: Y coordinate for the ring
+            
+        Returns:
+            Entity instance if ring type exists, None otherwise
+        """
+        ring_def = self.registry.get_ring(ring_type)
+        if not ring_def:
+            logger.warning(f"Unknown ring type: {ring_type}")
+            return None
+
+        try:
+            from components.ring import Ring, RingEffect
+            from components.item import Item
+            
+            # Convert ring_effect string to RingEffect enum
+            ring_effect_map = {
+                "protection": RingEffect.PROTECTION,
+                "regeneration": RingEffect.REGENERATION,
+                "resistance": RingEffect.RESISTANCE,
+                "strength": RingEffect.STRENGTH,
+                "dexterity": RingEffect.DEXTERITY,
+                "might": RingEffect.MIGHT,
+                "teleportation": RingEffect.TELEPORTATION,
+                "invisibility": RingEffect.INVISIBILITY,
+                "searching": RingEffect.SEARCHING,
+                "free_action": RingEffect.FREE_ACTION,
+                "wizardry": RingEffect.WIZARDRY,
+                "clarity": RingEffect.CLARITY,
+                "speed": RingEffect.SPEED,
+                "constitution": RingEffect.CONSTITUTION,
+                "luck": RingEffect.LUCK,
+            }
+            
+            ring_effect_enum = ring_effect_map.get(ring_def.ring_effect.lower())
+            if not ring_effect_enum:
+                logger.error(f"Unknown ring effect: {ring_def.ring_effect}")
+                return None
+            
+            # Create ring component with its passive effect
+            ring_component = Ring(
+                ring_effect=ring_effect_enum,
+                effect_strength=ring_def.effect_strength
+            )
+            
+            # Create equippable component for ring slot
+            from components.equippable import Equippable
+            equippable_component = Equippable(
+                slot=EquipmentSlots.RING  # Uses generic RING slot, will be assigned to left or right
+            )
+            
+            # Create item component
+            item_component = Item()
+            
+            # Apply identification logic for rings
+            self._apply_identification_logic(item_component, ring_type, "ring")
+            
+            # Create entity
+            ring_entity = Entity(
+                x=x,
+                y=y,
+                char=ring_def.char,
+                color=ring_def.color,
+                name=ring_def.name,
+                item=item_component,
+                equippable=equippable_component
+            )
+            
+            # Attach ring component
+            ring_entity.ring = ring_component
+            ring_component.owner = ring_entity
+            ring_entity.components.add(ComponentType.RING, ring_component)
+            
+            logger.debug(f"Created ring: {ring_def.name} at ({x}, {y}) [identified: {item_component.identified}]")
+            return ring_entity
+
+        except Exception as e:
+            logger.error(f"Error creating ring {ring_type}: {e}")
+            return None
+
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get player starting stats from configuration.
         
