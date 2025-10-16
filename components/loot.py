@@ -198,10 +198,26 @@ class LootGenerator:
         quality_bonus = rarity.get_bonus()
         final_power = base_power + quality_bonus
         
-        # Create weapon
+        # Determine damage dice based on dungeon level
+        # Early levels: 1d6, Mid levels: 1d8, Late levels: 1d10
+        if dungeon_level <= 3:
+            damage_dice = "1d6"
+        elif dungeon_level <= 6:
+            damage_dice = "1d8"
+        else:
+            damage_dice = "1d10"
+        
+        # Calculate damage_min and damage_max from dice notation
+        from dice import get_dice_min_max
+        damage_min, damage_max = get_dice_min_max(damage_dice)
+        
+        # Create weapon with proper damage values
         weapon_equippable = Equippable(
             slot=EquipmentSlots.MAIN_HAND,
-            power_bonus=final_power
+            power_bonus=final_power,
+            damage_min=damage_min,
+            damage_max=damage_max,
+            damage_dice=damage_dice
         )
         
         # Generate name

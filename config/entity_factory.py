@@ -776,8 +776,36 @@ class EntityFactory:
                 duration=duration
             )
         else:
-            logger.warning(f"Unknown spell function for {spell_def.name}, creating basic item")
-            return Item()
+            # Smart fallback: Check if spell exists in spell registry
+            # If yes, create a delegate function using cast_spell_by_id
+            from spells.spell_registry import get_spell_registry
+            spell_registry = get_spell_registry()
+            
+            # Try to find the spell in the registry by spell_id (which matches the item name)
+            spell_id = spell_def.name.lower().replace(' ', '_').replace('_scroll', '').replace('_potion', '')
+            spell_in_registry = spell_registry.get(spell_id)
+            
+            if spell_in_registry:
+                # Create a delegate function that calls cast_spell_by_id
+                from item_functions import cast_spell_by_id
+                
+                def delegate_function(*args, **kwargs):
+                    """Delegate to spell registry."""
+                    caster = args[0] if args else None
+                    return cast_spell_by_id(spell_id, caster, **kwargs)
+                
+                # Determine if targeting is needed
+                targeting = spell_in_registry.requires_target
+                
+                logger.debug(f"Created delegate for {spell_def.name} → spell_id '{spell_id}'")
+                return Item(
+                    use_function=delegate_function,
+                    targeting=targeting
+                )
+            else:
+                # Truly unknown spell
+                logger.warning(f"Unknown spell function for {spell_def.name} (tried spell_id '{spell_id}'), creating basic item")
+                return Item()
 
     def _create_item_component_from_wand(self, wand_def):
         """Create an item component from a wand definition.
