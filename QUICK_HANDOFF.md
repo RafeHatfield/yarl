@@ -135,6 +135,31 @@ python -m pytest
 
 ---
 
+## Progress Tracking Table
+
+**File:** `DEPTH_SCORE_TRACKING.md`  
+**Current Score:** **48/64 (75%)** ⬆️ +10 points this session!
+
+| Category | Score | Change |
+|----------|-------|--------|
+| Discovery | 6/10 | +3 ✅ |
+| Resource Management | 7/10 | +3 ✅ |
+| Build Diversity | 7/10 | +2 ✅ |
+| Emergent Gameplay | 7/10 | +2 ✅ |
+| Memorable Moments | 6/10 | - |
+| Combat System | 8/10 | - |
+| Progression | 7/10 | - |
+
+**To Update After Feature:**
+1. Open `DEPTH_SCORE_TRACKING.md`
+2. Update current scores table
+3. Mark completed features with ✅
+4. Add version history entry
+5. Update "Next Update" section
+6. Commit: "📊 Update Depth Scores - [Feature] Complete"
+
+---
+
 ## Next Session Likely Tasks
 
 1. **Playtesting Bugs** - User will thoroughly test and find edge cases

@@ -2,43 +2,48 @@
 
 *Goal: Transform Yarl into one of the best traditional roguelikes by tracking progress toward legendary status.*
 
-## Current Depth Scores (v3.10.0 - Potion Variety + Identification)
+## Current Depth Scores (v3.11.0 - Rings + Wands + Scrolls + Throwing)
 
 | Category | Current | Target | Gap | Priority Features to Close Gap |
 |----------|---------|--------|-----|-------------------------------|
-| **Discovery** | 3/10 | 10/10 | -7 | Vaults, Secret Doors, Unique Artifacts, More Scroll Variety |
-| **Resource Management** | 4/10 | 9/10 | -5 | Wand Charges, Hunger System (optional), Corpse System |
-| **Build Diversity** | 5/10 | 9/10 | -4 | Rings, Amulets, Resistances, Blessed/Cursed Items |
-| **Emergent Gameplay** | 5/10 | 9/10 | -4 | Throwing, Item Interactions, Polymorph, Digging |
+| **Discovery** | 6/10 | 10/10 | -4 | Vaults, Secret Doors, Unique Artifacts, More Scroll Types |
+| **Resource Management** | 7/10 | 9/10 | -2 | Anti-Grinding Design, Hunger System (optional) |
+| **Build Diversity** | 7/10 | 9/10 | -2 | Amulets, More Resistances, Blessed/Cursed Items |
+| **Emergent Gameplay** | 7/10 | 9/10 | -2 | Item Interactions, Polymorph, Digging |
 | **Memorable Moments** | 6/10 | 10/10 | -4 | Wishes, Polymorph, Divine Intervention, Artifacts |
 | **Combat System** | 8/10 | 9/10 | -1 | (Strong foundation - add fumble effects, swarm mechanics) |
 | **Progression** | 7/10 | 9/10 | -2 | Victory Condition, Hall of Fame, Morgue Files, Classes |
 
-**Overall Depth Score: 38/64 (59%)** → **Target: 64/74 (86%)**
-*Progress: +3 points from v3.9.0 (55% → 59%)*
+**Overall Depth Score: 48/64 (75%)** → **Target: 64/74 (86%)**
+*Progress: +10 points from v3.10.0 (59% → 75%) - MAJOR LEAP!*
 
 ---
 
 ## What Each Score Means
 
-### Discovery (3/10) - "Do I feel excited to explore?"
+### Discovery (6/10) - "Do I feel excited to explore?"
 **Current Strengths:**
 - Boss encounters with guaranteed legendary loot ✅
 - 4-tier loot quality system (Common → Legendary) ✅
 - Manual level design with special rooms ✅
-- Item identification system for potions ✅
-- 19 potion types (11 new in v3.10) ✅
+- **Item identification system for ALL item types** ✅ (NEW v3.11)
+- 11 potion types ✅
+- **20+ scroll types** ✅ (NEW v3.11)
+- **15 ring types** ✅ (NEW v3.11)
+- **9 wand types** ✅ (NEW v3.11)
 
-**Recently Completed (v3.10):**
-- ✅ Item Identification System (partial - potions only)
-- ✅ Expanded Potion Variety (8 → 19 types)
+**Recently Completed (v3.11):**
+- ✅ Complete Identification System (scrolls, potions, rings, wands)
+- ✅ Scroll Variety Expansion (8 → 20+ types)
+- ✅ Ring System (15 unique passive effect rings)
+- ✅ Wand System (9 rechargeable spell casters)
+- ✅ Identify Scroll (10-turn identification buff)
 
 **Missing Critical Elements:**
-- ⚠️ Limited identification (potions only, need scrolls/wands/rings)
 - ❌ No vaults (special treasure rooms with challenges)
 - ❌ No secret doors (hidden passages)
 - ❌ No unique artifacts (chase items like Excalibur)
-- ⚠️ Limited scroll variety (8 types, need 15+)
+- ❌ No dungeon variety (all levels similar)
 
 **To reach 10/10:**
 - Expand Identification to Scrolls/Wands (+2)
@@ -48,22 +53,27 @@
 
 ---
 
-### Resource Management (4/10) - "Do resources feel precious?"
+### Resource Management (7/10) - "Do resources feel precious?"
 **Current Strengths:**
 - Healing potions are limited ✅
 - Scrolls are consumable ✅
 - Equipment has weight limits ✅
-- 19 potion types create strategic choices ✅
+- 11 potion types create strategic choices ✅
+- **Wand charge system** ✅ (NEW v3.11)
+- **Identify scroll economy** ✅ (NEW v3.11)
+- **Ring slot competition (2 slots, 15 types)** ✅ (NEW v3.11)
+- **Turn economy** ✅ (NEW v3.11)
 
-**Recently Completed (v3.10):**
-- ✅ Expanded consumable variety (potions: 8 → 19)
+**Recently Completed (v3.11):**
+- ✅ Wand System (charges, recharging, wand merging)
+- ✅ Identify Scroll Economy (5-turn buff, 1 item/turn)
+- ✅ Ring System (slot competition, passive effects)
+- ✅ Turn Economy (all actions cost 1 turn)
 
 **Missing Critical Elements:**
-- ❌ No wand charges (reusable magic missing)
-- ⚠️ No identify scroll economy yet (potions auto-ID on use)
-- ❌ No ring/amulet slot competition
 - ❌ No blessing/cursing resources
 - ❌ No anti-grinding measures (can rest forever)
+- ❌ No mana/energy system
 
 **⚠️ NOTE:** Hunger system is OPTIONAL/CONTROVERSIAL (DCSS removed it in v0.26). Resource management will come from:
 - **Wand Charges** - Primary reusable magic system
@@ -81,21 +91,27 @@
 
 ---
 
-### Build Diversity (5/10) - "Can I create unique builds?"
+### Build Diversity (7/10) - "Can I create unique builds?"
 **Current Strengths:**
-- 12 weapon types with different properties ✅
-- 5 equipment slots (weapon, shield, head, chest, feet) ✅
+- 15+ weapon types with different properties ✅
+- **7 equipment slots** (weapon, shield, head, chest, feet, 2 rings) ✅ (NEW v3.11)
 - 4 rarity tiers with magic bonuses ✅
 - STR/DEX/CON stat system ✅
 - Finesse/unwieldy weapon properties ✅
+- **15 ring types with passive effects** ✅ (NEW v3.11)
+- **18+ status effects** ✅ (NEW v3.11)
+- **11 buff/debuff potions** ✅ (NEW v3.11)
+
+**Recently Completed (v3.11):**
+- ✅ Ring System (2 slots, 15 types, passive effects)
+- ✅ Status Effect Expansion (18+ types)
+- ✅ Potion Variety (11 types with tactical buffs/debuffs)
 
 **Missing Critical Elements:**
-- ❌ No rings (passive effect builds)
 - ❌ No amulets (build-defining items)
-- ❌ No resistances (fire/cold/poison/electric)
+- ❌ No resistances system (fire/cold/poison/electric)
 - ❌ No blessed/cursed items (equipment puzzle)
 - ❌ No god/religion system (divine builds)
-- ❌ Limited status effects (only invisibility, confusion, shield)
 
 **To reach 9/10:**
 - Add Ring System (2 slots, 15 types) (+2)
@@ -107,21 +123,26 @@
 
 ---
 
-### Emergent Gameplay (5/10) - "Can I create creative solutions?"
+### Emergent Gameplay (7/10) - "Can I create creative solutions?"
 **Current Strengths:**
 - Teleport scroll for positioning ✅
 - Invisibility for stealth ✅
 - Raise dead for allies ✅
 - Dragon fart for area denial ✅
 - Equipment swapping mid-combat ✅
-- 10 status effect types for tactical play ✅
+- 18+ status effect types for tactical play ✅
+- **Throwing system** ✅ (NEW v3.11)
+- **Buff stacking** ✅ (NEW v3.11)
+- **Ring combos** ✅ (NEW v3.11)
+- **Wand variety** ✅ (NEW v3.11)
 
-**Recently Completed (v3.10):**
-- ✅ Status Effect Expansion (invisibility → 10 types)
-- ✅ Buff/Debuff Potions (speed, heroism, weakness, blindness, etc.)
+**Recently Completed (v3.11):**
+- ✅ Throwing System (throw potions at enemies, throw weapons, projectile animations)
+- ✅ Status Effect Expansion (18+ types with stacking)
+- ✅ Ring Combos (equip 2 rings for build synergy)
+- ✅ Wand Tactics (rechargeable magic, charge management)
 
 **Missing Critical Elements:**
-- ❌ No throwing system (can't throw potions at enemies)
 - ❌ No item interactions (can't dip weapon in poison)
 - ❌ No polymorph (can't transform into monsters)
 - ❌ No digging/tunneling (can't create paths)
@@ -300,7 +321,44 @@ Features:
 
 ## Version History
 
-### v3.10.0 (Current - October 2025)
+### v3.11.0 (Current - October 16, 2025)
+**Overall: 48/64 (75%)** ⬆️ +10 from v3.10.0 - MAJOR LEAP! 🚀
+
+Completed:
+- Ring System (15 types, passive effects) ✅
+- Wand System (9 types, charges, recharging) ✅
+- Scroll Expansion (20+ types including Haste, Blink, Light, Magic Mapping, Earthquake, Identify) ✅
+- Throwing System (projectile animations, potions shatter, weapons drop) ✅
+- Item Stacking (quantity tracking) ✅
+- Turn Economy (all actions cost 1 turn) ✅
+- Complete Identification System (all item types) ✅
+- 16 Critical Bug Fixes ✅
+- 44 Regression Tests Added ✅
+
+Depth Scores:
+- Discovery: 3/10 → 6/10 (+3) ✅
+- Resource Management: 4/10 → 7/10 (+3) ✅
+- Build Diversity: 5/10 → 7/10 (+2) ✅
+- Emergent Gameplay: 5/10 → 7/10 (+2) ✅
+- Memorable Moments: 6/10 (unchanged)
+- Combat System: 8/10 (unchanged)
+- Progression: 7/10 (unchanged)
+
+**Major Systems Added:**
+- Ring System: Protection, Regeneration, Strength, Dexterity, Might, Teleportation, Invisibility, Searching, Free Action, Wizardry, Clarity, Speed, Constitution, Luck, Resistance
+- Wand System: Fireball, Lightning, Confusion, Teleportation, Dragon Farts, Yo Mama, Slow, Glue, Rage
+- New Scrolls: Haste, Blink, Light, Magic Mapping, Earthquake, Identify, Enhance Weapon/Armor
+- Throwing: Full projectile system with animations
+
+**Bug Fixes (16 total - see SESSION_CONTEXT_v3.11.0.md):**
+- Monster inventory not dropped (CRITICAL)
+- Stairs crash, Glue duration, Right-click drop
+- "Unknown" item warnings, Loot weapon enhancement
+- Pickup messages revealing IDs, Sidebar equip rings
+- Thrown scrolls, Sidebar scroll crashes
+- And more...
+
+### v3.10.0 (October 2025)
 **Overall: 38/64 (59%)** ⬆️ +3 from v3.9.0
 
 Completed:
@@ -368,28 +426,28 @@ After completing each feature, update:
 
 ---
 
-## Next Update: Scroll Identification + Variety
+## Next Update: Vaults & Secret Doors
 
 **Expected Impact:**
-- Discovery: 3 → 5 (+2)
-- Resource Management: 4 → 5 (+1)
-- Build Diversity: 5 → 6 (+1)
-- Overall: 38/64 → 44/64 (69%)
+- Discovery: 6 → 8 (+2)
+- Memorable Moments: 6 → 7 (+1)
+- Overall: 48/64 → 51/64 (80%)
 
 **Why These Changes:**
-- Discovery: Add identification to scrolls (currently only potions)
-- Discovery: Expand scroll variety (8 → 15+ types)
-- Resource Management: Identify scrolls become valuable resource
-- Build Diversity: More tactical options with scroll variety
+- Discovery: Vaults add special treasure rooms with challenges
+- Discovery: Secret doors add hidden passages and shortcuts
+- Memorable Moments: Finding secret vault with legendary loot
 
 **Remaining Work:**
-- Expand scroll catalog (8 → 15 types)
-- Add scroll identification system (like potions)
-- Add identify scroll as meta-item
-- Integrate with difficulty settings
+- Implement vault room templates
+- Add secret door mechanics (searching, detection)
+- Balance vault difficulty vs reward
+- Add Ring of Searching interaction
 
-**Configuration:**
-- Use existing master toggle (works for scrolls too)
-- Use existing difficulty integration
-- Meta-progression for veterans
+**Alternative Next Steps:**
+- **Fear Scroll** (deferred from scroll expansion)
+- **Detect Monster Scroll** (deferred from scroll expansion)
+- **Amulet System** (new equipment slot)
+- **Blessed/Cursed Items** (equipment puzzle layer)
+- **Comprehensive Playtesting** (find and fix edge cases)
 

@@ -471,6 +471,23 @@ Some tests are quarantined in `QUARANTINED_TESTS.md`:
 
 ## 🔮 Next Steps / Roadmap
 
+### Progress Tracking
+**See `DEPTH_SCORE_TRACKING.md` for the complete progress table!**
+
+**Current Score: 48/64 (75%)** - Up from 38/64 (59%) last version!
+- Discovery: 6/10 (+3)
+- Resource Management: 7/10 (+3)
+- Build Diversity: 7/10 (+2)
+- Emergent Gameplay: 7/10 (+2)
+
+**How to Update the Table:**
+When completing a feature, ask the agent to:
+1. Update depth scores in `DEPTH_SCORE_TRACKING.md`
+2. Mark features as complete (✅)
+3. Add to version history section
+4. Update "Next Update" section
+5. Commit with: "📊 Update Depth Scores - [Feature Name] Complete"
+
 ### Immediate Priorities
 1. **Comprehensive Playtesting** - User wants to do thorough testing with all new features
 2. **Fear Scroll Implementation** - Deferred from scroll expansion
