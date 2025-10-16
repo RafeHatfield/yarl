@@ -369,7 +369,8 @@ class AISystem(System):
             return
         
         # Process status effects at turn start
-        status_results = player.status_effects.process_turn_start()
+        # Pass entities list so effects like IdentifyMode can sync globally
+        status_results = player.status_effects.process_turn_start(entities=game_state.entities)
         
         # Add any messages to the message log
         for result in status_results:

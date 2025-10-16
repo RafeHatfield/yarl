@@ -23,8 +23,15 @@ class StatusEffect:
         self.is_active = False
         return []
 
-    def process_turn_start(self) -> List[Dict[str, Any]]:
-        """Process effect at the start of the owner's turn."""
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Process effect at the start of the owner's turn.
+        
+        Args:
+            entities: Optional list of all game entities (for effects that need global access)
+        
+        Returns:
+            List of result dictionaries
+        """
         return []
 
     def process_turn_end(self) -> List[Dict[str, Any]]:
@@ -236,8 +243,15 @@ class SlowedEffect(StatusEffect):
         })
         return results
     
-    def process_turn_start(self) -> List[Dict[str, Any]]:
-        """Check if entity should skip this turn."""
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Check if entity should skip this turn.
+        
+        Args:
+            entities: Optional list of all game entities (not used by this effect)
+        
+        Returns:
+            List of result dictionaries
+        """
         results = []
         self.turn_counter += 1
         
@@ -364,8 +378,16 @@ class RegenerationEffect(StatusEffect):
         results.append({'message': MB.status_effect(f"{self.owner.name} begins regenerating!")})
         return results
     
-    def process_turn_start(self) -> List[Dict[str, Any]]:
-        results = super().process_turn_start()
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Regenerate HP at turn start.
+        
+        Args:
+            entities: Optional list of all game entities (not used by this effect)
+        
+        Returns:
+            List of result dictionaries
+        """
+        results = super().process_turn_start(entities=entities)
         fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
         if fighter and fighter.hp < fighter.max_hp:
             heal_amount = min(self.heal_per_turn, fighter.max_hp - fighter.hp)
@@ -510,9 +532,16 @@ class IdentifyModeEffect(StatusEffect):
         })
         return results
     
-    def process_turn_start(self) -> List[Dict[str, Any]]:
-        """Automatically identify 1 random unidentified item at turn start."""
-        results = super().process_turn_start()
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Automatically identify 1 random unidentified item at turn start.
+        
+        Args:
+            entities: List of all game entities (needed for global identification sync)
+        
+        Returns:
+            List of result dictionaries
+        """
+        results = super().process_turn_start(entities=entities)
         
         # Find all unidentified items in inventory
         if not hasattr(self.owner, 'inventory') or not self.owner.inventory:
@@ -531,13 +560,8 @@ class IdentifyModeEffect(StatusEffect):
             item_comp = item_to_identify.item
             old_appearance = item_comp.appearance if hasattr(item_comp, 'appearance') else "mysterious item"
             
-            # Get entities list for global sync (try multiple sources)
-            entities = None
-            if hasattr(self.owner, 'game_map') and hasattr(self.owner.game_map, 'entities'):
-                entities = self.owner.game_map.entities
-            # Fallback: pass None, identification will still work for this item
-            
             # Identify the item (and all others of the same type)
+            # Pass entities list for global sync
             was_unidentified = item_comp.identify(entities=entities)
             
             if was_unidentified:
@@ -610,7 +634,15 @@ class StatusEffectManager:
     def get_effect(self, name: str) -> Optional[StatusEffect]:
         return self.active_effects.get(name)
 
-    def process_turn_start(self) -> List[Dict[str, Any]]:
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Process status effects at turn start.
+        
+        Args:
+            entities: Optional list of all game entities (for effects that need global access)
+        
+        Returns:
+            List of result dictionaries
+        """
         results = []
         
         # Process ring effects first (Ring of Regeneration)
@@ -622,10 +654,10 @@ class StatusEffectManager:
                     ring_results = ring.ring.process_turn(self.owner)
                     results.extend(ring_results)
         
-        # Then process status effects
+        # Then process status effects (pass entities to effects that need it)
         for effect_name in list(self.active_effects.keys()): # Iterate over a copy
             effect = self.active_effects[effect_name]
-            results.extend(effect.process_turn_start())
+            results.extend(effect.process_turn_start(entities=entities))
             if effect.duration <= 0 and effect_name in self.active_effects: # Check if effect was removed by itself
                 results.extend(self.remove_effect(effect_name))
         return results
