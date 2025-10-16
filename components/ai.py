@@ -107,6 +107,13 @@ class BossAI:
         monster = self.owner
         results = []
         
+        # Check for paralysis - completely prevents all actions
+        if (hasattr(monster, 'has_status_effect') and 
+            callable(monster.has_status_effect) and 
+            monster.has_status_effect('paralysis')):
+            results.append({'message': MB.custom(f"{monster.name} is paralyzed and cannot act!", (150, 75, 200))})
+            return results
+        
         # Get boss component for damage multiplier
         boss = monster.get_component_optional(ComponentType.BOSS)
         
@@ -233,6 +240,14 @@ class BasicMonster:
                     results.append(result)
                     return results  # Skip turn entirely
                 results.append(result)
+
+        # Check for paralysis - completely prevents all actions
+        if (hasattr(self.owner, 'has_status_effect') and 
+            callable(self.owner.has_status_effect) and 
+            self.owner.has_status_effect('paralysis')):
+            results.append({'message': MB.custom(f"{self.owner.name} is paralyzed and cannot act!", (150, 75, 200))})
+            MonsterActionLogger.log_turn_summary(self.owner, ["paralyzed"])
+            return results
 
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
@@ -604,6 +619,13 @@ class MindlessZombieAI:
                     return results  # Skip turn entirely
                 results.append(result)
         
+        # Check for paralysis - completely prevents all actions
+        if (hasattr(self.owner, 'has_status_effect') and 
+            callable(self.owner.has_status_effect) and 
+            self.owner.has_status_effect('paralysis')):
+            results.append({'message': MB.custom(f"{self.owner.name} is paralyzed and cannot act!", (150, 75, 200))})
+            return results
+        
         # Check if there's a taunted target (Yo Mama spell effect)
         # Even mindless zombies are drawn to the insult!
         taunted_target = find_taunted_target(entities)
@@ -895,6 +917,13 @@ class SlimeAI:
                     results.append(result)
                     return results  # Skip turn entirely
                 results.append(result)
+        
+        # Check for paralysis - completely prevents all actions
+        if (hasattr(monster, 'has_status_effect') and 
+            callable(monster.has_status_effect) and 
+            monster.has_status_effect('paralysis')):
+            results.append({'message': MB.custom(f"{monster.name} is paralyzed and cannot act!", (150, 75, 200))})
+            return results
         
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
