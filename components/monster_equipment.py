@@ -278,9 +278,9 @@ class MonsterLootDropper:
                 logger.info(f"{monster.name} dropped BONUS {magic_armor.loot.rarity.display_name} armor: {magic_armor.name}")
         
         # Drop inventory items (if monster has inventory)
-        # NOTE: Items in monster inventory are likely already in the world entities list
-        # (from when they were picked up). We just update their position and clear ownership.
-        # DO NOT return these items to be added again - they're already in entities!
+        # Drop items from monster inventory (items they picked up)
+        # CRITICAL: Items are REMOVED from entities when picked up (see ai.py _pickup_item line 548-549)
+        # So we MUST add them back to dropped_items so they're re-added to entities!
         inventory = monster.get_component_optional(ComponentType.INVENTORY)
         if inventory:
             # Create a copy of the items list to avoid modifying while iterating
@@ -292,8 +292,8 @@ class MonsterLootDropper:
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 item.x = drop_x
                 item.y = drop_y
-                # DON'T add to dropped_items - these items are already in entities!
-                logger.debug(f"Repositioned {item.name} from {monster.name} inventory at ({drop_x}, {drop_y})")
+                dropped_items.append(item)  # MUST add to dropped_items - they were removed from entities when picked up!
+                logger.info(f"Dropped {item.name} from {monster.name} inventory at ({drop_x}, {drop_y})")
         
         if dropped_items:
             logger.info(f"{monster.name} dropped {len(dropped_items)} items around ({x}, {y})")
