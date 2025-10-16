@@ -581,14 +581,23 @@ class GameMap:
                     failed_count += 1
                     break
                     
-                # Try to create as spell/potion (most items are spells)
-                item = entity_factory.create_spell_item(spawn.entity_type, x, y)
+                # Try to create item using smart fallback (supports all item types)
+                item = entity_factory.create_weapon(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_armor(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_ring(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_spell_item(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_wand(spawn.entity_type, x, y, self.dungeon_level)
+                
                 if item:
                     entities.append(item)
                     invalidate_entity_cache("guaranteed_spawn_item")
                     spawned_count += 1
                 else:
-                    logger.warning(f"Failed to create item: {spawn.entity_type}")
+                    logger.warning(f"Failed to create guaranteed item: {spawn.entity_type} (not found in any category)")
                     failed_count += 1
                     
         # Place guaranteed equipment (weapons/armor)
@@ -820,13 +829,23 @@ class GameMap:
                     failed_count += 1
                     break
                     
-                item = entity_factory.create_spell_item(spawn.entity_type, x, y)
+                # Try to create item using smart fallback (supports all item types)
+                item = entity_factory.create_weapon(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_armor(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_ring(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_spell_item(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_wand(spawn.entity_type, x, y, self.dungeon_level)
+                
                 if item:
                     entities.append(item)
                     invalidate_entity_cache("special_room_item")
                     spawned_count += 1
                 else:
-                    logger.warning(f"Failed to create item: {spawn.entity_type}")
+                    logger.warning(f"Failed to create special room item: {spawn.entity_type} (not found in any category)")
                     failed_count += 1
                     
         # Place guaranteed equipment
