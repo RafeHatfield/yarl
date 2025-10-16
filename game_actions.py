@@ -171,9 +171,12 @@ class ActionProcessor:
         
         Returns to PLAYERS_TURN state.
         """
+        print("=== _HANDLE_EXIT ENTERED ===")  # DEBUG: Verify function is called
         import logging
         logger = logging.getLogger(__name__)
+        print(f"=== LOGGER CREATED ===")  # DEBUG: Verify logger works
         current_state = self.state_manager.state.current_state
+        print(f"=== CURRENT STATE: {current_state} ===")  # DEBUG: Verify state access
         logger.warning(f"_handle_exit called! Current state: {current_state}")
         
         # Clear any targeting state data
