@@ -54,7 +54,7 @@ class TestMenuExitHandling:
     def test_exit_from_throw_select_item(self, mock_state_manager):
         """ESC should close throw menu and return to PLAYERS_TURN.
         
-        BUG: This was broken! _handle_exit wasn't implemented!
+        BUG FIXED: Duplicate _handle_exit methods! Old one didn't include THROW_SELECT_ITEM!
         """
         mock_state_manager.state.current_state = GameStates.THROW_SELECT_ITEM
         
@@ -68,30 +68,32 @@ class TestMenuExitHandling:
         mock_state_manager.set_extra_data.assert_called_with("throw_target", None)
     
     def test_exit_from_throw_targeting(self, mock_state_manager):
-        """ESC should cancel throw targeting and return to PLAYERS_TURN."""
+        """ESC should cancel throw targeting and return to previous state."""
         mock_state_manager.state.current_state = GameStates.THROW_TARGETING
+        mock_state_manager.get_extra_data.return_value = GameStates.PLAYERS_TURN
         
         processor = ActionProcessor(mock_state_manager)
         processor._handle_exit(None)
         
-        # Should return to PLAYERS_TURN
+        # Should return to previous state (PLAYERS_TURN)
         mock_state_manager.set_game_state.assert_called_with(GameStates.PLAYERS_TURN)
         
-        # Should clear both throw_item and throw_target
-        assert mock_state_manager.set_extra_data.call_count == 2
+        # Should clear targeting_item, previous_state, throw_item, and throw_target
+        assert mock_state_manager.set_extra_data.call_count == 4
     
     def test_exit_from_targeting(self, mock_state_manager):
-        """ESC should cancel spell targeting and return to PLAYERS_TURN."""
+        """ESC should cancel spell targeting and return to previous state."""
         mock_state_manager.state.current_state = GameStates.TARGETING
+        mock_state_manager.get_extra_data.return_value = GameStates.PLAYERS_TURN
         
         processor = ActionProcessor(mock_state_manager)
         processor._handle_exit(None)
         
-        # Should return to PLAYERS_TURN
+        # Should return to previous state (PLAYERS_TURN)
         mock_state_manager.set_game_state.assert_called_with(GameStates.PLAYERS_TURN)
         
-        # Should clear targeting_item
-        mock_state_manager.set_extra_data.assert_called_with("targeting_item", None)
+        # Should clear targeting_item and previous_state
+        assert mock_state_manager.set_extra_data.call_count == 2
     
     def test_exit_from_character_screen(self, mock_state_manager):
         """ESC should close character screen and return to PLAYERS_TURN."""
