@@ -265,6 +265,60 @@ class TestLootWeaponEnhancement:
 class TestSmartFallbackSystem:
     """Test the smart fallback system in place_entities."""
     
+    def test_fallback_no_warnings_for_intermediate_failures(self, factory, caplog):
+        """Test that smart fallback doesn't log warnings for intermediate failures.
+        
+        When the fallback tries create_ring('teleport_scroll'), it should NOT log
+        'Unknown ring type' because it's expected to fail and fall through to the
+        next method (create_spell_item).
+        """
+        import logging
+        
+        # Clear any previous logs
+        caplog.clear()
+        
+        # Simulate smart fallback for a ring
+        with caplog.at_level(logging.WARNING):
+            item = factory.create_weapon("ring_of_protection", 0, 0)
+            if not item:
+                item = factory.create_armor("ring_of_protection", 0, 0)
+            if not item:
+                item = factory.create_ring("ring_of_protection", 0, 0)
+        
+        # Should succeed at ring step with NO warnings
+        assert item is not None
+        assert item.name == "Ring Of Protection"
+        
+        # Check no "Unknown" warnings were logged (ignore identification warnings)
+        warnings = [record.message for record in caplog.records 
+                   if record.levelname == 'WARNING' and 'Unknown' in record.message]
+        assert len(warnings) == 0, f"Should have no 'Unknown' warnings, but got: {warnings}"
+    
+    def test_fallback_no_warnings_for_scrolls_tried_as_rings(self, factory, caplog):
+        """Test that trying to create a scroll as a ring doesn't log warnings."""
+        import logging
+        
+        caplog.clear()
+        
+        # Simulate smart fallback for a scroll (tries ring before spell)
+        with caplog.at_level(logging.WARNING):
+            item = factory.create_weapon("teleport_scroll", 0, 0)
+            if not item:
+                item = factory.create_armor("teleport_scroll", 0, 0)
+            if not item:
+                item = factory.create_ring("teleport_scroll", 0, 0)
+            if not item:
+                item = factory.create_spell_item("teleport_scroll", 0, 0)
+        
+        # Should succeed at spell step with NO warnings
+        assert item is not None
+        assert item.name == "Teleport Scroll"
+        
+        # Check no "Unknown" warnings were logged (ignore identification warnings)
+        warnings = [record.message for record in caplog.records 
+                   if record.levelname == 'WARNING' and 'Unknown' in record.message]
+        assert len(warnings) == 0, f"Should have no 'Unknown' warnings, but got: {warnings}"
+    
     def test_fallback_creates_weapons(self, factory):
         """Test that smart fallback creates weapons correctly."""
         # The fallback should try: weapon → armor → ring → spell → wand

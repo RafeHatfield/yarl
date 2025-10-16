@@ -283,7 +283,7 @@ class EntityFactory:
         """
         weapon_def = self.registry.get_weapon(weapon_type)
         if not weapon_def:
-            logger.debug(f"Unknown weapon type: {weapon_type}")
+            # Don't log - this is called as part of smart fallback chain
             return None  # Return None so caller can try armor
 
         try:
@@ -330,7 +330,7 @@ class EntityFactory:
         """
         armor_def = self.registry.get_armor(armor_type)
         if not armor_def:
-            logger.debug(f"Unknown armor type: {armor_type}")
+            # Don't log - this is called as part of smart fallback chain
             return None  # Return None so caller can try weapon
 
         try:
@@ -375,8 +375,8 @@ class EntityFactory:
         """
         spell_def = self.registry.get_spell(spell_type)
         if not spell_def:
-            logger.warning(f"Unknown spell type: {spell_type}")
-            return self._create_fallback_spell(spell_type, x, y)
+            # Don't log - this is called as part of smart fallback chain
+            return None  # Return None so caller can try other methods
 
         try:
             # Create item component with appropriate function
@@ -488,7 +488,7 @@ class EntityFactory:
         """
         ring_def = self.registry.get_ring(ring_type)
         if not ring_def:
-            logger.warning(f"Unknown ring type: {ring_type}")
+            # Don't log - this is called as part of smart fallback chain
             return None
 
         try:
