@@ -154,6 +154,12 @@ class BossAI:
                         monster.x = next_x
                         monster.y = next_y
         
+        # Process status effects at turn end (decrement durations, remove expired effects)
+        status_effects = monster.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            end_results = status_effects.process_turn_end()
+            results.extend(end_results)
+        
         return results
     
     def _get_path_to(self, target, game_map, entities):
@@ -420,6 +426,12 @@ class BasicMonster:
                 attack_results = monster.fighter.attack_d20(target)
                 results.extend(attack_results)
                 actions_taken.append("combat")
+
+        # Process status effects at turn end (decrement durations, remove expired effects)
+        status_effects = monster.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            end_results = status_effects.process_turn_end()
+            results.extend(end_results)
 
         MonsterActionLogger.log_turn_summary(monster, actions_taken)
         return results
@@ -755,6 +767,12 @@ class MindlessZombieAI:
                 if not blocking_entity:
                     self.owner.move(dx, dy)
         
+        # Process status effects at turn end (decrement durations, remove expired effects)
+        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            end_results = status_effects.process_turn_end()
+            results.extend(end_results)
+        
         return results
     
     def _find_adjacent_targets(self, entities):
@@ -967,6 +985,12 @@ class SlimeAI:
                 MonsterActionLogger.log_action_attempt(
                     monster, "attack", f"attacking {best_target.name}"
                 )
+        
+        # Process status effects at turn end (decrement durations, remove expired effects)
+        status_effects = monster.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            end_results = status_effects.process_turn_end()
+            results.extend(end_results)
         
         return results
     
