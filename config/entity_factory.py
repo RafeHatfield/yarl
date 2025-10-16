@@ -768,7 +768,7 @@ class EntityFactory:
             )
         elif spell_def.name.lower().replace(' ', '_') == "identify_scroll":
             from item_functions import cast_identify
-            duration = getattr(spell_def, 'duration', 10)  # Default 10 turns of identify mode
+            duration = getattr(spell_def, 'duration', 5)  # Default 5 turns of identify mode
             return Item(
                 use_function=cast_identify,
                 duration=duration

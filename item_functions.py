@@ -700,22 +700,25 @@ def cast_rage(*args, **kwargs):
 
 
 def cast_identify(*args, **kwargs):
-    """Identify an unidentified item in the player's inventory.
+    """Grant temporary identification powers for 5 turns.
     
-    Shows a menu of unidentified items and identifies the selected one.
-    This is a special spell that doesn't use targeting.
+    Applies IdentifyModeEffect which automatically identifies 1 random
+    unidentified item per turn for 5 turns.
     
     Args:
         *args: First argument should be the caster (player)
-        **kwargs: Additional arguments (not used for identify)
+        **kwargs: duration (optional, defaults to 5)
     
     Returns:
-        list: List of result dictionaries with identification results
+        list: List of result dictionaries with status effect application
     """
+    from components.status_effects import IdentifyModeEffect
+    
     caster = args[0]
     results = []
+    duration = kwargs.get('duration', 5)
     
-    # Get player's inventory
+    # Check if player has any unidentified items
     if not hasattr(caster, 'inventory') or not caster.inventory:
         results.append({
             "consumed": False,
@@ -723,40 +726,27 @@ def cast_identify(*args, **kwargs):
         })
         return results
     
-    # Find all unidentified items
-    unidentified_items = []
+    # Count unidentified items
+    unidentified_count = 0
     for item in caster.inventory.items:
         item_comp = getattr(item, 'item', None)
         if item_comp and hasattr(item_comp, 'identified') and not item_comp.identified:
-            unidentified_items.append(item)
+            unidentified_count += 1
     
-    if len(unidentified_items) == 0:
+    if unidentified_count == 0:
         results.append({
             "consumed": False,
             "message": MB.info("You have no unidentified items!")
         })
         return results
     
-    # For now, identify the first unidentified item
-    # TODO: In future, this should show a menu to let player choose
-    item_to_identify = unidentified_items[0]
-    item_comp = item_to_identify.item
+    # Apply identify mode effect
+    identify_effect = IdentifyModeEffect(duration=duration, owner=caster)
+    effect_results = caster.status_effects.add_effect(identify_effect)
+    results.extend(effect_results)
     
-    # Identify the item
-    was_unidentified = item_comp.identify()
-    
-    if was_unidentified:
-        results.append({
-            "consumed": True,
-            "message": MB.item_pickup(
-                f"You identify the {item_comp.appearance} as {item_to_identify.name}!"
-            )
-        })
-    else:
-        results.append({
-            "consumed": False,
-            "message": MB.warning("The item was already identified!")
-        })
+    # Scroll is consumed
+    results.append({"consumed": True})
     
     return results
 # This will be appended to item_functions.py

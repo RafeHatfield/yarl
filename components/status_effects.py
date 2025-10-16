@@ -490,15 +490,14 @@ class ParalysisEffect(StatusEffect):
 
 
 class IdentifyModeEffect(StatusEffect):
-    """Allows the owner to identify 1 item per turn for the duration.
+    """Automatically identifies 1 random item per turn for the duration.
     
     Used by the Identify scroll - grants temporary identification powers.
-    Player can identify 1 unidentified item per turn while this effect is active.
+    At the start of each turn, automatically identifies 1 random unidentified item.
     """
     
     def __init__(self, duration: int, owner: 'Entity'):
         super().__init__("identify_mode", duration, owner)
-        self.identifies_used_this_turn = 0
     
     def apply(self) -> List[Dict[str, Any]]:
         """Apply the identification buff."""
@@ -506,32 +505,53 @@ class IdentifyModeEffect(StatusEffect):
         results.append({
             'message': MB.status_effect(
                 f"✨ {self.owner.name}'s mind expands with knowledge! "
-                f"You can identify items for {self.duration} turns."
+                f"Items will be identified automatically for {self.duration} turns."
             )
         })
         return results
     
-    def can_identify_item(self) -> bool:
-        """Check if the owner can identify an item this turn.
-        
-        Returns:
-            bool: True if an identify action is available this turn
-        """
-        return self.identifies_used_this_turn < 1
-    
-    def use_identify(self) -> None:
-        """Mark that an identify action was used this turn."""
-        self.identifies_used_this_turn += 1
-    
     def process_turn_start(self) -> List[Dict[str, Any]]:
-        """Reset identify counter at the start of each turn."""
+        """Automatically identify 1 random unidentified item at turn start."""
         results = super().process_turn_start()
-        self.identifies_used_this_turn = 0  # Reset for new turn
         
-        if self.duration > 0:
+        # Find all unidentified items in inventory
+        if not hasattr(self.owner, 'inventory') or not self.owner.inventory:
+            return results
+        
+        unidentified_items = []
+        for item in self.owner.inventory.items:
+            item_comp = getattr(item, 'item', None)
+            if item_comp and hasattr(item_comp, 'identified') and not item_comp.identified:
+                unidentified_items.append(item)
+        
+        # If there are unidentified items, identify one randomly
+        if unidentified_items:
+            import random
+            item_to_identify = random.choice(unidentified_items)
+            item_comp = item_to_identify.item
+            old_appearance = item_comp.appearance if hasattr(item_comp, 'appearance') else "mysterious item"
+            
+            # Get entities list for global sync (try multiple sources)
+            entities = None
+            if hasattr(self.owner, 'game_map') and hasattr(self.owner.game_map, 'entities'):
+                entities = self.owner.game_map.entities
+            # Fallback: pass None, identification will still work for this item
+            
+            # Identify the item (and all others of the same type)
+            was_unidentified = item_comp.identify(entities=entities)
+            
+            if was_unidentified:
+                results.append({
+                    'message': MB.item_pickup(
+                        f"🔍 You identify the {old_appearance} as {item_to_identify.name}!"
+                    )
+                })
+        else:
+            # No more unidentified items - effect can end early
             results.append({
-                'message': MB.info(f"🔍 Identify Mode: {self.duration} turns remaining")
+                'message': MB.info("🔍 All items identified! Identify mode ends.")
             })
+            self.duration = 0  # End effect early
         
         return results
     

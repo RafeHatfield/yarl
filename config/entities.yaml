@@ -782,12 +782,12 @@ spells:
     damage: 20  # Base damage (3d6 in spell def)
     radius: 3  # AOE radius
   
-  # Identify scroll - grants temporary identification powers
+  # Identify scroll - auto-identifies 1 random item per turn
   identify_scroll:
     spell_type: "utility"
     char: "~"
     color: [255, 215, 0]  # Gold
-    duration: 10  # Turns of identify mode
+    duration: 5  # Turns of identify mode (identifies 5 random items)
 
 # ═══════════════════════════════════════════════════════════
 # WANDS - Multi-charge reusable magic items
