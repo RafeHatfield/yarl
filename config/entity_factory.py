@@ -231,9 +231,11 @@ class EntityFactory:
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai
+                from components.component_registry import ComponentType
                 item_seeking_ai = create_item_seeking_ai(monster, monster_def)
                 if item_seeking_ai:
-                    monster.item_seeking_ai = item_seeking_ai
+                    monster.item_seeking_ai = item_seeking_ai  # Legacy attribute for backward compatibility
+                    monster.components.add(ComponentType.ITEM_SEEKING_AI, item_seeking_ai)  # Register with ComponentRegistry
                     logger.debug(f"Added item-seeking AI to {monster_def.name}")
                 else:
                     logger.warning(f"Failed to create item-seeking AI for {monster_def.name}")

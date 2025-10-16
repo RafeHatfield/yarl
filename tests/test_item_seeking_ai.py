@@ -7,15 +7,8 @@ This module tests the item-seeking behavior for monsters, including:
 - Integration with existing AI
 """
 
-
-# QUARANTINED: AI creation logic needs review
-# See QUARANTINED_TESTS.md for details.
-
-import pytest
-
-# Quarantine entire file
-pytestmark = pytest.mark.skip(reason="Quarantined - AI creation logic needs review. See QUARANTINED_TESTS.md")
 import unittest
+import pytest
 from unittest.mock import Mock, patch, MagicMock
 import math
 
@@ -298,6 +291,8 @@ class TestItemSeekingAICreation(unittest.TestCase):
         # Mock ComponentRegistry to return None for inventory
         monster.components = Mock()
         monster.components.get = Mock(return_value=None)
+        # Also mock get_component_optional (used by create_item_seeking_ai)
+        monster.get_component_optional = Mock(return_value=None)
         
         monster_def = Mock()
         monster_def.can_seek_items = True
