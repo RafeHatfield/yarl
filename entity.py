@@ -186,7 +186,7 @@ class Entity:
                 component.owner = self
     
     @classmethod
-    def create_player(cls, x, y, fighter, inventory, level, equipment):
+    def create_player(cls, x, y, fighter, inventory, level, equipment, status_effects=None):
         """Create a player entity with standard components.
         
         Args:
@@ -196,14 +196,21 @@ class Entity:
             inventory (Inventory): Inventory component
             level (Level): Level/XP component
             equipment (Equipment): Equipment component
+            status_effects (StatusEffectManager): Status effect manager (auto-created if None)
             
         Returns:
             Entity: Configured player entity
         """
+        # Auto-create StatusEffectManager if not provided
+        if status_effects is None:
+            from components.status_effects import StatusEffectManager
+            status_effects = StatusEffectManager()
+        
         return cls(
             x=x, y=y, char='@', color=(255, 255, 255), name='Player',
             blocks=True, render_order=RenderOrder.ACTOR, faction=Faction.PLAYER,
-            fighter=fighter, inventory=inventory, level=level, equipment=equipment
+            fighter=fighter, inventory=inventory, level=level, equipment=equipment,
+            status_effects=status_effects
         )
     
     @classmethod
