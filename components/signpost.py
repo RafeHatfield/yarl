@@ -115,8 +115,9 @@ class Signpost(MapFeature):
         results = []
         
         if not self.can_interact():
+            from message_builder import MessageBuilder as MB
             results.append({
-                'message': "You can't read that right now."
+                'message': MB.warning("You can't read that right now.")
             })
             return results
         

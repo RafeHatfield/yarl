@@ -144,36 +144,40 @@ class Chest(MapFeature):
         
         if not self.can_interact():
             if self.state == ChestState.OPEN:
+                from message_builder import MessageBuilder as MB
                 results.append({
-                    'message': "This chest is already empty."
+                    'message': MB.info("This chest is already empty.")
                 })
             return results
         
         # Check if mimic
         if self.is_mimic:
+            from message_builder import MessageBuilder as MB
             results.append({
                 'mimic_revealed': True,
                 'entity': self.owner,
-                'message': "The chest comes alive and attacks!"
+                'message': MB.warning("The chest comes alive and attacks!")
             })
             return results
         
         # Check if locked
         if self.is_locked():
+            from message_builder import MessageBuilder as MB
             if not has_key:
                 results.append({
-                    'message': "This chest is locked. You need a key to open it."
+                    'message': MB.warning("This chest is locked. You need a key to open it.")
                 })
                 return results
             else:
                 results.append({
-                    'message': "You unlock the chest with the key."
+                    'message': MB.info("You unlock the chest with the key.")
                 })
         
         # Check if trapped
         if self.is_trapped():
+            from message_builder import MessageBuilder as MB
             results.append({
-                'message': "You trigger a trap!",
+                'message': MB.error("You trigger a trap!"),
                 'trap_triggered': True,
                 'trap_type': self.trap_type
             })
@@ -187,10 +191,11 @@ class Chest(MapFeature):
         if not self.loot:
             self.loot = self._generate_loot()
         
+        from message_builder import MessageBuilder as MB
         results.append({
             'chest_opened': True,
             'loot': self.loot,
-            'message': f"You open the chest and find {len(self.loot)} item(s)!"
+            'message': MB.success(f"You open the chest and find {len(self.loot)} item(s)!")
         })
         
         return results
