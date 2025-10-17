@@ -49,6 +49,9 @@ class ComponentType(Enum):
         ITEM_USAGE: Monster item usage AI component
         ITEM_SEEKING_AI: Monster item-seeking behavior
         AUTO_EXPLORE: Automated dungeon exploration for player
+        MAP_FEATURE: Base map feature (chests, signposts, etc.)
+        CHEST: Interactive chest container
+        SIGNPOST: Readable sign with messages
     """
     FIGHTER = auto()
     AI = auto()
@@ -69,6 +72,9 @@ class ComponentType(Enum):
     ITEM_USAGE = auto()
     ITEM_SEEKING_AI = auto()
     AUTO_EXPLORE = auto()
+    MAP_FEATURE = auto()
+    CHEST = auto()
+    SIGNPOST = auto()
 
 
 class ComponentRegistry:

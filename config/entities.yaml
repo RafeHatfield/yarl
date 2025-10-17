@@ -1012,3 +1012,103 @@ rings:
     color: [255, 215, 180]  # Rose gold
     ring_effect: "luck"
     effect_strength: 5  # +5% crit chance, better loot
+
+# ==============================================================================
+# MAP FEATURES - Interactive environmental objects
+# ==============================================================================
+# Map features are interactive entities on the game map that provide
+# discovery moments, loot, information, or access to new areas.
+#
+# Feature Types:
+#   - Chests: Loot containers (can be trapped, locked, or mimics)
+#   - Signposts: Readable signs with messages (lore, warnings, hints)
+#   - Secret Doors: Hidden passages (75% passive reveal when adjacent)
+#   - Vaults: Special treasure rooms with tougher enemies
+#
+# Chests can be in various states:
+#   - closed: Normal chest, ready to open
+#   - trapped: Triggers trap on open (damage, status effect, monster spawn)
+#   - locked: Requires key to open
+#   - mimic: Actually a monster in disguise!
+#
+# Signpost types:
+#   - lore: Backstory about the dungeon
+#   - warning: Alerts about nearby dangers
+#   - humor: Easter eggs and jokes
+#   - hint: Clues about nearby secrets
+#   - directional: Navigation help
+
+map_features:
+  # ============================================================================
+  # CHESTS - Loot containers
+  # ============================================================================
+  
+  chest:
+    char: "C"
+    color: [139, 69, 19]  # Brown/wooden
+    blocks: false
+    render_order: "item"
+    chest_state: "closed"
+    loot_quality: "common"
+  
+  # Rare/valuable chest variant
+  golden_chest:
+    char: "C"
+    color: [255, 215, 0]  # Gold
+    blocks: false
+    render_order: "item"
+    chest_state: "closed"
+    loot_quality: "rare"
+  
+  # Trapped chest variant
+  trapped_chest:
+    char: "C"
+    color: [150, 75, 25]  # Dark brown
+    blocks: false
+    render_order: "item"
+    chest_state: "trapped"
+    trap_type: "damage"  # Or: poison, monster_spawn
+    loot_quality: "uncommon"
+  
+  # Locked chest variant
+  locked_chest:
+    char: "C"
+    color: [100, 100, 120]  # Iron/steel
+    blocks: false
+    render_order: "item"
+    chest_state: "locked"
+    key_id: "dungeon_key"
+    loot_quality: "rare"
+  
+  # ============================================================================
+  # SIGNPOSTS - Readable messages
+  # ============================================================================
+  
+  signpost:
+    char: "|"
+    color: [139, 69, 19]  # Brown wood
+    blocks: false
+    render_order: "item"
+    sign_type: "lore"
+    # message will be set dynamically or from templates
+  
+  warning_sign:
+    char: "|"
+    color: [255, 69, 0]  # Red/orange for warnings
+    blocks: false
+    render_order: "item"
+    sign_type: "warning"
+  
+  humor_sign:
+    char: "|"
+    color: [100, 200, 255]  # Cyan for humor
+    blocks: false
+    render_order: "item"
+    sign_type: "humor"
+  
+  hint_sign:
+    char: "|"
+    color: [255, 215, 0]  # Gold for hints
+    blocks: false
+    render_order: "item"
+    sign_type: "hint"
