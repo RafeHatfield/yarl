@@ -590,6 +590,71 @@ class IdentifyModeEffect(StatusEffect):
         return results
 
 
+class FearEffect(StatusEffect):
+    """Makes the owner flee from enemies in terror.
+    
+    Used by the Fear scroll - causes enemies to run away from threats.
+    Affected creatures will attempt to move away from the player.
+    """
+    
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("fear", duration, owner)
+        self.previous_ai = None
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply the fear effect."""
+        results = super().apply()
+        
+        # Store the current AI and replace with fleeing behavior
+        # We'll modify the AI to flee in the actual AI processing
+        results.append({
+            'message': MB.warning(f"{self.owner.name} flees in terror!")
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove the fear effect."""
+        results = super().remove()
+        results.append({
+            'message': MB.status_effect(f"{self.owner.name} is no longer afraid.")
+        })
+        return results
+
+
+class DetectMonsterEffect(StatusEffect):
+    """Allows the owner to sense the presence and location of all monsters.
+    
+    Used by the Detect Monster scroll - grants temporary monster detection.
+    The player can see all monsters on the current level regardless of FOV.
+    """
+    
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("detect_monster", duration, owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply the detect monster buff."""
+        results = super().apply()
+        # Set a flag on the owner to indicate they can detect monsters
+        self.owner.detecting_monsters = True
+        results.append({
+            'message': MB.status_effect(
+                f"👁️ {self.owner.name} senses the presence of all monsters for {self.duration} turns!"
+            )
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove the detect monster buff."""
+        results = super().remove()
+        self.owner.detecting_monsters = False
+        results.append({
+            'message': MB.status_effect(
+                f"{self.owner.name}'s monster detection fades."
+            )
+        })
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):
@@ -634,11 +699,12 @@ class StatusEffectManager:
     def get_effect(self, name: str) -> Optional[StatusEffect]:
         return self.active_effects.get(name)
 
-    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+    def process_turn_start(self, entities=None, turn_number: int = None) -> List[Dict[str, Any]]:
         """Process status effects at turn start.
         
         Args:
             entities: Optional list of all game entities (for effects that need global access)
+            turn_number: Optional current turn number (for time-based effects like Ring of Regeneration)
         
         Returns:
             List of result dictionaries
@@ -651,7 +717,7 @@ class StatusEffectManager:
         if equipment:
             for ring in [equipment.left_ring, equipment.right_ring]:
                 if ring and ring.components.has(ComponentType.RING):
-                    ring_results = ring.ring.process_turn(self.owner)
+                    ring_results = ring.ring.process_turn(self.owner, turn_number=turn_number)
                     results.extend(ring_results)
         
         # Then process status effects (pass entities to effects that need it)

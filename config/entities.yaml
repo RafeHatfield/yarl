@@ -218,6 +218,11 @@ monsters:
       strength: 20             # Crushing strength (+5 damage modifier)
       dexterity: 14            # Surprisingly agile (+2 to-hit, +2 AC)
       constitution: 18         # Ancient endurance (+4 HP modifier)
+      # Resistances: Dragons are immune to their element
+      resistances:
+        fire: 100              # Immune to fire damage (fire-breathing dragon)
+        cold: 50               # Resistant to cold (thick scales)
+        poison: 30             # Partial poison resistance (ancient creature)
     char: "D"                  # Capital D for Dragon
     color: [255, 50, 0]        # Burning red
     ai_type: "boss"            # Boss AI for enhanced combat behavior
@@ -246,6 +251,11 @@ monsters:
       strength: 16             # Strong (+3 damage modifier)
       dexterity: 16            # Agile (+3 to-hit, +3 AC)
       constitution: 16         # Demonic vitality (+3 HP modifier)
+      # Resistances: Demons are creatures of fire and darkness
+      resistances:
+        fire: 75               # Highly resistant to fire (creature of hell)
+        poison: 100            # Immune to poison (demonic nature)
+        lightning: 50          # Resistant to lightning (magical nature)
     char: "K"                  # Capital K for King
     color: [160, 32, 240]      # Dark purple
     ai_type: "boss"            # Boss AI for enhanced combat behavior
@@ -788,6 +798,21 @@ spells:
     char: "~"
     color: [255, 215, 0]  # Gold
     duration: 5  # Turns of identify mode (identifies 5 random items)
+  
+  # Fear scroll - causes enemies to flee in terror
+  fear_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [139, 69, 19]  # Brown (terror)
+    duration: 15  # How long enemies flee
+    radius: 10  # Large AOE around caster
+  
+  # Detect Monster scroll - reveals all monster locations
+  detect_monster_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 0, 255]  # Magenta (psychic sense)
+    duration: 20  # Turns of monster detection
 
 # ═══════════════════════════════════════════════════════════
 # WANDS - Multi-charge reusable magic items

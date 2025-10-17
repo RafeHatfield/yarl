@@ -246,15 +246,17 @@ def handle_mouse(mouse, camera=None, game_state=None):
     return {}
 
 
-def handle_main_menu(key):
+def handle_main_menu(key, mouse=None):
     """Handle input in the main menu.
 
     Args:
         key: tcod Key object containing key press information
+        mouse: tcod Mouse object containing mouse state (optional)
 
     Returns:
         dict: Dictionary with 'new_game', 'load_game', 'fullscreen', or 'exit' keys
     """
+    # Handle keyboard input
     key_char = chr(key.c)
 
     if key_char == "a":
@@ -263,6 +265,31 @@ def handle_main_menu(key):
         return {"load_game": True}
     elif key_char == "c" or key.vk == libtcod.KEY_ESCAPE:
         return {"exit": True}
+    
+    # Handle mouse clicks
+    if mouse and mouse.lbutton_pressed:
+        from menus import get_menu_click_index
+        from config.ui_layout import get_ui_layout
+        
+        ui_layout = get_ui_layout()
+        
+        # Main menu options
+        options = ["Play a new game", "Continue last game", "Quit"]
+        
+        # Check if click is on a menu option
+        # Main menu uses empty header and width of 24
+        clicked_index = get_menu_click_index(
+            mouse.cx, mouse.cy, "", options, 24,
+            ui_layout.screen_width, ui_layout.screen_height
+        )
+        
+        if clicked_index is not None:
+            if clicked_index == 0:  # Play a new game
+                return {"new_game": True}
+            elif clicked_index == 1:  # Continue last game
+                return {"load_game": True}
+            elif clicked_index == 2:  # Quit
+                return {"exit": True}
 
     return {}
 

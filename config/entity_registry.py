@@ -39,6 +39,8 @@ class EntityStats:
     strength: int = 10
     dexterity: int = 10
     constitution: int = 10
+    # Resistance system (v3.12.0)
+    resistances: Optional[Dict[str, int]] = None
 
     def __post_init__(self):
         """Validate stats after creation."""

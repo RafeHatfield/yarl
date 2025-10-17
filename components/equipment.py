@@ -126,31 +126,38 @@ class Equipment:
         results = []
         slot = equippable_entity.equippable.slot
 
-        # Map slots to their attributes
-        slot_map = {
-            EquipmentSlots.MAIN_HAND: 'main_hand',
-            EquipmentSlots.OFF_HAND: 'off_hand',
-            EquipmentSlots.HEAD: 'head',
-            EquipmentSlots.CHEST: 'chest',
-            EquipmentSlots.FEET: 'feet',
-            EquipmentSlots.LEFT_RING: 'left_ring',
-            EquipmentSlots.RIGHT_RING: 'right_ring'
-        }
-
-        slot_attr = slot_map.get(slot)
-        if not slot_attr:
-            return results  # Unknown slot
-        
-        # Special handling for rings: if RING slot specified, choose left or right
+        # Special handling for RING slot: choose left or right automatically
+        # IMPORTANT: Do this BEFORE the slot_map check!
         if slot == EquipmentSlots.RING:
-            # Try left ring first, then right ring
-            if self.left_ring is None:
+            # Check if this ring is already equipped in either slot
+            if self.left_ring == equippable_entity:
                 slot_attr = 'left_ring'
-            elif self.right_ring is None:
+            elif self.right_ring == equippable_entity:
                 slot_attr = 'right_ring'
             else:
-                # Both slots full, replace left ring
-                slot_attr = 'left_ring'
+                # Not currently equipped - find an available slot
+                if self.left_ring is None:
+                    slot_attr = 'left_ring'
+                elif self.right_ring is None:
+                    slot_attr = 'right_ring'
+                else:
+                    # Both slots full, replace left ring
+                    slot_attr = 'left_ring'
+        else:
+            # Map slots to their attributes
+            slot_map = {
+                EquipmentSlots.MAIN_HAND: 'main_hand',
+                EquipmentSlots.OFF_HAND: 'off_hand',
+                EquipmentSlots.HEAD: 'head',
+                EquipmentSlots.CHEST: 'chest',
+                EquipmentSlots.FEET: 'feet',
+                EquipmentSlots.LEFT_RING: 'left_ring',
+                EquipmentSlots.RIGHT_RING: 'right_ring'
+            }
+
+            slot_attr = slot_map.get(slot)
+            if not slot_attr:
+                return results  # Unknown slot
 
         current_item = getattr(self, slot_attr)
 
@@ -187,6 +194,18 @@ class Equipment:
                 results.append({"dequipped": current_item})
 
             setattr(self, slot_attr, equippable_entity)
+            
+            # Auto-identify equipment when equipped (traditional roguelike behavior)
+            if hasattr(equippable_entity, 'item') and equippable_entity.item:
+                was_unidentified = equippable_entity.item.identify()
+                if was_unidentified:
+                    # Add identification message
+                    from message_builder import MessageBuilder as MB
+                    results.append({
+                        "message": MB.success(f"You recognize this as {equippable_entity.name}!"),
+                        "identified": True
+                    })
+            
             results.append({"equipped": equippable_entity})
 
         return results

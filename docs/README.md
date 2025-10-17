@@ -1,49 +1,139 @@
-# Documentation Index
+# Documentation Organization
 
-Welcome to the **Catacombs of Yarl** documentation! This index helps you find relevant documentation for different aspects of the game.
+This directory contains all project documentation organized by category.
 
-## 🎮 Game Systems
+## 📁 Directory Structure
 
-### Core Systems
-- **[Combat System](COMBAT_SYSTEM.md)** - D&D-style combat mechanics, attack rolls, damage calculations
-- **[AI System](AI_SYSTEM.md)** - Monster AI behaviors (BasicMonster, SlimeAI, BossAI, MindlessZombieAI)
-- **[Spell System](SPELL_SYSTEM.md)** - Spell registry, spell executor, and spell definitions
-- **[Turn & State Architecture](TURN_AND_STATE_ARCHITECTURE.md)** - Turn phase management and game states
+### `/archive/` - Completed & Historical Documentation
 
-### Configuration & Data
-- **[YAML Constants Guide](YAML_CONSTANTS_GUIDE.md)** - How to use and modify game constants
-- **[Message Builder Guide](MESSAGE_BUILDER_GUIDE.md)** - Consistent game message formatting
+Documentation for completed work, archived for reference.
 
-## 🏗️ Architecture & Design
+#### `/archive/bug-fixes/`
+Completed bug fixes with detailed analysis:
+- AUTO_IDENTIFY_MESSAGE_FIX.md
+- EQUIPMENT_UNEQUIP_FIX.md
+- RESISTANCE_CONFIG_FIX.md
+- RING_EQUIPPING_BUG_FIX.md
+- RING_OF_REGENERATION_FIX.md
+- RING_UNEQUIP_BUG_FIX.md
+- SIDEBAR_YCOORD_BUG_FIX.md
+- SESSION_THROWING_FIXES.md
 
-### Best Practices
-- **[Component Type Best Practices](COMPONENT_TYPE_BEST_PRACTICES.md)** - ECS component guidelines
-- **[Refactoring Guide](REFACTORING_GUIDE.md)** - Safe refactoring patterns and strategies
-- **[Testing Strategy](TESTING_STRATEGY.md)** - Test coverage and quality assurance
+#### `/archive/completed-features/`
+Implemented systems and features:
+- RING_SYSTEM_COMPLETE.md
+- RING_SYSTEM_PLAN.md
+- RING_ISSUES_AND_FIXES.md
+- SCROLL_IMPLEMENTATION_COMPLETE.md
+- SCROLL_IMPLEMENTATION_PLAN.md
+- SCROLL_EXPANSION_PLAN.md
+- SCROLL_PROGRESS.md
+- RESISTANCE_SYSTEM_IMPLEMENTATION.md
+- THROWING_SYSTEM_COMPLETE.md
+- TURN_ECONOMY_COMPLETE.md
+- TURN_ECONOMY_IMPLEMENTATION.md
+- ITEM_STACKING_STATUS.md
+- SYSTEMS_ALREADY_COMPLETE.md
 
-### Design Documents
-- **[Manual Level Design](MANUAL_LEVEL_DESIGN.md)** - Template-based level creation
-- **[Camera System Plan](CAMERA_SYSTEM_PLAN.md)** - Future camera/viewport system
-- **[Distribution Plan](DISTRIBUTION_PLAN.md)** - Packaging and deployment strategy
-- **[Story Concepts](STORY_CONCEPTS.md)** - Narrative ideas and lore
-- **[Logging](LOGGING.md)** - Debug and development logging
+#### `/archive/sessions/`
+Development session summaries:
+- SESSION_CONTEXT_v3.11.0.md
+- SESSION_RING_FIXES_OCT17.md
+- SESSION_SUMMARY.md
+- SESSION_v3.10.0_SUMMARY.md
+- SESSION_v3.11.0_SUMMARY.md
+- QOL_IMPROVEMENTS_OCT17.md
+- QUICK_HANDOFF.md
+- CURRENT_STATUS.md
+- FINAL_STATUS.md
 
-### Technical Debt
-- **[Tech Debt Analysis 2025](TECH_DEBT_ANALYSIS_2025.md)** - Current technical debt assessment
+#### `/archive/releases/`
+Version release notes:
+- RELEASE_NOTES_v3.8.0.md
+- RELEASE_NOTES_v3.9.0.md
 
-## 📚 Archived Documentation
+#### `/archive/` (root)
+Original design documents:
+- BOSS_FIGHT_CONCEPT.md
+- MONSTER_LOOT_DESIGN.md
+- POWER_SYSTEM_DESIGN.md
+- SLIME_SYSTEM_DESIGN.md
+- TURN_MANAGER_DESIGN.md
 
-Completed feature designs and historical development docs are in `docs/archive/`:
-- Boss Fight Concept (completed v3.9.0)
-- Slime System Design (completed v3.7.0)
-- Power System Design (completed)
-- Monster Loot Design (completed v3.8.0)
-- Turn Manager Design (completed v3.8.0)
+---
 
-## 🚀 Quick Links
+### `/testing/` - Test Documentation
 
-- **[Main README](../README.md)** - Game overview, installation, and quick start
-- **[Roadmap](../ROADMAP.md)** - Development priorities and future features
-- **[Tech Debt](../TECH_DEBT.md)** - Current technical debt tracking
-- **[Release Notes](../RELEASE_NOTES_v3.9.0.md)** - Latest release information
+Testing strategies, results, and guidelines:
+- TESTING_LESSONS_LEARNED.md
+- TESTING_STRATEGY.md
+- TESTING_RESISTANCE_EXAMPLE.md
+- TESTING_RESISTANCE_SYSTEM.md
+- KNOWN_TEST_POLLUTION.md
+- QUARANTINED_TESTS.md
+- TEST_CLEANUP_COMPLETE.md
+- TEST_EVALUATION_PLAN.md
+- TEST_FIXES_PLAN.md
+- TEST_FIX_SESSION_SUMMARY.md
+- TEST_RESULTS_FINAL.md
+- TESTS_NEEDING_REVIEW.md
 
+---
+
+### `/guides/` - User & Playtesting Guides
+
+Documentation for players and playtesters:
+- PLAYTESTING_CHEAT_SHEET.md
+- PLAYTESTING_GUIDE.md
+
+---
+
+### `/reference/` - Game Content Reference
+
+Reference documentation for game content:
+- ITEMS_REFERENCE.md
+- POTION_VARIETY_SUMMARY.md
+- RING_NOT_IMPLEMENTED.md
+
+---
+
+### `/planning/` - Design & Planning Documents
+
+Active planning and design documents:
+- BALANCE_NOTES.md
+- DUNGEON_LEVELS_PLAN.md
+- RIGHT_CLICK_FEATURES.md
+- TECH_DEBT.md
+
+---
+
+## 📄 Root Directory Documents (Active)
+
+The following documents remain in the project root for quick access:
+
+- **DEPTH_SCORE_TRACKING.md** - KPI dashboard for game depth progress
+- **NEXT_FEATURES_REAL.md** - Prioritized feature list
+- **PLAYER_PAIN_POINTS.md** - Design guidelines to avoid common frustrations
+- **PROJECT_STATS.md** - Codebase statistics and metrics
+- **README.md** - Main project README
+- **ROADMAP.md** - Project roadmap
+- **TRADITIONAL_ROGUELIKE_FEATURES.md** - Beloved features from classic roguelikes
+
+---
+
+## 🔍 Finding Documents
+
+**Looking for...**
+- Bug fix documentation? → `/archive/bug-fixes/`
+- Completed feature docs? → `/archive/completed-features/`
+- Session summaries? → `/archive/sessions/`
+- Release notes? → `/archive/releases/`
+- Testing docs? → `/testing/`
+- Playtesting guides? → `/guides/`
+- Item/content reference? → `/reference/`
+- Design plans? → `/planning/`
+- Active priorities? → **Root directory**
+
+---
+
+*Last updated: October 18, 2025*

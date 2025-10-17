@@ -166,10 +166,10 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
     y_cursor += 2  # Title + spacing
     y_cursor += 2  # Separator + spacing
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 6  # 6 hotkey lines (C, I, G, Z, <>, /)
+    y_cursor += 7  # 7 hotkey lines (C, I, O, G, Z, <>, /)
     y_cursor += 1  # Spacing after hotkeys
     y_cursor += 1  # "EQUIPMENT" header
-    equipment_start_y = y_cursor  # Should be 15
+    equipment_start_y = y_cursor  # Should be 16
     
     # Equipment slots (must match sidebar.py order!)
     equipment_slots = [
@@ -263,15 +263,14 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     y_cursor += 2  # Separator + spacing
     # Hotkeys section in sidebar.py:
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 6  # 6 hotkey lines rendered (even though there are 7 in the list - see git history)
+    y_cursor += 7  # 7 hotkey lines (C, I, O, G, Z, <>, /)
     y_cursor += 1  # Spacing after hotkeys
     # Equipment section in sidebar.py:
     y_cursor += 1  # "EQUIPMENT" header
     y_cursor += 7  # 7 equipment slots (added rings!)
     y_cursor += 1  # Spacing after equipment
     # Inventory section in sidebar.py:
-    y_cursor += 1  # "INVENTORY (N/20)" header
-    y_cursor += 1  # Header is printed, then y increments before items are rendered
+    y_cursor += 1  # "INVENTORY (N/20)" header is printed, y increments, items render at y+1
     
     # Now y_cursor is at first inventory item
     inventory_start_y = y_cursor

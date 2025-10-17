@@ -33,7 +33,7 @@ class UILayoutConfig:
     """
     
     # Sidebar dimensions
-    sidebar_width: int = 20
+    sidebar_width: int = 24  # Increased from 20 (20% wider to reduce text truncation)
     sidebar_enabled: bool = True
     sidebar_padding: int = 1
     

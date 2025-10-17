@@ -114,6 +114,21 @@ class BossAI:
             results.append({'message': MB.custom(f"{monster.name} is paralyzed and cannot act!", (150, 75, 200))})
             return results
         
+        # Check for fear - causes monster to flee
+        if (hasattr(monster, 'has_status_effect') and 
+            callable(monster.has_status_effect) and 
+            monster.has_status_effect('fear')):
+            # Try to move away from target
+            flee_results = self._flee_from_target(target, game_map, entities)
+            if flee_results:
+                results.extend(flee_results)
+            # Process status effects at turn end
+            status_effects = monster.get_component_optional(ComponentType.STATUS_EFFECTS)
+            if status_effects:
+                end_results = status_effects.process_turn_end()
+                results.extend(end_results)
+            return results
+        
         # Get boss component for damage multiplier
         boss = monster.get_component_optional(ComponentType.BOSS)
         
@@ -200,6 +215,84 @@ class BossAI:
         
         # Return path excluding starting position
         return [(x, y) for x, y in path[1:]]
+    
+    def _flee_from_target(self, target, game_map, entities):
+        """Move away from target when afraid.
+        
+        Finds the best direction to flee (away from target) and moves there.
+        
+        Args:
+            target (Entity): Entity to flee from
+            game_map (GameMap): Game map for walkability checks
+            entities (list): All entities for collision detection
+            
+        Returns:
+            list: List of result dictionaries
+        """
+        monster = self.owner
+        results = []
+        
+        # Calculate direction away from target
+        dx = monster.x - target.x
+        dy = monster.y - target.y
+        
+        # Normalize direction (make it unit length approximately)
+        distance = max(abs(dx), abs(dy), 1)  # Avoid division by zero
+        dx = dx / distance
+        dy = dy / distance
+        
+        # Try to move in the flee direction (prefer diagonal if possible)
+        flee_x = monster.x + (1 if dx > 0.3 else (-1 if dx < -0.3 else 0))
+        flee_y = monster.y + (1 if dy > 0.3 else (-1 if dy < -0.3 else 0))
+        
+        # Check if flee position is valid
+        if (0 <= flee_x < game_map.width and 0 <= flee_y < game_map.height and
+            not game_map.is_blocked(flee_x, flee_y)):
+            
+            # Check for blocking entities
+            blocked = False
+            for entity in entities:
+                if entity.x == flee_x and entity.y == flee_y and entity.blocks:
+                    blocked = True
+                    break
+            
+            if not blocked:
+                monster.x = flee_x
+                monster.y = flee_y
+                return results
+        
+        # If direct flee failed, try cardinal directions away from target
+        directions = []
+        if dx > 0:
+            directions.append((1, 0))
+        if dx < 0:
+            directions.append((-1, 0))
+        if dy > 0:
+            directions.append((0, 1))
+        if dy < 0:
+            directions.append((0, -1))
+        
+        for dir_x, dir_y in directions:
+            new_x = monster.x + dir_x
+            new_y = monster.y + dir_y
+            
+            if (0 <= new_x < game_map.width and 0 <= new_y < game_map.height and
+                not game_map.is_blocked(new_x, new_y)):
+                
+                # Check for blocking entities
+                blocked = False
+                for entity in entities:
+                    if entity.x == new_x and entity.y == new_y and entity.blocks:
+                        blocked = True
+                        break
+                
+                if not blocked:
+                    monster.x = new_x
+                    monster.y = new_y
+                    return results
+        
+        # Can't flee - stay in place
+        return results
 
 
 class BasicMonster:
@@ -253,6 +346,22 @@ class BasicMonster:
             self.owner.has_status_effect('paralysis')):
             results.append({'message': MB.custom(f"{self.owner.name} is paralyzed and cannot act!", (150, 75, 200))})
             MonsterActionLogger.log_turn_summary(self.owner, ["paralyzed"])
+            return results
+        
+        # Check for fear - causes monster to flee
+        if (hasattr(self.owner, 'has_status_effect') and 
+            callable(self.owner.has_status_effect) and 
+            self.owner.has_status_effect('fear')):
+            # Try to move away from target
+            flee_results = self._flee_from_target(target, game_map, entities)
+            if flee_results:
+                results.extend(flee_results)
+            MonsterActionLogger.log_turn_summary(self.owner, ["fleeing"])
+            # Process status effects at turn end
+            status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
+            if status_effects:
+                end_results = status_effects.process_turn_end()
+                results.extend(end_results)
             return results
 
         # Check if there's a taunted target (Yo Mama spell effect)
@@ -571,6 +680,84 @@ class BasicMonster:
             "message": MB.item_pickup(f"{self.owner.name.capitalize()} picks up the {item.name}!")
         })
         
+        return results
+    
+    def _flee_from_target(self, target, game_map, entities):
+        """Move away from target when afraid.
+        
+        Finds the best direction to flee (away from target) and moves there.
+        
+        Args:
+            target (Entity): Entity to flee from
+            game_map (GameMap): Game map for walkability checks
+            entities (list): All entities for collision detection
+            
+        Returns:
+            list: List of result dictionaries
+        """
+        monster = self.owner
+        results = []
+        
+        # Calculate direction away from target
+        dx = monster.x - target.x
+        dy = monster.y - target.y
+        
+        # Normalize direction (make it unit length approximately)
+        distance = max(abs(dx), abs(dy), 1)  # Avoid division by zero
+        dx = dx / distance
+        dy = dy / distance
+        
+        # Try to move in the flee direction (prefer diagonal if possible)
+        flee_x = monster.x + (1 if dx > 0.3 else (-1 if dx < -0.3 else 0))
+        flee_y = monster.y + (1 if dy > 0.3 else (-1 if dy < -0.3 else 0))
+        
+        # Check if flee position is valid
+        if (0 <= flee_x < game_map.width and 0 <= flee_y < game_map.height and
+            not game_map.is_blocked(flee_x, flee_y)):
+            
+            # Check for blocking entities
+            blocked = False
+            for entity in entities:
+                if entity.x == flee_x and entity.y == flee_y and entity.blocks:
+                    blocked = True
+                    break
+            
+            if not blocked:
+                monster.x = flee_x
+                monster.y = flee_y
+                return results
+        
+        # If direct flee failed, try cardinal directions away from target
+        directions = []
+        if dx > 0:
+            directions.append((1, 0))
+        if dx < 0:
+            directions.append((-1, 0))
+        if dy > 0:
+            directions.append((0, 1))
+        if dy < 0:
+            directions.append((0, -1))
+        
+        for dir_x, dir_y in directions:
+            new_x = monster.x + dir_x
+            new_y = monster.y + dir_y
+            
+            if (0 <= new_x < game_map.width and 0 <= new_y < game_map.height and
+                not game_map.is_blocked(new_x, new_y)):
+                
+                # Check for blocking entities
+                blocked = False
+                for entity in entities:
+                    if entity.x == new_x and entity.y == new_y and entity.blocks:
+                        blocked = True
+                        break
+                
+                if not blocked:
+                    monster.x = new_x
+                    monster.y = new_y
+                    return results
+        
+        # Can't flee - stay in place
         return results
 
 

@@ -177,7 +177,7 @@ def main():
                                       message="This function is not supported if contexts are being used")
                 libtcod.console_flush()
 
-            action = handle_main_menu(key)
+            action = handle_main_menu(key, mouse)
 
             new_game = action.get("new_game")
             load_saved_game = action.get("load_game")

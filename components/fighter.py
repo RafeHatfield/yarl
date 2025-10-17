@@ -1,5 +1,6 @@
 import logging
 import random
+from enum import Enum, auto
 from game_messages import Message
 from message_builder import MessageBuilder as MB
 from config.testing_config import is_testing_mode
@@ -12,6 +13,33 @@ combat_logger.setLevel(logging.DEBUG)
 
 # General logger for this module
 logger = logging.getLogger(__name__)
+
+# Set up resistance logger for test mode visibility
+resistance_logger = logging.getLogger('resistance_debug')
+resistance_logger.setLevel(logging.INFO)
+
+# Create console handler if not already present
+if not resistance_logger.handlers:
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(message)s')
+    console_handler.setFormatter(formatter)
+    resistance_logger.addHandler(console_handler)
+    # Log that resistance system is active
+    resistance_logger.info("=" * 60)
+    resistance_logger.info("🛡️ RESISTANCE SYSTEM ACTIVE - Logging enabled")
+    resistance_logger.info("   Watch for resistance messages when damage is dealt")
+    resistance_logger.info("=" * 60)
+
+
+class ResistanceType(Enum):
+    """Types of damage resistance."""
+    FIRE = auto()
+    COLD = auto()
+    POISON = auto()
+    LIGHTNING = auto()
+    ACID = auto()
+    PHYSICAL = auto()  # For future use
 
 
 
@@ -40,7 +68,7 @@ class Fighter:
     """
 
     def __init__(self, hp, defense, power, xp=0, damage_min=0, damage_max=0, 
-                 strength=10, dexterity=10, constitution=10):
+                 strength=10, dexterity=10, constitution=10, resistances=None):
         """Initialize a Fighter component.
 
         Args:
@@ -53,6 +81,7 @@ class Fighter:
             strength (int, optional): Strength stat (8-18). Defaults to 10.
             dexterity (int, optional): Dexterity stat (8-18). Defaults to 10.
             constitution (int, optional): Constitution stat (8-18). Defaults to 10.
+            resistances (dict, optional): Dict mapping ResistanceType to percentage (0-100). Defaults to None.
         """
         self.base_max_hp = hp
         self.hp = hp
@@ -66,6 +95,10 @@ class Fighter:
         self.strength = strength
         self.dexterity = dexterity
         self.constitution = constitution
+        
+        # Resistance system: Maps ResistanceType enum to percentage (0-100)
+        # 0 = no resistance, 50 = half damage, 100 = immune
+        self.base_resistances = resistances if resistances else {}
         
         self.owner = None  # Will be set by Entity when component is registered
 
@@ -143,6 +176,89 @@ class Fighter:
                     base_con += ring.ring.get_stat_bonus('constitution')
         
         return self.get_stat_modifier(base_con)
+    
+    def get_resistance(self, resistance_type):
+        """Get total resistance percentage for a damage type.
+        
+        Combines base resistances with equipment bonuses.
+        
+        Args:
+            resistance_type (ResistanceType): Type of resistance to check
+            
+        Returns:
+            int: Resistance percentage (0-100). 0 = no resistance, 50 = half damage, 100 = immune
+        """
+        # Start with base resistance
+        total_resistance = self.base_resistances.get(resistance_type, 0)
+        
+        # Add equipment resistances
+        equipment = self._get_equipment(self.owner)
+        if equipment:
+            # Check all equipped items for resistance bonuses
+            for item in [equipment.main_hand, equipment.off_hand, equipment.head, 
+                        equipment.chest, equipment.feet, equipment.left_ring, equipment.right_ring]:
+                if item and hasattr(item, 'equippable') and item.equippable:
+                    # Check if this equipment provides resistance
+                    item_resistance = getattr(item.equippable, 'resistances', {})
+                    total_resistance += item_resistance.get(resistance_type, 0)
+        
+        # Cap at 100% (immune)
+        return min(total_resistance, 100)
+    
+    def apply_resistance(self, damage, damage_type):
+        """Apply resistance to reduce damage.
+        
+        Args:
+            damage (int): Base damage amount
+            damage_type (str or ResistanceType): Type of damage (e.g., "fire", "cold", etc.)
+            
+        Returns:
+            tuple: (reduced_damage, resistance_pct) - The damage after resistance and the resistance %
+        """
+        # Convert string damage type to ResistanceType enum
+        if isinstance(damage_type, str):
+            damage_type_lower = damage_type.lower()
+            type_mapping = {
+                'fire': ResistanceType.FIRE,
+                'cold': ResistanceType.COLD,
+                'poison': ResistanceType.POISON,
+                'lightning': ResistanceType.LIGHTNING,
+                'electric': ResistanceType.LIGHTNING,  # Alias
+                'acid': ResistanceType.ACID,
+                'physical': ResistanceType.PHYSICAL
+            }
+            resistance_type = type_mapping.get(damage_type_lower)
+            if not resistance_type:
+                # Unknown damage type - no resistance applies
+                logger.debug(f"Unknown damage type '{damage_type}' - no resistance applies")
+                return damage, 0
+        else:
+            resistance_type = damage_type
+        
+        # Get resistance percentage
+        resistance_pct = self.get_resistance(resistance_type)
+        
+        # Log resistance calculation (visible in test mode)
+        entity_name = self.owner.name if self.owner else "Unknown"
+        damage_type_name = resistance_type.name.lower() if hasattr(resistance_type, 'name') else str(damage_type)
+        
+        if resistance_pct <= 0:
+            # No resistance
+            logger.debug(f"{entity_name}: No resistance to {damage_type_name} damage ({damage} damage)")
+            return damage, 0
+        
+        # Calculate reduced damage
+        # resistance_pct is 0-100, where 100 = immune (0 damage)
+        reduction_multiplier = (100 - resistance_pct) / 100.0
+        reduced_damage = int(damage * reduction_multiplier)
+        
+        # Log the resistance application (visible in console)
+        if resistance_pct >= 100:
+            resistance_logger.info(f"🛡️ RESISTANCE: {entity_name} is IMMUNE to {damage_type_name} ({resistance_pct}% resistance) - {damage} damage → 0")
+        elif reduced_damage < damage:
+            resistance_logger.info(f"🛡️ RESISTANCE: {entity_name} resists {damage_type_name} ({resistance_pct}% resistance) - {damage} damage → {reduced_damage}")
+        
+        return reduced_damage, resistance_pct
     
     def _get_equipment(self, entity):
         """Get equipment component from entity, with backward compatibility.
@@ -294,21 +410,40 @@ class Fighter:
 
         return self.base_defense + bonus
 
-    def take_damage(self, amount):
+    def take_damage(self, amount, damage_type=None):
         """Apply damage to this fighter.
-
-        Reduces current HP by the damage amount. If HP drops to 0 or below,
-        marks the fighter as dead and returns XP reward information.
+        
+        Reduces current HP by the damage amount, applying resistances if damage_type specified.
+        If HP drops to 0 or below, marks the fighter as dead and returns XP reward information.
         
         For bosses, also checks for enrage and low HP dialogue triggers.
 
         Args:
             amount (int): Amount of damage to apply
+            damage_type (str or ResistanceType, optional): Type of damage for resistance calculation.
+                Can be "fire", "cold", "poison", "lightning", "acid", etc. Defaults to None (no resistance).
 
         Returns:
             list: List of result dictionaries, may include 'dead', 'xp', 'message' keys
         """
         results = []
+        
+        # Apply resistances if damage type is specified
+        original_damage = amount
+        resistance_pct = 0
+        if damage_type:
+            amount, resistance_pct = self.apply_resistance(amount, damage_type)
+            
+            # Add message if resistance reduced damage significantly
+            if resistance_pct > 0 and self.owner:
+                if resistance_pct >= 100:
+                    results.append({
+                        'message': MB.custom(f"{self.owner.name} is immune to {damage_type}!", (100, 255, 100))
+                    })
+                elif resistance_pct >= 50:
+                    results.append({
+                        'message': MB.info(f"{self.owner.name} resists {damage_type} damage! ({resistance_pct}% resistance, {original_damage} → {amount})")
+                    })
 
         self.hp -= amount
         

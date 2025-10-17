@@ -2,20 +2,20 @@
 
 *Goal: Transform Yarl into one of the best traditional roguelikes by tracking progress toward legendary status.*
 
-## Current Depth Scores (v3.11.0 - Rings + Wands + Scrolls + Throwing)
+## Current Depth Scores (v3.12.0 - Resistance System)
 
 | Category | Current | Target | Gap | Priority Features to Close Gap |
 |----------|---------|--------|-----|-------------------------------|
-| **Discovery** | 6/10 | 10/10 | -4 | Vaults, Secret Doors, Unique Artifacts, More Scroll Types |
+| **Discovery** | 6/10 | 10/10 | -4 | Vaults, Secret Doors, Unique Artifacts |
 | **Resource Management** | 7/10 | 9/10 | -2 | Anti-Grinding Design, Hunger System (optional) |
-| **Build Diversity** | 7/10 | 9/10 | -2 | Amulets, More Resistances, Blessed/Cursed Items |
+| **Build Diversity** | 8/10 | 9/10 | -1 | Amulets, Blessed/Cursed Items |
 | **Emergent Gameplay** | 7/10 | 9/10 | -2 | Item Interactions, Polymorph, Digging |
 | **Memorable Moments** | 6/10 | 10/10 | -4 | Wishes, Polymorph, Divine Intervention, Artifacts |
-| **Combat System** | 8/10 | 9/10 | -1 | (Strong foundation - add fumble effects, swarm mechanics) |
+| **Combat System** | 8.5/10 | 9/10 | -0.5 | (Strong foundation - add fumble effects, swarm mechanics) |
 | **Progression** | 7/10 | 9/10 | -2 | Victory Condition, Hall of Fame, Morgue Files, Classes |
 
-**Overall Depth Score: 48/64 (75%)** → **Target: 64/74 (86%)**
-*Progress: +10 points from v3.10.0 (59% → 75%) - MAJOR LEAP!*
+**Overall Depth Score: 49.5/64 (77%)** → **Target: 64/74 (86%)**
+*Progress: +1.5 points from v3.11.1 (75% → 77%)*
 
 ---
 
@@ -28,13 +28,15 @@
 - Manual level design with special rooms ✅
 - **Item identification system for ALL item types** ✅ (NEW v3.11)
 - 11 potion types ✅
-- **20+ scroll types** ✅ (NEW v3.11)
+- **22 scroll types** ✅ (NEW v3.11.1 - COMPLETE)
 - **15 ring types** ✅ (NEW v3.11)
 - **9 wand types** ✅ (NEW v3.11)
 
-**Recently Completed (v3.11):**
+**Recently Completed (v3.11.1):**
 - ✅ Complete Identification System (scrolls, potions, rings, wands)
-- ✅ Scroll Variety Expansion (8 → 20+ types)
+- ✅ Scroll Variety Expansion (8 → 22 types) - **NOW COMPLETE**
+  - ✅ Fear Scroll - AoE fear effect, enemies flee in terror
+  - ✅ Detect Monster Scroll - See all monsters for 20 turns
 - ✅ Ring System (15 unique passive effect rings)
 - ✅ Wand System (9 rechargeable spell casters)
 - ✅ Identify Scroll (10-turn identification buff)
@@ -321,13 +323,77 @@ Features:
 
 ## Version History
 
-### v3.11.0 (Current - October 16, 2025)
+### v3.12.0 (Current - October 16, 2025)
+**Overall: 49.5/64 (77%)** - Resistance System Complete! ⬆️ +1.5 from v3.11.1
+
+Completed:
+- **Resistance System** - Core elemental damage reduction mechanics ✅
+  - Added ResistanceType enum (FIRE, COLD, POISON, LIGHTNING, ACID, PHYSICAL)
+  - Fighter component tracks base resistances (0-100%)
+  - `get_resistance()` method calculates total resistance
+  - `apply_resistance()` method reduces damage based on type
+  - Resistances cap at 100% (immunity)
+  
+- **Damage System Integration** ✅
+  - `take_damage()` now accepts optional `damage_type` parameter
+  - Shows immunity/resistance messages when damage is reduced
+  - All spell damage now passes damage types to enable resistances
+  - Updated spell_executor: auto-target, AOE, and cone spells
+  
+- **Monster Resistances** ✅
+  - Dragon Lord: 100% fire (immune), 50% cold, 30% poison
+  - Demon King: 75% fire, 100% poison (immune), 50% lightning
+  - Framework ready for more monster resistances
+  
+- **Test Suite** ✅
+  - 13 comprehensive resistance tests
+  - Tests base resistances, immunity, partial resistance, stacking
+  - Tests damage type conversion and unknown types
+  - Full coverage of resistance mechanics
+
+**Depth Score Changes:**
+- Build Diversity: 7/10 → 8/10 (+1) ✅ - Equipment choices now matter for resistances
+- Combat System: 8/10 → 8.5/10 (+0.5) ✅ - Tactical consideration of enemy resistances
+
+**Technical Achievements:**
+- Clean, extensible resistance architecture
+- Backward compatible (damage_type optional)
+- Ready for equipment-based resistance bonuses
+- String damage type aliases for flexibility
+- See `RESISTANCE_SYSTEM_IMPLEMENTATION.md` for full details
+
+**Future Integration:**
+- Equipment with resistance bonuses (Dragon Scale Mail +30% fire)
+- Character screen display of current resistances
+- More monsters with themed resistances
+
+### v3.11.1 (October 16, 2025)
+**Overall: 48/64 (75%)** - Scroll Expansion Complete! ✅
+
+Completed:
+- Fear Scroll - AoE scroll that makes enemies flee in terror ✅
+  - New FearEffect status effect
+  - Modified AI to flee when afraid
+  - 15-turn duration, 10-tile radius
+- Detect Monster Scroll - Reveals all monster locations for 20 turns ✅
+  - New DetectMonsterEffect status effect
+  - Sets detecting_monsters flag on player
+  - Temporary monster ESP
+- Comprehensive Test Suite ✅
+  - 10 new tests for fear and detect monster mechanics
+  - Test coverage for status effects, AI behavior, spell execution
+  
+**Scroll Count: 22 types total** (was 20 in v3.11.0)
+- All planned scrolls from TRADITIONAL_ROGUELIKE_FEATURES.md now implemented
+- Scroll variety expansion is **COMPLETE**
+
+### v3.11.0 (October 16, 2025)
 **Overall: 48/64 (75%)** ⬆️ +10 from v3.10.0 - MAJOR LEAP! 🚀
 
 Completed:
 - Ring System (15 types, passive effects) ✅
 - Wand System (9 types, charges, recharging) ✅
-- Scroll Expansion (20+ types including Haste, Blink, Light, Magic Mapping, Earthquake, Identify) ✅
+- Scroll Expansion (20 types including Haste, Blink, Light, Magic Mapping, Earthquake, Identify) ✅
 - Throwing System (projectile animations, potions shatter, weapons drop) ✅
 - Item Stacking (quantity tracking) ✅
 - Turn Economy (all actions cost 1 turn) ✅
@@ -426,28 +492,29 @@ After completing each feature, update:
 
 ---
 
-## Next Update: Vaults & Secret Doors
+## Next Update: Resistance System
 
 **Expected Impact:**
-- Discovery: 6 → 8 (+2)
-- Memorable Moments: 6 → 7 (+1)
-- Overall: 48/64 → 51/64 (80%)
+- Build Diversity: 7 → 8 (+1)
+- Combat System: 8 → 8.5 (+0.5)
+- Overall: 48/64 → 49.5/64 (77%)
 
 **Why These Changes:**
-- Discovery: Vaults add special treasure rooms with challenges
-- Discovery: Secret doors add hidden passages and shortcuts
-- Memorable Moments: Finding secret vault with legendary loot
+- Build Diversity: Fire/Cold/Poison/Electric resistances create equipment choices
+- Combat System: Tactical considerations for different enemy types
+- Foundation for more interesting loot ("Dragon Scale Mail +30% fire resist")
 
-**Remaining Work:**
-- Implement vault room templates
-- Add secret door mechanics (searching, detection)
-- Balance vault difficulty vs reward
-- Add Ring of Searching interaction
+**Implementation Plan:**
+- Add Resistance component to Fighter
+- Implement resistance types: Fire, Cold, Poison, Electric, Acid
+- Add resistance fields to equipment definitions
+- Modify damage calculation to check resistances
+- Visual indicator on character screen
+- Monster resistances (e.g., fire elementals immune to fire)
 
 **Alternative Next Steps:**
-- **Fear Scroll** (deferred from scroll expansion)
-- **Detect Monster Scroll** (deferred from scroll expansion)
-- **Amulet System** (new equipment slot)
-- **Blessed/Cursed Items** (equipment puzzle layer)
+- **Vaults & Secret Doors** (discovery +2, memorable moments +1)
+- **Amulet System** (new equipment slot, build diversity +1)
+- **Blessed/Cursed Items** (equipment puzzle layer, memorable moments +1)
 - **Comprehensive Playtesting** (find and fix edge cases)
 

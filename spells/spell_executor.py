@@ -192,7 +192,8 @@ class SpellExecutor:
             path = self._bresenham_line(caster.x, caster.y, target.x, target.y)
             spell.visual_effect(path)
         
-        # Apply damage
+        # Apply damage (with damage type for resistance)
+        damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
         message_text = spell.success_message or f"The {spell.name} strikes the {target.name} for {damage} damage!"
         results.append(
             {
@@ -201,7 +202,7 @@ class SpellExecutor:
                 "message": MB.spell_effect(message_text.format(target.name, damage)),
             }
         )
-        results.extend(target.fighter.take_damage(damage))
+        results.extend(target.fighter.take_damage(damage, damage_type=damage_type_str))
         
         return results
     
@@ -273,7 +274,9 @@ class SpellExecutor:
                             )
                         }
                     )
-                    results.extend(entity.fighter.take_damage(damage))
+                    # Apply damage with type for resistance
+                    damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
+                    results.extend(entity.fighter.take_damage(damage, damage_type=damage_type_str))
         
         # Create ground hazards if defined
         if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager'):
@@ -368,7 +371,9 @@ class SpellExecutor:
                         )
                     }
                 )
-                results.extend(entity.fighter.take_damage(damage))
+                # Apply damage with type for resistance
+                damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
+                results.extend(entity.fighter.take_damage(damage, damage_type=damage_type_str))
         
         # Create ground hazards if defined
         if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager'):
@@ -463,10 +468,14 @@ class SpellExecutor:
             return self._cast_confusion_spell(spell, caster, entities, target_x, target_y)
         elif spell.effect_type in [EffectType.SLOW, EffectType.GLUE, EffectType.RAGE]:
             return self._cast_status_effect_spell(spell, caster, entities, fov_map, target_x, target_y)
+        elif spell.effect_type == EffectType.FEAR:
+            return self._cast_fear_spell(spell, caster, entities, fov_map)
         elif spell.spell_id == "teleport":
             return self._cast_teleport_spell(spell, caster, entities, game_map, target_x, target_y)
         elif spell.spell_id == "blink":
             return self._cast_blink_spell(spell, caster, entities, game_map, fov_map, target_x, target_y)
+        elif spell.spell_id == "detect_monster":
+            return self._cast_detect_monster_spell(spell, caster)
         elif spell.spell_id == "magic_mapping":
             return self._cast_magic_mapping_spell(spell, caster, game_map)
         elif spell.spell_id == "light":
@@ -773,6 +782,90 @@ class SpellExecutor:
                 "message": MB.spell_effect(message),
             }
         ]
+    
+    def _cast_fear_spell(
+        self,
+        spell: SpellDefinition,
+        caster,
+        entities: List,
+        fov_map
+    ) -> List[Dict[str, Any]]:
+        """Cast fear spell - makes nearby enemies flee in terror.
+        
+        Applies fear status effect to all enemies within radius that are in FOV.
+        Feared enemies will attempt to run away from the caster.
+        """
+        from components.status_effects import FearEffect, StatusEffectManager
+        
+        # Get spell radius (default to spell definition)
+        radius = spell.radius if hasattr(spell, 'radius') else 10
+        
+        # Find all enemies within radius and in FOV
+        affected_entities = []
+        for entity in entities:
+            if entity == caster or not entity.components.has(ComponentType.FIGHTER):
+                continue
+            
+            # Check if in range
+            distance = math.sqrt((entity.x - caster.x) ** 2 + (entity.y - caster.y) ** 2)
+            if distance > radius:
+                continue
+            
+            # Check if in FOV
+            if not map_is_in_fov(fov_map, entity.x, entity.y):
+                continue
+            
+            # Check boss immunity
+            boss = entity.get_component_optional(ComponentType.BOSS)
+            if boss and boss.is_immune_to("fear"):
+                continue
+            
+            # Ensure entity has status_effects component
+            if not entity.components.has(ComponentType.STATUS_EFFECTS):
+                entity.status_effects = StatusEffectManager(entity)
+                entity.components.add(ComponentType.STATUS_EFFECTS, entity.status_effects)
+            
+            # Apply fear effect
+            effect = FearEffect(duration=spell.duration, owner=entity)
+            entity.status_effects.add_effect(effect)
+            affected_entities.append(entity)
+        
+        # Generate messages
+        results = [{"consumed": True}]
+        
+        if affected_entities:
+            if spell.cast_message:
+                results.append({"message": MB.spell_effect(spell.cast_message)})
+            results.append({
+                "message": MB.spell_effect(f"{len(affected_entities)} enemies flee in terror!")
+            })
+        else:
+            results.append({"message": MB.info("No enemies are close enough to frighten.")})
+        
+        return results
+    
+    def _cast_detect_monster_spell(
+        self,
+        spell: SpellDefinition,
+        caster
+    ) -> List[Dict[str, Any]]:
+        """Cast detect monster spell - grants ability to sense all monsters.
+        
+        Applies detect monster status effect which allows seeing all monsters
+        on the level regardless of FOV for the duration.
+        """
+        from components.status_effects import DetectMonsterEffect, StatusEffectManager
+        
+        # Ensure caster has status_effects component
+        if not caster.components.has(ComponentType.STATUS_EFFECTS):
+            caster.status_effects = StatusEffectManager(caster)
+            caster.components.add(ComponentType.STATUS_EFFECTS, caster.status_effects)
+        
+        # Apply detect monster effect
+        effect = DetectMonsterEffect(duration=spell.duration, owner=caster)
+        effect_results = caster.status_effects.add_effect(effect)
+        
+        return [{"consumed": True}] + effect_results
     
     def _cast_buff_spell(
         self,

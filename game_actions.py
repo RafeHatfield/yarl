@@ -890,6 +890,17 @@ class ActionProcessor:
                 entity_message = MB.custom(entity_quote, (180, 180, 150))  # Muted gold for Entity
                 message_log.add_message(entity_message)
                 
+                # Trigger ring effects for new level (e.g., Ring of Invisibility)
+                if player.equipment:
+                    rings = [player.equipment.left_ring, player.equipment.right_ring]
+                    for ring_entity in rings:
+                        if ring_entity and hasattr(ring_entity, 'ring') and ring_entity.ring:
+                            ring_results = ring_entity.ring.on_new_level(player)
+                            for result in ring_results:
+                                ring_message = result.get('message')
+                                if ring_message:
+                                    message_log.add_message(ring_message)
+                
                 break
         else:
             message = MB.warning("There are no stairs here.")
@@ -1177,10 +1188,22 @@ class ActionProcessor:
                 logger.warning(f"SIDEBAR INVENTORY ITEM CLICKED: index {action['inventory_index']}")
                 self._handle_inventory_action(action['inventory_index'])
             elif 'equipment_slot' in action:
-                # User left-clicked on equipment - could show info or do nothing for now
+                # User left-clicked on equipment - unequip it!
                 logger.warning(f"SIDEBAR EQUIPMENT CLICKED: slot {action['equipment_slot']}")
-                # For now, left-click on equipment does nothing (could add "examine" later)
-                pass
+                equipment_item = action.get('equipment_item')
+                if equipment_item and player.equipment:
+                    # Unequip the item (toggle_equip on already equipped item = unequip)
+                    message_log = self.state_manager.state.message_log
+                    equip_results = player.equipment.toggle_equip(equipment_item)
+                    
+                    for result in equip_results:
+                        message = result.get("message")
+                        if message:
+                            message_log.add_message(message)
+                    
+                    # Unequipping takes a turn
+                    self._process_player_status_effects()
+                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
             else:
                 # User clicked on a hotkey button - process it!
                 logger.warning(f"SIDEBAR HOTKEY CLICKED: {action}")
@@ -1502,7 +1525,21 @@ class ActionProcessor:
         if not player or not message_log:
             return
         
-        # Process status effects turn end
+        # Get current turn number from TurnManager (if available)
+        turn_number = None
+        if self.turn_manager:
+            turn_number = self.turn_manager.turn_number
+        
+        # Process status effects at turn START (for Ring of Regeneration, etc.)
+        # This happens BEFORE the turn ends to apply regeneration
+        if hasattr(player, 'status_effects') and player.status_effects:
+            start_results = player.status_effects.process_turn_start(turn_number=turn_number)
+            for result in start_results:
+                message = result.get("message")
+                if message:
+                    message_log.add_message(message)
+        
+        # Process status effects turn end (duration decrements, etc.)
         effect_results = player.process_status_effects_turn_end()
         
         # Add any messages from status effects

@@ -170,13 +170,14 @@ class Ring:
         
         return False
     
-    def process_turn(self, wearer) -> List[Dict[str, Any]]:
+    def process_turn(self, wearer, turn_number: int = None) -> List[Dict[str, Any]]:
         """Process turn-based effects for this ring.
         
         Called at the start of each turn to handle effects like regeneration.
         
         Args:
             wearer (Entity): The entity wearing this ring
+            turn_number (int): Current turn number (from TurnManager)
             
         Returns:
             List[Dict[str, Any]]: List of result dictionaries with effects/messages
@@ -185,13 +186,22 @@ class Ring:
         
         # Ring of Regeneration: heal every N turns
         if self.ring_effect == RingEffect.REGENERATION:
+            # Get turn number from wearer's turn_count, parameter, or fallback
+            current_turn = None
             if hasattr(wearer, 'turn_count'):
+                current_turn = wearer.turn_count
+            elif turn_number is not None:
+                current_turn = turn_number
+            
+            if current_turn is not None:
                 # Heal every effect_strength turns (default: 5)
-                if wearer.turn_count % self.effect_strength == 0:
+                # Skip turn 0 to avoid healing immediately on equip
+                if current_turn > 0 and current_turn % self.effect_strength == 0:
                     if wearer.fighter and wearer.fighter.hp < wearer.fighter.max_hp:
                         wearer.fighter.heal(1)
+                        from message_builder import MessageBuilder as MB
                         results.append({
-                            'message': f"{wearer.name}'s ring glows softly. (+1 HP)"
+                            'message': MB.status_effect(f"{wearer.name}'s ring glows softly. (+1 HP)")
                         })
         
         return results
@@ -217,6 +227,43 @@ class Ring:
                     'teleport': True,
                     'message': f"{wearer.name}'s ring flashes! You teleport away!"
                 })
+        
+        return results
+    
+    def on_new_level(self, wearer) -> List[Dict[str, Any]]:
+        """Handle ring effects that trigger when entering a new dungeon level.
+        
+        This is called when the wearer descends or ascends stairs to a new level.
+        
+        Args:
+            wearer (Entity): The entity wearing this ring
+            
+        Returns:
+            List[Dict[str, Any]]: List of result dictionaries with effects/messages
+        """
+        results = []
+        
+        # Ring of Invisibility: grant invisibility at start of new level
+        if self.ring_effect == RingEffect.INVISIBILITY:
+            from components.status_effects import InvisibilityEffect, StatusEffectManager
+            from message_builder import MessageBuilder as MB
+            
+            # Ensure wearer has status effects manager
+            if not hasattr(wearer, 'status_effects') or wearer.status_effects is None:
+                wearer.status_effects = StatusEffectManager(wearer)
+            
+            # Grant invisibility for N turns (effect_strength, default: 5)
+            invis_effect = InvisibilityEffect(
+                duration=self.effect_strength,
+                owner=wearer
+            )
+            effect_results = wearer.status_effects.add_effect(invis_effect)
+            results.extend(effect_results)
+            
+            # Add special message for ring trigger
+            results.append({
+                'message': MB.status_effect(f"Your ring shimmers... you fade from view!")
+            })
         
         return results
     
