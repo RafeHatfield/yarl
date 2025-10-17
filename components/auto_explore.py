@@ -233,11 +233,13 @@ class AutoExplore:
         
         Stop conditions (in priority order):
         1. Monster in FOV
-        2. Valuable item in FOV
-        3. Standing on stairs
-        4. Took damage
-        5. Has status effect
-        6. Trap triggered (detected via damage)
+        2. Chest in FOV (unopened)
+        3. Signpost in FOV
+        4. Valuable item in FOV
+        5. Standing on stairs
+        6. Took damage
+        7. Has status effect
+        8. Trap triggered (detected via damage)
         
         Args:
             game_map: Current game map
@@ -255,25 +257,35 @@ class AutoExplore:
         if monster:
             return f"Monster spotted: {monster.name}"
         
-        # 2. Check for valuable items in FOV
+        # 2. Check for chests in FOV
+        chest = self._chest_in_fov(entities, fov_map)
+        if chest:
+            return f"Found {chest.name}"
+        
+        # 3. Check for signposts in FOV
+        signpost = self._signpost_in_fov(entities, fov_map)
+        if signpost:
+            return f"Found {signpost.name}"
+        
+        # 4. Check for valuable items in FOV
         item = self._valuable_item_in_fov(entities, fov_map)
         if item:
             return f"Found {item.name}"
         
-        # 3. Check if standing on stairs
+        # 5. Check if standing on stairs
         if self._on_stairs(entities):
             return "Stairs found"
         
-        # 4. Check for damage taken
+        # 6. Check for damage taken
         if self._took_damage():
             return "Took damage"
         
-        # 5. Check for status effects
+        # 7. Check for status effects
         effect_name = self._has_status_effect()
         if effect_name:
             return f"Affected by {effect_name}"
         
-        # 6. Trap triggered - detected via damage check (already covered by #4)
+        # 8. Trap triggered - detected via damage check (already covered by #6)
         
         return None  # Continue exploring
     
@@ -369,6 +381,75 @@ class AutoExplore:
                     # Found a new valuable item! Mark it as known and return it
                     self.known_items.add(entity_id)
                     logger.debug(f"New valuable item found: {entity.name}")
+                    return entity
+        
+        return None
+    
+    def _chest_in_fov(
+        self, entities: List['Entity'], fov_map
+    ) -> Optional['Entity']:
+        """Check if any unopened chest is visible.
+        
+        Args:
+            entities: All entities on the map
+            fov_map: Field-of-view map
+            
+        Returns:
+            Entity: First unopened chest found, or None
+        """
+        if not self.owner or not fov_map:
+            return None
+        
+        from fov_functions import map_is_in_fov
+        from components.component_registry import ComponentType
+        from components.chest import ChestState
+        
+        for entity in entities:
+            # Must have chest component
+            if not entity.components.has(ComponentType.CHEST):
+                continue
+            
+            # Check if in FOV
+            if map_is_in_fov(fov_map, entity.x, entity.y):
+                chest = entity.chest
+                
+                # Only stop for unopened chests (skip already looted ones)
+                if chest and chest.state != ChestState.OPEN:
+                    logger.debug(f"Unopened chest found: {entity.name}")
+                    return entity
+        
+        return None
+    
+    def _signpost_in_fov(
+        self, entities: List['Entity'], fov_map
+    ) -> Optional['Entity']:
+        """Check if any unread signpost is visible.
+        
+        Args:
+            entities: All entities on the map
+            fov_map: Field-of-view map
+            
+        Returns:
+            Entity: First unread signpost found, or None
+        """
+        if not self.owner or not fov_map:
+            return None
+        
+        from fov_functions import map_is_in_fov
+        from components.component_registry import ComponentType
+        
+        for entity in entities:
+            # Must have signpost component
+            if not entity.components.has(ComponentType.SIGNPOST):
+                continue
+            
+            # Check if in FOV
+            if map_is_in_fov(fov_map, entity.x, entity.y):
+                signpost = entity.signpost
+                
+                # Only stop for unread signposts (skip already read ones)
+                if signpost and not signpost.has_been_read:
+                    logger.debug(f"Unread signpost found: {entity.name}")
                     return entity
         
         return None
