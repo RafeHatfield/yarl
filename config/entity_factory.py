@@ -560,6 +560,133 @@ class EntityFactory:
         except Exception as e:
             logger.error(f"Error creating ring {ring_type}: {e}")
             return None
+    
+    def create_chest(self, chest_type: str, x: int, y: int, loot_quality: Optional[str] = None) -> Optional[Entity]:
+        """Create a chest map feature entity from configuration.
+        
+        Chests are interactive loot containers that can be closed, trapped, locked, or mimics.
+        
+        Args:
+            chest_type: The type of chest to create (e.g., "chest", "trapped_chest", "locked_chest")
+            x: X coordinate for the chest
+            y: Y coordinate for the chest
+            loot_quality: Override loot quality ("common", "uncommon", "rare", "legendary")
+            
+        Returns:
+            Entity instance if chest type exists, None otherwise
+        """
+        chest_def = self.registry.get_map_feature(chest_type)
+        if not chest_def or chest_def.feature_type != "chest":
+            logger.warning(f"Unknown chest type: {chest_type}")
+            return None
+        
+        try:
+            from components.chest import Chest, ChestState
+            
+            # Convert chest_state string to ChestState enum
+            state_map = {
+                "closed": ChestState.CLOSED,
+                "open": ChestState.OPEN,
+                "trapped": ChestState.TRAPPED,
+                "locked": ChestState.LOCKED
+            }
+            
+            chest_state = state_map.get(chest_def.chest_state, ChestState.CLOSED)
+            quality = loot_quality or chest_def.loot_quality or "common"
+            
+            # Create chest component
+            chest_component = Chest(
+                state=chest_state,
+                loot=[],  # Will be populated later
+                trap_type=chest_def.trap_type,
+                key_id=chest_def.key_id,
+                loot_quality=quality
+            )
+            
+            # Create entity
+            chest_entity = Entity(
+                x=x,
+                y=y,
+                char=chest_def.char,
+                color=chest_def.color,
+                name=chest_def.name,
+                blocks=chest_def.blocks
+            )
+            
+            # Attach chest component
+            chest_entity.chest = chest_component
+            chest_component.owner = chest_entity
+            chest_entity.components.add(ComponentType.CHEST, chest_component)
+            
+            # Set render order
+            from render_functions import RenderOrder
+            chest_entity.render_order = getattr(RenderOrder, chest_def.render_order.upper(), RenderOrder.ITEM)
+            
+            logger.debug(f"Created chest: {chest_def.name} at ({x}, {y}) [state: {chest_state.name}, quality: {quality}]")
+            return chest_entity
+        
+        except Exception as e:
+            logger.error(f"Error creating chest {chest_type}: {e}")
+            return None
+    
+    def create_signpost(self, sign_type: str, x: int, y: int, message: Optional[str] = None) -> Optional[Entity]:
+        """Create a signpost map feature entity from configuration.
+        
+        Signposts display readable messages and provide environmental storytelling.
+        
+        Args:
+            sign_type: The type of sign to create (e.g., "signpost", "warning_sign", "humor_sign")
+            x: X coordinate for the signpost
+            y: Y coordinate for the signpost
+            message: Override message text (None = random from pool)
+            
+        Returns:
+            Entity instance if signpost type exists, None otherwise
+        """
+        sign_def = self.registry.get_map_feature(sign_type)
+        if not sign_def or sign_def.feature_type != "signpost":
+            logger.warning(f"Unknown signpost type: {sign_type}")
+            return None
+        
+        try:
+            from components.signpost import Signpost
+            
+            # Use provided message or get random one for the type
+            actual_message = message or sign_def.message
+            if not actual_message:
+                actual_message = Signpost.get_random_message(sign_def.sign_type)
+            
+            # Create signpost component
+            signpost_component = Signpost(
+                message=actual_message,
+                sign_type=sign_def.sign_type
+            )
+            
+            # Create entity
+            sign_entity = Entity(
+                x=x,
+                y=y,
+                char=sign_def.char,
+                color=sign_def.color,
+                name=sign_def.name,
+                blocks=sign_def.blocks
+            )
+            
+            # Attach signpost component
+            sign_entity.signpost = signpost_component
+            signpost_component.owner = sign_entity
+            sign_entity.components.add(ComponentType.SIGNPOST, signpost_component)
+            
+            # Set render order
+            from render_functions import RenderOrder
+            sign_entity.render_order = getattr(RenderOrder, sign_def.render_order.upper(), RenderOrder.ITEM)
+            
+            logger.debug(f"Created signpost: {sign_def.name} at ({x}, {y}) [type: {sign_def.sign_type}]")
+            return sign_entity
+        
+        except Exception as e:
+            logger.error(f"Error creating signpost {sign_type}: {e}")
+            return None
 
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get player starting stats from configuration.

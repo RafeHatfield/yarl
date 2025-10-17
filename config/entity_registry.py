@@ -213,6 +213,40 @@ class RingDefinition:
 
 
 @dataclass
+class MapFeatureDefinition:
+    """Definition for a map feature (chest, signpost, etc).
+    
+    Map features are interactive entities on the game map that provide
+    discovery moments, loot, information, or access to new areas.
+    
+    Types include:
+    - Chests: Loot containers (can be trapped, locked, or mimics)
+    - Signposts: Readable messages (lore, warnings, hints, humor)
+    - Secret Doors: Hidden passages (75% passive reveal)
+    - Vault Doors: Locked entrances to treasure rooms
+    """
+    name: str
+    feature_type: str  # "chest", "signpost", "secret_door", "vault_door"
+    char: str
+    color: Tuple[int, int, int]
+    blocks: bool = False
+    render_order: str = "item"
+    
+    # Chest-specific fields
+    chest_state: Optional[str] = None  # "closed", "trapped", "locked", "mimic"
+    loot_quality: Optional[str] = None  # "common", "uncommon", "rare", "legendary"
+    trap_type: Optional[str] = None  # "damage", "poison", "monster_spawn"
+    key_id: Optional[str] = None  # Key required if locked
+    
+    # Signpost-specific fields
+    sign_type: Optional[str] = None  # "lore", "warning", "humor", "hint", "directional"
+    message: Optional[str] = None  # Specific message text
+    
+    # Inheritance
+    extends: Optional[str] = None
+
+
+@dataclass
 class WandDefinition:
     """Definition for a wand item (multi-charge spell caster).
     
@@ -267,6 +301,7 @@ class EntityRegistry:
         self.spells: Dict[str, SpellDefinition] = {}
         self.wands: Dict[str, WandDefinition] = {}
         self.rings: Dict[str, RingDefinition] = {}
+        self.map_features: Dict[str, MapFeatureDefinition] = {}
         self.player_stats: Optional[EntityStats] = None
         self._loaded = False
 
@@ -305,6 +340,7 @@ class EntityRegistry:
             logger.info(f"  Armor: {len(self.armor)}")
             logger.info(f"  Spells: {len(self.spells)}")
             logger.info(f"  Rings: {len(self.rings)}")
+            logger.info(f"  Map Features: {len(self.map_features)}")
 
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML in entity configuration: {e}")
@@ -352,6 +388,10 @@ class EntityRegistry:
         # Load rings - process inheritance-aware
         if 'rings' in config_data:
             self._process_rings_with_inheritance(config_data['rings'])
+        
+        # Load map features - process inheritance-aware
+        if 'map_features' in config_data:
+            self._process_map_features_with_inheritance(config_data['map_features'])
 
     def _process_monsters_with_inheritance(self, monsters_data: Dict[str, Any]) -> None:
         """Process monster data with inheritance-aware creation.
@@ -540,6 +580,43 @@ class EntityRegistry:
             except Exception as e:
                 logger.error(f"Error creating resolved ring '{ring_id}': {e}")
                 raise ValueError(f"Invalid resolved ring configuration for '{ring_id}': {e}")
+
+    def _process_map_features_with_inheritance(self, map_features_data: Dict[str, Any]) -> None:
+        """Process map feature data with inheritance-aware creation."""
+        resolved_map_features_data = self._resolve_raw_inheritance(map_features_data, 'map_feature')
+        
+        for feature_id, feature_data in resolved_map_features_data.items():
+            try:
+                # Determine feature type from the data
+                feature_type = "chest"  # Default
+                if 'sign_type' in feature_data:
+                    feature_type = "signpost"
+                elif 'chest_state' in feature_data:
+                    feature_type = "chest"
+                
+                feature_def = MapFeatureDefinition(
+                    name=feature_id.replace('_', ' ').title(),
+                    feature_type=feature_type,
+                    char=feature_data.get('char', 'C' if feature_type == "chest" else '|'),
+                    color=tuple(feature_data.get('color', [139, 69, 19])),
+                    blocks=feature_data.get('blocks', False),
+                    render_order=feature_data.get('render_order', 'item'),
+                    # Chest fields
+                    chest_state=feature_data.get('chest_state'),
+                    loot_quality=feature_data.get('loot_quality'),
+                    trap_type=feature_data.get('trap_type'),
+                    key_id=feature_data.get('key_id'),
+                    # Signpost fields
+                    sign_type=feature_data.get('sign_type'),
+                    message=feature_data.get('message'),
+                    extends=None  # Clear extends after resolution
+                )
+                
+                self.map_features[feature_id] = feature_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved map_feature '{feature_id}': {e}")
+                raise ValueError(f"Invalid resolved map_feature configuration for '{feature_id}': {e}")
 
     def _resolve_raw_inheritance(self, entities_data: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
         """Resolve inheritance at the raw data level before entity creation.
@@ -883,6 +960,17 @@ class EntityRegistry:
             RingDefinition if found, None otherwise
         """
         return self.rings.get(ring_id)
+    
+    def get_map_feature(self, feature_id: str) -> Optional[MapFeatureDefinition]:
+        """Get a map feature definition by ID.
+        
+        Args:
+            feature_id: The map feature identifier (e.g., "chest", "signpost")
+            
+        Returns:
+            MapFeatureDefinition if found, None otherwise
+        """
+        return self.map_features.get(feature_id)
 
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get the player starting stats.
