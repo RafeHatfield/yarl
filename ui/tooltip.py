@@ -165,8 +165,7 @@ def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_l
     y_cursor += 1  # "HOTKEYS" header
     y_cursor += 8  # 8 hotkey lines (C, I, O, G, S, Z, <>, /)
     y_cursor += 1  # Spacing after hotkeys
-    y_cursor += 1  # "EQUIPMENT" header
-    y_cursor += 1  # Header is printed, then y increments before equipment is rendered
+    y_cursor += 1  # "EQUIPMENT" header is printed, then y increments
     equipment_start_y = y_cursor
     
     # Equipment slots (must match sidebar.py order!)
@@ -244,8 +243,7 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     y_cursor += 1  # "EQUIPMENT" header
     y_cursor += 7  # 7 equipment slots (added rings)
     y_cursor += 1  # Spacing after equipment
-    y_cursor += 1  # "INVENTORY (N/20)" header
-    y_cursor += 1  # Header is printed, then y increments before items are rendered
+    y_cursor += 1  # "INVENTORY (N/20)" header is printed, then y increments
     
     inventory_start_y = y_cursor
     
