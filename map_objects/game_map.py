@@ -219,6 +219,9 @@ class GameMap:
         # Apply guaranteed spawns from level templates (if configured)
         self.place_guaranteed_spawns(rooms, entities)
         
+        # Designate some rooms as treasure vaults (Phase 1: Simple Vaults)
+        self.designate_vaults(rooms, entities)
+        
         # Place secret doors between rooms (15% chance per level)
         self.place_secret_doors_between_rooms(rooms)
 
@@ -536,6 +539,172 @@ class GameMap:
             door = SecretDoor(x, y, connected_rooms=(id(room_a), id(room_b)))
             self.secret_door_manager.add_door(door)
             logger.debug(f"Placed secret door at ({x}, {y}) between rooms")
+    
+    def designate_vaults(self, rooms, entities):
+        """Designate some rooms as treasure vaults with elite monsters and guaranteed loot.
+        
+        Phase 1: Simple Treasure Rooms
+        - Spawn on depths 4+ (10% chance at depth 4-6, 15% at depth 7-9, 20% at depth 10+)
+        - Elite monsters: 2x HP, +2 damage, +1 AC, spawn from depth+2
+        - Guaranteed 2-3 chests with rare/legendary loot
+        - Visual distinction (golden walls)
+        
+        Args:
+            rooms (list): List of Rect objects representing rooms
+            entities (list): List of entities on the map
+        """
+        if self.dungeon_level < 4:
+            return  # No vaults on early floors
+        
+        if len(rooms) < 3:
+            return  # Need at least 3 rooms (player start, stairs, vault)
+        
+        # Calculate vault chance based on depth
+        if self.dungeon_level <= 6:
+            vault_chance = 0.10
+        elif self.dungeon_level <= 9:
+            vault_chance = 0.15
+        else:
+            vault_chance = 0.20
+        
+        # Roll for vault
+        if random() > vault_chance:
+            logger.debug(f"Level {self.dungeon_level}: No vault (rolled > {vault_chance})")
+            return
+        
+        # Pick a room that's not first (player) or last (stairs)
+        eligible_rooms = rooms[1:-1]
+        if not eligible_rooms:
+            return
+        
+        vault_room = choice(eligible_rooms)
+        vault_room.is_vault = True
+        logger.info(f"Level {self.dungeon_level}: Designated vault at room center {vault_room.center()}")
+        
+        # Apply visual distinction (golden walls)
+        self._apply_vault_visuals(vault_room)
+        
+        # Spawn elite monsters
+        self._spawn_vault_monsters(vault_room, entities)
+        
+        # Spawn guaranteed loot (2-3 chests + bonus items)
+        self._spawn_vault_loot(vault_room, entities)
+    
+    def _apply_vault_visuals(self, room):
+        """Apply visual distinction to vault room walls.
+        
+        Args:
+            room (Rect): The vault room to modify
+        """
+        gold_color = (200, 150, 50)  # Golden tint
+        
+        # Color the walls of the vault room
+        for x in range(room.x1, room.x2 + 1):
+            for y in range(room.y1, room.y2 + 1):
+                # Only color walls, not floor tiles
+                if self.tiles[x][y].blocked:
+                    self.tiles[x][y].light = gold_color
+                    self.tiles[x][y].dark = tuple(c // 2 for c in gold_color)
+    
+    def _spawn_vault_monsters(self, room, entities):
+        """Spawn elite monsters in vault room.
+        
+        Elite monsters have:
+        - 2x HP
+        - +2 damage
+        - +1 AC
+        - Spawn from depth+2 (tougher variants)
+        
+        Args:
+            room (Rect): The vault room
+            entities (list): List of entities on the map
+        """
+        from config.entity_factory import get_entity_factory
+        entity_factory = get_entity_factory()
+        
+        # Calculate monster count (150-200% of normal)
+        base_monster_count = randint(2, 4)  # Normal room has 0-3
+        elite_monster_count = int(base_monster_count * randint(150, 200) / 100)
+        elite_monster_count = max(2, min(6, elite_monster_count))  # 2-6 monsters
+        
+        logger.debug(f"Spawning {elite_monster_count} elite monsters in vault")
+        
+        for _ in range(elite_monster_count):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if tile is free
+            if not any([e for e in entities if e.x == x and e.y == y]):
+                # Spawn monster from depth+2 (tougher)
+                monster = entity_factory.create_monster_for_level(
+                    self.dungeon_level + 2, x, y
+                )
+                
+                if monster and monster.fighter:
+                    # Apply elite bonuses
+                    monster.fighter.max_hp = monster.fighter.max_hp * 2
+                    monster.fighter.hp = monster.fighter.max_hp
+                    monster.fighter.power += 2
+                    monster.fighter.defense += 1
+                    
+                    # Visual indication: append (Elite) to name
+                    monster.name = f"{monster.name} (Elite)"
+                    
+                    entities.append(monster)
+                    logger.debug(f"Spawned elite {monster.name} at ({x}, {y})")
+    
+    def _spawn_vault_loot(self, room, entities):
+        """Spawn guaranteed loot in vault room.
+        
+        Spawns:
+        - 2-3 chests (rare or legendary quality)
+        - 1-2 bonus items on floor
+        
+        Args:
+            room (Rect): The vault room
+            entities (list): List of entities on the map
+        """
+        from config.entity_factory import get_entity_factory
+        entity_factory = get_entity_factory()
+        
+        # Spawn 2-3 chests
+        num_chests = randint(2, 3)
+        logger.debug(f"Spawning {num_chests} chests in vault")
+        
+        for _ in range(num_chests):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if tile is free
+            if not any([e for e in entities if e.x == x and e.y == y]):
+                # High quality chests
+                if self.dungeon_level >= 10:
+                    chest_type = choice(['golden_chest', 'golden_chest', 'chest'])
+                    quality = choice(['legendary', 'rare', 'rare'])
+                elif self.dungeon_level >= 7:
+                    chest_type = choice(['golden_chest', 'chest'])
+                    quality = choice(['rare', 'rare', 'uncommon'])
+                else:
+                    chest_type = 'chest'
+                    quality = choice(['rare', 'uncommon'])
+                
+                chest = entity_factory.create_chest(chest_type, x, y, loot_quality=quality)
+                if chest:
+                    entities.append(chest)
+                    logger.debug(f"Spawned {chest_type} ({quality}) at ({x}, {y})")
+        
+        # Spawn 1-2 bonus items on floor
+        num_items = randint(1, 2)
+        for _ in range(num_items):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if tile is free
+            if not any([e for e in entities if e.x == x and e.y == y]):
+                item = entity_factory.create_item_for_level(self.dungeon_level + 1, x, y)
+                if item:
+                    entities.append(item)
+                    logger.debug(f"Spawned bonus item {item.name} at ({x}, {y})")
     
     def is_blocked(self, x, y):
         """Check if a tile is blocked for movement.

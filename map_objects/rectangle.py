@@ -11,7 +11,7 @@ class Rect:
         y2 (int): Bottom edge y coordinate
     """
 
-    def __init__(self, x, y, w, h):
+    def __init__(self, x, y, w, h, is_vault=False):
         """Initialize a Rectangle.
 
         Args:
@@ -19,11 +19,13 @@ class Rect:
             y (int): Top edge y coordinate
             w (int): Width of the rectangle
             h (int): Height of the rectangle
+            is_vault (bool): Whether this room is a treasure vault
         """
         self.x1 = x
         self.y1 = y
         self.x2 = x + w
         self.y2 = y + h
+        self.is_vault = is_vault
 
     def center(self):
         """Calculate the center point of the rectangle.
