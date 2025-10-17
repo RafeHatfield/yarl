@@ -193,6 +193,9 @@ class GameMap:
                         self.create_h_tunnel(prev_x, new_x, new_y)
 
                 self.place_entities(new_room, entities)
+                
+                # Place exploration features (chests, signposts)
+                self.place_exploration_features(new_room, entities)
 
                 # finally, append the new room to the list
                 rooms.append(new_room)
@@ -215,6 +218,9 @@ class GameMap:
         
         # Apply guaranteed spawns from level templates (if configured)
         self.place_guaranteed_spawns(rooms, entities)
+        
+        # Place secret doors between rooms (15% chance per level)
+        self.place_secret_doors_between_rooms(rooms)
 
     def create_room(self, room):
         """Create a room by making tiles passable.
@@ -429,6 +435,108 @@ class GameMap:
                 # Invalidate entity sorting cache when new entities are added
                 invalidate_entity_cache("entity_added_item")
 
+    def place_exploration_features(self, room, entities):
+        """Place exploration features (chests, signposts, secret doors) in a room.
+        
+        Spawns exploration content based on dungeon level and probability tables:
+        - Chests: 30% chance per room (quality scales with depth)
+        - Signposts: 20% chance per room (random messages)
+        - Secret doors: 15% chance per level (placed between rooms)
+        
+        Args:
+            room (Rect): Room to place features in
+            entities (list): List to add new feature entities to
+        """
+        from random import random, choice
+        entity_factory = get_entity_factory()
+        
+        # CHESTS - 30% chance per room
+        if random() < 0.30:
+            # Determine chest quality based on dungeon level
+            if self.dungeon_level >= 8:
+                chest_type = choice(['golden_chest', 'chest', 'trapped_chest'])
+            elif self.dungeon_level >= 5:
+                chest_type = choice(['chest', 'trapped_chest', 'chest'])
+            else:
+                chest_type = 'chest'
+            
+            # Random position in room (not at edges)
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            chest = entity_factory.create_chest(chest_type, x, y)
+            if chest:
+                entities.append(chest)
+                logger.debug(f"Placed {chest_type} at ({x}, {y}) in room")
+        
+        # SIGNPOSTS - 20% chance per room
+        if random() < 0.20:
+            # Random signpost type
+            sign_type = choice(['signpost', 'warning_sign', 'humor_sign', 'hint_sign'])
+            
+            # Random position in room (not at edges)
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            signpost = entity_factory.create_signpost(sign_type, x, y)
+            if signpost:
+                entities.append(signpost)
+                logger.debug(f"Placed {sign_type} at ({x}, {y}) in room")
+    
+    def place_secret_doors_between_rooms(self, rooms):
+        """Place secret doors between some rooms.
+        
+        15% chance per level to generate 1-3 secret doors connecting rooms.
+        Secret doors appear as walls until revealed by player proximity or search.
+        
+        Args:
+            rooms (list): List of Rect rooms in the dungeon
+        """
+        from random import random, randint, choice
+        from map_objects.secret_door import SecretDoor
+        
+        # 15% chance to have secret doors on this level
+        if random() > 0.15:
+            return
+        
+        # Generate 1-3 secret doors
+        num_doors = randint(1, min(3, len(rooms) - 1))
+        
+        for _ in range(num_doors):
+            if len(rooms) < 2:
+                break
+            
+            # Pick two adjacent rooms to connect
+            room_a = choice(rooms)
+            room_b = choice([r for r in rooms if r != room_a])
+            
+            # Find a wall position between them
+            # For simplicity, use the midpoint of the wall between rooms
+            if room_a.x2 == room_b.x1 - 1:
+                # Rooms are horizontally adjacent (A is west of B)
+                x = room_a.x2
+                y = randint(max(room_a.y1, room_b.y1) + 1, min(room_a.y2, room_b.y2) - 1)
+            elif room_b.x2 == room_a.x1 - 1:
+                # Rooms are horizontally adjacent (B is west of A)
+                x = room_b.x2
+                y = randint(max(room_a.y1, room_b.y1) + 1, min(room_a.y2, room_b.y2) - 1)
+            elif room_a.y2 == room_b.y1 - 1:
+                # Rooms are vertically adjacent (A is north of B)
+                x = randint(max(room_a.x1, room_b.x1) + 1, min(room_a.x2, room_b.x2) - 1)
+                y = room_a.y2
+            elif room_b.y2 == room_a.y1 - 1:
+                # Rooms are vertically adjacent (B is north of A)
+                x = randint(max(room_a.x1, room_b.x1) + 1, min(room_a.x2, room_b.x2) - 1)
+                y = room_b.y2
+            else:
+                # Rooms not adjacent, skip
+                continue
+            
+            # Create secret door at this position
+            door = SecretDoor(x, y, connected_rooms=(id(room_a), id(room_b)))
+            self.secret_door_manager.add_door(door)
+            logger.debug(f"Placed secret door at ({x}, {y}) between rooms")
+    
     def is_blocked(self, x, y):
         """Check if a tile is blocked for movement.
 
