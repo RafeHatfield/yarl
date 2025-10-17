@@ -552,6 +552,9 @@ class ActionProcessor:
             # Handle dropped loot
             if hasattr(dead_entity, '_dropped_loot') and dead_entity._dropped_loot:
                 # Add dropped items to the entities list
+                logger.warning(f"🎁 game_actions: Adding {len(dead_entity._dropped_loot)} items from {dead_entity.name} to entities")
+                for item in dead_entity._dropped_loot:
+                    logger.warning(f"   - {item.name} at ({item.x}, {item.y})")
                 self.state_manager.state.entities.extend(dead_entity._dropped_loot)
                 # Clean up the temporary attribute
                 delattr(dead_entity, '_dropped_loot')

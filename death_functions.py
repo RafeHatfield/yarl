@@ -167,10 +167,17 @@ def kill_monster(monster, game_map=None, entities=None):
     # This prevents duplicate loot drops if kill_monster is called multiple times
     if hasattr(monster, '_death_processed') and monster._death_processed:
         # Already processed - return a simple message and do nothing else
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"⚠️ kill_monster() called AGAIN for {monster.name} - PREVENTED duplicate processing")
         return MB.combat(f"{monster.name} is already dead.")
     
     # Mark this monster as death-processed to prevent duplicate processing
     monster._death_processed = True
+    
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(f"💀 kill_monster() processing death for {monster.name} at ({monster.x}, {monster.y})")
     
     # Check if this is a boss death (before components are removed)
     boss = monster.get_component_optional(ComponentType.BOSS) if monster else None
