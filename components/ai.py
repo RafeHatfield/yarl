@@ -665,10 +665,16 @@ class BasicMonster:
                 # Simple equipping logic - equip if slot is empty
                 if item.equippable.slot.value == "main_hand" and not equipment.main_hand:
                     self.owner.equipment.toggle_equip(item)
+                    # CRITICAL: Remove from inventory when equipped!
+                    # Otherwise item exists in BOTH inventory AND equipment slot
+                    # causing duplicate drops on death
+                    inventory.items.remove(item)
                     MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
                     equipped = True
                 elif item.equippable.slot.value == "off_hand" and not equipment.off_hand:
                     equipment.toggle_equip(item)
+                    # CRITICAL: Remove from inventory when equipped!
+                    inventory.items.remove(item)
                     MonsterActionLogger.log_equipment_change(self.owner, item, "equipped")
                     equipped = True
         
