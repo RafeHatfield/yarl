@@ -212,7 +212,7 @@ class ItemSpawnConfig:
     # New scrolls (v3.11.0+)
     HASTE_SCROLL_SPAWN: list = None  # [[15, 3]] - buff scroll, common
     BLINK_SCROLL_SPAWN: list = None  # [[12, 4]] - tactical teleport
-    LIGHT_SCROLL_SPAWN: list = None  # [[20, 1]] - utility, very common
+    LIGHT_SCROLL_SPAWN: list = None  # [[4, 6]] - rare discovery, "aha moment" vs vampires later
     MAGIC_MAPPING_SCROLL_SPAWN: list = None  # [[8, 5]] - powerful utility
     EARTHQUAKE_SCROLL_SPAWN: list = None  # [[10, 7]] - high-level offensive
     IDENTIFY_SCROLL_SPAWN: list = None  # [[18, 2]] - important utility
@@ -295,7 +295,7 @@ class ItemSpawnConfig:
         if self.BLINK_SCROLL_SPAWN is None:
             self.BLINK_SCROLL_SPAWN = [[12, 4]]
         if self.LIGHT_SCROLL_SPAWN is None:
-            self.LIGHT_SCROLL_SPAWN = [[20, 1]]  # Very common utility
+            self.LIGHT_SCROLL_SPAWN = [[4, 6]]  # Rare discovery, "aha moment" vs vampires
         if self.MAGIC_MAPPING_SCROLL_SPAWN is None:
             self.MAGIC_MAPPING_SCROLL_SPAWN = [[8, 5]]
         if self.EARTHQUAKE_SCROLL_SPAWN is None:
