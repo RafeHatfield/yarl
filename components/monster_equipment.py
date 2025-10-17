@@ -183,6 +183,8 @@ class MonsterLootDropper:
         if game_map and hasattr(game_map, 'dungeon_level'):
             dungeon_level = game_map.dungeon_level
         
+        logger.warning(f"🎒 drop_monster_loot() starting for {monster.name}")
+        
         # Drop equipped items
         equipment = monster.get_component_optional(ComponentType.EQUIPMENT)
         if equipment:
@@ -242,6 +244,10 @@ class MonsterLootDropper:
                 boots.y = drop_y
                 dropped_items.append(boots)
                 logger.debug(f"Dropped {boots.name} from {monster.name} at ({drop_x}, {drop_y})")
+        
+        logger.warning(f"📦 After dropping equipped items: {len(dropped_items)} items total")
+        for item in dropped_items:
+            logger.warning(f"   - {item.name} at ({item.x}, {item.y})")
         
         # Check if this is a boss kill - bosses drop guaranteed legendary loot!
         boss_component = monster.get_component_optional(ComponentType.BOSS)
@@ -307,6 +313,10 @@ class MonsterLootDropper:
                 item.y = drop_y
                 dropped_items.append(item)  # MUST add to dropped_items - they were removed from entities when picked up!
                 logger.info(f"Dropped {item.name} from {monster.name} inventory at ({drop_x}, {drop_y})")
+        
+        logger.warning(f"🎁 FINAL drop_monster_loot() result: {len(dropped_items)} items total")
+        for item in dropped_items:
+            logger.warning(f"   - {item.name} at ({item.x}, {item.y})")
         
         if dropped_items:
             logger.info(f"{monster.name} dropped {len(dropped_items)} items around ({x}, {y})")
