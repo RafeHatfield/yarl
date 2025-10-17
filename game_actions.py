@@ -447,6 +447,9 @@ class ActionProcessor:
                         game_map.tiles[door.x][door.y].blocked = False
                         game_map.tiles[door.x][door.y].block_sight = False
                     
+                    # Create a visual marker entity for the revealed door
+                    self._create_secret_door_marker(door.x, door.y)
+                    
                     # Add reveal message
                     message = door.get_reveal_message(distance)
                     message_log.add_message(MB.success(message))
@@ -458,6 +461,46 @@ class ActionProcessor:
                     # Give a hint message
                     hint = door.get_hint_message()
                     message_log.add_message(MB.info(hint))
+    
+    def _create_secret_door_marker(self, x: int, y: int) -> None:
+        """Create a visual marker entity for a revealed secret door.
+        
+        The marker is a non-blocking entity that makes revealed doors visible
+        and distinct from regular floors. Uses '+' symbol in cyan.
+        
+        Args:
+            x: X coordinate of revealed door
+            y: Y coordinate of revealed door
+        """
+        from entity import Entity
+        from render_functions import RenderOrder
+        
+        entities = self.state_manager.state.entities
+        if entities is None:
+            return
+        
+        # Check if marker already exists at this location
+        for entity in entities:
+            if entity.x == x and entity.y == y and hasattr(entity, 'is_secret_door_marker'):
+                return  # Marker already exists
+        
+        # Create the marker entity
+        marker = Entity(
+            x=x,
+            y=y,
+            char='+',  # Distinct character (door symbol)
+            color=(0, 255, 255),  # Cyan - stands out clearly
+            name='Secret Door',
+            blocks=False
+        )
+        marker.render_order = RenderOrder.ITEM
+        marker.is_secret_door_marker = True  # Tag for identification
+        
+        entities.append(marker)
+        
+        # Invalidate entity cache
+        from entity_sorting_cache import invalidate_entity_cache
+        invalidate_entity_cache("entity_added_secret_door")
     
     def _handle_combat(self, attacker, target) -> None:
         """Handle combat between attacker and target.
@@ -670,11 +713,14 @@ class ActionProcessor:
         revealed_doors = game_map.secret_door_manager.search_room(search_bounds)
         
         if revealed_doors:
-            # Convert revealed doors to passable floor tiles
+            # Convert revealed doors to passable floor tiles and add visual markers
             for door in revealed_doors:
                 if 0 <= door.x < game_map.width and 0 <= door.y < game_map.height:
                     game_map.tiles[door.x][door.y].blocked = False
                     game_map.tiles[door.x][door.y].block_sight = False
+                    
+                # Create visual marker for revealed door
+                self._create_secret_door_marker(door.x, door.y)
             
             # Add discovery messages
             if len(revealed_doors) == 1:

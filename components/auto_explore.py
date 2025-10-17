@@ -233,13 +233,14 @@ class AutoExplore:
         
         Stop conditions (in priority order):
         1. Monster in FOV
-        2. Chest in FOV (unopened)
-        3. Signpost in FOV
-        4. Valuable item in FOV
-        5. Standing on stairs
-        6. Took damage
-        7. Has status effect
-        8. Trap triggered (detected via damage)
+        2. Secret door discovered
+        3. Chest in FOV (unopened)
+        4. Signpost in FOV
+        5. Valuable item in FOV
+        6. Standing on stairs
+        7. Took damage
+        8. Has status effect
+        9. Trap triggered (detected via damage)
         
         Args:
             game_map: Current game map
@@ -257,35 +258,40 @@ class AutoExplore:
         if monster:
             return f"Monster spotted: {monster.name}"
         
-        # 2. Check for chests in FOV
+        # 2. Check for newly revealed secret doors
+        secret_door = self._secret_door_in_fov(entities, fov_map)
+        if secret_door:
+            return "Found secret door!"
+        
+        # 3. Check for chests in FOV
         chest = self._chest_in_fov(entities, fov_map)
         if chest:
             return f"Found {chest.name}"
         
-        # 3. Check for signposts in FOV
+        # 4. Check for signposts in FOV
         signpost = self._signpost_in_fov(entities, fov_map)
         if signpost:
             return f"Found {signpost.name}"
         
-        # 4. Check for valuable items in FOV
+        # 5. Check for valuable items in FOV
         item = self._valuable_item_in_fov(entities, fov_map)
         if item:
             return f"Found {item.name}"
         
-        # 5. Check if standing on stairs
+        # 6. Check if standing on stairs
         if self._on_stairs(entities):
             return "Stairs found"
         
-        # 6. Check for damage taken
+        # 7. Check for damage taken
         if self._took_damage():
             return "Took damage"
         
-        # 7. Check for status effects
+        # 8. Check for status effects
         effect_name = self._has_status_effect()
         if effect_name:
             return f"Affected by {effect_name}"
         
-        # 8. Trap triggered - detected via damage check (already covered by #6)
+        # 9. Trap triggered - detected via damage check (already covered by #7)
         
         return None  # Continue exploring
     
@@ -382,6 +388,46 @@ class AutoExplore:
                     self.known_items.add(entity_id)
                     logger.debug(f"New valuable item found: {entity.name}")
                     return entity
+        
+        return None
+    
+    def _secret_door_in_fov(
+        self, entities: List['Entity'], fov_map
+    ) -> Optional['Entity']:
+        """Check if any newly revealed secret door is visible.
+        
+        Only returns NEW secret door markers that weren't visible when auto-explore started.
+        This allows exploring past already-discovered secret doors.
+        
+        Args:
+            entities: All entities on the map
+            fov_map: Field-of-view map
+            
+        Returns:
+            Entity: First new secret door marker found, or None
+        """
+        if not self.owner or not fov_map:
+            return None
+        
+        from fov_functions import map_is_in_fov
+        
+        for entity in entities:
+            # Must be a secret door marker
+            if not (hasattr(entity, 'is_secret_door_marker') and entity.is_secret_door_marker):
+                continue
+            
+            # Check if in FOV
+            if map_is_in_fov(fov_map, entity.x, entity.y):
+                entity_id = id(entity)
+                
+                # Skip doors we already knew about
+                if entity_id in self.known_items:
+                    continue
+                
+                # Found a new secret door! Mark it as known and return it
+                self.known_items.add(entity_id)
+                logger.debug(f"New secret door found at ({entity.x}, {entity.y})")
+                return entity
         
         return None
     

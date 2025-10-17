@@ -503,11 +503,12 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
         game_map (GameMap): Game map for tile information
         camera: Camera for viewport translation (optional, defaults to no offset)
     """
-    # Check if entity is a persistent feature (stairs, chests, signposts)
+    # Check if entity is a persistent feature (stairs, chests, signposts, secret doors)
     is_persistent_feature = (
         (hasattr(entity, "stairs") and entity.stairs) or
         (hasattr(entity, "chest") and entity.chest) or
-        (hasattr(entity, "signpost") and entity.signpost)
+        (hasattr(entity, "signpost") and entity.signpost) or
+        (hasattr(entity, "is_secret_door_marker") and entity.is_secret_door_marker)
     )
     
     if map_is_in_fov(fov_map, entity.x, entity.y) or (
