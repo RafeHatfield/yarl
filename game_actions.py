@@ -990,6 +990,11 @@ class ActionProcessor:
                 self.state_manager.update_state(fov_map=new_fov_map)
                 self.state_manager.request_fov_recompute()
                 
+                # Center camera on player's new position (fixes black screen on level transition)
+                camera = self.state_manager.state.camera
+                if camera:
+                    camera.update(player.x, player.y)
+                
                 # Entity comments on level transition (Phase 1 feature!)
                 entity_quote = EntityDialogue.get_level_transition_quote(game_map.dungeon_level)
                 entity_message = MB.custom(entity_quote, (180, 180, 150))  # Muted gold for Entity
