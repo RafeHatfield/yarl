@@ -20,9 +20,10 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
       Y=8:  I - Inventory
       Y=9:  O - Auto-Explore
       Y=10: G - Get/Drop
-      Y=11: Z - Wait
-      Y=12: <> - Stairs
-      Y=13: / - Look
+      Y=11: S - Search
+      Y=12: Z - Wait
+      Y=13: <> - Stairs
+      Y=14: / - Look
     
     Args:
         screen_x: X coordinate of click
@@ -50,6 +51,7 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
         ("I - Inventory", {"show_inventory": True}),
         ("O - Auto-Explore", {"start_auto_explore": True}),
         ("G - Get/Drop", None),  # Context-aware (handled below)
+        ("S - Search", {"search": True}),
         ("Z - Wait", {"wait": True}),
         ("<> - Stairs", None),  # Context-aware (handled below)
         ("/ - Look", {"targeting": True, "targeting_type": "look"}),
@@ -166,7 +168,7 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
     y_cursor += 2  # Title + spacing
     y_cursor += 2  # Separator + spacing
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 7  # 7 hotkey lines (C, I, O, G, Z, <>, /)
+    y_cursor += 8  # 8 hotkey lines (C, I, O, G, S, Z, <>, /)
     y_cursor += 1  # Spacing after hotkeys
     y_cursor += 1  # "EQUIPMENT" header
     equipment_start_y = y_cursor  # Should be 16
@@ -263,7 +265,7 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     y_cursor += 2  # Separator + spacing
     # Hotkeys section in sidebar.py:
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 7  # 7 hotkey lines (C, I, O, G, Z, <>, /)
+    y_cursor += 8  # 8 hotkey lines (C, I, O, G, S, Z, <>, /)
     y_cursor += 1  # Spacing after hotkeys
     # Equipment section in sidebar.py:
     y_cursor += 1  # "EQUIPMENT" header

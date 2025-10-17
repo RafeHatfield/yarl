@@ -59,6 +59,10 @@ class GameMap:
         # Initialize ground hazard manager for persistent spell effects
         from components.ground_hazard import GroundHazardManager
         self.hazard_manager = GroundHazardManager()
+        
+        # Initialize secret door manager for hidden passages
+        from map_objects.secret_door import SecretDoorManager
+        self.secret_door_manager = SecretDoorManager()
 
     def initialize_tiles(self):
         """Initialize the map with blocked wall tiles.

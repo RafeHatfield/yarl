@@ -63,6 +63,7 @@ def render_sidebar(console, player, ui_layout) -> None:
         "I - Inventory",
         "O - Auto-Explore",
         "G - Get/Drop",
+        "S - Search",
         "Z - Wait",
         "<> - Stairs",
         "/ - Look",

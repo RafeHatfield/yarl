@@ -73,6 +73,7 @@ class ActionProcessor:
             'level_up': self._handle_level_up,
             'start_auto_explore': self._handle_start_auto_explore,
             'throw': self._handle_throw_action,
+            'search': self._handle_search,
         }
         
         # Map mouse actions to their handlers
@@ -403,12 +404,60 @@ class ActionProcessor:
             camera = self.state_manager.state.camera
             if camera:
                 camera.update(player.x, player.y)
+            
+            # Check for passive secret door reveals
+            self._check_secret_reveals(player, game_map)
         
         # Process status effects at end of player turn
         self._process_player_status_effects()
         
         # Switch to enemy turn
         _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+    
+    def _check_secret_reveals(self, player, game_map) -> None:
+        """Check for passive secret door reveals near the player.
+        
+        Args:
+            player: The player entity
+            game_map: The game map
+        """
+        # Check if the map has a secret door manager
+        if not hasattr(game_map, 'secret_door_manager') or game_map.secret_door_manager is None:
+            return
+        
+        # Check for reveals within 3 tiles
+        reveal_results = game_map.secret_door_manager.check_reveals_near(player, max_distance=3)
+        
+        if not reveal_results:
+            return
+        
+        message_log = self.state_manager.state.message_log
+        if not message_log:
+            return
+        
+        # Process reveals
+        for result in reveal_results:
+            if result.get('secret_revealed'):
+                door = result.get('secret_door')
+                distance = result.get('distance', 0)
+                
+                if door:
+                    # Convert door tile to passable floor
+                    if 0 <= door.x < game_map.width and 0 <= door.y < game_map.height:
+                        game_map.tiles[door.x][door.y].blocked = False
+                        game_map.tiles[door.x][door.y].block_sight = False
+                    
+                    # Add reveal message
+                    message = door.get_reveal_message(distance)
+                    message_log.add_message(MB.success(message))
+            
+            elif result.get('secret_hint'):
+                door = result.get('secret_door')
+                
+                if door:
+                    # Give a hint message
+                    hint = door.get_hint_message()
+                    message_log.add_message(MB.info(hint))
     
     def _handle_combat(self, attacker, target) -> None:
         """Handle combat between attacker and target.
@@ -582,6 +631,62 @@ class ActionProcessor:
             message = MB.warning("There is nothing here to pick up.")
             message_log.add_message(message)
             # No item to pick up = no turn consumed
+    
+    def _handle_search(self, _) -> None:
+        """Handle room-wide search action. TAKES 1 TURN.
+        
+        Searches the current room for secret doors, revealing any that are hidden.
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state != GameStates.PLAYERS_TURN:
+            return
+        
+        player = self.state_manager.state.player
+        game_map = self.state_manager.state.game_map
+        message_log = self.state_manager.state.message_log
+        
+        if not all([player, game_map, message_log]):
+            return
+        
+        # Check if the map has a secret door manager
+        if not hasattr(game_map, 'secret_door_manager') or game_map.secret_door_manager is None:
+            message_log.add_message(MB.info("You search carefully but find nothing."))
+            # Still consumes a turn
+            self._process_player_status_effects()
+            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            return
+        
+        # Find the room the player is in
+        # For now, search a reasonable radius around the player (10 tiles)
+        search_radius = 10
+        search_bounds = (
+            player.x - search_radius,
+            player.y - search_radius,
+            player.x + search_radius,
+            player.y + search_radius
+        )
+        
+        # Reveal all secret doors in the search area
+        revealed_doors = game_map.secret_door_manager.search_room(search_bounds)
+        
+        if revealed_doors:
+            # Convert revealed doors to passable floor tiles
+            for door in revealed_doors:
+                if 0 <= door.x < game_map.width and 0 <= door.y < game_map.height:
+                    game_map.tiles[door.x][door.y].blocked = False
+                    game_map.tiles[door.x][door.y].block_sight = False
+            
+            # Add discovery messages
+            if len(revealed_doors) == 1:
+                message_log.add_message(MB.success("You discover a secret door!"))
+            else:
+                message_log.add_message(MB.success(f"You discover {len(revealed_doors)} secret doors!"))
+        else:
+            message_log.add_message(MB.info("You search carefully but find nothing hidden here."))
+        
+        # TURN ECONOMY: Searching takes 1 turn
+        self._process_player_status_effects()
+        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
     
     def _handle_inventory_action(self, inventory_index: int) -> None:
         """Handle inventory item usage or dropping.

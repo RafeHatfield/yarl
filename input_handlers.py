@@ -125,6 +125,8 @@ def handle_player_turn_keys(key):
         return {"show_character_screen": True}
     elif key_char == "o":
         return {"start_auto_explore": True}
+    elif key_char == "s":
+        return {"search": True}
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle full screen
