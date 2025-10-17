@@ -24,9 +24,11 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
     """Handle a mouse click for movement or combat.
     
     This function processes mouse clicks and determines the appropriate action:
-    - Click on empty tile: Start pathfinding movement
+    - Click on chest: Open/interact with chest
+    - Click on signpost: Read signpost message
     - Click on adjacent enemy: Attack the enemy
     - Click on non-adjacent enemy: Show message (future: pathfind to attack)
+    - Click on empty tile: Start pathfinding movement
     - Click on invalid location: Show error message
     
     Args:
@@ -49,7 +51,20 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
         })
         return {"results": results}
     
-    # Check if there's an entity at the clicked location
+    # Check ALL entities at the clicked location (not just blocking ones)
+    # Chests and signposts don't block, so we need to check non-blocking entities too
+    entities_at_location = [e for e in entities if e.x == click_x and e.y == click_y]
+    
+    # Priority 1: Check for interactive map features (chests, signposts)
+    for entity in entities_at_location:
+        if entity.components.has(ComponentType.CHEST):
+            # Clicked on a chest - interact with it
+            return _handle_chest_click(player, entity, results)
+        elif entity.components.has(ComponentType.SIGNPOST):
+            # Clicked on a signpost - read it
+            return _handle_signpost_click(player, entity, results)
+    
+    # Priority 2: Check for blocking entities (enemies)
     target_entity = get_blocking_entities_at_location(entities, click_x, click_y)
     
     if target_entity and target_entity.fighter:
@@ -116,6 +131,121 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
         # This will be handled by the movement system
         results.append({
             "pathfind_to_enemy": (target.x, target.y)
+        })
+    
+    return {"results": results}
+
+
+def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list) -> dict:
+    """Handle clicking on a chest.
+    
+    Opens the chest if the player is adjacent. If not adjacent, pathfinds to it.
+    
+    Args:
+        player (Entity): The player entity
+        chest_entity (Entity): The chest entity
+        results (list): List to append results to
+        
+    Returns:
+        dict: Dictionary containing action results
+    """
+    # Calculate distance to chest
+    distance = player.distance_to(chest_entity)
+    
+    if distance <= 1.5:  # Adjacent (including diagonals)
+        # Open the chest
+        chest = chest_entity.chest
+        if chest:
+            open_results = chest.open(player)
+            results.extend(open_results)
+            
+            # Process results - check for loot, traps, mimics
+            for result in open_results:
+                if result.get('mimic_revealed'):
+                    # TODO: Spawn mimic monster here when mimic system is implemented
+                    results.append({
+                        "message": MB.warning("This will become a mimic encounter!")
+                    })
+                elif result.get('trap_triggered'):
+                    # Handle trap damage
+                    trap_type = result.get('trap_type')
+                    if trap_type == 'damage' and player.fighter:
+                        damage = 10  # Base trap damage
+                        player.fighter.take_damage(damage)
+                        results.append({
+                            "message": MB.error(f"The trap deals {damage} damage!")
+                        })
+                    elif trap_type == 'poison':
+                        # TODO: Apply poison status effect
+                        results.append({
+                            "message": MB.warning("Poison gas erupts from the chest!")
+                        })
+                    elif trap_type == 'monster_spawn':
+                        # TODO: Spawn monster near chest
+                        results.append({
+                            "message": MB.warning("Monsters burst from the chest!")
+                        })
+                elif result.get('chest_opened'):
+                    # Add loot to player inventory
+                    loot = result.get('loot', [])
+                    if player.inventory:
+                        for item in loot:
+                            player.inventory.add_item(item)
+            
+            # Trigger enemy turn after interaction
+            results.append({"enemy_turn": True})
+        else:
+            results.append({
+                "message": MB.warning("This chest cannot be opened.")
+            })
+    else:
+        # Too far - pathfind to the chest
+        results.append({
+            "message": MB.info(f"Moving toward the {chest_entity.name}...")
+        })
+        results.append({
+            "pathfind_to_target": (chest_entity.x, chest_entity.y)
+        })
+    
+    return {"results": results}
+
+
+def _handle_signpost_click(player: 'Entity', sign_entity: 'Entity', results: list) -> dict:
+    """Handle clicking on a signpost.
+    
+    Reads the signpost if the player is adjacent. If not adjacent, pathfinds to it.
+    
+    Args:
+        player (Entity): The player entity
+        sign_entity (Entity): The signpost entity
+        results (list): List to append results to
+        
+    Returns:
+        dict: Dictionary containing action results
+    """
+    # Calculate distance to signpost
+    distance = player.distance_to(sign_entity)
+    
+    if distance <= 1.5:  # Adjacent (including diagonals)
+        # Read the signpost
+        signpost = sign_entity.signpost
+        if signpost:
+            read_results = signpost.read(player)
+            results.extend(read_results)
+            
+            # Reading doesn't consume a turn - it's free information
+            # No enemy_turn trigger
+        else:
+            results.append({
+                "message": MB.warning("This sign cannot be read.")
+            })
+    else:
+        # Too far - pathfind to the signpost
+        results.append({
+            "message": MB.info(f"Moving toward the {sign_entity.name}...")
+        })
+        results.append({
+            "pathfind_to_target": (sign_entity.x, sign_entity.y)
         })
     
     return {"results": results}

@@ -201,10 +201,102 @@ class Chest(MapFeature):
         Returns:
             List of loot entities
         """
-        # TODO: Implement proper loot generation
-        # For now, return empty list
-        # This will be implemented in Slice 2
-        return []
+        import random
+        from config.entity_factory import EntityFactory
+        
+        loot = []
+        
+        # Quality determines number and rarity of items
+        loot_counts = {
+            'common': (1, 2),      # 1-2 items
+            'uncommon': (2, 3),    # 2-3 items
+            'rare': (3, 4),        # 3-4 items
+            'legendary': (4, 6)    # 4-6 items
+        }
+        
+        min_items, max_items = loot_counts.get(self.loot_quality, (1, 2))
+        num_items = random.randint(min_items, max_items)
+        
+        # Loot tables by quality
+        # Format: [(item_type, weight), ...]
+        loot_tables = {
+            'common': [
+                ('healing_potion', 40),
+                ('scroll_of_lightning_bolt', 20),
+                ('scroll_of_fireball', 20),
+                ('scroll_of_confusion', 20),
+            ],
+            'uncommon': [
+                ('healing_potion', 30),
+                ('strength_potion', 20),
+                ('scroll_of_lightning_bolt', 15),
+                ('scroll_of_fireball', 15),
+                ('wand_of_lightning', 10),
+                ('wand_of_fireball', 10),
+            ],
+            'rare': [
+                ('healing_potion', 20),
+                ('strength_potion', 15),
+                ('wand_of_lightning', 15),
+                ('wand_of_fireball', 15),
+                ('ring_of_protection', 10),
+                ('ring_of_strength', 10),
+                ('ring_of_regeneration', 10),
+                ('scroll_of_identify', 5),
+            ],
+            'legendary': [
+                ('wand_of_fireball', 20),
+                ('ring_of_might', 15),
+                ('ring_of_protection', 15),
+                ('ring_of_invisibility', 10),
+                ('ring_of_regeneration', 10),
+                ('scroll_of_magic_mapping', 10),
+                ('scroll_of_teleportation', 10),
+                ('strength_potion', 10),
+            ]
+        }
+        
+        loot_table = loot_tables.get(self.loot_quality, loot_tables['common'])
+        
+        # Determine chest position for spawning items
+        chest_x = self.owner.x if self.owner else 0
+        chest_y = self.owner.y if self.owner else 0
+        
+        try:
+            factory = EntityFactory()
+            
+            for _ in range(num_items):
+                # Weighted random selection
+                items = [item for item, weight in loot_table]
+                weights = [weight for item, weight in loot_table]
+                
+                item_type = random.choices(items, weights=weights, k=1)[0]
+                
+                # Create the item
+                # Try different factory methods based on item type
+                item = None
+                
+                # Try spell/consumable
+                if 'scroll' in item_type or 'potion' in item_type:
+                    item = factory.create_spell_item(item_type, chest_x, chest_y)
+                
+                # Try wand
+                if not item and 'wand' in item_type:
+                    item = factory.create_wand(item_type, chest_x, chest_y)
+                
+                # Try ring
+                if not item and 'ring' in item_type:
+                    item = factory.create_ring(item_type, chest_x, chest_y)
+                
+                if item:
+                    loot.append(item)
+        
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error generating chest loot: {e}")
+        
+        return loot
     
     def get_description(self) -> str:
         """Get description of the chest.
