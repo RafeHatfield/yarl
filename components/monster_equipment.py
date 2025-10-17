@@ -271,29 +271,37 @@ class MonsterLootDropper:
         # Generate additional quality loot based on dungeon level (non-boss monsters)
         # This is the new loot quality system - monsters can drop magic items!
         elif loot_gen.should_monster_drop_loot(monster.name, dungeon_level):
+            logger.warning(f"💰 Bonus loot triggered for {monster.name}")
             # Collect names of already-dropped items to avoid duplicates
             dropped_item_names = {item.name.lower() for item in dropped_items}
+            logger.warning(f"   Already dropped: {dropped_item_names}")
             
             # 70% chance for weapon, 30% chance for armor
             if random() < 0.70:
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 magic_weapon = loot_gen.generate_weapon(drop_x, drop_y, dungeon_level)
+                logger.warning(f"   Generated bonus weapon: {magic_weapon.name}")
                 
                 # Only drop if not a duplicate
                 if magic_weapon.name.lower() not in dropped_item_names:
+                    logger.warning(f"   ✅ Adding bonus weapon (not a duplicate)")
                     dropped_items.append(magic_weapon)
                     logger.info(f"{monster.name} dropped BONUS {magic_weapon.loot.rarity.display_name} weapon: {magic_weapon.name}")
                 else:
+                    logger.warning(f"   ❌ Skipping bonus weapon (duplicate)")
                     logger.debug(f"{monster.name} bonus weapon skipped (duplicate {magic_weapon.name})")
             else:
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 magic_armor = loot_gen.generate_armor(drop_x, drop_y, dungeon_level)
+                logger.warning(f"   Generated bonus armor: {magic_armor.name}")
                 
                 # Only drop if not a duplicate
                 if magic_armor.name.lower() not in dropped_item_names:
+                    logger.warning(f"   ✅ Adding bonus armor (not a duplicate)")
                     dropped_items.append(magic_armor)
                     logger.info(f"{monster.name} dropped BONUS {magic_armor.loot.rarity.display_name} armor: {magic_armor.name}")
                 else:
+                    logger.warning(f"   ❌ Skipping bonus armor (duplicate)")
                     logger.debug(f"{monster.name} bonus armor skipped (duplicate {magic_armor.name})")
         
         # Drop inventory items (if monster has inventory)
@@ -301,10 +309,12 @@ class MonsterLootDropper:
         # CRITICAL: Items are REMOVED from entities when picked up (see ai.py _pickup_item line 548-549)
         # So we MUST add them back to dropped_items so they're re-added to entities!
         inventory = monster.get_component_optional(ComponentType.INVENTORY)
-        if inventory:
+        if inventory and inventory.items:
+            logger.warning(f"🎒 Monster has inventory with {len(inventory.items)} items")
             # Create a copy of the items list to avoid modifying while iterating
             items_to_drop = list(inventory.items)
             for item in items_to_drop:
+                logger.warning(f"   Dropping inventory item: {item.name}")
                 # Remove from inventory first to clear the reference
                 inventory.items.remove(item)
                 item.owner = None  # Clear ownership
