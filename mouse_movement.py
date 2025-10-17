@@ -59,7 +59,7 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
     for entity in entities_at_location:
         if entity.components.has(ComponentType.CHEST):
             # Clicked on a chest - interact with it
-            return _handle_chest_click(player, entity, results)
+            return _handle_chest_click(player, entity, results, entities, game_map)
         elif entity.components.has(ComponentType.SIGNPOST):
             # Clicked on a signpost - read it
             return _handle_signpost_click(player, entity, results)
@@ -136,15 +136,19 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
     return {"results": results}
 
 
-def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list) -> dict:
+def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list, 
+                       entities: List['Entity'], game_map: 'GameMap') -> dict:
     """Handle clicking on a chest.
     
     Opens the chest if the player is adjacent. If not adjacent, pathfinds to it.
+    Drops loot on the ground near the chest for the player to pick up.
     
     Args:
         player (Entity): The player entity
         chest_entity (Entity): The chest entity
         results (list): List to append results to
+        entities (List[Entity]): List of all entities
+        game_map (GameMap): The game map for loot placement
         
     Returns:
         dict: Dictionary containing action results
@@ -186,11 +190,26 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list)
                             "message": MB.warning("Monsters burst from the chest!")
                         })
                 elif result.get('chest_opened'):
-                    # Add loot to player inventory
+                    # Drop loot on the ground near the chest for player to pick up
                     loot = result.get('loot', [])
-                    if player.inventory:
-                        for item in loot:
-                            player.inventory.add_item(item)
+                    if loot:
+                        # Add items to entities so they appear on the map
+                        entities.extend(loot)
+                        
+                        # Invalidate entity sorting cache when new entities are added
+                        from entity_sorting_cache import invalidate_entity_cache
+                        invalidate_entity_cache("entity_added_chest_loot")
+                        
+                        # Create a follow-up message listing what was in the chest
+                        if len(loot) == 1:
+                            results.append({
+                                "message": MB.info(f"The chest contained: {loot[0].name}")
+                            })
+                        else:
+                            item_names = ", ".join([item.name for item in loot])
+                            results.append({
+                                "message": MB.info(f"The chest contained: {item_names}")
+                            })
             
             # Trigger enemy turn after interaction
             results.append({"enemy_turn": True})

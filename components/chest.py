@@ -192,10 +192,17 @@ class Chest(MapFeature):
             self.loot = self._generate_loot()
         
         from message_builder import MessageBuilder as MB
+        
+        # Message depends on whether chest had loot
+        if self.loot:
+            message = MB.success("You open the chest!")
+        else:
+            message = MB.info("You open the chest, but it's empty.")
+        
         results.append({
             'chest_opened': True,
             'loot': self.loot,
-            'message': MB.success(f"You open the chest and find {len(self.loot)} item(s)!")
+            'message': message
         })
         
         return results
