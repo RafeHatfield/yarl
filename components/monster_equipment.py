@@ -265,17 +265,30 @@ class MonsterLootDropper:
         # Generate additional quality loot based on dungeon level (non-boss monsters)
         # This is the new loot quality system - monsters can drop magic items!
         elif loot_gen.should_monster_drop_loot(monster.name, dungeon_level):
+            # Collect names of already-dropped items to avoid duplicates
+            dropped_item_names = {item.name.lower() for item in dropped_items}
+            
             # 70% chance for weapon, 30% chance for armor
             if random() < 0.70:
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 magic_weapon = loot_gen.generate_weapon(drop_x, drop_y, dungeon_level)
-                dropped_items.append(magic_weapon)
-                logger.info(f"{monster.name} dropped BONUS {magic_weapon.loot.rarity.display_name} weapon: {magic_weapon.name}")
+                
+                # Only drop if not a duplicate
+                if magic_weapon.name.lower() not in dropped_item_names:
+                    dropped_items.append(magic_weapon)
+                    logger.info(f"{monster.name} dropped BONUS {magic_weapon.loot.rarity.display_name} weapon: {magic_weapon.name}")
+                else:
+                    logger.debug(f"{monster.name} bonus weapon skipped (duplicate {magic_weapon.name})")
             else:
                 drop_x, drop_y = MonsterLootDropper._find_drop_location(x, y, dropped_items, game_map)
                 magic_armor = loot_gen.generate_armor(drop_x, drop_y, dungeon_level)
-                dropped_items.append(magic_armor)
-                logger.info(f"{monster.name} dropped BONUS {magic_armor.loot.rarity.display_name} armor: {magic_armor.name}")
+                
+                # Only drop if not a duplicate
+                if magic_armor.name.lower() not in dropped_item_names:
+                    dropped_items.append(magic_armor)
+                    logger.info(f"{monster.name} dropped BONUS {magic_armor.loot.rarity.display_name} armor: {magic_armor.name}")
+                else:
+                    logger.debug(f"{monster.name} bonus armor skipped (duplicate {magic_armor.name})")
         
         # Drop inventory items (if monster has inventory)
         # Drop items from monster inventory (items they picked up)
