@@ -6,113 +6,200 @@
 #
 # TESTING GUIDE:
 # ==============
-# Level 1: Potion Testing - All 10 new potions + identification
-# Level 2: Scroll Testing - All new scrolls including Identify
-# Level 3: Ring Testing - All 15 ring types
-# Level 4: Wand Testing - All wands + recharging
-# Level 5: Throwing System - Test throwing potions & weapons
-# Level 6: Equipment Testing - All weapons & armor, reach testing
-# Level 7: Status Effects - Test all buffs/debuffs in combat
-# Level 8: Boss Arena - Dragon Lord & Demon King
+# Level 1: EXPLORATION & DISCOVERY - Chests, signposts, secret doors, vaults
+# Level 2: EXPLORATION & LOOT - All chest types, quality testing, elite monsters
+# Level 3: Potion Testing - All 10 new potions + identification
+# Level 4: Scroll Testing - All new scrolls including Identify
+# Level 5: Ring Testing - All 15 ring types
+# Level 6: Wand Testing - All wands + recharging
+# Level 7: Throwing System - Test throwing potions & weapons
+# Level 8: Equipment Testing - All weapons & armor, reach testing
 
 version: "1.0"
 
 level_overrides:
   # ============================================================================
-  # LEVEL 1: POTION TESTING
+  # LEVEL 1: EXPLORATION & DISCOVERY TESTING
   # ============================================================================
-  # Test all 10 new potion types + identification system
-  # Focus: Buff potions (Speed, Regen, Invis, Levitation, Protection, Heroism)
-  #        Debuff potions (Weakness, Blindness, Paralysis)
-  #        Identify potion functionality
-  3:
+  # Test all new exploration features: chests, signposts, secret doors
+  # Focus: Map features, auto-explore stops, visual distinction, loot generation
+  # Note: Vaults require depth 4+, test those separately or modify code temporarily
+  1:
     parameters:
-      map_width: 60
-      map_height: 45
-      min_room_size: 8
-      max_room_size: 12
-      max_rooms: 3
+      map_width: 80
+      map_height: 60
+      min_room_size: 10
+      max_room_size: 15
+      max_rooms: 8  # More rooms to test features
+      max_monsters_per_room: 1  # Keep it safe for testing
     
     guaranteed_spawns:
       mode: "additional"
       monsters:
-        # Weak monsters for safe testing
+        # Just a few weak monsters for testing
         - type: "orc"
-          count: 3
-        - type: "troll"
-          count: 1  # Tougher enemy to test buffs on
+          count: 2
+      
+      map_features:
+        # CHESTS - Test all types
+        - type: "chest"
+          count: 3  # Normal chests
+        - type: "golden_chest"
+          count: 2  # Rare chests
+        - type: "trapped_chest"
+          count: 2  # Trapped chests (test trap mechanics)
+        - type: "locked_chest"
+          count: 1  # Locked chest (needs key)
+        
+        # SIGNPOSTS - Test all types
+        - type: "signpost"
+          count: 2  # Lore signs
+        - type: "warning_sign"
+          count: 2  # Warning signs
+        - type: "humor_sign"
+          count: 2  # Humor signs
+        - type: "hint_sign"
+          count: 2  # Hint signs
       
       items:
-        # BUFF POTIONS (6 types)
-        - type: "speed_potion"
-          count: 3
-        - type: "regeneration_potion"
-          count: 3
-        - type: "invisibility_potion"
-          count: 3
-        - type: "levitation_potion"
-          count: 3
-        - type: "protection_potion"
-          count: 3
-        - type: "heroism_potion"
-          count: 3
-        
-        # DEBUFF POTIONS (3 types) - for throwing at enemies!
-        - type: "weakness_potion"
-          count: 3
-        - type: "blindness_potion"
-          count: 3
-        - type: "paralysis_potion"
-          count: 3
-        
-        # HEALING (essential!)
+        # SURVIVAL GEAR - Make it easy to survive
         - type: "healing_potion"
-          count: 10
+          count: 20  # Lots of healing
         
-        # IDENTIFY SCROLLS - to test potion identification
+        # EQUIPMENT - Good starting gear
+        - type: "sword"
+          count: 1
+        - type: "shield"
+          count: 1
+        - type: "chain_mail"
+          count: 1
+        - type: "helmet"
+          count: 1
+        - type: "boots"
+          count: 1
+        
+        # UTILITY ITEMS
+        - type: "teleport_scroll"
+          count: 3  # Escape tools
+        - type: "invisibility_scroll"
+          count: 2  # More escapes
         - type: "identify_scroll"
-          count: 5
+          count: 5  # Test item identification
         
-        # Basic combat scrolls
+        # COMBAT SCROLLS
         - type: "lightning_scroll"
-          count: 2
+          count: 3
         - type: "fireball_scroll"
-          count: 2
+          count: 3
+        - type: "confusion_scroll"
+          count: 3
+        
+        # NEW SCROLLS (for chest loot testing)
+        - type: "fear_scroll"
+          count: 2  # Test fear effect
+        - type: "detect_monster_scroll"
+          count: 2  # Test detection
+        - type: "light_scroll"
+          count: 2  # Test light reveal
+        
+        # RINGS (some for testing)
+        - type: "ring_of_protection"
+          count: 1
+        - type: "ring_of_searching"
+          count: 1  # Test secret door detection
+        - type: "ring_of_regeneration"
+          count: 1
 
   # ============================================================================
-  # LEVEL 2: SCROLL TESTING
+  # LEVEL 2: VAULT SIMULATION & LOOT QUALITY TESTING
   # ============================================================================
-  # Test all new scroll types including Identify, Haste, Blink, Light, etc.
-  # Focus: Utility scrolls, combat scrolls, enchantment scrolls
+  # Simulate elite monster combat and test loot quality tiers
+  # Focus: Elite monster spawning, high-quality loot, multiple chests
+  # Note: This simulates a vault without golden walls (test actual vaults at depth 4+)
   2:
     parameters:
-      map_width: 60
-      map_height: 45
-      min_room_size: 8
-      max_room_size: 12
-      max_rooms: 3
+      map_width: 80
+      map_height: 60
+      min_room_size: 12
+      max_room_size: 18
+      max_rooms: 5
+      max_monsters_per_room: 3  # More monsters for combat testing
     
     guaranteed_spawns:
       mode: "additional"
       monsters:
+        # Simulate elite monsters (higher tier spawns)
         - type: "orc"
-          count: 4
+          count: 6  # More monsters like in a vault
         - type: "troll"
+          count: 3  # Tougher enemies
+      
+      map_features:
+        # LOTS OF CHESTS - Test loot generation
+        - type: "chest"
+          count: 5  # Common chests
+        - type: "golden_chest"
+          count: 3  # Rare chests
+        - type: "trapped_chest"
+          count: 2  # Trapped variants
+        - type: "locked_chest"
+          count: 1  # Locked chest
+        
+        # SIGNPOSTS
+        - type: "signpost"
+          count: 1
+        - type: "hint_sign"
           count: 1
       
       items:
-        # NEW SCROLLS
+        # SURVIVAL GEAR - Lots of healing for combat
+        - type: "healing_potion"
+          count: 30  # More healing for tougher fights
+        
+        # BETTER EQUIPMENT
+        - type: "sword"
+          count: 2
+        - type: "greatsword"
+          count: 1  # Two-handed option
+        - type: "shield"
+          count: 2
+        - type: "plate_armor"
+          count: 1  # Best armor
+        - type: "chain_mail"
+          count: 1
+        - type: "helmet"
+          count: 1
+        - type: "boots"
+          count: 1
+        
+        # BUFF POTIONS - For difficult combat
+        - type: "speed_potion"
+          count: 3
+        - type: "heroism_potion"
+          count: 3
+        - type: "protection_potion"
+          count: 3
+        - type: "regeneration_potion"
+          count: 2
+        
+        # UTILITY SCROLLS
+        - type: "teleport_scroll"
+          count: 5  # Lots of escapes
+        - type: "invisibility_scroll"
+          count: 3
         - type: "identify_scroll"
-          count: 5  # Test identify mode (10-turn buff)
+          count: 5
         - type: "haste_scroll"
           count: 3
-        - type: "blink_scroll"
-          count: 3
-        - type: "light_scroll"
-          count: 3
-        - type: "magic_mapping_scroll"
-          count: 3
-        - type: "earthquake_scroll"
+        
+        # COMBAT SCROLLS
+        - type: "lightning_scroll"
+          count: 5
+        - type: "fireball_scroll"
+          count: 5
+        - type: "confusion_scroll"
+          count: 5
+        - type: "fear_scroll"
           count: 3
         
         # ENCHANTMENT SCROLLS
@@ -121,25 +208,21 @@ level_overrides:
         - type: "enhance_armor_scroll"
           count: 3
         
-        # CLASSIC SCROLLS (for comparison)
-        - type: "lightning_scroll"
-          count: 3
-        - type: "fireball_scroll"
-          count: 3
-        - type: "confusion_scroll"
-          count: 3
-        - type: "teleport_scroll"
-          count: 3
-        
-        # HEALING
-        - type: "healing_potion"
-          count: 10
-        
-        # Equipment to enchant
-        - type: "sword"
+        # RINGS - More powerful ones
+        - type: "ring_of_protection"
+          count: 2
+        - type: "ring_of_regeneration"
           count: 1
-        - type: "chain_mail"
+        - type: "ring_of_might"
           count: 1
+        - type: "ring_of_searching"
+          count: 1  # For secret doors
+        
+        # WANDS
+        - type: "wand_of_lightning"
+          count: 2
+        - type: "wand_of_fireball"
+          count: 2
 
   # ============================================================================
   # LEVEL 3: RING TESTING

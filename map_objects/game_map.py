@@ -553,19 +553,32 @@ class GameMap:
             rooms (list): List of Rect objects representing rooms
             entities (list): List of entities on the map
         """
-        if self.dungeon_level < 4:
-            return  # No vaults on early floors
+        # Check if we're in testing mode
+        from config.testing_config import is_testing_mode
+        testing_mode = is_testing_mode()
+        
+        # In normal mode, no vaults on early floors
+        if not testing_mode and self.dungeon_level < 4:
+            return  # No vaults on early floors (except in testing)
         
         if len(rooms) < 3:
             return  # Need at least 3 rooms (player start, stairs, vault)
         
         # Calculate vault chance based on depth
-        if self.dungeon_level <= 6:
-            vault_chance = 0.10
-        elif self.dungeon_level <= 9:
-            vault_chance = 0.15
+        # In testing mode, increase chances dramatically for easier testing
+        if testing_mode:
+            if self.dungeon_level <= 2:
+                vault_chance = 0.80  # 80% on level 1-2 for testing
+            else:
+                vault_chance = 0.50  # 50% on other levels in testing
         else:
-            vault_chance = 0.20
+            # Normal mode spawn rates
+            if self.dungeon_level <= 6:
+                vault_chance = 0.10
+            elif self.dungeon_level <= 9:
+                vault_chance = 0.15
+            else:
+                vault_chance = 0.20
         
         # Roll for vault
         if random() > vault_chance:
