@@ -159,18 +159,20 @@ def kill_monster(monster, game_map=None, entities=None):
     Returns:
         Message: Death message to display to the player
     """
+    # Import MessageBuilder at the top so it's available throughout the function
+    from message_builder import MessageBuilder as MB
+    from components.component_registry import ComponentType
+    
     # GUARD: Check if this monster has already been processed
     # This prevents duplicate loot drops if kill_monster is called multiple times
     if hasattr(monster, '_death_processed') and monster._death_processed:
         # Already processed - return a simple message and do nothing else
-        from message_builder import MessageBuilder as MB
         return MB.combat(f"{monster.name} is already dead.")
     
     # Mark this monster as death-processed to prevent duplicate processing
     monster._death_processed = True
     
     # Check if this is a boss death (before components are removed)
-    from components.component_registry import ComponentType
     boss = monster.get_component_optional(ComponentType.BOSS) if monster else None
     death_dialogue = None
     
