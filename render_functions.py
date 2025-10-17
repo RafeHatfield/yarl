@@ -503,10 +503,15 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
         game_map (GameMap): Game map for tile information
         camera: Camera for viewport translation (optional, defaults to no offset)
     """
-    # Check if entity has stairs attribute (for backwards compatibility with saves)
-    has_stairs = hasattr(entity, "stairs") and entity.stairs
+    # Check if entity is a persistent feature (stairs, chests, signposts)
+    is_persistent_feature = (
+        (hasattr(entity, "stairs") and entity.stairs) or
+        (hasattr(entity, "chest") and entity.chest) or
+        (hasattr(entity, "signpost") and entity.signpost)
+    )
+    
     if map_is_in_fov(fov_map, entity.x, entity.y) or (
-        has_stairs and game_map.tiles[entity.x][entity.y].explored
+        is_persistent_feature and game_map.tiles[entity.x][entity.y].explored
     ):
         # Translate world coordinates to viewport coordinates using camera
         if camera:
@@ -520,26 +525,30 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
             # No camera, use world coordinates directly (backward compatibility)
             viewport_x, viewport_y = entity.x, entity.y
         
-        # Check if entity is invisible and modify rendering accordingly
+        # Determine rendering color based on entity state
+        render_color = entity.color
+        render_char = entity.char
+        
+        # Check if entity is invisible (player invisibility effect)
         if hasattr(entity, 'invisible') and entity.invisible:
             # Render invisible entities with a translucent/faded appearance
-            # Use a darker, more transparent version of the original color
-            original_color = entity.color
-            invisible_color = (
-                max(0, original_color[0] // 3),  # Reduce red by 2/3
-                max(0, original_color[1] // 3),  # Reduce green by 2/3  
-                max(0, original_color[2] // 3)   # Reduce blue by 2/3
+            render_color = (
+                max(0, entity.color[0] // 3),  # Reduce red by 2/3
+                max(0, entity.color[1] // 3),  # Reduce green by 2/3  
+                max(0, entity.color[2] // 3)   # Reduce blue by 2/3
             )
-            libtcod.console_set_default_foreground(con, invisible_color)
-            # Use a different character to indicate invisibility (optional)
-            char = '?' if entity.name == "Player" else entity.char
-            libtcod.console_put_char(con, viewport_x, viewport_y, char, libtcod.BKGND_NONE)
-        else:
-            # Normal rendering
-            libtcod.console_set_default_foreground(con, entity.color)
-            libtcod.console_put_char(
-                con, viewport_x, viewport_y, entity.char, libtcod.BKGND_NONE
-            )
+            render_char = '?' if entity.name == "Player" else entity.char
+        
+        # Check if entity is an opened chest (render as greyed out)
+        elif hasattr(entity, 'chest') and entity.chest:
+            from components.chest import ChestState
+            if entity.chest.state == ChestState.OPEN:
+                # Render opened chests in grey/whitewashed color
+                render_color = (100, 100, 100)  # Dark grey
+        
+        # Apply the rendering
+        libtcod.console_set_default_foreground(con, render_color)
+        libtcod.console_put_char(con, viewport_x, viewport_y, render_char, libtcod.BKGND_NONE)
 
 
 def clear_entity(con, entity):
