@@ -682,8 +682,7 @@ class GameMap:
             entities (list): List of entities on the map
         """
         from config.entity_factory import get_entity_factory
-        from random_utils import random_choice_from_dict
-        from map_objects.rectangle import from_dungeon_level
+        from random_utils import random_choice_from_dict, from_dungeon_level
         
         entity_factory = get_entity_factory()
         
