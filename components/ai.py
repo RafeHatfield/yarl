@@ -682,8 +682,13 @@ class BasicMonster:
         pickup_details = f"picked up and {'equipped' if equipped else 'stored'} {item.name}"
         MonsterActionLogger.log_item_pickup(self.owner, item, True, pickup_details)
         
+        # Use display name to respect identification status
+        display_name = item.name
+        if item.item:
+            display_name = item.item.get_display_name(show_quantity=False)
+        
         results.append({
-            "message": MB.item_pickup(f"{self.owner.name.capitalize()} picks up the {item.name}!")
+            "message": MB.item_pickup(f"{self.owner.name.capitalize()} picks up the {display_name}!")
         })
         
         return results
