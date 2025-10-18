@@ -514,25 +514,40 @@ class GameMap:
             room_b = choice([r for r in rooms if r != room_a])
             
             # Find a wall position between them
-            # For simplicity, use the midpoint of the wall between rooms
+            # Check if rooms are adjacent and have valid overlap
+            x, y = None, None
+            
             if room_a.x2 == room_b.x1 - 1:
                 # Rooms are horizontally adjacent (A is west of B)
-                x = room_a.x2
-                y = randint(max(room_a.y1, room_b.y1) + 1, min(room_a.y2, room_b.y2) - 1)
+                y_min = max(room_a.y1, room_b.y1) + 1
+                y_max = min(room_a.y2, room_b.y2) - 1
+                if y_min <= y_max:  # Valid overlap
+                    x = room_a.x2
+                    y = randint(y_min, y_max)
             elif room_b.x2 == room_a.x1 - 1:
                 # Rooms are horizontally adjacent (B is west of A)
-                x = room_b.x2
-                y = randint(max(room_a.y1, room_b.y1) + 1, min(room_a.y2, room_b.y2) - 1)
+                y_min = max(room_a.y1, room_b.y1) + 1
+                y_max = min(room_a.y2, room_b.y2) - 1
+                if y_min <= y_max:  # Valid overlap
+                    x = room_b.x2
+                    y = randint(y_min, y_max)
             elif room_a.y2 == room_b.y1 - 1:
                 # Rooms are vertically adjacent (A is north of B)
-                x = randint(max(room_a.x1, room_b.x1) + 1, min(room_a.x2, room_b.x2) - 1)
-                y = room_a.y2
+                x_min = max(room_a.x1, room_b.x1) + 1
+                x_max = min(room_a.x2, room_b.x2) - 1
+                if x_min <= x_max:  # Valid overlap
+                    x = randint(x_min, x_max)
+                    y = room_a.y2
             elif room_b.y2 == room_a.y1 - 1:
                 # Rooms are vertically adjacent (B is north of A)
-                x = randint(max(room_a.x1, room_b.x1) + 1, min(room_a.x2, room_b.x2) - 1)
-                y = room_b.y2
-            else:
-                # Rooms not adjacent, skip
+                x_min = max(room_a.x1, room_b.x1) + 1
+                x_max = min(room_a.x2, room_b.x2) - 1
+                if x_min <= x_max:  # Valid overlap
+                    x = randint(x_min, x_max)
+                    y = room_b.y2
+            
+            # Skip if rooms not adjacent or no valid overlap
+            if x is None or y is None:
                 continue
             
             # Create secret door at this position
