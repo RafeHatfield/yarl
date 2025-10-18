@@ -42,6 +42,34 @@ class ResistanceType(Enum):
     PHYSICAL = auto()  # For future use
 
 
+def normalize_resistance_type(damage_type):
+    """Convert string or ResistanceType to ResistanceType enum.
+    
+    Args:
+        damage_type: String ('fire', 'cold', etc.) or ResistanceType enum
+    
+    Returns:
+        ResistanceType enum or None if unknown
+    """
+    if isinstance(damage_type, ResistanceType):
+        return damage_type
+    
+    if isinstance(damage_type, str):
+        # Map string names to ResistanceType
+        type_map = {
+            'fire': ResistanceType.FIRE,
+            'cold': ResistanceType.COLD,
+            'ice': ResistanceType.COLD,  # Alias
+            'poison': ResistanceType.POISON,
+            'lightning': ResistanceType.LIGHTNING,
+            'electric': ResistanceType.LIGHTNING,  # Alias
+            'acid': ResistanceType.ACID,
+            'physical': ResistanceType.PHYSICAL
+        }
+        return type_map.get(damage_type.lower())
+    
+    return None
+
 
 class Fighter:
     """Component that handles combat statistics and actions.
@@ -188,8 +216,16 @@ class Fighter:
         Returns:
             int: Resistance percentage (0-100). 0 = no resistance, 50 = half damage, 100 = immune
         """
-        # Start with base resistance
-        total_resistance = self.base_resistances.get(resistance_type, 0)
+        # Normalize the resistance type (handle both string and enum)
+        normalized_type = normalize_resistance_type(resistance_type)
+        if not normalized_type:
+            return 0
+        
+        # Start with base resistance - check both enum and string keys for backward compat
+        total_resistance = self.base_resistances.get(normalized_type, 0)
+        if total_resistance == 0:
+            # Try string key (from YAML configs)
+            total_resistance = self.base_resistances.get(resistance_type if isinstance(resistance_type, str) else normalized_type.name.lower(), 0)
         
         # Add equipment resistances
         equipment = self._get_equipment(self.owner)

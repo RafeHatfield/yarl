@@ -21,7 +21,7 @@ def test_resistance_type_enum():
 def test_fighter_with_no_resistances():
     """Test that fighter without resistances takes full damage."""
     fighter = Fighter(hp=100, defense=0, power=0)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Fighter with no resistances
@@ -40,7 +40,7 @@ def test_fighter_with_base_fire_resistance():
         ResistanceType.FIRE: 50  # 50% fire resistance
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Check resistance value
@@ -59,7 +59,7 @@ def test_fighter_with_fire_immunity():
         ResistanceType.FIRE: 100  # Immune to fire
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Apply 100 fire damage - should be reduced to 0
@@ -74,7 +74,7 @@ def test_resistance_caps_at_100_percent():
         ResistanceType.COLD: 150  # Over 100%
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Should be capped at 100%
@@ -94,7 +94,7 @@ def test_multiple_resistance_types():
         ResistanceType.POISON: 100
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Check each resistance
@@ -120,7 +120,7 @@ def test_damage_type_string_aliases():
         ResistanceType.LIGHTNING: 50
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Both "lightning" and "electric" should work
@@ -137,7 +137,7 @@ def test_unknown_damage_type():
         ResistanceType.FIRE: 100
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Unknown damage type - no resistance
@@ -152,7 +152,7 @@ def test_take_damage_with_resistance():
         ResistanceType.FIRE: 50
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Take 20 fire damage - should be reduced to 10
@@ -168,7 +168,7 @@ def test_take_damage_without_damage_type():
         ResistanceType.FIRE: 100  # Immune to fire
     }
     fighter = Fighter(hp=100, defense=0, power=0, resistances=resistances)
-    entity = Entity(0, 0, 'test', fighter=fighter)
+    entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
     fighter.owner = entity
     
     # Take 20 damage without specifying type - should be full damage
@@ -190,7 +190,7 @@ def test_partial_resistances():
     for resistance, original_damage, expected_damage in test_cases:
         resistances = {ResistanceType.FIRE: resistance}
         fighter = Fighter(hp=1000, defense=0, power=0, resistances=resistances)
-        entity = Entity(0, 0, 'test', fighter=fighter)
+        entity = Entity(0, 0, 'T', (255, 255, 255), 'Test Entity', fighter=fighter)
         fighter.owner = entity
         
         reduced_damage, _ = fighter.apply_resistance(original_damage, "fire")
