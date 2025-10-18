@@ -304,10 +304,12 @@ class Inventory:
                             wand_component.use_charge()
                         
                         # Don't remove the wand - it stays in inventory
-                        # Filter out "consumed" results since wands don't get consumed
+                        # Pass through all messages/effects, but remove "consumed" flag (wands don't get consumed)
                         for item_use_result in item_use_results:
-                            if not item_use_result.get("consumed"):
-                                results.append(item_use_result)
+                            # Create a copy without the "consumed" key (wands stay in inventory)
+                            filtered_result = {k: v for k, v in item_use_result.items() if k != "consumed"}
+                            if filtered_result:  # Only append if there's something left (message, effects, etc.)
+                                results.append(filtered_result)
                         
                         # Add a message showing remaining charges (only if spell was consumed)
                         if spell_consumed:
