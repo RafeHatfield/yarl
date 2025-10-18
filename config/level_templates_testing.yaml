@@ -329,8 +329,8 @@ level_overrides:
           count: 3
         - type: "wand_of_confusion"
           count: 3
-        - type: "wand_of_magic_missile"
-          count: 3
+        - type: "wand_of_teleportation"
+          count: 2
         
         # SCROLLS for recharging wands
         - type: "lightning_scroll"

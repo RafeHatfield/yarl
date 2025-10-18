@@ -485,9 +485,9 @@ class BasicMonster:
             # Check for item usage first (scrolls, potions, etc.)
             # Only try to use items occasionally to avoid overuse of valuable resources
             from random import random
-            from config.game_constants import get_constants
-            constants = get_constants()
-            if random() < constants.monster_equipment.ITEM_USAGE_ATTEMPT_RATE:
+            from config.game_constants import get_monster_equipment_config
+            monster_config = get_monster_equipment_config()
+            if random() < monster_config.ITEM_USAGE_ATTEMPT_RATE:
                 item_usage_action = self._try_item_usage(target, game_map, entities)
             else:
                 item_usage_action = None
