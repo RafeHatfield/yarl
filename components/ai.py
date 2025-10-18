@@ -620,6 +620,13 @@ class BasicMonster:
         
         if "move" in action:
             # Move towards item
+            # Check if immobilized (Glue spell)
+            if (hasattr(self.owner, 'has_status_effect') and 
+                callable(self.owner.has_status_effect) and 
+                self.owner.has_status_effect('immobilized')):
+                results.append({'message': MB.custom(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+                return results
+            
             dx, dy = action["move"]
             self.owner.move(dx, dy)
             
