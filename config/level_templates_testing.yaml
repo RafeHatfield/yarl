@@ -95,6 +95,16 @@ level_overrides:
         - type: "confusion_scroll"
           count: 3
         
+        # KEYS - Test vault unlocking system
+        - type: "bronze_key"
+          count: 2  # Library vaults
+        - type: "silver_key"
+          count: 2  # Armory vaults
+        - type: "gold_key"
+          count: 2  # Treasure/Shrine vaults
+        - type: "dragon_scale"
+          count: 1  # Dragon's Hoard
+        
         # NEW SCROLLS (for chest loot testing)
         - type: "fear_scroll"
           count: 2  # Test fear effect
