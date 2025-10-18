@@ -810,6 +810,11 @@ class ActionProcessor:
             self._use_inventory_item(item)
         elif current_state == GameStates.DROP_INVENTORY:
             self._drop_inventory_item(item)
+        elif current_state == GameStates.TARGETING:
+            # Switching targeted item while in targeting mode
+            # Update the targeting_item to the newly selected item
+            self.state_manager.set_extra_data("targeting_item", item)
+            logger.warning(f"Switched targeting to: {item.name}")
         elif current_state == GameStates.THROW_SELECT_ITEM:
             # Selected item to throw - check if we have a pre-selected target from right-click
             throw_target = self.state_manager.get_extra_data("throw_target")
