@@ -191,13 +191,11 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
                         key_consumed = True
                         
                         # Add message about using the key
-                        from message_builder import MessageBuilder as MB
                         results.append({
                             "message": MB.info(f"You use the {matching_key.name} to unlock the chest.")
                         })
                     else:
                         # Player doesn't have the key
-                        from message_builder import MessageBuilder as MB
                         key_name = chest.key_id.replace('_', ' ').title()
                         results.append({
                             "message": MB.warning(f"This chest is locked. You need a {key_name}.")
