@@ -93,6 +93,7 @@ class LevelParameters:
     max_items_per_room: Optional[int] = None
     map_width: Optional[int] = None  # Map width override (for testing camera scrolling)
     map_height: Optional[int] = None  # Map height override (for testing camera scrolling)
+    vault_count: Optional[int] = None  # Number of vault rooms to generate (overrides random chance)
     
     def has_overrides(self) -> bool:
         """Check if any parameters are overridden."""
@@ -103,7 +104,8 @@ class LevelParameters:
             self.max_monsters_per_room is not None,
             self.max_items_per_room is not None,
             self.map_width is not None,
-            self.map_height is not None
+            self.map_height is not None,
+            self.vault_count is not None
         ])
 
 
@@ -308,7 +310,8 @@ class LevelTemplateRegistry:
                 max_monsters_per_room=params_data.get('max_monsters_per_room'),
                 max_items_per_room=params_data.get('max_items_per_room'),
                 map_width=params_data.get('map_width'),  # Support map size overrides
-                map_height=params_data.get('map_height')
+                map_height=params_data.get('map_height'),
+                vault_count=params_data.get('vault_count')  # Guaranteed vault rooms
             )
             
         # Parse Tier 2: special_rooms

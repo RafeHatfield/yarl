@@ -21,17 +21,18 @@ level_overrides:
   # ============================================================================
   # LEVEL 1: EXPLORATION & DISCOVERY TESTING
   # ============================================================================
-  # Test all new exploration features: chests, signposts, secret doors
+  # Test all new exploration features: chests, signposts, secret doors, vaults
   # Focus: Map features, auto-explore stops, visual distinction, loot generation
-  # Note: Vaults require depth 4+, test those separately or modify code temporarily
+  # Vaults: 2 guaranteed vaults with golden walls and elite monsters
   1:
     parameters:
       map_width: 80
       map_height: 60
       min_room_size: 10
       max_room_size: 15
-      max_rooms: 8  # More rooms to test features
+      max_rooms: 10  # More rooms to fit 2 vaults + features
       max_monsters_per_room: 1  # Keep it safe for testing
+      vault_count: 2  # Guarantee 2 vaults for testing
     
     guaranteed_spawns:
       mode: "additional"
@@ -111,19 +112,20 @@ level_overrides:
           count: 1
 
   # ============================================================================
-  # LEVEL 2: VAULT SIMULATION & LOOT QUALITY TESTING
+  # LEVEL 2: MULTIPLE VAULTS & COMBAT TESTING
   # ============================================================================
-  # Simulate elite monster combat and test loot quality tiers
-  # Focus: Elite monster spawning, high-quality loot, multiple chests
-  # Note: This simulates a vault without golden walls (test actual vaults at depth 4+)
+  # Test multiple vaults with elite monsters and high-quality loot
+  # Focus: Elite monster combat, loot quality tiers, vault visual distinction
+  # Vaults: 3 guaranteed vaults for comprehensive testing
   2:
     parameters:
       map_width: 80
       map_height: 60
       min_room_size: 12
       max_room_size: 18
-      max_rooms: 5
-      max_monsters_per_room: 3  # More monsters for combat testing
+      max_rooms: 8  # More rooms to fit 3 vaults
+      max_monsters_per_room: 2  # Moderate monster count
+      vault_count: 3  # Guarantee 3 vaults for extensive testing
     
     guaranteed_spawns:
       mode: "additional"

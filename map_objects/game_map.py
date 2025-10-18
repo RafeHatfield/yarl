@@ -549,59 +549,93 @@ class GameMap:
         - Guaranteed 2-3 chests with rare/legendary loot
         - Visual distinction (golden walls)
         
+        Can be overridden via level templates using 'vault_count' parameter:
+            parameters:
+              vault_count: 2  # Force exactly 2 vaults on this level
+        
         Args:
             rooms (list): List of Rect objects representing rooms
             entities (list): List of entities on the map
         """
-        # Check if we're in testing mode
-        from config.testing_config import is_testing_mode
-        testing_mode = is_testing_mode()
-        
-        # In normal mode, no vaults on early floors
-        if not testing_mode and self.dungeon_level < 4:
-            return  # No vaults on early floors (except in testing)
-        
         if len(rooms) < 3:
             return  # Need at least 3 rooms (player start, stairs, vault)
         
-        # Calculate vault chance based on depth
-        # In testing mode, increase chances dramatically for easier testing
-        if testing_mode:
-            if self.dungeon_level <= 2:
-                vault_chance = 0.80  # 80% on level 1-2 for testing
+        # Check for level template override first
+        from config.level_template_registry import get_level_template_registry
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        vault_count_override = None
+        if level_override and level_override.has_parameters():
+            vault_count_override = level_override.parameters.vault_count
+        
+        # If template specifies vault count, use it (ignores depth restrictions)
+        if vault_count_override is not None:
+            num_vaults = max(0, min(vault_count_override, len(rooms) - 2))  # Cap at available rooms
+            if num_vaults > 0:
+                logger.info(
+                    f"Level {self.dungeon_level}: Creating {num_vaults} vaults (from template override)"
+                )
             else:
-                vault_chance = 0.50  # 50% on other levels in testing
+                return
         else:
-            # Normal mode spawn rates
-            if self.dungeon_level <= 6:
-                vault_chance = 0.10
-            elif self.dungeon_level <= 9:
-                vault_chance = 0.15
+            # No template override - use random chance based on depth/mode
+            from config.testing_config import is_testing_mode
+            testing_mode = is_testing_mode()
+            
+            # In normal mode, no vaults on early floors
+            if not testing_mode and self.dungeon_level < 4:
+                return  # No vaults on early floors (except in testing)
+            
+            # Calculate vault chance based on depth
+            # In testing mode, increase chances dramatically for easier testing
+            if testing_mode:
+                if self.dungeon_level <= 2:
+                    vault_chance = 0.80  # 80% on level 1-2 for testing
+                else:
+                    vault_chance = 0.50  # 50% on other levels in testing
             else:
-                vault_chance = 0.20
+                # Normal mode spawn rates
+                if self.dungeon_level <= 6:
+                    vault_chance = 0.10
+                elif self.dungeon_level <= 9:
+                    vault_chance = 0.15
+                else:
+                    vault_chance = 0.20
+            
+            # Roll for vault
+            if random() > vault_chance:
+                logger.debug(f"Level {self.dungeon_level}: No vault (rolled > {vault_chance})")
+                return
+            
+            # Random generation: create 1 vault
+            num_vaults = 1
         
-        # Roll for vault
-        if random() > vault_chance:
-            logger.debug(f"Level {self.dungeon_level}: No vault (rolled > {vault_chance})")
-            return
-        
-        # Pick a room that's not first (player) or last (stairs)
+        # Pick room(s) that's not first (player) or last (stairs)
         eligible_rooms = rooms[1:-1]
         if not eligible_rooms:
             return
         
-        vault_room = choice(eligible_rooms)
-        vault_room.is_vault = True
-        logger.info(f"Level {self.dungeon_level}: Designated vault at room center {vault_room.center()}")
+        # Ensure we don't try to create more vaults than eligible rooms
+        num_vaults = min(num_vaults, len(eligible_rooms))
         
-        # Apply visual distinction (golden walls)
-        self._apply_vault_visuals(vault_room)
+        # Randomly select vault rooms
+        from random import sample
+        vault_rooms = sample(eligible_rooms, num_vaults)
         
-        # Spawn elite monsters
-        self._spawn_vault_monsters(vault_room, entities)
-        
-        # Spawn guaranteed loot (2-3 chests + bonus items)
-        self._spawn_vault_loot(vault_room, entities)
+        # Create each vault
+        for vault_room in vault_rooms:
+            vault_room.is_vault = True
+            logger.info(f"Level {self.dungeon_level}: Designated vault at room center {vault_room.center()}")
+            
+            # Apply visual distinction (golden walls)
+            self._apply_vault_visuals(vault_room)
+            
+            # Spawn elite monsters
+            self._spawn_vault_monsters(vault_room, entities)
+            
+            # Spawn guaranteed loot (2-3 chests + bonus items)
+            self._spawn_vault_loot(vault_room, entities)
     
     def _apply_vault_visuals(self, room):
         """Apply visual distinction to vault room walls.
