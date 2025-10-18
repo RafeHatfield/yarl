@@ -7,6 +7,7 @@ including clicking on inventory items and hotkey buttons.
 import logging
 from typing import Optional, Tuple, Any
 from components.component_registry import ComponentType
+from ui.sidebar_layout import calculate_sidebar_layout, get_hotkey_list, get_equipment_slot_list
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +16,7 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
                         game_map: Optional[Any] = None, entities: Optional[list] = None) -> Optional[dict]:
     """Handle clicks on hotkey buttons in the sidebar.
     
-    Hotkeys are rendered at Y positions based on sidebar layout:
-      Y=7:  C - Character
-      Y=8:  I - Inventory
-      Y=9:  O - Auto-Explore
-      Y=10: G - Get/Drop
-      Y=11: S - Search
-      Y=12: Z - Wait
-      Y=13: Enter - Stairs
+    Uses centralized layout calculation to determine hotkey Y positions.
     
     Args:
         screen_x: X coordinate of click
@@ -37,27 +31,24 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
     """
     padding = ui_layout.sidebar_padding
     
-    # Calculate hotkey section Y positions (must match sidebar.py!)
-    y_cursor = 2   # Starting Y (where title is rendered)
-    y_cursor += 2  # Title + spacing (y = 4)
-    y_cursor += 2  # Separator + spacing (y = 6, where "HOTKEYS" header is)
-    y_cursor += 1  # Move past header (y = 7, where first hotkey is)
-    hotkey_start_y = y_cursor  # Should be 7
+    # Get centralized layout positions
+    hotkey_list = get_hotkey_list()
+    layout = calculate_sidebar_layout(hotkey_count=len(hotkey_list))
     
-    # Hotkeys list (must match sidebar.py order!)
-    hotkeys = [
-        ("C - Character", {"show_character_screen": True}),
-        ("I - Inventory", {"show_inventory": True}),
-        ("O - Auto-Explore", {"start_auto_explore": True}),
-        ("G - Get/Drop", None),  # Context-aware (handled below)
-        ("S - Search", {"search": True}),
-        ("Z - Wait", {"wait": True}),
-        ("Enter - Stairs", None),  # Context-aware (handled below)
-    ]
+    # Map hotkeys to actions
+    hotkey_actions = {
+        "C - Character": {"show_character_screen": True},
+        "I - Inventory": {"show_inventory": True},
+        "O - Auto-Explore": {"start_auto_explore": True},
+        "G - Get/Drop": None,  # Context-aware (handled below)
+        "S - Search": {"search": True},
+        "Z - Wait": {"wait": True},
+        "Enter - Stairs": None,  # Context-aware (handled below)
+    }
     
     # Check if click is on any hotkey line
-    for i, (hotkey_text, action) in enumerate(hotkeys):
-        hotkey_y = hotkey_start_y + i
+    for i, (hotkey_text, is_context_aware) in enumerate(hotkey_list):
+        hotkey_y = layout.hotkeys_start_y + i
         
         # Check if click is on this hotkey line
         if screen_y == hotkey_y and screen_x >= padding and screen_x < ui_layout.sidebar_width - padding:
@@ -65,16 +56,12 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
             
             # Handle context-aware hotkeys
             if hotkey_text == "G - Get/Drop":
-                # Smart Get/Drop: if standing on item, pick up; otherwise drop
                 return _handle_get_drop_click(player, entities)
-            
             elif hotkey_text == "Enter - Stairs":
-                # Smart Stairs: go up if on upstairs, down if on downstairs
                 return _handle_stairs_click(player, game_map)
-            
             else:
                 # Simple action
-                return action
+                return hotkey_actions.get(hotkey_text)
     
     return None
 
@@ -143,8 +130,7 @@ def _handle_stairs_click(player: Any, game_map: Optional[Any]) -> Optional[dict]
 def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout: Any) -> Optional[dict]:
     """Handle clicks on equipment slots in the sidebar.
     
-    Equipment slots are rendered at Y positions based on sidebar layout:
-      After hotkeys (Y=13), after "EQUIPMENT" header (Y=14), then 5 slots
+    Uses centralized layout calculation to determine equipment Y positions.
     
     Args:
         screen_x: X coordinate of click
@@ -161,30 +147,17 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
     
     padding = ui_layout.sidebar_padding
     
-    # Calculate equipment section Y positions (must match sidebar.py!)
-    y_cursor = 2   # Starting Y
-    y_cursor += 2  # Title + spacing
-    y_cursor += 2  # Separator + spacing
-    y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 8  # 8 hotkey lines (C, I, O, G, S, Z, <>, /)
-    y_cursor += 1  # Spacing after hotkeys
-    y_cursor += 1  # "EQUIPMENT" header
-    equipment_start_y = y_cursor  # Should be 16
+    # Get centralized layout positions
+    hotkey_list = get_hotkey_list()
+    slot_list = get_equipment_slot_list()
+    layout = calculate_sidebar_layout(hotkey_count=len(hotkey_list), equipment_slot_count=len(slot_list))
     
-    # Equipment slots (must match sidebar.py order!)
-    equipment_slots = [
-        ("main_hand", player.equipment.main_hand),
-        ("off_hand", player.equipment.off_hand),
-        ("head", player.equipment.head),
-        ("chest", player.equipment.chest),
-        ("feet", player.equipment.feet),
-        ("left_ring", player.equipment.left_ring),
-        ("right_ring", player.equipment.right_ring),
-    ]
+    # Build equipment slots from player's equipment
+    equipment_slots = [(slot_name, getattr(player.equipment, slot_name)) for slot_name in slot_list]
     
     # Check if click is on any equipment line
     for i, (slot_name, item) in enumerate(equipment_slots):
-        slot_y = equipment_start_y + i
+        slot_y = layout.equipment_start_y + i
         
         # Check if click is on this equipment line
         if screen_y == slot_y and screen_x >= padding and screen_x < ui_layout.sidebar_width - padding:
@@ -253,29 +226,17 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     if len(inventory_items) == 0:
         return None
     
-    # Calculate where inventory section starts in sidebar
-    # This MUST match the rendering logic in ui/sidebar.py EXACTLY!
+    # Calculate where inventory section starts in sidebar using centralized layout
     padding = ui_layout.sidebar_padding
     
-    # Trace through sidebar.py rendering to calculate Y positions:
-    y_cursor = 2   # Starting Y in sidebar.py
-    y_cursor += 2  # Title (line) + spacing
-    y_cursor += 2  # Separator + spacing
-    # Hotkeys section in sidebar.py:
-    y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 8  # 8 hotkey lines (C, I, O, G, S, Z, <>, /)
-    y_cursor += 1  # Spacing after hotkeys
-    # Equipment section in sidebar.py:
-    y_cursor += 1  # "EQUIPMENT" header
-    y_cursor += 7  # 7 equipment slots (added rings!)
-    y_cursor += 1  # Spacing after equipment
-    # Inventory section in sidebar.py:
-    y_cursor += 1  # "INVENTORY (N/20)" header is printed, y increments, items render at y+1
+    # Get centralized layout positions
+    hotkey_list = get_hotkey_list()
+    slot_list = get_equipment_slot_list()
+    layout = calculate_sidebar_layout(hotkey_count=len(hotkey_list), equipment_slot_count=len(slot_list))
     
-    # Now y_cursor is at first inventory item
-    inventory_start_y = y_cursor
+    inventory_start_y = layout.inventory_start_y
     
-    logger.info(f"Calculated inventory_start_y = {inventory_start_y}")
+    logger.info(f"Calculated inventory_start_y = {inventory_start_y} (from centralized layout)")
     
     # Check if click is on an inventory item
     # Items are rendered at: padding + 1, inventory_start_y + index

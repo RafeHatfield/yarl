@@ -813,6 +813,37 @@ spells:
     char: "~"
     color: [255, 0, 255]  # Magenta (psychic sense)
     duration: 20  # Turns of monster detection
+  
+  # ════════════════════════════════════════════════════════
+  # KEYS - Unlock vault doors and special chests
+  # ════════════════════════════════════════════════════════
+  # Keys are consumable items that unlock themed vaults.
+  # Each key type corresponds to specific vault themes.
+  # Keys are consumed when used to unlock doors/chests.
+  
+  bronze_key:
+    spell_type: "key"
+    char: "k"
+    color: [205, 127, 50]  # Bronze
+    key_type: "bronze"
+  
+  silver_key:
+    spell_type: "key"
+    char: "k"
+    color: [192, 192, 192]  # Silver
+    key_type: "silver"
+  
+  gold_key:
+    spell_type: "key"
+    char: "k"
+    color: [255, 215, 0]  # Gold
+    key_type: "gold"
+  
+  dragon_scale:
+    spell_type: "key"
+    char: "k"
+    color: [220, 20, 60]  # Crimson
+    key_type: "dragon_scale"
 
 # ═══════════════════════════════════════════════════════════
 # WANDS - Multi-charge reusable magic items
@@ -1077,7 +1108,7 @@ map_features:
     blocks: false
     render_order: "item"
     chest_state: "locked"
-    key_id: "dungeon_key"
+    key_id: "silver_key"  # Requires Silver Key to open
     loot_quality: "rare"
   
   # ============================================================================
@@ -1112,3 +1143,41 @@ map_features:
     blocks: false
     render_order: "item"
     sign_type: "hint"
+  
+  # ============================================================================
+  # LOCKED DOORS - Vault entrances and special areas
+  # ============================================================================
+  # Locked doors block passage until unlocked with the matching key.
+  # Each door type corresponds to a specific key type and vault theme.
+  
+  bronze_door:
+    char: "+"
+    color: [205, 127, 50]  # Bronze
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "bronze_key"
+  
+  silver_door:
+    char: "+"
+    color: [192, 192, 192]  # Silver
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "silver_key"
+  
+  gold_door:
+    char: "+"
+    color: [255, 215, 0]  # Gold
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "gold_key"
+  
+  crimson_door:
+    char: "+"
+    color: [220, 20, 60]  # Crimson
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "dragon_scale"

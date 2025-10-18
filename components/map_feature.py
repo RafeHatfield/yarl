@@ -24,6 +24,7 @@ class MapFeatureType(Enum):
     SIGNPOST = auto()
     SECRET_DOOR = auto()
     VAULT_DOOR = auto()
+    DOOR = auto()  # Generic locked door
 
 
 class MapFeature:

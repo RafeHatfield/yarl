@@ -12,10 +12,13 @@ The sidebar is always visible and provides persistent game information.
 import tcod.libtcodpy as libtcod
 from typing import Optional
 from components.component_registry import ComponentType
+from ui.sidebar_layout import calculate_sidebar_layout, get_hotkey_list, get_equipment_slot_list
 
 
 def render_sidebar(console, player, ui_layout) -> None:
     """Render the sidebar UI with menu, stats, and equipment.
+    
+    Uses centralized layout calculation to ensure consistency with interaction and tooltips.
     
     Args:
         console: The sidebar console to render to
@@ -26,81 +29,69 @@ def render_sidebar(console, player, ui_layout) -> None:
     libtcod.console_set_default_background(console, libtcod.Color(20, 20, 20))
     libtcod.console_clear(console)
     
-    y = 2  # Starting Y position
     padding = ui_layout.sidebar_padding
+    
+    # Get centralized layout
+    hotkey_list = get_hotkey_list()
+    slot_list = get_equipment_slot_list()
+    layout = calculate_sidebar_layout(hotkey_count=len(hotkey_list), equipment_slot_count=len(slot_list))
     
     # Title bar
     libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
     title = "YARL"
     libtcod.console_print_ex(
-        console, ui_layout.sidebar_width // 2, y,
+        console, ui_layout.sidebar_width // 2, layout.title_y,
         libtcod.BKGND_NONE, libtcod.CENTER, title
     )
-    y += 2
     
     # Separator
     libtcod.console_set_default_foreground(console, libtcod.Color(100, 100, 100))
     separator = "─" * (ui_layout.sidebar_width - padding * 2)
     libtcod.console_print_ex(
-        console, padding, y,
+        console, padding, layout.separator_y,
         libtcod.BKGND_NONE, libtcod.LEFT, separator
     )
-    y += 2
     
     # Hotkeys Section (clickable!)
     libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
     libtcod.console_print_ex(
-        console, padding, y,
+        console, padding, layout.hotkeys_header_y,
         libtcod.BKGND_NONE, libtcod.LEFT, "HOTKEYS"
     )
-    y += 1
     
     libtcod.console_set_default_foreground(console, libtcod.Color(150, 150, 150))
-    # Option C: Hybrid clickable layout
-    # Each line is a clickable action
-    hotkeys = [
-        "C - Character",
-        "I - Inventory",
-        "O - Auto-Explore",
-        "G - Get/Drop",
-        "S - Search",
-        "Z - Wait",
-        "Enter - Stairs",
-    ]
-    
-    for hotkey in hotkeys:
+    for i, (hotkey_text, is_context_aware) in enumerate(hotkey_list):
         libtcod.console_print_ex(
-            console, padding + 1, y,
-            libtcod.BKGND_NONE, libtcod.LEFT, hotkey
+            console, padding + 1, layout.hotkeys_start_y + i,
+            libtcod.BKGND_NONE, libtcod.LEFT, hotkey_text
         )
-        y += 1
-    
-    y += 1
         
     # Equipment Section
     equipment = player.get_component_optional(ComponentType.EQUIPMENT)
     if equipment:
         libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
         libtcod.console_print_ex(
-            console, padding, y,
+            console, padding, layout.equipment_header_y,
             libtcod.BKGND_NONE, libtcod.LEFT, "EQUIPMENT"
         )
-        y += 1
         
         libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
         
-        # Show equipped items
-        equipment_slots = [
-            ("Weapon", player.equipment.main_hand),
-            ("Shield", player.equipment.off_hand),
-            ("Helm", player.equipment.head),
-            ("Armor", player.equipment.chest),
-            ("Boots", player.equipment.feet),
-            ("L Ring", player.equipment.left_ring),
-            ("R Ring", player.equipment.right_ring),
-        ]
+        # Show equipped items (using centralized slot list)
+        equipment_labels = {
+            "main_hand": "Weapon",
+            "off_hand": "Shield",
+            "head": "Helm",
+            "chest": "Armor",
+            "feet": "Boots",
+            "left_ring": "L Ring",
+            "right_ring": "R Ring",
+        }
         
-        for slot_name, item in equipment_slots:
+        for i, slot_name in enumerate(slot_list):
+            label = equipment_labels[slot_name]
+            item = getattr(player.equipment, slot_name)
+            
             if item:
                 # Truncate name if too long
                 item_name = item.name
@@ -108,17 +99,14 @@ def render_sidebar(console, player, ui_layout) -> None:
                 if len(item_name) > max_name_len:
                     item_name = item_name[:max_name_len-2] + ".."
                 
-                slot_text = f"{slot_name[:3]}: {item_name}"
+                slot_text = f"{label[:3]}: {item_name}"
             else:
-                slot_text = f"{slot_name[:3]}: -"
+                slot_text = f"{label[:3]}: -"
             
             libtcod.console_print_ex(
-                console, padding + 1, y,
+                console, padding + 1, layout.equipment_start_y + i,
                 libtcod.BKGND_NONE, libtcod.LEFT, slot_text
             )
-            y += 1
-        
-        y += 1
         
     # Inventory Section (PERSISTENT!)
     inventory = player.get_component_optional(ComponentType.INVENTORY)
@@ -143,22 +131,21 @@ def render_sidebar(console, player, ui_layout) -> None:
         libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
         inv_header = f"INVENTORY ({len(inventory_items)}/{player.inventory.capacity})"
         libtcod.console_print_ex(
-            console, padding, y,
+            console, padding, layout.inventory_header_y,
             libtcod.BKGND_NONE, libtcod.LEFT, inv_header
         )
-        y += 1
         
         if len(inventory_items) == 0:
             libtcod.console_set_default_foreground(console, libtcod.Color(128, 128, 128))
             libtcod.console_print_ex(
-                console, padding + 1, y,
+                console, padding + 1, layout.inventory_start_y,
                 libtcod.BKGND_NONE, libtcod.LEFT, "(empty)"
             )
         else:
             libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
             letter_index = ord('a')
             
-            for item in inventory_items:
+            for i, item in enumerate(inventory_items):
                 # Format: "a) 5x Potion" or "a) Potion"
                 # Use item component's display name to include quantity for stacks
                 if hasattr(item, 'item') and item.item:
@@ -176,20 +163,18 @@ def render_sidebar(console, player, ui_layout) -> None:
                 
                 item_text = f"{chr(letter_index)}) {item_name}"
                 libtcod.console_print_ex(
-                    console, padding + 1, y,
+                    console, padding + 1, layout.inventory_start_y + i,
                     libtcod.BKGND_NONE, libtcod.LEFT, item_text
                 )
-                y += 1
                 letter_index += 1
-        
-        y += 1
-        
-        # Click hint
-        libtcod.console_set_default_foreground(console, libtcod.Color(100, 100, 100))
-        libtcod.console_print_ex(
-            console, padding + 1, y,
-            libtcod.BKGND_NONE, libtcod.LEFT, "(Click to use!)"
-        )
+            
+            # Click hint (appears after last inventory item)
+            hint_y = layout.inventory_start_y + len(inventory_items) + 1
+            libtcod.console_set_default_foreground(console, libtcod.Color(100, 100, 100))
+            libtcod.console_print_ex(
+                console, padding + 1, hint_y,
+                libtcod.BKGND_NONE, libtcod.LEFT, "(Click to use!)"
+            )
 
 
 def _render_sidebar(console, player, ui_layout) -> None:

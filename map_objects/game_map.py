@@ -638,78 +638,138 @@ class GameMap:
         from random import sample
         vault_rooms = sample(eligible_rooms, num_vaults)
         
-        # Create each vault
+        # Load vault theme registry
+        from config.vault_theme_registry import get_vault_theme_registry
+        theme_registry = get_vault_theme_registry()
+        
+        # Create each vault with a theme
         for vault_room in vault_rooms:
             vault_room.is_vault = True
-            logger.info(f"Level {self.dungeon_level}: Designated vault at room center {vault_room.center()}")
             
-            # Apply visual distinction (golden walls)
-            self._apply_vault_visuals(vault_room)
+            # Select a theme for this vault based on depth and spawn chances
+            vault_theme = self._select_vault_theme(theme_registry, self.dungeon_level)
+            theme_name = vault_theme.get('name', 'Treasure Room')
             
-            # Spawn elite monsters
-            self._spawn_vault_monsters(vault_room, entities)
+            logger.info(
+                f"Level {self.dungeon_level}: Designated {theme_name} at room center {vault_room.center()}"
+            )
             
-            # Spawn guaranteed loot (2-3 chests + bonus items)
-            self._spawn_vault_loot(vault_room, entities)
+            # Apply visual distinction (themed walls)
+            self._apply_vault_visuals(vault_room, vault_theme)
+            
+            # Spawn elite monsters (themed)
+            self._spawn_vault_monsters(vault_room, entities, vault_theme)
+            
+            # Spawn guaranteed loot (themed chests + bonus items)
+            self._spawn_vault_loot(vault_room, entities, vault_theme)
     
-    def _apply_vault_visuals(self, room):
-        """Apply visual distinction to vault room walls.
+    def _select_vault_theme(self, theme_registry, depth):
+        """Select a vault theme based on depth and spawn chances.
+        
+        Args:
+            theme_registry: VaultThemeRegistry instance
+            depth: Current dungeon level
+            
+        Returns:
+            Theme configuration dictionary
+        """
+        # Get available themes for this depth
+        available_themes = theme_registry.get_available_themes(depth)
+        
+        if not available_themes:
+            # No themes available, use default
+            return theme_registry.get_default_theme()
+        
+        # Build weighted selection based on spawn chances
+        theme_weights = []
+        for theme_id in available_themes:
+            spawn_chance = theme_registry.get_spawn_chance(theme_id, depth)
+            theme_weights.append((theme_id, spawn_chance))
+        
+        # Weighted random selection
+        total_weight = sum(weight for _, weight in theme_weights)
+        if total_weight <= 0:
+            return theme_registry.get_default_theme()
+        
+        roll = random() * total_weight
+        cumulative = 0
+        
+        for theme_id, weight in theme_weights:
+            cumulative += weight
+            if roll <= cumulative:
+                theme = theme_registry.get_theme(theme_id)
+                if theme:
+                    return theme
+        
+        # Fallback to default
+        return theme_registry.get_default_theme()
+    
+    def _apply_vault_visuals(self, room, vault_theme=None):
+        """Apply visual distinction to vault room walls using theme colors.
         
         Args:
             room (Rect): The vault room to modify
+            vault_theme (dict): Theme configuration with wall_color
         """
-        gold_color = (200, 150, 50)  # Golden tint
+        # Get wall color from theme, or use default golden tint
+        if vault_theme and 'wall_color' in vault_theme:
+            wall_color = tuple(vault_theme['wall_color'])
+        else:
+            wall_color = (200, 150, 50)  # Default golden tint
         
         # Color the walls of the vault room
         for x in range(room.x1, room.x2 + 1):
             for y in range(room.y1, room.y2 + 1):
                 # Only color walls, not floor tiles
                 if self.tiles[x][y].blocked:
-                    self.tiles[x][y].light = gold_color
-                    self.tiles[x][y].dark = tuple(c // 2 for c in gold_color)
+                    self.tiles[x][y].light = wall_color
+                    self.tiles[x][y].dark = tuple(c // 2 for c in wall_color)
     
-    def _spawn_vault_monsters(self, room, entities):
-        """Spawn elite monsters in vault room.
+    def _spawn_vault_monsters(self, room, entities, vault_theme=None):
+        """Spawn elite monsters in vault room using theme configuration.
         
-        Elite monsters have:
-        - 2x HP
-        - +2 damage
-        - +1 AC
-        - Spawn from depth+2 (tougher variants)
+        Uses theme's monster table and elite scaling modifiers.
         
         Args:
             room (Rect): The vault room
             entities (list): List of entities on the map
+            vault_theme (dict): Theme configuration with monsters and elite_scaling
         """
         from config.entity_factory import get_entity_factory
-        from random_utils import random_choice_from_dict, from_dungeon_level
+        from random_utils import random_choice_from_dict
         
         entity_factory = get_entity_factory()
         
-        # Calculate monster count (150-200% of normal)
-        base_monster_count = randint(2, 4)  # Normal room has 0-3
-        elite_monster_count = int(base_monster_count * randint(150, 200) / 100)
-        elite_monster_count = max(2, min(6, elite_monster_count))  # 2-6 monsters
-        
-        logger.debug(f"Spawning {elite_monster_count} elite monsters in vault")
-        
-        # Calculate monster chances for depth+2 (tougher variants)
-        vault_depth = self.dungeon_level + 2
-        monster_chances = {
-            "orc": 80,
-            "troll": from_dungeon_level([[15, 3], [30, 5], [60, 7]], vault_depth),
-            "dragon_lord": from_dungeon_level([[5, 8], [10, 10]], vault_depth),
-            "demon_king": from_dungeon_level([[5, 9], [10, 11]], vault_depth),
-        }
-        
-        # Add slimes to vault pool
-        from config.testing_config import is_testing_mode
-        if is_testing_mode():
-            monster_chances["slime"] = 40
-            monster_chances["large_slime"] = from_dungeon_level([[10, 1], [20, 3]], vault_depth)
+        # Get monster configuration from theme, or use defaults
+        if vault_theme and 'monsters' in vault_theme:
+            monster_chances = vault_theme['monsters']
         else:
-            monster_chances["slime"] = from_dungeon_level([[20, 2], [40, 4], [60, 6]], vault_depth)
-            monster_chances["large_slime"] = from_dungeon_level([[5, 3], [15, 5], [25, 7]], vault_depth)
+            # Default monster chances
+            monster_chances = {"orc": 80, "troll": 20}
+        
+        # Get elite scaling from theme, or use defaults
+        if vault_theme and 'elite_scaling' in vault_theme:
+            elite_scaling = vault_theme['elite_scaling']
+            hp_multiplier = elite_scaling.get('hp_multiplier', 2.0)
+            power_bonus = elite_scaling.get('power_bonus', 2)
+            defense_bonus = elite_scaling.get('defense_bonus', 1)
+        else:
+            # Default elite scaling
+            hp_multiplier = 2.0
+            power_bonus = 2
+            defense_bonus = 1
+        
+        # Calculate monster count (2-6 monsters)
+        elite_monster_count = randint(2, 6)
+        
+        theme_name = vault_theme.get('name', 'vault') if vault_theme else 'vault'
+        logger.debug(
+            f"Spawning {elite_monster_count} elite monsters in {theme_name} "
+            f"({hp_multiplier}x HP, +{power_bonus} power, +{defense_bonus} defense)"
+        )
+        
+        # Calculate vault depth for equipment
+        vault_depth = self.dungeon_level + 2
         
         for _ in range(elite_monster_count):
             x = randint(room.x1 + 1, room.x2 - 1)
@@ -717,17 +777,16 @@ class GameMap:
             
             # Check if tile is free
             if not any([e for e in entities if e.x == x and e.y == y]):
-                # Select monster type based on vault depth chances
+                # Select monster type from theme's monster table
                 monster_choice = random_choice_from_dict(monster_chances)
                 monster = entity_factory.create_monster(monster_choice, x, y)
                 
                 if monster and monster.fighter:
-                    # Apply elite bonuses
-                    # Double base HP (max_hp is a property, so we modify base_max_hp)
-                    monster.fighter.base_max_hp = monster.fighter.base_max_hp * 2
+                    # Apply elite bonuses from theme
+                    monster.fighter.base_max_hp = int(monster.fighter.base_max_hp * hp_multiplier)
                     monster.fighter.hp = monster.fighter.max_hp  # Heal to new max
-                    monster.fighter.base_power += 2
-                    monster.fighter.base_defense += 1
+                    monster.fighter.base_power += power_bonus
+                    monster.fighter.base_defense += defense_bonus
                     
                     # Visual indication: append (Elite) to name
                     monster.name = f"{monster.name} (Elite)"
@@ -740,48 +799,77 @@ class GameMap:
                     invalidate_entity_cache("entity_added_vault_monster")
                     logger.debug(f"Spawned elite {monster.name} at ({x}, {y})")
     
-    def _spawn_vault_loot(self, room, entities):
-        """Spawn guaranteed loot in vault room.
+    def _spawn_vault_loot(self, room, entities, vault_theme=None):
+        """Spawn guaranteed loot in vault room using theme configuration.
         
-        Spawns:
-        - 2-3 chests (rare or legendary quality)
-        - 1-2 bonus items on floor
+        Uses theme's chest count, quality, and bonus items configuration.
         
         Args:
             room (Rect): The vault room
             entities (list): List of entities on the map
+            vault_theme (dict): Theme configuration with chest_count, chest_quality, bonus_items
         """
         from config.entity_factory import get_entity_factory
         entity_factory = get_entity_factory()
         
-        # Spawn 2-3 chests
-        num_chests = randint(2, 3)
-        logger.debug(f"Spawning {num_chests} chests in vault")
+        # Get chest count from theme
+        if vault_theme and 'chest_count' in vault_theme:
+            chest_config = vault_theme['chest_count']
+            num_chests = randint(chest_config.get('min', 2), chest_config.get('max', 3))
+        else:
+            num_chests = randint(2, 3)
         
+        # Build weighted quality table from theme
+        quality_weights = []
+        if vault_theme and 'chest_quality' in vault_theme:
+            for quality_entry in vault_theme['chest_quality']:
+                quality_weights.append((quality_entry['quality'], quality_entry['weight']))
+        else:
+            # Default quality distribution
+            quality_weights = [('rare', 70), ('legendary', 30)]
+        
+        theme_name = vault_theme.get('name', 'vault') if vault_theme else 'vault'
+        logger.debug(f"Spawning {num_chests} chests in {theme_name}")
+        
+        # Spawn chests
         for _ in range(num_chests):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             
             # Check if tile is free
             if not any([e for e in entities if e.x == x and e.y == y]):
-                # High quality chests
-                if self.dungeon_level >= 10:
-                    chest_type = choice(['golden_chest', 'golden_chest', 'chest'])
-                    quality = choice(['legendary', 'rare', 'rare'])
-                elif self.dungeon_level >= 7:
+                # Select quality using weighted random
+                total_weight = sum(weight for _, weight in quality_weights)
+                roll = random() * total_weight
+                cumulative = 0
+                quality = 'rare'  # Default
+                
+                for q, weight in quality_weights:
+                    cumulative += weight
+                    if roll <= cumulative:
+                        quality = q
+                        break
+                
+                # Choose chest type based on quality
+                if quality == 'legendary':
+                    chest_type = 'golden_chest'
+                elif quality == 'rare':
                     chest_type = choice(['golden_chest', 'chest'])
-                    quality = choice(['rare', 'rare', 'uncommon'])
                 else:
                     chest_type = 'chest'
-                    quality = choice(['rare', 'uncommon'])
                 
                 chest = entity_factory.create_chest(chest_type, x, y, loot_quality=quality)
                 if chest:
                     entities.append(chest)
                     logger.debug(f"Spawned {chest_type} ({quality}) at ({x}, {y})")
         
-        # Spawn 1-2 bonus items on floor
-        num_items = randint(1, 2)
+        # Spawn bonus items on floor
+        if vault_theme and 'bonus_items' in vault_theme:
+            bonus_config = vault_theme['bonus_items']
+            num_items = randint(bonus_config.get('min', 1), bonus_config.get('max', 2))
+        else:
+            num_items = randint(1, 2)
+        
         for _ in range(num_items):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)

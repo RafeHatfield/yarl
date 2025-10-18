@@ -894,6 +894,11 @@ class EntityFactory:
             except AttributeError:
                 logger.error(f"Effect function '{spell_def.effect_function}' not found in item_functions")
                 # Fall through to legacy mapping below
+        
+        # Handle keys (they're items without use functions)
+        if hasattr(spell_def, 'spell_type') and spell_def.spell_type == 'key':
+            logger.debug(f"Creating key item: {spell_def.name}")
+            return Item()  # Keys are just inventory items, no use function
 
         # Map spell types to functions and parameters
         if spell_def.name.lower().replace(' ', '_') == "healing_potion":
