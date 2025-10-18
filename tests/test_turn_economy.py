@@ -23,6 +23,8 @@ class TestPickupTurnEconomy:
         state_manager.state.player.x = 5
         state_manager.state.player.y = 5
         state_manager.state.player.inventory = Mock()
+        state_manager.state.player.status_effects = Mock()
+        state_manager.state.player.status_effects.process_turn_start = Mock(return_value=[])
         state_manager.state.player.process_status_effects_turn_end = Mock(return_value=[])  # Mock status effects
         state_manager.state.entities = []
         state_manager.state.message_log = Mock()
@@ -78,12 +80,17 @@ class TestInventoryActionTurnEconomy:
         state_manager = Mock()
         state_manager.state = Mock()
         state_manager.state.player = Mock()
+        state_manager.state.player.status_effects = Mock()
+        state_manager.state.player.status_effects.process_turn_start = Mock(return_value=[])
         state_manager.state.player.process_status_effects_turn_end = Mock(return_value=[])  # Mock status effects
         state_manager.state.message_log = Mock()
         
         # Create a consumable item
         item = Mock()
         item.item = Mock()
+        item.item.targeting = False  # Direct use, no targeting
+        item.components = Mock()
+        item.components.has = Mock(return_value=False)  # Not equippable
         
         # Mock successful use (item consumed)
         state_manager.state.player.inventory.use.return_value = [
@@ -106,6 +113,8 @@ class TestInventoryActionTurnEconomy:
         state_manager.state.player = Mock()
         state_manager.state.player.equipment = Mock()
         state_manager.state.player.equipment.toggle_equip = Mock(return_value=[])  # Mock equipment toggle
+        state_manager.state.player.status_effects = Mock()
+        state_manager.state.player.status_effects.process_turn_start = Mock(return_value=[])
         state_manager.state.player.process_status_effects_turn_end = Mock(return_value=[])  # Mock status effects
         state_manager.state.message_log = Mock()
         
@@ -135,6 +144,8 @@ class TestInventoryActionTurnEconomy:
         
         item = Mock()
         item.item = Mock()
+        item.components = Mock()
+        item.components.has = Mock(return_value=False)  # Not equippable
         
         # Mock entering targeting (turn should NOT end yet)
         state_manager.state.player.inventory.use.return_value = [
@@ -163,6 +174,8 @@ class TestDropTurnEconomy:
         state_manager.state.player = Mock()
         state_manager.state.player.x = 5
         state_manager.state.player.y = 5
+        state_manager.state.player.status_effects = Mock()
+        state_manager.state.player.status_effects.process_turn_start = Mock(return_value=[])
         state_manager.state.player.process_status_effects_turn_end = Mock(return_value=[])  # Mock status effects
         state_manager.state.entities = []
         state_manager.state.message_log = Mock()
@@ -195,6 +208,8 @@ class TestTargetingCompletionTurnEconomy:
         state_manager.state.current_state = GameStates.TARGETING
         state_manager.state.player = Mock()
         state_manager.state.player.inventory = Mock()
+        state_manager.state.player.status_effects = Mock()
+        state_manager.state.player.status_effects.process_turn_start = Mock(return_value=[])
         state_manager.state.player.process_status_effects_turn_end = Mock(return_value=[])  # Mock status effects
         state_manager.state.entities = []
         state_manager.state.message_log = Mock()
@@ -234,47 +249,8 @@ class TestIdentifyModeEffect:
         assert effect.name == "identify_mode"
         assert effect.duration == 10
         assert effect.owner == owner
-        assert effect.identifies_used_this_turn == 0
-    
-    def test_identify_mode_can_identify(self):
-        """can_identify_item() should return True when no identifies used this turn."""
-        from components.status_effects import IdentifyModeEffect
-        
-        owner = Mock()
-        effect = IdentifyModeEffect(duration=10, owner=owner)
-        
-        assert effect.can_identify_item() is True
-    
-    def test_identify_mode_use_identify(self):
-        """use_identify() should increment the counter."""
-        from components.status_effects import IdentifyModeEffect
-        
-        owner = Mock()
-        effect = IdentifyModeEffect(duration=10, owner=owner)
-        
-        effect.use_identify()
-        
-        assert effect.identifies_used_this_turn == 1
-        assert effect.can_identify_item() is False
-    
-    def test_identify_mode_turn_start_resets_counter(self):
-        """process_turn_start() should reset the identify counter."""
-        from components.status_effects import IdentifyModeEffect
-        
-        owner = Mock()
-        owner.name = "Player"
-        effect = IdentifyModeEffect(duration=10, owner=owner)
-        
-        # Use an identify
-        effect.use_identify()
-        assert effect.can_identify_item() is False
-        
-        # Start new turn
-        effect.process_turn_start()
-        
-        # Counter should be reset
-        assert effect.identifies_used_this_turn == 0
-        assert effect.can_identify_item() is True
+        # NOTE: Old API (identifies_used_this_turn, can_identify_item, use_identify) 
+        # was removed - new implementation automatically identifies items at turn start
     
     def test_identify_mode_duration_decreases(self):
         """process_turn_end() should decrease duration."""
