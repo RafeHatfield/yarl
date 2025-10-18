@@ -901,6 +901,11 @@ class ActionProcessor:
             # Enter targeting mode for this item
             self.state_manager.state.targeting_item = item
             self.state_manager.set_game_state(GameStates.TARGETING)
+            
+            # Show targeting message
+            item_name = item.item.get_display_name() if hasattr(item, 'item') and hasattr(item.item, 'get_display_name') else item.name
+            message_log.add_message(MB.info(f"Select a target for {item_name}. (Right-click or ESC to cancel)"))
+            
             return  # Don't consume turn yet - wait for targeting
         
         # Use item directly (no targeting required)
