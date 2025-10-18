@@ -20,7 +20,7 @@ from components.equipment import Equipment
 from components.status_effects import StatusEffectManager
 from components.item import Item
 from item_functions import (
-    cast_heal,
+    heal,
     drink_speed_potion,
     drink_regeneration_potion,
     drink_invisibility_potion,
@@ -36,7 +36,7 @@ from item_functions import (
 @pytest.fixture
 def player():
     """Create a fully-configured player entity."""
-    fighter = Fighter(hp=100, defense=2, power=5, base_max_hp=100, base_defense=2, base_power=5)
+    fighter = Fighter(hp=100, defense=2, power=5)
     inventory = Inventory(26)
     level_comp = Level()
     equipment = Equipment()
