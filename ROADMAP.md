@@ -8,7 +8,31 @@ This roadmap organizes all planned features by implementation complexity and gam
 
 ---
 
-## ✅ **Recently Completed: Boss Fights & Loot Quality** (v3.8.0 - v3.9.0)
+## ✅ **Recently Completed: Exploration & Discovery** (v3.13.0)
+
+**🗺️ Vaults, Secret Doors, Chests & Signposts** (October 18, 2025)
+
+Complete exploration system transforming dungeon-crawling into discovery-filled adventures:
+
+### **What Was Accomplished (v3.13.0 - Exploration & Discovery)**
+- **🗝️ Chest System:** 4 chest types (basic, golden, trapped, locked) with quality-based loot tables
+- **🪧 Signpost System:** 90+ YAML-based messages with depth filtering (lore, warnings, hints, humor)
+- **🚪 Secret Door System:** Passive + active discovery, Ring of Searching integration
+- **💰 Simple Vaults (Phase 1):** Elite monsters (2x HP), guaranteed rare/legendary loot, golden walls
+- **🔧 YAML Templates:** Full integration for manual placement and testing configurations
+- **🐛 15+ Bug Fixes:** Wand targeting, identification leaks, tooltip alignment, monster AI fixes
+
+### **Benefits Realized**
+- **🎮 Players:** Discovery rewards, risk/reward decisions, memorable vault encounters
+- **🗺️ Exploration:** Finding vaults and secrets feels exciting and meaningful
+- **🏗️ Architecture:** YAML-driven signpost messages, extensible vault system
+- **✨ Quality:** Comprehensive testing setup, 26 files improved
+
+**Depth Score:** 48 → ~54/64 (75% → 84%)
+
+---
+
+## ✅ **Previously Completed: Boss Fights & Loot Quality** (v3.8.0 - v3.9.0)
 
 **🐉 Epic Boss Encounters & Magic Items** (October 2025)
 
