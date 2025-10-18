@@ -141,6 +141,7 @@ class LevelOverride:
     guaranteed_monsters: List[GuaranteedSpawn]
     guaranteed_items: List[GuaranteedSpawn]
     guaranteed_equipment: List[GuaranteedSpawn]
+    guaranteed_map_features: List[GuaranteedSpawn] = field(default_factory=list)  # Chests, signposts, etc.
     parameters: Optional[LevelParameters] = None  # Tier 2
     special_rooms: List[SpecialRoom] = field(default_factory=list)  # Tier 2
     
@@ -149,7 +150,8 @@ class LevelOverride:
         """Get all guaranteed spawns combined (Tier 1 only)."""
         return (self.guaranteed_monsters + 
                 self.guaranteed_items + 
-                self.guaranteed_equipment)
+                self.guaranteed_equipment +
+                self.guaranteed_map_features)
     
     def has_special_rooms(self) -> bool:
         """Check if this override has any special rooms configured."""
@@ -158,6 +160,10 @@ class LevelOverride:
     def has_parameters(self) -> bool:
         """Check if this override has level parameters configured."""
         return self.parameters is not None and self.parameters.has_overrides()
+    
+    def has_map_features(self) -> bool:
+        """Check if this override has guaranteed map features configured."""
+        return len(self.guaranteed_map_features) > 0
 
 
 class LevelTemplateRegistry:
@@ -299,6 +305,16 @@ class LevelTemplateRegistry:
                 count_max=count_max
             ))
         
+        # Parse map_features (chests, signposts, etc.)
+        map_features = []
+        for feature_data in guaranteed_spawns.get('map_features', []):
+            count_min, count_max = parse_count_range(feature_data['count'])
+            map_features.append(GuaranteedSpawn(
+                entity_type=feature_data['type'],
+                count_min=count_min,
+                count_max=count_max
+            ))
+        
         # Parse Tier 2: parameters
         parameters = None
         if 'parameters' in data:
@@ -326,6 +342,7 @@ class LevelTemplateRegistry:
             guaranteed_monsters=monsters,
             guaranteed_items=items,
             guaranteed_equipment=equipment,
+            guaranteed_map_features=map_features,
             parameters=parameters,
             special_rooms=special_rooms
         )

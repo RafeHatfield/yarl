@@ -682,6 +682,9 @@ class GameMap:
             entities (list): List of entities on the map
         """
         from config.entity_factory import get_entity_factory
+        from game_messages import random_choice_from_dict
+        from map_objects.rectangle import from_dungeon_level
+        
         entity_factory = get_entity_factory()
         
         # Calculate monster count (150-200% of normal)
@@ -691,16 +694,33 @@ class GameMap:
         
         logger.debug(f"Spawning {elite_monster_count} elite monsters in vault")
         
+        # Calculate monster chances for depth+2 (tougher variants)
+        vault_depth = self.dungeon_level + 2
+        monster_chances = {
+            "orc": 80,
+            "troll": from_dungeon_level([[15, 3], [30, 5], [60, 7]], vault_depth),
+            "dragon_lord": from_dungeon_level([[5, 8], [10, 10]], vault_depth),
+            "demon_king": from_dungeon_level([[5, 9], [10, 11]], vault_depth),
+        }
+        
+        # Add slimes to vault pool
+        from config.testing_config import is_testing_mode
+        if is_testing_mode():
+            monster_chances["slime"] = 40
+            monster_chances["large_slime"] = from_dungeon_level([[10, 1], [20, 3]], vault_depth)
+        else:
+            monster_chances["slime"] = from_dungeon_level([[20, 2], [40, 4], [60, 6]], vault_depth)
+            monster_chances["large_slime"] = from_dungeon_level([[5, 3], [15, 5], [25, 7]], vault_depth)
+        
         for _ in range(elite_monster_count):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             
             # Check if tile is free
             if not any([e for e in entities if e.x == x and e.y == y]):
-                # Spawn monster from depth+2 (tougher)
-                monster = entity_factory.create_monster_for_level(
-                    self.dungeon_level + 2, x, y
-                )
+                # Select monster type based on vault depth chances
+                monster_choice = random_choice_from_dict(monster_chances)
+                monster = entity_factory.create_monster(monster_choice, x, y)
                 
                 if monster and monster.fighter:
                     # Apply elite bonuses
@@ -712,7 +732,12 @@ class GameMap:
                     # Visual indication: append (Elite) to name
                     monster.name = f"{monster.name} (Elite)"
                     
+                    # Spawn equipment on elite monster
+                    from components.monster_equipment import spawn_equipment_on_monster
+                    spawn_equipment_on_monster(monster, vault_depth)
+                    
                     entities.append(monster)
+                    invalidate_entity_cache("entity_added_vault_monster")
                     logger.debug(f"Spawned elite {monster.name} at ({x}, {y})")
     
     def _spawn_vault_loot(self, room, entities):
@@ -967,6 +992,32 @@ class GameMap:
                     spawned_count += 1
                 else:
                     logger.warning(f"Failed to create equipment: {spawn.entity_type}")
+                    failed_count += 1
+        
+        # Place guaranteed map_features (chests, signposts, etc.)
+        for spawn in level_override.guaranteed_map_features:
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
+                x, y = self._find_random_unoccupied_position(rooms, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find unoccupied position for {spawn.entity_type}, "
+                        f"spawned {i}/{spawn_count}"
+                    )
+                    failed_count += 1
+                    break
+                
+                # Try to create chest or signpost
+                map_feature = entity_factory.create_chest(spawn.entity_type, x, y)
+                if not map_feature:
+                    map_feature = entity_factory.create_signpost(spawn.entity_type, x, y, depth=self.dungeon_level)
+                
+                if map_feature:
+                    entities.append(map_feature)
+                    invalidate_entity_cache("guaranteed_spawn_map_feature")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create map feature: {spawn.entity_type}")
                     failed_count += 1
                     
         logger.info(
