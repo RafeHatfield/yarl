@@ -8,13 +8,48 @@ This roadmap organizes all planned features by implementation complexity and gam
 
 ---
 
+## ✅ **Recently Completed: Themed Vaults & Sidebar Architecture** (v3.14.0)
+
+**🏛️ Themed Vaults, Key System & Centralized UI Layout** (October 18, 2025)
+
+Complete Phase 2 of Exploration & Discovery plus major UI architecture improvements:
+
+### **What Was Accomplished (v3.14.0 - Themed Vaults Phase 2)**
+- **🔑 Key System:** 4 key types (Bronze, Silver, Gold, Dragon Scale) for unlocking chests/doors
+- **🚪 Locked Doors:** 4 door types requiring specific keys, interactive unlocking
+- **🏛️ 5 Themed Vaults:** Ancient Library, Armory, Treasure Vault, Sacred Shrine, Dragon's Hoard
+- **🎨 Themed Visuals:** Unique wall colors per vault type (bronze, steel, golden, silver, crimson)
+- **👹 Themed Monsters:** Vault-specific enemy tables (wizards, warriors, rogues, clerics, dragons)
+- **💎 Themed Loot:** Quality-based loot tables matching vault themes
+- **🪧 13 New Signpost Hints:** Vault-themed cryptic messages with depth filtering
+- **🎯 Centralized Sidebar Layout:** Single source of truth eliminates off-by-one bugs
+- **✅ 20 New Tests:** Comprehensive sidebar layout test suite (all passing)
+- **🐛 6 Bug Fixes:** Keys, trapped chests, click detection, variable scoping
+
+### **Technical Achievements**
+- **🏗️ UI Architecture Refactor:** `ui/sidebar_layout.py` - centralized Y-coordinate calculations
+- **📊 Dynamic Layout System:** Self-adjusting positions based on actual hotkey/equipment counts
+- **🎨 DRY Pattern:** Eliminated duplicated layout logic across rendering/interaction/tooltips
+- **🧪 Test Coverage:** Prevents regression of sidebar alignment issues
+
+### **Benefits Realized**
+- **🎮 Players:** 5 unique vault types with distinct challenges and rewards
+- **🔑 Treasure Hunting:** Key-finding creates compelling exploration loop
+- **🗺️ Visual Clarity:** Themed vaults instantly recognizable by wall colors
+- **🏗️ Architecture:** Robust UI system that won't break when adding features
+- **✨ Quality:** 20 new tests prevent entire class of recurring bugs
+
+**Depth Score:** 54 → ~58/64 (84% → 91%)
+
+---
+
 ## ✅ **Recently Completed: Exploration & Discovery** (v3.13.0)
 
-**🗺️ Vaults, Secret Doors, Chests & Signposts** (October 18, 2025)
+**🗺️ Vaults, Secret Doors, Chests & Signposts - Phase 1** (October 18, 2025)
 
 Complete exploration system transforming dungeon-crawling into discovery-filled adventures:
 
-### **What Was Accomplished (v3.13.0 - Exploration & Discovery)**
+### **What Was Accomplished (v3.13.0 - Exploration & Discovery Phase 1)**
 - **🗝️ Chest System:** 4 chest types (basic, golden, trapped, locked) with quality-based loot tables
 - **🪧 Signpost System:** 90+ YAML-based messages with depth filtering (lore, warnings, hints, humor)
 - **🚪 Secret Door System:** Passive + active discovery, Ring of Searching integration
