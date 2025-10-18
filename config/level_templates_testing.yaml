@@ -231,7 +231,7 @@ level_overrides:
   # ============================================================================
   # Test all 15 ring types + dual ring slots
   # Focus: AC rings, stat rings, special effect rings, immunities
-  1:
+  3:
     parameters:
       map_width: 60
       map_height: 45
