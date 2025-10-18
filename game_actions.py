@@ -1639,8 +1639,13 @@ class ActionProcessor:
                             # Mark that we want to auto-pickup when we arrive
                             player.pathfinding.auto_pickup_target = target_item
                             
+                            # Use display name to respect identification status
+                            display_name = target_item.name
+                            if target_item.item:
+                                display_name = target_item.item.get_display_name(show_quantity=False)
+                            
                             message_log.add_message(
-                                MB.info(f"Moving to pick up {target_item.name}...")
+                                MB.info(f"Moving to pick up {display_name}...")
                             )
                             
                             # Immediately start moving along the path

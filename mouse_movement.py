@@ -491,8 +491,12 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                         item_consumed = pickup_result.get("item_consumed")
                         if item_added or item_consumed:
                             entities.remove(target_item)
+                            # Use display name to respect identification status
+                            display_name = target_item.name
+                            if target_item.item:
+                                display_name = target_item.item.get_display_name(show_quantity=False)
                             results.append({
-                                "message": MB.item_pickup(f"Auto-picked up {target_item.name}!")
+                                "message": MB.item_pickup(f"Auto-picked up {display_name}!")
                             })
             
             # Clear the auto-pickup target
