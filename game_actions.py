@@ -899,7 +899,8 @@ class ActionProcessor:
         # Check if item requires targeting - if so, enter targeting mode
         if item.item.targeting:
             # Enter targeting mode for this item
-            self.state_manager.state.targeting_item = item
+            self.state_manager.set_extra_data("targeting_item", item)
+            self.state_manager.set_extra_data("previous_state", GameStates.PLAYERS_TURN)
             self.state_manager.set_game_state(GameStates.TARGETING)
             
             # Show targeting message
