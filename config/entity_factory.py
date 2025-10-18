@@ -1056,6 +1056,7 @@ class EntityFactory:
         elif spell_name == "lightning_scroll":
             return Item(
                 use_function=cast_lightning,
+                targeting=True,
                 damage=wand_def.damage,
                 maximum_range=wand_def.maximum_range
             )
