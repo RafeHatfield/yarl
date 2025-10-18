@@ -34,6 +34,13 @@ class TestBaseDamageSystem(unittest.TestCase):
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.orc.get_component_optional = Mock(return_value=None)
         
+        # Mock status_effects for both entities
+        self.player.status_effects = Mock()
+        self.player.status_effects.get_effect = Mock(return_value=None)
+        
+        self.orc.status_effects = Mock()
+        self.orc.status_effects.get_effect = Mock(return_value=None)
+        
         # Mock equipment for both entities
         self.player.equipment = Mock()
         self.player.equipment.power_bonus = 0
