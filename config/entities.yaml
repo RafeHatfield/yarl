@@ -1108,7 +1108,7 @@ map_features:
     blocks: false
     render_order: "item"
     chest_state: "locked"
-    key_id: "dungeon_key"
+    key_id: "silver_key"  # Requires Silver Key to open
     loot_quality: "rare"
   
   # ============================================================================

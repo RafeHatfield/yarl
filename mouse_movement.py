@@ -160,7 +160,49 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
         # Open the chest
         chest = chest_entity.chest
         if chest:
-            open_results = chest.open(player)
+            # Check if chest is locked and requires a key
+            has_key = False
+            key_consumed = False
+            
+            if chest.is_locked() and chest.key_id:
+                # Check player inventory for matching key
+                from components.component_registry import ComponentType
+                inventory = player.get_component_optional(ComponentType.INVENTORY)
+                
+                if inventory:
+                    # Look for key in inventory
+                    matching_key = None
+                    for item in inventory.items:
+                        # Check if this is a key item
+                        if item.item and hasattr(item, 'name'):
+                            # Match key by name (e.g., "bronze_key" chest needs "Bronze Key" item)
+                            item_name_normalized = item.name.lower().replace(' ', '_')
+                            if item_name_normalized == chest.key_id:
+                                matching_key = item
+                                break
+                    
+                    if matching_key:
+                        # Player has the key! Remove it from inventory
+                        inventory.items.remove(matching_key)
+                        has_key = True
+                        key_consumed = True
+                        
+                        # Add message about using the key
+                        from message_builder import MessageBuilder as MB
+                        results.append({
+                            "message": MB.info(f"You use the {matching_key.name} to unlock the chest.")
+                        })
+                    else:
+                        # Player doesn't have the key
+                        from message_builder import MessageBuilder as MB
+                        key_name = chest.key_id.replace('_', ' ').title()
+                        results.append({
+                            "message": MB.warning(f"This chest is locked. You need a {key_name}.")
+                        })
+                        return {"results": results}
+            
+            # Open the chest (will handle locked state if has_key is True)
+            open_results = chest.open(player, has_key=has_key)
             results.extend(open_results)
             
             # Process results - check for loot, traps, mimics
