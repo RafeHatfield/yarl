@@ -132,11 +132,13 @@ class AutoExplore:
             from components.component_registry import ComponentType
             
             for entity in entities:
-                if entity.components.has(ComponentType.ITEM):
+                if (entity.components.has(ComponentType.ITEM) or 
+                    entity.components.has(ComponentType.CHEST) or
+                    entity.components.has(ComponentType.SIGNPOST)):
                     if map_is_in_fov(fov_map, entity.x, entity.y):
                         self.known_items.add(id(entity))
             
-            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items in FOV")
+            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items/chests/signposts in FOV")
         
         logger.info(f"Auto-explore started for {self.owner.name}")
         return random.choice(ADVENTURE_QUOTES)
@@ -498,6 +500,8 @@ class AutoExplore:
     ) -> Optional['Entity']:
         """Check if any unopened chest is visible.
         
+        Only returns NEW chests that weren't visible when auto-explore started.
+        
         Args:
             entities: All entities on the map
             fov_map: Field-of-view map
@@ -519,11 +523,18 @@ class AutoExplore:
             
             # Check if in FOV
             if map_is_in_fov(fov_map, entity.x, entity.y):
+                entity_id = id(entity)
                 chest = entity.chest
+                
+                # Skip chests we already knew about
+                if entity_id in self.known_items:
+                    continue
                 
                 # Only stop for unopened chests (skip already looted ones)
                 if chest and chest.state != ChestState.OPEN:
-                    logger.debug(f"Unopened chest found: {entity.name}")
+                    # Found a new unopened chest! Mark it as known and return it
+                    self.known_items.add(entity_id)
+                    logger.debug(f"New unopened chest found: {entity.name}")
                     return entity
         
         return None
@@ -532,6 +543,8 @@ class AutoExplore:
         self, entities: List['Entity'], fov_map
     ) -> Optional['Entity']:
         """Check if any unread signpost is visible.
+        
+        Only returns NEW signposts that weren't visible when auto-explore started.
         
         Args:
             entities: All entities on the map
@@ -553,11 +566,18 @@ class AutoExplore:
             
             # Check if in FOV
             if map_is_in_fov(fov_map, entity.x, entity.y):
+                entity_id = id(entity)
                 signpost = entity.signpost
+                
+                # Skip signposts we already knew about
+                if entity_id in self.known_items:
+                    continue
                 
                 # Only stop for unread signposts (skip already read ones)
                 if signpost and not signpost.has_been_read:
-                    logger.debug(f"Unread signpost found: {entity.name}")
+                    # Found a new unread signpost! Mark it as known and return it
+                    self.known_items.add(entity_id)
+                    logger.debug(f"New unread signpost found: {entity.name}")
                     return entity
         
         return None
