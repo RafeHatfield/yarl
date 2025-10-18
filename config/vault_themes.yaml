@@ -1,0 +1,290 @@
+# Vault Theme Configuration
+#
+# Defines the 5 themed vault types with their unique characteristics:
+# - Visual appearance (wall colors)
+# - Monster spawns (themed enemies)
+# - Loot tables (themed rewards)
+# - Required keys
+#
+# Each vault type provides a unique challenge and reward profile.
+
+version: "1.0"
+
+vault_themes:
+  # ============================================================================
+  # TREASURE VAULT - Wealth and riches
+  # ============================================================================
+  # Theme: Hoarded treasure, thieves' den, legendary wealth
+  # Difficulty: High (rogues have high dodge, can steal)
+  # Key: Gold Key (rare)
+  
+  treasure:
+    name: "Treasure Vault"
+    description: "A glittering hoard of gold and gems guarded by cunning thieves."
+    required_key: "gold_key"
+    
+    # Visual appearance
+    wall_color: [255, 215, 0]  # Bright gold
+    
+    # Monster table (weighted spawn chances)
+    monsters:
+      orc: 30        # Basic guards
+      troll: 30      # Tough guards
+      orc_veteran: 20  # Elite guards
+      orc_chieftain: 20  # Boss guard
+    
+    # Elite scaling
+    elite_scaling:
+      hp_multiplier: 2.0
+      power_bonus: 2
+      defense_bonus: 1
+    
+    # Loot configuration
+    chest_count:
+      min: 3
+      max: 5
+    
+    chest_quality:
+      - quality: "rare"
+        weight: 60
+      - quality: "legendary"
+        weight: 40
+    
+    bonus_items:
+      min: 1
+      max: 2
+    
+    # Spawn rates by depth
+    spawn_chance:
+      depth_1_6: 0.0    # Too early
+      depth_7_9: 0.05   # 5% chance
+      depth_10_plus: 0.10  # 10% chance
+  
+  # ============================================================================
+  # ARMORY - Weapons and armor cache
+  # ============================================================================
+  # Theme: Military stockpile, warrior training ground
+  # Difficulty: Very High (warriors have high HP and damage)
+  # Key: Silver Key (uncommon)
+  
+  armory:
+    name: "Armory"
+    description: "A weapons cache guarded by heavily armed warriors."
+    required_key: "silver_key"
+    
+    # Visual appearance
+    wall_color: [192, 192, 192]  # Steel grey
+    
+    # Monster table
+    monsters:
+      orc: 40        # Basic soldiers
+      orc_veteran: 35  # Elite soldiers
+      orc_chieftain: 25  # Commander
+    
+    # Elite scaling (warriors are tankier)
+    elite_scaling:
+      hp_multiplier: 2.5
+      power_bonus: 3
+      defense_bonus: 2
+    
+    # Loot configuration
+    chest_count:
+      min: 2
+      max: 4
+    
+    chest_quality:
+      - quality: "uncommon"
+        weight: 40
+      - quality: "rare"
+        weight: 50
+      - quality: "legendary"
+        weight: 10
+    
+    bonus_items:
+      min: 1
+      max: 3
+    
+    # Spawn rates by depth
+    spawn_chance:
+      depth_1_6: 0.0    # Too early
+      depth_7_9: 0.08   # 8% chance
+      depth_10_plus: 0.12  # 12% chance
+  
+  # ============================================================================
+  # LIBRARY/SCRIPTORIUM - Knowledge and magic
+  # ============================================================================
+  # Theme: Ancient library, wizard's study, arcane knowledge
+  # Difficulty: Medium (wizards cast spells)
+  # Key: Bronze Key (common)
+  
+  library:
+    name: "Ancient Library"
+    description: "Dusty tomes and arcane scrolls guarded by scholarly mages."
+    required_key: "bronze_key"
+    
+    # Visual appearance
+    wall_color: [245, 222, 179]  # Parchment beige
+    
+    # Monster table
+    monsters:
+      orc: 50        # Library guards
+      troll: 30      # Enforcer
+      orc_veteran: 20  # Head librarian
+    
+    # Elite scaling (wizards are squishy but dangerous)
+    elite_scaling:
+      hp_multiplier: 1.5
+      power_bonus: 3
+      defense_bonus: 0
+    
+    # Loot configuration
+    chest_count:
+      min: 2
+      max: 3
+    
+    chest_quality:
+      - quality: "uncommon"
+        weight: 50
+      - quality: "rare"
+        weight: 40
+      - quality: "legendary"
+        weight: 10
+    
+    bonus_items:
+      min: 2
+      max: 3
+    
+    # Spawn rates by depth
+    spawn_chance:
+      depth_1_6: 0.05   # 5% chance (earliest vault type)
+      depth_7_9: 0.10   # 10% chance
+      depth_10_plus: 0.08  # 8% chance (less common at high depths)
+  
+  # ============================================================================
+  # SHRINE/TEMPLE - Holy ground and healing
+  # ============================================================================
+  # Theme: Religious sanctuary, temple of healing, divine blessing
+  # Difficulty: Medium-High (priests heal, undead resist)
+  # Key: Gold Key (rare)
+  
+  shrine:
+    name: "Sacred Shrine"
+    description: "A holy place defiled by dark forces."
+    required_key: "gold_key"
+    
+    # Visual appearance
+    wall_color: [255, 250, 250]  # Divine white
+    
+    # Monster table
+    monsters:
+      orc: 40        # Corrupted guards
+      troll: 35      # Defilers
+      orc_veteran: 25  # Dark priest
+    
+    # Elite scaling
+    elite_scaling:
+      hp_multiplier: 1.8
+      power_bonus: 1
+      defense_bonus: 2
+    
+    # Loot configuration
+    chest_count:
+      min: 2
+      max: 4
+    
+    chest_quality:
+      - quality: "rare"
+        weight: 70
+      - quality: "legendary"
+        weight: 30
+    
+    bonus_items:
+      min: 1
+      max: 2
+    
+    # Spawn rates by depth
+    spawn_chance:
+      depth_1_6: 0.0    # Too early
+      depth_7_9: 0.05   # 5% chance
+      depth_10_plus: 0.08  # 8% chance
+  
+  # ============================================================================
+  # DRAGON'S HOARD - Legendary treasure
+  # ============================================================================
+  # Theme: Ultimate challenge, legendary loot, dragon boss
+  # Difficulty: EXTREME (dragon boss encounter)
+  # Key: Dragon Scale (legendary, very rare)
+  
+  dragon_hoard:
+    name: "Dragon's Hoard"
+    description: "A mountain of treasure guarded by an ancient dragon."
+    required_key: "dragon_scale"
+    
+    # Visual appearance
+    wall_color: [139, 0, 0]  # Dark crimson
+    
+    # Monster table (dragon + minions)
+    monsters:
+      troll: 40      # Dragon spawn
+      orc_chieftain: 30  # Elite guard
+      orc_veteran: 30  # Guard
+    
+    # Elite scaling (extreme difficulty)
+    elite_scaling:
+      hp_multiplier: 3.0
+      power_bonus: 4
+      defense_bonus: 3
+    
+    # Loot configuration (legendary rewards)
+    chest_count:
+      min: 4
+      max: 6
+    
+    chest_quality:
+      - quality: "legendary"
+        weight: 80
+      - quality: "rare"
+        weight: 20
+    
+    bonus_items:
+      min: 2
+      max: 4
+    
+    # Spawn rates by depth
+    spawn_chance:
+      depth_1_9: 0.0     # Too early
+      depth_10_plus: 0.02  # 2% chance (very rare)
+
+# ============================================================================
+# Default vault configuration (used when no theme specified)
+# ============================================================================
+default_vault:
+  name: "Treasure Room"
+  description: "A room filled with treasure and elite guards."
+  wall_color: [200, 150, 50]  # Golden (same as Phase 1)
+  
+  monsters:
+    orc: 40
+    troll: 30
+    orc_veteran: 20
+    orc_chieftain: 10
+  
+  elite_scaling:
+    hp_multiplier: 2.0
+    power_bonus: 2
+    defense_bonus: 1
+  
+  chest_count:
+    min: 2
+    max: 3
+  
+  chest_quality:
+    - quality: "rare"
+      weight: 70
+    - quality: "legendary"
+      weight: 30
+  
+  bonus_items:
+    min: 1
+    max: 2
+
