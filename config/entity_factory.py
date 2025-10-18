@@ -629,16 +629,18 @@ class EntityFactory:
             logger.error(f"Error creating chest {chest_type}: {e}")
             return None
     
-    def create_signpost(self, sign_type: str, x: int, y: int, message: Optional[str] = None) -> Optional[Entity]:
+    def create_signpost(self, sign_type: str, x: int, y: int, message: Optional[str] = None, depth: int = 1) -> Optional[Entity]:
         """Create a signpost map feature entity from configuration.
         
         Signposts display readable messages and provide environmental storytelling.
+        Messages are depth-aware and will be filtered based on the dungeon level.
         
         Args:
             sign_type: The type of sign to create (e.g., "signpost", "warning_sign", "humor_sign")
             x: X coordinate for the signpost
             y: Y coordinate for the signpost
             message: Override message text (None = random from pool)
+            depth: Dungeon level for depth-specific messages
             
         Returns:
             Entity instance if signpost type exists, None otherwise
@@ -651,10 +653,10 @@ class EntityFactory:
         try:
             from components.signpost import Signpost
             
-            # Use provided message or get random one for the type
+            # Use provided message or get random one for the type and depth
             actual_message = message or sign_def.message
             if not actual_message:
-                actual_message = Signpost.get_random_message(sign_def.sign_type)
+                actual_message = Signpost.get_random_message(sign_def.sign_type, depth)
             
             # Create signpost component
             signpost_component = Signpost(

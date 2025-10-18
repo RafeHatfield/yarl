@@ -5,7 +5,7 @@ tile management, entity placement, and map navigation. It uses BSP-style
 room generation with connecting tunnels.
 """
 
-from random import randint
+from random import randint, random, choice
 import logging
 
 from components.ai import BasicMonster
@@ -481,10 +481,10 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             
-            signpost = entity_factory.create_signpost(sign_type, x, y)
+            signpost = entity_factory.create_signpost(sign_type, x, y, depth=self.dungeon_level)
             if signpost:
                 entities.append(signpost)
-                logger.debug(f"Placed {sign_type} at ({x}, {y}) in room")
+                logger.debug(f"Placed {sign_type} at ({x}, {y}) in room (depth {self.dungeon_level})")
     
     def place_secret_doors_between_rooms(self, rooms):
         """Place secret doors between some rooms.

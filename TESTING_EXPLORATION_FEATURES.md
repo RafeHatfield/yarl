@@ -41,7 +41,13 @@ Then reload: `source ~/.bashrc`
   - [ ] Warning sign (red/orange '|')
   - [ ] Humor sign (cyan '|')
   - [ ] Hint sign (gold '|')
+- [ ] **Vaults (2 guaranteed)**
+  - [ ] Golden walls clearly visible
+  - [ ] Elite monsters with "(Elite)" suffix
+  - [ ] 2-3 chests per vault
+  - [ ] Auto-explore stops on entry
 - [ ] **Auto-Explore Stops**
+  - [ ] Pauses on vaults
   - [ ] Pauses on chests
   - [ ] Pauses on signposts
   - [ ] Pauses on secret doors (if found)
@@ -49,6 +55,7 @@ Then reload: `source ~/.bashrc`
   - [ ] Chests visible outside FOV (after discovery)
   - [ ] Signposts visible outside FOV
   - [ ] Opened chests appear grey
+  - [ ] Vault walls are golden (RGB 200, 150, 50)
 - [ ] **Chest Loot**
   - [ ] Items drop on ground near chest
   - [ ] See what items were in chest (message)
@@ -62,20 +69,27 @@ Then reload: `source ~/.bashrc`
 
 ---
 
-### **Level 2: Vault Simulation & Loot Quality**
+### **Level 2: Multiple Vaults & Combat**
 
 **What to test:**
-- [ ] **Multiple Chests (11 total)**
-  - [ ] 5 normal chests
-  - [ ] 3 golden chests
-  - [ ] 2 trapped chests
-  - [ ] 1 locked chest
+- [ ] **3 Guaranteed Vaults**
+  - [ ] All 3 have golden walls
+  - [ ] All spawn elite monsters
+  - [ ] Each has 2-3 chests
+  - [ ] Auto-explore stops at each vault (first visit only)
 - [ ] **Elite Monster Combat**
-  - [ ] 6 orcs + 3 trolls (tougher than level 1)
+  - [ ] Elite monsters have "(Elite)" suffix
+  - [ ] Noticeably tougher (2x HP, +2 damage, +1 AC)
+  - [ ] Spawn from depth+2 (tougher variants)
   - [ ] Test combat with buff potions (speed, heroism, protection)
+- [ ] **Multiple Chests**
+  - [ ] 11 guaranteed chests on map (from level template)
+  - [ ] 6-9 more chests from vaults (2-3 per vault)
+  - [ ] Test various chest types (normal, golden, trapped, locked)
 - [ ] **Loot Quality**
-  - [ ] Check chest contents quality
-  - [ ] Compare golden chests vs normal chests
+  - [ ] Vault chests have higher quality loot
+  - [ ] Compare golden vs normal chests
+  - [ ] Check bonus items on vault floors
 - [ ] **Survival**
   - [ ] 30 healing potions available
   - [ ] Buff potions help in combat
@@ -91,13 +105,14 @@ Then reload: `source ~/.bashrc`
 
 ---
 
-### **Level 3+: Actual Vaults (with golden walls)**
+### **Level 3+: Random Vaults (Testing Mode)**
 
-**When in Testing Mode:**
-- **Vault spawn rate: 80% on levels 1-2, 50% on levels 3+**
-- You should see at least 1 vault by level 3
+**Random Vault Generation:**
+- **Testing mode:** 50% spawn rate on level 3+
+- **Normal mode:** 10-20% spawn rate on level 4+
+- Level templates can override with `vault_count` parameter
 
-**What to test:**
+**What to test (if vaults spawn):**
 - [ ] **Visual Distinction**
   - [ ] Golden walls (RGB 200, 150, 50)
   - [ ] Clearly distinguishable from normal brown walls
@@ -118,6 +133,34 @@ Then reload: `source ~/.bashrc`
   - [ ] Vaults feel appropriately challenging
   - [ ] Loot feels rewarding for the risk
   - [ ] Can choose to skip vault if too dangerous
+
+---
+
+### **Custom Vault Configuration (YAML)**
+
+**For level designers:**
+You can now specify exact vault counts in `level_templates.yaml`:
+
+```yaml
+level_overrides:
+  5:
+    parameters:
+      vault_count: 1  # Force 1 vault on level 5
+  
+  10:
+    parameters:
+      vault_count: 3  # Epic level with 3 vaults!
+  
+  15:
+    parameters:
+      vault_count: 0  # Disable vaults on level 15
+```
+
+**Benefits:**
+- ✅ Works on any level (ignores depth restrictions)
+- ✅ Exact control over vault count (0 to N)
+- ✅ No code changes needed
+- ✅ Consistent with other level template features
 
 ---
 
