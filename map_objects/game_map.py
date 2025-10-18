@@ -723,10 +723,11 @@ class GameMap:
                 
                 if monster and monster.fighter:
                     # Apply elite bonuses
-                    monster.fighter.max_hp = monster.fighter.max_hp * 2
-                    monster.fighter.hp = monster.fighter.max_hp
-                    monster.fighter.power += 2
-                    monster.fighter.defense += 1
+                    # Double base HP (max_hp is a property, so we modify base_max_hp)
+                    monster.fighter.base_max_hp = monster.fighter.base_max_hp * 2
+                    monster.fighter.hp = monster.fighter.max_hp  # Heal to new max
+                    monster.fighter.base_power += 2
+                    monster.fighter.base_defense += 1
                     
                     # Visual indication: append (Elite) to name
                     monster.name = f"{monster.name} (Elite)"
