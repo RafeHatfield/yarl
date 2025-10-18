@@ -1143,3 +1143,41 @@ map_features:
     blocks: false
     render_order: "item"
     sign_type: "hint"
+  
+  # ============================================================================
+  # LOCKED DOORS - Vault entrances and special areas
+  # ============================================================================
+  # Locked doors block passage until unlocked with the matching key.
+  # Each door type corresponds to a specific key type and vault theme.
+  
+  bronze_door:
+    char: "+"
+    color: [205, 127, 50]  # Bronze
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "bronze_key"
+  
+  silver_door:
+    char: "+"
+    color: [192, 192, 192]  # Silver
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "silver_key"
+  
+  gold_door:
+    char: "+"
+    color: [255, 215, 0]  # Gold
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "gold_key"
+  
+  crimson_door:
+    char: "+"
+    color: [220, 20, 60]  # Crimson
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "dragon_scale"
