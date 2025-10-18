@@ -483,7 +483,15 @@ class BasicMonster:
                         return results
             
             # Check for item usage first (scrolls, potions, etc.)
-            item_usage_action = self._try_item_usage(target, game_map, entities)
+            # Only try to use items occasionally to avoid overuse of valuable resources
+            from random import random
+            from config.game_constants import get_constants
+            constants = get_constants()
+            if random() < constants.monster_equipment.ITEM_USAGE_ATTEMPT_RATE:
+                item_usage_action = self._try_item_usage(target, game_map, entities)
+            else:
+                item_usage_action = None
+            
             if item_usage_action:
                 MonsterActionLogger.log_action_attempt(monster, "item_usage", 
                     f"attempting to use {item_usage_action.get('use_item', {}).name if item_usage_action.get('use_item') else 'unknown item'}")
@@ -620,6 +628,13 @@ class BasicMonster:
         
         if "move" in action:
             # Move towards item
+            # Check if immobilized (Glue spell)
+            if (hasattr(self.owner, 'has_status_effect') and 
+                callable(self.owner.has_status_effect) and 
+                self.owner.has_status_effect('immobilized')):
+                results.append({'message': MB.custom(f"{self.owner.name} struggles against the glue!", (139, 69, 19))})
+                return results
+            
             dx, dy = action["move"]
             self.owner.move(dx, dy)
             
@@ -682,8 +697,13 @@ class BasicMonster:
         pickup_details = f"picked up and {'equipped' if equipped else 'stored'} {item.name}"
         MonsterActionLogger.log_item_pickup(self.owner, item, True, pickup_details)
         
+        # Use display name to respect identification status
+        display_name = item.name
+        if item.item:
+            display_name = item.item.get_display_name(show_quantity=False)
+        
         results.append({
-            "message": MB.item_pickup(f"{self.owner.name.capitalize()} picks up the {item.name}!")
+            "message": MB.item_pickup(f"{self.owner.name.capitalize()} picks up the {display_name}!")
         })
         
         return results

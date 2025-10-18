@@ -810,6 +810,11 @@ class ActionProcessor:
             self._use_inventory_item(item)
         elif current_state == GameStates.DROP_INVENTORY:
             self._drop_inventory_item(item)
+        elif current_state == GameStates.TARGETING:
+            # Switching targeted item while in targeting mode
+            # Update the targeting_item to the newly selected item
+            self.state_manager.set_extra_data("targeting_item", item)
+            logger.warning(f"Switched targeting to: {item.name}")
         elif current_state == GameStates.THROW_SELECT_ITEM:
             # Selected item to throw - check if we have a pre-selected target from right-click
             throw_target = self.state_manager.get_extra_data("throw_target")
@@ -894,8 +899,14 @@ class ActionProcessor:
         # Check if item requires targeting - if so, enter targeting mode
         if item.item.targeting:
             # Enter targeting mode for this item
-            self.state_manager.state.targeting_item = item
+            self.state_manager.set_extra_data("targeting_item", item)
+            self.state_manager.set_extra_data("previous_state", GameStates.PLAYERS_TURN)
             self.state_manager.set_game_state(GameStates.TARGETING)
+            
+            # Show targeting message
+            item_name = item.item.get_display_name() if hasattr(item, 'item') and hasattr(item.item, 'get_display_name') else item.name
+            message_log.add_message(MB.info(f"Select a target for {item_name}. (Right-click or ESC to cancel)"))
+            
             return  # Don't consume turn yet - wait for targeting
         
         # Use item directly (no targeting required)
@@ -1639,8 +1650,13 @@ class ActionProcessor:
                             # Mark that we want to auto-pickup when we arrive
                             player.pathfinding.auto_pickup_target = target_item
                             
+                            # Use display name to respect identification status
+                            display_name = target_item.name
+                            if target_item.item:
+                                display_name = target_item.item.get_display_name(show_quantity=False)
+                            
                             message_log.add_message(
-                                MB.info(f"Moving to pick up {target_item.name}...")
+                                MB.info(f"Moving to pick up {display_name}...")
                             )
                             
                             # Immediately start moving along the path

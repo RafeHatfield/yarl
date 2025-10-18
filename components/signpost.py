@@ -4,6 +4,9 @@ This module provides the signpost component for environmental storytelling
 and player hints. Signposts display text messages when examined and can
 provide lore, warnings, humor, or hints about nearby features.
 
+Messages are loaded from config/signpost_messages.yaml and can be filtered
+by dungeon depth for contextual storytelling.
+
 Example:
     >>> signpost = Entity(10, 10, '|', (139, 69, 19), 'Signpost')
     >>> signpost.signpost = Signpost("Beware: Dragon ahead!", sign_type='warning')
@@ -16,58 +19,6 @@ from components.map_feature import MapFeature, MapFeatureType
 
 if TYPE_CHECKING:
     from entity import Entity
-
-
-# Message pools for random signpost generation
-LORE_MESSAGES = [
-    "These catacombs were once a sacred burial ground...",
-    "The Entity watches from the shadows, amused by your struggles.",
-    "Long ago, these halls echoed with the chants of the faithful.",
-    "The deeper you descend, the older the stones become.",
-    "Many have sought the Amulet. Few have returned.",
-    "The dungeon shifts and changes, but the Entity remains constant.",
-    "Ancient runes mark this place as cursed ground.",
-    "Treasure hunters came here seeking glory. They found only death.",
-]
-
-WARNING_MESSAGES = [
-    "Beware: Dangerous creatures ahead!",
-    "Warning: The path beyond is treacherous.",
-    "Caution: Traps have been reported in this area.",
-    "Turn back now, or face certain doom!",
-    "Those who proceed beyond this point rarely return.",
-    "The air grows thick with malice. Proceed with care.",
-    "Strong monsters guard the treasure within.",
-]
-
-HUMOR_MESSAGES = [
-    "Free treasure! (Just kidding. There's a troll.)",
-    "If you can read this, you're standing too close to danger.",
-    "Achievement unlocked: Reading Signs",
-    "The Entity put this sign here just to mess with you.",
-    "Beware of... actually, never mind. You'll find out.",
-    "Welcome to the dungeon! Please die quietly.",
-    "Exit: That way →  (Spoiler: There is no exit)",
-    "This sign was placed by the previous adventurer. RIP.",
-]
-
-HINT_MESSAGES = [
-    "Check the walls for hidden passages...",
-    "Not all chests are what they seem.",
-    "The key lies with the guardian nearby.",
-    "Some secrets reveal themselves to the patient.",
-    "Look for cracks in the stonework.",
-    "Rings of power can reveal hidden truths.",
-    "The vault is protected, but not impenetrable.",
-]
-
-DIRECTIONAL_MESSAGES = [
-    "Stairs down this way →",
-    "Treasury: North",
-    "Exit: Probably not this way",
-    "Boss Room: Straight ahead (Good luck!)",
-    "Shops: One level down",
-]
 
 
 class Signpost(MapFeature):
@@ -161,27 +112,23 @@ class Signpost(MapFeature):
         return "Signpost (unread)"
     
     @staticmethod
-    def get_random_message(sign_type: str) -> str:
-        """Get a random message for the specified sign type.
+    def get_random_message(sign_type: str, depth: int = 1) -> str:
+        """Get a random message for the specified sign type and depth.
+        
+        Messages are loaded from config/signpost_messages.yaml and filtered
+        by dungeon depth to provide contextual storytelling.
         
         Args:
             sign_type: Type of sign to get message for
+            depth: Current dungeon level (for depth-specific messages)
             
         Returns:
-            Random message string
+            Random message string appropriate for the sign type and depth
         """
-        import random
+        from config.signpost_message_registry import get_signpost_message_registry
         
-        message_pools = {
-            'lore': LORE_MESSAGES,
-            'warning': WARNING_MESSAGES,
-            'humor': HUMOR_MESSAGES,
-            'hint': HINT_MESSAGES,
-            'directional': DIRECTIONAL_MESSAGES
-        }
-        
-        pool = message_pools.get(sign_type, LORE_MESSAGES)
-        return random.choice(pool)
+        registry = get_signpost_message_registry()
+        return registry.get_random_message(sign_type, depth)
     
     def __repr__(self):
         return (

@@ -22,8 +22,7 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
       Y=10: G - Get/Drop
       Y=11: S - Search
       Y=12: Z - Wait
-      Y=13: <> - Stairs
-      Y=14: / - Look
+      Y=13: Enter - Stairs
     
     Args:
         screen_x: X coordinate of click
@@ -53,8 +52,7 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
         ("G - Get/Drop", None),  # Context-aware (handled below)
         ("S - Search", {"search": True}),
         ("Z - Wait", {"wait": True}),
-        ("<> - Stairs", None),  # Context-aware (handled below)
-        ("/ - Look", {"targeting": True, "targeting_type": "look"}),
+        ("Enter - Stairs", None),  # Context-aware (handled below)
     ]
     
     # Check if click is on any hotkey line
@@ -70,7 +68,7 @@ def _handle_hotkey_click(screen_x: int, screen_y: int, player: Any, ui_layout: A
                 # Smart Get/Drop: if standing on item, pick up; otherwise drop
                 return _handle_get_drop_click(player, entities)
             
-            elif hotkey_text == "<> - Stairs":
+            elif hotkey_text == "Enter - Stairs":
                 # Smart Stairs: go up if on upstairs, down if on downstairs
                 return _handle_stairs_click(player, game_map)
             

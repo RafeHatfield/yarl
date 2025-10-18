@@ -177,7 +177,7 @@ class Chest(MapFeature):
         if self.is_trapped():
             from message_builder import MessageBuilder as MB
             results.append({
-                'message': MB.error("You trigger a trap!"),
+                'message': MB.warning("You trigger a trap!"),
                 'trap_triggered': True,
                 'trap_type': self.trap_type
             })

@@ -74,9 +74,9 @@ level_overrides:
           count: 1
         - type: "chain_mail"
           count: 1
-        - type: "chain_coif"
+        - type: "helmet"
           count: 1
-        - type: "chain_boots"
+        - type: "boots"
           count: 1
         
         # UTILITY ITEMS
@@ -169,9 +169,9 @@ level_overrides:
           count: 1  # Best armor
         - type: "chain_mail"
           count: 1
-        - type: "chain_coif"
+        - type: "helmet"
           count: 1
-        - type: "chain_boots"
+        - type: "boots"
           count: 1
         
         # BUFF POTIONS - For difficult combat
@@ -231,7 +231,7 @@ level_overrides:
   # ============================================================================
   # Test all 15 ring types + dual ring slots
   # Focus: AC rings, stat rings, special effect rings, immunities
-  3:
+  1:
     parameters:
       map_width: 60
       map_height: 45
@@ -441,15 +441,11 @@ level_overrides:
         - type: "shield"
           count: 3  # +1 AC
         
-        # HELMETS, BOOTS (various tiers for testing)
-        - type: "leather_helmet"
-          count: 1
-        - type: "chain_coif"
-          count: 1
-        - type: "leather_boots"
-          count: 1
-        - type: "chain_boots"
-          count: 1
+        # HELMETS, BOOTS
+        - type: "helmet"
+          count: 2
+        - type: "boots"
+          count: 2
         
         # Enchantment scrolls
         - type: "enhance_weapon_scroll"
@@ -563,9 +559,9 @@ level_overrides:
           count: 1
         - type: "shield"
           count: 1
-        - type: "plate_helm"
+        - type: "helmet"
           count: 1
-        - type: "plate_boots"
+        - type: "boots"
           count: 1
         
         # BEST RINGS

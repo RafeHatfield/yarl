@@ -132,11 +132,13 @@ class AutoExplore:
             from components.component_registry import ComponentType
             
             for entity in entities:
-                if entity.components.has(ComponentType.ITEM):
+                if (entity.components.has(ComponentType.ITEM) or 
+                    entity.components.has(ComponentType.CHEST) or
+                    entity.components.has(ComponentType.SIGNPOST)):
                     if map_is_in_fov(fov_map, entity.x, entity.y):
                         self.known_items.add(id(entity))
             
-            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items in FOV")
+            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items/chests/signposts in FOV")
         
         logger.info(f"Auto-explore started for {self.owner.name}")
         return random.choice(ADVENTURE_QUOTES)
@@ -233,14 +235,15 @@ class AutoExplore:
         
         Stop conditions (in priority order):
         1. Monster in FOV
-        2. Secret door discovered
-        3. Chest in FOV (unopened)
-        4. Signpost in FOV
-        5. Valuable item in FOV
-        6. Standing on stairs
-        7. Took damage
-        8. Has status effect
-        9. Trap triggered (detected via damage)
+        2. Entered treasure vault
+        3. Secret door discovered
+        4. Chest in FOV (unopened)
+        5. Signpost in FOV
+        6. Valuable item in FOV
+        7. Standing on stairs
+        8. Took damage
+        9. Has status effect
+        10. Trap triggered (detected via damage)
         
         Args:
             game_map: Current game map
@@ -258,7 +261,11 @@ class AutoExplore:
         if monster:
             return f"Monster spotted: {monster.name}"
         
-        # 2. Check for newly revealed secret doors
+        # 2. Check if entered a treasure vault
+        if self._in_vault_room(game_map):
+            return "Discovered treasure vault!"
+        
+        # 3. Check for newly revealed secret doors
         secret_door = self._secret_door_in_fov(entities, fov_map)
         if secret_door:
             return "Found secret door!"
@@ -266,7 +273,7 @@ class AutoExplore:
         # 3. Check for chests in FOV
         chest = self._chest_in_fov(entities, fov_map)
         if chest:
-            return f"Found {chest.name}"
+            return "Found chest"
         
         # 4. Check for signposts in FOV
         signpost = self._signpost_in_fov(entities, fov_map)
@@ -329,6 +336,63 @@ class AutoExplore:
                     return entity
         
         return None
+    
+    def _in_vault_room(self, game_map: 'GameMap') -> bool:
+        """Check if player is currently in a treasure vault room.
+        
+        Only triggers once per vault (tracks visited vaults).
+        
+        Args:
+            game_map: Current game map
+            
+        Returns:
+            bool: True if player just entered a new vault
+        """
+        if not self.owner or not game_map:
+            return False
+        
+        # Need to check all rooms on the map to find which one we're in
+        # This requires access to the rooms list, which isn't stored
+        # So we'll use a simpler approach: check tile color for golden walls nearby
+        
+        # Look for golden vault walls in nearby tiles (within 3 tiles)
+        gold_color = (200, 150, 50)
+        vault_wall_found = False
+        
+        for dx in range(-3, 4):
+            for dy in range(-3, 4):
+                x, y = self.owner.x + dx, self.owner.y + dy
+                
+                # Check bounds
+                if not (0 <= x < game_map.width and 0 <= y < game_map.height):
+                    continue
+                
+                # Check if this tile is a golden wall (vault indicator)
+                tile = game_map.tiles[x][y]
+                if tile.blocked and hasattr(tile, 'light') and tile.light == gold_color:
+                    vault_wall_found = True
+                    break
+            
+            if vault_wall_found:
+                break
+        
+        if not vault_wall_found:
+            return False
+        
+        # Track visited vaults to only trigger once per vault
+        # Use a simple position-based key (this vault's approximate center)
+        vault_key = (self.owner.x // 10, self.owner.y // 10)  # Grid-based tracking
+        
+        if not hasattr(self, '_visited_vaults'):
+            self._visited_vaults = set()
+        
+        if vault_key in self._visited_vaults:
+            return False  # Already visited this vault
+        
+        # New vault discovered!
+        self._visited_vaults.add(vault_key)
+        logger.debug(f"Entered new treasure vault at grid {vault_key}")
+        return True
     
     def _valuable_item_in_fov(
         self, entities: List['Entity'], fov_map
@@ -436,6 +500,8 @@ class AutoExplore:
     ) -> Optional['Entity']:
         """Check if any unopened chest is visible.
         
+        Only returns NEW chests that weren't visible when auto-explore started.
+        
         Args:
             entities: All entities on the map
             fov_map: Field-of-view map
@@ -457,11 +523,18 @@ class AutoExplore:
             
             # Check if in FOV
             if map_is_in_fov(fov_map, entity.x, entity.y):
+                entity_id = id(entity)
                 chest = entity.chest
+                
+                # Skip chests we already knew about
+                if entity_id in self.known_items:
+                    continue
                 
                 # Only stop for unopened chests (skip already looted ones)
                 if chest and chest.state != ChestState.OPEN:
-                    logger.debug(f"Unopened chest found: {entity.name}")
+                    # Found a new unopened chest! Mark it as known and return it
+                    self.known_items.add(entity_id)
+                    logger.debug(f"New unopened chest found: {entity.name}")
                     return entity
         
         return None
@@ -470,6 +543,8 @@ class AutoExplore:
         self, entities: List['Entity'], fov_map
     ) -> Optional['Entity']:
         """Check if any unread signpost is visible.
+        
+        Only returns NEW signposts that weren't visible when auto-explore started.
         
         Args:
             entities: All entities on the map
@@ -491,11 +566,18 @@ class AutoExplore:
             
             # Check if in FOV
             if map_is_in_fov(fov_map, entity.x, entity.y):
+                entity_id = id(entity)
                 signpost = entity.signpost
+                
+                # Skip signposts we already knew about
+                if entity_id in self.known_items:
+                    continue
                 
                 # Only stop for unread signposts (skip already read ones)
                 if signpost and not signpost.has_been_read:
-                    logger.debug(f"Unread signpost found: {entity.name}")
+                    # Found a new unread signpost! Mark it as known and return it
+                    self.known_items.add(entity_id)
+                    logger.debug(f"New unread signpost found: {entity.name}")
                     return entity
         
         return None

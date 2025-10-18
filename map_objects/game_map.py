@@ -5,7 +5,7 @@ tile management, entity placement, and map navigation. It uses BSP-style
 room generation with connecting tunnels.
 """
 
-from random import randint
+from random import randint, random, choice
 import logging
 
 from components.ai import BasicMonster
@@ -218,6 +218,9 @@ class GameMap:
         
         # Apply guaranteed spawns from level templates (if configured)
         self.place_guaranteed_spawns(rooms, entities)
+        
+        # Designate some rooms as treasure vaults (Phase 1: Simple Vaults)
+        self.designate_vaults(rooms, entities)
         
         # Place secret doors between rooms (15% chance per level)
         self.place_secret_doors_between_rooms(rooms)
@@ -478,10 +481,10 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
             
-            signpost = entity_factory.create_signpost(sign_type, x, y)
+            signpost = entity_factory.create_signpost(sign_type, x, y, depth=self.dungeon_level)
             if signpost:
                 entities.append(signpost)
-                logger.debug(f"Placed {sign_type} at ({x}, {y}) in room")
+                logger.debug(f"Placed {sign_type} at ({x}, {y}) in room (depth {self.dungeon_level})")
     
     def place_secret_doors_between_rooms(self, rooms):
         """Place secret doors between some rooms.
@@ -511,31 +514,290 @@ class GameMap:
             room_b = choice([r for r in rooms if r != room_a])
             
             # Find a wall position between them
-            # For simplicity, use the midpoint of the wall between rooms
+            # Check if rooms are adjacent and have valid overlap
+            x, y = None, None
+            
             if room_a.x2 == room_b.x1 - 1:
                 # Rooms are horizontally adjacent (A is west of B)
-                x = room_a.x2
-                y = randint(max(room_a.y1, room_b.y1) + 1, min(room_a.y2, room_b.y2) - 1)
+                y_min = max(room_a.y1, room_b.y1) + 1
+                y_max = min(room_a.y2, room_b.y2) - 1
+                if y_min <= y_max:  # Valid overlap
+                    x = room_a.x2
+                    y = randint(y_min, y_max)
             elif room_b.x2 == room_a.x1 - 1:
                 # Rooms are horizontally adjacent (B is west of A)
-                x = room_b.x2
-                y = randint(max(room_a.y1, room_b.y1) + 1, min(room_a.y2, room_b.y2) - 1)
+                y_min = max(room_a.y1, room_b.y1) + 1
+                y_max = min(room_a.y2, room_b.y2) - 1
+                if y_min <= y_max:  # Valid overlap
+                    x = room_b.x2
+                    y = randint(y_min, y_max)
             elif room_a.y2 == room_b.y1 - 1:
                 # Rooms are vertically adjacent (A is north of B)
-                x = randint(max(room_a.x1, room_b.x1) + 1, min(room_a.x2, room_b.x2) - 1)
-                y = room_a.y2
+                x_min = max(room_a.x1, room_b.x1) + 1
+                x_max = min(room_a.x2, room_b.x2) - 1
+                if x_min <= x_max:  # Valid overlap
+                    x = randint(x_min, x_max)
+                    y = room_a.y2
             elif room_b.y2 == room_a.y1 - 1:
                 # Rooms are vertically adjacent (B is north of A)
-                x = randint(max(room_a.x1, room_b.x1) + 1, min(room_a.x2, room_b.x2) - 1)
-                y = room_b.y2
-            else:
-                # Rooms not adjacent, skip
+                x_min = max(room_a.x1, room_b.x1) + 1
+                x_max = min(room_a.x2, room_b.x2) - 1
+                if x_min <= x_max:  # Valid overlap
+                    x = randint(x_min, x_max)
+                    y = room_b.y2
+            
+            # Skip if rooms not adjacent or no valid overlap
+            if x is None or y is None:
                 continue
             
             # Create secret door at this position
             door = SecretDoor(x, y, connected_rooms=(id(room_a), id(room_b)))
             self.secret_door_manager.add_door(door)
             logger.debug(f"Placed secret door at ({x}, {y}) between rooms")
+    
+    def designate_vaults(self, rooms, entities):
+        """Designate some rooms as treasure vaults with elite monsters and guaranteed loot.
+        
+        Phase 1: Simple Treasure Rooms
+        - Spawn on depths 4+ (10% chance at depth 4-6, 15% at depth 7-9, 20% at depth 10+)
+        - Elite monsters: 2x HP, +2 damage, +1 AC, spawn from depth+2
+        - Guaranteed 2-3 chests with rare/legendary loot
+        - Visual distinction (golden walls)
+        
+        Can be overridden via level templates using 'vault_count' parameter:
+            parameters:
+              vault_count: 2  # Force exactly 2 vaults on this level
+        
+        Args:
+            rooms (list): List of Rect objects representing rooms
+            entities (list): List of entities on the map
+        """
+        if len(rooms) < 3:
+            return  # Need at least 3 rooms (player start, stairs, vault)
+        
+        # Check for level template override first
+        from config.level_template_registry import get_level_template_registry
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        vault_count_override = None
+        if level_override and level_override.has_parameters():
+            vault_count_override = level_override.parameters.vault_count
+        
+        # If template specifies vault count, use it (ignores depth restrictions)
+        if vault_count_override is not None:
+            num_vaults = max(0, min(vault_count_override, len(rooms) - 2))  # Cap at available rooms
+            if num_vaults > 0:
+                logger.info(
+                    f"Level {self.dungeon_level}: Creating {num_vaults} vaults (from template override)"
+                )
+            else:
+                return
+        else:
+            # No template override - use random chance based on depth/mode
+            from config.testing_config import is_testing_mode
+            testing_mode = is_testing_mode()
+            
+            # In normal mode, no vaults on early floors
+            if not testing_mode and self.dungeon_level < 4:
+                return  # No vaults on early floors (except in testing)
+            
+            # Calculate vault chance based on depth
+            # In testing mode, increase chances dramatically for easier testing
+            if testing_mode:
+                if self.dungeon_level <= 2:
+                    vault_chance = 0.80  # 80% on level 1-2 for testing
+                else:
+                    vault_chance = 0.50  # 50% on other levels in testing
+            else:
+                # Normal mode spawn rates
+                if self.dungeon_level <= 6:
+                    vault_chance = 0.10
+                elif self.dungeon_level <= 9:
+                    vault_chance = 0.15
+                else:
+                    vault_chance = 0.20
+            
+            # Roll for vault
+            if random() > vault_chance:
+                logger.debug(f"Level {self.dungeon_level}: No vault (rolled > {vault_chance})")
+                return
+            
+            # Random generation: create 1 vault
+            num_vaults = 1
+        
+        # Pick room(s) that's not first (player) or last (stairs)
+        eligible_rooms = rooms[1:-1]
+        if not eligible_rooms:
+            return
+        
+        # Ensure we don't try to create more vaults than eligible rooms
+        num_vaults = min(num_vaults, len(eligible_rooms))
+        
+        # Randomly select vault rooms
+        from random import sample
+        vault_rooms = sample(eligible_rooms, num_vaults)
+        
+        # Create each vault
+        for vault_room in vault_rooms:
+            vault_room.is_vault = True
+            logger.info(f"Level {self.dungeon_level}: Designated vault at room center {vault_room.center()}")
+            
+            # Apply visual distinction (golden walls)
+            self._apply_vault_visuals(vault_room)
+            
+            # Spawn elite monsters
+            self._spawn_vault_monsters(vault_room, entities)
+            
+            # Spawn guaranteed loot (2-3 chests + bonus items)
+            self._spawn_vault_loot(vault_room, entities)
+    
+    def _apply_vault_visuals(self, room):
+        """Apply visual distinction to vault room walls.
+        
+        Args:
+            room (Rect): The vault room to modify
+        """
+        gold_color = (200, 150, 50)  # Golden tint
+        
+        # Color the walls of the vault room
+        for x in range(room.x1, room.x2 + 1):
+            for y in range(room.y1, room.y2 + 1):
+                # Only color walls, not floor tiles
+                if self.tiles[x][y].blocked:
+                    self.tiles[x][y].light = gold_color
+                    self.tiles[x][y].dark = tuple(c // 2 for c in gold_color)
+    
+    def _spawn_vault_monsters(self, room, entities):
+        """Spawn elite monsters in vault room.
+        
+        Elite monsters have:
+        - 2x HP
+        - +2 damage
+        - +1 AC
+        - Spawn from depth+2 (tougher variants)
+        
+        Args:
+            room (Rect): The vault room
+            entities (list): List of entities on the map
+        """
+        from config.entity_factory import get_entity_factory
+        from random_utils import random_choice_from_dict, from_dungeon_level
+        
+        entity_factory = get_entity_factory()
+        
+        # Calculate monster count (150-200% of normal)
+        base_monster_count = randint(2, 4)  # Normal room has 0-3
+        elite_monster_count = int(base_monster_count * randint(150, 200) / 100)
+        elite_monster_count = max(2, min(6, elite_monster_count))  # 2-6 monsters
+        
+        logger.debug(f"Spawning {elite_monster_count} elite monsters in vault")
+        
+        # Calculate monster chances for depth+2 (tougher variants)
+        vault_depth = self.dungeon_level + 2
+        monster_chances = {
+            "orc": 80,
+            "troll": from_dungeon_level([[15, 3], [30, 5], [60, 7]], vault_depth),
+            "dragon_lord": from_dungeon_level([[5, 8], [10, 10]], vault_depth),
+            "demon_king": from_dungeon_level([[5, 9], [10, 11]], vault_depth),
+        }
+        
+        # Add slimes to vault pool
+        from config.testing_config import is_testing_mode
+        if is_testing_mode():
+            monster_chances["slime"] = 40
+            monster_chances["large_slime"] = from_dungeon_level([[10, 1], [20, 3]], vault_depth)
+        else:
+            monster_chances["slime"] = from_dungeon_level([[20, 2], [40, 4], [60, 6]], vault_depth)
+            monster_chances["large_slime"] = from_dungeon_level([[5, 3], [15, 5], [25, 7]], vault_depth)
+        
+        for _ in range(elite_monster_count):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if tile is free
+            if not any([e for e in entities if e.x == x and e.y == y]):
+                # Select monster type based on vault depth chances
+                monster_choice = random_choice_from_dict(monster_chances)
+                monster = entity_factory.create_monster(monster_choice, x, y)
+                
+                if monster and monster.fighter:
+                    # Apply elite bonuses
+                    # Double base HP (max_hp is a property, so we modify base_max_hp)
+                    monster.fighter.base_max_hp = monster.fighter.base_max_hp * 2
+                    monster.fighter.hp = monster.fighter.max_hp  # Heal to new max
+                    monster.fighter.base_power += 2
+                    monster.fighter.base_defense += 1
+                    
+                    # Visual indication: append (Elite) to name
+                    monster.name = f"{monster.name} (Elite)"
+                    
+                    # Spawn equipment on elite monster
+                    from components.monster_equipment import spawn_equipment_on_monster
+                    spawn_equipment_on_monster(monster, vault_depth)
+                    
+                    entities.append(monster)
+                    invalidate_entity_cache("entity_added_vault_monster")
+                    logger.debug(f"Spawned elite {monster.name} at ({x}, {y})")
+    
+    def _spawn_vault_loot(self, room, entities):
+        """Spawn guaranteed loot in vault room.
+        
+        Spawns:
+        - 2-3 chests (rare or legendary quality)
+        - 1-2 bonus items on floor
+        
+        Args:
+            room (Rect): The vault room
+            entities (list): List of entities on the map
+        """
+        from config.entity_factory import get_entity_factory
+        entity_factory = get_entity_factory()
+        
+        # Spawn 2-3 chests
+        num_chests = randint(2, 3)
+        logger.debug(f"Spawning {num_chests} chests in vault")
+        
+        for _ in range(num_chests):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if tile is free
+            if not any([e for e in entities if e.x == x and e.y == y]):
+                # High quality chests
+                if self.dungeon_level >= 10:
+                    chest_type = choice(['golden_chest', 'golden_chest', 'chest'])
+                    quality = choice(['legendary', 'rare', 'rare'])
+                elif self.dungeon_level >= 7:
+                    chest_type = choice(['golden_chest', 'chest'])
+                    quality = choice(['rare', 'rare', 'uncommon'])
+                else:
+                    chest_type = 'chest'
+                    quality = choice(['rare', 'uncommon'])
+                
+                chest = entity_factory.create_chest(chest_type, x, y, loot_quality=quality)
+                if chest:
+                    entities.append(chest)
+                    logger.debug(f"Spawned {chest_type} ({quality}) at ({x}, {y})")
+        
+        # Spawn 1-2 bonus items on floor
+        num_items = randint(1, 2)
+        for _ in range(num_items):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if tile is free
+            if not any([e for e in entities if e.x == x and e.y == y]):
+                # Use a simple selection of useful items for vault loot
+                item_choices = ['healing_potion', 'lightning_scroll', 'fireball_scroll', 
+                               'speed_potion', 'teleport_scroll', 'identify_scroll']
+                item_type = choice(item_choices)
+                
+                # Try to create the item
+                item = entity_factory.create_spell_item(item_type, x, y)
+                if item:
+                    entities.append(item)
+                    logger.debug(f"Spawned bonus item {item.name} at ({x}, {y})")
     
     def is_blocked(self, x, y):
         """Check if a tile is blocked for movement.
@@ -736,6 +998,35 @@ class GameMap:
                     spawned_count += 1
                 else:
                     logger.warning(f"Failed to create equipment: {spawn.entity_type}")
+                    failed_count += 1
+        
+        # Place guaranteed map_features (chests, signposts, etc.)
+        for spawn in level_override.guaranteed_map_features:
+            spawn_count = spawn.get_random_count()
+            for i in range(spawn_count):
+                x, y = self._find_random_unoccupied_position(rooms, entities)
+                if x is None:
+                    logger.warning(
+                        f"Could not find unoccupied position for {spawn.entity_type}, "
+                        f"spawned {i}/{spawn_count}"
+                    )
+                    failed_count += 1
+                    break
+                
+                # Try to create chest or signpost based on type
+                # Check if it's a chest type or signpost type
+                if 'chest' in spawn.entity_type.lower():
+                    map_feature = entity_factory.create_chest(spawn.entity_type, x, y)
+                else:
+                    # Assume it's a signpost
+                    map_feature = entity_factory.create_signpost(spawn.entity_type, x, y, depth=self.dungeon_level)
+                
+                if map_feature:
+                    entities.append(map_feature)
+                    invalidate_entity_cache("guaranteed_spawn_map_feature")
+                    spawned_count += 1
+                else:
+                    logger.warning(f"Failed to create map feature: {spawn.entity_type}")
                     failed_count += 1
                     
         logger.info(

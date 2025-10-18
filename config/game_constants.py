@@ -149,6 +149,7 @@ class MonsterEquipmentConfig:
     ITEM_PRIORITY_OVER_PLAYER: bool = True  # Prioritize items over player pursuit
     
     # Scroll usage and failure rates
+    ITEM_USAGE_ATTEMPT_RATE: float = 0.10  # 10% chance per turn to attempt using an item (prevents overuse)
     SCROLL_FAILURE_RATE: float = 0.75  # 75% failure rate for monster scroll usage (orcs aren't smart!)
     POTION_FAILURE_RATE: float = 0.2  # 20% failure rate for monster potion usage
 

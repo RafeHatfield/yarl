@@ -381,27 +381,33 @@ def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
             
             visible = map_is_in_fov(fov_map, x, y)
             wall = game_map.tiles[x][y].block_sight
+            tile = game_map.tiles[x][y]
 
             if visible:
-                if wall:
-                    libtcod.console_set_char_background(
-                        con, viewport_x, viewport_y, colors.get("light_wall"), libtcod.BKGND_SET
-                    )
+                # Use tile's custom light color if set, otherwise use default
+                if tile.light:
+                    color = tile.light
+                elif wall:
+                    color = colors.get("light_wall")
                 else:
-                    libtcod.console_set_char_background(
-                        con, viewport_x, viewport_y, colors.get("light_ground"), libtcod.BKGND_SET
-                    )
-
-                game_map.tiles[x][y].explored = True
-            elif game_map.tiles[x][y].explored:
-                if wall:
-                    libtcod.console_set_char_background(
-                        con, viewport_x, viewport_y, colors.get("dark_wall"), libtcod.BKGND_SET
-                    )
+                    color = colors.get("light_ground")
+                
+                libtcod.console_set_char_background(
+                    con, viewport_x, viewport_y, color, libtcod.BKGND_SET
+                )
+                tile.explored = True
+            elif tile.explored:
+                # Use tile's custom dark color if set, otherwise use default
+                if tile.dark:
+                    color = tile.dark
+                elif wall:
+                    color = colors.get("dark_wall")
                 else:
-                    libtcod.console_set_char_background(
-                        con, viewport_x, viewport_y, colors.get("dark_ground"), libtcod.BKGND_SET
-                    )
+                    color = colors.get("dark_ground")
+                
+                libtcod.console_set_char_background(
+                    con, viewport_x, viewport_y, color, libtcod.BKGND_SET
+                )
             
             # Render ground hazard overlay if present
             _render_hazard_at_tile(con, game_map, x, y, viewport_x, viewport_y, visible, colors)

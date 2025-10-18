@@ -1,0 +1,210 @@
+# Signpost Messages Configuration
+#
+# This file defines all messages that can appear on signposts throughout the dungeon.
+# Messages are categorized by type and can be further filtered by dungeon depth.
+#
+# Message Types:
+#   - lore: Backstory and world-building
+#   - warning: Alerts about dangers
+#   - humor: Jokes and meta-commentary
+#   - hint: Clues about nearby features
+#   - directional: Navigation help
+#
+# Depth Filtering:
+#   Messages can optionally specify min_depth and/or max_depth to only appear
+#   on certain dungeon levels. If not specified, the message can appear anywhere.
+
+version: "1.0"
+
+messages:
+  # ==========================================================================
+  # LORE MESSAGES - Backstory and world-building
+  # ==========================================================================
+  lore:
+    - text: "These catacombs were once a sacred burial ground..."
+      min_depth: 1
+    
+    - text: "The Entity watches from the shadows, amused by your struggles."
+      min_depth: 1
+    
+    - text: "Long ago, these halls echoed with the chants of the faithful."
+      min_depth: 1
+    
+    - text: "The deeper you descend, the older the stones become."
+      min_depth: 3
+    
+    - text: "Many have sought the Amulet. Few have returned."
+      min_depth: 1
+    
+    - text: "The dungeon shifts and changes, but the Entity remains constant."
+      min_depth: 5
+    
+    - text: "Ancient runes mark this place as cursed ground."
+      min_depth: 4
+    
+    - text: "Treasure hunters came here seeking glory. They found only death."
+      min_depth: 1
+    
+    - text: "The air here tastes of ancient magic and forgotten prayers."
+      min_depth: 6
+    
+    - text: "This level was sealed for centuries. You are the first to breach it."
+      min_depth: 8
+    
+    - text: "The architects of this dungeon never meant for anyone to leave."
+      min_depth: 7
+    
+    - text: "Every stone here is stained with the blood of failed heroes."
+      min_depth: 5
+
+  # ==========================================================================
+  # WARNING MESSAGES - Alerts about dangers
+  # ==========================================================================
+  warning:
+    - text: "Beware: Dangerous creatures ahead!"
+      min_depth: 1
+    
+    - text: "Warning: The path beyond is treacherous."
+      min_depth: 1
+    
+    - text: "Caution: Traps have been reported in this area."
+      min_depth: 2
+    
+    - text: "Turn back now, or face certain doom!"
+      min_depth: 1
+    
+    - text: "Those who proceed beyond this point rarely return."
+      min_depth: 4
+    
+    - text: "The air grows thick with malice. Proceed with care."
+      min_depth: 5
+    
+    - text: "Strong monsters guard the treasure within."
+      min_depth: 3
+    
+    - text: "Danger! Elite guardians patrol this area."
+      min_depth: 6
+    
+    - text: "Warning: Dragon territory ahead."
+      min_depth: 10
+    
+    - text: "Beware of mimics disguised as treasure chests."
+      min_depth: 4
+    
+    - text: "The walls have teeth. Watch your step."
+      min_depth: 7
+
+  # ==========================================================================
+  # HUMOR MESSAGES - Jokes and meta-commentary
+  # ==========================================================================
+  humor:
+    - text: "Free treasure! (Just kidding. There's a troll.)"
+      min_depth: 1
+    
+    - text: "If you can read this, you're standing too close to danger."
+      min_depth: 1
+    
+    - text: "Achievement unlocked: Reading Signs"
+      min_depth: 1
+    
+    - text: "The Entity put this sign here just to mess with you."
+      min_depth: 1
+    
+    - text: "Beware of... actually, never mind. You'll find out."
+      min_depth: 2
+    
+    - text: "Welcome to the dungeon! Please die quietly."
+      min_depth: 1
+    
+    - text: "Exit: That way →  (Spoiler: There is no exit)"
+      min_depth: 1
+    
+    - text: "This sign was placed by the previous adventurer. RIP."
+      min_depth: 1
+    
+    - text: "You look tired. Have you tried using healing potions?"
+      min_depth: 3
+    
+    - text: "Congratulations! You're lost."
+      min_depth: 4
+    
+    - text: "Fun fact: 90% of adventurers don't make it past level 5!"
+      min_depth: 5
+    
+    - text: "If you die here, can I have your stuff?"
+      min_depth: 2
+    
+    - text: "Pro tip: Don't die."
+      min_depth: 1
+    
+    - text: "The Entity rates your performance: 2/10. Needs more dying."
+      min_depth: 6
+
+  # ==========================================================================
+  # HINT MESSAGES - Clues about nearby features
+  # ==========================================================================
+  hint:
+    - text: "Check the walls for hidden passages..."
+      min_depth: 2
+    
+    - text: "Not all chests are what they seem."
+      min_depth: 3
+    
+    - text: "The key lies with the guardian nearby."
+      min_depth: 4
+    
+    - text: "Some secrets reveal themselves to the patient."
+      min_depth: 2
+    
+    - text: "Look for cracks in the stonework."
+      min_depth: 3
+    
+    - text: "Rings of power can reveal hidden truths."
+      min_depth: 4
+    
+    - text: "The vault is protected, but not impenetrable."
+      min_depth: 4
+    
+    - text: "Golden walls often hide golden rewards."
+      min_depth: 4
+    
+    - text: "Press 'S' to search for secrets in this area."
+      min_depth: 1
+    
+    - text: "Trapped chests can be opened safely... if you're lucky."
+      min_depth: 3
+    
+    - text: "Elite monsters carry elite rewards."
+      min_depth: 5
+    
+    - text: "Some doors aren't really doors. Some walls aren't really walls."
+      min_depth: 5
+
+  # ==========================================================================
+  # DIRECTIONAL MESSAGES - Navigation help
+  # ==========================================================================
+  directional:
+    - text: "Stairs down this way →"
+      min_depth: 1
+    
+    - text: "Treasury: North"
+      min_depth: 3
+    
+    - text: "Exit: Probably not this way"
+      min_depth: 1
+    
+    - text: "Boss Room: Straight ahead (Good luck!)"
+      min_depth: 8
+    
+    - text: "Shops: One level down"
+      min_depth: 1
+    
+    - text: "Vault entrance: Behind the secret door"
+      min_depth: 4
+    
+    - text: "Safe room: Follow the light"
+      min_depth: 5
+    
+    - text: "Point of no return: Beyond this point"
+      min_depth: 10
+

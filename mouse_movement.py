@@ -177,7 +177,7 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
                         damage = 10  # Base trap damage
                         player.fighter.take_damage(damage)
                         results.append({
-                            "message": MB.error(f"The trap deals {damage} damage!")
+                            "message": MB.combat(f"The trap deals {damage} damage!")
                         })
                     elif trap_type == 'poison':
                         # TODO: Apply poison status effect
@@ -201,12 +201,22 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
                         invalidate_entity_cache("entity_added_chest_loot")
                         
                         # Create a follow-up message listing what was in the chest
+                        # Use display names to respect identification status
                         if len(loot) == 1:
+                            display_name = loot[0].name
+                            if loot[0].item:
+                                display_name = loot[0].item.get_display_name(show_quantity=False)
                             results.append({
-                                "message": MB.info(f"The chest contained: {loot[0].name}")
+                                "message": MB.info(f"The chest contained: {display_name}")
                             })
                         else:
-                            item_names = ", ".join([item.name for item in loot])
+                            display_names = []
+                            for item in loot:
+                                if item.item:
+                                    display_names.append(item.item.get_display_name(show_quantity=False))
+                                else:
+                                    display_names.append(item.name)
+                            item_names = ", ".join(display_names)
                             results.append({
                                 "message": MB.info(f"The chest contained: {item_names}")
                             })
@@ -491,8 +501,12 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                         item_consumed = pickup_result.get("item_consumed")
                         if item_added or item_consumed:
                             entities.remove(target_item)
+                            # Use display name to respect identification status
+                            display_name = target_item.name
+                            if target_item.item:
+                                display_name = target_item.item.get_display_name(show_quantity=False)
                             results.append({
-                                "message": MB.item_pickup(f"Auto-picked up {target_item.name}!")
+                                "message": MB.item_pickup(f"Auto-picked up {display_name}!")
                             })
             
             # Clear the auto-pickup target
