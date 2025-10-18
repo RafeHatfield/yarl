@@ -9,6 +9,7 @@ from typing import Optional, Any
 import logging
 
 from components.component_registry import ComponentType
+from ui.sidebar_layout import calculate_sidebar_layout, get_hotkey_list, get_equipment_slot_list
 
 logger = logging.getLogger(__name__)
 
@@ -158,26 +159,15 @@ def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_l
     
     padding = ui_layout.sidebar_padding
     
-    # Calculate equipment section Y positions (must match sidebar.py!)
-    y_cursor = 2   # Starting Y
-    y_cursor += 2  # Title + spacing
-    y_cursor += 2  # Separator + spacing
-    y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 7  # 7 hotkey lines (C, I, O, G, S, Z, Enter)
-    y_cursor += 1  # Spacing after hotkeys
-    y_cursor += 1  # "EQUIPMENT" header is printed, then y increments
-    equipment_start_y = y_cursor
+    # Get centralized layout positions
+    hotkey_list = get_hotkey_list()
+    slot_list = get_equipment_slot_list()
+    layout = calculate_sidebar_layout(hotkey_count=len(hotkey_list), equipment_slot_count=len(slot_list))
     
-    # Equipment slots (must match sidebar.py order!)
-    equipment_slots = [
-        equipment.main_hand,
-        equipment.off_hand,
-        equipment.head,
-        equipment.chest,
-        equipment.feet,
-        equipment.left_ring,
-        equipment.right_ring,
-    ]
+    equipment_start_y = layout.equipment_start_y
+    
+    # Build equipment slots from player's equipment (using centralized slot list)
+    equipment_slots = [getattr(equipment, slot_name) for slot_name in slot_list]
     
     # Check if hovering over any equipment line
     for i, item in enumerate(equipment_slots):
@@ -232,20 +222,13 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     if len(inventory_items) == 0:
         return None
     
-    # Calculate where inventory section starts (must match sidebar.py rendering!)
+    # Get centralized layout positions
     padding = ui_layout.sidebar_padding
-    y_cursor = 2  # Title
-    y_cursor += 2  # Title spacing + separator
-    y_cursor += 2  # Separator spacing
-    y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 7  # 7 hotkey lines (C, I, O, G, S, Z, Enter)
-    y_cursor += 1  # Spacing after hotkeys
-    y_cursor += 1  # "EQUIPMENT" header
-    y_cursor += 7  # 7 equipment slots (added rings)
-    y_cursor += 1  # Spacing after equipment
-    y_cursor += 1  # "INVENTORY (N/20)" header is printed, then y increments
+    hotkey_list = get_hotkey_list()
+    slot_list = get_equipment_slot_list()
+    layout = calculate_sidebar_layout(hotkey_count=len(hotkey_list), equipment_slot_count=len(slot_list))
     
-    inventory_start_y = y_cursor
+    inventory_start_y = layout.inventory_start_y
     
     # Check if mouse is on an inventory item line
     for i, item in enumerate(inventory_items):
