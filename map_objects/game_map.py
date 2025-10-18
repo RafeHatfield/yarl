@@ -788,7 +788,13 @@ class GameMap:
             
             # Check if tile is free
             if not any([e for e in entities if e.x == x and e.y == y]):
-                item = entity_factory.create_item_for_level(self.dungeon_level + 1, x, y)
+                # Use a simple selection of useful items for vault loot
+                item_choices = ['healing_potion', 'lightning_scroll', 'fireball_scroll', 
+                               'speed_potion', 'teleport_scroll', 'identify_scroll']
+                item_type = choice(item_choices)
+                
+                # Try to create the item
+                item = entity_factory.create_spell_item(item_type, x, y)
                 if item:
                     entities.append(item)
                     logger.debug(f"Spawned bonus item {item.name} at ({x}, {y})")
@@ -1007,9 +1013,12 @@ class GameMap:
                     failed_count += 1
                     break
                 
-                # Try to create chest or signpost
-                map_feature = entity_factory.create_chest(spawn.entity_type, x, y)
-                if not map_feature:
+                # Try to create chest or signpost based on type
+                # Check if it's a chest type or signpost type
+                if 'chest' in spawn.entity_type.lower():
+                    map_feature = entity_factory.create_chest(spawn.entity_type, x, y)
+                else:
+                    # Assume it's a signpost
                     map_feature = entity_factory.create_signpost(spawn.entity_type, x, y, depth=self.dungeon_level)
                 
                 if map_feature:
