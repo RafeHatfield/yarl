@@ -167,15 +167,14 @@ def render_sidebar(console, player, ui_layout) -> None:
                     libtcod.BKGND_NONE, libtcod.LEFT, item_text
                 )
                 letter_index += 1
-        
-        y += 1
-        
-        # Click hint
-        libtcod.console_set_default_foreground(console, libtcod.Color(100, 100, 100))
-        libtcod.console_print_ex(
-            console, padding + 1, y,
-            libtcod.BKGND_NONE, libtcod.LEFT, "(Click to use!)"
-        )
+            
+            # Click hint (appears after last inventory item)
+            hint_y = layout.inventory_start_y + len(inventory_items) + 1
+            libtcod.console_set_default_foreground(console, libtcod.Color(100, 100, 100))
+            libtcod.console_print_ex(
+                console, padding + 1, hint_y,
+                libtcod.BKGND_NONE, libtcod.LEFT, "(Click to use!)"
+            )
 
 
 def _render_sidebar(console, player, ui_layout) -> None:
