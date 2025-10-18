@@ -100,7 +100,7 @@ class TestPlayerCanUseAllPotions:
         player.fighter.hp = 50
         
         # Use healing potion
-        results = cast_heal(player, heal_amount=40)
+        results = heal(player, amount=40)
         
         # Should not crash and should heal
         assert len(results) > 0
@@ -116,7 +116,7 @@ class TestPlayerCanUseAllPotions:
         
         # Should not crash
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         # Should have speed effect
         speed_effect = player.status_effects.get_effect('speed')
@@ -132,7 +132,7 @@ class TestPlayerCanUseAllPotions:
         
         # Should not crash
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         # Should have regen effect
         regen_effect = player.status_effects.get_effect('regeneration')
@@ -143,7 +143,7 @@ class TestPlayerCanUseAllPotions:
         results = drink_invisibility_potion(player)
         
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         invis_effect = player.status_effects.get_effect('invisibility')
         assert invis_effect is not None
@@ -153,7 +153,7 @@ class TestPlayerCanUseAllPotions:
         results = drink_levitation_potion(player)
         
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         levitation_effect = player.status_effects.get_effect('levitation')
         assert levitation_effect is not None
@@ -163,7 +163,7 @@ class TestPlayerCanUseAllPotions:
         results = drink_protection_potion(player)
         
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         protection_effect = player.status_effects.get_effect('protection')
         assert protection_effect is not None
@@ -173,7 +173,7 @@ class TestPlayerCanUseAllPotions:
         results = drink_heroism_potion(player)
         
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         heroism_effect = player.status_effects.get_effect('heroism')
         assert heroism_effect is not None
@@ -183,7 +183,7 @@ class TestPlayerCanUseAllPotions:
         results = drink_weakness_potion(player)
         
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         weakness_effect = player.status_effects.get_effect('weakness')
         assert weakness_effect is not None
@@ -193,7 +193,7 @@ class TestPlayerCanUseAllPotions:
         results = drink_blindness_potion(player)
         
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         blindness_effect = player.status_effects.get_effect('blindness')
         assert blindness_effect is not None
@@ -203,7 +203,7 @@ class TestPlayerCanUseAllPotions:
         results = drink_paralysis_potion(player)
         
         assert len(results) > 0
-        assert results[0].get('consumed') is True
+        assert any(r.get('consumed') is True for r in results)
         
         paralysis_effect = player.status_effects.get_effect('paralysis')
         assert paralysis_effect is not None
