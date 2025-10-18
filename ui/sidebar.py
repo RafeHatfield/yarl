@@ -65,8 +65,7 @@ def render_sidebar(console, player, ui_layout) -> None:
         "G - Get/Drop",
         "S - Search",
         "Z - Wait",
-        "<> - Stairs",
-        "/ - Look",
+        "Enter - Stairs",
     ]
     
     for hotkey in hotkeys:
