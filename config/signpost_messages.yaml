@@ -179,6 +179,43 @@ messages:
     
     - text: "Some doors aren't really doors. Some walls aren't really walls."
       min_depth: 5
+    
+    # VAULT HINTS - Themed vault clues
+    - text: "Through the bronze door lies ancient knowledge..."
+      min_depth: 5
+    
+    - text: "The armory awaits those with the silver key."
+      min_depth: 6
+    
+    - text: "Beware! A dragon guards legendary treasure beyond."
+      min_depth: 9
+    
+    - text: "Only the pure may enter the golden shrine."
+      min_depth: 6
+    
+    - text: "Treasures beyond measure... if you have the key."
+      min_depth: 7
+    
+    - text: "Bronze unlocks wisdom. Silver unlocks strength. Gold unlocks wealth."
+      min_depth: 5
+    
+    - text: "The library's secrets are protected by magical guardians."
+      min_depth: 5
+    
+    - text: "Warriors train in the armory. Wizards study in the library."
+      min_depth: 6
+    
+    - text: "The shrine glows with divine light, but darkness guards it."
+      min_depth: 7
+    
+    - text: "Crimson walls mark the dragon's domain. Enter at your peril."
+      min_depth: 9
+    
+    - text: "Keys are rare. Use them wisely."
+      min_depth: 4
+    
+    - text: "Golden walls mean golden loot... and golden danger."
+      min_depth: 5
 
   # ==========================================================================
   # DIRECTIONAL MESSAGES - Navigation help
