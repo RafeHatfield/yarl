@@ -483,7 +483,15 @@ class BasicMonster:
                         return results
             
             # Check for item usage first (scrolls, potions, etc.)
-            item_usage_action = self._try_item_usage(target, game_map, entities)
+            # Only try to use items occasionally to avoid overuse of valuable resources
+            from random import random
+            from config.game_constants import get_constants
+            constants = get_constants()
+            if random() < constants.monster_equipment.ITEM_USAGE_ATTEMPT_RATE:
+                item_usage_action = self._try_item_usage(target, game_map, entities)
+            else:
+                item_usage_action = None
+            
             if item_usage_action:
                 MonsterActionLogger.log_action_attempt(monster, "item_usage", 
                     f"attempting to use {item_usage_action.get('use_item', {}).name if item_usage_action.get('use_item') else 'unknown item'}")
