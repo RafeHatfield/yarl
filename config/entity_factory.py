@@ -246,7 +246,8 @@ class EntityFactory:
                 from components.monster_item_usage import create_monster_item_usage
                 item_usage = create_monster_item_usage(monster)
                 if item_usage:
-                    monster.item_usage = item_usage
+                    monster.item_usage = item_usage  # Legacy attribute for backward compatibility
+                    monster.components.add(ComponentType.ITEM_USAGE, item_usage)  # Register with ComponentRegistry
                     logger.debug(f"Added item usage capability to {monster_def.name}")
                 else:
                     logger.warning(f"Failed to create item usage for {monster_def.name}")
