@@ -166,7 +166,7 @@ def _handle_equipment_click(screen_x: int, screen_y: int, player: Any, ui_layout
     y_cursor += 2  # Title + spacing
     y_cursor += 2  # Separator + spacing
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 8  # 8 hotkey lines (C, I, O, G, S, Z, <>, /)
+    y_cursor += 7  # 7 hotkey lines (C, I, O, G, S, Z, Enter)
     y_cursor += 1  # Spacing after hotkeys
     y_cursor += 1  # "EQUIPMENT" header
     equipment_start_y = y_cursor  # Should be 16
@@ -263,7 +263,7 @@ def handle_sidebar_click(screen_x: int, screen_y: int, player, ui_layout, game_m
     y_cursor += 2  # Separator + spacing
     # Hotkeys section in sidebar.py:
     y_cursor += 1  # "HOTKEYS" header
-    y_cursor += 8  # 8 hotkey lines (C, I, O, G, S, Z, <>, /)
+    y_cursor += 7  # 7 hotkey lines (C, I, O, G, S, Z, Enter)
     y_cursor += 1  # Spacing after hotkeys
     # Equipment section in sidebar.py:
     y_cursor += 1  # "EQUIPMENT" header
