@@ -894,6 +894,37 @@ wands:
     color: [255, 100, 100]  # Bright red (wand)
     duration: 8
     range: 8
+  
+  # ════════════════════════════════════════════════════════
+  # KEYS - Unlock vault doors and special chests
+  # ════════════════════════════════════════════════════════
+  # Keys are consumable items that unlock themed vaults.
+  # Each key type corresponds to specific vault themes.
+  # Keys are consumed when used to unlock doors/chests.
+  
+  bronze_key:
+    spell_type: "key"
+    char: "k"
+    color: [205, 127, 50]  # Bronze
+    key_type: "bronze"
+  
+  silver_key:
+    spell_type: "key"
+    char: "k"
+    color: [192, 192, 192]  # Silver
+    key_type: "silver"
+  
+  gold_key:
+    spell_type: "key"
+    char: "k"
+    color: [255, 215, 0]  # Gold
+    key_type: "gold"
+  
+  dragon_scale:
+    spell_type: "key"
+    char: "k"
+    color: [220, 20, 60]  # Crimson
+    key_type: "dragon_scale"
 
 # ═══════════════════════════════════════════════════════════
 # RINGS - Passive effect jewelry
