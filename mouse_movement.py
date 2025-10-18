@@ -177,7 +177,7 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
                         damage = 10  # Base trap damage
                         player.fighter.take_damage(damage)
                         results.append({
-                            "message": MB.error(f"The trap deals {damage} damage!")
+                            "message": MB.combat(f"The trap deals {damage} damage!")
                         })
                     elif trap_type == 'poison':
                         # TODO: Apply poison status effect

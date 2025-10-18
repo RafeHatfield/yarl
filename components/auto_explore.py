@@ -271,7 +271,7 @@ class AutoExplore:
         # 3. Check for chests in FOV
         chest = self._chest_in_fov(entities, fov_map)
         if chest:
-            return f"Found {chest.name}"
+            return "Found chest"
         
         # 4. Check for signposts in FOV
         signpost = self._signpost_in_fov(entities, fov_map)
