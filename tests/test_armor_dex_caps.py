@@ -11,7 +11,7 @@ when calculating Armor Class (AC).
 import pytest
 
 # Quarantine entire file
-pytestmark = pytest.mark.skip(reason="Quarantined - DEX cap feature needs verification. See QUARANTINED_TESTS.md")
+# pytestmark = pytest.mark.skip(reason="Quarantined - DEX cap feature needs verification. See QUARANTINED_TESTS.md")  # REMOVED Session 2
 
 import pytest
 from entity import Entity
