@@ -33,8 +33,14 @@ class TestMonsterVariableDamage(unittest.TestCase):
         self.player.equipment.defense_bonus = 0
         self.player.equipment.main_hand = None
         self.player.equipment.off_hand = None
+        self.player.equipment.left_ring = None
+        self.player.equipment.right_ring = None
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.player.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        self.player.status_effects = status_effects_mock
 
     def test_fighter_init_with_damage_range(self):
         """Test Fighter initialization with damage_min/damage_max."""
@@ -89,8 +95,15 @@ class TestMonsterVariableDamage(unittest.TestCase):
         monster.equipment = Mock()
         monster.equipment.power_bonus = 0
         monster.equipment.main_hand = None
+        monster.equipment.left_ring = None
+        monster.equipment.right_ring = None
         # Mock get_component_optional to return None for BOSS (not a boss)
         monster.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        monster.status_effects = status_effects_mock
+        monster.equipment.main_hand = None  # Prevent reach check from returning Mock
         
         # Mock variable damage roll
         mock_randint.return_value = 2  # Roll 2 from 1-3 range
@@ -117,6 +130,7 @@ class TestMonsterVariableDamage(unittest.TestCase):
         self.player.equipment.main_hand = Mock()
         self.player.equipment.main_hand.equippable = Mock()
         self.player.equipment.main_hand.equippable.roll_damage.return_value = 2
+        self.player.equipment.main_hand.item = None  # Prevent reach check from returning Mock
         
         # Player fighter should not have monster damage
         self.assertEqual(self.player.fighter.damage_min, 0)
@@ -152,8 +166,15 @@ class TestMonsterVariableDamage(unittest.TestCase):
         monster.equipment = Mock()
         monster.equipment.power_bonus = 0
         monster.equipment.main_hand = None
+        monster.equipment.left_ring = None
+        monster.equipment.right_ring = None
         # Mock get_component_optional to return None for BOSS (not a boss)
         monster.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        monster.status_effects = status_effects_mock
+        monster.equipment.main_hand = None  # Prevent reach check from returning Mock
         
         mock_randint.return_value = 4  # Roll 4 from 2-6 range
         
@@ -179,8 +200,15 @@ class TestMonsterVariableDamage(unittest.TestCase):
         monster.equipment = Mock()
         monster.equipment.power_bonus = 0
         monster.equipment.main_hand = None
+        monster.equipment.left_ring = None
+        monster.equipment.right_ring = None
         # Mock get_component_optional to return None for BOSS (not a boss)
         monster.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        monster.status_effects = status_effects_mock
+        monster.equipment.main_hand = None  # Prevent reach check from returning Mock
         
         # Capture debug log output
         with patch('components.fighter.combat_logger') as mock_logger:
@@ -325,6 +353,13 @@ class TestBackwardCompatibility(unittest.TestCase):
         player.equipment.main_hand.equippable.roll_damage.return_value = 2
         player.equipment.defense_bonus = 0
         player.equipment.off_hand = None
+        player.equipment.left_ring = None
+        player.equipment.right_ring = None
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        player.status_effects = status_effects_mock
+        player.equipment.main_hand.item = None  # Prevent reach check from returning Mock
         
         # Monster with natural damage
         monster = Mock()
@@ -339,6 +374,12 @@ class TestBackwardCompatibility(unittest.TestCase):
         monster.equipment.defense_bonus = 0
         monster.equipment.main_hand = None
         monster.equipment.off_hand = None
+        monster.equipment.left_ring = None
+        monster.equipment.right_ring = None
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        monster.status_effects = status_effects_mock
         
         # Both should be able to attack using their respective damage systems
         with patch('random.randint', return_value=2):
