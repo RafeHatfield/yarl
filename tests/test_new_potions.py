@@ -54,6 +54,8 @@ class TestBuffPotions:
         self.entity.name = "Test Entity"
         self.entity.status_effects = StatusEffectManager(self.entity)
         self.entity.get_component_optional = Mock(return_value=None)
+        # Mock equipment to prevent ring immunity checks from interfering
+        self.entity.equipment = None
     
     def test_drink_speed_potion(self):
         """Speed potion should add speed effect for 20 turns."""
@@ -191,6 +193,8 @@ class TestDebuffPotions:
         self.entity.name = "Test Entity"
         self.entity.status_effects = StatusEffectManager(self.entity)
         self.entity.get_component_optional = Mock(return_value=None)
+        # Mock equipment to prevent ring immunity checks from interfering
+        self.entity.equipment = None
     
     def test_drink_weakness_potion(self):
         """Weakness potion should add weakness effect for 30 turns with -2 damage."""
@@ -286,6 +290,8 @@ class TestSpecialPotions:
         self.entity.get_component_optional = Mock(
             side_effect=lambda ct: self.level_comp if ct == ComponentType.LEVEL else None
         )
+        # Mock equipment to prevent ring immunity checks from interfering
+        self.entity.equipment = None
     
     def test_drink_experience_potion(self):
         """Experience potion should grant enough XP for instant level-up."""
@@ -341,6 +347,8 @@ class TestStatusEffectInteractions:
         self.entity.name = "Test Entity"
         self.entity.status_effects = StatusEffectManager(self.entity)
         self.entity.get_component_optional = Mock(return_value=None)
+        # Mock equipment to prevent ring immunity checks from interfering
+        self.entity.equipment = None
     
     def test_multiple_buff_potions(self):
         """Multiple buff potions should stack (speed + heroism)."""
@@ -391,6 +399,8 @@ class TestRegenerationHealing:
         self.entity.get_component_optional = Mock(
             side_effect=lambda ct: self.fighter if ct == ComponentType.FIGHTER else None
         )
+        # Mock equipment to prevent ring immunity checks from interfering
+        self.entity.equipment = None
     
     def test_regeneration_heals_over_time(self):
         """Regeneration should heal 1 HP per turn for 50 turns."""
@@ -465,6 +475,8 @@ class TestEdgeCases:
         entity.name = "No Manager"
         # Start without status_effects attribute
         del entity.status_effects
+        # Mock equipment to prevent ring immunity checks from interfering
+        entity.equipment = None
         
         # Should work and create manager
         drink_speed_potion(entity)
