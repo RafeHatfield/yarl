@@ -13,7 +13,7 @@ This module tests the fixes for:
 import pytest
 
 # Quarantine entire file
-pytestmark = pytest.mark.skip(reason="Quarantined - Initialization flow needs review. See QUARANTINED_TESTS.md")
+# pytestmark = pytest.mark.skip(reason="Quarantined - Initialization flow needs review. See QUARANTINED_TESTS.md")  # REMOVED Session 2
 
 import pytest
 from unittest.mock import Mock, MagicMock
@@ -115,9 +115,9 @@ class TestPlayerInitialization:
         assert player.equipment.main_hand is not None
         assert player.equipment.chest is not None
         
-        # Equipment should be in inventory
-        assert player.equipment.main_hand in player.inventory.items
-        assert player.equipment.chest in player.inventory.items
+        # NOTE: Equipped items are NO LONGER in inventory (removed when equipped)
+        # This was changed to fix duplicate loot bug - equipped items are removed
+        # from inventory and re-added when unequipped
     
     def test_player_has_starting_potion(self):
         """Test that player starts with a healing potion (balance change)."""
