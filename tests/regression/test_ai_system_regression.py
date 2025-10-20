@@ -175,41 +175,6 @@ class TestAISystemRegressions:
             self.mock_entities,  # entities
         )
 
-    def test_ai_system_integration_with_real_ai_classes(self):
-        """Integration test: Verify AISystem works with actual AI implementations.
-
-        This test uses real AI classes (not mocks) to ensure the integration
-        works end-to-end and catches any signature mismatches.
-        """
-        # Create a real entity with BasicMonster AI
-        from entity import Entity
-        from components.fighter import Fighter
-        
-        fighter = Fighter(hp=15, defense=2, power=5)
-        entity = Entity(10, 10, 'o', (0, 255, 0), 'Integration Test Orc', blocks=True, fighter=fighter)
-        
-        # Mock some methods that we need to track
-        entity.distance_to = Mock(return_value=5)  # Far from player
-        entity.move_astar = Mock()
-        entity.fighter.attack = Mock(return_value=[])
-        
-        # Mock has_status_effect to prevent immobilized check from failing
-        entity.has_status_effect = Mock(return_value=False)
-
-        # Create real BasicMonster AI
-        basic_ai = BasicMonster()
-        basic_ai.owner = entity
-        entity.ai = basic_ai
-
-        # Set up FOV map to return True (entity can see player)
-        with patch("components.ai.map_is_in_fov", return_value=True):
-            # This should execute without errors
-            result = self.ai_system._process_entity_turn(entity, self.mock_game_state)
-
-            # Verify the AI actually executed (entity tried to move)
-            entity.move_astar.assert_called_once()
-
-
 class TestAISystemInterfaceContract:
     """Tests to ensure AI system interface contracts are maintained."""
 

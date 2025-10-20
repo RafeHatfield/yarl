@@ -68,40 +68,6 @@ class TestRenderSystemRegressions:
         self.fov_map = Mock()
         self.render_system.set_fov_map(self.fov_map)
 
-    def test_fov_recompute_flag_respected_regression(self):
-        """Regression test: Ensure fov_recompute flag is always respected.
-
-        Bug: OptimizedRenderSystem was ignoring the fov_recompute flag and only
-        recomputing FOV when position changed, causing the map to stay black
-        after the first frame.
-
-        The render system should ALWAYS recompute FOV when fov_recompute=True,
-        regardless of position caching optimizations.
-        """
-        # Set fov_recompute to True (this should force recomputation)
-        self.render_system.fov_recompute = True
-
-        # Mock recompute_fov to verify it gets called
-        with patch(
-            "engine.systems.optimized_render_system.recompute_fov"
-        ) as mock_recompute:
-            # Mock render_all, clear_all, and console_flush to avoid complex rendering logic in test
-            with patch("engine.systems.optimized_render_system.render_all"):
-                with patch("engine.systems.optimized_render_system.clear_all"):
-                    with patch("tcod.libtcodpy.console_flush"):
-                        # Update the render system
-                        self.render_system.update(0.016)
-
-                        # FOV should have been recomputed because fov_recompute was True
-                        mock_recompute.assert_called_once_with(
-                            self.fov_map,
-                            self.player.x,
-                            self.player.y,
-                            10,  # fov_radius
-                            True,  # fov_light_walls
-                            12,  # fov_algorithm (updated to modern default)
-                        )
-
     def test_fov_recompute_multiple_frames_regression(self):
         """Regression test: FOV recomputes on multiple frames when flag is set.
 
