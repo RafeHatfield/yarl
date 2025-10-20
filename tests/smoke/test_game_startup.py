@@ -12,7 +12,7 @@ not be caught by unit tests.
 import pytest
 
 # Quarantine entire file
-pytestmark = pytest.mark.skip(reason="Quarantined - Smoke tests need full initialization. See QUARANTINED_TESTS.md")
+# pytestmark = pytest.mark.skip(reason="Quarantined - Smoke tests need full initialization. See QUARANTINED_TESTS.md")  # REMOVED Session 2
 
 import unittest
 from unittest.mock import Mock, patch
