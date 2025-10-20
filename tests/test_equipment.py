@@ -181,8 +181,8 @@ class TestEquipmentToggling:
         results = self.equipment.toggle_equip(weapon)
 
         assert self.equipment.main_hand == weapon
-        assert len(results) == 1
-        assert results[0]["equipped"] == weapon
+        # Results may include identification message + equipped message
+        assert any('equipped' in r and r['equipped'] == weapon for r in results)
 
     def test_equip_off_hand_empty_slot(self):
         """Test equipping item to empty off hand slot."""
@@ -193,8 +193,8 @@ class TestEquipmentToggling:
         results = self.equipment.toggle_equip(shield)
 
         assert self.equipment.off_hand == shield
-        assert len(results) == 1
-        assert results[0]["equipped"] == shield
+        # Results may include identification message + equipped message
+        assert any('equipped' in r and r['equipped'] == shield for r in results)
 
     def test_unequip_main_hand(self):
         """Test unequipping item from main hand."""
@@ -248,9 +248,9 @@ class TestEquipmentToggling:
         results = self.equipment.toggle_equip(new_weapon)
 
         assert self.equipment.main_hand == new_weapon
-        assert len(results) == 2
-        assert results[0]["dequipped"] == old_weapon
-        assert results[1]["equipped"] == new_weapon
+        # Results may include identification message + dequipped + equipped
+        assert any('dequipped' in r and r['dequipped'] == old_weapon for r in results)
+        assert any('equipped' in r and r['equipped'] == new_weapon for r in results)
 
     def test_replace_off_hand_equipment(self):
         """Test replacing off hand equipment with new item."""
@@ -270,9 +270,9 @@ class TestEquipmentToggling:
         results = self.equipment.toggle_equip(new_shield)
 
         assert self.equipment.off_hand == new_shield
-        assert len(results) == 2
-        assert results[0]["dequipped"] == old_shield
-        assert results[1]["equipped"] == new_shield
+        # Results may include identification message + dequipped + equipped
+        assert any('dequipped' in r and r['dequipped'] == old_shield for r in results)
+        assert any('equipped' in r and r['equipped'] == new_shield for r in results)
 
     def test_equip_multiple_different_slots(self):
         """Test equipping items to different slots simultaneously."""
@@ -286,13 +286,11 @@ class TestEquipmentToggling:
 
         # Equip weapon
         weapon_results = self.equipment.toggle_equip(weapon)
-        assert len(weapon_results) == 1
-        assert weapon_results[0]["equipped"] == weapon
+        assert any('equipped' in r and r['equipped'] == weapon for r in weapon_results)
 
         # Equip shield
         shield_results = self.equipment.toggle_equip(shield)
-        assert len(shield_results) == 1
-        assert shield_results[0]["equipped"] == shield
+        assert any('equipped' in r and r['equipped'] == shield for r in shield_results)
 
         # Both should be equipped
         assert self.equipment.main_hand == weapon
