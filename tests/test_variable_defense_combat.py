@@ -31,6 +31,10 @@ class TestVariableDefenseCombat:
         self.attacker.equipment.owner = self.attacker
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.attacker.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        self.attacker.status_effects = status_effects_mock
         
         # Create target with equipment
         self.target = Mock()
@@ -43,6 +47,10 @@ class TestVariableDefenseCombat:
         self.target.equipment.owner = self.target
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.target.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        self.target.status_effects = status_effects_mock
 
     def test_variable_defense_applied_in_combat(self):
         """Test that variable defense from armor is applied during combat."""
@@ -239,6 +247,10 @@ class TestVariableDefenseIntegration:
         self.attacker.equipment.owner = self.attacker
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.attacker.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        self.attacker.status_effects = status_effects_mock
         
         self.target = Mock()
         self.target.name = "player"
@@ -246,6 +258,10 @@ class TestVariableDefenseIntegration:
         self.target.fighter.owner = self.target
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.target.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        self.target.status_effects = status_effects_mock
         
         self.target.equipment = Equipment()
         self.target.equipment.owner = self.target
@@ -260,6 +276,8 @@ class TestVariableDefenseIntegration:
             damage_min=2,
             damage_max=5
         )
+        # Prevent reach check from returning Mock
+        weapon.item = None
         
         self.attacker.equipment = Equipment(main_hand=weapon)
         self.attacker.equipment.owner = self.attacker
@@ -361,6 +379,10 @@ class TestVariableDefenseEdgeCases:
         attacker.equipment.owner = attacker
         # Mock get_component_optional to return None for BOSS (not a boss)
         attacker.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        attacker.status_effects = status_effects_mock
         
         # Create a target with no equipment by using a real object with None equipment
         target = Mock()
@@ -370,6 +392,10 @@ class TestVariableDefenseEdgeCases:
         target.get_component_optional = Mock(return_value=None)
         target.fighter.owner = target
         target.equipment = None  # Explicitly set to None instead of missing
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        target.status_effects = status_effects_mock
         
         results = attacker.fighter.attack(target)
         
@@ -388,6 +414,10 @@ class TestVariableDefenseEdgeCases:
         attacker.equipment = Equipment()
         attacker.equipment.owner = attacker
         attacker.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        attacker.status_effects = status_effects_mock
         
         target = Mock()
         target.name = "player"
@@ -396,6 +426,10 @@ class TestVariableDefenseEdgeCases:
         target.equipment = Equipment()
         target.equipment.owner = target
         target.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        target.status_effects = status_effects_mock
         
         # Equipment with no off_hand
         target.equipment = Equipment()
@@ -418,6 +452,10 @@ class TestVariableDefenseEdgeCases:
         attacker.equipment = Equipment()
         attacker.equipment.owner = attacker
         attacker.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        attacker.status_effects = status_effects_mock
         
         target = Mock()
         target.name = "player"
@@ -426,6 +464,10 @@ class TestVariableDefenseEdgeCases:
         target.equipment = Equipment()
         target.equipment.owner = target
         target.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        target.status_effects = status_effects_mock
         
         # Equipment with off_hand item that has no equippable component
         off_hand_item = Mock()
@@ -452,6 +494,10 @@ class TestVariableDefenseEdgeCases:
         attacker.equipment = Equipment()
         attacker.equipment.owner = attacker
         attacker.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        attacker.status_effects = status_effects_mock
         
         # Strong target with good armor
         target = Mock()
@@ -459,6 +505,10 @@ class TestVariableDefenseEdgeCases:
         target.fighter = Fighter(hp=50, defense=2, power=5)
         target.fighter.owner = target
         target.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        target.status_effects = status_effects_mock
         
         # Strong armor
         armor = Mock()
