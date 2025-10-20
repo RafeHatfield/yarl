@@ -283,6 +283,99 @@ This establishes the **gold standard** for data-driven game development in Pytho
 
 ---
 
+## 🌟 **MAJOR DIFFERENTIATOR: Community Modding & Expansion System**
+
+### **🔧 YAML-Based Modding Platform** (Estimated: 3-6 weeks for full polish)
+
+**Status:** 🟡 Foundation Already Built! (~80% complete)
+
+**Current Capabilities (Already Working):**
+- ✅ **Entity Definition System** - All monsters, weapons, armor via `config/entities.yaml`
+- ✅ **Level Templates** - Custom dungeon layouts via `config/level_templates.yaml`
+- ✅ **Vault Themes** - Complete themed vaults via `config/vault_themes.yaml`
+- ✅ **Signpost Messages** - Depth-aware lore via `config/signpost_messages.yaml`
+- ✅ **Game Constants** - Balance tuning via `config/game_constants.py`
+- ✅ **Registry System** - Clean loading and validation of YAML configs
+
+**What Makes This Special:**
+- **No coding required** - Content creators can add entire expansion packs using only YAML files
+- **Deep customization** - Not just cosmetic mods, but complete game systems
+- **Data-driven architecture** - Everything from monsters to magic items to dungeon themes
+- **Already proven** - Current game development already uses this system successfully
+
+**Potential Expansion Content:**
+- 🏰 **New Themed Vaults** - Egyptian tombs, Underwater ruins, Sky castles
+- 👹 **Monster Packs** - Undead expansion, Elemental planes, Lovecraftian horrors
+- ⚔️ **Equipment Sets** - Viking weaponry, Samurai gear, Steampunk items
+- 📖 **Story Campaigns** - Custom level sequences with narrative arcs
+- 🎲 **Total Conversions** - Completely different game themes (sci-fi, western, etc.)
+
+**Work Required to Make Mod-Ready (3-6 weeks):**
+
+| Task | Time | Priority | Description |
+|------|------|----------|-------------|
+| **Mod Loading System** | 1-2 weeks | 🔥 Critical | Detect and load mods from `mods/` directory |
+| **Mod Manifest Format** | 1 week | 🔥 Critical | Define mod metadata (name, author, version, dependencies) |
+| **Mod Validation** | 1 week | 🔥 High | Validate mod YAMLs, prevent crashes, error reporting |
+| **Mod Conflict Resolution** | 1-2 weeks | 🔥 High | Handle overlapping definitions, load order, patches |
+| **Mod Manager UI** | 1-2 weeks | 🔶 Medium | In-game mod enable/disable, load order management |
+| **Mod Documentation** | 1 week | 🔥 High | Complete modding guide, YAML reference, examples |
+| **Example Mod Pack** | 1 week | 🔶 Medium | "Skeleton Expansion" demo showing all capabilities |
+| **Steam Workshop Integration** | 2-3 weeks | 🔷 Low | One-click mod sharing (future, if on Steam) |
+
+**Technical Architecture (Mostly Done!):**
+```python
+# Current system (already working):
+entity_factory = EntityFactory(EntityRegistry())
+vault_registry = VaultThemeRegistry()
+signpost_registry = SignpostMessageRegistry()
+
+# Just needs mod loader wrapper:
+mod_loader = ModLoader()
+mod_loader.load_mods_from_directory("mods/")
+entity_factory = EntityFactory(EntityRegistry(mod_loader))
+```
+
+**Example Mod Structure:**
+```
+mods/
+  skeleton_expansion/
+    mod.yaml              # Manifest (name, version, author)
+    entities.yaml         # New monsters, items, equipment
+    vault_themes.yaml     # New vault types
+    signpost_messages.yaml # New lore/hints
+    level_templates.yaml  # Optional custom levels
+    README.md            # Mod description for players
+```
+
+**Competitive Advantage:**
+This positions the game as:
+- **"The Moddable Roguelike"** - Like Skyrim but for traditional roguelikes
+- **Community-driven content** - Player-created expansions extend replay value infinitely
+- **Learning tool** - Aspiring developers can learn by creating YAML content
+- **Long-term viability** - Community keeps game alive with fresh content
+
+**Timing Recommendation:**
+- **Phase 1:** Document current YAML capabilities (1 week)
+- **Phase 2:** Add mod loader + validation (2-3 weeks) - Do after core features stable
+- **Phase 3:** Polish UI + Steam Workshop (2-3 weeks) - Do before 1.0 release
+
+**Success Metrics:**
+- 10+ community-created mods within 3 months of release
+- "Mod of the Month" showcases on game website/socials
+- Modding guide has 1,000+ views
+- Players request modding features (item interactions, custom AI, etc.)
+- Game is known as "the moddable traditional roguelike"
+
+**Notes:**
+- Already have 80% of the hard work done (YAML system, registries, validation)
+- Main work is packaging it nicely and making it user-friendly
+- Could be THE selling point that differentiates from other roguelikes
+- NetHack has ASCII editing, DCSS has vault definitions, but YAML mod system is more accessible
+- Enables community to create content faster than we can!
+
+---
+
 ## 🟢 **Phase 1: Essential Roguelike Features** (1-2 weeks each)
 
 **Goal:** Add THE defining roguelike mechanics that create discovery, risk/reward, and depth.
