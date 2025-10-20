@@ -506,8 +506,65 @@ grep -L "status_effects" tests/test_*.py
 
 ---
 
-**Status:** 📋 Strategy Document Complete  
-**Next Action:** Begin Session 2 - Quarantine Quick Wins  
-**Expected Outcome:** 30-50 tests fixed, clearer path to 100%
+**Status:** ✅ Session 2 Complete - Major Progress + Critical Bug Found  
+**Next Action:** Investigate AC calculation bug, then Session 3  
+**Progress:** 43 tests fixed (+30 passing, +13 partial)
+
+---
+
+## 🔍 **CRITICAL BUG DISCOVERED - Session 2**
+
+### **AC Bonus Calculation Not Working**
+
+**Issue:** `Fighter.armor_class` property not reading `Equippable.armor_class_bonus`
+
+**Impact:** ~15 tests failing across 3 files:
+- `test_d20_combat.py` (2 tests)
+- `test_armor_slots.py` (6 tests)
+- `test_armor_dex_caps.py` (8 tests)
+
+**Symptoms:**
+- Tests create armor with `armor_class_bonus=2`
+- `fighter.armor_class` returns 11 (base 10 + DEX 1)
+- **Expected:** 13 (base 10 + DEX 1 + armor 2)
+- **Actual:** 11 (armor bonus not applied)
+
+**Test Setup Pattern:**
+```python
+helmet = Entity(0, 0, '^', (255, 255, 255), 'Helmet')
+helmet.equippable = Equippable(EquipmentSlots.HEAD, armor_class_bonus=1)
+helmet.components = Mock()
+helmet.components.has = Mock(return_value=False)  # Use hasattr fallback
+
+player.equipment = Equipment(player)
+player.equipment.head = helmet
+
+# This fails:
+assert player.fighter.armor_class == 12  # Expected: 10 + 1 DEX + 1 helmet
+# Actual: 11 (helmet bonus not applied)
+```
+
+**Investigation Needed:**
+1. Check `Fighter.armor_class` property (fighter.py:322-380)
+2. Verify `_get_equipment()` returns correct Equipment
+3. Check iteration over equipment slots (main_hand, off_hand, head, chest, feet)
+4. Verify `item.equippable.armor_class_bonus` is accessible
+5. Check if `components.has()` logic is correct
+
+**Workarounds Attempted:**
+- ✅ Equipment(owner) initialization - didn't fix
+- ✅ Mock components.has(return_value=False) - didn't fix
+- ❌ Real Equippable objects used - still fails
+
+**Root Cause Hypothesis:**
+The `armor_class` property iteration may not be finding equipped items, OR the `armor_class_bonus` attribute isn't being read correctly from Equippable objects.
+
+**Priority:** 🔥 **HIGH** - Blocking 15 tests, core combat mechanic
+
+---
+
+**Status:** 📋 Strategy Document Complete + AC Bug Documented  
+**Next Action:** **Fix AC calculation bug**, then continue Session 3  
+**Expected Outcome:** +15 tests once bug fixed
 
 
