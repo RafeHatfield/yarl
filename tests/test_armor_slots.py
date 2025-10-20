@@ -19,7 +19,7 @@ from components.fighter import Fighter
 from entity import Entity
 
 # Quarantine entire file - AC bonuses from armor slots not working as expected
-pytestmark = pytest.mark.skip(reason="Quarantined - AC calculation needs review. See QUARANTINED_TESTS.md")
+# pytestmark = pytest.mark.skip(reason="Quarantined - AC calculation needs review. See QUARANTINED_TESTS.md")  # REMOVED Session 2
 
 
 class TestArmorSlots(unittest.TestCase):
@@ -137,21 +137,31 @@ class TestArmorACBonuses(unittest.TestCase):
         self.player.fighter = Fighter(hp=30, defense=0, power=0, 
                                      strength=14, dexterity=12, constitution=14)
         self.player.fighter.owner = self.player
-        self.player.equipment = Equipment()
-        self.player.equipment.owner = self.player
+        self.player.equipment = Equipment(self.player)  # Equipment needs owner in __init__
 
-        # Create armor items
+        # Create armor items (with component setup for proper AC calculation)
+        from unittest.mock import Mock
+        from components.component_registry import ComponentType
+        
         self.helmet = Entity(0, 0, '^', (255, 255, 255), 'Helmet')
         self.helmet.equippable = Equippable(EquipmentSlots.HEAD, armor_class_bonus=1)
+        self.helmet.components = Mock()
+        self.helmet.components.has = Mock(return_value=False)  # Use hasattr fallback
 
         self.chest = Entity(0, 0, '[', (255, 255, 255), 'Chest Armor')
         self.chest.equippable = Equippable(EquipmentSlots.CHEST, armor_class_bonus=2)
+        self.chest.components = Mock()
+        self.chest.components.has = Mock(return_value=False)
 
         self.boots = Entity(0, 0, ']', (255, 255, 255), 'Boots')
         self.boots.equippable = Equippable(EquipmentSlots.FEET, armor_class_bonus=1)
+        self.boots.components = Mock()
+        self.boots.components.has = Mock(return_value=False)
 
         self.shield = Entity(0, 0, '[', (255, 255, 255), 'Shield')
         self.shield.equippable = Equippable(EquipmentSlots.OFF_HAND, armor_class_bonus=2)
+        self.shield.components = Mock()
+        self.shield.components.has = Mock(return_value=False)
 
     def test_ac_with_no_armor(self):
         """Test AC calculation with no armor equipped."""
