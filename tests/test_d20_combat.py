@@ -59,7 +59,6 @@ class TestArmorClass(unittest.TestCase):
         
         self.assertEqual(fighter.armor_class, 9)  # 10 - 1 DEX
     
-    @pytest.mark.skip(reason="Needs rewrite with real Equippable objects - mocking not compatible with current implementation")
     def test_ac_with_armor_bonus(self):
         """Test AC with armor providing AC bonus."""
         fighter = Fighter(hp=30, defense=0, power=0, dexterity=12)  # +1 DEX mod
@@ -298,7 +297,6 @@ class TestWeaponBonuses(unittest.TestCase):
         self.target.fighter.owner = self.target
         self.target.equipment = Equipment()
     
-    @pytest.mark.skip(reason="Needs rewrite - mock randint not working with current d20 system")
     @patch('random.randint')
     def test_weapon_to_hit_bonus_applies(self, mock_randint):
         """Test that weapon to-hit bonus is added to attack roll."""

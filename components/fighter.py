@@ -313,7 +313,13 @@ class Fighter:
         # Note: Mock objects also pass hasattr/callable checks, so check for Entity type
         from entity import Entity
         if isinstance(entity, Entity):
-            return entity.get_component_optional(ComponentType.EQUIPMENT)
+            result = entity.get_component_optional(ComponentType.EQUIPMENT)
+            # FALLBACK: If component system returns None but direct attribute exists, use it
+            # This provides backward compatibility with tests that assign equipment directly
+            # without using the component registration system
+            if result is None and hasattr(entity, 'equipment'):
+                result = entity.equipment
+            return result
         
         # Fall back to direct attribute access (for Mock objects in tests)
         return getattr(entity, 'equipment', None)
