@@ -11,7 +11,7 @@ specifically the issue where the map renders as completely black.
 import pytest
 
 # Quarantine entire file
-pytestmark = pytest.mark.skip(reason="Quarantined - Rendering tests need display mocking. See QUARANTINED_TESTS.md")
+# pytestmark = pytest.mark.skip(reason="Quarantined - Rendering tests need display mocking. See QUARANTINED_TESTS.md")  # REMOVED Session 2
 
 import unittest
 from unittest.mock import Mock, patch
