@@ -11,7 +11,7 @@ throughout all methods and don't suffer from scoping issues.
 import pytest
 
 # Quarantine entire file
-pytestmark = pytest.mark.skip(reason="Quarantined - Component scoping needs review. See QUARANTINED_TESTS.md")
+# pytestmark = pytest.mark.skip(reason="Quarantined - Component scoping needs review. See QUARANTINED_TESTS.md")  # REMOVED Session 2
 import pytest
 from config.entity_factory import EntityFactory
 from config.entity_registry import load_entity_config
