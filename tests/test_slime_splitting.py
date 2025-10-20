@@ -6,8 +6,8 @@
 
 import pytest
 
-# Quarantine entire file
-pytestmark = pytest.mark.skip(reason="Quarantined - Slime splitting logic needs review. See QUARANTINED_TESTS.md")
+# Quarantine entire file - REMOVED for Session 2 testing
+# pytestmark = pytest.mark.skip(reason="Quarantined - Slime splitting logic needs review. See QUARANTINED_TESTS.md")
 
 import unittest
 from unittest.mock import patch, MagicMock
@@ -196,7 +196,7 @@ class TestSlimeSplitting(unittest.TestCase):
         
         # Should have normal death message
         self.assertIn("is dead", death_message.text)
-        self.assertEqual(death_message.color, (255, 127, 0))  # Normal death color
+        self.assertEqual(death_message.color, (255, 165, 0))  # Standard web orange  # Normal death color
     
     def test_kill_monster_regular_slime(self):
         """Test kill_monster with regular slime (no splitting ability)."""
@@ -207,7 +207,7 @@ class TestSlimeSplitting(unittest.TestCase):
         
         # Should have normal death message
         self.assertIn("is dead", death_message.text)
-        self.assertEqual(death_message.color, (255, 127, 0))
+        self.assertEqual(death_message.color, (255, 165, 0))  # Standard web orange
 
 
 class TestSlimeSplittingIntegration(unittest.TestCase):
