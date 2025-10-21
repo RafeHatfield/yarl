@@ -258,8 +258,8 @@ class TestPlayerPotionIntegration:
         
         initial_duration = player.status_effects.get_effect('speed').duration
         
-        # Process turn
-        player.status_effects.process_turn_start()
+        # Process turn end (when durations decrease)
+        player.status_effects.process_turn_end()
         
         # Effect should still exist but duration decreased
         speed_effect = player.status_effects.get_effect('speed')

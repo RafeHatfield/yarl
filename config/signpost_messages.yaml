@@ -64,28 +64,28 @@ messages:
     - text: "Beware: Dangerous creatures ahead!"
       min_depth: 1
     
-    - text: "Warning: The path beyond is treacherous."
+    - text: "Warning: The path beyond is beyond treacherous."
       min_depth: 1
     
-    - text: "Caution: Traps have been reported in this area."
+    - text: "Caution: Traps have been reported in this area. Or have they..."
       min_depth: 2
     
-    - text: "Turn back now, or face certain doom!"
+    - text: "Turn back now, or face certain doom! Or maybe not..."
       min_depth: 1
     
-    - text: "Those who proceed beyond this point rarely return."
+    - text: "Those who proceed beyond this point rarely return. Or maybe they just forgot to report in when they returned?"
       min_depth: 4
     
     - text: "The air grows thick with malice. Proceed with care."
       min_depth: 5
     
-    - text: "Strong monsters guard the treasure within."
+    - text: "Strong monsters guard the treasure within. Minus a small percentage for services rendered, of course."
       min_depth: 3
     
     - text: "Danger! Elite guardians patrol this area."
       min_depth: 6
     
-    - text: "Warning: Dragon territory ahead."
+    - text: "Warning: Dragon territory ahead. And behind you too!"
       min_depth: 10
     
     - text: "Beware of mimics disguised as treasure chests."
