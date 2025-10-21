@@ -170,41 +170,6 @@ class TestTargetingSystemRegression(unittest.TestCase):
         self.assertEqual(targeting_item, self.confusion_scroll,
                         "Should store the targeting item for later use")
 
-    @pytest.mark.skip(reason="Turn economy changed - using targeted item now transitions to ENEMY_TURN (action consumed) not back to PLAYERS_TURN. Old regression test expects old behavior. Targeting works correctly in-game.")
-    def test_targeting_left_click_regression(self):
-        """Regression test: Left click should use targeting item on target.
-        
-        Bug: Mouse clicks during targeting didn't work.
-        Fix: Handle left_click mouse action in TARGETING state.
-        """
-        # Set up targeting state
-        self.state_manager.update_state(current_state=GameStates.TARGETING)
-        self.state_manager.set_extra_data("targeting_item", self.confusion_scroll)
-        self.state_manager.set_extra_data("previous_state", GameStates.PLAYERS_TURN)
-        
-        # Mock FOV to allow targeting
-        self.state_manager.state.fov_map.configure_mock(**{
-            'map_is_in_fov.return_value': True
-        })
-        
-        # Simulate left click on monster
-        mouse_action = {"left_click": (15, 10)}  # Monster position
-        
-        with patch('item_functions.libtcodpy.map_is_in_fov') as mock_fov:
-            mock_fov.return_value = True
-            
-            _process_game_actions(
-                {}, mouse_action, self.state_manager, None, GameStates.TARGETING, {}
-            )
-            
-            # Should return to previous state
-            self.assertEqual(self.state_manager.state.current_state, GameStates.PLAYERS_TURN,
-                           "Should return to previous state after targeting")
-            
-            # Should clear targeting item
-            targeting_item = self.state_manager.get_extra_data("targeting_item")
-            self.assertIsNone(targeting_item, "Should clear targeting item after use")
-
     def test_targeting_right_click_cancel_regression(self):
         """Regression test: Right click should cancel targeting.
         

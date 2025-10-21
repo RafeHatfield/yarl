@@ -184,19 +184,6 @@ class TestEntityFactory:
         assert spell_item.color == (127, 0, 255)
         assert spell_item.item is not None
 
-    @pytest.mark.skip(reason="Factory error handling changed - now returns None for unknown spells instead of placeholder entity")
-    def test_create_spell_item_not_found(self):
-        """Test spell item creation when definition not found."""
-        self.mock_registry.get_spell.return_value = None
-
-        spell_item = self.factory.create_spell_item("unknown_spell", 1, 1)
-
-        assert spell_item is not None
-        assert spell_item.name == "Unknown unknown_spell"
-        assert spell_item.char == "?"
-        assert spell_item.color == (255, 0, 255)
-        assert spell_item.item is not None
-
     def test_get_player_stats_success(self):
         """Test getting player stats from registry."""
         self.mock_registry.get_player_stats.return_value = self.test_player_stats
