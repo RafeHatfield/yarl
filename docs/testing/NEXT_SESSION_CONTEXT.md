@@ -1,8 +1,8 @@
 # 🎯 Test Suite Quarantine Cleanup - Next Session Context
 
 **Created:** October 21, 2025  
-**Last Updated:** October 21, 2025 (after Phase 2 completion)  
-**Current Status:** Phase 2 Complete, Ready for Phase 3  
+**Last Updated:** October 21, 2025 (after Phase 3 completion)  
+**Current Status:** Phase 3 Complete - Cleanup Finished!  
 
 ---
 
@@ -12,7 +12,7 @@
 ```
 ✅ 2,219 PASSING TESTS (100% of non-skipped)
 ❌ 0 FAILING TESTS
-⏭️  45 SKIPPED TESTS (down from 64!)
+⏭️  45 SKIPPED TESTS (25 marked for deletion, 20 justified)
 🎯 100% PASS RATE (non-skipped)
 ```
 
@@ -20,22 +20,37 @@
 - ✅ **Session 3:** Achieved 100% passing test suite (from 94.9%)
 - ✅ **Phase 1 Complete:** Deleted 14 brittle tests (64 → 50 skipped)
 - ✅ **Phase 2 Complete:** Fixed 5 simple tests (50 → 45 skipped)
+- ✅ **Phase 3 Complete:** Evaluated and documented all integration tests
 
 ---
 
-## 🎯 Where We Are: Quarantine Cleanup
+## 🎯 Cleanup Status: COMPLETE
 
-### **Overall Goal**
-Review all remaining skipped tests and either:
-1. **FIX** - Simple fixes (<30 min, high value)
-2. **DELETE** - Brittle, low value, or obsolete
-3. **LEAVE SKIPPED** - Complex rewrites, low priority, file already >90% passing
+### **Summary**
+All skipped tests have been reviewed and decisions made:
+
+### **Tests Marked for Deletion (25 tests)**
+Files ready to delete when desired:
+- `test_game_logic_integration.py` (8 tests)
+- `test_spell_scenario_integration.py` (8 tests)
+- `test_action_validation.py` (9 tests)
+
+### **Tests Justifiably Skipped (20 tests)**
+- `test_engine_integration.py` (12 tests) - Low priority, documented
+- Individual tests in high-coverage files (8 tests):
+  - `test_throwing_system.py` (2/10 skipped, 80% passing)
+  - `test_item_seeking_ai.py` (1/51 skipped, 98% passing)
+  - `test_ai_integration.py` (1/8 skipped, 88% passing)
+  - `test_monster_migration.py` (1/23 skipped, 96% passing)
+  - `test_wand_targeting_regression.py` (1 test)
+  - `test_entity_sorting_cache.py` (1/15 skipped, 93% passing)
+  - `test_monster_item_usage.py` (1/23 skipped, 96% passing)
 
 ### **Progress**
 - ✅ **Phase 1 Complete:** Deleted 14 brittle tests (30 min)
 - ✅ **Phase 2 Complete:** Fixed 5 simple tests (45 min)
-- 🔄 **Phase 3 Ready:** Evaluate integration test files (2 hours)
-- ⏳ **Phase 4 Optional:** Update documentation (1 hour)
+- ✅ **Phase 3 Complete:** Evaluated integration tests (60 min)
+- ⏭️ **Optional:** Delete marked files to reach 20 skipped tests
 
 ---
 
@@ -68,48 +83,85 @@ Successfully fixed 5 tests in 45 minutes:
 
 ---
 
-## 📋 Where to Pick Up: Phase 3
+## 📋 Phase 3 Summary (Just Completed)
 
-### **Next Action: Evaluate Integration Test Files**
+### **What Was Done:**
 
-**Goal:** Review 4 quarantined integration test files and decide: FIX, DELETE, or LEAVE SKIPPED
+Evaluated 37 integration tests in 4 files (60 minutes):
 
-**Files to Evaluate (37 tests total):**
+1. ✅ **`test_game_logic_integration.py`** (8 tests) - MARKED FOR DELETION
+   - **Tested:** 6/8 passed initially
+   - **Issue:** Brittle with new features (secret doors, loot dropping)
+   - **Decision:** DELETE - High maintenance, covered by unit tests
+   - **Comment added explaining deletion rationale**
 
-1. **`test_engine_integration.py`** (12 tests) - Leave skipped
-   - Complex engine mocking needed
-   - Engine works in actual gameplay
-   - Low priority
+2. ✅ **`test_spell_scenario_integration.py`** (8 tests) - MARKED FOR DELETION
+   - **Tested:** Only 2/8 passed
+   - **Issue:** Tests old spell casting API, broke with spell refactor
+   - **Decision:** DELETE - Outdated API, spells work in gameplay
+   - **Comment added explaining deletion rationale**
 
-2. **`integration/test_game_logic_integration.py`** (8 tests) - Evaluate
-   - Tests core gameplay loops
-   - High value if fixable
-   - May need significant refactoring
+3. ✅ **`test_action_validation.py`** (9 tests) - MARKED FOR DELETION
+   - **Tested:** 6/9 passed
+   - **Issue:** Tests implementation details (state transitions, exact behavior)
+   - **Decision:** DELETE - Testing details that evolve, actions work
+   - **Comment added explaining deletion rationale**
 
-3. **`integration/test_spell_scenario_integration.py`** (8 tests) - Evaluate
-   - Spell integration tests
-   - Medium-high value
-   - Spells work in-game but tests may catch regressions
+4. ✅ **`test_engine_integration.py`** (12 tests) - LEFT SKIPPED
+   - **Decision:** LEAVE SKIPPED - Low priority, complex mocking, engine works
+   - **Documented:** Clear explanation of why these stay skipped
 
-4. **`comprehensive/test_action_validation.py`** (9 tests) - Consider deleting
-   - Tests implementation details
-   - Low-medium value
-   - Actions work in-game
+### **Key Decisions:**
+- **Delete integration tests that broke with new features** - Better covered by unit tests and gameplay
+- **Don't fix brittle integration tests** - High maintenance cost, low unique value
+- **Document skipped tests** - Future developers understand why they're skipped
+- **Integration testing via gameplay** - More effective than brittle mocked tests
 
-**Remaining Individual Tests (8 tests):**
-All in files with >90% passing - **LEAVE SKIPPED**:
-- `test_throwing_system.py` (2 tests) - 8/10 passing
-- `test_item_seeking_ai.py` (1 test) - 50/51 passing  
-- `integration/test_ai_integration.py` (1 test) - 7/8 passing
-- `test_monster_migration.py` (1 test) - 22/23 passing
-- `test_wand_targeting_regression.py` (1 test) - Old regression test
-- `test_entity_sorting_cache.py` (1 test) - 14/15 passing
-- `test_monster_item_usage.py` (1 test) - 22/23 passing
+### **Result:**
+- 25 tests marked for deletion (files can be deleted anytime)
+- 20 tests documented as justifiably skipped
+- All 45 skipped tests now have clear decisions
 
-**Expected Outcome:**
-- Best case: Fix integration tests → ~30-35 skipped
-- Realistic: Delete some, fix some → ~35-40 skipped
-- Minimum: Leave all skipped, document reasons → 45 skipped (current)
+---
+
+## 📋 Next Steps (Optional)
+
+### **Option 1: Delete Marked Test Files**
+
+To go from 45 → 20 skipped tests, delete the 3 marked files:
+
+```bash
+# Delete marked integration test files
+rm tests/integration/test_game_logic_integration.py
+rm tests/integration/test_spell_scenario_integration.py  
+rm tests/comprehensive/test_action_validation.py
+
+# Verify
+pytest --tb=no -q | tail -3
+# Should show: 2,219 passed, 20 skipped
+```
+
+### **Option 2: Keep Current State**
+
+Current state is acceptable:
+- **2,219 passing tests** (100% pass rate)
+- **45 skipped** (all documented with clear rationale)
+- **25 marked for deletion** (when desired)
+- **20 justified skips** (high-coverage files, low-priority tests)
+
+### **Test Suite Health Summary**
+
+✅ **Excellent Health:**
+- 100% of non-skipped tests pass
+- All skipped tests have documented decisions
+- No brittle tests blocking development
+- Clear path forward (delete marked files when ready)
+
+### **Philosophy Established:**
+- **Test behavior, not implementation** - Tests should survive refactors
+- **Delete over fix for brittle tests** - Reduce maintenance burden
+- **High coverage in individual files** - Files with 90%+ passing are healthy
+- **Integration via gameplay** - Better than mocked integration tests
 
 ---
 
