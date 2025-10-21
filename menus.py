@@ -449,6 +449,30 @@ def character_screen(
     letter_index += 1
     
     # ═══════════════════════════════════════════════════════════
+    # RESISTANCES
+    # ═══════════════════════════════════════════════════════════
+    # Display elemental resistances if any are > 0
+    from components.fighter import ResistanceType
+    resistance_display = _get_resistance_display(player)
+    if resistance_display:
+        libtcodpy.console_print_rect_ex(
+            window, 0, y, character_screen_width, character_screen_height,
+            libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+            "RESISTANCES"
+        )
+        y += 1
+        
+        for line in resistance_display:
+            libtcodpy.console_print_rect_ex(
+                window, 0, y, character_screen_width, character_screen_height,
+                libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+                line
+            )
+            y += 1
+        
+        y += 1  # Extra space after resistances
+    
+    # ═══════════════════════════════════════════════════════════
     # INVENTORY (Consumables only)
     # ═══════════════════════════════════════════════════════════
     # Get non-equipped items (consumables, unequipped equipment)
@@ -750,3 +774,65 @@ def _get_defense_display_text(player):
     
     # No armor or no bonus
     return f"Defense: {base_defense}"
+
+
+def _get_resistance_display(player):
+    """Get formatted resistance display lines for character screen.
+    
+    Shows all resistance types with values > 0.
+    
+    Args:
+        player (Entity): Player entity with fighter component
+        
+    Returns:
+        list[str]: List of formatted resistance lines, or empty list if no resistances
+    """
+    from components.fighter import ResistanceType
+    
+    # Get all resistance values
+    resistances = {}
+    for resist_type in ResistanceType:
+        value = player.fighter.get_resistance(resist_type)
+        if value > 0:
+            resistances[resist_type] = value
+    
+    if not resistances:
+        return []  # No resistances to display
+    
+    # Format resistances into display lines
+    # Group into rows of 2 for compact display
+    lines = []
+    resist_items = list(resistances.items())
+    
+    for i in range(0, len(resist_items), 2):
+        left = resist_items[i]
+        left_name = left[0].name.capitalize()
+        left_value = left[1]
+        
+        # Check if value is 100 (immunity)
+        if left_value >= 100:
+            left_text = f"{left_name}: Immune"
+        else:
+            left_text = f"{left_name}: {left_value}%"
+        
+        # Pad to 20 characters for alignment
+        left_text = left_text.ljust(20)
+        
+        # Add right column if it exists
+        if i + 1 < len(resist_items):
+            right = resist_items[i + 1]
+            right_name = right[0].name.capitalize()
+            right_value = right[1]
+            
+            if right_value >= 100:
+                right_text = f"{right_name}: Immune"
+            else:
+                right_text = f"{right_name}: {right_value}%"
+            
+            line = f"  {left_text}{right_text}"
+        else:
+            line = f"  {left_text}"
+        
+        lines.append(line)
+    
+    return lines
