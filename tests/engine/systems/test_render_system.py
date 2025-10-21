@@ -198,7 +198,7 @@ class TestRenderSystemUpdate:
             "message_log": message_log,
             "current_state": current_state,
             "mouse": mouse,
-            "fov_radius": 8,
+            "fov_radius": 1,  # Updated to match current game constants
             "fov_light_walls": True,
             "fov_algorithm": 0,
         }
@@ -212,7 +212,7 @@ class TestRenderSystemUpdate:
             self.render_system.update(0.016)
 
         # Verify FOV recomputation
-        mock_recompute_fov.assert_called_once_with(fov_map, 10, 15, 8, True, 0)
+        mock_recompute_fov.assert_called_once_with(fov_map, 10, 15, 1, True, 0)
 
         # Verify render_all call
         mock_render_all.assert_called_once_with(

@@ -179,13 +179,17 @@ class TestAISystemUpdate:
         self.mock_state_manager.state = self.mock_game_state
         self.mock_game_state.current_state = GameStates.ENEMY_TURN
         
-        # Mock player with pathfinding component
+        # Mock player with pathfinding component and status_effects
         from components.component_registry import ComponentType
         mock_pathfinding = Mock()
         mock_pathfinding.is_path_active.return_value = False
         mock_pathfinding.get_next_move.return_value = None
+        mock_status_effects = Mock()
+        mock_status_effects.process_turn_start = Mock(return_value=[])
+        mock_status_effects.process_turn_end = Mock(return_value=[])
         self.mock_game_state.player = Mock()
         self.mock_game_state.player.pathfinding = mock_pathfinding
+        self.mock_game_state.player.status_effects = mock_status_effects
         # Mock new component access helper
         self.mock_game_state.player.get_component_optional = Mock(side_effect=lambda comp_type: 
             mock_pathfinding if comp_type == ComponentType.PATHFINDING else None)
@@ -226,7 +230,11 @@ class TestAISystemUpdate:
         # Mock player with no active pathfinding
         mock_pathfinding = Mock()
         mock_pathfinding.is_path_active.return_value = False
+        mock_status_effects = Mock()
+        mock_status_effects.process_turn_start = Mock(return_value=[])
+        mock_status_effects.process_turn_end = Mock(return_value=[])
         self.mock_game_state.player = Mock()
+        self.mock_game_state.player.status_effects = mock_status_effects
         self.mock_game_state.player.get_component_optional = Mock(return_value=mock_pathfinding)
         
         with patch.object(self.ai_system, "_process_ai_turns") as mock_process:
@@ -245,8 +253,12 @@ class TestAISystemUpdate:
         mock_pathfinding = Mock()
         mock_pathfinding.is_path_active.return_value = False
         mock_pathfinding.get_next_move.return_value = None
+        mock_status_effects = Mock()
+        mock_status_effects.process_turn_start = Mock(return_value=[])
+        mock_status_effects.process_turn_end = Mock(return_value=[])
         self.mock_game_state.player = Mock()
         self.mock_game_state.player.pathfinding = mock_pathfinding
+        self.mock_game_state.player.status_effects = mock_status_effects
         # Mock new component access helper
         self.mock_game_state.player.get_component_optional = Mock(side_effect=lambda comp_type: 
             mock_pathfinding if comp_type == ComponentType.PATHFINDING else None)
