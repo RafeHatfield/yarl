@@ -218,6 +218,13 @@ class TestFighterEquipmentCombat:
         self.attacker_fighter.owner = self.attacker
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.attacker.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        self.attacker.status_effects = status_effects_mock
+        # Add rings to attacker equipment
+        self.attacker_equipment.left_ring = None
+        self.attacker_equipment.right_ring = None
 
         # Create target with equipment
         self.target_fighter = Fighter(hp=50, defense=2, power=3)
@@ -231,6 +238,13 @@ class TestFighterEquipmentCombat:
         self.target_fighter.owner = self.target
         # Mock get_component_optional to return None for BOSS (not a boss)
         self.target.get_component_optional = Mock(return_value=None)
+        # Mock status_effects to prevent arithmetic errors
+        status_effects_mock = Mock()
+        status_effects_mock.get_effect = Mock(return_value=None)
+        self.target.status_effects = status_effects_mock
+        # Add rings to target equipment
+        self.target_equipment.left_ring = None
+        self.target_equipment.right_ring = None
 
     def test_combat_with_weapon_bonus(self):
         """Test combat damage calculation with weapon bonus."""
@@ -242,6 +256,7 @@ class TestFighterEquipmentCombat:
         weapon.equippable.max_hp_bonus = 0
         weapon.equippable.slot = EquipmentSlots.MAIN_HAND
         weapon.equippable.roll_damage.return_value = 3  # Return weapon damage as integer
+        weapon.item = None  # Prevent reach check from returning Mock
 
         self.attacker_equipment.toggle_equip(weapon)
 
@@ -283,6 +298,7 @@ class TestFighterEquipmentCombat:
         weapon.equippable.max_hp_bonus = 0
         weapon.equippable.slot = EquipmentSlots.MAIN_HAND
         weapon.equippable.roll_damage.return_value = 4  # Return weapon damage as integer
+        weapon.item = None  # Prevent reach check from returning Mock
 
         self.attacker_equipment.toggle_equip(weapon)
 
