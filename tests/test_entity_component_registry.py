@@ -87,9 +87,10 @@ class TestEntityComponentRegistryIntegration:
         assert player.components.has(ComponentType.INVENTORY)
         assert player.components.has(ComponentType.LEVEL)
         assert player.components.has(ComponentType.EQUIPMENT)
+        assert player.components.has(ComponentType.STATUS_EFFECTS)
         
-        # Count should be 4
-        assert len(player.components) == 4
+        # Count should be 5 (FIGHTER, INVENTORY, LEVEL, EQUIPMENT, STATUS_EFFECTS)
+        assert len(player.components) == 5
     
     def test_component_registry_iteration(self):
         """Test iterating over entity components."""

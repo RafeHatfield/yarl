@@ -278,21 +278,21 @@ class TestEntityRegistry:
         # Check monster
         assert "test_orc" in self.registry.monsters
         orc = self.registry.monsters["test_orc"]
-        assert orc.name == "Test_Orc"
+        assert orc.name == "Test_Orc"  # Monsters use .title() only, no underscore replacement
         assert orc.stats.hp == 20
         assert orc.char == "o"
         
         # Check weapon
         assert "test_sword" in self.registry.weapons
         sword = self.registry.weapons["test_sword"]
-        assert sword.name == "Test_Sword"
+        assert sword.name == "Test Sword"  # Underscores converted to spaces
         assert sword.power_bonus == 3
         assert sword.damage_min == 2
         
         # Check armor
         assert "test_shield" in self.registry.armor
         shield = self.registry.armor["test_shield"]
-        assert shield.name == "Test_Shield"
+        assert shield.name == "Test Shield"  # Underscores converted to spaces
         assert shield.defense_bonus == 1
         
         # Check spell
