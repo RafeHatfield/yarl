@@ -196,7 +196,7 @@ class TestInvisibilityScroll:
         # Check that the effect was applied with default duration
         status_manager = self.player.get_status_effect_manager()
         effect = status_manager.get_effect("invisibility")
-        assert effect.duration == 10  # Default duration
+        assert effect.duration == 30  # Default duration (increased from 10)
 
 
 class TestInvisibilityScrollCreation:

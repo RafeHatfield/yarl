@@ -271,6 +271,10 @@ class TestCastIdentify:
         caster = Mock()
         caster.inventory = Mock()
         
+        # Mock status_effects.add_effect to return list
+        caster.status_effects = Mock()
+        caster.status_effects.add_effect = Mock(return_value=[])
+        
         # Create unidentified item
         item1 = Mock()
         item1.item = Mock()
@@ -283,10 +287,11 @@ class TestCastIdentify:
         
         results = cast_identify(caster)
         
+        # Should return consumed result (identify effect is applied, not immediately used)
         assert len(results) == 1
         assert results[0]['consumed'] is True
-        assert 'identify' in results[0]['message'].text.lower()
-        item1.item.identify.assert_called_once()
+        # Effect was added successfully
+        caster.status_effects.add_effect.assert_called_once()
 
 
 if __name__ == '__main__':
