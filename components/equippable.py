@@ -28,6 +28,7 @@ class Equippable:
         dex_cap (int): Maximum DEX modifier that applies to AC (None = no cap)
         two_handed (bool): Requires both hands, prevents shield use
         reach (int): Attack range in tiles (1 = adjacent, 2 = spear reach)
+        resistances (dict): Dict mapping ResistanceType to percentage (0-100)
         owner (Entity): The entity that owns this component
     """
 
@@ -35,7 +36,7 @@ class Equippable:
                  armor_class_bonus: int = 0, to_hit_bonus: int = 0,
                  damage_min: int = 0, damage_max: int = 0, defense_min: int = 0, defense_max: int = 0,
                  armor_type: Optional[str] = None, dex_cap: Optional[int] = None, damage_dice: Optional[str] = None,
-                 two_handed: bool = False, reach: int = 1) -> None:
+                 two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None) -> None:
         """Initialize an Equippable component.
 
         Args:
@@ -54,6 +55,7 @@ class Equippable:
             damage_dice (Optional[str], optional): Dice notation for damage (e.g., "1d4", "2d6"). Defaults to None.
             two_handed (bool, optional): Requires both hands, prevents shield use. Defaults to False.
             reach (int, optional): Attack range in tiles (1 = adjacent, 2 = spear). Defaults to 1.
+            resistances (Optional[dict], optional): Dict mapping ResistanceType to percentage (0-100). Defaults to None.
         """
         self.slot: Any = slot
         self.power_bonus: int = power_bonus
@@ -70,6 +72,7 @@ class Equippable:
         self.damage_dice: Optional[str] = damage_dice  # Dice notation like "1d4", "1d6", "2d6"
         self.two_handed: bool = two_handed  # Requires both hands, prevents shield use
         self.reach: int = reach  # Attack range in tiles (1 = adjacent, 2 = spear reach)
+        self.resistances: dict = resistances if resistances is not None else {}  # Resistance bonuses (ResistanceType: percentage)
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
     
     def get_damage_range_text(self) -> str:

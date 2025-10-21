@@ -106,6 +106,28 @@ class Equipment:
 
         return bonus
 
+    def get_resistance_bonus(self, resistance_type: Any) -> int:
+        """Calculate total resistance bonus for a specific resistance type from all equipped items.
+
+        Args:
+            resistance_type: The resistance type to calculate bonus for (ResistanceType enum)
+
+        Returns:
+            int: Total resistance percentage bonus from all equipped items (0-100+)
+        """
+        bonus = 0
+
+        for item in [self.main_hand, self.off_hand, self.head, self.chest, self.feet, self.left_ring, self.right_ring]:
+            if item and item.equippable:
+                # Check if equippable has resistances dict
+                if hasattr(item.equippable, 'resistances') and item.equippable.resistances:
+                    # Get resistance bonus for this type (default to 0 if not present)
+                    item_resistance = item.equippable.resistances.get(resistance_type, 0)
+                    if item_resistance is not None:
+                        bonus += item_resistance
+
+        return bonus
+
     def toggle_equip(self, equippable_entity: Any) -> List[Dict[str, Any]]:
         """Equip, unequip, or replace an item in the appropriate slot.
 

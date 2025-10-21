@@ -227,16 +227,10 @@ class Fighter:
             # Try string key (from YAML configs)
             total_resistance = self.base_resistances.get(resistance_type if isinstance(resistance_type, str) else normalized_type.name.lower(), 0)
         
-        # Add equipment resistances
+        # Add equipment resistances (use Equipment's aggregation method)
         equipment = self._get_equipment(self.owner)
-        if equipment:
-            # Check all equipped items for resistance bonuses
-            for item in [equipment.main_hand, equipment.off_hand, equipment.head, 
-                        equipment.chest, equipment.feet, equipment.left_ring, equipment.right_ring]:
-                if item and hasattr(item, 'equippable') and item.equippable:
-                    # Check if this equipment provides resistance
-                    item_resistance = getattr(item.equippable, 'resistances', {})
-                    total_resistance += item_resistance.get(resistance_type, 0)
+        if equipment and hasattr(equipment, 'get_resistance_bonus'):
+            total_resistance += equipment.get_resistance_bonus(normalized_type)
         
         # Cap at 100% (immune)
         return min(total_resistance, 100)

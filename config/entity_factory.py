@@ -289,6 +289,16 @@ class EntityFactory:
             return None  # Return None so caller can try armor
 
         try:
+            # Convert string resistance types to ResistanceType enums if resistances are defined
+            resistances_dict = None
+            if weapon_def.resistances:
+                from components.fighter import ResistanceType, normalize_resistance_type
+                resistances_dict = {}
+                for resist_type_str, value in weapon_def.resistances.items():
+                    resist_enum = normalize_resistance_type(resist_type_str)
+                    if resist_enum:
+                        resistances_dict[resist_enum] = value
+            
             # Create equippable component
             equippable_component = Equippable(
                 slot=self._get_equipment_slot(weapon_def.slot),
@@ -298,7 +308,8 @@ class EntityFactory:
                 damage_dice=weapon_def.damage_dice,
                 to_hit_bonus=weapon_def.to_hit_bonus,
                 two_handed=weapon_def.two_handed,
-                reach=weapon_def.reach
+                reach=weapon_def.reach,
+                resistances=resistances_dict
             )
 
             # Create entity
@@ -336,6 +347,16 @@ class EntityFactory:
             return None  # Return None so caller can try weapon
 
         try:
+            # Convert string resistance types to ResistanceType enums if resistances are defined
+            resistances_dict = None
+            if armor_def.resistances:
+                from components.fighter import ResistanceType, normalize_resistance_type
+                resistances_dict = {}
+                for resist_type_str, value in armor_def.resistances.items():
+                    resist_enum = normalize_resistance_type(resist_type_str)
+                    if resist_enum:
+                        resistances_dict[resist_enum] = value
+            
             # Create equippable component
             equippable_component = Equippable(
                 slot=self._get_equipment_slot(armor_def.slot),
@@ -344,7 +365,8 @@ class EntityFactory:
                 defense_max=armor_def.defense_max,
                 armor_class_bonus=armor_def.armor_class_bonus,
                 armor_type=armor_def.armor_type,
-                dex_cap=armor_def.dex_cap
+                dex_cap=armor_def.dex_cap,
+                resistances=resistances_dict
             )
 
             # Create entity
@@ -527,10 +549,21 @@ class EntityFactory:
                 effect_strength=ring_def.effect_strength
             )
             
+            # Convert string resistance types to ResistanceType enums if resistances are defined
+            resistances_dict = None
+            if hasattr(ring_def, 'resistances') and ring_def.resistances:
+                from components.fighter import ResistanceType, normalize_resistance_type
+                resistances_dict = {}
+                for resist_type_str, value in ring_def.resistances.items():
+                    resist_enum = normalize_resistance_type(resist_type_str)
+                    if resist_enum:
+                        resistances_dict[resist_enum] = value
+            
             # Create equippable component for ring slot
             from components.equippable import Equippable
             equippable_component = Equippable(
-                slot=EquipmentSlots.RING  # Uses generic RING slot, will be assigned to left or right
+                slot=EquipmentSlots.RING,  # Uses generic RING slot, will be assigned to left or right
+                resistances=resistances_dict
             )
             
             # Create item component

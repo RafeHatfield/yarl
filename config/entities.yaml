@@ -524,6 +524,28 @@ armor:
     slot: "chest"
     char: "["
     color: [128, 128, 128]  # Gray
+  
+  # Special: Dragon Scale Mail (medium armor with fire resistance)
+  dragon_scale_mail:
+    armor_class_bonus: 5  # +5 AC (same as scale mail)
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    resistances:
+      fire: 30  # +30% fire resistance
+    slot: "chest"
+    char: "["
+    color: [220, 20, 60]  # Crimson (dragon scales)
+  
+  # Special: Frost Mail (medium armor with cold resistance)
+  frost_mail:
+    armor_class_bonus: 5  # +5 AC (same as scale mail)
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    resistances:
+      cold: 30  # +30% cold resistance
+    slot: "chest"
+    char: "["
+    color: [135, 206, 250]  # Light sky blue (icy)
 
   # FEET SLOT - Medium
   chain_boots:
@@ -572,6 +594,56 @@ armor:
     slot: "feet"
     char: "]"
     color: [155, 155, 175]  # Steel
+  
+  # ═══════════════════════════════════════════════════════════
+  # SPECIAL ARMOR WITH RESISTANCES
+  # ═══════════════════════════════════════════════════════════
+  
+  # Helmet of Fire Resistance
+  helmet_of_fire_resistance:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2
+    resistances:
+      fire: 20  # +20% fire resistance
+    slot: "head"
+    char: "^"
+    color: [255, 69, 0]  # Orange-red (fire)
+  
+  # Helmet of Frost
+  helmet_of_frost:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2
+    resistances:
+      cold: 20  # +20% cold resistance
+    slot: "head"
+    char: "^"
+    color: [176, 224, 230]  # Powder blue (frost)
+  
+  # Boots of Acid Resistance
+  acid_resistant_boots:
+    armor_class_bonus: 1  # +1 AC
+    armor_type: "light"
+    resistances:
+      acid: 25  # +25% acid resistance
+    slot: "feet"
+    char: "]"
+    color: [154, 205, 50]  # Yellow-green (acid)
+  
+  # Shield of Resistance (uncommon)
+  shield_of_resistance:
+    armor_class_bonus: 3  # +3 AC (better than normal shield)
+    armor_type: "shield"
+    resistances:
+      fire: 15
+      cold: 15
+      poison: 15
+      lightning: 15
+      acid: 15  # +15% to all resistances
+    slot: "off_hand"
+    char: "["
+    color: [147, 112, 219]  # Medium purple (magical)
 
 # Spell and consumable definitions
 spells:
@@ -955,6 +1027,14 @@ rings:
     color: [200, 150, 255]  # Purple
     ring_effect: "resistance"
     effect_strength: 10  # +10% all resistances
+    # Note: Ring component provides resistance bonuses, but we also add to equippable
+    # so it works via equipment aggregation
+    resistances:
+      fire: 10
+      cold: 10
+      poison: 10
+      lightning: 10
+      acid: 10
   
   # ──────────────────────────────────────────────────────────
   # OFFENSIVE RINGS - Combat bonuses

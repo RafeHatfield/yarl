@@ -104,6 +104,7 @@ class WeaponDefinition:
     Weapon Properties:
     - two_handed: Requires both hands, prevents shield use
     - reach: Attack range in tiles (default 1, spears have 2)
+    - resistances: Dict mapping resistance type string to percentage (e.g., {"fire": 30})
     """
     name: str
     power_bonus: int = 0
@@ -113,6 +114,7 @@ class WeaponDefinition:
     to_hit_bonus: int = 0  # Bonus to attack rolls
     two_handed: bool = False  # Requires both hands, prevents shield use
     reach: int = 1  # Attack range in tiles (1 = adjacent, 2 = spear reach)
+    resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 30})
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -141,6 +143,9 @@ class ArmorDefinition:
     - medium: DEX cap +2 (max +2 DEX bonus to AC)
     - heavy: DEX cap 0 (no DEX bonus to AC)
     - shield: No impact on DEX cap
+    
+    Resistances:
+    - resistances: Dict mapping resistance type string to percentage (e.g., {"fire": 30})
     """
     name: str
     defense_bonus: int = 0
@@ -149,6 +154,7 @@ class ArmorDefinition:
     armor_class_bonus: int = 0  # AC bonus for d20 combat
     armor_type: Optional[str] = None  # light, medium, heavy, shield
     dex_cap: Optional[int] = None  # Max DEX modifier for AC (None = no cap)
+    resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 30})
     slot: str = "off_hand"
     char: str = "["
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -202,11 +208,12 @@ class RingDefinition:
     
     Rings provide continuous bonuses while equipped in left or right ring slots.
     Effects can include AC bonuses, stat bonuses, damage bonuses, immunities,
-    regeneration, and triggered effects.
+    regeneration, triggered effects, and resistance bonuses.
     """
     name: str
     ring_effect: str  # Type of effect (e.g., "protection", "strength", "regeneration")
     effect_strength: int  # Magnitude of the effect (e.g., +2 AC, +2 STR, heal every N turns)
+    resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 10})
     char: str = "="
     color: Tuple[int, int, int] = (200, 200, 200)
     extends: Optional[str] = None  # For inheritance
