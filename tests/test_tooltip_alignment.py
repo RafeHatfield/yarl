@@ -183,9 +183,15 @@ class TestTooltipIntegration:
         
         # Import after mocking to avoid circular imports
         from ui.tooltip import get_sidebar_equipment_at_position
+        from ui.sidebar_layout import calculate_sidebar_layout, get_hotkey_list, get_equipment_slot_list
         
-        # Test that first equipment slot (y=17) returns main_hand
-        equipment_start_y = 17
+        # Calculate dynamic layout (not hardcoded y-coordinates)
+        hotkey_list = get_hotkey_list()
+        slot_list = get_equipment_slot_list()
+        layout = calculate_sidebar_layout(hotkey_count=len(hotkey_list), equipment_slot_count=len(slot_list))
+        equipment_start_y = layout.equipment_start_y
+        
+        # Test that first equipment slot returns main_hand
         result = get_sidebar_equipment_at_position(5, equipment_start_y, player, ui_layout)
         
         assert result == equipment.main_hand, (
