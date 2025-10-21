@@ -238,7 +238,12 @@ class PlayerPathfinding:
             return []
         
         # Create a FOV map that has the dimensions of the map
-        fov = tcod.map.Map(game_map.width, game_map.height)
+        # Note: tcod.map.Map is deprecated but still functional. Migration to numpy
+        # arrays would require significant refactoring of pathfinding logic.
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            fov = tcod.map.Map(game_map.width, game_map.height)
         
         # Scan the current map each turn and set all the walls as unwalkable
         for y1 in range(game_map.height):
@@ -307,8 +312,8 @@ class PlayerPathfinding:
             return path
             
         finally:
-            # Always clean up the path to free memory
-            libtcodpy.path_delete(my_path)
+            # Path objects are automatically deleted by libtcod (no manual cleanup needed)
+            pass
     
     def _complete_movement(self) -> None:
         """Complete the current movement and clean up state."""

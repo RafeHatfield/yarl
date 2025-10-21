@@ -134,8 +134,7 @@ class TestPlayerPathfinding(unittest.TestCase):
         self.assertEqual(self.pathfinding.current_path, [(6, 5), (7, 5), (8, 5)])
         self.assertEqual(self.pathfinding.total_moves_planned, 3)
         
-        # Verify cleanup
-        mock_libtcodpy.path_delete.assert_called_with(mock_path)
+        # Note: path_delete is no longer called as libtcod handles cleanup automatically
     
     def test_get_next_move(self):
         """Test getting next move from path."""

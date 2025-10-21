@@ -2,11 +2,11 @@
 
 *Goal: Transform Yarl into one of the best traditional roguelikes by tracking progress toward legendary status.*
 
-## Current Depth Scores (v3.12.0 - Resistance System)
+## Current Depth Scores (v3.14.1 - Equipment Resistances Complete!)
 
 | Category | Current | Target | Gap | Priority Features to Close Gap |
 |----------|---------|--------|-----|-------------------------------|
-| **Discovery** | 6/10 | 10/10 | -4 | Vaults, Secret Doors, Unique Artifacts |
+| **Discovery** | 6/10 | 10/10 | -4 | Vaults Phase 3, Secret Doors, Unique Artifacts |
 | **Resource Management** | 7/10 | 9/10 | -2 | Anti-Grinding Design, Hunger System (optional) |
 | **Build Diversity** | 8/10 | 9/10 | -1 | Amulets, Blessed/Cursed Items |
 | **Emergent Gameplay** | 7/10 | 9/10 | -2 | Item Interactions, Polymorph, Digging |
@@ -15,7 +15,9 @@
 | **Progression** | 7/10 | 9/10 | -2 | Victory Condition, Hall of Fame, Morgue Files, Classes |
 
 **Overall Depth Score: 49.5/64 (77%)** → **Target: 64/74 (86%)**
-*Progress: +1.5 points from v3.11.1 (75% → 77%)*
+*Progress: Resistance system complete, but already counted in v3.12.0 score*
+
+**Note:** Resistance system was already included in v3.12.0 scoring (core mechanics). Equipment integration completes the system but was anticipated in original +0.5 allocation.
 
 ---
 
@@ -109,9 +111,20 @@
 - ✅ Status Effect Expansion (18+ types)
 - ✅ Potion Variety (11 types with tactical buffs/debuffs)
 
+**Recently Completed (v3.14.1):**
+- ✅ **Equipment Resistance System** - 7 items grant elemental resistances
+  - Dragon Scale Mail: +30% fire
+  - Frost Mail: +30% cold
+  - Helmet of Fire Resistance: +20% fire
+  - Helmet of Frost: +20% cold
+  - Acid Resistant Boots: +25% acid
+  - Shield of Resistance: +15% all
+  - Ring of Resistance: +10% all
+- ✅ Character screen displays resistances
+- ✅ Full TDD implementation (27 tests passing)
+
 **Missing Critical Elements:**
 - ❌ No amulets (build-defining items)
-- ❌ No resistances system (fire/cold/poison/electric)
 - ❌ No blessed/cursed items (equipment puzzle)
 - ❌ No god/religion system (divine builds)
 
