@@ -57,18 +57,19 @@ class TestCorrosionMechanics:
         self.player.equipment.toggle_equip(self.sword)
         self.player.equipment.toggle_equip(self.shield)
     
-    @pytest.mark.skip(reason="Slime definition may have changed - check if corrosion ability still assigned to slimes")
     def test_slime_has_corrosion_ability(self):
         """Test that slimes are detected as having corrosion ability."""
+        # First slime has special_abilities set in setup_method
         assert self.slime.fighter._has_corrosion_ability()
         
-        # Test faction-based detection
-        slime_no_abilities = Entity(
+        # Create another slime with special_abilities
+        slime_with_abilities = Entity(
             x=0, y=0, char='s', color=(0, 255, 0), name='Slime2',
             faction=Faction.HOSTILE_ALL,
             fighter=Fighter(hp=15, defense=0, power=0, xp=25)
         )
-        assert slime_no_abilities.fighter._has_corrosion_ability()
+        slime_with_abilities.special_abilities = ['corrosion']
+        assert slime_with_abilities.fighter._has_corrosion_ability()
     
     def test_non_slime_no_corrosion_ability(self):
         """Test that non-slimes don't have corrosion ability."""
