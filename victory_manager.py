@@ -44,9 +44,9 @@ class VictoryManager:
         player.victory.obtain_amulet(player.x, player.y)
         
         # Display Entity's reaction (dramatic moment!)
-        message_log.add_message(MB.critical("The Amulet pulses with power in your hands!"))
-        message_log.add_message(MB.entity("\"AT LAST! You've done it!\""))
-        message_log.add_message(MB.entity("\"Now... bring it to me. QUICKLY.\""))
+        message_log.add_message(MB.item_effect("The Amulet pulses with power in your hands!"))
+        message_log.add_message(MB.warning("\"AT LAST! You've done it!\""))
+        message_log.add_message(MB.warning("\"Now... bring it to me. QUICKLY.\""))
         
         # Spawn portal at player's current location
         portal = self.entity_factory.create_unique_item('entity_portal', player.x, player.y)
