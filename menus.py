@@ -245,7 +245,7 @@ def main_menu(con, background_image, screen_width, screen_height, entity_quote=N
     menu(
         con,
         "",
-        ["Play a new game", "Continue last game", "Quit"],
+        ["Play a new game", "Continue last game", "Hall of Fame", "Quit"],
         24,
         screen_width,
         screen_height,

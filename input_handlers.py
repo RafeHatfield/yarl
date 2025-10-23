@@ -265,7 +265,9 @@ def handle_main_menu(key, mouse=None):
         return {"new_game": True}
     elif key_char == "b":
         return {"load_game": True}
-    elif key_char == "c" or key.vk == libtcod.KEY_ESCAPE:
+    elif key_char == "c":
+        return {"hall_of_fame": True}
+    elif key_char == "d" or key.vk == libtcod.KEY_ESCAPE:
         return {"exit": True}
     
     # Handle mouse clicks
@@ -276,7 +278,7 @@ def handle_main_menu(key, mouse=None):
         ui_layout = get_ui_layout()
         
         # Main menu options
-        options = ["Play a new game", "Continue last game", "Quit"]
+        options = ["Play a new game", "Continue last game", "Hall of Fame", "Quit"]
         
         # Check if click is on a menu option
         # Main menu uses empty header and width of 24
@@ -290,7 +292,9 @@ def handle_main_menu(key, mouse=None):
                 return {"new_game": True}
             elif clicked_index == 1:  # Continue last game
                 return {"load_game": True}
-            elif clicked_index == 2:  # Quit
+            elif clicked_index == 2:  # Hall of Fame
+                return {"hall_of_fame": True}
+            elif clicked_index == 3:  # Quit
                 return {"exit": True}
 
     return {}

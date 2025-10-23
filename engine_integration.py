@@ -245,6 +245,53 @@ def play_game_with_engine(
 
         # Use the new action processor for clean, modular action handling
         action_processor.process_actions(action, mouse_action)
+        
+        # Handle victory condition states
+        current_state = engine.state_manager.state.current_state
+        
+        if current_state == GameStates.CONFRONTATION:
+            # Show confrontation choice screen
+            from screens.confrontation_choice import confrontation_menu
+            from victory_manager import get_victory_manager
+            
+            choice, new_state = confrontation_menu(
+                con, engine.root_console,
+                constants['screen_width'], constants['screen_height']
+            )
+            
+            if choice:
+                # Player made a choice, show ending screen
+                victory_mgr = get_victory_manager()
+                player_stats = victory_mgr.get_player_stats_for_ending(
+                    engine.state_manager.state.player,
+                    engine.state_manager.state.game_map
+                )
+                
+                from screens.victory_screen import show_ending_screen
+                from systems.hall_of_fame import get_hall_of_fame
+                
+                result = show_ending_screen(
+                    con, engine.root_console,
+                    constants['screen_width'], constants['screen_height'],
+                    choice, player_stats
+                )
+                
+                # Record victory in Hall of Fame if good ending
+                if choice == 'good':
+                    hall = get_hall_of_fame()
+                    player_name = engine.state_manager.state.player.name
+                    hall.add_victory(player_name, choice, player_stats)
+                
+                if result == 'restart':
+                    engine.stop()
+                    return {"restart": True}
+                elif result == 'quit':
+                    break
+        
+        elif current_state in (GameStates.VICTORY, GameStates.FAILURE):
+            # These states are handled by confrontation, shouldn't reach here
+            # But if we do, treat as game end
+            break
 
         # Update all systems (AI will run after player actions are processed)
         engine.update()

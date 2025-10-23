@@ -181,10 +181,15 @@ def main():
 
             new_game = action.get("new_game")
             load_saved_game = action.get("load_game")
+            show_hall_of_fame = action.get("hall_of_fame")
             exit_game = action.get("exit")
 
-            if show_load_error_message and (new_game or load_saved_game or exit_game):
+            if show_load_error_message and (new_game or load_saved_game or show_hall_of_fame or exit_game):
                 show_load_error_message = False
+            elif show_hall_of_fame:
+                # Display Hall of Fame screen
+                from systems.hall_of_fame import display_hall_of_fame
+                display_hall_of_fame(con, con, ui_layout.screen_width, ui_layout.screen_height)
             elif new_game:
                 player, entities, game_map, message_log, game_state = (
                     get_game_variables(constants)
