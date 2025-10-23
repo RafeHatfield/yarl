@@ -63,6 +63,11 @@ level_overrides:
           count: 2  # Hint signs
       
       items:
+        # ========== VICTORY CONDITION TESTING ==========
+        # AMULET OF YENDOR - Test victory sequence on level 1!
+        - type: "amulet_of_yendor"
+          count: 1  # THE ultimate goal, spawns portal when picked up
+        
         # SURVIVAL GEAR - Make it easy to survive
         - type: "healing_potion"
           count: 20  # Lots of healing

@@ -1070,6 +1070,9 @@ class GameMap:
                     item = entity_factory.create_spell_item(spawn.entity_type, x, y)
                 if not item:
                     item = entity_factory.create_wand(spawn.entity_type, x, y, self.dungeon_level)
+                if not item:
+                    # Try unique quest items (e.g., amulet_of_yendor, entity_portal)
+                    item = entity_factory.create_unique_item(spawn.entity_type, x, y)
                 
                 if item:
                     entities.append(item)
