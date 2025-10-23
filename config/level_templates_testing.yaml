@@ -30,9 +30,9 @@ level_overrides:
       map_height: 60
       min_room_size: 10
       max_room_size: 15
-      max_rooms: 10  # More rooms to fit 2 vaults + features
+      max_rooms: 3  # More rooms to fit 2 vaults + features
       max_monsters_per_room: 1  # Keep it safe for testing
-      vault_count: 2  # Guarantee 2 vaults for testing
+      vault_count: 1  # Guarantee 2 vaults for testing
     
     guaranteed_spawns:
       mode: "additional"

@@ -1060,7 +1060,10 @@ class GameMap:
                     break
                     
                 # Try to create item using smart fallback (supports all item types)
-                item = entity_factory.create_weapon(spawn.entity_type, x, y)
+                # Check unique items first (rare, specific names like "amulet_of_yendor")
+                item = entity_factory.create_unique_item(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_weapon(spawn.entity_type, x, y)
                 if not item:
                     item = entity_factory.create_armor(spawn.entity_type, x, y)
                 if not item:
@@ -1069,9 +1072,6 @@ class GameMap:
                     item = entity_factory.create_spell_item(spawn.entity_type, x, y)
                 if not item:
                     item = entity_factory.create_wand(spawn.entity_type, x, y, self.dungeon_level)
-                if not item:
-                    # Try unique quest items (e.g., amulet_of_yendor, entity_portal)
-                    item = entity_factory.create_unique_item(spawn.entity_type, x, y)
                 
                 if item:
                     entities.append(item)
