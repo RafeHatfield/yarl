@@ -1,0 +1,239 @@
+"""Victory and failure ending screens.
+
+This module displays the final outcome screens after the player makes
+their choice in the Entity confrontation.
+"""
+
+import tcod
+from typing import Dict, Any
+
+
+def show_ending_screen(con, root_console, screen_width, screen_height, 
+                       ending_type, player_stats):
+    """Display the ending screen based on player's choice.
+    
+    Args:
+        con: Console to draw on
+        root_console: Root console for rendering
+        screen_width: Width of the screen
+        screen_height: Height of the screen
+        ending_type: 'good' or 'bad'
+        player_stats: Dict containing player statistics
+        
+    Returns:
+        str: 'restart' or 'quit' based on player input
+    """
+    if ending_type == 'good':
+        return show_good_ending(con, root_console, screen_width, screen_height, player_stats)
+    elif ending_type == 'bad':
+        return show_bad_ending(con, root_console, screen_width, screen_height, player_stats)
+    
+    return 'quit'
+
+
+def show_good_ending(con, root_console, screen_width, screen_height, player_stats):
+    """Display the good ending (player kept the Amulet and escaped).
+    
+    Returns:
+        str: 'restart' or 'quit'
+    """
+    title = "VICTORY - You Are Free"
+    
+    story = [
+        "You clutch the Amulet tightly and channel its power.",
+        "",
+        "\"Oh. OH. You think— Wait. No. You COULDN'T.\"",
+        "",
+        "The Entity's eyes widen in horror as golden light",
+        "erupts from the Amulet, severing the binding on your soul.",
+        "",
+        "\"Im...impossible. I... HOW—\"",
+        "",
+        "The chains dissolve. For the first time in an eternity,",
+        "your soul is truly your own.",
+        "",
+        "The Entity remains trapped in its temporal prison,",
+        "unable to stop you as you walk through a rift back to reality.",
+        "",
+        "Behind you, you hear its fading roar of impotent rage.",
+        "",
+        "You are free.",
+        "",
+        "=== YOU HAVE WON ==="
+    ]
+    
+    return display_ending(con, root_console, screen_width, screen_height, 
+                         title, story, player_stats, tcod.light_green)
+
+
+def show_bad_ending(con, root_console, screen_width, screen_height, player_stats):
+    """Display the bad ending (player gave away the Amulet).
+    
+    Returns:
+        str: 'restart' or 'quit'
+    """
+    title = "YOU FAILED - Bound for Eternity"
+    
+    story = [
+        "You hand the Amulet to the Entity.",
+        "",
+        "\"Ah. There we are. I knew you'd see sense eventually.\"",
+        "",
+        "The Entity's form ripples and expands, ancient draconic",
+        "power flooding back into its body. Scales emerge, wings unfurl.",
+        "",
+        "\"Your service has been... adequate. As promised, you are free.\"",
+        "",
+        "Hope surges in your chest—",
+        "",
+        "\"Oh, one more thing...\"",
+        "",
+        "The Entity smiles with far too many teeth.",
+        "",
+        "\"Thank you for taking my place.\"",
+        "",
+        "Reality TWISTS. The temporal prison that held the Entity",
+        "snaps shut around YOU instead. Ancient binding magic",
+        "floods your being, and you understand with horror:",
+        "",
+        "Only a dragon can replace a dragon.",
+        "Only a bound soul can free a bound soul.",
+        "",
+        "The Entity—now a magnificent dragon once more—spreads its wings.",
+        "",
+        "\"Better luck next time. Oh wait, there won't be a next time.\"",
+        "",
+        "Its laughter echoes as it flies free, leaving you",
+        "trapped in the prison outside time, just as it was.",
+        "",
+        "Forever.",
+        "",
+        "=== GAME OVER ==="
+    ]
+    
+    return display_ending(con, root_console, screen_width, screen_height,
+                         title, story, player_stats, tcod.dark_red)
+
+
+def display_ending(con, root_console, screen_width, screen_height,
+                   title, story_lines, player_stats, title_color):
+    """Display an ending screen with story and statistics.
+    
+    Args:
+        con: Console to draw on
+        root_console: Root console
+        screen_width: Screen width
+        screen_height: Screen height
+        title: Title of the ending
+        story_lines: List of story text lines
+        player_stats: Player statistics dictionary
+        title_color: Color for the title
+        
+    Returns:
+        str: 'restart' or 'quit'
+    """
+    # Calculate menu dimensions
+    menu_width = 80
+    story_height = len(story_lines) + 4
+    stats_height = 12
+    total_height = story_height + stats_height
+    
+    x = screen_width // 2 - menu_width // 2
+    y = max(2, screen_height // 2 - total_height // 2)
+    
+    # Clear console
+    tcod.console_set_default_background(con, tcod.black)
+    tcod.console_clear(con)
+    
+    # Draw title
+    tcod.console_set_default_foreground(con, title_color)
+    tcod.console_print_ex(
+        con, menu_width // 2, 2,
+        tcod.BKGND_NONE, tcod.CENTER,
+        title
+    )
+    
+    # Draw separator
+    tcod.console_set_default_foreground(con, tcod.dark_gray)
+    tcod.console_print_ex(
+        con, menu_width // 2, 3,
+        tcod.BKGND_NONE, tcod.CENTER,
+        "=" * (menu_width - 4)
+    )
+    
+    # Draw story
+    current_y = 5
+    for line in story_lines:
+        if line == "":
+            current_y += 1
+            continue
+        
+        # Highlight Entity speech
+        if line.startswith("\""):
+            tcod.console_set_default_foreground(con, tcod.light_yellow)
+        # Highlight victory/defeat text
+        elif "===" in line:
+            tcod.console_set_default_foreground(con, title_color)
+        else:
+            tcod.console_set_default_foreground(con, tcod.light_gray)
+        
+        # Center align story text
+        tcod.console_print_ex(
+            con, menu_width // 2, current_y,
+            tcod.BKGND_NONE, tcod.CENTER,
+            line
+        )
+        current_y += 1
+    
+    # Draw statistics section
+    current_y += 2
+    tcod.console_set_default_foreground(con, tcod.light_blue)
+    tcod.console_print_ex(
+        con, menu_width // 2, current_y,
+        tcod.BKGND_NONE, tcod.CENTER,
+        "=== Your Journey ==="
+    )
+    current_y += 2
+    
+    # Display stats
+    tcod.console_set_default_foreground(con, tcod.white)
+    stats_to_show = [
+        f"Deaths: {player_stats.get('deaths', 0)}",
+        f"Turns Taken: {player_stats.get('turns', 0)}",
+        f"Deepest Level: {player_stats.get('deepest_level', 0)}",
+        f"Monsters Slain: {player_stats.get('kills', 0)}",
+        f"Final Level: {player_stats.get('final_level', 0)}"
+    ]
+    
+    for stat in stats_to_show:
+        tcod.console_print_ex(
+            con, menu_width // 2, current_y,
+            tcod.BKGND_NONE, tcod.CENTER,
+            stat
+        )
+        current_y += 1
+    
+    # Draw instructions
+    current_y += 2
+    tcod.console_set_default_foreground(con, tcod.dark_gray)
+    tcod.console_print_ex(
+        con, menu_width // 2, current_y,
+        tcod.BKGND_NONE, tcod.CENTER,
+        "[Press R to restart or ESC to quit]"
+    )
+    
+    # Blit to root
+    tcod.console_blit(con, 0, 0, menu_width, total_height, root_console, x, y, 1.0, 0.9)
+    tcod.console_flush()
+    
+    # Wait for input
+    while True:
+        key = tcod.console_wait_for_keypress(True)
+        
+        if key.vk == tcod.KEY_ESCAPE:
+            return 'quit'
+        
+        key_char = chr(key.c).lower() if key.c > 0 else ''
+        if key_char == 'r':
+            return 'restart'
+

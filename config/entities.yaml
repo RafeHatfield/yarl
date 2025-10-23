@@ -1261,3 +1261,29 @@ map_features:
     render_order: "item"
     door_type: "locked"
     required_key: "dragon_scale"
+
+# Unique Quest Items
+# Special items that trigger victory conditions and story events
+unique_items:
+  # The Amulet of Yendor - The ultimate goal
+  # This ancient artifact was used to trap the Entity in time
+  # Finding it triggers the final confrontation and victory condition
+  amulet_of_yendor:
+    char: "\""  # Amulet symbol
+    color: [255, 215, 0]  # Brilliant gold
+    render_order: "item"
+    blocks: false
+    description: "An ancient amulet thrumming with binding magic. You feel immense power radiating from it."
+    is_quest_item: true
+    triggers_victory: true
+  
+  # Entity's Portal - Gateway to the final confrontation
+  # Appears when player obtains the Amulet of Yendor
+  # Stepping through leads to the Entity's Throne Room
+  entity_portal:
+    char: "O"  # Portal symbol
+    color: [255, 0, 255]  # Bright magenta (otherworldly)
+    render_order: "item"
+    blocks: false
+    description: "A shimmering portal wreathed in temporal distortions. The Entity's voice echoes from within."
+    is_portal: true

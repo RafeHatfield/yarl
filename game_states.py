@@ -24,3 +24,9 @@ class GameStates(Enum):
     CHARACTER_SCREEN = 8
     THROW_SELECT_ITEM = 9  # Selecting item to throw
     THROW_TARGETING = 10   # Targeting throw location
+    
+    # Victory condition states
+    AMULET_OBTAINED = 11   # Player picked up Amulet of Yendor
+    CONFRONTATION = 12     # Facing Entity with choice to make
+    VICTORY = 13           # Player achieved victory (any ending)
+    FAILURE = 14           # Player failed (bad ending)
