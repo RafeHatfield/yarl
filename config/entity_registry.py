@@ -310,6 +310,8 @@ class EntityRegistry:
         self.rings: Dict[str, RingDefinition] = {}
         self.map_features: Dict[str, MapFeatureDefinition] = {}
         self.player_stats: Optional[EntityStats] = None
+        self.unique_items: Dict[str, dict] = {}  # Quest items, amulet, etc.
+        self.data: Optional[dict] = None  # Raw YAML data for extensions
         self._loaded = False
 
     def load_from_file(self, config_path: str) -> None:
@@ -337,6 +339,9 @@ class EntityRegistry:
                 logger.warning(f"Empty or invalid YAML file: {config_path}")
                 return
 
+            # Store raw data for extensions (unique_items, etc.)
+            self.data = config_data
+            
             self._process_config_data(config_data)
             self._resolve_inheritance()
             self._loaded = True
@@ -348,6 +353,7 @@ class EntityRegistry:
             logger.info(f"  Spells: {len(self.spells)}")
             logger.info(f"  Rings: {len(self.rings)}")
             logger.info(f"  Map Features: {len(self.map_features)}")
+            logger.info(f"  Unique Items: {len(self.unique_items)}")
 
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML in entity configuration: {e}")
@@ -399,6 +405,11 @@ class EntityRegistry:
         # Load map features - process inheritance-aware
         if 'map_features' in config_data:
             self._process_map_features_with_inheritance(config_data['map_features'])
+        
+        # Load unique quest items (simple dictionary, no inheritance)
+        if 'unique_items' in config_data:
+            self.unique_items = config_data['unique_items']
+            logger.info(f"Loaded {len(self.unique_items)} unique quest items")
 
     def _process_monsters_with_inheritance(self, monsters_data: Dict[str, Any]) -> None:
         """Process monster data with inheritance-aware creation.
