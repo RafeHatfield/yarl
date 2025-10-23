@@ -226,8 +226,7 @@ class GameMap:
             amulet = factory.create_unique_item('amulet_of_yendor', amulet_x, amulet_y)
             if amulet:
                 entities.append(amulet)
-                import logging
-                logger = logging.getLogger(__name__)
+                # Logger already imported at module level (line 28)
                 logger.info(f"=== AMULET OF YENDOR SPAWNED at ({amulet_x}, {amulet_y}) ===")
         
         # Apply special rooms from level templates (Tier 2)
