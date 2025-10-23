@@ -213,6 +213,23 @@ class GameMap:
         )
         entities.append(down_stairs)
         
+        # VICTORY CONDITION: Spawn Amulet of Yendor on level 25!
+        if self.dungeon_level == 25:
+            from config.entity_factory import get_entity_factory
+            factory = get_entity_factory()
+            
+            # Place amulet in center of the last room (where stairs are)
+            # Offset slightly so it doesn't overlap with stairs
+            amulet_x = center_of_last_room_x + 1
+            amulet_y = center_of_last_room_y
+            
+            amulet = factory.create_unique_item('amulet_of_yendor', amulet_x, amulet_y)
+            if amulet:
+                entities.append(amulet)
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"=== AMULET OF YENDOR SPAWNED at ({amulet_x}, {amulet_y}) ===")
+        
         # Apply special rooms from level templates (Tier 2)
         self.place_special_rooms(rooms, entities)
         
