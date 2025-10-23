@@ -352,7 +352,7 @@ class ActionProcessor:
             move_data: Tuple of (dx, dy) movement deltas
         """
         current_state = self.state_manager.state.current_state
-        if current_state != GameStates.PLAYERS_TURN:
+        if current_state not in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
             return
         
         # Validate move input
@@ -404,6 +404,19 @@ class ActionProcessor:
             camera = self.state_manager.state.camera
             if camera:
                 camera.update(player.x, player.y)
+            
+            # Check if player stepped on victory portal
+            if current_state == GameStates.AMULET_OBTAINED:
+                from victory_manager import get_victory_manager
+                victory_mgr = get_victory_manager()
+                entities = self.state_manager.state.entities
+                message_log = self.state_manager.state.message_log
+                
+                if victory_mgr.check_portal_entry(player, entities):
+                    victory_mgr.enter_portal(player, message_log)
+                    # Transition to confrontation state
+                    self.state_manager.set_game_state(GameStates.CONFRONTATION)
+                    return  # Don't process turn end, go straight to confrontation
             
             # Check for passive secret door reveals
             self._check_secret_reveals(player, game_map)
@@ -662,6 +675,15 @@ class ActionProcessor:
                     
                     # Remove entity if it was added to inventory OR consumed (e.g., scroll recharged a wand)
                     if item_added or item_consumed:
+                        # Check if this is the Amulet of Yendor (triggers victory sequence!)
+                        if hasattr(entity, 'triggers_victory') and entity.triggers_victory:
+                            from victory_manager import get_victory_manager
+                            victory_mgr = get_victory_manager()
+                            game_map = self.state_manager.state.game_map
+                            victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log)
+                            # Transition to AMULET_OBTAINED state
+                            self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                        
                         entities.remove(entity)
                         
                         # TURN ECONOMY: Picking up an item takes 1 turn

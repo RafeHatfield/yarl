@@ -1224,6 +1224,65 @@ class EntityFactory:
             x=x, y=y, char='?', color=(255, 0, 255), name=f"Unknown {spell_type}",
             item=item_component
         )
+    
+    def create_unique_item(self, item_type: str, x: int, y: int) -> Optional[Entity]:
+        """Create a unique quest item entity.
+        
+        Unique items are special entities that trigger victory conditions,
+        story events, or other unique gameplay mechanics.
+        
+        Args:
+            item_type: Type of unique item (e.g., 'amulet_of_yendor', 'entity_portal')
+            x: X coordinate
+            y: Y coordinate
+            
+        Returns:
+            Entity instance or None if creation fails
+        """
+        # Get unique item definition from registry
+        if not hasattr(self.registry, 'data') or 'unique_items' not in self.registry.data:
+            logger.warning(f"No unique_items section in registry")
+            return None
+        
+        unique_items = self.registry.data['unique_items']
+        if item_type not in unique_items:
+            logger.warning(f"Unique item type '{item_type}' not found in registry")
+            return None
+        
+        item_def = unique_items[item_type]
+        
+        # Extract basic properties
+        char = item_def.get('char', '?')
+        color = tuple(item_def.get('color', [255, 255, 255]))
+        description = item_def.get('description', 'A unique item.')
+        name = item_type.replace('_', ' ').title()
+        
+        # Create item component
+        item_component = Item()
+        
+        # Create entity
+        entity = Entity(
+            x=x, y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks=item_def.get('blocks', False),
+            render_order=RenderOrder.ITEM,
+            item=item_component
+        )
+        
+        # Add special properties for quest items
+        if item_def.get('is_quest_item'):
+            entity.is_quest_item = True
+        if item_def.get('triggers_victory'):
+            entity.triggers_victory = True
+        if item_def.get('is_portal'):
+            entity.is_portal = True
+        
+        # Store description on entity for examine text
+        entity.description = description
+        
+        return entity
 
 
 # Global factory instance
