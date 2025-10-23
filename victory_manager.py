@@ -49,13 +49,16 @@ class VictoryManager:
         message_log.add_message(MB.warning("\"Now... bring it to me. QUICKLY.\""))
         
         # Spawn portal at player's current location
+        logger.info(f"Attempting to spawn portal at player location: ({player.x}, {player.y})")
         portal = self.entity_factory.create_unique_item('entity_portal', player.x, player.y)
         
         if portal:
+            logger.info(f"Portal created successfully. Portal location: ({portal.x}, {portal.y})")
             entities.append(portal)
             message_log.add_message(MB.warning("A shimmering portal tears open before you!"))
             message_log.add_message(MB.info("The Entity's voice echoes from within..."))
-            logger.info(f"Victory portal spawned at ({player.x}, {player.y})")
+            message_log.add_message(MB.info(f"[The portal is at your feet at ({portal.x}, {portal.y})]"))
+            logger.info(f"Victory portal spawned at ({portal.x}, {portal.y})")
             return True
         else:
             logger.error("Failed to spawn victory portal!")

@@ -677,12 +677,18 @@ class ActionProcessor:
                     if item_added or item_consumed:
                         # Check if this is the Amulet of Yendor (triggers victory sequence!)
                         if hasattr(entity, 'triggers_victory') and entity.triggers_victory:
-                            from victory_manager import get_victory_manager
-                            victory_mgr = get_victory_manager()
-                            game_map = self.state_manager.state.game_map
-                            victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log)
-                            # Transition to AMULET_OBTAINED state
-                            self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                            logger.info(f"=== AMULET PICKED UP! Triggering victory sequence ===")
+                            try:
+                                from victory_manager import get_victory_manager
+                                victory_mgr = get_victory_manager()
+                                game_map = self.state_manager.state.game_map
+                                victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log)
+                                # Transition to AMULET_OBTAINED state
+                                self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                                logger.info("Victory sequence triggered successfully")
+                            except Exception as e:
+                                logger.error(f"Error triggering victory sequence: {e}", exc_info=True)
+                                message_log.add_message(MB.warning(f"[DEBUG] Victory sequence error: {e}"))
                         
                         entities.remove(entity)
                         
