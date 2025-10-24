@@ -406,17 +406,32 @@ class ActionProcessor:
                 camera.update(player.x, player.y)
             
             # Check if player stepped on victory portal
+            logger.info(f"=== MOVEMENT: Player moved to ({player.x}, {player.y}), Current state: {current_state}")
             if current_state == GameStates.AMULET_OBTAINED:
+                logger.info("=== MOVEMENT: State is AMULET_OBTAINED, checking portal entry")
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 entities = self.state_manager.state.entities
                 message_log = self.state_manager.state.message_log
                 
+                logger.info(f"=== MOVEMENT: Entities count: {len(entities)}")
+                # Debug: Find portal in entities
+                portal_found = False
+                for entity in entities:
+                    if hasattr(entity, 'is_portal') and entity.is_portal:
+                        logger.info(f"=== MOVEMENT: Portal found at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
+                        portal_found = True
+                if not portal_found:
+                    logger.warning("=== MOVEMENT: NO PORTAL FOUND IN ENTITIES LIST!")
+                
                 if victory_mgr.check_portal_entry(player, entities):
+                    logger.info("=== MOVEMENT: PORTAL ENTRY DETECTED! Triggering confrontation")
                     victory_mgr.enter_portal(player, message_log)
                     # Transition to confrontation state
                     self.state_manager.set_game_state(GameStates.CONFRONTATION)
                     return  # Don't process turn end, go straight to confrontation
+                else:
+                    logger.info("=== MOVEMENT: Portal entry check returned False")
             
             # Check for passive secret door reveals
             self._check_secret_reveals(player, game_map)
