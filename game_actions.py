@@ -1636,6 +1636,49 @@ class ActionProcessor:
             # Pathfinding completed/cancelled without movement, stay in player turn
             self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
     
+    def _handle_left_click(self, click_pos: Tuple[int, int]) -> None:
+        """Handle left mouse click (pathfind to location).
+        
+        Args:
+            click_pos: Tuple of (world_x, world_y) click coordinates
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state not in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
+            return
+        
+        player = self.state_manager.state.player
+        entities = self.state_manager.state.entities
+        game_map = self.state_manager.state.game_map
+        fov_map = self.state_manager.state.fov_map
+        message_log = self.state_manager.state.message_log
+        
+        if not all([player, game_map, fov_map]):
+            return
+        
+        world_x, world_y = click_pos
+        
+        # If click is on player's location, do nothing
+        if world_x == player.x and world_y == player.y:
+            return
+        
+        # Try to pathfind to clicked location
+        pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
+        if pathfinding:
+            success = pathfinding.set_destination(
+                world_x, world_y, game_map, entities, fov_map
+            )
+            
+            if success:
+                message_log.add_message(
+                    MB.info(f"Moving to ({world_x}, {world_y})...")
+                )
+                # Immediately start moving along the path
+                self._process_pathfinding_movement_action(None)
+            else:
+                message_log.add_message(
+                    MB.warning("Cannot path to that location.")
+                )
+    
     def _handle_right_click(self, click_pos: Tuple[int, int]) -> None:
         """Handle right mouse click (context-aware: pickup items or cancel).
         
