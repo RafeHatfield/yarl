@@ -1654,6 +1654,7 @@ class ActionProcessor:
                     # Already adjacent - just pick it up
                     if player.inventory:
                         pickup_results = player.inventory.add_item(target_item)
+                        item_was_added = False
                         for result in pickup_results:
                             message = result.get("message")
                             if message:
@@ -1663,6 +1664,19 @@ class ActionProcessor:
                             item_consumed = result.get("item_consumed")
                             if item_added or item_consumed:
                                 entities.remove(target_item)
+                                item_was_added = True
+                        
+                        # Check for victory condition trigger (Amulet of Yendor)
+                        if item_was_added and hasattr(target_item, 'triggers_victory') and target_item.triggers_victory:
+                            logger.info("=== RIGHT-CLICK PICKUP: Victory trigger detected! ===")
+                            from victory_manager import get_victory_manager
+                            victory_mgr = get_victory_manager()
+                            
+                            if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
+                                logger.info("=== RIGHT-CLICK: Victory sequence initiated successfully ===")
+                                self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                            else:
+                                logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
                     
                     # End turn after pickup
                     _transition_to_enemy_turn(self.state_manager, self.turn_manager)
