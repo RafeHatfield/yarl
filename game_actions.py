@@ -1567,6 +1567,7 @@ class ActionProcessor:
         
         # Process results
         end_turn = False
+        victory_triggered = False
         for result in movement_result.get("results", []):
             message = result.get("message")
             if message:
@@ -1576,12 +1577,27 @@ class ActionProcessor:
             if result.get("fov_recompute"):
                 self.state_manager.request_fov_recompute()
             
+            # Handle victory trigger
+            if result.get("victory_triggered"):
+                logger.info("=== PATHFINDING: Victory sequence triggered via pathfinding pickup ===")
+                from victory_manager import get_victory_manager
+                victory_mgr = get_victory_manager()
+                
+                if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
+                    logger.info("=== PATHFINDING: Victory sequence initiated successfully ===")
+                    victory_triggered = True
+                else:
+                    logger.error("=== PATHFINDING: Victory sequence FAILED ===")
+            
             # Check if we should end the turn (continue pathfinding or interrupt after movement)
             if result.get("continue_pathfinding") or result.get("enemy_turn"):
                 end_turn = True
         
         # Transition to appropriate state
-        if end_turn:
+        if victory_triggered:
+            # Victory sequence initiated - set to special state
+            self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+        elif end_turn:
             # Player moved, give enemies their turn (which will cycle back to player)
             _transition_to_enemy_turn(self.state_manager, self.turn_manager)
         else:
