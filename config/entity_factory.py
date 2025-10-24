@@ -1257,12 +1257,8 @@ class EntityFactory:
         description = item_def.get('description', 'A unique item.')
         name = item_type.replace('_', ' ').title()
         
-        # Portals are not pickupable - they're environmental features
-        # (Future: Wand of Portals will be a separate item type!)
-        is_portal = item_def.get('is_portal', False)
-        
-        # Create item component only if not a portal
-        item_component = None if is_portal else Item()
+        # Create item component (portals ARE pickupable for future Portal system!)
+        item_component = Item()
         
         # Create entity
         entity = Entity(
