@@ -18,15 +18,18 @@
 - ✅ **Victory Screen**: Ending cinematic with player statistics
 - ✅ **Hall of Fame**: Persistent victory tracking from main menu
 
-### Bug Fixes (8 total!)
+### Bug Fixes (11 total!)
 1. ✅ **Logger UnboundLocalError**: Fixed module-level logger scoping
 2. ✅ **EntityRegistry Loading**: Added unique_items dict to registry
 3. ✅ **MessageBuilder Methods**: Fixed non-existent method calls
 4. ✅ **Right-Click Pickup**: Added victory trigger to adjacent pickup path
 5. ✅ **Pathfinding Pickup**: Added victory trigger to arrival pickup path
 6. ✅ **Item Fallback Order**: Check unique_items FIRST (no more "unknown wand" warnings)
-7. ✅ **Portal Pickupable**: Made portal environmental feature (no item component)
-8. ✅ **All Pickup Paths**: Victory sequence works consistently across all 3 methods
+7. ✅ **Portal Spawn Location**: Portal spawns adjacent (not on player!)
+8. ✅ **Portal Pickupability**: Restored Item component (user wants Portal mechanics!)
+9. ✅ **Tooltip Crash**: Added null check for entity.item
+10. ✅ **Directional Feedback**: Portal message tells player where it spawned
+11. ✅ **All Pickup Paths**: Victory sequence works consistently across all 3 methods
 
 ### Documentation
 - ✅ **VICTORY_CONDITION_PHASES.md**: Complete 16-phase roadmap
@@ -54,13 +57,16 @@ python engine.py --testing
 2. Find golden Amulet of Yendor (")
 3. Pick up with 'g' key
 4. ✅ Entity's 5 dramatic messages appear
-5. ✅ Magenta portal (O) spawns at player location
+5. ✅ Magenta portal (O) spawns **adjacent to player** (with directional message!)
 6. ✅ Game state changes to AMULET_OBTAINED
-7. **Step onto portal** (walk to the O symbol)
+7. **Walk to the portal** (move onto the O symbol)
 8. ✅ Confrontation screen appears
 9. Choose 'a' (Give Amulet)
 10. ✅ Bad ending plays
 11. Press ESC or R
+
+**Note:** Portal spawns in an adjacent open tile (right → down → left → up → diagonals).
+The message will tell you which direction: "to your right", "below you", etc.
 
 ### Test 2: Right-Click Adjacent Pickup
 1. Start new game (testing mode)
@@ -84,14 +90,18 @@ python engine.py --testing
 8. **Step onto portal**
 9. ✅ Confrontation triggers
 
-### Test 4: Portal is Unpickupable
+### Test 4: Portal is Pickupable (Future Feature!)
 1. Start new game (testing mode)
 2. Pick up amulet (any method)
-3. Portal spawns
+3. Portal spawns adjacent
 4. **Try to pick up portal with 'g' key**
-5. ✅ Cannot be picked up (no item component)
-6. **Try to right-click portal**
-7. ✅ Nothing happens (or perhaps shows description?)
+5. ✅ Portal CAN be picked up! (Goes into inventory)
+6. **Drop portal and step on it**
+7. ✅ Confrontation should trigger when stepping on dropped portal
+
+**Note:** Portal pickupability preserved for future "Wand of Portals" system!
+Current behavior: Portal in inventory doesn't trigger confrontation (need to drop it first).
+Future: Proper portal placement/usage mechanics with easter eggs!
 
 ### Test 5: Hall of Fame
 1. Complete victory flow (any ending)
@@ -102,14 +112,20 @@ python engine.py --testing
 
 ---
 
-## 🐛 Known Issues (If Any)
+## 🐛 Known Issues & Quirks
 
-### Issue: Portal Not Triggering Confrontation?
-**If** stepping on portal doesn't trigger confrontation:
-1. Check game state is `AMULET_OBTAINED` (should be set after pickup)
-2. Check portal entity has `is_portal=True` attribute
-3. Check player x,y matches portal x,y
-4. Check logs for "Victory sequence" messages
+### Portal Behavior (By Design)
+- **Portal spawns adjacent**: No longer at player's feet (fixed!)
+- **Portal is pickupable**: Intentional for future Portal system
+- **Portal in inventory doesn't work**: Need to drop it and step on it
+- **Future improvement**: "Use" action for portal in inventory
+
+### If Portal Entry Still Doesn't Work
+**Possible causes:**
+1. Portal picked up and in inventory (drop it first!)
+2. Game state not `AMULET_OBTAINED` (check logs)
+3. Portal entity doesn't have `is_portal=True`
+4. Player not on same x,y as portal
 
 **Debug Commands:**
 ```bash
@@ -126,7 +142,7 @@ grep -i "error\|traceback" debug.log
 
 ## 📊 Commits Summary
 
-**Total Commits:** 11  
+**Total Commits:** 14  
 **Branch:** `feature/victory-condition-phase1-mvp`
 
 1. **Foundation**: Victory components, screens, systems
@@ -139,8 +155,10 @@ grep -i "error\|traceback" debug.log
 8. **Bugfix #5**: Right-click adjacent pickup victory trigger
 9. **Bugfix #6**: Pathfinding arrival pickup victory trigger
 10. **Bugfix #7**: Reorder item creation (unique_items first)
-11. **Bugfix #8**: Portal non-pickupable (environmental feature)
+11. **Bugfix #8**: Portal non-pickupable (first attempt)
 12. **Documentation**: Complete 16-phase roadmap + Portal system
+13. **Documentation**: Phase 1 MVP completion checklist
+14. **Bugfix #9-11**: Portal spawn adjacent, pickupable, tooltip crash
 
 ---
 
