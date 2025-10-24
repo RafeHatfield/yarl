@@ -441,7 +441,7 @@ This positions the game as:
 | **Player Profiles/Achievements** | 2-3 weeks | 🔥 High | Persistent player stats across runs, multiple profiles | Profile management, aggregate statistics tracking |
 | **Multi-Save Games** | 2-3 weeks | 🔥 High | Multiple save slots with metadata display | Save slot UI, file management, save previews |
 | **Morgue Files** | 1-2 weeks | 🔥 High | Post-death character dumps - community, learning | Text file with complete run statistics |
-| **Victory Condition/Ascension** | 2-3 weeks | 🔥 CRITICAL | Clear goal - retrieve amulet, escape | Win screen, hall of fame, score system |
+| **Victory Condition/Ascension** | ✅ Phase 1 MVP COMPLETE | 🔥 CRITICAL | Clear goal - retrieve amulet, escape | **See [VICTORY_CONDITION_PHASES.md](VICTORY_CONDITION_PHASES.md) for complete 16-phase roadmap** |
 | **Player Naming** | 1 week | 🔥 High | Allow players to enter custom names for personalization | Add name input dialog at game start |
 
 **Combined Impact:** Gives players reasons to play "one more run" and sense of progression/completion.
@@ -733,13 +733,14 @@ This positions the game as:
 - **Vaults & Secret Doors** (2 weeks) - Discovery and exploration
 - **More Status Effects** (2-3 weeks) - Tactical depth
 - **Amulet System** (2 weeks) - Power spikes
-- **Victory Condition/Ascension** (2-3 weeks) - Clear goal
+- ✅ **Victory Condition/Ascension** - Phase 1 MVP Complete! See [VICTORY_CONDITION_PHASES.md](VICTORY_CONDITION_PHASES.md)
 
 ### **🌟 LEGENDARY Impact, Higher Effort (Do Fourth)**
 - **Wish/Genie System** (1-2 weeks) - Unforgettable moments
 - **Polymorph System** (3-4 weeks) - Power fantasy
 - **Item Interaction System** (3-4 weeks) - Emergent depth
 - **Unique Artifacts** (2-3 weeks) - Chase items
+- **🌀 Portal System (Wand of Portals)** (4-6 weeks) - Portal-esque tactical gameplay! See [VICTORY_CONDITION_PHASES.md](VICTORY_CONDITION_PHASES.md#-new-feature-portal-mechanics-system-future-phase---high-priority)
 
 ### **✅ Already Complete**
 - Variable Damage/Defense (v3.0)
