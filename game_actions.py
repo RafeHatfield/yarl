@@ -103,7 +103,7 @@ class ActionProcessor:
         
         # AUTO-PROCESS: Handle auto-explore or pathfinding movement if active (before processing input)
         # This enables auto-exploration and continuous pathfinding
-        if current_state == GameStates.PLAYERS_TURN:
+        if current_state in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
             player = self.state_manager.state.player
             
             # Check for auto-explore first (higher priority)
@@ -128,13 +128,18 @@ class ActionProcessor:
                 return  # Don't process other input this turn
         
         # Process keyboard actions
+        if action:
+            print(f">>> KEYBOARD ACTION RECEIVED: {action}")
         for action_type, value in action.items():
             # Use 'is not None' instead of just 'value' to handle inventory_index=0
             if value is not None and action_type in self.action_handlers:
                 try:
+                    print(f">>> Calling handler for {action_type}")
                     self.action_handlers[action_type](value)
                 except Exception as e:
                     logger.error(f"Error processing action {action_type}: {e}", exc_info=True)
+            else:
+                print(f">>> No handler for action {action_type}")
         
         # Process mouse actions
         for mouse_action_type, value in mouse_action.items():
