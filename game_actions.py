@@ -406,31 +406,42 @@ class ActionProcessor:
                 camera.update(player.x, player.y)
             
             # Check if player stepped on victory portal
+            print(f"\n{'='*80}")
+            print(f"MOVEMENT DEBUG: Player at ({player.x}, {player.y}), State: {current_state}")
+            print(f"{'='*80}\n")
             logger.info(f"=== MOVEMENT: Player moved to ({player.x}, {player.y}), Current state: {current_state}")
             if current_state == GameStates.AMULET_OBTAINED:
+                print(">>> STATE IS AMULET_OBTAINED! Checking for portal entry...")
                 logger.info("=== MOVEMENT: State is AMULET_OBTAINED, checking portal entry")
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 entities = self.state_manager.state.entities
                 message_log = self.state_manager.state.message_log
                 
+                print(f">>> Entities count: {len(entities)}")
                 logger.info(f"=== MOVEMENT: Entities count: {len(entities)}")
                 # Debug: Find portal in entities
                 portal_found = False
                 for entity in entities:
                     if hasattr(entity, 'is_portal') and entity.is_portal:
+                        print(f">>> PORTAL FOUND at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
                         logger.info(f"=== MOVEMENT: Portal found at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
                         portal_found = True
                 if not portal_found:
+                    print(">>> WARNING: NO PORTAL IN ENTITIES LIST!")
                     logger.warning("=== MOVEMENT: NO PORTAL FOUND IN ENTITIES LIST!")
                 
                 if victory_mgr.check_portal_entry(player, entities):
+                    print("\n" + "!"*80)
+                    print("PORTAL ENTRY DETECTED!!! TRIGGERING CONFRONTATION!!!")
+                    print("!"*80 + "\n")
                     logger.info("=== MOVEMENT: PORTAL ENTRY DETECTED! Triggering confrontation")
                     victory_mgr.enter_portal(player, message_log)
                     # Transition to confrontation state
                     self.state_manager.set_game_state(GameStates.CONFRONTATION)
                     return  # Don't process turn end, go straight to confrontation
                 else:
+                    print(">>> Portal entry check returned False (coordinates don't match)")
                     logger.info("=== MOVEMENT: Portal entry check returned False")
             
             # Check for passive secret door reveals
@@ -1699,14 +1710,23 @@ class ActionProcessor:
                         
                         # Check for victory condition trigger (Amulet of Yendor)
                         if item_was_added and hasattr(target_item, 'triggers_victory') and target_item.triggers_victory:
+                            print(f"\n{'*'*80}")
+                            print("AMULET PICKUP DETECTED!")
+                            print(f"{'*'*80}\n")
                             logger.info("=== RIGHT-CLICK PICKUP: Victory trigger detected! ===")
                             from victory_manager import get_victory_manager
                             victory_mgr = get_victory_manager()
                             
                             if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
+                                print(f"\n{'*'*80}")
+                                print(f"VICTORY SEQUENCE SUCCESS! Setting state to AMULET_OBTAINED")
+                                print(f"{'*'*80}\n")
                                 logger.info("=== RIGHT-CLICK: Victory sequence initiated successfully ===")
                                 self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
                             else:
+                                print(f"\n{'*'*80}")
+                                print("VICTORY SEQUENCE FAILED!")
+                                print(f"{'*'*80}\n")
                                 logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
                     
                     # End turn after pickup
