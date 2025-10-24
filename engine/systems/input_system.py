@@ -51,6 +51,7 @@ class InputSystem(System):
         # Handler mappings for different game states
         self.key_handlers = {
             GameStates.PLAYERS_TURN: handle_player_turn_keys,
+            GameStates.AMULET_OBTAINED: handle_player_turn_keys,  # Same controls as PLAYERS_TURN
             GameStates.PLAYER_DEAD: handle_player_dead_keys,
             GameStates.TARGETING: handle_targeting_keys,
             GameStates.SHOW_INVENTORY: handle_inventory_keys,
