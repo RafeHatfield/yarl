@@ -352,8 +352,11 @@ class ActionProcessor:
             move_data: Tuple of (dx, dy) movement deltas
         """
         current_state = self.state_manager.state.current_state
+        print(f">>> _handle_movement called! State: {current_state}, Move data: {move_data}")
         if current_state not in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
+            print(f">>> Movement blocked - wrong state: {current_state}")
             return
+        print(f">>> Movement allowed, processing...")
         
         # Validate move input
         if not isinstance(move_data, (tuple, list)) or len(move_data) != 2:
