@@ -712,6 +712,9 @@ class ActionProcessor:
                                 # Transition to AMULET_OBTAINED state
                                 self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
                                 logger.info("Victory sequence triggered successfully")
+                                entities.remove(entity)
+                                # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
+                                return  # Exit handler immediately
                             except Exception as e:
                                 logger.error(f"Error triggering victory sequence: {e}", exc_info=True)
                                 message_log.add_message(MB.warning(f"[DEBUG] Victory sequence error: {e}"))
@@ -1720,16 +1723,19 @@ class ActionProcessor:
                             if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
                                 print(f"\n{'*'*80}")
                                 print(f"VICTORY SEQUENCE SUCCESS! Setting state to AMULET_OBTAINED")
+                                print(f"State will remain AMULET_OBTAINED (not transitioning to enemy turn)")
                                 print(f"{'*'*80}\n")
                                 logger.info("=== RIGHT-CLICK: Victory sequence initiated successfully ===")
                                 self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                                # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
+                                return  # Exit handler, keep state as AMULET_OBTAINED
                             else:
                                 print(f"\n{'*'*80}")
                                 print("VICTORY SEQUENCE FAILED!")
                                 print(f"{'*'*80}\n")
                                 logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
                     
-                    # End turn after pickup
+                    # End turn after pickup (only if NOT victory sequence)
                     _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                 else:
                     # Not adjacent - pathfind to it
