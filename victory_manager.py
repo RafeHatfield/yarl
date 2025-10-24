@@ -156,7 +156,7 @@ class VictoryManager:
         if hasattr(player, 'victory') and player.victory:
             player.victory.start_confrontation()
         
-        message_log.add_message(MB.critical("You step through the portal..."))
+        message_log.add_message(MB.item_effect("You step through the portal..."))
         message_log.add_message(MB.warning("Reality twists around you!"))
     
     def get_entity_anxiety_dialogue(self, player) -> str:
