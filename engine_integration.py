@@ -255,7 +255,7 @@ def play_game_with_engine(
             from victory_manager import get_victory_manager
             
             choice, new_state = confrontation_menu(
-                con, engine.root_console,
+                con, 0,  # 0 is the root console in libtcod
                 constants['screen_width'], constants['screen_height']
             )
             
@@ -271,7 +271,7 @@ def play_game_with_engine(
                 from systems.hall_of_fame import get_hall_of_fame
                 
                 result = show_ending_screen(
-                    con, engine.root_console,
+                    con, 0,  # 0 is the root console in libtcod
                     constants['screen_width'], constants['screen_height'],
                     choice, player_stats
                 )
