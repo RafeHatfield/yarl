@@ -115,7 +115,7 @@ class VictoryManager:
             # Check if tile is in bounds
             if 0 <= x < game_map.width and 0 <= y < game_map.height:
                 # Check if tile is walkable
-                if not game_map.tiles[x][y]['blocked']:
+                if not game_map.tiles[x][y].blocked:
                     # Check if no entity blocking
                     blocking_entity = None
                     for entity in entities:
