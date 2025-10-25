@@ -14,6 +14,7 @@ from message_builder import MessageBuilder as MB
 from game_states import GameStates
 from entity_sorting_cache import invalidate_entity_cache
 from components.component_registry import ComponentType
+from state_management.state_config import StateManager
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,10 @@ class AISystem(System):
         self.turn_queue: List[Any] = []
         self.current_turn_entity = None
         self.turn_processing = False
+        
+        # State preservation for turn transitions
+        # Tracks what state we should restore after enemy turn
+        self.state_before_enemy_turn = None
 
         # Debug and profiling
         self.ai_debug_mode = False
@@ -146,10 +151,15 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    # Check if player has obtained the amulet - if so, return to AMULET_OBTAINED state
+                    # Determine which state to return to after enemy turn
+                    # Use StateManager to check if special states should be preserved
                     player = game_state.player
                     if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
-                        state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                        # Player has amulet - should we preserve AMULET_OBTAINED state?
+                        if StateManager.should_preserve_after_enemy_turn(GameStates.AMULET_OBTAINED):
+                            state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                        else:
+                            state_manager.set_game_state(GameStates.PLAYERS_TURN)
                     else:
                         state_manager.set_game_state(GameStates.PLAYERS_TURN)
                 else:
@@ -161,10 +171,15 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    # Check if player has obtained the amulet - if so, return to AMULET_OBTAINED state
+                    # Determine which state to return to after enemy turn
+                    # Use StateManager to check if special states should be preserved
                     player = game_state.player
                     if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
-                        state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                        # Player has amulet - should we preserve AMULET_OBTAINED state?
+                        if StateManager.should_preserve_after_enemy_turn(GameStates.AMULET_OBTAINED):
+                            state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                        else:
+                            state_manager.set_game_state(GameStates.PLAYERS_TURN)
                     else:
                         state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
