@@ -85,21 +85,14 @@ class TurnController:
             # Opening inventory doesn't consume a turn
             turn_controller.end_player_action(turn_consumed=False)
         """
-        logger.debug(f"TurnController.end_player_action called, turn_consumed={turn_consumed}")
-        
         if not turn_consumed:
-            logger.debug("Action didn't consume turn - no transition")
             return
         
         current_state = self.state_manager.state.current_state
-        logger.debug(f"Current state: {current_state}")
         
         # Check if this state should transition to enemy turn
         if not StateManager.should_transition_to_enemy(current_state):
-            logger.debug(f"State {current_state} doesn't transition to enemy turn")
             return
-        
-        logger.debug(f"State SHOULD transition to enemy, checking preservation...")
         
         # Check if we should preserve this state
         if StateManager.should_preserve_after_enemy_turn(current_state):
@@ -107,10 +100,8 @@ class TurnController:
             logger.info(f"Preserving state {current_state} for restoration after enemy turn")
         else:
             self.preserved_state = None
-            logger.debug(f"Not preserving state")
         
         # Transition to enemy turn
-        logger.debug(f"Calling _transition_to_enemy_turn()")
         self._transition_to_enemy_turn()
     
     def end_enemy_turn(self) -> None:
@@ -152,22 +143,15 @@ class TurnController:
         
         Uses TurnManager if available (Phase 3), always keeps GameStates in sync.
         """
-        logger.debug("_transition_to_enemy_turn called")
-        
         # Use TurnManager if available (Phase 3)
         if self.turn_manager:
-            logger.debug(f"TurnManager exists: {self.turn_manager}")
             from engine.turn_manager import TurnPhase
             self.turn_manager.advance_turn(TurnPhase.ENEMY)
-            logger.debug("TurnManager advanced to ENEMY phase")
         else:
-            logger.warning("TurnManager is None - cannot advance phase!")
+            logger.warning("TurnManager is None - using backward compatibility mode")
         
         # Always keep GameStates in sync (backward compatibility)
-        logger.debug("Setting state to ENEMY_TURN")
         self.state_manager.set_game_state(GameStates.ENEMY_TURN)
-        logger.debug("Transitioned to ENEMY_TURN")
-        logger.debug("State set to ENEMY_TURN complete")
     
     def force_state_transition(self, new_state: GameStates) -> None:
         """Force a state transition without turn logic.

@@ -109,9 +109,9 @@ class AISystem(System):
             # New system: Check TurnManager
             from engine.turn_manager import TurnPhase
             if not turn_manager.is_phase(TurnPhase.ENEMY):
-                # Only log mismatch once when it first happens
+                # Only log mismatch if it occurs (critical error)
                 if current_state == GameStates.ENEMY_TURN and not hasattr(self, '_mismatch_logged'):
-                    logger.error(f"STATE MISMATCH! GameState={current_state}, TurnManager phase={turn_manager.current_phase}")
+                    logger.error(f"CRITICAL: State mismatch! GameState={current_state}, TurnManager phase={turn_manager.current_phase}")
                     self._mismatch_logged = True
                 return
             else:
@@ -123,7 +123,6 @@ class AISystem(System):
             if current_state != GameStates.ENEMY_TURN:
                 return
 
-        logger.debug("AISystem: Processing AI turns!")
         # Process AI turns
         self._process_ai_turns(game_state)
 

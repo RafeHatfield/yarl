@@ -344,13 +344,10 @@ class ActionProcessor:
             move_data: Tuple of (dx, dy) movement deltas
         """
         current_state = self.state_manager.state.current_state
-        logger.debug(f"_handle_movement called! State: {current_state}, Move data: {move_data}")
         
         # Use StateManager to check if movement is allowed in current state
         if not StateManager.allows_movement(current_state):
-            logger.debug(f"Movement blocked - not allowed in state: {current_state}")
             return
-        logger.debug(f"Movement allowed, processing...")
         
         # Validate move input
         if not isinstance(move_data, (tuple, list)) or len(move_data) != 2:
@@ -403,15 +400,11 @@ class ActionProcessor:
                 camera.update(player.x, player.y)
             
             # Check if player stepped on victory portal
-            logger.debug(f"MOVEMENT: Player at ({player.x}, {player.y}), State: {current_state}")
             if current_state == GameStates.AMULET_OBTAINED:
-                logger.debug("STATE IS AMULET_OBTAINED! Checking for portal entry...")
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 entities = self.state_manager.state.entities
                 message_log = self.state_manager.state.message_log
-                
-                logger.debug(f"Entities count: {len(entities)}")
                 # Debug: Find portal in entities
                 portal_found = False
                 for entity in entities:
@@ -443,7 +436,6 @@ class ActionProcessor:
         self._process_player_status_effects()
         
         # Switch to enemy turn
-        logger.debug("ENDING TURN: Calling turn_controller.end_player_action()")
         self.turn_controller.end_player_action(turn_consumed=True)
     
     def _check_secret_reveals(self, player, game_map) -> None:
