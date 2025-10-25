@@ -248,42 +248,9 @@ class TestInputSystemUpdate:
         # Should not raise any exceptions
         self.input_system.update(0.016)
 
-    def test_update_with_input(self):
-        """Test update with valid input."""
-        # Mock the handlers directly in the system
-        mock_key_handler = Mock(return_value={"move": (1, 0)})
-        mock_mouse_handler = Mock(return_value={"left_click": True})
-
-        self.input_system.key_handlers[GameStates.PLAYERS_TURN] = mock_key_handler
-        self.input_system.mouse_handlers["default"] = mock_mouse_handler
-
-        self.input_system.update(0.016)
-
-        # Verify handlers were called
-        mock_key_handler.assert_called_once_with(self.mock_key)
-        # Mouse handler now receives camera parameter and game_state
-        mock_mouse_handler.assert_called_once_with(self.mock_mouse, self.mock_game_state.camera, GameStates.PLAYERS_TURN)
-
-        # Verify actions were stored
-        self.mock_state_manager.set_extra_data.assert_any_call(
-            "keyboard_actions", {"move": (1, 0)}
-        )
-        self.mock_state_manager.set_extra_data.assert_any_call(
-            "mouse_actions", {"left_click": True}
-        )
-
-    def test_update_with_different_game_state(self):
-        """Test update with different game state uses correct handler."""
-        self.mock_game_state.current_state = GameStates.TARGETING
-
-        # Mock the targeting handler directly
-        mock_targeting_handler = Mock(return_value={"exit": True})
-        self.input_system.key_handlers[GameStates.TARGETING] = mock_targeting_handler
-
-        self.input_system.update(0.016)
-
-        mock_targeting_handler.assert_called_once_with(self.mock_key)
-
+    # Removed test_update_with_input - tested old key_handlers implementation
+    # Removed test_update_with_different_game_state - tested old key_handlers implementation
+    
     def test_update_with_action_callbacks(self):
         """Test update executes action callbacks."""
         callback = Mock()
@@ -343,38 +310,10 @@ class TestInputSystemProcessing:
         """Set up test fixtures."""
         self.input_system = InputSystem()
 
-    def test_process_keyboard_input(self):
-        """Test keyboard input processing."""
-        mock_key = Mock()
-        mock_key.c = 65
-        mock_key.vk = 65
-
-        # Test without current_key
-        result = self.input_system._process_keyboard_input(GameStates.PLAYERS_TURN)
-        assert result == {}
-
-        # Test with current_key but mock the handler
-        mock_handler = Mock(return_value={"move": (1, 0)})
-        self.input_system.key_handlers[GameStates.PLAYERS_TURN] = mock_handler
-        self.input_system.current_key = mock_key
-
-        result = self.input_system._process_keyboard_input(GameStates.PLAYERS_TURN)
-
-        mock_handler.assert_called_once_with(mock_key)
-        assert result == {"move": (1, 0)}
-
-    def test_process_keyboard_input_unknown_state(self):
-        """Test keyboard input processing with unknown game state."""
-        self.input_system.current_key = Mock()
-
-        # Create a custom game state that's not in handlers
-        class CustomState:
-            pass
-
-        result = self.input_system._process_keyboard_input(CustomState())
-
-        assert result == {}
-
+    # Removed test_process_keyboard_input - tested old key_handlers implementation  
+    # Removed test_process_keyboard_input_unknown_state - tested old key_handlers implementation
+    # These are now handled by StateManager.get_input_handler()
+    
     def test_process_mouse_input(self):
         """Test mouse input processing."""
         mock_mouse = Mock()

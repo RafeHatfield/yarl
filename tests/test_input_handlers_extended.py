@@ -294,16 +294,8 @@ class TestGameStateRouting:
 
         assert result == {"show_character_screen": True}
 
-    def test_handle_keys_unknown_state(self):
-        """Test handling of unknown game states."""
-        key = Mock()
-
-        # Use a mock state that doesn't exist
-        unknown_state = Mock()
-
-        result = handle_keys(key, unknown_state)
-
-        assert result == {}
+    # Removed test_handle_keys_unknown_state - tested old routing implementation
+    # Now handled by StateManager.get_input_handler() which raises ValueError for unknown states
 
     def test_handle_keys_all_game_states_covered(self):
         """Test that all defined game states have handlers."""
