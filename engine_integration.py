@@ -4,9 +4,12 @@ This module provides functions to bridge the gap between the new GameEngine
 architecture and the existing game loop, allowing for gradual migration.
 """
 
+import logging
 import tcod.libtcodpy as libtcod
 
 from engine import GameEngine
+
+logger = logging.getLogger(__name__)
 
 
 # Global reference to current state manager for accessing from render functions
@@ -225,8 +228,6 @@ def play_game_with_engine(
             action, mouse_action, engine.state_manager.state.current_state
         ):
             # LOG: Track why game is exiting
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warning(f"=== GAME EXIT TRIGGERED ===")
             logger.warning(f"Action: {action}")
             logger.warning(f"Mouse action: {mouse_action}")
@@ -327,9 +328,6 @@ def _should_exit_game(action, mouse_action, current_state):
     Returns:
         bool: True if game should exit
     """
-    import logging
-    logger = logging.getLogger(__name__)
-    
     exit_action = action.get("exit")
     fullscreen = action.get("fullscreen")
 
