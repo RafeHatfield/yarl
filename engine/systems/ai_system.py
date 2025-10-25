@@ -88,23 +88,18 @@ class AISystem(System):
         Args:
             dt (float): Delta time since last update in seconds
         """
-        logger.debug("AISystem.update() called")
-        
         if not self.engine or not hasattr(self.engine, "state_manager"):
-            logger.debug("AISystem: No engine or state_manager, returning")
             return
 
         state_manager = self.engine.state_manager
         if not state_manager:
-            logger.debug("AISystem: No state_manager, returning")
             return
 
         game_state = state_manager.state
-        logger.debug(f"AISystem: current_state = {game_state.current_state}")
+        current_state = game_state.current_state
 
         # CRITICAL: Don't process AI if player is dead
-        if game_state.current_state == GameStates.PLAYER_DEAD:
-            logger.debug("AISystem: Player is DEAD, returning")
+        if current_state == GameStates.PLAYER_DEAD:
             return
 
         # Only process AI during enemy turn
@@ -114,12 +109,18 @@ class AISystem(System):
             # New system: Check TurnManager
             from engine.turn_manager import TurnPhase
             if not turn_manager.is_phase(TurnPhase.ENEMY):
-                logger.debug("AISystem: Not ENEMY phase in TurnManager, returning")
+                # Only log mismatch once when it first happens
+                if current_state == GameStates.ENEMY_TURN and not hasattr(self, '_mismatch_logged'):
+                    logger.error(f"STATE MISMATCH! GameState={current_state}, TurnManager phase={turn_manager.current_phase}")
+                    self._mismatch_logged = True
                 return
+            else:
+                # Reset mismatch flag when we're back in sync
+                if hasattr(self, '_mismatch_logged'):
+                    delattr(self, '_mismatch_logged')
         else:
             # Backward compatibility: Fall back to GameStates check
-            if game_state.current_state != GameStates.ENEMY_TURN:
-                logger.debug("AISystem: Not ENEMY_TURN state, returning")
+            if current_state != GameStates.ENEMY_TURN:
                 return
 
         logger.debug("AISystem: Processing AI turns!")

@@ -156,9 +156,12 @@ class TurnController:
         
         # Use TurnManager if available (Phase 3)
         if self.turn_manager:
+            logger.debug(f"TurnManager exists: {self.turn_manager}")
             from engine.turn_manager import TurnPhase
             self.turn_manager.advance_turn(TurnPhase.ENEMY)
             logger.debug("TurnManager advanced to ENEMY phase")
+        else:
+            logger.warning("TurnManager is None - cannot advance phase!")
         
         # Always keep GameStates in sync (backward compatibility)
         logger.debug("Setting state to ENEMY_TURN")
