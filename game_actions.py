@@ -60,6 +60,10 @@ class ActionProcessor:
         self.turn_manager = None  # Will be set by engine (Phase 3)
         self.constants = get_constants()
         
+        # Initialize TurnController for centralized turn flow
+        from systems.turn_controller import TurnController
+        self.turn_controller = TurnController(state_manager, self.turn_manager)
+        
         # Map action types to their handler methods
         self.action_handlers = {
             'show_inventory': self._handle_show_inventory,
@@ -350,7 +354,7 @@ class ActionProcessor:
         
         # Transition to enemy turn if player moved
         if end_turn:
-            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            self.turn_controller.end_player_action(turn_consumed=True)
     
     def _handle_movement(self, move_data: Tuple[int, int]) -> None:
         """Handle player movement.
@@ -389,7 +393,7 @@ class ActionProcessor:
             )
             # IMPORTANT: Consume the turn so paralysis duration decrements
             self._process_player_status_effects()
-            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            self.turn_controller.end_player_action(turn_consumed=True)
             return
         
         destination_x = player.x + dx
@@ -463,7 +467,7 @@ class ActionProcessor:
         self._process_player_status_effects()
         
         # Switch to enemy turn
-        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+        self.turn_controller.end_player_action(turn_consumed=True)
     
     def _check_secret_reveals(self, player, game_map) -> None:
         """Check for passive secret door reveals near the player.
@@ -676,7 +680,7 @@ class ActionProcessor:
         if current_state == GameStates.PLAYERS_TURN:
             # Process status effects at end of player turn
             self._process_player_status_effects()
-            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            self.turn_controller.end_player_action(turn_consumed=True)
     
     def _handle_pickup(self, _) -> None:
         """Handle item pickup. TAKES 1 TURN."""
@@ -737,7 +741,7 @@ class ActionProcessor:
                         
                         # TURN ECONOMY: Picking up an item takes 1 turn
                         self._process_player_status_effects()
-                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                        self.turn_controller.end_player_action(turn_consumed=True)
                 
                 break
         
@@ -767,7 +771,7 @@ class ActionProcessor:
             message_log.add_message(MB.info("You search carefully but find nothing."))
             # Still consumes a turn
             self._process_player_status_effects()
-            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            self.turn_controller.end_player_action(turn_consumed=True)
             return
         
         # Find the room the player is in
@@ -803,7 +807,7 @@ class ActionProcessor:
         
         # TURN ECONOMY: Searching takes 1 turn
         self._process_player_status_effects()
-        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+        self.turn_controller.end_player_action(turn_consumed=True)
     
     def _handle_inventory_action(self, inventory_index: int) -> None:
         """Handle inventory item usage or dropping.
@@ -929,7 +933,7 @@ class ActionProcessor:
                 # TURN ECONOMY: Throwing takes 1 turn
                 if not player_died:
                     self._process_player_status_effects()
-                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                    self.turn_controller.end_player_action(turn_consumed=True)
             else:
                 # No pre-selected target - enter throw targeting mode
                 self.state_manager.set_game_state(GameStates.THROW_TARGETING)
@@ -960,7 +964,7 @@ class ActionProcessor:
                 
                 # TURN ECONOMY: Equipping/unequipping takes 1 turn
                 self._process_player_status_effects()
-                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                self.turn_controller.end_player_action(turn_consumed=True)
             return
         
         # Not equipment - treat as consumable
@@ -1031,7 +1035,7 @@ class ActionProcessor:
             if item_consumed:
                 # Item was used/consumed - end turn
                 self._process_player_status_effects()
-                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                self.turn_controller.end_player_action(turn_consumed=True)
             else:
                 # Just return to player turn (e.g., examining item)
                 self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
@@ -1061,7 +1065,7 @@ class ActionProcessor:
         # TURN ECONOMY: Dropping an item takes 1 turn
         if item_dropped:
             self._process_player_status_effects()
-            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            self.turn_controller.end_player_action(turn_consumed=True)
         else:
             # Failed to drop (shouldn't happen, but be safe)
             self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
@@ -1304,7 +1308,7 @@ class ActionProcessor:
                     # TURN ECONOMY: Throwing takes 1 turn
                     if not player_died:
                         self._process_player_status_effects()
-                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                        self.turn_controller.end_player_action(turn_consumed=True)
                     return
         
         # Continue with regular TARGETING handling
@@ -1344,7 +1348,7 @@ class ActionProcessor:
                     # TURN ECONOMY: Completing targeting (using targeted item) takes 1 turn
                     if not player_died:
                         self._process_player_status_effects()
-                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                        self.turn_controller.end_player_action(turn_consumed=True)
         
         elif current_state == GameStates.THROW_TARGETING:
             # Handle throw targeting completion
@@ -1387,7 +1391,7 @@ class ActionProcessor:
                     # TURN ECONOMY: Throwing takes 1 turn
                     if not player_died:
                         self._process_player_status_effects()
-                        _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                        self.turn_controller.end_player_action(turn_consumed=True)
         
         elif current_state == GameStates.PLAYERS_TURN:
             # Handle mouse movement/combat during player turn
@@ -1441,7 +1445,7 @@ class ActionProcessor:
                     
                     # Unequipping takes a turn
                     self._process_player_status_effects()
-                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                    self.turn_controller.end_player_action(turn_consumed=True)
             else:
                 # User clicked on a hotkey button - process it!
                 logger.warning(f"SIDEBAR HOTKEY CLICKED: {action}")
@@ -1563,21 +1567,21 @@ class ActionProcessor:
             # Handle pathfinding start
             if result.get("start_pathfinding"):
                 # Switch to enemy turn to begin pathfinding movement
-                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                self.turn_controller.end_player_action(turn_consumed=True)
             
             # Handle pathfinding to enemy
             if result.get("pathfind_to_enemy"):
                 target_x, target_y = result["pathfind_to_enemy"]
                 if player.pathfinding.set_destination(target_x, target_y, game_map, entities):
                     # Successfully set path to enemy
-                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                    self.turn_controller.end_player_action(turn_consumed=True)
                 else:
                     # Could not find path to enemy
                     message_log.add_message(MB.warning("Cannot reach that enemy."))
             
             # Handle immediate enemy turn (for attacks)
             if result.get("enemy_turn"):
-                _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                self.turn_controller.end_player_action(turn_consumed=True)
     
     def process_pathfinding_turn(self) -> None:
         """Process one step of pathfinding movement during player turn.
@@ -1642,7 +1646,7 @@ class ActionProcessor:
             self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
         elif end_turn:
             # Player moved, give enemies their turn (which will cycle back to player)
-            _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+            self.turn_controller.end_player_action(turn_consumed=True)
         else:
             # Pathfinding completed/cancelled without movement, stay in player turn
             self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
@@ -1793,7 +1797,7 @@ class ActionProcessor:
                                 logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
                     
                     # End turn after pickup (only if NOT victory sequence)
-                    _transition_to_enemy_turn(self.state_manager, self.turn_manager)
+                    self.turn_controller.end_player_action(turn_consumed=True)
                 else:
                     # Not adjacent - pathfind to it
                     pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
