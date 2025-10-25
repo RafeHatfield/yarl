@@ -19,25 +19,6 @@ from components.component_registry import ComponentType
 logger = logging.getLogger(__name__)
 
 
-def _transition_to_enemy_turn(state_manager, turn_manager=None) -> None:
-    """Helper function to transition from player turn to enemy turn.
-    
-    Phase 3: Uses TurnManager if available, otherwise falls back to GameStates.
-    This provides a single point of control for turn transitions.
-    
-    Args:
-        state_manager: Game state manager
-        turn_manager: Optional turn manager (Phase 3 integration)
-    """
-    # Use TurnManager if available (Phase 3)
-    if turn_manager:
-        from engine.turn_manager import TurnPhase
-        turn_manager.advance_turn(TurnPhase.ENEMY)
-    
-    # Always keep GameStates in sync (backward compatibility)
-    state_manager.set_game_state(GameStates.ENEMY_TURN)
-
-
 class ActionProcessor:
     """Processes game actions in a modular, maintainable way.
     
