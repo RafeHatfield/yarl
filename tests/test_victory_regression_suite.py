@@ -44,7 +44,7 @@ class TestStateNotOverwrittenAfterVictory:
         
         FIX: Added 'return' statement after setting AMULET_OBTAINED.
         """
-        from game_actions import GameActions
+        from game_actions import ActionProcessor
         
         # Setup
         victory_mgr = Mock()
@@ -74,7 +74,7 @@ class TestStateNotOverwrittenAfterVictory:
         state_manager.set_game_state = Mock(side_effect=track)
         
         turn_manager = Mock()
-        game_actions = GameActions(state_manager, turn_manager)
+        game_actions = ActionProcessor(state_manager)
         
         # Execute
         with patch('game_actions._transition_to_enemy_turn') as mock_transition:
@@ -231,11 +231,11 @@ class TestLeftClickHandlerExists:
         
         FIX: Created _handle_left_click method.
         """
-        from game_actions import GameActions
+        from game_actions import ActionProcessor
         
         state_manager = Mock()
         turn_manager = Mock()
-        game_actions = GameActions(state_manager, turn_manager)
+        game_actions = ActionProcessor(state_manager)
         
         # Verify left_click is registered
         assert 'left_click' in game_actions.mouse_handlers, \
@@ -424,7 +424,7 @@ class TestVictorySystemIntegration:
         4. AI doesn't reset state
         5. Portal entry triggers confrontation
         """
-        from game_actions import GameActions
+        from game_actions import ActionProcessor
         from components.victory import Victory
         
         # Setup victory manager
@@ -472,7 +472,7 @@ class TestVictorySystemIntegration:
         state_manager.set_game_state = Mock(side_effect=track)
         
         turn_manager = Mock()
-        game_actions = GameActions(state_manager, turn_manager)
+        game_actions = ActionProcessor(state_manager)
         
         # STEP 1: Pick up amulet
         player.inventory.add_item.return_value = [{'message': Mock(), 'item_added': amulet}]

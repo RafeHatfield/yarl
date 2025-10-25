@@ -15,7 +15,7 @@ This is a regression test for the bug where:
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from game_states import GameStates
-from game_actions import GameActions
+from game_actions import ActionProcessor
 from entity import Entity
 
 
@@ -55,9 +55,8 @@ class TestVictoryStatePersistence:
             self.state_changes.append(new_state)
         self.state_manager.set_game_state = Mock(side_effect=track_state)
         
-        # Create game actions handler
-        self.turn_manager = Mock()
-        self.game_actions = GameActions(self.state_manager, self.turn_manager)
+        # Create game actions handler (ActionProcessor only takes state_manager now)
+        self.game_actions = ActionProcessor(self.state_manager)
     
     @patch('game_actions.get_victory_manager')
     def test_g_key_pickup_sets_amulet_obtained_and_returns(self, mock_get_victory_mgr):
@@ -207,9 +206,8 @@ class TestPortalEntryRequiresAmuletObtainedState:
         self.state_manager.state.fov_map = Mock()
         self.state_manager.state.camera = Mock()
         
-        # Create game actions handler
-        self.turn_manager = Mock()
-        self.game_actions = GameActions(self.state_manager, self.turn_manager)
+        # Create game actions handler (ActionProcessor only takes state_manager now)
+        self.game_actions = ActionProcessor(self.state_manager)
     
     @patch('game_actions.get_victory_manager')
     def test_portal_entry_checked_in_amulet_obtained_state(self, mock_get_victory_mgr):
@@ -337,7 +335,7 @@ class TestStatePersistenceScenario:
         state_manager.set_game_state = Mock(side_effect=track_state)
         
         turn_manager = Mock()
-        game_actions = GameActions(state_manager, turn_manager)
+        game_actions = ActionProcessor(state_manager)
         
         # STEP 1: Pick up amulet
         player.inventory.add_item.return_value = [

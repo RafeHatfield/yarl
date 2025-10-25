@@ -1,10 +1,11 @@
-"""Tests for the InputSystem."""
+"""Tests for the InputSystem (Refactored - StateManager integration)."""
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
 from engine.systems.input_system import InputSystem
 from game_states import GameStates
+from state_management.state_config import StateManager
 
 
 class TestInputSystemInitialization:
@@ -16,7 +17,7 @@ class TestInputSystemInitialization:
 
         assert input_system.name == "input"
         assert input_system.priority == 10  # Early priority
-        assert len(input_system.key_handlers) > 0
+        # NOTE: key_handlers removed - now uses StateManager.get_input_handler()
         assert len(input_system.mouse_handlers) > 0
         assert input_system.action_callbacks == {}
         assert input_system.input_buffer == []
@@ -30,19 +31,25 @@ class TestInputSystemInitialization:
         assert input_system.priority == 5
 
     def test_input_system_has_required_handlers(self):
-        """Test that InputSystem has handlers for all game states."""
+        """Test that StateManager has handlers for all game states.
+        
+        NOTE: InputSystem no longer stores key_handlers directly.
+        It queries StateManager.get_input_handler() dynamically.
+        """
+        # Trigger StateManager initialization
+        StateManager.get_config(GameStates.PLAYERS_TURN)
+        
+        # Check that StateManager has handlers for major game states
+        assert StateManager.get_input_handler(GameStates.PLAYERS_TURN) is not None
+        assert StateManager.get_input_handler(GameStates.PLAYER_DEAD) is not None
+        assert StateManager.get_input_handler(GameStates.TARGETING) is not None
+        assert StateManager.get_input_handler(GameStates.SHOW_INVENTORY) is not None
+        assert StateManager.get_input_handler(GameStates.DROP_INVENTORY) is not None
+        assert StateManager.get_input_handler(GameStates.LEVEL_UP) is not None
+        assert StateManager.get_input_handler(GameStates.CHARACTER_SCREEN) is not None
+        
+        # Check mouse handlers still exist in InputSystem
         input_system = InputSystem()
-
-        # Check that key handlers exist for major game states
-        assert GameStates.PLAYERS_TURN in input_system.key_handlers
-        assert GameStates.PLAYER_DEAD in input_system.key_handlers
-        assert GameStates.TARGETING in input_system.key_handlers
-        assert GameStates.SHOW_INVENTORY in input_system.key_handlers
-        assert GameStates.DROP_INVENTORY in input_system.key_handlers
-        assert GameStates.LEVEL_UP in input_system.key_handlers
-        assert GameStates.CHARACTER_SCREEN in input_system.key_handlers
-
-        # Check mouse handlers
         assert "default" in input_system.mouse_handlers
 
 
@@ -81,12 +88,17 @@ class TestInputSystemMethods:
         self.input_system.unregister_action_callback("nonexistent")
 
     def test_register_key_handler(self):
-        """Test registering custom key handlers."""
-        custom_handler = Mock()
-
-        self.input_system.register_key_handler(GameStates.PLAYERS_TURN, custom_handler)
-
-        assert self.input_system.key_handlers[GameStates.PLAYERS_TURN] is custom_handler
+        """Test that key handlers are managed by StateManager (no longer directly registered).
+        
+        NOTE: After refactoring, InputSystem no longer has register_key_handler().
+        Key handlers are configured in state_management/state_config.py.
+        """
+        # The old method doesn't exist - this is expected after refactoring
+        assert not hasattr(self.input_system, 'register_key_handler')
+        
+        # Instead, handlers are retrieved from StateManager
+        handler = StateManager.get_input_handler(GameStates.PLAYERS_TURN)
+        assert handler is not None
 
     def test_register_mouse_handler(self):
         """Test registering custom mouse handlers."""
