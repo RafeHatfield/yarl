@@ -448,6 +448,8 @@ class ActionProcessor:
         self._process_player_status_effects()
         
         # Switch to enemy turn
+        print(f">>> ENDING TURN: Calling turn_controller.end_player_action()")
+        logger.info("=== MOVEMENT: Ending player turn, transitioning to enemy turn")
         self.turn_controller.end_player_action(turn_consumed=True)
     
     def _check_secret_reveals(self, player, game_map) -> None:
