@@ -1257,7 +1257,7 @@ class EntityFactory:
         description = item_def.get('description', 'A unique item.')
         name = item_type.replace('_', ' ').title()
         
-        # Create item component
+        # Create item component (portals ARE pickupable for future Portal system!)
         item_component = Item()
         
         # Create entity

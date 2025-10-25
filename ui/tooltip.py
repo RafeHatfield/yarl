@@ -352,7 +352,7 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
             slot_name = slot_str.replace('_', ' ').title()
             tooltip_lines.append(f"Slot: {slot_name}")
     
-    elif entity.components.has(ComponentType.ITEM):
+    elif entity.components.has(ComponentType.ITEM) and entity.item:
         if entity.item.use_function:
             # Only reveal function details if item is identified
             if entity.item.identified:

@@ -623,6 +623,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                 inventory = player.get_component_optional(ComponentType.INVENTORY)
                 if inventory:
                     pickup_results = inventory.add_item(target_item)
+                    item_was_added = False
                     
                     for pickup_result in pickup_results:
                         message = pickup_result.get("message")
@@ -633,6 +634,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                         item_consumed = pickup_result.get("item_consumed")
                         if item_added or item_consumed:
                             entities.remove(target_item)
+                            item_was_added = True
                             # Use display name to respect identification status
                             display_name = target_item.name
                             if target_item.item:
@@ -640,6 +642,14 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                             results.append({
                                 "message": MB.item_pickup(f"Auto-picked up {display_name}!")
                             })
+                    
+                    # Check for victory condition trigger (Amulet of Yendor)
+                    if item_was_added and hasattr(target_item, 'triggers_victory') and target_item.triggers_victory:
+                        logger.info("=== PATHFINDING ARRIVAL PICKUP: Victory trigger detected! ===")
+                        # Signal to caller to handle victory sequence
+                        results.append({
+                            "victory_triggered": True
+                        })
             
             # Clear the auto-pickup target
             pathfinding.auto_pickup_target = None

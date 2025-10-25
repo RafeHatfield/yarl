@@ -21,7 +21,7 @@ def handle_keys(key, game_state, death_frame_counter=None):
     Returns:
         dict: Dictionary of actions to perform based on the key press
     """
-    if game_state == GameStates.PLAYERS_TURN:
+    if game_state in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
         return handle_player_turn_keys(key)
     elif game_state == GameStates.PLAYER_DEAD:
         return handle_player_dead_keys(key, death_frame_counter)

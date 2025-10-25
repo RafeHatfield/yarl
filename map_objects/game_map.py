@@ -226,8 +226,7 @@ class GameMap:
             amulet = factory.create_unique_item('amulet_of_yendor', amulet_x, amulet_y)
             if amulet:
                 entities.append(amulet)
-                import logging
-                logger = logging.getLogger(__name__)
+                # Logger already imported at module level (line 28)
                 logger.info(f"=== AMULET OF YENDOR SPAWNED at ({amulet_x}, {amulet_y}) ===")
         
         # Apply special rooms from level templates (Tier 2)
@@ -1061,7 +1060,10 @@ class GameMap:
                     break
                     
                 # Try to create item using smart fallback (supports all item types)
-                item = entity_factory.create_weapon(spawn.entity_type, x, y)
+                # Check unique items first (rare, specific names like "amulet_of_yendor")
+                item = entity_factory.create_unique_item(spawn.entity_type, x, y)
+                if not item:
+                    item = entity_factory.create_weapon(spawn.entity_type, x, y)
                 if not item:
                     item = entity_factory.create_armor(spawn.entity_type, x, y)
                 if not item:

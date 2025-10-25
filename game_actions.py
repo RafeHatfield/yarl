@@ -103,7 +103,7 @@ class ActionProcessor:
         
         # AUTO-PROCESS: Handle auto-explore or pathfinding movement if active (before processing input)
         # This enables auto-exploration and continuous pathfinding
-        if current_state == GameStates.PLAYERS_TURN:
+        if current_state in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
             player = self.state_manager.state.player
             
             # Check for auto-explore first (higher priority)
@@ -128,13 +128,18 @@ class ActionProcessor:
                 return  # Don't process other input this turn
         
         # Process keyboard actions
+        if action:
+            print(f">>> KEYBOARD ACTION RECEIVED: {action}")
         for action_type, value in action.items():
             # Use 'is not None' instead of just 'value' to handle inventory_index=0
             if value is not None and action_type in self.action_handlers:
                 try:
+                    print(f">>> Calling handler for {action_type}")
                     self.action_handlers[action_type](value)
                 except Exception as e:
                     logger.error(f"Error processing action {action_type}: {e}", exc_info=True)
+            else:
+                print(f">>> No handler for action {action_type}")
         
         # Process mouse actions
         for mouse_action_type, value in mouse_action.items():
@@ -352,8 +357,11 @@ class ActionProcessor:
             move_data: Tuple of (dx, dy) movement deltas
         """
         current_state = self.state_manager.state.current_state
+        print(f">>> _handle_movement called! State: {current_state}, Move data: {move_data}")
         if current_state not in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
+            print(f">>> Movement blocked - wrong state: {current_state}")
             return
+        print(f">>> Movement allowed, processing...")
         
         # Validate move input
         if not isinstance(move_data, (tuple, list)) or len(move_data) != 2:
@@ -406,17 +414,43 @@ class ActionProcessor:
                 camera.update(player.x, player.y)
             
             # Check if player stepped on victory portal
+            print(f"\n{'='*80}")
+            print(f"MOVEMENT DEBUG: Player at ({player.x}, {player.y}), State: {current_state}")
+            print(f"{'='*80}\n")
+            logger.info(f"=== MOVEMENT: Player moved to ({player.x}, {player.y}), Current state: {current_state}")
             if current_state == GameStates.AMULET_OBTAINED:
+                print(">>> STATE IS AMULET_OBTAINED! Checking for portal entry...")
+                logger.info("=== MOVEMENT: State is AMULET_OBTAINED, checking portal entry")
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 entities = self.state_manager.state.entities
                 message_log = self.state_manager.state.message_log
                 
+                print(f">>> Entities count: {len(entities)}")
+                logger.info(f"=== MOVEMENT: Entities count: {len(entities)}")
+                # Debug: Find portal in entities
+                portal_found = False
+                for entity in entities:
+                    if hasattr(entity, 'is_portal') and entity.is_portal:
+                        print(f">>> PORTAL FOUND at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
+                        logger.info(f"=== MOVEMENT: Portal found at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
+                        portal_found = True
+                if not portal_found:
+                    print(">>> WARNING: NO PORTAL IN ENTITIES LIST!")
+                    logger.warning("=== MOVEMENT: NO PORTAL FOUND IN ENTITIES LIST!")
+                
                 if victory_mgr.check_portal_entry(player, entities):
+                    print("\n" + "!"*80)
+                    print("PORTAL ENTRY DETECTED!!! TRIGGERING CONFRONTATION!!!")
+                    print("!"*80 + "\n")
+                    logger.info("=== MOVEMENT: PORTAL ENTRY DETECTED! Triggering confrontation")
                     victory_mgr.enter_portal(player, message_log)
                     # Transition to confrontation state
                     self.state_manager.set_game_state(GameStates.CONFRONTATION)
                     return  # Don't process turn end, go straight to confrontation
+                else:
+                    print(">>> Portal entry check returned False (coordinates don't match)")
+                    logger.info("=== MOVEMENT: Portal entry check returned False")
             
             # Check for passive secret door reveals
             self._check_secret_reveals(player, game_map)
@@ -677,12 +711,21 @@ class ActionProcessor:
                     if item_added or item_consumed:
                         # Check if this is the Amulet of Yendor (triggers victory sequence!)
                         if hasattr(entity, 'triggers_victory') and entity.triggers_victory:
-                            from victory_manager import get_victory_manager
-                            victory_mgr = get_victory_manager()
-                            game_map = self.state_manager.state.game_map
-                            victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log)
-                            # Transition to AMULET_OBTAINED state
-                            self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                            logger.info(f"=== AMULET PICKED UP! Triggering victory sequence ===")
+                            try:
+                                from victory_manager import get_victory_manager
+                                victory_mgr = get_victory_manager()
+                                game_map = self.state_manager.state.game_map
+                                victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log)
+                                # Transition to AMULET_OBTAINED state
+                                self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                                logger.info("Victory sequence triggered successfully")
+                                entities.remove(entity)
+                                # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
+                                return  # Exit handler immediately
+                            except Exception as e:
+                                logger.error(f"Error triggering victory sequence: {e}", exc_info=True)
+                                message_log.add_message(MB.warning(f"[DEBUG] Victory sequence error: {e}"))
                         
                         entities.remove(entity)
                         
@@ -1561,6 +1604,7 @@ class ActionProcessor:
         
         # Process results
         end_turn = False
+        victory_triggered = False
         for result in movement_result.get("results", []):
             message = result.get("message")
             if message:
@@ -1570,17 +1614,75 @@ class ActionProcessor:
             if result.get("fov_recompute"):
                 self.state_manager.request_fov_recompute()
             
+            # Handle victory trigger
+            if result.get("victory_triggered"):
+                logger.info("=== PATHFINDING: Victory sequence triggered via pathfinding pickup ===")
+                from victory_manager import get_victory_manager
+                victory_mgr = get_victory_manager()
+                
+                if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
+                    logger.info("=== PATHFINDING: Victory sequence initiated successfully ===")
+                    victory_triggered = True
+                else:
+                    logger.error("=== PATHFINDING: Victory sequence FAILED ===")
+            
             # Check if we should end the turn (continue pathfinding or interrupt after movement)
             if result.get("continue_pathfinding") or result.get("enemy_turn"):
                 end_turn = True
         
         # Transition to appropriate state
-        if end_turn:
+        if victory_triggered:
+            # Victory sequence initiated - set to special state
+            self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+        elif end_turn:
             # Player moved, give enemies their turn (which will cycle back to player)
             _transition_to_enemy_turn(self.state_manager, self.turn_manager)
         else:
             # Pathfinding completed/cancelled without movement, stay in player turn
             self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+    
+    def _handle_left_click(self, click_pos: Tuple[int, int]) -> None:
+        """Handle left mouse click (pathfind to location).
+        
+        Args:
+            click_pos: Tuple of (world_x, world_y) click coordinates
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state not in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
+            return
+        
+        player = self.state_manager.state.player
+        entities = self.state_manager.state.entities
+        game_map = self.state_manager.state.game_map
+        fov_map = self.state_manager.state.fov_map
+        message_log = self.state_manager.state.message_log
+        
+        if not all([player, game_map, fov_map]):
+            return
+        
+        world_x, world_y = click_pos
+        
+        # If click is on player's location, do nothing
+        if world_x == player.x and world_y == player.y:
+            return
+        
+        # Try to pathfind to clicked location
+        pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
+        if pathfinding:
+            success = pathfinding.set_destination(
+                world_x, world_y, game_map, entities, fov_map
+            )
+            
+            if success:
+                message_log.add_message(
+                    MB.info(f"Moving to ({world_x}, {world_y})...")
+                )
+                # Immediately start moving along the path
+                self._process_pathfinding_movement_action(None)
+            else:
+                message_log.add_message(
+                    MB.warning("Cannot path to that location.")
+                )
     
     def _handle_right_click(self, click_pos: Tuple[int, int]) -> None:
         """Handle right mouse click (context-aware: pickup items or cancel).
@@ -1648,6 +1750,7 @@ class ActionProcessor:
                     # Already adjacent - just pick it up
                     if player.inventory:
                         pickup_results = player.inventory.add_item(target_item)
+                        item_was_added = False
                         for result in pickup_results:
                             message = result.get("message")
                             if message:
@@ -1657,8 +1760,33 @@ class ActionProcessor:
                             item_consumed = result.get("item_consumed")
                             if item_added or item_consumed:
                                 entities.remove(target_item)
+                                item_was_added = True
+                        
+                        # Check for victory condition trigger (Amulet of Yendor)
+                        if item_was_added and hasattr(target_item, 'triggers_victory') and target_item.triggers_victory:
+                            print(f"\n{'*'*80}")
+                            print("AMULET PICKUP DETECTED!")
+                            print(f"{'*'*80}\n")
+                            logger.info("=== RIGHT-CLICK PICKUP: Victory trigger detected! ===")
+                            from victory_manager import get_victory_manager
+                            victory_mgr = get_victory_manager()
+                            
+                            if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
+                                print(f"\n{'*'*80}")
+                                print(f"VICTORY SEQUENCE SUCCESS! Setting state to AMULET_OBTAINED")
+                                print(f"State will remain AMULET_OBTAINED (not transitioning to enemy turn)")
+                                print(f"{'*'*80}\n")
+                                logger.info("=== RIGHT-CLICK: Victory sequence initiated successfully ===")
+                                self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                                # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
+                                return  # Exit handler, keep state as AMULET_OBTAINED
+                            else:
+                                print(f"\n{'*'*80}")
+                                print("VICTORY SEQUENCE FAILED!")
+                                print(f"{'*'*80}\n")
+                                logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
                     
-                    # End turn after pickup
+                    # End turn after pickup (only if NOT victory sequence)
                     _transition_to_enemy_turn(self.state_manager, self.turn_manager)
                 else:
                     # Not adjacent - pathfind to it

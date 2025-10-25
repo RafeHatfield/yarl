@@ -30,9 +30,9 @@ level_overrides:
       map_height: 60
       min_room_size: 10
       max_room_size: 15
-      max_rooms: 10  # More rooms to fit 2 vaults + features
+      max_rooms: 3  # More rooms to fit 2 vaults + features
       max_monsters_per_room: 1  # Keep it safe for testing
-      vault_count: 2  # Guarantee 2 vaults for testing
+      vault_count: 1  # Guarantee 2 vaults for testing
     
     guaranteed_spawns:
       mode: "additional"
@@ -63,6 +63,11 @@ level_overrides:
           count: 2  # Hint signs
       
       items:
+        # ========== VICTORY CONDITION TESTING ==========
+        # AMULET OF YENDOR - Test victory sequence on level 1!
+        - type: "amulet_of_yendor"
+          count: 1  # THE ultimate goal, spawns portal when picked up
+        
         # SURVIVAL GEAR - Make it easy to survive
         - type: "healing_potion"
           count: 20  # Lots of healing

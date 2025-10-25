@@ -146,7 +146,12 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    # Check if player has obtained the amulet - if so, return to AMULET_OBTAINED state
+                    player = game_state.player
+                    if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
+                        state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                    else:
+                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
                 else:
                     # Backward compatibility
                     # Process player status effects at start of their turn
@@ -156,7 +161,12 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    # Check if player has obtained the amulet - if so, return to AMULET_OBTAINED state
+                    player = game_state.player
+                    if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
+                        state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                    else:
+                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
         """Process all AI entity turns.
