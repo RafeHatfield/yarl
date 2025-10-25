@@ -3,15 +3,22 @@
 This module processes player input and translates it into game actions
 based on the current game state. Different states have different input
 handlers for context-appropriate controls.
+
+Input routing is now handled by StateManager (state_management/state_config.py)
+to maintain a single source of truth for state behavior.
 """
 
 import tcod.libtcodpy as libtcod
 
 from game_states import GameStates
+from state_management.state_config import StateManager
 
 
 def handle_keys(key, game_state, death_frame_counter=None):
     """Route key input to the appropriate handler based on game state.
+    
+    Now uses StateManager to eliminate hardcoded state lists.
+    See state_management/state_config.py for state configurations.
 
     Args:
         key: tcod Key object containing key press information
@@ -21,21 +28,16 @@ def handle_keys(key, game_state, death_frame_counter=None):
     Returns:
         dict: Dictionary of actions to perform based on the key press
     """
-    if game_state in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
-        return handle_player_turn_keys(key)
-    elif game_state == GameStates.PLAYER_DEAD:
-        return handle_player_dead_keys(key, death_frame_counter)
-    elif game_state == GameStates.TARGETING:
-        return handle_targeting_keys(key)
-    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.THROW_SELECT_ITEM):
-        return handle_inventory_keys(key)
-    elif game_state == GameStates.THROW_TARGETING:
-        return handle_targeting_keys(key)
-    elif game_state == GameStates.LEVEL_UP:
-        return handle_level_up_menu(key)
-    elif game_state == GameStates.CHARACTER_SCREEN:
-        return handle_character_screen(key)
-
+    # Get handler from StateManager (single source of truth!)
+    handler = StateManager.get_input_handler(game_state)
+    
+    if handler:
+        # Special case: PLAYER_DEAD needs death_frame_counter
+        if game_state == GameStates.PLAYER_DEAD:
+            return handler(key, death_frame_counter)
+        else:
+            return handler(key)
+    
     return {}
 
 
