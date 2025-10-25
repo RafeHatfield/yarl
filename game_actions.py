@@ -10,6 +10,7 @@ import logging
 
 from message_builder import MessageBuilder as MB
 from game_states import GameStates
+from state_management.state_config import StateManager
 from config.game_constants import get_constants
 from entity_sorting_cache import invalidate_entity_cache
 from entity_dialogue import EntityDialogue
@@ -103,7 +104,8 @@ class ActionProcessor:
         
         # AUTO-PROCESS: Handle auto-explore or pathfinding movement if active (before processing input)
         # This enables auto-exploration and continuous pathfinding
-        if current_state in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
+        # Use StateManager to check if movement/exploration is allowed
+        if StateManager.allows_movement(current_state):
             player = self.state_manager.state.player
             
             # Check for auto-explore first (higher priority)
@@ -358,8 +360,10 @@ class ActionProcessor:
         """
         current_state = self.state_manager.state.current_state
         print(f">>> _handle_movement called! State: {current_state}, Move data: {move_data}")
-        if current_state not in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
-            print(f">>> Movement blocked - wrong state: {current_state}")
+        
+        # Use StateManager to check if movement is allowed in current state
+        if not StateManager.allows_movement(current_state):
+            print(f">>> Movement blocked - not allowed in state: {current_state}")
             return
         print(f">>> Movement allowed, processing...")
         
@@ -677,7 +681,9 @@ class ActionProcessor:
     def _handle_pickup(self, _) -> None:
         """Handle item pickup. TAKES 1 TURN."""
         current_state = self.state_manager.state.current_state
-        if current_state != GameStates.PLAYERS_TURN:
+        
+        # Use StateManager to check if pickup is allowed in current state
+        if not StateManager.allows_pickup(current_state):
             return
         
         player = self.state_manager.state.player
