@@ -88,17 +88,23 @@ class AISystem(System):
         Args:
             dt (float): Delta time since last update in seconds
         """
+        print(f">>> AISystem.update() called")
+        
         if not self.engine or not hasattr(self.engine, "state_manager"):
+            print(f">>> AISystem: No engine or state_manager, returning")
             return
 
         state_manager = self.engine.state_manager
         if not state_manager:
+            print(f">>> AISystem: No state_manager, returning")
             return
 
         game_state = state_manager.state
+        print(f">>> AISystem: current_state = {game_state.current_state}")
 
         # CRITICAL: Don't process AI if player is dead
         if game_state.current_state == GameStates.PLAYER_DEAD:
+            print(f">>> AISystem: Player is DEAD, returning")
             return
 
         # Only process AI during enemy turn
@@ -108,12 +114,15 @@ class AISystem(System):
             # New system: Check TurnManager
             from engine.turn_manager import TurnPhase
             if not turn_manager.is_phase(TurnPhase.ENEMY):
+                print(f">>> AISystem: Not ENEMY phase in TurnManager, returning")
                 return
         else:
             # Backward compatibility: Fall back to GameStates check
             if game_state.current_state != GameStates.ENEMY_TURN:
+                print(f">>> AISystem: Not ENEMY_TURN state, returning")
                 return
 
+        print(f">>> AISystem: Processing AI turns!")
         # Process AI turns
         self._process_ai_turns(game_state)
 
