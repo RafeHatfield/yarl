@@ -65,22 +65,34 @@ class StateConfig:
         self.description = description
 
 
-# Import handlers at module level (after StateConfig is defined)
-from input_handlers import (
-    handle_player_turn_keys,
-    handle_targeting_keys,
-    handle_inventory_keys,
-    handle_player_dead_keys,
-    handle_level_up_menu,
-    handle_character_screen,
-)
-
-
 # =============================================================================
 # THE SINGLE SOURCE OF TRUTH
 # =============================================================================
+# NOTE: Handler imports delayed to _initialize_state_configurations() to avoid circular imports
 
-STATE_CONFIGURATIONS: Dict[GameStates, StateConfig] = {
+STATE_CONFIGURATIONS: Dict[GameStates, StateConfig] = {}
+
+
+def _initialize_state_configurations():
+    """Initialize state configurations with handler functions.
+    
+    This is called lazily to avoid circular import issues.
+    input_handlers imports StateManager, so we can't import handlers at module level.
+    """
+    if STATE_CONFIGURATIONS:
+        return  # Already initialized
+    
+    # Import handlers here to avoid circular import
+    from input_handlers import (
+        handle_player_turn_keys,
+        handle_targeting_keys,
+        handle_inventory_keys,
+        handle_player_dead_keys,
+        handle_level_up_menu,
+        handle_character_screen,
+    )
+    
+    STATE_CONFIGURATIONS.update({
     # Normal player turn - full control
     GameStates.PLAYERS_TURN: StateConfig(
         input_handler=handle_player_turn_keys,
@@ -217,7 +229,7 @@ STATE_CONFIGURATIONS: Dict[GameStates, StateConfig] = {
         allows_inventory=False,
         description="Failure - bad ending"
     ),
-}
+    })  # Close the update() call
 
 
 # =============================================================================
@@ -259,6 +271,9 @@ class StateManager:
         Raises:
             ValueError: If state has no configuration
         """
+        # Lazy initialization to avoid circular imports
+        _initialize_state_configurations()
+        
         if state not in STATE_CONFIGURATIONS:
             raise ValueError(
                 f"No configuration found for state: {state}. "
