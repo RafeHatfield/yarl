@@ -133,22 +133,13 @@ def _initialize_state_configurations():
         description="Selecting spell or wand target"
     ),
     
-    # Spell/wand is targeting (alternate targeting state)
-    GameStates.SPELL_TARGETING: StateConfig(
-        input_handler=handle_targeting_keys,
+    # Selecting item to throw
+    GameStates.THROW_SELECT_ITEM: StateConfig(
+        input_handler=handle_inventory_keys,
         allows_movement=False,
         allows_pickup=False,
         allows_inventory=False,
-        description="Targeting spell effect"
-    ),
-    
-    # Wand is targeting
-    GameStates.WAND_TARGETING: StateConfig(
-        input_handler=handle_targeting_keys,
-        allows_movement=False,
-        allows_pickup=False,
-        allows_inventory=False,
-        description="Targeting wand effect"
+        description="Selecting item to throw"
     ),
     
     # Throwing item targeting
