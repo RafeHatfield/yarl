@@ -72,6 +72,11 @@ def main():
     Initializes the game window, loads or creates a new game,
     and runs the main game loop until the player quits.
     """
+    # Initialize debug logging FIRST (before anything else)
+    from debug_logging import setup_debug_logging
+    debug_log = setup_debug_logging("debug.log", console_level="WARNING")
+    print(f"🔍 Debug logging enabled: {debug_log}")
+    
     # Parse command line arguments
     args = parse_arguments()
     

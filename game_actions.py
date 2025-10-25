@@ -344,13 +344,13 @@ class ActionProcessor:
             move_data: Tuple of (dx, dy) movement deltas
         """
         current_state = self.state_manager.state.current_state
-        print(f">>> _handle_movement called! State: {current_state}, Move data: {move_data}")
+        logger.debug(f"_handle_movement called! State: {current_state}, Move data: {move_data}")
         
         # Use StateManager to check if movement is allowed in current state
         if not StateManager.allows_movement(current_state):
-            print(f">>> Movement blocked - not allowed in state: {current_state}")
+            logger.debug(f"Movement blocked - not allowed in state: {current_state}")
             return
-        print(f">>> Movement allowed, processing...")
+        logger.debug(f"Movement allowed, processing...")
         
         # Validate move input
         if not isinstance(move_data, (tuple, list)) or len(move_data) != 2:
@@ -403,20 +403,15 @@ class ActionProcessor:
                 camera.update(player.x, player.y)
             
             # Check if player stepped on victory portal
-            print(f"\n{'='*80}")
-            print(f"MOVEMENT DEBUG: Player at ({player.x}, {player.y}), State: {current_state}")
-            print(f"{'='*80}\n")
-            logger.info(f"=== MOVEMENT: Player moved to ({player.x}, {player.y}), Current state: {current_state}")
+            logger.debug(f"MOVEMENT: Player at ({player.x}, {player.y}), State: {current_state}")
             if current_state == GameStates.AMULET_OBTAINED:
-                print(">>> STATE IS AMULET_OBTAINED! Checking for portal entry...")
-                logger.info("=== MOVEMENT: State is AMULET_OBTAINED, checking portal entry")
+                logger.debug("STATE IS AMULET_OBTAINED! Checking for portal entry...")
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 entities = self.state_manager.state.entities
                 message_log = self.state_manager.state.message_log
                 
-                print(f">>> Entities count: {len(entities)}")
-                logger.info(f"=== MOVEMENT: Entities count: {len(entities)}")
+                logger.debug(f"Entities count: {len(entities)}")
                 # Debug: Find portal in entities
                 portal_found = False
                 for entity in entities:
@@ -448,8 +443,7 @@ class ActionProcessor:
         self._process_player_status_effects()
         
         # Switch to enemy turn
-        print(f">>> ENDING TURN: Calling turn_controller.end_player_action()")
-        logger.info("=== MOVEMENT: Ending player turn, transitioning to enemy turn")
+        logger.debug("ENDING TURN: Calling turn_controller.end_player_action()")
         self.turn_controller.end_player_action(turn_consumed=True)
     
     def _check_secret_reveals(self, player, game_map) -> None:
