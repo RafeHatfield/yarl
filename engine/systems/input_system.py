@@ -22,19 +22,19 @@ from input_handlers import (
     handle_character_screen,
 )
 from game_states import GameStates
+from state_management.state_config import StateManager
 
 
 class InputSystem(System):
     """System responsible for processing input and generating actions.
 
     The InputSystem handles all keyboard and mouse input, routing it through
-    appropriate handlers based on the current game state. It provides a
-    centralized place for input processing and can be extended to support
-    different input methods, key remapping, and input recording/playback.
+    appropriate handlers based on the current game state. Input handlers are
+    retrieved from StateManager (see state_management/state_config.py) to
+    maintain a single source of truth.
 
     Attributes:
-        key_handlers (Dict): Mapping of game states to key handler functions
-        mouse_handlers (Dict): Mapping of game states to mouse handler functions
+        mouse_handlers (Dict): Mapping of mouse handler names to functions
         action_callbacks (Dict): Callbacks for specific actions
         input_buffer (list): Buffer for input recording/playback
         recording (bool): Whether input is being recorded
@@ -48,19 +48,9 @@ class InputSystem(System):
         """
         super().__init__("input", priority)
 
-        # Handler mappings for different game states
-        self.key_handlers = {
-            GameStates.PLAYERS_TURN: handle_player_turn_keys,
-            GameStates.AMULET_OBTAINED: handle_player_turn_keys,  # Same controls as PLAYERS_TURN
-            GameStates.PLAYER_DEAD: handle_player_dead_keys,
-            GameStates.TARGETING: handle_targeting_keys,
-            GameStates.SHOW_INVENTORY: handle_inventory_keys,
-            GameStates.DROP_INVENTORY: handle_inventory_keys,
-            GameStates.THROW_SELECT_ITEM: handle_inventory_keys,  # Use same handler as inventory
-            GameStates.THROW_TARGETING: handle_targeting_keys,     # Use same handler as targeting
-            GameStates.LEVEL_UP: handle_level_up_menu,
-            GameStates.CHARACTER_SCREEN: handle_character_screen,
-        }
+        # NOTE: Key handlers are now retrieved from StateManager.get_input_handler()
+        # This eliminates duplication between input_system and input_handlers
+        # See state_management/state_config.py for state configurations
 
         # Mouse handlers (could be state-specific in the future)
         self.mouse_handlers = {
@@ -149,13 +139,18 @@ class InputSystem(System):
     def _process_keyboard_input(self, current_state: GameStates) -> Dict[str, Any]:
         """Process keyboard input for the current game state.
 
+        Uses StateManager to get the appropriate input handler for the current state.
+        This eliminates hardcoded state-to-handler mappings.
+
         Args:
             current_state (GameStates): Current game state
 
         Returns:
             Dict[str, Any]: Dictionary of actions generated from input
         """
-        handler = self.key_handlers.get(current_state)
+        # Get handler from StateManager (single source of truth!)
+        handler = StateManager.get_input_handler(current_state)
+        
         if handler and self.current_key:
             # Pass death_frame_counter for PLAYER_DEAD state
             if current_state == GameStates.PLAYER_DEAD:
@@ -216,15 +211,6 @@ class InputSystem(System):
         """
         if action_name in self.action_callbacks:
             del self.action_callbacks[action_name]
-
-    def register_key_handler(self, state: GameStates, handler: Callable) -> None:
-        """Register a custom key handler for a specific game state.
-
-        Args:
-            state (GameStates): Game state to handle
-            handler (Callable): Function to handle key input for this state
-        """
-        self.key_handlers[state] = handler
 
     def register_mouse_handler(self, state_name: str, handler: Callable) -> None:
         """Register a custom mouse handler.

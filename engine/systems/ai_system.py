@@ -14,6 +14,7 @@ from message_builder import MessageBuilder as MB
 from game_states import GameStates
 from entity_sorting_cache import invalidate_entity_cache
 from components.component_registry import ComponentType
+from state_management.state_config import StateManager
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,10 @@ class AISystem(System):
         self.turn_queue: List[Any] = []
         self.current_turn_entity = None
         self.turn_processing = False
+        
+        # State preservation for turn transitions
+        # Tracks what state we should restore after enemy turn
+        self.state_before_enemy_turn = None
 
         # Debug and profiling
         self.ai_debug_mode = False
@@ -146,11 +151,20 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    # Check if player has obtained the amulet - if so, return to AMULET_OBTAINED state
-                    player = game_state.player
-                    if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
-                        state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                    # Use TurnController to restore appropriate state
+                    # (handles AMULET_OBTAINED preservation automatically)
+                    from systems.turn_controller import get_turn_controller
+                    turn_controller = get_turn_controller()
+                    if turn_controller:
+                        # Restore preserved state or return to PLAYERS_TURN
+                        if turn_controller.is_state_preserved():
+                            restored_state = turn_controller.get_preserved_state()
+                            state_manager.set_game_state(restored_state)
+                            turn_controller.clear_preserved_state()
+                        else:
+                            state_manager.set_game_state(GameStates.PLAYERS_TURN)
                     else:
+                        # Fallback if turn_controller not available
                         state_manager.set_game_state(GameStates.PLAYERS_TURN)
                 else:
                     # Backward compatibility
@@ -161,11 +175,20 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    # Check if player has obtained the amulet - if so, return to AMULET_OBTAINED state
-                    player = game_state.player
-                    if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
-                        state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                    # Use TurnController to restore appropriate state
+                    # (handles AMULET_OBTAINED preservation automatically)
+                    from systems.turn_controller import get_turn_controller
+                    turn_controller = get_turn_controller()
+                    if turn_controller:
+                        # Restore preserved state or return to PLAYERS_TURN
+                        if turn_controller.is_state_preserved():
+                            restored_state = turn_controller.get_preserved_state()
+                            state_manager.set_game_state(restored_state)
+                            turn_controller.clear_preserved_state()
+                        else:
+                            state_manager.set_game_state(GameStates.PLAYERS_TURN)
                     else:
+                        # Fallback if turn_controller not available
                         state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
