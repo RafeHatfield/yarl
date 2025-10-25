@@ -61,8 +61,8 @@ class ActionProcessor:
         self.constants = get_constants()
         
         # Initialize TurnController for centralized turn flow
-        from systems.turn_controller import TurnController
-        self.turn_controller = TurnController(state_manager, self.turn_manager)
+        from systems.turn_controller import TurnController, initialize_turn_controller
+        self.turn_controller = initialize_turn_controller(state_manager, self.turn_manager)
         
         # Map action types to their handler methods
         self.action_handlers = {

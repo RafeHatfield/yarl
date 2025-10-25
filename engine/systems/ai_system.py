@@ -151,16 +151,20 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    # Determine which state to return to after enemy turn
-                    # Use StateManager to check if special states should be preserved
-                    player = game_state.player
-                    if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
-                        # Player has amulet - should we preserve AMULET_OBTAINED state?
-                        if StateManager.should_preserve_after_enemy_turn(GameStates.AMULET_OBTAINED):
-                            state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                    # Use TurnController to restore appropriate state
+                    # (handles AMULET_OBTAINED preservation automatically)
+                    from systems.turn_controller import get_turn_controller
+                    turn_controller = get_turn_controller()
+                    if turn_controller:
+                        # Restore preserved state or return to PLAYERS_TURN
+                        if turn_controller.is_state_preserved():
+                            restored_state = turn_controller.get_preserved_state()
+                            state_manager.set_game_state(restored_state)
+                            turn_controller.clear_preserved_state()
                         else:
                             state_manager.set_game_state(GameStates.PLAYERS_TURN)
                     else:
+                        # Fallback if turn_controller not available
                         state_manager.set_game_state(GameStates.PLAYERS_TURN)
                 else:
                     # Backward compatibility
@@ -171,16 +175,20 @@ class AISystem(System):
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
                     
-                    # Determine which state to return to after enemy turn
-                    # Use StateManager to check if special states should be preserved
-                    player = game_state.player
-                    if player and hasattr(player, 'victory') and player.victory and player.victory.amulet_obtained:
-                        # Player has amulet - should we preserve AMULET_OBTAINED state?
-                        if StateManager.should_preserve_after_enemy_turn(GameStates.AMULET_OBTAINED):
-                            state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                    # Use TurnController to restore appropriate state
+                    # (handles AMULET_OBTAINED preservation automatically)
+                    from systems.turn_controller import get_turn_controller
+                    turn_controller = get_turn_controller()
+                    if turn_controller:
+                        # Restore preserved state or return to PLAYERS_TURN
+                        if turn_controller.is_state_preserved():
+                            restored_state = turn_controller.get_preserved_state()
+                            state_manager.set_game_state(restored_state)
+                            turn_controller.clear_preserved_state()
                         else:
                             state_manager.set_game_state(GameStates.PLAYERS_TURN)
                     else:
+                        # Fallback if turn_controller not available
                         state_manager.set_game_state(GameStates.PLAYERS_TURN)
 
     def _process_ai_turns(self, game_state) -> None:
