@@ -53,7 +53,8 @@ class EntitySortingCache:
         """
         if self._is_cache_valid(entities):
             self._stats['cache_hits'] += 1
-            logger.debug(f"Entity sorting cache hit (entities: {len(entities)})")
+            # Don't log cache hits - they happen every frame and spam the log
+            # logger.debug(f"Entity sorting cache hit (entities: {len(entities)})")
             return self._cached_entities
         
         # Cache miss - need to sort and update cache
