@@ -707,16 +707,21 @@ class ActionProcessor:
                                 from victory_manager import get_victory_manager
                                 victory_mgr = get_victory_manager()
                                 game_map = self.state_manager.state.game_map
-                                victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log)
-                                # Transition to AMULET_OBTAINED state
-                                self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
-                                logger.info("Victory sequence triggered successfully")
-                                entities.remove(entity)
-                                # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
-                                return  # Exit handler immediately
+                                # Check if victory sequence succeeded
+                                if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
+                                    # Victory sequence succeeded - transition to AMULET_OBTAINED state
+                                    self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                                    logger.info("Victory sequence triggered successfully")
+                                    entities.remove(entity)
+                                    # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
+                                    return  # Exit handler immediately
+                                else:
+                                    # Victory sequence failed - fall through to normal pickup
+                                    logger.warning("Victory sequence failed, treating as normal pickup")
                             except Exception as e:
                                 logger.error(f"Error triggering victory sequence: {e}", exc_info=True)
                                 message_log.add_message(MB.warning(f"[DEBUG] Victory sequence error: {e}"))
+                                # Fall through to normal pickup on error
                         
                         entities.remove(entity)
                         

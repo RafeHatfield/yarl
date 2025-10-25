@@ -41,6 +41,7 @@ class TestVictoryStatePersistence:
         self.amulet.y = 10
         self.amulet.item = Mock()
         self.amulet.triggers_victory = True
+        self.amulet.components = Mock()  # Add components attribute for right-click handler
         
         # Set up state
         self.state_manager.state.player = self.player
@@ -55,10 +56,14 @@ class TestVictoryStatePersistence:
             self.state_changes.append(new_state)
         self.state_manager.set_game_state = Mock(side_effect=track_state)
         
+        # Mock TurnController (used for turn transitions after refactoring)
+        self.mock_turn_controller = Mock()
+        
         # Create game actions handler (ActionProcessor only takes state_manager now)
         self.game_actions = ActionProcessor(self.state_manager)
+        self.game_actions.turn_controller = self.mock_turn_controller
     
-    @patch('game_actions.get_victory_manager')
+    @patch('victory_manager.get_victory_manager')
     def test_g_key_pickup_sets_amulet_obtained_and_returns(self, mock_get_victory_mgr):
         """Test that 'g' key pickup sets AMULET_OBTAINED and returns immediately.
         
@@ -89,7 +94,7 @@ class TestVictoryStatePersistence:
         # Verify victory manager was called
         assert victory_mgr.handle_amulet_pickup.called
     
-    @patch('game_actions.get_victory_manager')
+    @patch('victory_manager.get_victory_manager')
     def test_right_click_adjacent_pickup_sets_amulet_obtained_and_returns(self, mock_get_victory_mgr):
         """Test that right-click adjacent pickup sets AMULET_OBTAINED and returns."""
         # Setup
@@ -120,7 +125,7 @@ class TestVictoryStatePersistence:
         assert len(self.state_changes) == 1, \
             "State should only be set once (handler should return after victory)"
     
-    @patch('game_actions.get_victory_manager')
+    @patch('victory_manager.get_victory_manager')
     def test_non_amulet_pickup_transitions_to_enemy_turn(self, mock_get_victory_mgr):
         """Test that picking up normal items still transitions to enemy turn.
         
@@ -140,20 +145,18 @@ class TestVictoryStatePersistence:
             {'message': Mock(), 'item_added': normal_item}
         ]
         
-        # Mock the turn transition function
-        with patch('game_actions._transition_to_enemy_turn') as mock_transition:
-            # Execute
-            self.game_actions._handle_pickup(None)
-            
-            # Verify transition WAS called for normal items
-            assert mock_transition.called, \
-                "Normal item pickup should still transition to enemy turn"
-            
-            # Verify AMULET_OBTAINED was NOT set
-            assert GameStates.AMULET_OBTAINED not in self.state_changes, \
-                "AMULET_OBTAINED should not be set for normal items"
+        # Execute
+        self.game_actions._handle_pickup(None)
+        
+        # Verify TurnController.end_player_action WAS called for normal items
+        assert self.mock_turn_controller.end_player_action.called, \
+            "Normal item pickup should still end player action (trigger turn transition)"
+        
+        # Verify AMULET_OBTAINED was NOT set
+        assert GameStates.AMULET_OBTAINED not in self.state_changes, \
+            "AMULET_OBTAINED should not be set for normal items"
     
-    @patch('game_actions.get_victory_manager')
+    @patch('victory_manager.get_victory_manager')
     def test_amulet_pickup_failure_still_transitions(self, mock_get_victory_mgr):
         """Test that if victory sequence fails, turn still transitions normally."""
         # Setup
@@ -166,14 +169,12 @@ class TestVictoryStatePersistence:
             {'message': Mock(), 'item_added': self.amulet}
         ]
         
-        # Mock the turn transition function
-        with patch('game_actions._transition_to_enemy_turn') as mock_transition:
-            # Execute
-            self.game_actions._handle_pickup(None)
-            
-            # Verify transition WAS called (because victory failed)
-            assert mock_transition.called, \
-                "If victory sequence fails, should still transition to enemy turn"
+        # Execute
+        self.game_actions._handle_pickup(None)
+        
+        # Verify TurnController.end_player_action WAS called (because victory failed)
+        assert self.mock_turn_controller.end_player_action.called, \
+            "If victory sequence fails, should still end player action"
 
 
 class TestPortalEntryRequiresAmuletObtainedState:
@@ -206,10 +207,14 @@ class TestPortalEntryRequiresAmuletObtainedState:
         self.state_manager.state.fov_map = Mock()
         self.state_manager.state.camera = Mock()
         
+        # Mock TurnController
+        self.mock_turn_controller = Mock()
+        
         # Create game actions handler (ActionProcessor only takes state_manager now)
         self.game_actions = ActionProcessor(self.state_manager)
+        self.game_actions.turn_controller = self.mock_turn_controller
     
-    @patch('game_actions.get_victory_manager')
+    @patch('victory_manager.get_victory_manager')
     def test_portal_entry_checked_in_amulet_obtained_state(self, mock_get_victory_mgr):
         """Test that portal entry is checked when state is AMULET_OBTAINED."""
         # Setup
@@ -240,7 +245,7 @@ class TestPortalEntryRequiresAmuletObtainedState:
         # Setup - wrong state (this is what happened in the bug)
         self.state_manager.state.current_state = GameStates.PLAYERS_TURN
         
-        with patch('game_actions.get_victory_manager') as mock_get_victory_mgr:
+        with patch('victory_manager.get_victory_manager') as mock_get_victory_mgr:
             victory_mgr = Mock()
             victory_mgr.check_portal_entry = Mock(return_value=True)
             mock_get_victory_mgr.return_value = victory_mgr
@@ -249,15 +254,14 @@ class TestPortalEntryRequiresAmuletObtainedState:
             self.player.x = self.portal.x
             self.player.y = self.portal.y
             
-            # Execute movement
-            with patch('game_actions._transition_to_enemy_turn'):
-                self.game_actions._handle_movement({'move': (0, 0)})
+            # Execute movement (no need to patch - TurnController mocked in setup)
+            self.game_actions._handle_movement({'move': (0, 0)})
             
             # Verify portal entry was NOT checked (wrong state)
             assert not victory_mgr.check_portal_entry.called, \
                 "Portal entry should NOT be checked in PLAYERS_TURN state"
     
-    @patch('game_actions.get_victory_manager')
+    @patch('victory_manager.get_victory_manager')
     def test_state_persistence_through_movement(self, mock_get_victory_mgr):
         """Integration test: State stays AMULET_OBTAINED through movement."""
         # Setup
@@ -265,28 +269,26 @@ class TestPortalEntryRequiresAmuletObtainedState:
         
         victory_mgr = Mock()
         victory_mgr.check_portal_entry = Mock(return_value=False)  # Not on portal yet
-        mock_get_victory_manager.return_value = victory_mgr
+        mock_get_victory_mgr.return_value = victory_mgr
         
         # Move player (not onto portal)
-        with patch('game_actions._transition_to_enemy_turn') as mock_transition:
-            self.game_actions._handle_movement({'move': (0, 1)})
-            
-            # Verify turn still transitions (movement takes a turn)
-            assert mock_transition.called, \
-                "Movement should still end turn in AMULET_OBTAINED state"
-            
-            # But state should have been preserved during portal check
-            # (The check runs BEFORE transition)
-            assert victory_mgr.check_portal_entry.called, \
-                "Portal check should run while state is still AMULET_OBTAINED"
+        self.game_actions._handle_movement({'move': (0, 1)})
+        
+        # Verify turn controller end_player_action was called (movement takes a turn)
+        assert self.mock_turn_controller.end_player_action.called, \
+            "Movement should still end turn in AMULET_OBTAINED state"
+        
+        # But state should have been preserved during portal check
+        # (The check runs BEFORE transition)
+        assert victory_mgr.check_portal_entry.called, \
+            "Portal check should run while state is still AMULET_OBTAINED"
 
 
 class TestStatePersistenceScenario:
     """End-to-end scenario test for the bug."""
     
-    @patch('game_actions.get_victory_manager')
-    @patch('game_actions._transition_to_enemy_turn')
-    def test_complete_victory_sequence_scenario(self, mock_transition, mock_get_victory_mgr):
+    @patch('victory_manager.get_victory_manager')
+    def test_complete_victory_sequence_scenario(self, mock_get_victory_mgr):
         """Test complete scenario: pickup amulet, move, enter portal.
         
         This reproduces the exact user flow that triggered the bug.
@@ -334,8 +336,12 @@ class TestStatePersistenceScenario:
             state_manager.state.current_state = new_state
         state_manager.set_game_state = Mock(side_effect=track_state)
         
-        turn_manager = Mock()
+        # Mock TurnController
+        mock_turn_controller = Mock()
+        
+        # Create game actions with mocked TurnController
         game_actions = ActionProcessor(state_manager)
+        game_actions.turn_controller = mock_turn_controller
         
         # STEP 1: Pick up amulet
         player.inventory.add_item.return_value = [

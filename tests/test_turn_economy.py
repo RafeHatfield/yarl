@@ -79,6 +79,7 @@ class TestInventoryActionTurnEconomy:
         # Setup
         state_manager = Mock()
         state_manager.state = Mock()
+        state_manager.state.current_state = GameStates.PLAYERS_TURN  # Add current_state
         state_manager.state.player = Mock()
         state_manager.state.player.status_effects = Mock()
         state_manager.state.player.status_effects.process_turn_start = Mock(return_value=[])
@@ -98,18 +99,21 @@ class TestInventoryActionTurnEconomy:
         ]
         
         processor = ActionProcessor(state_manager)
+        # Mock TurnController
+        processor.turn_controller = Mock()
         
         # Execute use
         processor._use_inventory_item(item)
         
-        # Verify turn ended
-        state_manager.set_game_state.assert_called_with(GameStates.ENEMY_TURN)
+        # Verify turn ended (via TurnController, not state_manager)
+        processor.turn_controller.end_player_action.assert_called_once()
     
     def test_equipping_item_ends_turn(self):
         """Equipping an item should end the turn."""
         # Setup
         state_manager = Mock()
         state_manager.state = Mock()
+        state_manager.state.current_state = GameStates.PLAYERS_TURN  # Add current_state
         state_manager.state.player = Mock()
         state_manager.state.player.equipment = Mock()
         state_manager.state.player.equipment.toggle_equip = Mock(return_value=[])  # Mock equipment toggle
@@ -127,12 +131,14 @@ class TestInventoryActionTurnEconomy:
         ]
         
         processor = ActionProcessor(state_manager)
+        # Mock TurnController
+        processor.turn_controller = Mock()
         
         # Execute equip
         processor._use_inventory_item(item)
         
-        # Verify turn ended
-        state_manager.set_game_state.assert_called_with(GameStates.ENEMY_TURN)
+        # Verify turn ended (via TurnController)
+        processor.turn_controller.end_player_action.assert_called_once()
     
     def test_entering_targeting_does_not_end_turn(self):
         """Entering targeting mode should NOT end the turn yet."""
@@ -171,6 +177,7 @@ class TestDropTurnEconomy:
         # Setup
         state_manager = Mock()
         state_manager.state = Mock()
+        state_manager.state.current_state = GameStates.PLAYERS_TURN  # Add current_state
         state_manager.state.player = Mock()
         state_manager.state.player.x = 5
         state_manager.state.player.y = 5
@@ -188,19 +195,20 @@ class TestDropTurnEconomy:
         ]
         
         processor = ActionProcessor(state_manager)
+        # Mock TurnController
+        processor.turn_controller = Mock()
         
         # Execute drop
         processor._drop_inventory_item(item)
         
-        # Verify turn ended
-        state_manager.set_game_state.assert_called_with(GameStates.ENEMY_TURN)
+        # Verify turn ended (via TurnController)
+        processor.turn_controller.end_player_action.assert_called_once()
 
 
 class TestTargetingCompletionTurnEconomy:
     """Test that completing targeting consumes a turn."""
     
-    @patch('game_actions._transition_to_enemy_turn')
-    def test_completing_targeting_ends_turn(self, mock_transition):
+    def test_completing_targeting_ends_turn(self):
         """Selecting a target for a spell should end the turn."""
         # Setup
         state_manager = Mock()
@@ -225,13 +233,15 @@ class TestTargetingCompletionTurnEconomy:
         ]
         
         processor = ActionProcessor(state_manager)
+        # Mock TurnController
+        processor.turn_controller = Mock()
         
         # Execute targeting completion
         click_pos = (10, 10)
         processor._handle_left_click(click_pos)
         
-        # Verify turn ended
-        mock_transition.assert_called_once()
+        # Verify turn ended (via TurnController)
+        processor.turn_controller.end_player_action.assert_called_once()
 
 
 class TestIdentifyModeEffect:
