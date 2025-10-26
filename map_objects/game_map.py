@@ -317,6 +317,10 @@ class GameMap:
         # Get a random number of monsters and items
         number_of_monsters = randint(0, max_monsters_per_room)
         number_of_items = randint(0, max_items_per_room)
+        
+        # DEBUG: Tier 1 - No monsters mode (peaceful testing)
+        if config.no_monsters:
+            number_of_monsters = 0
 
         monster_chances = {
             "orc": 80,

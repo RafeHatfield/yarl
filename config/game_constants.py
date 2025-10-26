@@ -791,6 +791,18 @@ class GameConstants:
             'gameplay': asdict(self.gameplay),
         }
     
+    def _get_fov_radius(self) -> int:
+        """Get FOV radius, accounting for debug reveal-map mode.
+        
+        Returns:
+            FOV radius (10 normally, 999 in reveal-map mode)
+        """
+        from config.testing_config import get_testing_config
+        config = get_testing_config()
+        if config.reveal_map:
+            return 999  # Infinite FOV - see entire map
+        return self.rendering.DEFAULT_FOV_RADIUS
+    
     def to_legacy_constants(self) -> Dict[str, Any]:
         """Convert to the legacy constants dictionary format.
         
@@ -810,7 +822,7 @@ class GameConstants:
             'window_title': 'Yarl (Catacombs of Yarl)',
             
             # FOV settings
-            'fov_radius': self.rendering.DEFAULT_FOV_RADIUS,
+            'fov_radius': self._get_fov_radius(),
             'fov_light_walls': self.rendering.DEFAULT_FOV_LIGHT_WALLS,
             'fov_algorithm': self.rendering.DEFAULT_FOV_ALGORITHM,
             

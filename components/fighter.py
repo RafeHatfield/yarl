@@ -481,6 +481,18 @@ class Fighter:
                         'message': MB.info(f"{self.owner.name} resists {damage_type} damage! ({resistance_pct}% resistance, {original_damage} → {amount})")
                     })
 
+        # DEBUG: God mode protection (Tier 1)
+        from config.testing_config import get_testing_config
+        config = get_testing_config()
+        if config.god_mode and self.owner and hasattr(self.owner, 'name') and self.owner.name == "Player":
+            # Player in god mode - prevent HP from going below 1
+            if self.hp - amount < 1:
+                # Reduce damage to leave player at 1 HP
+                amount = self.hp - 1
+                results.append({
+                    'message': MB.warning("🛡️ GOD MODE: Fatal damage prevented!")
+                })
+        
         self.hp -= amount
         
         # Record damage taken (only for player)
