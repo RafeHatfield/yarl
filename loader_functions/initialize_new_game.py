@@ -286,7 +286,7 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
     # Always give healing potions (5 base + 1 per 5 levels)
     num_potions = 5 + (dungeon_level // 5)
     for i in range(num_potions):
-        potion = entity_factory.create_item('healing_potion', 0, 0, 1)
+        potion = entity_factory.create_spell_item('healing_potion', 0, 0)
         if potion and player.inventory:
             player.inventory.add_item(potion)
     logger.info(f"   Granted {num_potions} healing potions")
@@ -316,7 +316,7 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
     # Give utility scrolls for deep levels
     if dungeon_level >= 15:
         for i in range(3):
-            scroll = entity_factory.create_item('teleport_scroll', 0, 0, dungeon_level)
+            scroll = entity_factory.create_spell_item('teleport_scroll', 0, 0)
             if scroll and player.inventory:
                 player.inventory.add_item(scroll)
         logger.info("   Granted 3 teleport scrolls")
