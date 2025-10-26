@@ -121,6 +121,8 @@ def handle_player_turn_keys(key):
         return {"drop_inventory": True}
     elif key_char == "t":
         return {"throw": True}
+    elif key_char == "T":  # Phase 3: Talk to NPCs
+        return {"talk": True}
     elif key.vk == libtcod.KEY_ENTER:
         return {"take_stairs": True}
     elif key_char == "c":

@@ -194,6 +194,15 @@ def _initialize_state_configurations():
         description="Viewing character sheet"
     ),
     
+    # Talking to NPC (Phase 3: Ghost Guide)
+    GameStates.NPC_DIALOGUE: StateConfig(
+        input_handler=None,  # Handled by dialogue screen
+        allows_movement=False,
+        allows_pickup=False,
+        allows_inventory=False,
+        description="Talking to NPC - making dialogue choices"
+    ),
+    
     # Entity confrontation (final choice)
     GameStates.CONFRONTATION: StateConfig(
         input_handler=None,  # Handled by confrontation screen directly

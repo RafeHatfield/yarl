@@ -30,3 +30,6 @@ class GameStates(Enum):
     CONFRONTATION = 12     # Facing Entity with choice to make
     VICTORY = 13           # Player achieved victory (any ending)
     FAILURE = 14           # Player failed (bad ending)
+    
+    # NPC Dialogue states (Phase 3)
+    NPC_DIALOGUE = 15      # Talking to NPC (Guide, etc.)

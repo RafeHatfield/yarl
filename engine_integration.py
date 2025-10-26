@@ -5,19 +5,9 @@ architecture and the existing game loop, allowing for gradual migration.
 """
 
 import logging
-from contextlib import contextmanager
-
 import tcod.libtcodpy as libtcod
 
 from engine import GameEngine
-from engine.systems import RenderSystem, InputSystem, AISystem, PerformanceSystem
-from engine.systems.optimized_render_system import OptimizedRenderSystem
-from fov_functions import initialize_fov
-from game_actions import ActionProcessor
-from game_messages import Message
-from game_states import GameStates
-from input_handlers import handle_keys, handle_mouse
-from loader_functions.data_loaders import save_game
 
 logger = logging.getLogger(__name__)
 
@@ -28,43 +18,19 @@ _current_state_manager = None
 
 def get_current_state_manager():
     """Get the current state manager instance.
-
+    
     Returns:
         StateManager: The current state manager, or None if not set
     """
     return _current_state_manager
-
-
-@contextmanager
-def _manual_input_system_update(engine, dt):
-    """Update the input system once and disable it for the rest of the frame.
-
-    This context manager ensures the InputSystem runs exactly once before
-    other systems are updated. The system is temporarily disabled to avoid a
-    second update when the engine processes all systems later in the frame.
-
-    Args:
-        engine (GameEngine): The current game engine instance.
-        dt (float): The delta time value to pass to the input system.
-
-    Yields:
-        InputSystem or None: The input system instance if available.
-    """
-
-    input_systems = engine.get_systems_by_type(InputSystem)
-    input_system = input_systems[0] if input_systems else None
-    was_enabled = False
-
-    if input_system and input_system.enabled:
-        input_system.update(dt)
-        was_enabled = True
-        input_system.disable()
-
-    try:
-        yield input_system
-    finally:
-        if input_system and was_enabled:
-            input_system.enable()
+from engine.systems import RenderSystem, InputSystem, AISystem, PerformanceSystem
+from engine.systems.optimized_render_system import OptimizedRenderSystem
+from fov_functions import initialize_fov
+from game_actions import ActionProcessor
+from game_messages import Message
+from game_states import GameStates
+from input_handlers import handle_keys, handle_mouse
+from loader_functions.data_loaders import save_game
 
 
 def create_game_engine(constants, sidebar_console, viewport_console, status_console):
@@ -210,7 +176,6 @@ def play_game_with_engine(
     previous_game_state = game_state
     targeting_item = None
     first_frame = True
-    manual_input_dt = 1.0 / engine.target_fps if engine.target_fps else 0.0
     
     # Create action processor for clean action handling
     action_processor = ActionProcessor(engine.state_manager)
@@ -242,103 +207,125 @@ def play_game_with_engine(
             engine.state_manager.request_fov_recompute()
             first_frame = False
 
-        with _manual_input_system_update(engine, manual_input_dt):
-            action = engine.state_manager.get_extra_data("keyboard_actions", {})
-            mouse_action = engine.state_manager.get_extra_data("mouse_actions", {})
+        # Get actions from the input system BEFORE updating other systems
+        # This ensures we process actions in the correct state
+        input_systems = [s for s in engine.systems if isinstance(s, InputSystem)]
+        if input_systems:
+            input_systems[0].update(0.016)  # Update input system first
+        
+        action = engine.state_manager.get_extra_data("keyboard_actions", {})
+        mouse_action = engine.state_manager.get_extra_data("mouse_actions", {})
+        
+        # Check for restart action (from death screen)
+        if action.get("restart"):
+            # Player wants to restart - return to main loop for new game
+            engine.stop()
+            return {"restart": True}
 
-            # Check for restart action (from death screen)
-            if action.get("restart"):
-                # Player wants to restart - return to main loop for new game
-                engine.stop()
-                return {"restart": True}
+        # Process actions BEFORE AI system runs
+        # This prevents zombie actions after death
+        if _should_exit_game(
+            action, mouse_action, engine.state_manager.state.current_state
+        ):
+            # LOG: Track why game is exiting
+            logger.warning(f"=== GAME EXIT TRIGGERED ===")
+            logger.warning(f"Action: {action}")
+            logger.warning(f"Mouse action: {mouse_action}")
+            logger.warning(f"Current state: {engine.state_manager.state.current_state}")
+            logger.warning(f"Exit action in actions: {action.get('exit', False)}")
+            logger.warning(f"========================")
+            
+            # Save game before exiting (unless player is dead)
+            if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
+                try:
+                    game_state_data = engine.state_manager.state
+                    save_game(
+                        game_state_data.player,
+                        game_state_data.entities,
+                        game_state_data.game_map,
+                        game_state_data.message_log,
+                        game_state_data.current_state
+                    )
+                    print("Game saved successfully!")
+                except Exception as e:
+                    print(f"Failed to save game: {e}")
+                    logger.error(f"Save failed: {e}")
+            break
 
-            # Process actions BEFORE AI system runs
-            # This prevents zombie actions after death
-            if _should_exit_game(
-                action, mouse_action, engine.state_manager.state.current_state
-            ):
-                # LOG: Track why game is exiting
-                logger.warning(f"=== GAME EXIT TRIGGERED ===")
-                logger.warning(f"Action: {action}")
-                logger.warning(f"Mouse action: {mouse_action}")
-                logger.warning(f"Current state: {engine.state_manager.state.current_state}")
-                logger.warning(f"Exit action in actions: {action.get('exit', False)}")
-                logger.warning(f"========================")
-
-                # Save game before exiting (unless player is dead)
-                if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
-                    try:
-                        game_state_data = engine.state_manager.state
-                        save_game(
-                            game_state_data.player,
-                            game_state_data.entities,
-                            game_state_data.game_map,
-                            game_state_data.message_log,
-                            game_state_data.current_state
-                        )
-                        print("Game saved successfully!")
-                    except Exception as e:
-                        print(f"Failed to save game: {e}")
-                        logger.error(f"Save failed: {e}")
-                break
-
-            # Use the new action processor for clean, modular action handling
-            action_processor.process_actions(action, mouse_action)
-
-            # Handle victory condition states
-            current_state = engine.state_manager.state.current_state
-
-            if current_state == GameStates.CONFRONTATION:
-                # Show confrontation choice screen
-                from screens.confrontation_choice import confrontation_menu
-                from victory_manager import get_victory_manager
-
-                choice, new_state = confrontation_menu(
-                    con, 0,  # 0 is the root console in libtcod
-                    constants['screen_width'], constants['screen_height']
+        # Use the new action processor for clean, modular action handling
+        action_processor.process_actions(action, mouse_action)
+        
+        # Handle victory condition states
+        current_state = engine.state_manager.state.current_state
+        
+        if current_state == GameStates.CONFRONTATION:
+            # Show confrontation choice screen
+            from screens.confrontation_choice import confrontation_menu
+            from victory_manager import get_victory_manager
+            
+            choice, new_state = confrontation_menu(
+                con, 0,  # 0 is the root console in libtcod
+                constants['screen_width'], constants['screen_height']
+            )
+            
+            if choice:
+                # Player made a choice, show ending screen
+                victory_mgr = get_victory_manager()
+                player_stats = victory_mgr.get_player_stats_for_ending(
+                    engine.state_manager.state.player,
+                    engine.state_manager.state.game_map
                 )
+                
+                from screens.victory_screen import show_ending_screen
+                from systems.hall_of_fame import get_hall_of_fame
+                
+                result = show_ending_screen(
+                    con, 0,  # 0 is the root console in libtcod
+                    constants['screen_width'], constants['screen_height'],
+                    choice, player_stats
+                )
+                
+                # Record victory in Hall of Fame if good ending
+                if choice == 'good':
+                    hall = get_hall_of_fame()
+                    player_name = engine.state_manager.state.player.name
+                    hall.add_victory(player_name, choice, player_stats)
+                
+                if result == 'restart':
+                    engine.stop()
+                    return {"restart": True}
+                elif result == 'quit':
+                    break
+        
+        # Phase 3: Handle NPC Dialogue
+        elif current_state == GameStates.NPC_DIALOGUE:
+            from screens.npc_dialogue_screen import show_npc_dialogue_screen
+            
+            # Get the NPC we're talking to
+            npc = getattr(engine.state_manager.state, 'current_dialogue_npc', None)
+            if npc:
+                # Show dialogue screen (it handles its own loop)
+                new_state = show_npc_dialogue_screen(npc, engine.state_manager)
+                engine.state_manager.set_game_state(new_state)
+                
+                # Clean up
+                engine.state_manager.state.current_dialogue_npc = None
+            else:
+                # No NPC found, exit dialogue
+                engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+        
+        elif current_state in (GameStates.VICTORY, GameStates.FAILURE):
+            # These states are handled by confrontation, shouldn't reach here
+            # But if we do, treat as game end
+            break
 
-                if choice:
-                    # Player made a choice, show ending screen
-                    victory_mgr = get_victory_manager()
-                    player_stats = victory_mgr.get_player_stats_for_ending(
-                        engine.state_manager.state.player,
-                        engine.state_manager.state.game_map
-                    )
+        # Update all systems (AI will run after player actions are processed)
+        engine.update()
 
-                    from screens.victory_screen import show_ending_screen
-                    from systems.hall_of_fame import get_hall_of_fame
-
-                    result = show_ending_screen(
-                        con, 0,  # 0 is the root console in libtcod
-                        constants['screen_width'], constants['screen_height'],
-                        choice, player_stats
-                    )
-
-                    # Record victory in Hall of Fame if good ending
-                    if choice == 'good':
-                        hall = get_hall_of_fame()
-                        player_name = engine.state_manager.state.player.name
-                        hall.add_victory(player_name, choice, player_stats)
-
-                    if result == 'restart':
-                        engine.stop()
-                        return {"restart": True}
-                    elif result == 'quit':
-                        break
-
-            elif current_state in (GameStates.VICTORY, GameStates.FAILURE):
-                # These states are handled by confrontation, shouldn't reach here
-                # But if we do, treat as game end
-                break
-
-            # Update all systems (AI will run after player actions are processed)
-            engine.update()
-
-            # IMPORTANT: Reset FOV flag AFTER rendering is complete
-            # This ensures the flag stays active for the entire frame
-            if engine.state_manager.state.fov_recompute:
-                engine.state_manager.state.fov_recompute = False
+        # IMPORTANT: Reset FOV flag AFTER rendering is complete
+        # This ensures the flag stays active for the entire frame
+        if engine.state_manager.state.fov_recompute:
+            engine.state_manager.state.fov_recompute = False
 
     # Clean up
     engine.stop()
@@ -374,6 +361,7 @@ def _should_exit_game(action, mouse_action, current_state):
             GameStates.THROW_SELECT_ITEM,
             GameStates.CHARACTER_SCREEN,
             GameStates.LEVEL_UP,
+            GameStates.NPC_DIALOGUE,  # Phase 3: Exit dialogue menu
         ):
             # Exit menu, don't exit game
             logger.debug(f"Exit from menu state {current_state} - closing menu, not exiting game")
