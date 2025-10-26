@@ -457,6 +457,19 @@ This positions the game as:
 
 **Combined Impact:** Polishes the core experience.
 
+### **🛠️ Development & Testing Tools (Critical for Phase 3+)**
+
+| Feature | Time | Impact | Status | Technical Notes |
+|---------|------|--------|--------|-----------------|
+| **Tier 1: Command-Line Debug Flags** | ~5 hours | 🔥 CRITICAL | 🔄 In Progress | `--start-level N`, `--god-mode`, `--no-monsters`, `--reveal-map` - 98% time savings for testing! |
+| **Tier 2: Wizard Mode** | ~10 hours | 🔥 High | Pending | Interactive debug menu (`&` key): spawn items/NPCs, teleport, unlock knowledge, test edge cases |
+| **Tier 3: Save State System** | ~8 hours | 🔶 Medium | Planned | `--save-state`/`--load-state` for repeatable testing of specific scenarios |
+| **Tier 4: Automated Playthrough** | ~16 hours | 🔷 Low | Future | Script-driven testing for overnight regression runs |
+
+**Combined Impact:** **20x faster iteration** for story/victory testing. Essential for Phases 4-6 development (Entity reactions, multiple endings, polish). See [DEBUG_MODE_PROPOSAL.md](docs/development/DEBUG_MODE_PROPOSAL.md) for full specification.
+
+**Example:** Test Level 20 Guide encounter in 30 seconds instead of 30 minutes!
+
 ### **📷 Camera System (Optional Polish)**
 
 | Feature | Time | Impact | Why Now | Technical Notes |
