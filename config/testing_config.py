@@ -21,6 +21,12 @@ class TestingConfig:
         """
         self.testing_mode = testing_mode
         
+        # Tier 1 Debug Flags (set by command-line args in engine.py)
+        self.start_level = 1          # Start on specific dungeon level
+        self.god_mode = False          # Player cannot die (HP never < 1)
+        self.no_monsters = False       # Disable monster spawning (peaceful mode)
+        self.reveal_map = False        # Full FOV, no fog of war
+        
     def get_max_items_per_room(self, dungeon_level: int) -> List[List[int]]:
         """Get maximum items per room based on testing mode.
         
