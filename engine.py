@@ -201,7 +201,20 @@ def main():
     message_log = None
     game_state = None
 
-    show_main_menu = True
+    # Skip main menu if any debug flags are active (testing mode)
+    skip_menu = args.testing and (args.start_level or args.god_mode or args.no_monsters or args.reveal_map)
+    
+    if skip_menu:
+        print("⏩ SKIPPING MAIN MENU: Starting new game directly with debug flags")
+        show_main_menu = False
+        # Initialize new game immediately
+        player, entities, game_map, message_log, game_state = (
+            get_game_variables(constants)
+        )
+        game_state = GameStates.PLAYERS_TURN
+    else:
+        show_main_menu = True
+    
     show_load_error_message = False
 
     main_menu_background_image = libtcod.image_load("menu_background1.png")

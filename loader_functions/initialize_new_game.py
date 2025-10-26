@@ -339,5 +339,19 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
             entities.remove(gear)
             logger.debug(f"   Removed {gear.name} from world entities (now in inventory/equipment)")
     
+    # Also validate all entities have valid coordinates within map bounds
+    from config.game_constants import GameConstants
+    game_constants = GameConstants()
+    map_width = game_constants.map.width
+    map_height = game_constants.map.height
+    
+    invalid_entities = [e for e in entities if e.x < 0 or e.x >= map_width or e.y < 0 or e.y >= map_height]
+    if invalid_entities:
+        logger.warning(f"   Found {len(invalid_entities)} entities with invalid coordinates:")
+        for entity in invalid_entities:
+            logger.warning(f"      {entity.name} at ({entity.x}, {entity.y}) - removing from world")
+            if entity in entities:
+                entities.remove(entity)
+    
     # Recalculate HP after equipment changes (max_hp is a property, recalculates automatically)
     player.fighter.hp = player.fighter.max_hp
