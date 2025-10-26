@@ -342,8 +342,8 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
     # Also validate all entities have valid coordinates within map bounds
     from config.game_constants import GameConstants
     game_constants = GameConstants()
-    map_width = game_constants.map.width
-    map_height = game_constants.map.height
+    map_width = game_constants.gameplay.DEFAULT_MAP_WIDTH
+    map_height = game_constants.gameplay.DEFAULT_MAP_HEIGHT
     
     invalid_entities = [e for e in entities if e.x < 0 or e.x >= map_width or e.y < 0 or e.y >= map_height]
     if invalid_entities:
