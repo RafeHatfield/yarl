@@ -250,7 +250,7 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     
     # Descend through levels
     for i in range(target_level - 1):
-        game_map.next_floor(player, constants)
+        game_map.next_floor(player, message_log, constants)
         logger.debug(f"   Descended to level {game_map.dungeon_level}")
     
     # Grant level-appropriate gear
