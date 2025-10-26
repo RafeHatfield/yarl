@@ -299,6 +299,62 @@ class EmptyRoomGenerator(RoomGenerator):
         pass
 
 
+class CampRoomGenerator(RoomGenerator):
+    """Generator for camp/safe rooms where NPCs like the Guide appear.
+    
+    Camp rooms are:
+    - Safe (no monsters)
+    - Well-lit
+    - Have minimal items (maybe healing?)
+    - Spawn special NPCs like the Ghost Guide
+    
+    Phase 3: Used for Guide encounters at levels 5, 10, 15, 20
+    """
+    
+    def __init__(self, min_size: int = 8, max_size: int = 12):
+        super().__init__(
+            name="Camp Room",
+            min_size=min_size,
+            max_size=max_size,
+            spawn_chance=0.0  # Don't spawn randomly - placed intentionally
+        )
+    
+    def _populate_room(
+        self,
+        game_map: 'GameMap',
+        room: Rect,
+        entities: List['Entity'],
+        dungeon_level: int
+    ) -> None:
+        """Populate camp with minimal entities - safe resting area."""
+        # No monsters in camp rooms!
+        
+        # Maybe spawn some healing items (low chance)
+        from random import random
+        if random() < 0.3:  # 30% chance
+            # Spawn a single healing item
+            from config.entity_factory import get_entity_factory
+            
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if position is free
+            if not any(entity.x == x and entity.y == y for entity in entities):
+                factory = get_entity_factory()
+                healing_item = factory.create_item('healing_potion', x, y, dungeon_level)
+                if healing_item:
+                    entities.append(healing_item)
+                    logger.debug(f"Placed healing item in camp at ({x}, {y})")
+        
+        # Mark this room as a camp for special NPC spawning
+        # (Will be handled by map generation logic)
+        if not hasattr(game_map, 'camp_rooms'):
+            game_map.camp_rooms = []
+        game_map.camp_rooms.append(room)
+        
+        logger.info(f"Generated camp room at ({room.x1}, {room.y1})")
+
+
 class RoomGeneratorFactory:
     """Factory for selecting and creating room generators.
     
@@ -313,6 +369,7 @@ class RoomGeneratorFactory:
             TreasureRoomGenerator(),
             BossRoomGenerator(),
             EmptyRoomGenerator(),
+            CampRoomGenerator(),  # Phase 3: Safe rooms for NPCs
         ]
     
     def add_generator(self, generator: RoomGenerator) -> None:
