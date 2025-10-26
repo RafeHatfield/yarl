@@ -385,9 +385,9 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
 
-            if not any(
-                [entity for entity in entities if entity.x == x and entity.y == y]
-            ):
+            # SAFETY: Check tile is walkable AND no entity already there
+            if (not self.is_blocked(x, y) and 
+                not any([entity for entity in entities if entity.x == x and entity.y == y])):
                 item_choice = random_choice_from_dict(item_chances)
                 
                 # Get entity factory for equipment creation
