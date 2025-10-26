@@ -25,6 +25,8 @@ class TestMonsterVariableDamage(unittest.TestCase):
         # Create mock player
         self.player = Mock()
         self.player.name = "player"
+        self.player.x = 5  # SAFETY: Real coordinates for is_blocked() checks
+        self.player.y = 5  # SAFETY: Real coordinates for is_blocked() checks
         self.player.fighter = Fighter(hp=100, defense=1, power=2)
         self.player.fighter.owner = self.player
         self.player.fighter.take_damage = Mock(return_value=[{"dead": False}])  # Mock take_damage method
@@ -139,6 +141,8 @@ class TestMonsterVariableDamage(unittest.TestCase):
         # Create target monster
         target = Mock()
         target.name = "orc"
+        target.x = 6  # SAFETY: Real coordinates for is_blocked() checks
+        target.y = 5  # SAFETY: Real coordinates for is_blocked() checks
         target.fighter = Fighter(hp=20, defense=0, power=3)
         target.fighter.owner = target
         target.fighter.take_damage = Mock(return_value=[{"dead": False}])
@@ -285,6 +289,8 @@ class TestEntityFactoryIntegration(unittest.TestCase):
         
         target = Mock()
         target.name = "player"
+        target.x = 6  # SAFETY: Real coordinates for is_blocked() checks
+        target.y = 5  # SAFETY: Real coordinates for is_blocked() checks
         target.fighter = Fighter(hp=100, defense=1, power=2)
         target.fighter.owner = target
         target.fighter.take_damage = Mock(return_value=[{"dead": False}])

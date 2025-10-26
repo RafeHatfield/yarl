@@ -242,13 +242,14 @@ class TestRoomGeneratorFactory:
     def test_factory_initialization(self):
         """Test factory creates with default generators."""
         factory = RoomGeneratorFactory()
-        assert len(factory.generators) == 4, "Should have 4 default generators"
+        assert len(factory.generators) == 5, "Should have 5 default generators (including Camp Room)"
         
         names = [g.name for g in factory.generators]
         assert "Standard Room" in names
         assert "Treasure Room" in names
         assert "Boss Room" in names
         assert "Empty Room" in names
+        assert "Camp Room" in names  # Added in Phase 3 for Ghost Guide
     
     def test_add_custom_generator(self):
         """Test adding custom generator to factory."""
@@ -259,7 +260,7 @@ class TestRoomGeneratorFactory:
         custom.name = "Custom Room"
         
         factory.add_generator(custom)
-        assert len(factory.generators) == 5, "Should have 5 generators"
+        assert len(factory.generators) == 6, "Should have 6 generators (5 default + 1 custom)"
     
     def test_get_specific_generator(self):
         """Test retrieving specific generator by name."""
