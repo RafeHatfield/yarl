@@ -51,16 +51,49 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python engine.py                    # Normal gameplay
-  python engine.py --testing          # Enable testing mode (more items)
-  python engine.py -t                 # Short form of testing mode
+  python engine.py                              # Normal gameplay
+  python engine.py --testing                    # Enable testing mode (more items)
+  python engine.py --testing --start-level 20   # Skip to level 20
+  python engine.py --testing --god-mode         # Can't die (HP never <1)
+  python engine.py --testing --no-monsters      # Peaceful mode (story testing)
+  python engine.py --testing --reveal-map       # Full FOV (no fog of war)
+  
+  # Combine flags for ultimate testing power:
+  python engine.py --testing --start-level 15 --god-mode --no-monsters --reveal-map
         """
     )
     
+    # Basic testing mode
     parser.add_argument(
         '--testing', '-t',
         action='store_true',
         help='Enable testing mode with increased item spawn rates for easier testing'
+    )
+    
+    # Tier 1 Debug Flags (require --testing)
+    parser.add_argument(
+        '--start-level',
+        type=int,
+        metavar='N',
+        help='Start game on dungeon level N (requires --testing)'
+    )
+    
+    parser.add_argument(
+        '--god-mode',
+        action='store_true',
+        help='Enable god mode - player cannot die, HP never goes below 1 (requires --testing)'
+    )
+    
+    parser.add_argument(
+        '--no-monsters',
+        action='store_true',
+        help='Disable monster spawning - peaceful mode for story/UI testing (requires --testing)'
+    )
+    
+    parser.add_argument(
+        '--reveal-map',
+        action='store_true',
+        help='Reveal entire map - no fog of war, infinite FOV (requires --testing)'
     )
     
     return parser.parse_args()
@@ -80,6 +113,12 @@ def main():
     # Parse command line arguments
     args = parse_arguments()
     
+    # Validate that debug flags require --testing
+    if (args.start_level or args.god_mode or args.no_monsters or args.reveal_map) and not args.testing:
+        print("❌ ERROR: Debug flags (--start-level, --god-mode, --no-monsters, --reveal-map) require --testing flag")
+        print("   Example: python engine.py --testing --start-level 20 --god-mode")
+        return
+    
     # Set testing mode if requested
     if args.testing:
         set_testing_mode(True)
@@ -89,6 +128,26 @@ def main():
     if os.environ.get('YARL_TESTING_MODE', '').lower() in ('true', '1', 'yes', 'on'):
         set_testing_mode(True)
         print("🧪 TESTING MODE ENABLED: Via environment variable YARL_TESTING_MODE")
+    
+    # Configure Tier 1 debug flags
+    from config.testing_config import get_testing_config
+    config = get_testing_config()
+    
+    if args.start_level:
+        config.start_level = args.start_level
+        print(f"⏭️  START LEVEL: Will begin on dungeon level {args.start_level}")
+    
+    if args.god_mode:
+        config.god_mode = True
+        print("🛡️  GOD MODE ENABLED: Player cannot die (HP never goes below 1)")
+    
+    if args.no_monsters:
+        config.no_monsters = True
+        print("☮️  PEACEFUL MODE: No monsters will spawn")
+    
+    if args.reveal_map:
+        config.reveal_map = True
+        print("👁️  REVEAL MAP: Entire map visible, no fog of war")
     
     # Initialize monster action logging if in testing mode
     from config.testing_config import is_testing_mode
