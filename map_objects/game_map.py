@@ -526,12 +526,14 @@ class GameMap:
         if random() > 0.15:
             return
         
-        # Generate 1-3 secret doors
+        # Need at least 2 rooms to place secret doors
+        if len(rooms) < 2:
+            return
+        
+        # Generate 1-3 secret doors (but not more than rooms - 1)
         num_doors = randint(1, min(3, len(rooms) - 1))
         
         for _ in range(num_doors):
-            if len(rooms) < 2:
-                break
             
             # Pick two adjacent rooms to connect
             room_a = choice(rooms)
