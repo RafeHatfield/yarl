@@ -1283,6 +1283,78 @@ class EntityFactory:
         entity.description = description
         
         return entity
+    
+    def create_unique_npc(self, npc_type: str, x: int, y: int, dungeon_level: int = 1) -> Optional[Entity]:
+        """Create a unique NPC entity (e.g., Ghost Guide).
+        
+        Unique NPCs are special entities that provide dialogue, quests, or story.
+        
+        Args:
+            npc_type: Type of unique NPC (e.g., 'ghost_guide')
+            x: X coordinate
+            y: Y coordinate
+            dungeon_level: Current dungeon level (for dialogue loading)
+            
+        Returns:
+            Entity instance or None if creation fails
+        """
+        # Get unique NPC definition from registry
+        if not hasattr(self.registry, 'data') or 'unique_npcs' not in self.registry.data:
+            logger.warning(f"No unique_npcs section in registry")
+            return None
+        
+        unique_npcs = self.registry.data['unique_npcs']
+        if npc_type not in unique_npcs:
+            logger.warning(f"Unique NPC type '{npc_type}' not found in registry")
+            return None
+        
+        npc_def = unique_npcs[npc_type]
+        
+        # Extract basic properties
+        char = npc_def.get('char', '@')
+        color = tuple(npc_def.get('color', [255, 255, 255]))
+        description = npc_def.get('description', 'A mysterious figure.')
+        name = npc_def.get('name', npc_type.replace('_', ' ').title())
+        blocks = npc_def.get('blocks', False)  # Ghosts don't block
+        
+        # Create entity
+        entity = Entity(
+            x=x, y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks=blocks,
+            render_order=RenderOrder.ACTOR
+        )
+        
+        # Add dialogue component if specified
+        if npc_def.get('has_dialogue', False):
+            dialogue_source = npc_def.get('dialogue_source', 'guide_dialogue')
+            
+            # Load dialogue from YAML
+            import yaml
+            from pathlib import Path
+            from components.npc_dialogue import create_dialogue_from_yaml
+            
+            dialogue_file = Path(f"config/{dialogue_source}.yaml")
+            if dialogue_file.exists():
+                with open(dialogue_file, 'r') as f:
+                    dialogue_data = yaml.safe_load(f)
+                
+                npc_dialogue = create_dialogue_from_yaml(dialogue_data)
+                entity.npc_dialogue = npc_dialogue
+                logger.info(f"Loaded dialogue for {name} from {dialogue_file}")
+            else:
+                logger.warning(f"Dialogue file not found: {dialogue_file}")
+        
+        # Add special flags
+        entity.is_npc = npc_def.get('is_npc', True)
+        entity.is_guide = npc_def.get('is_guide', False)
+        entity.is_intangible = npc_def.get('is_intangible', False)
+        entity.flavor_text = npc_def.get('flavor_text', '')
+        
+        logger.info(f"Created unique NPC: {name} at ({x}, {y})")
+        return entity
 
 
 # Global factory instance

@@ -1287,3 +1287,40 @@ unique_items:
     blocks: false
     description: "A shimmering portal wreathed in temporal distortions. The Entity's voice echoes from within."
     is_portal: true  # Pickupable! (Future: Portal system mechanics, easter eggs, tactical gameplay)
+
+# Unique NPCs
+# Special entities that provide story, dialogue, or quests
+unique_npcs:
+  # The Ghost Guide - Grumpy mentor who warns about the Entity
+  # Appears at camps on levels 5, 10, 15, 20 (Phase 3)
+  # Personality: Sarcastic, cranky, "Crabby Old Luke" vibes
+  ghost_guide:
+    char: "@"  # Humanoid symbol (like player)
+    color: [150, 220, 255]  # Light cyan (ghostly/ethereal)
+    render_order: "actor"
+    blocks: false  # Can walk through (it's a ghost!)
+    name: "Ghostly Guide"
+    
+    # Ghost has no combat stats - it's intangible
+    # If attacked, give sarcastic response instead of damage
+    is_intangible: true
+    
+    # Dialogue component (Phase 3)
+    # Loaded from guide_dialogue.yaml
+    has_dialogue: true
+    dialogue_source: "guide_dialogue"
+    
+    # Visual effects
+    description: "A translucent figure with weary eyes. The ghost of a failed adventurer."
+    flavor_text: "The ghost regards you with a mixture of pity and irritation."
+    
+    # Behavior
+    # Guide doesn't move or attack - just stands in camp waiting
+    ai_type: "stationary"  # Doesn't move
+    faction: "neutral"  # Won't attack player, can't be attacked meaningfully
+    
+    # Special properties
+    is_npc: true
+    is_guide: true  # Flag for special Guide logic
+    appears_at_levels: [5, 10, 15, 20]  # Which levels to spawn
+    spawn_location: "camp"  # Spawns in camp/safe rooms only
