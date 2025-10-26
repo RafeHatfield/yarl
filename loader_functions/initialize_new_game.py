@@ -283,43 +283,61 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
     
     entity_factory = get_entity_factory()
     
+    # Track entities created for gear (we'll remove them from world entities)
+    created_gear = []
+    
     # Always give healing potions (5 base + 1 per 5 levels)
     num_potions = 5 + (dungeon_level // 5)
     for i in range(num_potions):
         potion = entity_factory.create_spell_item('healing_potion', 0, 0)
-        if potion and player.inventory:
-            player.inventory.add_item(potion)
+        if potion:
+            created_gear.append(potion)
+            if player.inventory:
+                player.inventory.add_item(potion)
     logger.info(f"   Granted {num_potions} healing potions")
     
     # Give weapon for deeper levels
     if dungeon_level >= 5:
         sword = entity_factory.create_weapon('sword', 0, 0)
-        if sword and player.equipment:
-            # Unequip starting dagger first
-            if player.equipment.main_hand:
-                player.inventory.add_item(player.equipment.main_hand)
-                player.equipment.toggle_equip(player.equipment.main_hand)
-            player.equipment.toggle_equip(sword)
-            logger.info("   Granted sword (replacing dagger)")
+        if sword:
+            created_gear.append(sword)
+            if player.equipment:
+                # Unequip starting dagger first
+                if player.equipment.main_hand:
+                    player.inventory.add_item(player.equipment.main_hand)
+                    player.equipment.toggle_equip(player.equipment.main_hand)
+                player.equipment.toggle_equip(sword)
+                logger.info("   Granted sword (replacing dagger)")
     
     # Give armor for deeper levels
     if dungeon_level >= 10:
         chain_mail = entity_factory.create_armor('chain_mail', 0, 0)
-        if chain_mail and player.equipment:
-            # Unequip starting leather armor
-            if player.equipment.chest:
-                player.inventory.add_item(player.equipment.chest)
-                player.equipment.toggle_equip(player.equipment.chest)
-            player.equipment.toggle_equip(chain_mail)
-            logger.info("   Granted chain mail (replacing leather armor)")
+        if chain_mail:
+            created_gear.append(chain_mail)
+            if player.equipment:
+                # Unequip starting leather armor
+                if player.equipment.chest:
+                    player.inventory.add_item(player.equipment.chest)
+                    player.equipment.toggle_equip(player.equipment.chest)
+                player.equipment.toggle_equip(chain_mail)
+                logger.info("   Granted chain mail (replacing leather armor)")
     
     # Give utility scrolls for deep levels
     if dungeon_level >= 15:
         for i in range(3):
             scroll = entity_factory.create_spell_item('teleport_scroll', 0, 0)
-            if scroll and player.inventory:
-                player.inventory.add_item(scroll)
+            if scroll:
+                created_gear.append(scroll)
+                if player.inventory:
+                    player.inventory.add_item(scroll)
         logger.info("   Granted 3 teleport scrolls")
+    
+    # Remove created gear from world entities list (they should only be in inventory/equipment)
+    # Items created at (0, 0) shouldn't appear on the map
+    for gear in created_gear:
+        if gear in entities:
+            entities.remove(gear)
+            logger.debug(f"   Removed {gear.name} from world entities (now in inventory/equipment)")
     
     # Recalculate HP after equipment changes (max_hp is a property, recalculates automatically)
     player.fighter.hp = player.fighter.max_hp
