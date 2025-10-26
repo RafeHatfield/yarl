@@ -229,6 +229,10 @@ class GameMap:
                 # Logger already imported at module level (line 28)
                 logger.info(f"=== AMULET OF YENDOR SPAWNED at ({amulet_x}, {amulet_y}) ===")
         
+        # PHASE 3: Spawn Ghost Guide on levels 5, 10, 15, 20
+        if self.dungeon_level in [5, 10, 15, 20]:
+            self._spawn_ghost_guide(rooms, entities)
+        
         # Apply special rooms from level templates (Tier 2)
         self.place_special_rooms(rooms, entities)
         
@@ -1446,3 +1450,68 @@ class GameMap:
                 
         # Could not find a position after max_attempts
         return (None, None)
+    
+    def _spawn_ghost_guide(self, rooms, entities):
+        """Spawn the Ghost Guide NPC in a camp room (Phase 3).
+        
+        The Guide appears at levels 5, 10, 15, 20 to provide warnings
+        and reveal the Entity's backstory.
+        
+        Args:
+            rooms: List of room rectangles
+            entities: List of entities to add Guide to
+        """
+        if not rooms:
+            logger.warning(f"No rooms available for Guide spawn on level {self.dungeon_level}")
+            return
+        
+        # First, try to create or use a camp room
+        # Check if we have any camp rooms marked
+        camp_rooms = getattr(self, 'camp_rooms', [])
+        
+        if not camp_rooms:
+            # No camp room exists, create one by converting a random room
+            # Pick a room that's not the first (player spawn) or last (stairs)
+            if len(rooms) > 2:
+                camp_room = rooms[randint(1, len(rooms) - 2)]
+            else:
+                camp_room = rooms[0]  # Fallback to first room
+            
+            logger.info(f"Converting room at ({camp_room.x1}, {camp_room.y1}) to camp for Guide")
+            
+            # Clear monsters from this room to make it safe
+            entities_to_remove = [
+                e for e in entities
+                if (hasattr(e, 'ai') and e.ai and 
+                    camp_room.x1 < e.x < camp_room.x2 and 
+                    camp_room.y1 < e.y < camp_room.y2)
+            ]
+            for entity in entities_to_remove:
+                entities.remove(entity)
+                logger.debug(f"Removed {entity.name} from camp room")
+        else:
+            # Use existing camp room
+            camp_room = camp_rooms[0]
+        
+        # Find a good position for the Guide (center-ish)
+        guide_x = (camp_room.x1 + camp_room.x2) // 2
+        guide_y = (camp_room.y1 + camp_room.y2) // 2
+        
+        # Make sure position isn't occupied
+        if any(entity.x == guide_x and entity.y == guide_y for entity in entities):
+            # Try to find nearby free spot
+            guide_x, guide_y = self._find_random_position_in_room(camp_room, entities)
+            if guide_x is None:
+                logger.warning(f"Could not find free position for Guide on level {self.dungeon_level}")
+                return
+        
+        # Spawn the Ghost Guide!
+        from config.entity_factory import get_entity_factory
+        factory = get_entity_factory()
+        
+        guide = factory.create_unique_npc('ghost_guide', guide_x, guide_y, self.dungeon_level)
+        if guide:
+            entities.append(guide)
+            logger.info(f"=== GHOST GUIDE SPAWNED at ({guide_x}, {guide_y}) on level {self.dungeon_level} ===")
+        else:
+            logger.error(f"Failed to create Ghost Guide on level {self.dungeon_level}")
