@@ -314,6 +314,14 @@ def play_game_with_engine(
                 # No NPC found, exit dialogue
                 engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
         
+        # Tier 2: Handle Wizard Mode Debug Menu
+        elif current_state == GameStates.WIZARD_MENU:
+            from screens.wizard_menu import show_wizard_menu
+            
+            # Show wizard menu (it handles its own loop)
+            new_state = show_wizard_menu(con, engine.state_manager)
+            engine.state_manager.set_game_state(new_state)
+        
         elif current_state in (GameStates.VICTORY, GameStates.FAILURE):
             # These states are handled by confrontation, shouldn't reach here
             # But if we do, treat as game end
@@ -362,6 +370,7 @@ def _should_exit_game(action, mouse_action, current_state):
             GameStates.CHARACTER_SCREEN,
             GameStates.LEVEL_UP,
             GameStates.NPC_DIALOGUE,  # Phase 3: Exit dialogue menu
+            GameStates.WIZARD_MENU,   # Tier 2: Exit wizard menu
         ):
             # Exit menu, don't exit game
             logger.debug(f"Exit from menu state {current_state} - closing menu, not exiting game")

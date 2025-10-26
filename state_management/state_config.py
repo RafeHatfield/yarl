@@ -203,6 +203,15 @@ def _initialize_state_configurations():
         description="Talking to NPC - making dialogue choices"
     ),
     
+    # Tier 2: Wizard Mode debug menu
+    GameStates.WIZARD_MENU: StateConfig(
+        input_handler=None,  # Handled by wizard menu screen
+        allows_movement=False,
+        allows_pickup=False,
+        allows_inventory=False,
+        description="Wizard Mode debug menu - testing/development commands"
+    ),
+    
     # Entity confrontation (final choice)
     GameStates.CONFRONTATION: StateConfig(
         input_handler=None,  # Handled by confrontation screen directly

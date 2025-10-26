@@ -50,6 +50,7 @@ class ActionProcessor:
             'show_inventory': self._handle_show_inventory,
             'drop_inventory': self._handle_drop_inventory,
             'show_character_screen': self._handle_show_character_screen,
+            'show_wizard_menu': self._handle_show_wizard_menu,  # Tier 2: Wizard Mode
             'exit': self._handle_exit,
             'move': self._handle_movement,
             'wait': self._handle_wait,
@@ -150,6 +151,10 @@ class ActionProcessor:
     def _handle_show_character_screen(self, _) -> None:
         """Handle showing the character screen."""
         self.state_manager.set_game_state(GameStates.CHARACTER_SCREEN)
+    
+    def _handle_show_wizard_menu(self, _) -> None:
+        """Handle showing the wizard mode debug menu (Tier 2)."""
+        self.state_manager.set_game_state(GameStates.WIZARD_MENU)
     
     def _handle_throw_action(self, _) -> None:
         """Handle throw action - select item then target.

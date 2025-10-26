@@ -33,3 +33,6 @@ class GameStates(Enum):
     
     # NPC Dialogue states (Phase 3)
     NPC_DIALOGUE = 15      # Talking to NPC (Guide, etc.)
+    
+    # Debug/Testing states (Tier 2)
+    WIZARD_MENU = 16       # Wizard mode debug menu (--wizard flag)

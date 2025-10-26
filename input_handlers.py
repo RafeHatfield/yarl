@@ -131,6 +131,11 @@ def handle_player_turn_keys(key):
         return {"start_auto_explore": True}
     elif key_char == "s":
         return {"search": True}
+    elif key_char == "&":  # Tier 2: Wizard Mode (Shift+7)
+        # Only available in wizard mode
+        from config.testing_config import get_testing_config
+        if get_testing_config().wizard_mode:
+            return {"show_wizard_menu": True}
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle full screen
