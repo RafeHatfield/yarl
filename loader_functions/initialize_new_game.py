@@ -321,6 +321,5 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
                 player.inventory.add_item(scroll)
         logger.info("   Granted 3 teleport scrolls")
     
-    # Recalculate HP after equipment changes
-    player.fighter.max_hp = player.fighter.get_max_hp()
+    # Recalculate HP after equipment changes (max_hp is a property, recalculates automatically)
     player.fighter.hp = player.fighter.max_hp
