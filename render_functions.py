@@ -517,8 +517,11 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
         (hasattr(entity, "is_secret_door_marker") and entity.is_secret_door_marker)
     )
     
+    # SAFETY: Use GameMap safe accessor method instead of direct tile access
+    is_explored = game_map.is_explored(entity.x, entity.y) if game_map else False
+    
     if map_is_in_fov(fov_map, entity.x, entity.y) or (
-        is_persistent_feature and game_map.tiles[entity.x][entity.y].explored
+        is_persistent_feature and is_explored
     ):
         # Translate world coordinates to viewport coordinates using camera
         if camera:

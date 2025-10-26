@@ -913,21 +913,105 @@ class GameMap:
                     entities.append(item)
                     logger.debug(f"Spawned bonus item {item.name} at ({x}, {y})")
     
+    # ========================================================================
+    # SAFE TILE ACCESS METHODS
+    # These methods provide bounds-checked access to tiles, preventing
+    # IndexError crashes when accessing tiles with invalid coordinates.
+    # Always use these methods instead of direct tiles[x][y] access!
+    # ========================================================================
+    
+    def is_in_bounds(self, x: int, y: int) -> bool:
+        """Check if coordinates are within map bounds.
+        
+        Args:
+            x (int): X coordinate to check
+            y (int): Y coordinate to check
+        
+        Returns:
+            bool: True if coordinates are valid, False otherwise
+        """
+        return 0 <= x < self.width and 0 <= y < self.height
+    
+    def get_tile(self, x: int, y: int):
+        """Safely get tile at coordinates.
+        
+        Args:
+            x (int): X coordinate
+            y (int): Y coordinate
+        
+        Returns:
+            Tile or None: Tile object if coordinates are valid, None otherwise
+        """
+        if not self.is_in_bounds(x, y):
+            return None
+        return self.tiles[x][y]
+    
     def is_blocked(self, x, y):
         """Check if a tile is blocked for movement.
+        
+        SAFETY: Treats out-of-bounds coordinates as blocked.
 
         Args:
             x (int): X coordinate to check
             y (int): Y coordinate to check
 
         Returns:
-            bool: True if the tile is blocked, False otherwise
+            bool: True if the tile is blocked or out of bounds, False otherwise
         """
-        """Function to determine if a tile is blocked"""
-        if self.tiles[x][y].blocked:
-            return True
-
-        return False
+        tile = self.get_tile(x, y)
+        if tile is None:
+            return True  # Out of bounds = blocked
+        return tile.blocked
+    
+    def is_explored(self, x: int, y: int) -> bool:
+        """Check if a tile has been explored by the player.
+        
+        SAFETY: Out-of-bounds coordinates return False.
+        
+        Args:
+            x (int): X coordinate to check
+            y (int): Y coordinate to check
+        
+        Returns:
+            bool: True if tile is explored, False if unexplored or out of bounds
+        """
+        tile = self.get_tile(x, y)
+        if tile is None:
+            return False  # Out of bounds = not explored
+        return tile.explored
+    
+    def is_walkable(self, x: int, y: int) -> bool:
+        """Check if a tile is walkable (not blocked).
+        
+        SAFETY: Out-of-bounds coordinates return False.
+        
+        Args:
+            x (int): X coordinate to check
+            y (int): Y coordinate to check
+        
+        Returns:
+            bool: True if tile is walkable, False if blocked or out of bounds
+        """
+        return not self.is_blocked(x, y)
+    
+    def get_tile_property(self, x: int, y: int, property_name: str, default=None):
+        """Safely get a property from a tile.
+        
+        SAFETY: Returns default value if out of bounds or property doesn't exist.
+        
+        Args:
+            x (int): X coordinate
+            y (int): Y coordinate
+            property_name (str): Name of the property to get (e.g. 'blocked', 'explored')
+            default: Value to return if tile is out of bounds or property doesn't exist
+        
+        Returns:
+            Property value or default
+        """
+        tile = self.get_tile(x, y)
+        if tile is None:
+            return default
+        return getattr(tile, property_name, default)
 
     def next_floor(self, player, message_log, constants):
         """Generate the next dungeon floor.
