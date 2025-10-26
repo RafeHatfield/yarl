@@ -219,5 +219,108 @@ def get_game_variables(constants):
     )
 
     game_state = GameStates.PLAYERS_TURN
+    
+    # DEBUG: Tier 1 - Skip to specific dungeon level if requested
+    from config.testing_config import get_testing_config
+    config = get_testing_config()
+    if config.start_level > 1:
+        _skip_to_level(player, entities, game_map, message_log, config.start_level, constants)
 
     return player, entities, game_map, message_log, game_state
+
+
+def _skip_to_level(player, entities, game_map, message_log, target_level, constants):
+    """Skip to a specific dungeon level for testing.
+    
+    Descends through levels and grants appropriate gear for the target depth.
+    
+    Args:
+        player: Player entity
+        entities: List of all entities
+        game_map: Game map
+        message_log: Message log
+        target_level: Target dungeon level (2-25)
+        constants: Game constants
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"⏭️  DEBUG: Skipping to level {target_level}...")
+    print(f"⏭️  Descending to level {target_level}...")
+    
+    # Descend through levels
+    for i in range(target_level - 1):
+        game_map.next_floor(player, constants)
+        logger.debug(f"   Descended to level {game_map.dungeon_level}")
+    
+    # Grant level-appropriate gear
+    _grant_level_appropriate_gear(player, entities, target_level)
+    
+    # Boost player level to survive at this depth
+    target_player_level = min(target_level // 2, 10)  # Half dungeon level, max 10
+    player.level.current_level = target_player_level
+    player.fighter.max_hp = 30 + (target_player_level * 10)
+    player.fighter.hp = player.fighter.max_hp
+    
+    logger.info(f"✅ Started at dungeon level {game_map.dungeon_level}")
+    logger.info(f"   Player level: {player.level.current_level}")
+    logger.info(f"   HP: {player.fighter.hp}/{player.fighter.max_hp}")
+    
+    print(f"✅ Ready! You are on dungeon level {game_map.dungeon_level}")
+    print(f"   Player Level: {player.level.current_level} | HP: {player.fighter.hp}/{player.fighter.max_hp}")
+
+
+def _grant_level_appropriate_gear(player, entities, dungeon_level):
+    """Grant gear appropriate for testing at a specific dungeon depth.
+    
+    Args:
+        player: Player entity
+        entities: List of all entities  
+        dungeon_level: Current dungeon level
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    entity_factory = get_entity_factory()
+    
+    # Always give healing potions (5 base + 1 per 5 levels)
+    num_potions = 5 + (dungeon_level // 5)
+    for i in range(num_potions):
+        potion = entity_factory.create_item('healing_potion', 0, 0, 1)
+        if potion and player.inventory:
+            player.inventory.add_item(potion)
+    logger.info(f"   Granted {num_potions} healing potions")
+    
+    # Give weapon for deeper levels
+    if dungeon_level >= 5:
+        sword = entity_factory.create_weapon('sword', 0, 0)
+        if sword and player.equipment:
+            # Unequip starting dagger first
+            if player.equipment.main_hand:
+                player.inventory.add_item(player.equipment.main_hand)
+                player.equipment.toggle_equip(player.equipment.main_hand)
+            player.equipment.toggle_equip(sword)
+            logger.info("   Granted sword (replacing dagger)")
+    
+    # Give armor for deeper levels
+    if dungeon_level >= 10:
+        chain_mail = entity_factory.create_armor('chain_mail', 0, 0)
+        if chain_mail and player.equipment:
+            # Unequip starting leather armor
+            if player.equipment.chest:
+                player.inventory.add_item(player.equipment.chest)
+                player.equipment.toggle_equip(player.equipment.chest)
+            player.equipment.toggle_equip(chain_mail)
+            logger.info("   Granted chain mail (replacing leather armor)")
+    
+    # Give utility scrolls for deep levels
+    if dungeon_level >= 15:
+        for i in range(3):
+            scroll = entity_factory.create_item('teleport_scroll', 0, 0, dungeon_level)
+            if scroll and player.inventory:
+                player.inventory.add_item(scroll)
+        logger.info("   Granted 3 teleport scrolls")
+    
+    # Recalculate HP after equipment changes
+    player.fighter.max_hp = player.fighter.get_max_hp()
+    player.fighter.hp = player.fighter.max_hp
