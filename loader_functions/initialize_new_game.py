@@ -259,8 +259,8 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     # Boost player level to survive at this depth
     target_player_level = min(target_level // 2, 10)  # Half dungeon level, max 10
     player.level.current_level = target_player_level
-    player.fighter.max_hp = 30 + (target_player_level * 10)
-    player.fighter.hp = player.fighter.max_hp
+    player.fighter.base_max_hp = 30 + (target_player_level * 10)
+    player.fighter.hp = player.fighter.max_hp  # max_hp property calculates from base + bonuses
     
     logger.info(f"✅ Started at dungeon level {game_map.dungeon_level}")
     logger.info(f"   Player level: {player.level.current_level}")
