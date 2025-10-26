@@ -974,8 +974,45 @@ class GameMap:
                 "You take a moment to rest, and recover your strength.", (159, 63, 255)
             )
         )
+        
+        # Phase 2: Entity dialogue - Entity gets more anxious as player descends
+        self._trigger_entity_dialogue(message_log)
 
         return entities
+    
+    def _trigger_entity_dialogue(self, message_log):
+        """Trigger Entity dialogue based on current dungeon level.
+        
+        The Entity (ancient dragon bound in human form) speaks to the player
+        as they descend, growing progressively more anxious and desperate.
+        
+        Phase 2 implementation - depth-based dialogue from entity_dialogue.yaml.
+        
+        Args:
+            message_log (MessageLog): Game message log
+        """
+        from config.entity_dialogue_loader import get_entity_dialogue_loader
+        
+        # Get dialogue for current level
+        dialogue_loader = get_entity_dialogue_loader()
+        dialogue = dialogue_loader.get_dialogue_for_level(self.dungeon_level)
+        
+        if dialogue and dialogue_loader.should_show_in_log():
+            # Add Entity's message to the log
+            # Color based on dialogue config (purple → violet → red as anxiety increases)
+            import libtcodpy as libtcod
+            color_map = {
+                'light_purple': libtcod.light_purple,
+                'purple': libtcod.purple,
+                'violet': libtcod.violet,
+                'red': libtcod.red,
+                'light_red': libtcod.light_red,
+            }
+            color = color_map.get(dialogue.color, libtcod.light_purple)
+            
+            message_log.add_message(MB.custom(dialogue.message, color))
+            logger.info(f"Entity dialogue triggered at level {self.dungeon_level}")
+    
     
     def place_guaranteed_spawns(self, rooms, entities):
         """Place guaranteed spawns from level templates.
