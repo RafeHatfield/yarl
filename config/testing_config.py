@@ -27,6 +27,9 @@ class TestingConfig:
         self.no_monsters = False       # Disable monster spawning (peaceful mode)
         self.reveal_map = False        # Full FOV, no fog of war
         
+        # Tier 2: Wizard Mode (in-game debug menu)
+        self.wizard_mode = False       # Enable wizard debug menu (& key)
+        
     def get_max_items_per_room(self, dungeon_level: int) -> List[List[int]]:
         """Get maximum items per room based on testing mode.
         

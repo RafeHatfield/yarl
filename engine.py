@@ -96,6 +96,13 @@ Examples:
         help='Reveal entire map - no fog of war, infinite FOV (requires --testing)'
     )
     
+    # Tier 2: Wizard Mode - In-game debug menu
+    parser.add_argument(
+        '--wizard',
+        action='store_true',
+        help='Enable wizard mode - in-game debug menu with & key (requires --testing)'
+    )
+    
     return parser.parse_args()
 
 
@@ -114,9 +121,10 @@ def main():
     args = parse_arguments()
     
     # Validate that debug flags require --testing
-    if (args.start_level or args.god_mode or args.no_monsters or args.reveal_map) and not args.testing:
-        print("❌ ERROR: Debug flags (--start-level, --god-mode, --no-monsters, --reveal-map) require --testing flag")
+    if (args.start_level or args.god_mode or args.no_monsters or args.reveal_map or args.wizard) and not args.testing:
+        print("❌ ERROR: Debug flags (--start-level, --god-mode, --no-monsters, --reveal-map, --wizard) require --testing flag")
         print("   Example: python engine.py --testing --start-level 20 --god-mode")
+        print("   Example: python engine.py --testing --wizard")
         return
     
     # Set testing mode if requested
@@ -148,6 +156,10 @@ def main():
     if args.reveal_map:
         config.reveal_map = True
         print("👁️  REVEAL MAP: Entire map visible, no fog of war")
+    
+    if args.wizard:
+        config.wizard_mode = True
+        print("🧙 WIZARD MODE ENABLED: Press & to open debug menu")
     
     # Initialize monster action logging if in testing mode
     from config.testing_config import is_testing_mode
