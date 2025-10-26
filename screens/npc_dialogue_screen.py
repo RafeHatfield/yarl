@@ -204,8 +204,18 @@ def show_npc_dialogue_screen(npc, game_state_manager) -> GameStates:
         
         if chosen_id:
             # Player made a choice
-            dialogue.choose_option(chosen_id)
+            chosen_option = dialogue.choose_option(chosen_id)
             selected_index = 0  # Reset selection for next node
+            
+            # Sync knowledge with player's Victory component (Phase 3)
+            if chosen_option and chosen_option.unlocks_knowledge:
+                # Get player from game state manager
+                player = game_state_manager.state.player
+                if player and hasattr(player, 'victory') and player.victory:
+                    player.victory.unlock_knowledge(chosen_option.unlocks_knowledge)
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(f"Player unlocked knowledge: {chosen_option.unlocks_knowledge}")
             
             # Check if conversation ended
             if not dialogue.is_active():

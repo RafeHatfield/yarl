@@ -33,6 +33,10 @@ class Victory:
         self.ending_achieved: Optional[str] = None
         self.throne_room_entered = False
         
+        # Phase 3: Knowledge tracking (from Guide dialogue)
+        self.knows_entity_true_name = False  # Learned "Zhyraxion"
+        self.knowledge_unlocked = set()  # Set of knowledge IDs from dialogue
+        
         # Owner reference (will be set to player entity)
         self.owner: Optional[object] = None
     
@@ -73,4 +77,27 @@ class Victory:
             ending_type: 'good', 'bad', 'sacrifice', or 'betrayal'
         """
         self.ending_achieved = ending_type
+    
+    def unlock_knowledge(self, knowledge_id: str):
+        """Unlock a piece of knowledge from Guide dialogue.
+        
+        Args:
+            knowledge_id: ID of the knowledge (e.g., "entity_true_name_zhyraxion")
+        """
+        self.knowledge_unlocked.add(knowledge_id)
+        
+        # Special handling for true name
+        if knowledge_id == "entity_true_name_zhyraxion":
+            self.knows_entity_true_name = True
+    
+    def has_knowledge(self, knowledge_id: str) -> bool:
+        """Check if player has unlocked specific knowledge.
+        
+        Args:
+            knowledge_id: ID of the knowledge to check
+            
+        Returns:
+            True if knowledge is unlocked
+        """
+        return knowledge_id in self.knowledge_unlocked
 
