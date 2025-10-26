@@ -156,16 +156,21 @@ class PerformanceSystem(System):
                 in_fov = map_is_in_fov(game_state.fov_map, entity.x, entity.y)
                 
                 # Special entities visible on explored tiles (stairs, chests, signposts, secret doors)
-                is_persistent_feature_on_explored = (
-                    game_state.game_map
-                    and game_state.game_map.tiles[entity.x][entity.y].explored
-                    and (
-                        (hasattr(entity, "stairs") and entity.stairs) or
-                        (hasattr(entity, "chest") and entity.chest) or
-                        (hasattr(entity, "signpost") and entity.signpost) or
-                        (hasattr(entity, "is_secret_door_marker") and entity.is_secret_door_marker)
-                    )
-                )
+                # SAFETY: Validate coordinates are within bounds before accessing tiles
+                is_persistent_feature_on_explored = False
+                if game_state.game_map:
+                    # Check bounds
+                    if (0 <= entity.x < game_state.game_map.width and 
+                        0 <= entity.y < game_state.game_map.height):
+                        is_persistent_feature_on_explored = (
+                            game_state.game_map.tiles[entity.x][entity.y].explored
+                            and (
+                                (hasattr(entity, "stairs") and entity.stairs) or
+                                (hasattr(entity, "chest") and entity.chest) or
+                                (hasattr(entity, "signpost") and entity.signpost) or
+                                (hasattr(entity, "is_secret_door_marker") and entity.is_secret_door_marker)
+                            )
+                        )
 
                 if in_fov or is_persistent_feature_on_explored:
                     self.visible_entities.add(entity)

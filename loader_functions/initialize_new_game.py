@@ -347,11 +347,17 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
     
     invalid_entities = [e for e in entities if e.x < 0 or e.x >= map_width or e.y < 0 or e.y >= map_height]
     if invalid_entities:
-        logger.warning(f"   Found {len(invalid_entities)} entities with invalid coordinates:")
+        logger.warning(f"   ⚠️  Found {len(invalid_entities)} entities with invalid coordinates:")
         for entity in invalid_entities:
-            logger.warning(f"      {entity.name} at ({entity.x}, {entity.y}) - removing from world")
+            has_item = hasattr(entity, 'item') and entity.item
+            has_fighter = hasattr(entity, 'fighter') and entity.fighter
+            entity_type = "item" if has_item else "monster" if has_fighter else "other"
+            logger.warning(f"      {entity.name} ({entity_type}) at ({entity.x}, {entity.y}) - removing from world")
+            print(f"   ⚠️  DEBUG: Removed invalid entity: {entity.name} at ({entity.x}, {entity.y})")
             if entity in entities:
                 entities.remove(entity)
+    else:
+        logger.debug(f"   ✅ All {len(entities)} entities have valid coordinates")
     
     # Recalculate HP after equipment changes (max_hp is a property, recalculates automatically)
     player.fighter.hp = player.fighter.max_hp
