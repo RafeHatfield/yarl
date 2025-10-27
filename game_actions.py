@@ -1704,7 +1704,12 @@ class ActionProcessor:
                 )
     
     def _handle_right_click(self, click_pos: Tuple[int, int]) -> None:
-        """Handle right mouse click (context-aware: pickup items or cancel).
+        """Handle right mouse click (context-aware: talk to NPCs, pickup items, throw at enemies, or cancel).
+        
+        Priority:
+        1. NPCs → Start dialogue (pathfind if far)
+        2. Enemies → Open throw menu
+        3. Items → Auto-pickup (pathfind if far)
         
         Args:
             click_pos: Tuple of (world_x, world_y) click coordinates
@@ -1730,7 +1735,47 @@ class ActionProcessor:
             
             world_x, world_y = click_pos
             
-            # Check if there's an enemy at this location first (higher priority for throw shortcut)
+            # PRIORITY 1: Check for NPCs (dialogue interaction)
+            target_npc = None
+            for entity in entities:
+                if entity.x == world_x and entity.y == world_y:
+                    if (hasattr(entity, 'is_npc') and entity.is_npc and
+                        hasattr(entity, 'npc_dialogue') and entity.npc_dialogue):
+                        target_npc = entity
+                        break
+            
+            if target_npc:
+                # Right-click on NPC → pathfind and auto-talk!
+                distance = player.distance_to(target_npc)
+                
+                if distance <= 1.5:  # Adjacent or same tile
+                    # Close enough - start dialogue
+                    dungeon_level = game_map.dungeon_level if game_map else 1
+                    
+                    if not target_npc.npc_dialogue.start_encounter(dungeon_level):
+                        message_log.add_message(MB.info(f"{target_npc.name} has nothing to say right now."))
+                        return
+                    
+                    message_log.add_message(MB.info(f"You approach {target_npc.name}..."))
+                    self.state_manager.set_game_state(GameStates.NPC_DIALOGUE)
+                    self.state_manager.state.current_dialogue_npc = target_npc
+                    logger.info(f"Started conversation with {target_npc.name} (right-click)")
+                    return  # Don't consume turn
+                else:
+                    # Too far - pathfind to NPC
+                    from pathfinding import compute_path
+                    path = compute_path(game_map, player.x, player.y, world_x, world_y, entities, fov_map)
+                    
+                    if path:
+                        self.state_manager.set_extra_data("auto_path", path)
+                        self.state_manager.set_extra_data("auto_path_target", target_npc)
+                        self.state_manager.set_extra_data("auto_path_action", "talk")
+                        message_log.add_message(MB.info(f"Moving to {target_npc.name}..."))
+                    else:
+                        message_log.add_message(MB.warning(f"Can't reach {target_npc.name}."))
+                    return
+            
+            # PRIORITY 2: Check if there's an enemy at this location (throw shortcut)
             target_enemy = None
             for entity in entities:
                 if entity.x == world_x and entity.y == world_y:
