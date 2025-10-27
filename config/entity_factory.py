@@ -1232,7 +1232,7 @@ class EntityFactory:
         story events, or other unique gameplay mechanics.
         
         Args:
-            item_type: Type of unique item (e.g., 'amulet_of_yendor', 'entity_portal')
+            item_type: Type of unique item (e.g., 'ruby_heart', 'entity_portal')
             x: X coordinate
             y: Y coordinate
             

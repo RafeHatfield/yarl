@@ -1265,21 +1265,22 @@ map_features:
 # Unique Quest Items
 # Special items that trigger victory conditions and story events
 unique_items:
-  # The Amulet of Yendor - The ultimate goal
-  # This ancient artifact was used to trap the Entity in time
+  # Aurelyn's Ruby Heart - The dragon heart
+  # The extracted heart of Aurelyn, Zhyraxion's partner
   # Finding it triggers the final confrontation and victory condition
-  amulet_of_yendor:
-    char: "\""  # Amulet symbol
-    color: [255, 215, 0]  # Brilliant gold
+  ruby_heart:
+    char: "*"  # Pulsing heart symbol
+    color: [220, 20, 60]  # Crimson red
     render_order: "item"
     blocks: false
-    description: "An ancient amulet thrumming with binding magic. You feel immense power radiating from it."
+    description: "A dragon's heart, crystallized into ruby. It pulses with inner fire, warm to the touch, beating with a rhythm that isn't quite alive but isn't quite dead either. You can feel immense power thrumming through it. This was once part of a living being."
     is_quest_item: true
     triggers_victory: true
+    cannot_drop: true  # Cannot be dropped once picked up
   
   # Entity's Portal - Gateway to the final confrontation
-  # Appears when player obtains the Amulet of Yendor
-  # Stepping through leads to the Entity's Throne Room
+  # Appears when player obtains the Ruby Heart
+  # Stepping through leads to the Confrontation Chamber
   entity_portal:
     char: "O"  # Portal symbol
     color: [255, 0, 255]  # Bright magenta (otherworldly)
