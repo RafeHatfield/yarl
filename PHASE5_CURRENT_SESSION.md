@@ -1,7 +1,7 @@
 # Phase 5: The Five Endings - Current Session Status
 
 **Date:** October 27, 2025  
-**Status:** Sprint 1, Task 1 Complete (Ruby Heart) → Task 2 Starting (Portal System)  
+**Status:** Sprint 1, Tasks 1-2 Complete → Task 3 Starting (Confrontation Chamber)  
 **Branch:** `feature/phase3-guide-system`
 
 ---
@@ -35,6 +35,42 @@ We are implementing **Phase 5: The Five Endings** - the climactic conclusion to 
 
 ## ✅ What We Just Completed
 
+### Task 2: Portal System (DONE)
+
+**Files Modified:**
+- `victory_manager.py` - Renamed `handle_amulet_pickup()` → `handle_ruby_heart_pickup()`
+- `components/victory.py` - Updated all amulet references to ruby_heart
+- `game_states.py` - Renamed `AMULET_OBTAINED` → `RUBY_HEART_OBTAINED`
+- `game_actions.py` - Updated all victory trigger comments and method calls
+- `state_management/state_config.py` - Updated state config for new terminology
+- `systems/turn_controller.py` - Updated documentation
+- `engine/systems/ai_system.py` - Updated comments
+
+**Key Changes:**
+1. **Terminology Update:** All references to "Amulet of Yendor" replaced with "Aurelyn's Ruby Heart"
+2. **Message Updates:** Portal spawn messages now reference Zhyraxion and the Ruby Heart
+3. **Knowledge Tracking:** Added `knows_crimson_ritual` flag to Victory component
+4. **State Persistence:** `RUBY_HEART_OBTAINED` state properly configured to persist across turns
+5. **Anxiety Dialogue:** Updated Zhyraxion's dialogue to reflect desperation for the heart
+
+**Portal Behavior:**
+- ✅ Spawns adjacent to player when Ruby Heart is picked up
+- ✅ Player can explore Level 25 after pickup (find secret room)
+- ✅ Stepping on portal triggers `GameStates.CONFRONTATION`
+- ✅ Portal is one-way (no return)
+- ✅ Portal location communicated to player with directional hints
+
+**Zhyraxion's Messages:**
+```
+"You have it. After all these centuries..."
+"You have it. Now... bring it to me."  (calm)
+"PLEASE! I need— I MUST have that heart! Come to me! NOW!"  (desperate)
+```
+
+**Commit:** `0941436` - "✨ Phase 5.2: Update portal system for Ruby Heart terminology"
+
+---
+
 ### Task 1: Ruby Heart Entity (DONE)
 
 **Files Modified:**
@@ -66,43 +102,51 @@ ruby_heart:
 
 ---
 
-## 🚀 What's Next: Portal System
+## 🚀 What's Next: Confrontation Chamber
 
-### Task 2: Portal System (IN PROGRESS)
+### Task 3: Confrontation Chamber (READY TO START)
 
-The portal is the gateway to the confrontation chamber. It needs specific behavior:
+The confrontation chamber is where the player faces Zhyraxion and makes their choice. It needs to be:
 
 **Requirements:**
-1. **Spawns when Ruby Heart is picked up** - Not before
-2. **Appears near the player** - On Level 25, near where the heart was
-3. **Allows exploration** - Player can find secret room before entering
-4. **One-way transport** - Takes player to Confrontation Chamber (no return)
-5. **Visual clarity** - Should be obvious it's the "point of no return"
+1. **Special map/room** - Not part of the regular dungeon
+2. **Atmospheric design** - Circular chamber with ritual circles
+3. **Aurelyn's remains** - Golden scales/skeleton in center
+4. **No escape** - No exits until choice is made
+5. **Zhyraxion present** - As NPC entity (not initially hostile)
 
-**Technical Details:**
-- Entity already defined in `config/entities.yaml` as `entity_portal`
-- Needs to be spawned dynamically when heart is picked up
-- Current victory system in `victory_manager.py` handles this logic
-- Portal entry triggers game state change to `GameStates.CONFRONTATION`
+**Technical Approach:**
+- Create special map generation function for confrontation chamber
+- OR: Use existing map system but with custom template
+- OR: Create as a "cutscene" state that transitions to choice menu
 
-**Files to Review:**
-- `victory_manager.py` - Current portal spawn logic (may need updates)
-- `game_actions.py` - Handles pickup action
-- `components/victory.py` - Victory component tracks portal state
-- `config/entities.yaml` - Portal entity definition (line ~1284)
-
-**Current Portal Definition:**
-```yaml
-entity_portal:
-  char: "O"
-  color: [255, 0, 255]  # Bright magenta
-  render_order: "item"
-  blocks: false
-  description: "A swirling portal of otherworldly energy. Stepping through 
-    will take you to face the Entity. There is no turning back."
-  portal_destination: "entity_throne_room"
-  is_one_way: true
+**Key Elements:**
 ```
+- Circular room (15x15 or 20x20)
+- Ritual circles on floor (decorative tiles)
+- Aurelyn's remains in center (entity or decoration)
+- Zhyraxion standing opposite player
+- Oppressive atmosphere (dim lighting?)
+- No doors/exits visible
+```
+
+**Files to Consider:**
+- `map_objects/game_map.py` - Map generation (special case for confrontation)
+- `screens/confrontation_choice.py` - Already exists! (Simple placeholder)
+- `config/entities.yaml` - Zhyraxion entity definitions
+- `game_actions.py` - Portal entry handling (line ~415-439)
+
+**Existing Infrastructure:**
+- `screens/confrontation_choice.py` exists but has simple 2-choice menu
+- Portal entry already transitions to `GameStates.CONFRONTATION`
+- Need to either: generate map OR go straight to choice menu
+
+**Decision Needed:**
+Do we want a physical chamber to explore, or go straight to dialogue/choice?
+- **Option A:** Physical chamber (more immersive, player can look around)
+- **Option B:** Straight to dialogue (simpler, faster to implement)
+
+Recommendation: Start with Option B (dialogue screen), can add chamber later if desired.
 
 ---
 
@@ -110,8 +154,8 @@ entity_portal:
 
 ### Sprint 1: Foundation (Tasks 1-4)
 - [x] **Task 1:** Ruby Heart entity ✅ COMPLETE
-- [ ] **Task 2:** Portal system (spawns on pickup, teleports to chamber) ⬅️ **YOU ARE HERE**
-- [ ] **Task 3:** Confrontation Chamber map/room
+- [x] **Task 2:** Portal system (spawns on pickup, teleports to chamber) ✅ COMPLETE
+- [ ] **Task 3:** Confrontation Chamber map/room ⬅️ **YOU ARE HERE**
 - [ ] **Task 4:** Choice menu skeleton (Keep/Give/Destroy)
 
 ### Sprint 2: Secret Path (Tasks 5-7)
@@ -309,8 +353,9 @@ Phase 5 is the **final phase** - the culmination of everything.
 ## 💾 Git Status
 
 **Current Branch:** `feature/phase3-guide-system`  
-**Last Commit:** `46b5e96` - Ruby Heart implementation  
-**Status:** Clean working directory, ready for portal work
+**Last Commit:** `0941436` - Portal system for Ruby Heart  
+**Previous Commit:** `46b5e96` - Ruby Heart implementation  
+**Status:** Clean working directory, ready for confrontation chamber
 
 ---
 
@@ -340,5 +385,26 @@ Every choice has consequences. Every ending tells a different story. Some are tr
 
 ---
 
-*Next session: Implement portal system and confrontation chamber.*
+## 📊 Progress Summary
+
+**Completed:**
+- ✅ Task 1: Ruby Heart entity (emotional weight, cannot_drop flag)
+- ✅ Task 2: Portal system (spawn mechanics, terminology update)
+
+**In Progress:**
+- ⏳ Task 3: Confrontation Chamber (decision needed on implementation)
+
+**Next Steps:**
+1. Decide: Physical chamber vs. straight to dialogue
+2. Update `screens/confrontation_choice.py` with full menu system
+3. Implement 3-choice menu (Keep/Give/Destroy) with sub-menus
+4. Add knowledge-based conditional options
+
+**Remaining in Sprint 1:**
+- Task 3: Confrontation Chamber
+- Task 4: Choice menu skeleton
+
+---
+
+*Next session: Implement confrontation chamber and choice menu.*
 
