@@ -95,6 +95,7 @@ class AutoExplore:
         self.target_tile: Optional[Tuple[int, int]] = None
         self.known_items: Set[int] = set()  # IDs of items visible when exploration started
         self.known_monsters: Set[int] = set()  # IDs of monsters visible when exploration started
+        self.explored_tiles_at_start: Set[Tuple[int, int]] = set()  # Tiles explored before auto-explore started
     
     def start(self, game_map: 'GameMap', entities: List['Entity'], fov_map=None) -> str:
         """Begin auto-exploring the dungeon.
@@ -121,12 +122,20 @@ class AutoExplore:
         self.target_tile = None
         self.known_items = set()  # Reset known items
         self.known_monsters = set()  # Reset known monsters
+        self.explored_tiles_at_start = set()  # Reset explored tiles snapshot
         
         # Store initial HP for damage detection
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
             self.last_hp = self.owner.fighter.hp
         else:
             self.last_hp = 0
+        
+        # Snapshot all currently explored tiles
+        # This lets us distinguish between "already seen" vs "discovered during auto-explore"
+        for x in range(game_map.width):
+            for y in range(game_map.height):
+                if game_map.is_explored(x, y):
+                    self.explored_tiles_at_start.add((x, y))
         
         # Record entities already visible (so we don't stop for them)
         if fov_map:
@@ -449,9 +458,9 @@ class AutoExplore:
             if map_is_in_fov(fov_map, entity.x, entity.y):
                 entity_id = id(entity)
                 
-                # Skip items in already-explored tiles (user wants this!)
+                # Skip items in tiles that were already explored when auto-explore started
                 # This allows circling back through known areas without stopping
-                if game_map.is_explored(entity.x, entity.y):
+                if (entity.x, entity.y) in self.explored_tiles_at_start:
                     self.known_items.add(entity_id)  # Mark as known for consistency
                     continue
                 
@@ -555,8 +564,8 @@ class AutoExplore:
                 entity_id = id(entity)
                 chest = entity.chest
                 
-                # Skip chests in already-explored tiles
-                if game_map.is_explored(entity.x, entity.y):
+                # Skip chests in tiles that were already explored when auto-explore started
+                if (entity.x, entity.y) in self.explored_tiles_at_start:
                     self.known_items.add(entity_id)
                     continue
                 
@@ -604,8 +613,8 @@ class AutoExplore:
                 entity_id = id(entity)
                 signpost = entity.signpost
                 
-                # Skip signposts in already-explored tiles
-                if game_map.is_explored(entity.x, entity.y):
+                # Skip signposts in tiles that were already explored when auto-explore started
+                if (entity.x, entity.y) in self.explored_tiles_at_start:
                     self.known_items.add(entity_id)
                     continue
                 
