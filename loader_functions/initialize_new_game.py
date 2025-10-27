@@ -224,7 +224,7 @@ def get_game_variables(constants):
     from config.testing_config import get_testing_config
     config = get_testing_config()
     if config.start_level > 1:
-        _skip_to_level(player, entities, game_map, message_log, config.start_level, constants)
+        entities = _skip_to_level(player, entities, game_map, message_log, config.start_level, constants)
 
     return player, entities, game_map, message_log, game_state
 
@@ -241,6 +241,9 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
         message_log: Message log
         target_level: Target dungeon level (2-25)
         constants: Game constants
+        
+    Returns:
+        list: Updated entities list for the target level
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -248,9 +251,9 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     logger.info(f"⏭️  DEBUG: Skipping to level {target_level}...")
     print(f"⏭️  Descending to level {target_level}...")
     
-    # Descend through levels
+    # Descend through levels, capturing the entities list each time
     for i in range(target_level - 1):
-        game_map.next_floor(player, message_log, constants)
+        entities = game_map.next_floor(player, message_log, constants)
         logger.debug(f"   Descended to level {game_map.dungeon_level}")
     
     # Grant level-appropriate gear
@@ -268,6 +271,8 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     
     print(f"✅ Ready! You are on dungeon level {game_map.dungeon_level}")
     print(f"   Player Level: {player.level.current_level} | HP: {player.fighter.hp}/{player.fighter.max_hp}")
+    
+    return entities
 
 
 def _grant_level_appropriate_gear(player, entities, dungeon_level):
