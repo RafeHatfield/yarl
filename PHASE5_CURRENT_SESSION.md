@@ -1,7 +1,7 @@
 # Phase 5: The Five Endings - Current Session Status
 
 **Date:** October 27, 2025  
-**Status:** Sprint 1, Tasks 1-2 Complete → Task 3 Starting (Confrontation Chamber)  
+**Status:** Sprint 1, Tasks 1-3 Complete → TESTING PHASE  
 **Branch:** `feature/phase3-guide-system`
 
 ---
@@ -155,8 +155,8 @@ Recommendation: Start with Option B (dialogue screen), can add chamber later if 
 ### Sprint 1: Foundation (Tasks 1-4)
 - [x] **Task 1:** Ruby Heart entity ✅ COMPLETE
 - [x] **Task 2:** Portal system (spawns on pickup, teleports to chamber) ✅ COMPLETE
-- [ ] **Task 3:** Confrontation Chamber map/room ⬅️ **YOU ARE HERE**
-- [ ] **Task 4:** Choice menu skeleton (Keep/Give/Destroy)
+- [x] **Task 3:** Confrontation choice menu (3 menus, 6 endings) ✅ COMPLETE
+- [ ] **Task 4:** Ending screens for all 6 endings ⬅️ **NEXT**
 
 ### Sprint 2: Secret Path (Tasks 5-7)
 - [ ] **Task 5:** Secret room on Level 25 (hidden passage)
@@ -353,9 +353,9 @@ Phase 5 is the **final phase** - the culmination of everything.
 ## 💾 Git Status
 
 **Current Branch:** `feature/phase3-guide-system`  
-**Last Commit:** `0941436` - Portal system for Ruby Heart  
-**Previous Commit:** `46b5e96` - Ruby Heart implementation  
-**Status:** Clean working directory, ready for confrontation chamber
+**Last Commit:** `b106610` - Confrontation choice menu system  
+**Previous Commits:** `0941436` (Portal), `46b5e96` (Ruby Heart)  
+**Status:** Clean working directory, ready for testing!
 
 ---
 
@@ -387,22 +387,25 @@ Every choice has consequences. Every ending tells a different story. Some are tr
 
 ## 📊 Progress Summary
 
-**Completed:**
+**✅ Completed (Tasks 1-3):**
 - ✅ Task 1: Ruby Heart entity (emotional weight, cannot_drop flag)
 - ✅ Task 2: Portal system (spawn mechanics, terminology update)
+- ✅ Task 3: Confrontation choice menu (3 menus, 6 endings, conditional options)
 
-**In Progress:**
-- ⏳ Task 3: Confrontation Chamber (decision needed on implementation)
+**🧪 Ready to Test:**
+Full flow from Ruby Heart pickup through portal to confrontation menu works!
 
-**Next Steps:**
-1. Decide: Physical chamber vs. straight to dialogue
-2. Update `screens/confrontation_choice.py` with full menu system
-3. Implement 3-choice menu (Keep/Give/Destroy) with sub-menus
-4. Add knowledge-based conditional options
+**⏸️ Not Yet Implemented:**
+- Ending screens for Phase 5 endings ('1a', '1b', '2', '3', '4', '5')
+- Boss fights (Human/Full Dragon/Grief Dragon)
+- Secret room + Crimson Ritual Codex
+- Secret room enemies (Corrupted Ritualists)
 
-**Remaining in Sprint 1:**
-- Task 3: Confrontation Chamber
-- Task 4: Choice menu skeleton
+**Next Session:**
+- Test the implemented flow
+- Implement ending screens (Task 4)
+- Implement boss fights (Sprint 3)
+- Implement secret room (Sprint 2)
 
 ---
 
