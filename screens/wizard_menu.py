@@ -267,6 +267,8 @@ def wizard_gain_xp(game_state_manager):
 def wizard_teleport_to_level(game_state_manager):
     """Teleport to a specific dungeon level.
     
+    Descends floors until reaching target level, heals player each floor.
+    
     Args:
         game_state_manager: Game state manager
         
@@ -274,10 +276,44 @@ def wizard_teleport_to_level(game_state_manager):
         GameStates: PLAYERS_TURN
     """
     state = game_state_manager.state
+    player = state.player
+    game_map = state.game_map
     message_log = state.message_log
+    entities = state.entities
+    constants = state.constants
     
-    # TODO: Implement level teleport (needs number input)
-    message_log.add_message(MB.custom("🧙 WIZARD: Level teleport not yet implemented", WIZARD_COLOR))
+    # Prompt for target level
+    message_log.add_message(MB.custom("🧙 WIZARD: Enter target level (1-25, ESC to cancel):", WIZARD_COLOR))
+    
+    # Simple number input loop
+    target_level = _get_number_input(1, 25)
+    
+    if target_level is None:
+        message_log.add_message(MB.custom("🧙 WIZARD: Teleport cancelled", WIZARD_COLOR))
+        return GameStates.PLAYERS_TURN
+    
+    current_level = game_map.dungeon_level
+    
+    if target_level == current_level:
+        message_log.add_message(MB.custom(f"🧙 WIZARD: Already on level {target_level}", WIZARD_COLOR))
+        return GameStates.PLAYERS_TURN
+    
+    if target_level < current_level:
+        message_log.add_message(MB.custom("🧙 WIZARD: Cannot teleport backwards (not implemented)", WIZARD_COLOR))
+        return GameStates.PLAYERS_TURN
+    
+    # Descend to target level
+    levels_to_descend = target_level - current_level
+    message_log.add_message(MB.custom(f"🧙 WIZARD: Teleporting to level {target_level}...", WIZARD_COLOR))
+    
+    for i in range(levels_to_descend):
+        # Use the same next_floor logic as normal descent
+        game_map.next_floor(player, message_log, constants)
+    
+    # Heal player after teleport
+    player.fighter.hp = player.fighter.max_hp
+    
+    message_log.add_message(MB.custom(f"🧙 WIZARD: Arrived at dungeon level {game_map.dungeon_level}", WIZARD_COLOR))
     
     return GameStates.PLAYERS_TURN
 
@@ -285,6 +321,9 @@ def wizard_teleport_to_level(game_state_manager):
 def wizard_spawn_npc(game_state_manager):
     """Spawn an NPC near the player.
     
+    Currently supports:
+    - Ghost Guide (for Phase 3 testing)
+    
     Args:
         game_state_manager: Game state manager
         
@@ -292,10 +331,31 @@ def wizard_spawn_npc(game_state_manager):
         GameStates: PLAYERS_TURN
     """
     state = game_state_manager.state
+    player = state.player
+    game_map = state.game_map
+    entities = state.entities
     message_log = state.message_log
     
-    # TODO: Implement NPC spawning (needs submenu)
-    message_log.add_message(MB.custom("🧙 WIZARD: NPC spawning not yet implemented", WIZARD_COLOR))
+    # For now, just spawn the Ghost Guide
+    # In future, could add a submenu for different NPCs
+    from config.entity_factory import get_entity_factory
+    entity_factory = get_entity_factory()
+    
+    # Find empty spot near player
+    spawn_x, spawn_y = _find_empty_spot_near(player.x, player.y, game_map, entities)
+    
+    if spawn_x is None:
+        message_log.add_message(MB.custom("🧙 WIZARD: No empty spot near player!", WIZARD_COLOR))
+        return GameStates.PLAYERS_TURN
+    
+    # Spawn Ghost Guide
+    guide = entity_factory.create_unique_npc('ghost_guide', spawn_x, spawn_y, game_map.dungeon_level)
+    
+    if guide:
+        entities.append(guide)
+        message_log.add_message(MB.custom(f"🧙 WIZARD: Spawned {guide.name} at ({spawn_x}, {spawn_y})", WIZARD_COLOR))
+    else:
+        message_log.add_message(MB.custom("🧙 WIZARD: Failed to spawn Ghost Guide", WIZARD_COLOR))
     
     return GameStates.PLAYERS_TURN
 
@@ -352,4 +412,119 @@ def wizard_unlock_knowledge(game_state_manager):
     message_log.add_message(MB.custom("🧙 WIZARD: Knowledge unlock not yet implemented", WIZARD_COLOR))
     
     return GameStates.PLAYERS_TURN
+
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+def _get_number_input(min_val: int, max_val: int):
+    """Get a number input from the user.
+    
+    Args:
+        min_val: Minimum valid value
+        max_val: Maximum valid value
+        
+    Returns:
+        int or None: The entered number, or None if cancelled
+    """
+    import tcod as libtcod
+    
+    input_string = ""
+    
+    while True:
+        # Wait for key press
+        key = libtcod.console_wait_for_keypress(True)
+        
+        if key.vk == libtcod.KEY_ESCAPE:
+            return None
+        
+        elif key.vk == libtcod.KEY_ENTER:
+            # Try to parse the input
+            if input_string:
+                try:
+                    value = int(input_string)
+                    if min_val <= value <= max_val:
+                        return value
+                except ValueError:
+                    pass
+            return None
+        
+        elif key.vk == libtcod.KEY_BACKSPACE:
+            # Remove last character
+            if input_string:
+                input_string = input_string[:-1]
+        
+        elif key.c > 0:
+            # Add character if it's a digit
+            char = chr(key.c)
+            if char.isdigit() and len(input_string) < 3:  # Max 3 digits (up to 999)
+                input_string += char
+        
+        # Show current input (optional - could render to screen)
+        # For now, just accumulate silently until Enter
+
+
+def _find_empty_spot_near(x: int, y: int, game_map, entities, max_distance: int = 3):
+    """Find an empty spot near the given coordinates.
+    
+    Args:
+        x: Center x coordinate
+        y: Center y coordinate
+        game_map: Game map
+        entities: List of entities
+        max_distance: Maximum distance to search
+        
+    Returns:
+        tuple: (x, y) of empty spot, or (None, None) if none found
+    """
+    # Try adjacent tiles first (distance 1)
+    for dx in [-1, 0, 1]:
+        for dy in [-1, 0, 1]:
+            if dx == 0 and dy == 0:
+                continue
+            
+            new_x, new_y = x + dx, y + dy
+            
+            # Check if spot is valid
+            if _is_spot_empty(new_x, new_y, game_map, entities):
+                return (new_x, new_y)
+    
+    # Try further out (distance 2-3)
+    for dist in range(2, max_distance + 1):
+        for dx in range(-dist, dist + 1):
+            for dy in range(-dist, dist + 1):
+                if abs(dx) < dist and abs(dy) < dist:
+                    continue  # Skip inner tiles (already checked)
+                
+                new_x, new_y = x + dx, y + dy
+                
+                if _is_spot_empty(new_x, new_y, game_map, entities):
+                    return (new_x, new_y)
+    
+    return (None, None)
+
+
+def _is_spot_empty(x: int, y: int, game_map, entities):
+    """Check if a spot is empty and walkable.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        game_map: Game map
+        entities: List of entities
+        
+    Returns:
+        bool: True if spot is empty and walkable
+    """
+    # Check bounds and walkability
+    if not game_map.is_in_bounds(x, y) or game_map.is_blocked(x, y):
+        return False
+    
+    # Check for blocking entities
+    for entity in entities:
+        if entity.x == x and entity.y == y and getattr(entity, 'blocks', False):
+            return False
+    
+    return True
 
