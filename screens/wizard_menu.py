@@ -321,6 +321,18 @@ def wizard_teleport_to_level(game_state_manager):
     # Heal player after teleport
     player.fighter.hp = player.fighter.max_hp
     
+    # Force FOV recompute to ensure map renders correctly
+    import tcod as libtcod
+    from fov_functions import initialize_fov, recompute_fov
+    
+    fov_recompute = True
+    fov_map = initialize_fov(game_map)
+    recompute_fov(fov_map, player.x, player.y, constants['fov_radius'], constants['fov_light_walls'], constants['fov_algorithm'])
+    
+    # Update the FOV map in the game state
+    if hasattr(state, 'fov_map'):
+        state.fov_map = fov_map
+    
     message_log.add_message(MB.custom(f"🧙 WIZARD: Arrived at dungeon level {game_map.dungeon_level}", WIZARD_COLOR))
     
     return GameStates.PLAYERS_TURN
@@ -438,45 +450,48 @@ def _get_number_input(min_val: int, max_val: int):
     """
     import tcod as libtcod
     
-    global _wizard_console
-    if _wizard_console is None:
-        return None
-    
-    con = _wizard_console
     input_string = ""
     
-    # Input box dimensions
+    # Work with root console (0) directly for immediate visibility
+    root = 0
+    
+    # Input box dimensions - use fixed screen size
     box_width = 50
     box_height = 5
-    x = con.width // 2 - box_width // 2
-    y = con.height // 2 - box_height // 2
+    screen_width = 80  # Standard screen width
+    screen_height = 50  # Standard screen height
+    x = screen_width // 2 - box_width // 2
+    y = screen_height // 2 - box_height // 2
     
     while True:
-        # Draw input box with solid background
+        # Draw input box with solid background directly to root console
         for i in range(box_width):
             for j in range(box_height):
-                libtcod.console_set_char_background(con, x + i, y + j, libtcod.black, libtcod.BKGND_SET)
-                libtcod.console_put_char(con, x + i, y + j, ' ')
+                libtcod.console_set_char_background(root, x + i, y + j, libtcod.black, libtcod.BKGND_SET)
+                libtcod.console_put_char(root, x + i, y + j, ' ')
         
         # Draw border
         for i in range(box_width):
-            libtcod.console_put_char(con, x + i, y, libtcod.CHAR_HLINE)
-            libtcod.console_put_char(con, x + i, y + box_height - 1, libtcod.CHAR_HLINE)
+            libtcod.console_put_char(root, x + i, y, libtcod.CHAR_HLINE)
+            libtcod.console_put_char(root, x + i, y + box_height - 1, libtcod.CHAR_HLINE)
         for j in range(box_height):
-            libtcod.console_put_char(con, x, y + j, libtcod.CHAR_VLINE)
-            libtcod.console_put_char(con, x + box_width - 1, y + j, libtcod.CHAR_VLINE)
+            libtcod.console_put_char(root, x, y + j, libtcod.CHAR_VLINE)
+            libtcod.console_put_char(root, x + box_width - 1, y + j, libtcod.CHAR_VLINE)
         
-        # Draw prompt
+        # Draw prompt with green color (wizard mode theme)
+        libtcod.console_set_default_foreground(root, libtcod.green)
         prompt = f"Enter level ({min_val}-{max_val}):"
-        libtcod.console_print(con, x + 2, y + 1, prompt)
+        libtcod.console_print(root, x + 2, y + 1, prompt)
         
-        # Draw input
+        # Draw input with bright green
+        libtcod.console_set_default_foreground(root, libtcod.light_green)
         input_display = input_string + "_"
-        libtcod.console_print(con, x + 2, y + 2, input_display)
+        libtcod.console_print(root, x + 2, y + 2, input_display)
         
         # Draw help text
+        libtcod.console_set_default_foreground(root, libtcod.dark_green)
         help_text = "ENTER=confirm ESC=cancel"
-        libtcod.console_print(con, x + 2, y + 3, help_text)
+        libtcod.console_print(root, x + 2, y + 3, help_text)
         
         # Flush to screen
         libtcod.console_flush()
