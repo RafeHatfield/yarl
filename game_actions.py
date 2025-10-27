@@ -61,7 +61,6 @@ class ActionProcessor:
             'start_auto_explore': self._handle_start_auto_explore,
             'throw': self._handle_throw_action,
             'search': self._handle_search,
-            'talk': self._handle_talk_to_npc,  # Phase 3: Talk to Ghost Guide
         }
         
         # Map mouse actions to their handlers
@@ -658,7 +657,12 @@ class ActionProcessor:
             self.turn_controller.end_player_action(turn_consumed=True)
     
     def _handle_pickup(self, _) -> None:
-        """Handle item pickup. TAKES 1 TURN."""
+        """Handle interaction - talk to NPCs or pick up items. 
+        
+        Priority:
+        1. NPCs at player position - start dialogue (NO TURN)
+        2. Items at player position - pick up (TAKES 1 TURN)
+        """
         current_state = self.state_manager.state.current_state
         
         # Use StateManager to check if pickup is allowed in current state
@@ -668,11 +672,36 @@ class ActionProcessor:
         player = self.state_manager.state.player
         entities = self.state_manager.state.entities
         message_log = self.state_manager.state.message_log
+        game_map = self.state_manager.state.game_map
         
         if not all([player, entities is not None, message_log]):
             return
         
-        # Look for items at player's position
+        # FIRST: Check for NPCs at player position
+        for entity in entities:
+            if (entity.x == player.x and entity.y == player.y and
+                hasattr(entity, 'is_npc') and entity.is_npc and
+                hasattr(entity, 'npc_dialogue') and entity.npc_dialogue):
+                
+                # Found an NPC! Start dialogue
+                dungeon_level = game_map.dungeon_level if game_map else 1
+                
+                if not entity.npc_dialogue.start_encounter(dungeon_level):
+                    message_log.add_message(MB.info(f"{entity.name} has nothing to say right now."))
+                    return  # Don't consume turn
+                
+                message_log.add_message(MB.info(f"You approach {entity.name}..."))
+                
+                # Transition to dialogue state
+                self.state_manager.set_game_state(GameStates.NPC_DIALOGUE)
+                
+                # Store the NPC we're talking to
+                self.state_manager.state.current_dialogue_npc = entity
+                
+                logger.info(f"Started conversation with {entity.name} at dungeon level {dungeon_level}")
+                return  # Don't consume turn for dialogue
+        
+        # SECOND: Look for items at player's position
         item_found = False
         for entity in entities:
             if entity.item and entity.x == player.x and entity.y == player.y:
@@ -788,66 +817,6 @@ class ActionProcessor:
         # TURN ECONOMY: Searching takes 1 turn
         self._process_player_status_effects()
         self.turn_controller.end_player_action(turn_consumed=True)
-    
-    def _handle_talk_to_npc(self, _) -> None:
-        """Handle talking to adjacent NPCs. Phase 3: Ghost Guide interaction.
-        
-        Looks for NPCs in adjacent tiles (8 directions + same tile).
-        If found, opens the dialogue screen.
-        Does NOT consume a turn.
-        """
-        current_state = self.state_manager.state.current_state
-        if current_state != GameStates.PLAYERS_TURN:
-            return
-        
-        player = self.state_manager.state.player
-        entities = self.state_manager.state.entities
-        message_log = self.state_manager.state.message_log
-        
-        if not all([player, entities is not None, message_log]):
-            return
-        
-        # Look for NPCs in adjacent tiles (including same tile)
-        npc_found = None
-        for dx in [-1, 0, 1]:
-            for dy in [-1, 0, 1]:
-                target_x = player.x + dx
-                target_y = player.y + dy
-                
-                for entity in entities:
-                    # Check if entity is an NPC with dialogue
-                    if (entity.x == target_x and entity.y == target_y and
-                        hasattr(entity, 'is_npc') and entity.is_npc and
-                        hasattr(entity, 'npc_dialogue') and entity.npc_dialogue):
-                        npc_found = entity
-                        break
-                
-                if npc_found:
-                    break
-            if npc_found:
-                break
-        
-        if not npc_found:
-            message_log.add_message(MB.info("There's no one here to talk to."))
-            return
-        
-        # Start conversation with dungeon level context!
-        game_map = self.state_manager.state.game_map
-        dungeon_level = game_map.dungeon_level if game_map else 1
-        
-        if not npc_found.npc_dialogue.start_encounter(dungeon_level):
-            message_log.add_message(MB.info(f"{npc_found.name} has nothing to say right now."))
-            return
-        
-        message_log.add_message(MB.info(f"You approach {npc_found.name}..."))
-        
-        # Transition to dialogue state
-        self.state_manager.set_game_state(GameStates.NPC_DIALOGUE)
-        
-        # Store the NPC we're talking to for later reference
-        self.state_manager.state.current_dialogue_npc = npc_found
-        
-        logger.info(f"Started conversation with {npc_found.name} at dungeon level {dungeon_level}")
     
     def _handle_inventory_action(self, inventory_index: int) -> None:
         """Handle inventory item usage or dropping.
