@@ -77,39 +77,130 @@ The Guide isn't a random ghost. They're **you from before** - the previous soul 
 
 ---
 
-## 🐉 The Entity: Zhyraxion
+## 🐉 The Entity: Zhyraxion - The Full Tragedy
 
 ### True Identity
 
-**Zhyraxion** - Ancient dragon, cursed into mortal form
+**Zhyraxion** - Ancient dragon, bound and damaged by a failed ritual
 
-### The Curse
+### The Backstory: What Really Happened
 
-- Bound into a **human body**
-- Cannot leave this place
+#### The Two Dragons
+
+**Zhyraxion (D1)** and **Aurelyn (D2)** - The Golden Pair
+- Ancient dragons, bonded partners (romantic, battle companions, soulbound)
+- Flying together across the world
+- Seeking new sources of power and knowledge (as immortal dragons do)
+- Not malicious—ambitious, curious, powerful
+- Inseparable for millennia
+
+#### The Crimson Order
+
+**The Ritualists** - A cult of power-hungry wizards and priests
+- Built a massive underground citadel (25 levels deep into the earth)
+- Spent decades researching dragon magic
+- Discovered the secret: a dragon's immortal power resides in its **Ruby Heart**
+- Designed an elaborate ritual to:
+  1. **Attract** a dragon to the ritual site (ground level, above the citadel)
+  2. **Bind** the dragon so it cannot escape
+  3. **Destroy** the dragon completely
+  4. **Extract** the Ruby Heart from its corpse
+  5. **Absorb** the heart's power and achieve immortality
+
+The ritual was **perfect**. Years of preparation. Designed for exactly **one dragon**.
+
+#### What Went Catastrophically Wrong
+
+**The ritual attracted TWO dragons, not one.**
+
+**Phase 1: Aurelyn's Destruction**
+1. Aurelyn (D2) arrives first, drawn by the ritual's call
+2. Lands on the ritual site
+3. Ritualists spring the trap - binding circle activates
+4. Aurelyn fights but cannot escape
+5. Ritualists complete the ritual:
+   - ✓ Binding successful
+   - ✓ Destruction successful  
+   - ✓ Ruby Heart extracted
+6. **First ritual succeeds perfectly**
+7. Aurelyn is dead
+
+**Phase 2: Zhyraxion's Arrival**
+1. Zhyraxion arrives moments later, following his partner
+2. Sees Aurelyn dying/dead on the ritual ground
+3. Dives in **rage and grief** to save them—too late
+4. Crashes into the ritual site as Aurelyn's life ends
+
+**Phase 3: The Rushed Second Ritual**
+1. Ritualists are **exhausted** from the first ritual (it took everything)
+2. Panic: "ANOTHER dragon! We weren't prepared for two!"
+3. Fastest decision of their lives:
+   - Grab Aurelyn's Ruby Heart
+   - Sprint down all 25 levels to the **deepest vault**
+   - Lock it away in the most secure chamber (last line of defense)
+   - Sprint back up to face the second dragon
+4. Zhyraxion is **raging**, tearing the ritual site apart
+5. Ritualists have no choice: attempt the ritual again
+
+**Phase 4: The Incomplete Binding**
+
+The ritual was designed for ONE dragon. They're exhausted. It goes wrong.
+
+**What worked:**
+- ✓ Zhyraxion **bound to the citadel grounds** (cannot leave)
+- ✓ Zhyraxion **damaged** (cannot shapeshift, trapped in human form)
+- ✓ Zhyraxion **weakened** (powers suppressed, slowly rotting)
+
+**What failed:**
+- ✗ Zhyraxion **NOT destroyed** (ritualists too weak)
+- ✗ Ruby Heart **NOT extracted** (ritual incomplete)
+- ✗ Ritualists **destroyed themselves** in the attempt
+
+*Ambiguous whether they burned out from exhaustion or Zhyraxion killed them in his rage. Either way: all dead, ritual incomplete.*
+
+#### The Current Situation (Centuries Later)
+
+**Zhyraxion's Prison:**
+- Bound to the citadel, cannot leave the grounds
 - Cannot transform back to dragon form
-- Slowly **rotting** for centuries
-- Desperate to escape
+- Stuck in human body, slowly rotting for centuries
+- Tormented by **grief** (partner destroyed)
+- Tormented by **rage** (trapped by mortals)
+- Tormented by **desperation** (partner's heart tantalizingly close but unreachable)
 
-### What It Wants
+**The Ruby Heart:**
+- **Aurelyn's Ruby Heart** locked in the deepest vault (Level 25)
+- Glows with inner fire, pulses like a living heart
+- Ruby the size of a fist, warm to the touch
+- Contains Aurelyn's immortal essence/power
+- Only way to break Zhyraxion's incomplete binding
 
-The **Amulet** (placeholder name) from the bottom of the dungeon.
+**Why Zhyraxion Needs It:**
+1. **Practical**: The binding ritual was designed for ONE dragon. Aurelyn's heart contains enough power to **shatter the incomplete binding**.
+2. **Functional**: Would restore Zhyraxion's ability to shapeshift and leave.
+3. **Emotional**: It's not just "a power source"—it's **his partner's heart**. He's been separated from it for centuries.
+4. **Devastating**: The ritualists locked it at the absolute bottom as the ultimate cruelty.
 
-### Why It Needs the Amulet
+**The Soul Rotation:**
+- Zhyraxion has been trapped for centuries
+- Cannot retrieve the heart himself (too weak in human form)
+- Began capturing souls, cycling them through bodies
+- "Descend. Retrieve the Ruby Heart. Bring it to me."
+- Guide lasted decades trying
+- You're just the latest attempt
 
-**DELIBERATELY AMBIGUOUS**
+### What the Entity Never Tells You
 
-The Entity never fully explains. The Guide doesn't know for certain. Hints include:
+- **The heart belonged to his partner**
+- **His partner was murdered by the ritualists**
+- **He's been separated from it for centuries**
+- **His desperation is fueled by grief, not just ambition**
 
-- **Escape?** - Break free from this prison
-- **Healing?** - Repair the curse, stop rotting
-- **Transformation?** - Regain dragon form
-- **Power?** - Restore ancient abilities
-- **Freedom?** - Leave this place forever
+The Entity manipulates, lies, and betrays—but the **pain is real**.
 
-> *"That amulet? That's the KEY. To what? Freedom? Power? Its old body back? The dragon never told ME, and I was its favorite toy for decades. But it NEEDS it. Desperately."*
+### The Tragic Irony
 
-**Design Intent:** Keep it vague. Players speculate. Multiple interpretations valid.
+Zhyraxion and Aurelyn were seeking power when they were drawn to the ritual. They got what they sought: Aurelyn's power extracted, Zhyraxion bound to it forever. The Crimson Order wanted dragon power and immortality—they died achieving half their goal.
 
 ### Its Methods
 
@@ -133,36 +224,49 @@ The Entity never fully explains. The Guide doesn't know for certain. Hints inclu
 
 ---
 
-## 🎯 The Amulet: Key to Everything
+## 💎 The Ruby Heart: Aurelyn's Legacy
 
 ### What It Is
 
-- Ancient artifact at the bottom of the dungeon (level 25)
-- Glowing, golden, obviously powerful
-- Entity **desperately** wants it
-- Guide warns against giving it to Entity
+**Aurelyn's Ruby Heart** - The extracted heart of Zhyraxion's partner
+- Located at the bottom of the citadel (Level 25, deepest vault)
+- Ruby the size of a fist
+- Glows with inner fire, warm to the touch
+- Pulses like a living heartbeat
+- Contains Aurelyn's immortal essence and power
+- The Crimson Order's greatest (and final) achievement
 
-### What It Does
+### What the Player Discovers
 
-**AMBIGUOUS BY DESIGN**
+**Visual Description:**
+- Not an "amulet" or gem—clearly a **heart**
+- Crystallized ruby, still pulsing with life
+- Warm, almost uncomfortable to hold
+- Can feel the power thrumming through it
+- Unsettling: this was part of a living being
 
-Different perspectives:
+**The Guide's Knowledge:**
+- "That's not just a treasure. That's a dragon's HEART."
+- "The ritualists killed a dragon and took it."
+- "Zhyraxion has been trying to reach it for centuries."
+- "I don't know why he needs it, but he'd do ANYTHING for it."
 
-**Entity's Claims:**
-- "It will free us BOTH"
-- "Bring it to me and I'll reward you"
-- "We can escape together"
+**What the Player Doesn't Know (Until Context Reveals):**
+- The heart belonged to Zhyraxion's **partner**
+- Zhyraxion and Aurelyn were together for millennia
+- Zhyraxion watched Aurelyn die
+- He's been separated from the heart for centuries
+- His desperation is fueled by grief, not just ambition
 
-**Guide's Warnings:**
-- "It needs it for SOMETHING"
-- "Not sure if escape, healing, or transformation"
-- "Whatever it is, Entity becomes dangerous with it"
+### Player's Choices
 
-**Player's Choice:**
-- Keep it? (Stay trapped in cycle but safe)
-- Give it? (Trust Entity's promises)
-- Destroy it? (Break the curse entirely)
-- Destroy it WITH true name? (Purify Entity)
+Once you have the Ruby Heart:
+- **Keep it + Fight** → Battle human Zhyraxion, escape
+- **Keep it + Ritual** → Extract his heart too, collect both
+- **Keep it + Transform** → Accept dragon offer, get trapped
+- **Give it** → Face full dragon form (nearly unwinnable)
+- **Destroy (no name)** → Face grief-corrupted dragon (hard)
+- **Destroy (WITH name)** → Purify curse, free everyone (best)
 
 ---
 
@@ -228,33 +332,82 @@ Different perspectives:
 
 ### Act 4: Choice (Level 25)
 
-**Amulet Found:**
-- Entity's reaction: **DESPERATE**
-- "YES! BRING IT TO ME!"
+**Ruby Heart Found:**
+- You reach the deepest vault
+- There it is: glowing, pulsing, **alive**
+- Entity's reaction: **DESPERATE BEYOND MEASURE**
+- "YES! AURELYN! FINALLY!"
+- "BRING IT TO ME! PLEASE!"
 - "WE CAN ESCAPE TOGETHER!"
 - Promises, begging, manipulation
+- First time Entity sounds genuinely emotional (not just sarcastic)
 
 **Portal Appears:**
-- Step through → Confrontation
-- Entity demands the amulet
+- Ancient portal activates when heart is touched
+- Step through → Confrontation chamber
+- Zhyraxion there in human form, waiting
+- Sees the heart in your hands
+- "Give it to me. Please. It's been so long..."
 - Player must choose
 
 ---
 
 ## 🎭 The Five Endings
 
-### 1. 🔒 Eternal Servitude (Neutral Ending)
+### 1a. ⚔️ Escape Through Battle (Neutral-Good Ending)
 
-**Choice:** Keep the amulet, refuse dragon transformation
+**Choice:** Keep the Ruby Heart, refuse dragon transformation, FIGHT to escape
 
-**Outcome:**
-- Use amulet to stay alive but don't give it to Entity
-- Entity stays weak, you stay trapped in cycle
-- No freedom for either of you
-- Pyrrhic victory: safe but never free
-- Entity: "Fine. We'll both rot here then."
+**What Happens:**
+- You refuse to give Zhyraxion his partner's heart
+- You refuse his transformation offer
+- Zhyraxion, desperate and enraged: "Then you'll DIE here with me!"
+- **Boss fight: Zhyraxion (Human Form)**
 
-**Theme:** Fear of risk, stagnation over danger
+**Boss Details:**
+- Tough but winnable battle
+- Zhyraxion limited by human form
+- Still formidable (centuries of trapped rage)
+- Telegraphed attacks, pattern-based combat
+- Designed to be challenging but fair
+
+**Victory:**
+- Zhyraxion falls, defeated in human form
+- You escape with Aurelyn's Ruby Heart
+- Portal opens, you leave the citadel
+- Zhyraxion left behind, still trapped, still suffering
+- You're free but at the cost of condemning him
+
+**Theme:** Freedom through strength, but morally grey
+
+---
+
+### 1b. 💀 The Crimson Collector (Secret Dark Ending)
+
+**Choice:** Keep the Ruby Heart, USE it to finish the ritual on Zhyraxion
+
+**What Happens:**
+- You remember the Crimson Order's research (found in the citadel)
+- You realize: the ritual can be COMPLETED
+- You can extract Zhyraxion's Ruby Heart too
+- Become what the ritualists wanted to be
+
+**Process:**
+- Use Aurelyn's heart as power source
+- Complete the binding ritual on Zhyraxion
+- Extract his Ruby Heart
+- **You now have TWO dragon hearts**
+
+**Victory:**
+- Portal opens—but it's different (darker, red-tinted)
+- You leave with both hearts pulsing in your hands
+- Immense power, but at what cost?
+- You've become the very thing that started this tragedy
+- The cycle continues: will YOU start capturing souls?
+
+**Theme:** Power corrupts absolutely, become the monster
+
+**Tone:** Dark, disturbing, "fun" in a villain-protagonist way
 
 ---
 
@@ -288,55 +441,180 @@ Different perspectives:
 
 ---
 
-### 3. ☠️ Fool's Freedom (Quick Bad Ending)
+### 3. ☠️ Fool's Freedom (Bad Ending - Unwinnable Fight)
 
-**Choice:** Give the amulet to Entity immediately (no bargaining)
+**Choice:** Give Aurelyn's Ruby Heart to Zhyraxion immediately
 
-**Outcome:**
-- Entity thanks you, seems grateful
-- Uses amulet to restore power
-- Discards you instantly like trash
+**What Happens:**
+- "Yes! FINALLY! After all these centuries..."
+- Zhyraxion takes the heart, absorbs its power
+- Transformation begins: human form shatters
+- **Full dragon form emerges**
+
+**Boss Fight: Zhyraxion (Full Dragon Form - Corrupted)**
+- **MASSIVELY overpowered**
+- Ancient dragon at full strength
+- Fire breath, flight, crushing physical attacks
+- Player is NOT expected to win (virtually impossible)
+- Death is the expected outcome
+
+**Expected Outcome (Death):**
+- You're obliterated by full dragon power
+- Zhyraxion escapes, corrupted by centuries of grief/rage
 - You become the next discarded ghost
-- Entity: "Thank you. You were... adequate."
+- Entity doesn't even acknowledge you as he leaves
+- "...Finally. Aurelyn, I'm coming."
 
-**Theme:** Trust is fatal, you're just a tool
+**Secret Outcome (If player somehow wins - 0.1% chance):**
+- Easter egg achievement: "Dragonslayer"
+- Zhyraxion falls, you escape with both hearts (like 1b)
+- Special victory text: "You did the impossible."
+- Hall of Fame special marker
 
----
+**Theme:** Trust is fatal, you're hopelessly outmatched
 
-### 4. 🔥 Mercy & Corruption (Tragic Ending)
-
-**Choice:** Destroy the amulet (WITHOUT true name)
-
-**Outcome:**
-- Amulet shatters, curse breaks
-- Entity transforms to dragon form
-- But still CORRUPTED (curse wasn't purified)
-- Corrupted dragon kills you
-- You showed mercy, it backfired
-
-**Theme:** Mercy without wisdom is dangerous
+**Design Note:** This fight should feel genuinely impossible. Speedrunners/challenge seekers only.
 
 ---
 
-### 5. ✨ Sacrifice & Redemption (Secret Best Ending)
+### 4. 🔥 Mercy & Corruption (Tragic Ending - Difficult Fight)
 
-**Choice:** Destroy the amulet while speaking **ZHYRAXION** (true name)
+**Choice:** Destroy Aurelyn's Ruby Heart (WITHOUT speaking Zhyraxion's true name)
+
+**What Happens:**
+- You raise the Ruby Heart and shatter it
+- **Ultimate cruelty**: You destroy his partner's heart
+- Zhyraxion: "NO! WHAT HAVE YOU—AURELYN!"
+- **Rage and anguish** beyond comprehension
+- Incomplete binding BREAKS from the emotional surge
+- Zhyraxion transforms through sheer grief-fueled power
+
+**Boss Fight: Zhyraxion (Dragon Form - Grief-Corrupted)**
+- Partial transformation (curse not purified, only broken)
+- **Very difficult but winnable** with skill
+- Corrupted by grief, rage, and centuries of suffering
+- More powerful than human form (1a)
+- Less powerful than full form (3) - damaged, incomplete
+- Erratic attacks (grief-mad, not calculating)
+- Needs careful balancing
+
+**Victory:**
+- Zhyraxion falls, broken twice over
+- You escape, but at horrific cost
+- You destroyed his partner's heart (his only connection to her)
+- Then killed him in his grief
+- Freedom achieved through cruelty
+
+**Death (if you lose):**
+- Zhyraxion kills you in anguish
+- Escapes as corrupted dragon
+- Your soul joins the Guide
+- Zhyraxion forever corrupted, never finding peace
+
+**Theme:** Mercy without wisdom is cruelty in disguise
+
+**Emotional Weight:** You meant to free him but destroyed his last connection to Aurelyn. This is the most tragic ending.
+
+---
+
+### 5. ✨ Sacrifice & Redemption (Secret Best Ending - No Fight)
+
+**Choice:** Destroy Aurelyn's Ruby Heart while speaking **"ZHYRAXION"** (true name)
 
 **Requirements:**
 - Must have learned true name from Guide (level 15)
-- Must choose to destroy amulet
-- Must speak the name
+- Must choose to destroy the Ruby Heart
+- Must speak the true name as you destroy it
 
-**Outcome:**
-- Amulet shatters with Entity's true name
-- Curse **PURIFIED**, not just broken
-- Entity transforms back to dragon BUT REDEEMED
-- Dragon thanks you genuinely
-- Frees your soul (and Guide's)
-- BOTH escape together
-- Bittersweet: Entity disappears (where? unknown)
+**What Happens:**
+- You raise the Ruby Heart
+- Speak Zhyraxion's true name: **"ZHYRAXION"**
+- The heart shatters—but differently
+- Golden light, not red
+- The curse is **PURIFIED**, not just broken
 
-**Theme:** Compassion + knowledge = redemption
+**Transformation:**
+- Zhyraxion transforms, but redeemed
+- Dragon form restored, but the corruption is gone
+- The grief, rage, and suffering **lifted**
+- Aurelyn's soul released from the heart
+- The binding shattered properly
+
+**Resolution:**
+- Zhyraxion: "You... you spoke my name. You knew, and you still..."
+- Genuine gratitude (first time in centuries)
+- Frees your soul (and the Guide's soul)
+- Portal opens for everyone
+- Both dragons reunited—not in body, but in whatever comes after
+- You and Guide escape together, truly free
+
+**Final Moment:**
+- Zhyraxion and Aurelyn's spirits visible for a moment
+- Together again, finally at peace
+- They fade, but not into darkness—into light
+- Where they go: unknown, but it's right
+
+**Theme:** Compassion + knowledge + sacrifice = redemption for everyone
+
+**Emotional Weight:** You gave up the power (Ruby Heart) and chose to free them both. True selflessness. The only ending where EVERYONE wins.
+
+---
+
+## 📊 Endings Summary
+
+### Quick Reference Table
+
+| Ending | Choice | Boss Fight? | Difficulty | Moral Weight | Outcome |
+|--------|--------|-------------|------------|--------------|---------|
+| **1a. Escape Through Battle** | Keep + Refuse + Fight | Yes (Human Zhyraxion) | Medium-Hard | Morally Grey | You escape, he stays trapped |
+| **1b. Crimson Collector** | Keep + Use for Ritual | No | None | DARK | Collect both hearts, become the monster |
+| **2. Dragon's Bargain** | Keep + Accept Transform | No | None | Bad (Trapped) | Curse transfers to you, he's free |
+| **3. Fool's Freedom** | Give Immediately | Yes (Full Dragon) | **EXTREME** | Bad (Foolish) | Near-unwinnable, you die (probably) |
+| **4. Mercy & Corruption** | Destroy (no name) | Yes (Grief Dragon) | Hard | Tragic | Cruelty disguised as mercy |
+| **5. Sacrifice & Redemption** | Destroy (WITH name) | No | None | BEST | Everyone freed, dragons reunited |
+
+### Boss Fight Difficulty Scale
+
+**Human Form (1a):**
+- Challenging but fair
+- Telegraphed attacks
+- Pattern-based combat
+- Designed to be beaten with skill
+
+**Grief-Corrupted Dragon (4):**
+- Very difficult
+- Erratic, unpredictable attacks
+- Requires excellent gear and strategy
+- Beatable but tests your skills
+- Needs careful balancing
+
+**Full Dragon (3):**
+- Nearly impossible
+- Designed to kill you
+- Speedrunner/challenge seeker content
+- Victory is 0.1% chance easter egg
+- "You shouldn't have trusted him"
+
+### Moral Complexity Rankings
+
+**Most Selfless:** Ending 5 (Sacrifice & Redemption)
+- Give up power, free everyone
+
+**Morally Neutral:** Ending 1a (Escape Through Battle)
+- Self-preservation, but condemn Zhyraxion
+
+**Morally Dark:** Ending 1b (Crimson Collector)
+- Become what the ritualists wanted to be
+- Fun in a villain-protagonist way
+
+**Tragic:** Ending 4 (Mercy & Corruption)
+- Meant well, caused ultimate cruelty
+
+**Foolish:** Ending 3 (Fool's Freedom)
+- Trusted the dragon, paid the price
+
+**Corrupted:** Ending 2 (Dragon's Bargain)
+- Greed for power led to your imprisonment
 
 ---
 
