@@ -74,19 +74,34 @@ encounters:
           you succeed or it gets bored. I tried for DECADES. Never made it. Eventually
           it gave up on me and got someone new. That's you, by the way. Congratulations.'*
         unlocks_knowledge: "guide_first_warning"
+        leads_to: ["tell_more", "leave"]
+      
+      - id: "tell_more"
+        player_option: "What more can you tell me about the Entity?"
+        npc_response: >
+          The ghost opens its mouth to answer, but the form suddenly wavers.
+          
+          *'I... it's... the voice...'*
+          
+          The figure flickers violently, struggling to maintain shape.
+          
+          *'Can't... hold... much longer...'*
+          
+          The ghost's voice becomes distant, fragmented.
+          
+          *'Just... don't... trust...'*
         leads_to: ["leave"]
-        
+      
       - id: "leave"
         player_option: "..."
         npc_response: >
-          The ghost's form flickers and wavers.
+          The ghost's form is barely visible now, fading rapidly.
           
-          *'Takes a lot of energy to manifest like this. Can't hold it much longer.
-          Look... just don't trust the voice. That's all I'm saying.'*
+          *'Takes too much... energy... to stay...'*
           
-          The figure's edges begin to blur, fading into translucent wisps.
+          The figure's edges dissolve into translucent mist.
           
-          *'Good luck, I guess. You're going to need it.'*
+          *'Good luck... you'll need it...'*
         ends_conversation: true
     
     farewell: "The ghostly guide slowly fades away, leaving only a cold chill in the air."
