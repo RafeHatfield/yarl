@@ -36,6 +36,7 @@ class InteractionResult:
         npc_dialogue: Optional NPC to start dialogue with
         consume_turn: Whether to consume a turn
         start_pathfinding: Whether pathfinding was initiated
+        victory_triggered: Whether picking up a victory item (Ruby Heart)
     """
     
     def __init__(
@@ -45,7 +46,8 @@ class InteractionResult:
         message: Optional[str] = None,
         npc_dialogue: Optional['Entity'] = None,
         consume_turn: bool = False,
-        start_pathfinding: bool = False
+        start_pathfinding: bool = False,
+        victory_triggered: bool = False
     ):
         self.action_taken = action_taken
         self.state_change = state_change
@@ -53,6 +55,7 @@ class InteractionResult:
         self.npc_dialogue = npc_dialogue
         self.consume_turn = consume_turn
         self.start_pathfinding = start_pathfinding
+        self.victory_triggered = victory_triggered
 
 
 class InteractionStrategy(ABC):
@@ -209,15 +212,17 @@ class ItemInteractionStrategy(InteractionStrategy):
                     entities.remove(item)
                 item_was_added = True
         
-        # Check for victory trigger
+        # Check for victory trigger (Ruby Heart)
+        victory_triggered = False
         if item_was_added and hasattr(item, 'triggers_victory') and item.triggers_victory:
             logger.info("=== ITEM PICKUP: Victory trigger detected ===")
-            # Victory handling will be done by caller
+            victory_triggered = True
         
         return InteractionResult(
             action_taken=True,
             consume_turn=True,
-            message=messages[0] if messages else None
+            message=messages[0] if messages else None,
+            victory_triggered=victory_triggered
         )
 
 

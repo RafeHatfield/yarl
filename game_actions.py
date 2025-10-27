@@ -1745,6 +1745,23 @@ class ActionProcessor:
                 if result.npc_dialogue:
                     self.state_manager.state.current_dialogue_npc = result.npc_dialogue
                 
+                # Handle victory trigger (Ruby Heart pickup)
+                if result.victory_triggered:
+                    logger.info("=== RIGHT-CLICK: Victory trigger detected from interaction system ===")
+                    print(">>> RIGHT-CLICK: Ruby Heart picked up via interaction system!")
+                    from victory_manager import get_victory_manager
+                    victory_mgr = get_victory_manager()
+                    
+                    if victory_mgr.handle_ruby_heart_pickup(player, entities, game_map, message_log):
+                        logger.info("=== RIGHT-CLICK: Victory sequence initiated successfully ===")
+                        print(">>> RIGHT-CLICK: Portal spawned! Transitioning to RUBY_HEART_OBTAINED")
+                        self.state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
+                        # Don't consume turn here - already consumed by pickup
+                        return
+                    else:
+                        logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
+                        print(">>> RIGHT-CLICK: Portal spawn FAILED!")
+                
                 # Start pathfinding if needed
                 if result.start_pathfinding:
                     self._process_pathfinding_movement_action(None)

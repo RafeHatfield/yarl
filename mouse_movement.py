@@ -620,6 +620,10 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             # Check if item is at player's location
             if target_item in entities and target_item.x == player.x and target_item.y == player.y:
                 # Pick it up!
+                print(f">>> PATHFINDING: Picking up item: {target_item.name}")
+                print(f">>> Has triggers_victory attr: {hasattr(target_item, 'triggers_victory')}")
+                if hasattr(target_item, 'triggers_victory'):
+                    print(f">>> triggers_victory value: {target_item.triggers_victory}")
                 inventory = player.get_component_optional(ComponentType.INVENTORY)
                 if inventory:
                     pickup_results = inventory.add_item(target_item)
