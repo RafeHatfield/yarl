@@ -598,7 +598,8 @@ def _get_number_input(min_val: int, max_val: int):
         help_text = "ENTER=confirm ESC=cancel"
         libtcod.console_print(con, x + 2, y + 3, help_text)
         
-        # Flush to screen (this flushes the root console which has the wizard console blitted to it)
+        # Blit offscreen console to root console (0), then flush
+        libtcod.console_blit(con, 0, 0, screen_width, screen_height, 0, 0, 0)
         libtcod.console_flush()
         
         # Wait for key press
