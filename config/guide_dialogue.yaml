@@ -1,10 +1,14 @@
 # Guide Dialogue System
 #
 # The Guide: A ghostly former adventurer who warns about the Entity
+# Backstory: Failed retrieval agent - Entity sent them to get the amulet,
+#   but they failed and got their soul consumed as punishment. Now stuck
+#   as eternal warner, watching new fools make the same journey.
 # Personality: Grumpy, sarcastic, "cranky mentor" vibes
 #   - Tired of watching fools make the same mistakes
 #   - Not above slapping your hand (metaphorically) 
 #   - Somber and serious, but with biting wit
+#   - Bitter about their own failure
 #   - Respects player agency but thinks they're probably an idiot
 #
 # Phase 3: Progressive backstory reveals at camp encounters
@@ -44,14 +48,15 @@ encounters:
         player_option: "What's the truth?"
         npc_response: >
           *'The truth? The Entity doesn't give a damn about you. You're a means
-          to an end. I gave it that cursed amulet [PLACEHOLDER], thought I was
-          clever. Thought I'd get power, riches, whatever.'*
+          to an end. It sent ME down here first - promised me power if I brought
+          it that cursed amulet [PLACEHOLDER]. Sounded easy, right?'*
           
           The figure snorts.
           
-          *'Instead I got eaten. My soul's trapped here now. So yeah, listen to
-          the creepy voice if you want. I'm sure YOU'LL be different. They all
-          think they're special.'*
+          *'I failed. Couldn't get past the guardians. And when I came back empty-
+          handed? It ripped my soul out and threw me away like garbage. Now I'm
+          stuck here. So yeah, go be its errand boy if you want. I'm sure YOU'LL
+          succeed where I failed. They all think they're special.'*
         unlocks_knowledge: "guide_first_warning"
         leads_to: ["leave"]
         
@@ -110,9 +115,14 @@ encounters:
       - id: "why_here"
         player_option: "Why are you stuck here?"
         npc_response: >
-          *'Because I gave it what it wanted. "Thank you for freeing me!" it said.
-          Then it ate my soul like a snack. Now I'm stuck here, eternally playing
-          guidance counselor to dungeon crawlers. It's as bad as it sounds.'*
+          *'Because I FAILED. The dragon sent me to retrieve the amulet - its prison,
+          its power source, the thing keeping it trapped. I couldn't do it. Wasn't
+          strong enough. So it ate my soul and left me here as a warning.'*
+          
+          The ghost's voice turns bitter.
+          
+          *'Here's the kicker: it's been sending adventurers for CENTURIES. You're
+          just the latest. Most die. Some succeed. None live to enjoy it.'*
         leads_to: ["leave"]
         
       - id: "leave"
