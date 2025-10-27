@@ -7,7 +7,7 @@ transition logic with a single, testable system.
 
 Benefits:
 - Centralized turn transitions (no more scattered _transition_to_enemy_turn calls)
-- Automatic state preservation (e.g., AMULET_OBTAINED persists across turns)
+- Automatic state preservation (e.g., RUBY_HEART_OBTAINED persists across turns)
 - Clean integration with StateManager
 - Easy to extend for complex turn mechanics (assassins, time limits, etc.)
 
@@ -109,7 +109,7 @@ class TurnController:
         
         Called after all enemies have taken their turns. This will:
         1. Process environment phase (if using TurnManager)
-        2. Restore preserved state (e.g., AMULET_OBTAINED)
+        2. Restore preserved state (e.g., RUBY_HEART_OBTAINED)
         3. Or return to normal PLAYERS_TURN
         
         This is the key to solving the "state reset bug" from victory implementation!
@@ -117,7 +117,7 @@ class TurnController:
         Example:
             # In ai_system after enemies finish
             turn_controller.end_enemy_turn()
-            # State automatically restored to AMULET_OBTAINED if needed!
+            # State automatically restored to RUBY_HEART_OBTAINED if needed!
         """
         # Use TurnManager if available (Phase 3)
         if self.turn_manager:

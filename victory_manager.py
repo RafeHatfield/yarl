@@ -21,10 +21,10 @@ class VictoryManager:
         """Initialize victory manager."""
         self.entity_factory = get_entity_factory()
     
-    def handle_amulet_pickup(self, player, entities, game_map, message_log) -> bool:
-        """Handle the pickup of the Amulet of Yendor.
+    def handle_ruby_heart_pickup(self, player, entities, game_map, message_log) -> bool:
+        """Handle the pickup of Aurelyn's Ruby Heart.
         
-        This triggers the portal spawn and Entity dialogue.
+        This triggers the portal spawn and Zhyraxion's reaction.
         
         Args:
             player: Player entity
@@ -33,20 +33,20 @@ class VictoryManager:
             message_log: Message log for output
             
         Returns:
-            True if amulet was picked up and portal spawned
+            True if Ruby Heart was picked up and portal spawned
         """
         # Check if player has Victory component, add if not
         if not hasattr(player, 'victory') or player.victory is None:
             player.victory = Victory()
             player.victory.owner = player
         
-        # Mark amulet as obtained
-        player.victory.obtain_amulet(player.x, player.y)
+        # Mark Ruby Heart as obtained
+        player.victory.obtain_ruby_heart(player.x, player.y)
         
-        # Display Entity's reaction (dramatic moment!)
-        message_log.add_message(MB.item_effect("The Amulet pulses with power in your hands!"))
-        message_log.add_message(MB.warning("\"AT LAST! You've done it!\""))
-        message_log.add_message(MB.warning("\"Now... bring it to me. QUICKLY.\""))
+        # Display Zhyraxion's reaction (dramatic moment!)
+        message_log.add_message(MB.item_effect("The Ruby Heart pulses with warmth in your hands!"))
+        message_log.add_message(MB.warning("You feel its rhythm - not quite alive, not quite dead..."))
+        message_log.add_message(MB.warning("\"You have it. After all these centuries...\""))
         
         # Spawn portal adjacent to player (not on them!)
         # Try to find an open tile next to player
@@ -160,7 +160,7 @@ class VictoryManager:
         message_log.add_message(MB.warning("Reality twists around you!"))
     
     def get_entity_anxiety_dialogue(self, player) -> str:
-        """Get Entity's current anxiety dialogue based on delay.
+        """Get Zhyraxion's current anxiety dialogue based on delay.
         
         Args:
             player: Player entity with victory component
@@ -169,21 +169,21 @@ class VictoryManager:
             Anxiety-appropriate dialogue string
         """
         if not hasattr(player, 'victory') or not player.victory:
-            return "\"Where is my Amulet?!\""
+            return "\"Where is Aurelyn's heart?!\""
         
         anxiety = player.victory.entity_anxiety_level
         
         anxiety_lines = {
-            0: "\"Excellent. Now, let's conclude our arrangement.\"",
-            1: "\"What took you so long? No matter. Hand it over.\"",
-            2: "\"Where have you BEEN? I've been waiting! The Amulet. NOW.\"",
-            3: "\"FINALLY! Do you have ANY idea how long— Never mind. Give. It. To. Me.\""
+            0: "\"You have it. Now... bring it to me.\"",
+            1: "\"What's taking so long? The heart. Bring it here.\"",
+            2: "\"Where ARE you? I've waited centuries! Don't make me wait longer!\"",
+            3: "\"PLEASE! I need— I MUST have that heart! Come to me! NOW!\""
         }
         
         return anxiety_lines.get(anxiety, anxiety_lines[0])
     
     def advance_anxiety(self, player):
-        """Advance Entity's anxiety level if player delays with amulet.
+        """Advance Zhyraxion's anxiety level if player delays with Ruby Heart.
         
         Args:
             player: Player entity with victory component

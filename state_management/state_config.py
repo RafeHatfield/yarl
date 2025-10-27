@@ -12,7 +12,7 @@ Benefits:
 
 Example:
     # Before (scattered across files):
-    if game_state in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
+    if game_state in (GameStates.PLAYERS_TURN, GameStates.RUBY_HEART_OBTAINED):
         # Allow movement
     
     # After (centralized):
@@ -103,15 +103,15 @@ def _initialize_state_configurations():
         description="Normal player turn - can move, act, use inventory"
     ),
     
-    # Player has amulet - looking for portal (same controls as PLAYERS_TURN)
-    GameStates.AMULET_OBTAINED: StateConfig(
+    # Player has Ruby Heart - looking for portal (same controls as PLAYERS_TURN)
+    GameStates.RUBY_HEART_OBTAINED: StateConfig(
         input_handler=handle_player_turn_keys,
         allows_movement=True,
         allows_pickup=True,
         allows_inventory=True,
         transition_to_enemy=True,
         preserve_after_enemy_turn=True,  # KEY: Don't reset to PLAYERS_TURN!
-        description="Player has Amulet of Yendor - looking for Entity's portal"
+        description="Player has Aurelyn's Ruby Heart - looking for portal to confrontation"
     ),
     
     # Enemies taking their turns
@@ -342,7 +342,7 @@ class StateManager:
     def should_preserve_after_enemy_turn(state: GameStates) -> bool:
         """Should this state be restored after enemy turn?
         
-        Some states (like AMULET_OBTAINED) need to persist across turns.
+        Some states (like RUBY_HEART_OBTAINED) need to persist across turns.
         This flag tells the turn system to restore the state after enemies act.
         
         Args:

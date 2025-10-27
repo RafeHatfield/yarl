@@ -161,7 +161,7 @@ class AISystem(System):
                         return
                     
                     # Use TurnController to restore appropriate state
-                    # (handles AMULET_OBTAINED preservation automatically)
+                    # (handles RUBY_HEART_OBTAINED preservation automatically)
                     from systems.turn_controller import get_turn_controller
                     turn_controller = get_turn_controller()
                     if turn_controller:
@@ -185,7 +185,7 @@ class AISystem(System):
                         return
                     
                     # Use TurnController to restore appropriate state
-                    # (handles AMULET_OBTAINED preservation automatically)
+                    # (handles RUBY_HEART_OBTAINED preservation automatically)
                     from systems.turn_controller import get_turn_controller
                     turn_controller = get_turn_controller()
                     if turn_controller:

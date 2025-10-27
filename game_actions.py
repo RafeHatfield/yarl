@@ -412,7 +412,7 @@ class ActionProcessor:
                 camera.update(player.x, player.y)
             
             # Check if player stepped on victory portal
-            if current_state == GameStates.AMULET_OBTAINED:
+            if current_state == GameStates.RUBY_HEART_OBTAINED:
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 entities = self.state_manager.state.entities
@@ -730,20 +730,20 @@ class ActionProcessor:
                     
                     # Remove entity if it was added to inventory OR consumed (e.g., scroll recharged a wand)
                     if item_added or item_consumed:
-                        # Check if this is the Amulet of Yendor (triggers victory sequence!)
+                        # Check if this is Aurelyn's Ruby Heart (triggers victory sequence!)
                         if hasattr(entity, 'triggers_victory') and entity.triggers_victory:
-                            logger.info(f"=== AMULET PICKED UP! Triggering victory sequence ===")
+                            logger.info(f"=== RUBY HEART PICKED UP! Triggering victory sequence ===")
                             try:
                                 from victory_manager import get_victory_manager
                                 victory_mgr = get_victory_manager()
                                 game_map = self.state_manager.state.game_map
                                 # Check if victory sequence succeeded
-                                if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
-                                    # Victory sequence succeeded - transition to AMULET_OBTAINED state
-                                    self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+                                if victory_mgr.handle_ruby_heart_pickup(player, entities, game_map, message_log):
+                                    # Victory sequence succeeded - transition to RUBY_HEART_OBTAINED state
+                                    self.state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
                                     logger.info("Victory sequence triggered successfully")
                                     entities.remove(entity)
-                                    # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
+                                    # DON'T transition to enemy turn - stay in RUBY_HEART_OBTAINED state!
                                     return  # Exit handler immediately
                                 else:
                                     # Victory sequence failed - fall through to normal pickup
@@ -1646,7 +1646,7 @@ class ActionProcessor:
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 
-                if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
+                if victory_mgr.handle_ruby_heart_pickup(player, entities, game_map, message_log):
                     logger.info("=== PATHFINDING: Victory sequence initiated successfully ===")
                     victory_triggered = True
                 else:
@@ -1659,7 +1659,7 @@ class ActionProcessor:
         # Transition to appropriate state
         if victory_triggered:
             # Victory sequence initiated - set to special state
-            self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
+            self.state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
         elif end_turn:
             # Player moved, give enemies their turn (which will cycle back to player)
             self.turn_controller.end_player_action(turn_consumed=True)
@@ -1677,7 +1677,7 @@ class ActionProcessor:
             click_pos: Tuple of (world_x, world_y) click coordinates
         """
         current_state = self.state_manager.state.current_state
-        if current_state not in (GameStates.PLAYERS_TURN, GameStates.AMULET_OBTAINED):
+        if current_state not in (GameStates.PLAYERS_TURN, GameStates.RUBY_HEART_OBTAINED):
             return
         
         # Delegate to the same handler as right-click

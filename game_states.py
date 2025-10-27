@@ -26,8 +26,8 @@ class GameStates(Enum):
     THROW_TARGETING = 10   # Targeting throw location
     
     # Victory condition states
-    AMULET_OBTAINED = 11   # Player picked up Amulet of Yendor
-    CONFRONTATION = 12     # Facing Entity with choice to make
+    RUBY_HEART_OBTAINED = 11   # Player picked up Aurelyn's Ruby Heart
+    CONFRONTATION = 12     # Facing Zhyraxion with choice to make
     VICTORY = 13           # Player achieved victory (any ending)
     FAILURE = 14           # Player failed (bad ending)
     
