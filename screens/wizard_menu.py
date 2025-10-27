@@ -22,6 +22,9 @@ from message_builder import MessageBuilder as MB
 # Wizard mode color (purple to distinguish from game messages)
 WIZARD_COLOR = (138, 43, 226)
 
+# Global console reference for helper functions
+_wizard_console = None
+
 
 def show_wizard_menu(con, game_state_manager):
     """Display the wizard mode debug menu.
@@ -39,6 +42,10 @@ def show_wizard_menu(con, game_state_manager):
     # Safety check - shouldn't be able to access without wizard mode
     if not config.wizard_mode:
         return game_state_manager.state.current_state
+    
+    # Store console for helper functions
+    global _wizard_console
+    _wizard_console = con
     
     # Menu dimensions
     menu_width = 40
@@ -420,7 +427,7 @@ def wizard_unlock_knowledge(game_state_manager):
 # ============================================================================
 
 def _get_number_input(min_val: int, max_val: int):
-    """Get a number input from the user.
+    """Get a number input from the user with visual feedback.
     
     Args:
         min_val: Minimum valid value
@@ -431,9 +438,49 @@ def _get_number_input(min_val: int, max_val: int):
     """
     import tcod as libtcod
     
+    global _wizard_console
+    if _wizard_console is None:
+        return None
+    
+    con = _wizard_console
     input_string = ""
     
+    # Input box dimensions
+    box_width = 50
+    box_height = 5
+    x = con.width // 2 - box_width // 2
+    y = con.height // 2 - box_height // 2
+    
     while True:
+        # Draw input box with solid background
+        for i in range(box_width):
+            for j in range(box_height):
+                libtcod.console_set_char_background(con, x + i, y + j, libtcod.black, libtcod.BKGND_SET)
+                libtcod.console_put_char(con, x + i, y + j, ' ')
+        
+        # Draw border
+        for i in range(box_width):
+            libtcod.console_put_char(con, x + i, y, libtcod.CHAR_HLINE)
+            libtcod.console_put_char(con, x + i, y + box_height - 1, libtcod.CHAR_HLINE)
+        for j in range(box_height):
+            libtcod.console_put_char(con, x, y + j, libtcod.CHAR_VLINE)
+            libtcod.console_put_char(con, x + box_width - 1, y + j, libtcod.CHAR_VLINE)
+        
+        # Draw prompt
+        prompt = f"Enter level ({min_val}-{max_val}):"
+        libtcod.console_print(con, x + 2, y + 1, prompt)
+        
+        # Draw input
+        input_display = input_string + "_"
+        libtcod.console_print(con, x + 2, y + 2, input_display)
+        
+        # Draw help text
+        help_text = "ENTER=confirm ESC=cancel"
+        libtcod.console_print(con, x + 2, y + 3, help_text)
+        
+        # Flush to screen
+        libtcod.console_flush()
+        
         # Wait for key press
         key = libtcod.console_wait_for_keypress(True)
         
@@ -461,9 +508,6 @@ def _get_number_input(min_val: int, max_val: int):
             char = chr(key.c)
             if char.isdigit() and len(input_string) < 3:  # Max 3 digits (up to 999)
                 input_string += char
-        
-        # Show current input (optional - could render to screen)
-        # For now, just accumulate silently until Enter
 
 
 def _find_empty_spot_near(x: int, y: int, game_map, entities, max_distance: int = 3):
