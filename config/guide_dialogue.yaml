@@ -77,14 +77,19 @@ encounters:
         leads_to: ["leave"]
         
       - id: "leave"
-        player_option: "I should go."
+        player_option: "..."
         npc_response: >
-          *'Yeah, run along. Go chase your destiny or whatever. Just remember:
-          that voice in your head is a LIAR. But hey, what do I know? I'm just
-          a dead guy.'*
+          The ghost's form flickers and wavers.
+          
+          *'Takes a lot of energy to manifest like this. Can't hold it much longer.
+          Look... just don't trust the voice. That's all I'm saying.'*
+          
+          The figure's edges begin to blur, fading into translucent wisps.
+          
+          *'Good luck, I guess. You're going to need it.'*
         ends_conversation: true
     
-    farewell: "The ghost waves dismissively and fades."
+    farewell: "The ghostly guide slowly fades away, leaving only a cold chill in the air."
     
   # Level 10 - Entity's True Nature
   10:
@@ -150,14 +155,19 @@ encounters:
         leads_to: ["leave"]
         
       - id: "leave"
-        player_option: "Right. Thanks."
+        player_option: "..."
         npc_response: >
-          *'Don't thank me yet. You haven't proven you're smarter than I was.
-          Just remember: desperate prisoners will say ANYTHING. And this one's
-          had centuries to practice lying.'*
+          The ghost's form begins to waver, growing translucent.
+          
+          *'Getting harder to hold this shape each time. Drains what's left of me.'*
+          
+          The figure gives you a long, tired look.
+          
+          *'Just... don't trust it. No matter what it promises. I did, and look where
+          that got me.'*
         ends_conversation: true
     
-    farewell: "The ghost rolls its eyes and fades away."
+    farewell: "The ghost fades with a weary sigh, leaving silence behind."
     
   # Level 15 - The True Name
   15:
@@ -221,13 +231,19 @@ encounters:
         leads_to: ["leave"]
         
       - id: "leave"
-        player_option: "I'll remember the name."
+        player_option: "..."
         npc_response: >
-          *'You better. Zhyraxion. It's your only shot at the "good" ending, whatever
-          that means. Just... try to be smarter than I was. Which is a pretty low bar.'*
+          The ghost's form begins to dim, struggling to maintain cohesion.
+          
+          *'Can't... stay much longer. Listen: ZHYRAXION. Say it. Remember it.
+          It's your only shot at the "good" ending, whatever that means.'*
+          
+          The figure's voice grows distant, fading.
+          
+          *'Try to be smarter than I was... which is a pretty low bar...'*
         ends_conversation: true
     
-    farewell: "The ghost fades, muttering: *'Zhyraxion... don't forget...'*"
+    farewell: "The ghost fades, the name echoing in the air: *'Zhyraxion... don't forget...'*"
     
   # Level 20 - Final Warning
   20:
@@ -281,13 +297,15 @@ encounters:
         leads_to: ["farewell"]
         
       - id: "farewell"
-        player_option: "Thank you. For everything."
+        player_option: "..."
         npc_response: >
+          The ghost's form flickers, nearly transparent now, barely holding together.
+          
           *'Yeah, yeah. Don't get sentimental on me now. Just... remember the name.
           Zhyraxion. And whatever you choose down there - make it YOUR choice.
           Not the dragon's, not mine. Yours.'*
           
-          The ghost manages a wry smile.
+          The ghost manages a wry smile, even as it fades.
           
           *'Now get out of here before I start actually caring what happens to you.'*
         ends_conversation: true
