@@ -1,7 +1,9 @@
 # 🏆 Victory Condition & Story Implementation - Complete Roadmap
 
-*Primary Source: `STORY_CONCEPT_AND_VICTORY_CONDITIONS.md`*
-*Secondary Source: `NARRATIVE_AND_VICTORY_CONDITIONS(DEPRECATED).md`*
+**⚠️ STORY LORE:** For canonical story/lore, see `STORY_LORE_CANONICAL.md`
+
+*This document tracks implementation phases and technical details.*
+*For story content and character motivations, see `STORY_LORE_CANONICAL.md`*
 
 ---
 

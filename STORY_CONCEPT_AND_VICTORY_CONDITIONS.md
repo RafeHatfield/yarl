@@ -1,3 +1,13 @@
+# ⚠️ DEPRECATED - See `STORY_LORE_CANONICAL.md` for current lore
+
+This document contains early story concepts. The actual implemented story has evolved significantly.
+
+**For canonical story/lore, see:** `STORY_LORE_CANONICAL.md`
+
+---
+
+# Original Story Concept Document
+
 Story Option 2: The Cursed Past (Sympathy for the Devil)
 Concept
 Ancient Prison, Hidden Tragedy: Long ago, a great evil (an ancient dragon) was lured into a trap and sealed in a prison outside time

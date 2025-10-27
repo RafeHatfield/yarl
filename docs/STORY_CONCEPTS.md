@@ -1,3 +1,13 @@
+# ⚠️ DEPRECATED - See `/STORY_LORE_CANONICAL.md` for current lore
+
+This document contains early brainstorming. The actual implemented story has evolved significantly.
+
+**For canonical story/lore, see:** `../STORY_LORE_CANONICAL.md`
+
+---
+
+# Original Brainstorming Document
+
 # Story Concepts for Yarl (Roguelike)
 
 ## Core Concept: The Bound Soul
