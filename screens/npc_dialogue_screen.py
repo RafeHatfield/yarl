@@ -165,8 +165,11 @@ def show_npc_dialogue_screen(npc, game_state_manager) -> GameStates:
     dialogue = npc.npc_dialogue
     selected_index = 0
     
+    # Track current NPC response
+    current_response = None
+    
     # Show greeting and introduction on first interaction
-    first_interaction = True
+    first_time = True
     
     while True:
         # Check if encounter is still active
@@ -177,24 +180,24 @@ def show_npc_dialogue_screen(npc, game_state_manager) -> GameStates:
         # Get available options
         available_options = dialogue.get_available_options()
         if not available_options:
-            # No options left - end dialogue
+            # No options left - end dialogue with farewell
             farewell = dialogue.end_encounter()
-            if farewell:
-                from message_builder import MessageBuilder as MB
-                from game_states import GameStates as GS
-                # Show farewell message (would need message log access)
+            # TODO: Show farewell in message log or as overlay
             return GameStates.PLAYERS_TURN
         
         # Build NPC response text
-        if first_interaction:
-            # Show greeting + introduction
+        if first_time:
+            # First time: Show greeting + introduction
             greeting = dialogue.get_greeting() or ""
             introduction = dialogue.get_introduction() or ""
             npc_response = f"{greeting}\n\n{introduction}"
-            first_interaction = False
+            first_time = False
+        elif current_response:
+            # After player choice: Show the response for that choice
+            npc_response = current_response
+            current_response = None  # Clear for next iteration
         else:
-            # Just show the last selected option's response
-            # (this will be updated when player makes a choice)
+            # Fallback: show introduction
             npc_response = dialogue.get_introduction() or ""
         
         # Render the dialogue screen
@@ -224,19 +227,25 @@ def show_npc_dialogue_screen(npc, game_state_manager) -> GameStates:
         if chosen_id:
             # Player made a choice
             chosen_option = dialogue.select_option(chosen_id)
-            selected_index = 0  # Reset selection for next node
             
-            # Sync knowledge with player's Victory component (Phase 3)
-            if chosen_option and chosen_option.unlocks_knowledge:
-                # Get player from game state manager
-                player = game_state_manager.state.player
-                if player and hasattr(player, 'victory') and player.victory:
-                    player.victory.unlock_knowledge(chosen_option.unlocks_knowledge)
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.info(f"Player unlocked knowledge: {chosen_option.unlocks_knowledge}")
-            
-            # Check if conversation ended
-            if not dialogue.is_active():
-                return GameStates.PLAYERS_TURN
+            if chosen_option:
+                # Store the NPC's response to show on next render
+                current_response = chosen_option.npc_response
+                
+                # Reset selection for next set of options
+                selected_index = 0
+                
+                # Sync knowledge with player's Victory component
+                if chosen_option.unlocks_knowledge:
+                    player = game_state_manager.state.player
+                    if player and hasattr(player, 'victory') and player.victory:
+                        player.victory.unlock_knowledge(chosen_option.unlocks_knowledge)
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.info(f"Player unlocked knowledge: {chosen_option.unlocks_knowledge}")
+                
+                # Check if this ends the conversation
+                if chosen_option.ends_conversation:
+                    farewell = dialogue.end_encounter()
+                    return GameStates.PLAYERS_TURN
 
