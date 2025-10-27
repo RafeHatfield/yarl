@@ -94,6 +94,7 @@ class AutoExplore:
         self.last_hp: int = 0
         self.target_tile: Optional[Tuple[int, int]] = None
         self.known_items: Set[int] = set()  # IDs of items visible when exploration started
+        self.known_monsters: Set[int] = set()  # IDs of monsters visible when exploration started
     
     def start(self, game_map: 'GameMap', entities: List['Entity'], fov_map=None) -> str:
         """Begin auto-exploring the dungeon.
@@ -119,6 +120,7 @@ class AutoExplore:
         self.stop_reason = None
         self.target_tile = None
         self.known_items = set()  # Reset known items
+        self.known_monsters = set()  # Reset known monsters
         
         # Store initial HP for damage detection
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
@@ -126,19 +128,27 @@ class AutoExplore:
         else:
             self.last_hp = 0
         
-        # Record items already visible (so we don't stop for them)
+        # Record entities already visible (so we don't stop for them)
         if fov_map:
             from fov_functions import map_is_in_fov
             from components.component_registry import ComponentType
             
             for entity in entities:
+                # Track known items/chests/signposts
                 if (entity.components.has(ComponentType.ITEM) or 
                     entity.components.has(ComponentType.CHEST) or
                     entity.components.has(ComponentType.SIGNPOST)):
                     if map_is_in_fov(fov_map, entity.x, entity.y):
                         self.known_items.add(id(entity))
+                
+                # Track known monsters (so we only stop for NEW monsters)
+                if entity.components.has(ComponentType.AI) and entity != self.owner:
+                    fighter = entity.get_component_optional(ComponentType.FIGHTER)
+                    if fighter and fighter.hp > 0:
+                        if map_is_in_fov(fov_map, entity.x, entity.y):
+                            self.known_monsters.add(id(entity))
             
-            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items/chests/signposts in FOV")
+            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items and {len(self.known_monsters)} known monsters in FOV")
         
         logger.info(f"Auto-explore started for {self.owner.name}")
         return random.choice(ADVENTURE_QUOTES)
@@ -303,14 +313,17 @@ class AutoExplore:
         return None  # Continue exploring
     
     def _monster_in_fov(self, entities: List['Entity'], fov_map) -> Optional['Entity']:
-        """Check if any hostile monster is visible.
+        """Check if any NEW hostile monster is visible.
+        
+        Only returns monsters that weren't visible when auto-explore started.
+        This allows auto-explore to continue past known monsters.
         
         Args:
             entities: All entities on the map
             fov_map: Field-of-view map
             
         Returns:
-            Entity: First hostile monster found, or None
+            Entity: First NEW hostile monster found, or None
         """
         if not self.owner or not fov_map:
             return None
@@ -332,7 +345,15 @@ class AutoExplore:
                 # Check if hostile (has fighter component AND is alive)
                 fighter = entity.get_component_optional(ComponentType.FIGHTER)
                 if fighter and fighter.hp > 0:
-                    # Living, hostile monster found
+                    # Check if this is a NEW monster (not known when we started)
+                    entity_id = id(entity)
+                    if entity_id in self.known_monsters:
+                        # This monster was already visible, skip it
+                        continue
+                    
+                    # NEW monster discovered! Add to known and return it
+                    self.known_monsters.add(entity_id)
+                    # Living, hostile NEW monster found
                     return entity
         
         return None
