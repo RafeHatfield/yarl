@@ -241,38 +241,69 @@ Different perspectives:
 
 ---
 
-## 🎭 The Four Endings
+## 🎭 The Five Endings
 
-### 1. 🌅 Escape & Freedom (Good Ending)
+### 1. 🔒 Eternal Servitude (Neutral Ending)
 
-**Choice:** Keep the amulet for yourself
+**Choice:** Keep the amulet, refuse dragon transformation
 
 **Outcome:**
-- Use amulet to sever soul contract
-- Entity rages helplessly
-- You escape, Entity remains trapped
-- You're free, but Entity stays bound
+- Use amulet to stay alive but don't give it to Entity
+- Entity stays weak, you stay trapped in cycle
+- No freedom for either of you
+- Pyrrhic victory: safe but never free
+- Entity: "Fine. We'll both rot here then."
 
-**Theme:** Self-preservation over sympathy
+**Theme:** Fear of risk, stagnation over danger
 
 ---
 
-### 2. ☠️ False Alliance (Bad Ending)
+### 2. 🐉 The Dragon's Bargain (Bad Ending - The Trap)
 
-**Choice:** Give the amulet to Entity
+**Choice:** Keep the amulet, ACCEPT Entity's dragon transformation offer
+
+**The Offer:**
+- Entity makes one last desperate bid
+- "Why be a PUPPET when you could be a DRAGON?"
+- "Take my power! Transform! We'll BOTH be free!"
+- Sounds too good to be true (because it is)
+
+**Outcome:**
+- You accept the transformation ritual
+- Power floods through you, scales emerge, wings unfurl
+- For one glorious moment, you ARE a dragon
+- Then the binding curse **transfers to you**
+- Entity walks free, restored to original form
+- You're now trapped in the same prison that held Entity
+- Entity's dry Alan Rickman wit: "I'll visit when I'm not too bored. Give it a century or two."
+
+**Entity's Farewell:**
+> *"Marvelous view from up here, isn't it? The sky, the freedom... Oh, don't look so betrayed. I offered you EXACTLY what I promised: dragon transformation. Not my fault you didn't read the fine print about the binding curse. That's on you, really."*
+> 
+> *"I'll visit. When I'm bored. Might be a few centuries. You understand, I'm sure. Eternity is rather flexible that way."*
+> 
+> *"Do try not to capture too many souls yourself. Gets messy. Ta-ta!"*
+
+**Theme:** Greed and power fantasy lead to downfall, dramatic irony
+
+---
+
+### 3. ☠️ Fool's Freedom (Quick Bad Ending)
+
+**Choice:** Give the amulet to Entity immediately (no bargaining)
 
 **Outcome:**
 - Entity thanks you, seems grateful
-- Uses amulet to escape
-- Betrays and kills you instantly
-- Takes your place in the cycle OR discards you
-- Entity: "Thank you. You were useful."
+- Uses amulet to restore power
+- Discards you instantly like trash
+- You become the next discarded ghost
+- Entity: "Thank you. You were... adequate."
 
-**Theme:** Trust is fatal, ancient evils never reward freedom
+**Theme:** Trust is fatal, you're just a tool
 
 ---
 
-### 3. 🔥 Mercy & Corruption (Tragic Ending)
+### 4. 🔥 Mercy & Corruption (Tragic Ending)
 
 **Choice:** Destroy the amulet (WITHOUT true name)
 
@@ -287,7 +318,7 @@ Different perspectives:
 
 ---
 
-### 4. ✨ Sacrifice & Redemption (Secret Best Ending)
+### 5. ✨ Sacrifice & Redemption (Secret Best Ending)
 
 **Choice:** Destroy the amulet while speaking **ZHYRAXION** (true name)
 
