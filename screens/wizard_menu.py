@@ -14,9 +14,12 @@ Press @ (Shift+2) or F12 to open the wizard menu in-game.
 """
 
 import tcod as libtcod
+import logging
 
 from game_states import GameStates
 from message_builder import MessageBuilder as MB
+
+logger = logging.getLogger(__name__)
 
 
 # Wizard mode color (purple to distinguish from game messages)
@@ -338,6 +341,12 @@ def wizard_teleport_to_level(game_state_manager):
     # Update the FOV map in the game state
     if hasattr(state, 'fov_map'):
         state.fov_map = fov_map
+    
+    # Center camera on player after teleport
+    camera = state.camera
+    if camera:
+        camera.update(player.x, player.y)
+        logger.info(f"Camera centered on player at ({player.x}, {player.y})")
     
     message_log.add_message(MB.custom(f"🧙 WIZARD: Arrived at dungeon level {game_map.dungeon_level}", WIZARD_COLOR))
     

@@ -334,6 +334,13 @@ class ActionProcessor:
             if dead_entity:
                 self._handle_entity_death(dead_entity)
             
+            # Handle NPC dialogue trigger
+            npc_dialogue = r.get("npc_dialogue")
+            if npc_dialogue:
+                self.state_manager.set_game_state(GameStates.NPC_DIALOGUE)
+                self.state_manager.state.current_dialogue_npc = npc_dialogue
+                return  # Don't consume turn for dialogue
+            
             # Check if we should end the turn (continue pathfinding or interrupt after movement)
             if r.get("continue_pathfinding") or r.get("enemy_turn"):
                 end_turn = True
@@ -1762,17 +1769,22 @@ class ActionProcessor:
                     logger.info(f"Started conversation with {target_npc.name} (right-click)")
                     return  # Don't consume turn
                 else:
-                    # Too far - pathfind to NPC
-                    from pathfinding import compute_path
-                    path = compute_path(game_map, player.x, player.y, world_x, world_y, entities, fov_map)
-                    
-                    if path:
-                        self.state_manager.set_extra_data("auto_path", path)
-                        self.state_manager.set_extra_data("auto_path_target", target_npc)
-                        self.state_manager.set_extra_data("auto_path_action", "talk")
-                        message_log.add_message(MB.info(f"Moving to {target_npc.name}..."))
-                    else:
-                        message_log.add_message(MB.warning(f"Can't reach {target_npc.name}."))
+                    # Too far - pathfind to NPC using player's pathfinding component
+                    pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
+                    if pathfinding:
+                        success = pathfinding.set_destination(
+                            target_npc.x, target_npc.y, game_map, entities, fov_map
+                        )
+                        
+                        if success:
+                            # Mark that we want to talk when we arrive
+                            player.pathfinding.auto_talk_target = target_npc
+                            message_log.add_message(MB.info(f"Moving to {target_npc.name}..."))
+                            
+                            # Immediately start moving along the path
+                            self._process_pathfinding_movement_action(None)
+                        else:
+                            message_log.add_message(MB.warning(f"Can't reach {target_npc.name}."))
                     return
             
             # PRIORITY 2: Check if there's an enemy at this location (throw shortcut)

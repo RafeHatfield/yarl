@@ -653,6 +653,41 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             
             # Clear the auto-pickup target
             pathfinding.auto_pickup_target = None
+        
+        # Check if we were pathfinding to talk to an NPC
+        if hasattr(pathfinding, 'auto_talk_target') and pathfinding.auto_talk_target:
+            target_npc = pathfinding.auto_talk_target
+            
+            # Check if NPC is adjacent or at player's location
+            distance = abs(target_npc.x - player.x) + abs(target_npc.y - player.y)
+            if target_npc in entities and distance <= 1.5:
+                # Talk to them!
+                if (hasattr(target_npc, 'is_npc') and target_npc.is_npc and
+                    hasattr(target_npc, 'npc_dialogue') and target_npc.npc_dialogue):
+                    
+                    # Get dungeon level for dialogue
+                    from config.game_constants import GAME_CONSTANTS
+                    dungeon_level = 1
+                    if game_map and hasattr(game_map, 'dungeon_level'):
+                        dungeon_level = game_map.dungeon_level
+                    
+                    if target_npc.npc_dialogue.start_encounter(dungeon_level):
+                        results.append({
+                            "message": MB.info(f"You approach {target_npc.name}...")
+                        })
+                        
+                        # Need to trigger dialogue state change
+                        # This will be handled by the action processor
+                        results.append({
+                            "npc_dialogue": target_npc
+                        })
+                    else:
+                        results.append({
+                            "message": MB.info(f"{target_npc.name} has nothing to say right now.")
+                        })
+            
+            # Clear the auto-talk target
+            pathfinding.auto_talk_target = None
     
     return {"results": results}
 
