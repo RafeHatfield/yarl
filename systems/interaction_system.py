@@ -21,7 +21,7 @@ from typing import List, Optional, Tuple, Dict, Any
 from abc import ABC, abstractmethod
 import logging
 
-from components.component_types import ComponentType
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
