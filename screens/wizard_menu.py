@@ -10,6 +10,7 @@ This screen provides in-game debug commands for rapid testing:
 - Teleport to level
 
 Only accessible when wizard_mode is enabled (--wizard flag).
+Press @ (Shift+2) or F12 to open the wizard menu in-game.
 """
 
 import tcod as libtcod

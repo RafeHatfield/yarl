@@ -91,7 +91,7 @@ def handle_player_turn_keys(key):
     Returns:
         dict: Dictionary with action keys like 'move', 'pickup', 'show_inventory', etc.
     """
-    key_char = chr(key.c)
+    key_char = chr(key.c) if key.c > 0 else None
 
     # Movement keys
     if key.vk == libtcod.KEY_UP or key_char == "k":
@@ -131,7 +131,9 @@ def handle_player_turn_keys(key):
         return {"start_auto_explore": True}
     elif key_char == "s":
         return {"search": True}
-    elif key_char == "&":  # Tier 2: Wizard Mode (Shift+7)
+    
+    # Tier 2: Wizard Mode - Use @ (Shift+2) or F12
+    if key_char == "@" or key.vk == libtcod.KEY_F12:
         # Only available in wizard mode
         from config.testing_config import get_testing_config
         if get_testing_config().wizard_mode:

@@ -159,7 +159,7 @@ def main():
     
     if args.wizard:
         config.wizard_mode = True
-        print("🧙 WIZARD MODE ENABLED: Press & to open debug menu")
+        print("🧙 WIZARD MODE ENABLED: Press @ or F12 to open debug menu")
     
     # Initialize monster action logging if in testing mode
     from config.testing_config import is_testing_mode
