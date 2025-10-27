@@ -1643,14 +1643,17 @@ class ActionProcessor:
             # Handle victory trigger
             if result.get("victory_triggered"):
                 logger.info("=== PATHFINDING: Victory sequence triggered via pathfinding pickup ===")
+                print(">>> PATHFINDING: Calling handle_ruby_heart_pickup...")
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 
                 if victory_mgr.handle_ruby_heart_pickup(player, entities, game_map, message_log):
                     logger.info("=== PATHFINDING: Victory sequence initiated successfully ===")
+                    print(">>> PATHFINDING: Portal should have spawned! Transitioning to RUBY_HEART_OBTAINED state")
                     victory_triggered = True
                 else:
                     logger.error("=== PATHFINDING: Victory sequence FAILED ===")
+                    print(">>> PATHFINDING: Portal spawn FAILED!")
             
             # Check if we should end the turn (continue pathfinding or interrupt after movement)
             if result.get("continue_pathfinding") or result.get("enemy_turn"):

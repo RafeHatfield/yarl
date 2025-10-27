@@ -643,9 +643,10 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                                 "message": MB.item_pickup(f"Auto-picked up {display_name}!")
                             })
                     
-                    # Check for victory condition trigger (Amulet of Yendor)
+                    # Check for victory condition trigger (Ruby Heart)
                     if item_was_added and hasattr(target_item, 'triggers_victory') and target_item.triggers_victory:
                         logger.info("=== PATHFINDING ARRIVAL PICKUP: Victory trigger detected! ===")
+                        print(">>> PATHFINDING: Ruby Heart picked up, signaling victory trigger!")
                         # Signal to caller to handle victory sequence
                         results.append({
                             "victory_triggered": True
