@@ -280,18 +280,18 @@ class AutoExplore:
         if secret_door:
             return "Found secret door!"
         
-        # 3. Check for chests in FOV
-        chest = self._chest_in_fov(entities, fov_map)
+        # 3. Check for chests in FOV (only in unexplored areas)
+        chest = self._chest_in_fov(entities, fov_map, game_map)
         if chest:
             return "Found chest"
         
-        # 4. Check for signposts in FOV
-        signpost = self._signpost_in_fov(entities, fov_map)
+        # 4. Check for signposts in FOV (only in unexplored areas)
+        signpost = self._signpost_in_fov(entities, fov_map, game_map)
         if signpost:
             return f"Found {signpost.name}"
         
-        # 5. Check for valuable items in FOV
-        item = self._valuable_item_in_fov(entities, fov_map)
+        # 5. Check for valuable items in FOV (only in unexplored areas)
+        item = self._valuable_item_in_fov(entities, fov_map, game_map)
         if item:
             return f"Found {item.name}"
         
@@ -416,12 +416,12 @@ class AutoExplore:
         return True
     
     def _valuable_item_in_fov(
-        self, entities: List['Entity'], fov_map
+        self, entities: List['Entity'], fov_map, game_map: 'GameMap'
     ) -> Optional['Entity']:
-        """Check if any valuable item is visible.
+        """Check if any valuable item is visible IN UNEXPLORED AREAS.
         
-        Only returns NEW items that weren't visible when auto-explore started.
-        This allows exploring past items already on the ground.
+        Only returns items in tiles that were NOT explored when auto-explore started.
+        This allows exploring past items in already-explored rooms without stopping.
         
         Valuable items: equipment, scrolls, potions, wands, rings
         Not valuable: corpses, gold (if we add it), junk
@@ -429,11 +429,12 @@ class AutoExplore:
         Args:
             entities: All entities on the map
             fov_map: Field-of-view map
+            game_map: Game map for tile exploration state
             
         Returns:
-            Entity: First valuable NEW item found, or None
+            Entity: First valuable item in unexplored area, or None
         """
-        if not self.owner or not fov_map:
+        if not self.owner or not fov_map or not game_map:
             return None
         
         from fov_functions import map_is_in_fov
@@ -447,6 +448,12 @@ class AutoExplore:
             # Check if in FOV
             if map_is_in_fov(fov_map, entity.x, entity.y):
                 entity_id = id(entity)
+                
+                # Skip items in already-explored tiles (user wants this!)
+                # This allows circling back through known areas without stopping
+                if game_map.is_explored(entity.x, entity.y):
+                    self.known_items.add(entity_id)  # Mark as known for consistency
+                    continue
                 
                 # Skip items we already knew about
                 if entity_id in self.known_items:
@@ -517,20 +524,21 @@ class AutoExplore:
         return None
     
     def _chest_in_fov(
-        self, entities: List['Entity'], fov_map
+        self, entities: List['Entity'], fov_map, game_map: 'GameMap'
     ) -> Optional['Entity']:
-        """Check if any unopened chest is visible.
+        """Check if any unopened chest is visible IN UNEXPLORED AREAS.
         
-        Only returns NEW chests that weren't visible when auto-explore started.
+        Only returns chests in tiles that were NOT explored when auto-explore started.
         
         Args:
             entities: All entities on the map
             fov_map: Field-of-view map
+            game_map: Game map for tile exploration state
             
         Returns:
-            Entity: First unopened chest found, or None
+            Entity: First unopened chest in unexplored area, or None
         """
-        if not self.owner or not fov_map:
+        if not self.owner or not fov_map or not game_map:
             return None
         
         from fov_functions import map_is_in_fov
@@ -547,6 +555,11 @@ class AutoExplore:
                 entity_id = id(entity)
                 chest = entity.chest
                 
+                # Skip chests in already-explored tiles
+                if game_map.is_explored(entity.x, entity.y):
+                    self.known_items.add(entity_id)
+                    continue
+                
                 # Skip chests we already knew about
                 if entity_id in self.known_items:
                     continue
@@ -561,20 +574,21 @@ class AutoExplore:
         return None
     
     def _signpost_in_fov(
-        self, entities: List['Entity'], fov_map
+        self, entities: List['Entity'], fov_map, game_map: 'GameMap'
     ) -> Optional['Entity']:
-        """Check if any unread signpost is visible.
+        """Check if any unread signpost is visible IN UNEXPLORED AREAS.
         
-        Only returns NEW signposts that weren't visible when auto-explore started.
+        Only returns signposts in tiles that were NOT explored when auto-explore started.
         
         Args:
             entities: All entities on the map
             fov_map: Field-of-view map
+            game_map: Game map for tile exploration state
             
         Returns:
-            Entity: First unread signpost found, or None
+            Entity: First unread signpost in unexplored area, or None
         """
-        if not self.owner or not fov_map:
+        if not self.owner or not fov_map or not game_map:
             return None
         
         from fov_functions import map_is_in_fov
@@ -589,6 +603,11 @@ class AutoExplore:
             if map_is_in_fov(fov_map, entity.x, entity.y):
                 entity_id = id(entity)
                 signpost = entity.signpost
+                
+                # Skip signposts in already-explored tiles
+                if game_map.is_explored(entity.x, entity.y):
+                    self.known_items.add(entity_id)
+                    continue
                 
                 # Skip signposts we already knew about
                 if entity_id in self.known_items:
