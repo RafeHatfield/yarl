@@ -1151,8 +1151,16 @@ class GameMap:
         spawned_count = 0
         failed_count = 0
         
+        # DEBUG: Tier 1 - Respect no_monsters flag for guaranteed spawns too
+        config = get_testing_config()
+        skip_monsters = config.no_monsters
+        
         # Place guaranteed monsters
         for spawn in level_override.guaranteed_monsters:
+            # Skip monster spawns if no_monsters flag is active
+            if skip_monsters:
+                logger.debug(f"Skipping guaranteed monster spawn: {spawn.entity_type} (no_monsters flag)")
+                continue
             spawn_count = spawn.get_random_count()
             for i in range(spawn_count):
                 x, y = self._find_random_unoccupied_position(rooms, entities)
