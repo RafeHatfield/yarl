@@ -165,24 +165,43 @@ def show_npc_dialogue_screen(npc, game_state_manager) -> GameStates:
     dialogue = npc.npc_dialogue
     selected_index = 0
     
+    # Show greeting and introduction on first interaction
+    first_interaction = True
+    
     while True:
-        # Get current node
-        current_node = dialogue.get_current_node()
-        if not current_node:
+        # Check if encounter is still active
+        if not dialogue.current_encounter:
             # Dialogue ended
             return GameStates.PLAYERS_TURN
         
         # Get available options
         available_options = dialogue.get_available_options()
         if not available_options:
-            # No options left (shouldn't happen, but safety check)
+            # No options left - end dialogue
+            farewell = dialogue.end_encounter()
+            if farewell:
+                from message_builder import MessageBuilder as MB
+                from game_states import GameStates as GS
+                # Show farewell message (would need message log access)
             return GameStates.PLAYERS_TURN
+        
+        # Build NPC response text
+        if first_interaction:
+            # Show greeting + introduction
+            greeting = dialogue.get_greeting() or ""
+            introduction = dialogue.get_introduction() or ""
+            npc_response = f"{greeting}\n\n{introduction}"
+            first_interaction = False
+        else:
+            # Just show the last selected option's response
+            # (this will be updated when player makes a choice)
+            npc_response = dialogue.get_introduction() or ""
         
         # Render the dialogue screen
         render_npc_dialogue(
             console=0,  # Root console
             npc_name=npc.name,
-            npc_response=current_node.npc_response,
+            npc_response=npc_response,
             options=available_options,
             selected_index=selected_index,
             screen_width=80,
@@ -199,12 +218,12 @@ def show_npc_dialogue_screen(npc, game_state_manager) -> GameStates:
         
         if should_exit:
             # Player wants to leave
-            dialogue.end_conversation()
+            farewell = dialogue.end_encounter()
             return GameStates.PLAYERS_TURN
         
         if chosen_id:
             # Player made a choice
-            chosen_option = dialogue.choose_option(chosen_id)
+            chosen_option = dialogue.select_option(chosen_id)
             selected_index = 0  # Reset selection for next node
             
             # Sync knowledge with player's Victory component (Phase 3)

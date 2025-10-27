@@ -1711,12 +1711,12 @@ class ActionProcessor:
                 )
     
     def _handle_right_click(self, click_pos: Tuple[int, int]) -> None:
-        """Handle right mouse click (context-aware: throw at enemies, pickup items, talk to NPCs, or cancel).
+        """Handle right mouse click using the clean InteractionSystem.
         
-        Priority:
-        1. Enemies → Open throw menu (combat takes priority!)
-        2. Items → Auto-pickup (pathfind if far)
-        3. NPCs → Start dialogue (pathfind if far)
+        Uses strategy pattern for clean, testable interaction handling:
+        Priority 1: Enemies → Throw menu (combat is urgent!)
+        Priority 2: Items → Auto-pickup (pathfind if far)
+        Priority 3: NPCs → Dialogue (they can wait)
         
         Args:
             click_pos: Tuple of (world_x, world_y) click coordinates
@@ -1742,181 +1742,65 @@ class ActionProcessor:
             
             world_x, world_y = click_pos
             
-            # PRIORITY 1: Check if there's an enemy at this location (throw shortcut)
-            target_enemy = None
-            for entity in entities:
-                if entity.x == world_x and entity.y == world_y:
-                    if entity.components.has(ComponentType.FIGHTER) and entity != player:
-                        # Only target LIVING enemies (hp > 0)
-                        fighter = entity.components.get(ComponentType.FIGHTER)
-                        if fighter and fighter.hp > 0:
-                            target_enemy = entity
-                            break
+            # Use the clean InteractionSystem
+            from systems.interaction_system import get_interaction_system
+            interaction_system = get_interaction_system()
             
-            if target_enemy:
-                # Right-click on enemy → throw item shortcut!
-                if not player.inventory or not player.inventory.items:
-                    message_log.add_message(MB.warning("You have nothing to throw."))
-                    return
+            result = interaction_system.handle_click(
+                world_x, world_y, player, entities, game_map, fov_map
+            )
+            
+            # Process the result
+            if result.action_taken:
+                # Show message
+                if result.message:
+                    message_log.add_message(result.message)
                 
-                # Enter throw item selection mode
-                self.state_manager.set_game_state(GameStates.THROW_SELECT_ITEM)
-                # Store the target for after item selection
-                self.state_manager.set_extra_data("throw_target", (world_x, world_y))
-                return
-            
-            # Check if there's an item at this location
-            target_item = None
-            for entity in entities:
-                if entity.x == world_x and entity.y == world_y:
-                    if entity.components.has(ComponentType.ITEM):
-                        target_item = entity
-                        break
-            
-            if target_item:
-                # Right-click on item → pathfind and auto-pickup!
-                distance = player.distance_to(target_item)
-                
-                if distance <= 1:
-                    # Already adjacent - just pick it up
-                    if player.inventory:
-                        pickup_results = player.inventory.add_item(target_item)
-                        item_was_added = False
-                        for result in pickup_results:
-                            message = result.get("message")
-                            if message:
-                                message_log.add_message(message)
-                            
-                            item_added = result.get("item_added")
-                            item_consumed = result.get("item_consumed")
-                            if item_added or item_consumed:
-                                entities.remove(target_item)
-                                item_was_added = True
-                        
-                        # Check for victory condition trigger (Amulet of Yendor)
-                        if item_was_added and hasattr(target_item, 'triggers_victory') and target_item.triggers_victory:
-                            print(f"\n{'*'*80}")
-                            print("AMULET PICKUP DETECTED!")
-                            print(f"{'*'*80}\n")
-                            logger.info("=== RIGHT-CLICK PICKUP: Victory trigger detected! ===")
-                            from victory_manager import get_victory_manager
-                            victory_mgr = get_victory_manager()
-                            
-                            if victory_mgr.handle_amulet_pickup(player, entities, game_map, message_log):
-                                print(f"\n{'*'*80}")
-                                print(f"VICTORY SEQUENCE SUCCESS! Setting state to AMULET_OBTAINED")
-                                print(f"State will remain AMULET_OBTAINED (not transitioning to enemy turn)")
-                                print(f"{'*'*80}\n")
-                                logger.info("=== RIGHT-CLICK: Victory sequence initiated successfully ===")
-                                self.state_manager.set_game_state(GameStates.AMULET_OBTAINED)
-                                # DON'T transition to enemy turn - stay in AMULET_OBTAINED state!
-                                return  # Exit handler, keep state as AMULET_OBTAINED
-                            else:
-                                print(f"\n{'*'*80}")
-                                print("VICTORY SEQUENCE FAILED!")
-                                print(f"{'*'*80}\n")
-                                logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
+                # Handle state change
+                if result.state_change:
+                    self.state_manager.set_game_state(result.state_change)
                     
-                    # End turn after pickup (only if NOT victory sequence)
+                    # Store throw target if needed
+                    if result.state_change == GameStates.THROW_SELECT_ITEM:
+                        self.state_manager.set_extra_data("throw_target", (world_x, world_y))
+                
+                # Handle NPC dialogue
+                if result.npc_dialogue:
+                    self.state_manager.state.current_dialogue_npc = result.npc_dialogue
+                
+                # Start pathfinding if needed
+                if result.start_pathfinding:
+                    self._process_pathfinding_movement_action(None)
+                
+                # Consume turn if needed
+                if result.consume_turn:
                     self.turn_controller.end_player_action(turn_consumed=True)
-                else:
-                    # Not adjacent - pathfind to it
-                    pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
-                    if pathfinding:
-                        success = pathfinding.set_destination(
-                            target_item.x, target_item.y, game_map, entities, fov_map
-                        )
-                        
-                        if success:
-                            # Mark that we want to auto-pickup when we arrive
-                            player.pathfinding.auto_pickup_target = target_item
-                            
-                            # Use display name to respect identification status
-                            display_name = target_item.name
-                            if target_item.item:
-                                display_name = target_item.item.get_display_name(show_quantity=False)
-                            
-                            message_log.add_message(
-                                MB.info(f"Moving to pick up {display_name}...")
-                            )
-                            
-                            # Immediately start moving along the path
-                            self._process_pathfinding_movement_action(None)
-                        else:
-                            message_log.add_message(
-                                MB.warning("Cannot path to that location.")
-                            )
+                
                 return
             
-            # PRIORITY 3: Check for NPCs (dialogue interaction)
-            target_npc = None
-            for entity in entities:
-                if entity.x == world_x and entity.y == world_y:
-                    if (hasattr(entity, 'is_npc') and entity.is_npc and
-                        hasattr(entity, 'npc_dialogue') and entity.npc_dialogue):
-                        target_npc = entity
-                        break
+            # No interaction handled by system - fallthrough to auto-explore
+            # No item or enemy at location - start auto-explore!
+            # This gives full mouse control - right-click anywhere to explore
+            auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
             
-            if target_npc:
-                # Right-click on NPC → pathfind and auto-talk!
-                distance = player.distance_to(target_npc)
-                
-                if distance <= 1.5:  # Adjacent or same tile
-                    # Close enough - start dialogue
-                    dungeon_level = game_map.dungeon_level if game_map else 1
-                    
-                    if not target_npc.npc_dialogue.start_encounter(dungeon_level):
-                        message_log.add_message(MB.info(f"{target_npc.name} has nothing to say right now."))
-                        return
-                    
-                    message_log.add_message(MB.info(f"You approach {target_npc.name}..."))
-                    self.state_manager.set_game_state(GameStates.NPC_DIALOGUE)
-                    self.state_manager.state.current_dialogue_npc = target_npc
-                    logger.info(f"Started conversation with {target_npc.name} (right-click)")
-                    return  # Don't consume turn
-                else:
-                    # Too far - pathfind to NPC using player's pathfinding component
-                    pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
-                    if pathfinding:
-                        success = pathfinding.set_destination(
-                            target_npc.x, target_npc.y, game_map, entities, fov_map
-                        )
-                        
-                        if success:
-                            # Mark that we want to talk when we arrive
-                            player.pathfinding.auto_talk_target = target_npc
-                            message_log.add_message(MB.info(f"Moving to {target_npc.name}..."))
-                            
-                            # Immediately start moving along the path
-                            self._process_pathfinding_movement_action(None)
-                        else:
-                            message_log.add_message(MB.warning(f"Can't reach {target_npc.name}."))
-                    return
-            
-            # No specific target - just empty space
+            if auto_explore and auto_explore.is_active():
+                # Already exploring - cancel it
+                auto_explore.stop("Cancelled")
+                message_log.add_message(MB.info("Auto-explore cancelled"))
             else:
-                # No item or enemy at location - start auto-explore!
-                # This gives full mouse control - right-click anywhere to explore
-                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                # Start auto-explore
+                if not auto_explore:
+                    from components.auto_explore import AutoExplore
+                    auto_explore = AutoExplore()
+                    auto_explore.owner = player
+                    player.components.add(ComponentType.AUTO_EXPLORE, auto_explore)
                 
-                if auto_explore and auto_explore.is_active():
-                    # Already exploring - cancel it
-                    auto_explore.stop("Cancelled")
-                    message_log.add_message(MB.info("Auto-explore cancelled"))
-                else:
-                    # Start auto-explore
-                    if not auto_explore:
-                        from components.auto_explore import AutoExplore
-                        auto_explore = AutoExplore()
-                        auto_explore.owner = player
-                        player.components.add(ComponentType.AUTO_EXPLORE, auto_explore)
-                    
-                    # Start exploring (returns adventure quote)
-                    adventure_quote = auto_explore.start(game_map, entities, fov_map)
-                    
-                    # Show adventure quote
-                    message_log.add_message(MB.custom(f'"{adventure_quote}"', MB.CYAN))
-                    message_log.add_message(MB.info("Auto-exploring... (any key to cancel)"))
+                # Start exploring (returns adventure quote)
+                adventure_quote = auto_explore.start(game_map, entities, fov_map)
+                
+                # Show adventure quote
+                message_log.add_message(MB.custom(f'"{adventure_quote}"', MB.CYAN))
+                message_log.add_message(MB.info("Auto-exploring... (any key to cancel)"))
     
     def _process_player_status_effects(self) -> None:
         """Process status effects at the end of the player's turn."""
