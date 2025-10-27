@@ -831,8 +831,14 @@ class ActionProcessor:
             message_log.add_message(MB.info("There's no one here to talk to."))
             return
         
-        # Start conversation!
-        npc_found.npc_dialogue.start_conversation()
+        # Start conversation with dungeon level context!
+        game_map = self.state_manager.state.game_map
+        dungeon_level = game_map.dungeon_level if game_map else 1
+        
+        if not npc_found.npc_dialogue.start_encounter(dungeon_level):
+            message_log.add_message(MB.info(f"{npc_found.name} has nothing to say right now."))
+            return
+        
         message_log.add_message(MB.info(f"You approach {npc_found.name}..."))
         
         # Transition to dialogue state
@@ -841,7 +847,7 @@ class ActionProcessor:
         # Store the NPC we're talking to for later reference
         self.state_manager.state.current_dialogue_npc = npc_found
         
-        logger.info(f"Started conversation with {npc_found.name}")
+        logger.info(f"Started conversation with {npc_found.name} at dungeon level {dungeon_level}")
     
     def _handle_inventory_action(self, inventory_index: int) -> None:
         """Handle inventory item usage or dropping.
