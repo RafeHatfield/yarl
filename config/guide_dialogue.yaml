@@ -58,6 +58,12 @@ encounters:
           *'I lasted longer than most. Decades of runs. But eventually, the dragon
           got bored waiting for me to succeed. Threw me away like a broken tool.
           Now I'm stuck here watching the NEW guy.'*
+          
+          The figure gestures vaguely at the dungeon around you.
+          
+          *'Why do you think there's so much gear just lying around down here, anyway?
+          All those swords and armor? Those were MINE. And the souls before me. And
+          before them. Generations of failures, scattered across the floors.'*
         leads_to: ["the_truth", "leave"]
         
       - id: "the_truth"
