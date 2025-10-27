@@ -659,7 +659,8 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             target_npc = pathfinding.auto_talk_target
             
             # Check if NPC is adjacent or at player's location
-            distance = abs(target_npc.x - player.x) + abs(target_npc.y - player.y)
+            # Use Euclidean distance (same as interaction system) to handle diagonals correctly
+            distance = player.distance_to(target_npc)
             if target_npc in entities and distance <= 1.5:
                 # Talk to them!
                 if (hasattr(target_npc, 'is_npc') and target_npc.is_npc and
