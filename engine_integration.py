@@ -259,13 +259,15 @@ def play_game_with_engine(
         current_state = engine.state_manager.state.current_state
         
         if current_state == GameStates.CONFRONTATION:
-            # Show confrontation choice screen
+            # Show confrontation choice screen with full Phase 5 menu system
             from screens.confrontation_choice import confrontation_menu
             from victory_manager import get_victory_manager
             
+            player = engine.state_manager.state.player
             choice, new_state = confrontation_menu(
                 con, 0,  # 0 is the root console in libtcod
-                constants['screen_width'], constants['screen_height']
+                constants['screen_width'], constants['screen_height'],
+                player  # Pass player to check knowledge flags
             )
             
             if choice:
@@ -285,8 +287,9 @@ def play_game_with_engine(
                     choice, player_stats
                 )
                 
-                # Record victory in Hall of Fame if good ending
-                if choice == 'good':
+                # Record victory in Hall of Fame for victory endings
+                # Phase 5 endings: '1a', '1b', '5' are victories; '2' is failure; '3', '4' may vary
+                if choice in ('1a', '1b', '5', 'good'):
                     hall = get_hall_of_fame()
                     player_name = engine.state_manager.state.player.name
                     hall.add_victory(player_name, choice, player_stats)

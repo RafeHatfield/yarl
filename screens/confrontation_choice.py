@@ -1,63 +1,256 @@
-"""Confrontation choice screen for final Entity encounter.
+"""Confrontation choice screen for Zhyraxion encounter.
 
-This module handles the critical moment when the player faces the Entity
-with the Amulet of Yendor. The player must choose their fate.
+This module handles the critical moment when the player faces Zhyraxion
+with Aurelyn's Ruby Heart and must choose their fate across six possible endings.
+
+Phase 5: The Five Endings
+- Uses nested menu system (main choice → sub-choices)
+- Conditional options based on knowledge flags
+- Returns ending codes: '1a', '1b', '2', '3', '4', '5'
 """
 
 import tcod
+from typing import Optional, Tuple
 
 from game_states import GameStates
 
 
-def confrontation_menu(con, root_console, screen_width, screen_height):
-    """Display the Entity confrontation and choice menu.
+def confrontation_menu(con, root_console, screen_width, screen_height, player):
+    """Display Zhyraxion's confrontation and choice menu.
     
     Args:
         con: Console to draw on
         root_console: Root console for rendering
         screen_width: Width of the screen
         screen_height: Height of the screen
+        player: Player entity (to check knowledge flags)
         
     Returns:
-        tuple: (choice_letter, new_game_state) or (None, current_state)
+        tuple: (ending_code, new_game_state) or (None, current_state)
+        ending_code: '1a', '1b', '2', '3', '4', '5' or None
     """
-    # Entity's confrontation dialogue
-    title = "The Entity's Throne Room"
+    # Get knowledge flags
+    knows_true_name = False
+    knows_ritual = False
+    if hasattr(player, 'victory') and player.victory:
+        knows_true_name = player.victory.knows_entity_true_name
+        knows_ritual = player.victory.knows_crimson_ritual
+    
+    # Start with main menu
+    return _main_choice_menu(con, root_console, screen_width, screen_height, 
+                            knows_true_name, knows_ritual)
+
+def _main_choice_menu(con, root_console, screen_width, screen_height, 
+                     knows_true_name: bool, knows_ritual: bool) -> Tuple[Optional[str], GameStates]:
+    """Display the main confrontation choice menu.
+    
+    Returns:
+        tuple: (ending_code, game_state) or (None, CONFRONTATION)
+    """
+    title = "The Confrontation Chamber"
     
     dialogue = [
-        "You step through the portal into a vast chamber outside time itself.",
+        "You step through the portal into a circular chamber.",
         "",
-        "The Entity materializes before you - no longer just a voice,",
-        "but a towering figure wreathed in temporal distortions.",
+        "Ritual circles glow on the floor. In the center lie golden scales -",
+        "all that remains of a dragon named Aurelyn.",
         "",
-        "\"At last. You've done it. The Amulet of Yendor. My prison... my key.\"",
+        "A figure stands before you. Human in shape, but the eyes...",
+        "ancient, draconic, burning with centuries of grief and rage.",
         "",
-        "\"Hand it over, and your service is complete. I'll grant you freedom.\"",
+        "He speaks, voice like silk over steel:",
         "",
-        "The Entity's eyes gleam with barely contained desperation.",
-        "You sense this is the moment that defines everything.",
+        "\"You have it. Aurelyn's heart. After all this time...\"",
         "",
-        "What do you do?"
+        "\"I've waited centuries. Watched thousands die in this place.\"",
+        "\"All for this moment.\"",
+        "",
+        "He extends a hand, trembling with barely contained desperation.",
+        "",
+        "\"Give it to me. I'll grant you your freedom. We can both escape.\"",
+        "",
+        "The Ruby Heart pulses warm in your hands, beating with a rhythm",
+        "that isn't quite alive, isn't quite dead.",
+        "",
+        "What do you do with the heart?"
     ]
     
-    # Choice options
+    # Main choices (3 options)
     choices = [
-        ("a", "Give the Amulet to the Entity"),
-        ("b", "Keep the Amulet for yourself"),
+        ("K", "Keep the heart"),
+        ("G", "Give the heart to him"),
+        ("D", "Destroy the heart"),
     ]
     
+    # Render the menu and get input
+    key_char = _render_menu(con, root_console, screen_width, screen_height,
+                           title, dialogue, choices)
+    
+    # Handle main choice
+    if key_char is None:
+        return None, GameStates.CONFRONTATION  # ESC pressed
+    
+    if key_char == 'k':
+        # KEEP - Go to keep submenu
+        return _keep_submenu(con, root_console, screen_width, screen_height, knows_ritual)
+    elif key_char == 'g':
+        # GIVE - Ending 3 (Fool's Freedom - give heart, fight Full Dragon)
+        return '3', GameStates.CONFRONTATION  # Will transition to boss fight
+    elif key_char == 'd':
+        # DESTROY - Go to destroy submenu
+        return _destroy_submenu(con, root_console, screen_width, screen_height, knows_true_name)
+    
+    return None, GameStates.CONFRONTATION  # Invalid input
+
+
+def _keep_submenu(con, root_console, screen_width, screen_height, 
+                 knows_ritual: bool) -> Tuple[Optional[str], GameStates]:
+    """Display submenu for keeping the heart.
+    
+    Returns:
+        tuple: (ending_code, game_state) or (None, CONFRONTATION)
+    """
+    title = "You grip the heart tightly..."
+    
+    dialogue = [
+        "You pull the Ruby Heart close to your chest.",
+        "",
+        "Zhyraxion's expression shifts - surprise, then anger.",
+        "",
+        "\"You would... keep it? DENY me?\"",
+        "",
+        "His form flickers, barely holding human shape.",
+        "",
+        "\"Very well. Let me offer you... alternatives.\"",
+        "",
+        "\"You could FIGHT me for your freedom - though I assure you,\"",
+        "\"you won't win.\"",
+        "",
+        "\"Or... you could accept my gift. Become a dragon. We'll BOTH\"",
+        "\"escape. You'll have power beyond imagining.\"",
+        "",
+        "His smile is thin, dangerous.",
+    ]
+    
+    # Build choices based on knowledge
+    choices = [
+        ("F", "Fight for your freedom"),
+        ("T", "Accept his transformation offer"),
+    ]
+    
+    if knows_ritual:
+        choices.append(("R", "Use the Crimson Ritual [SECRET]"))
+    
+    choices.append(("B", "Back"))
+    
+    # Render and get input
+    key_char = _render_menu(con, root_console, screen_width, screen_height,
+                           title, dialogue, choices)
+    
+    if key_char is None or key_char == 'b':
+        return None, GameStates.CONFRONTATION  # Back to main menu
+    
+    if key_char == 'f':
+        # Ending 1a: Fight Human Zhyraxion
+        return '1a', GameStates.CONFRONTATION  # Will transition to boss fight
+    elif key_char == 't':
+        # Ending 2: Dragon's Bargain (trapped)
+        return '2', GameStates.FAILURE  # Bad ending - player trapped
+    elif key_char == 'r' and knows_ritual:
+        # Ending 1b: Crimson Collector (dark power ending)
+        return '1b', GameStates.VICTORY  # Dark victory
+    
+    return None, GameStates.CONFRONTATION
+
+
+def _destroy_submenu(con, root_console, screen_width, screen_height,
+                    knows_true_name: bool) -> Tuple[Optional[str], GameStates]:
+    """Display submenu for destroying the heart.
+    
+    Returns:
+        tuple: (ending_code, game_state) or (None, CONFRONTATION)
+    """
+    title = "You raise the heart..."
+    
+    dialogue = [
+        "You lift Aurelyn's Ruby Heart above your head.",
+        "",
+        "Zhyraxion's eyes widen in horror.",
+        "",
+        "\"NO! Don't you DARE! That's all I have left of—\"",
+        "",
+        "\"Please. Don't do this. I'm begging you.\"",
+        "",
+        "The heart pulses in your hands. You feel its warmth,",
+        "its not-quite-alive rhythm.",
+        "",
+        "This is someone's heart. Someone who was loved.",
+    ]
+    
+    if knows_true_name:
+        dialogue.extend([
+            "",
+            "You know his true name: Zhyraxion.",
+            "",
+            "If you speak it before destroying the heart...",
+            "...perhaps there's another way."
+        ])
+    
+    # Build choices
+    choices = []
+    
+    if knows_true_name:
+        choices.append(("N", "Speak his true name and destroy the heart"))
+    
+    choices.extend([
+        ("J", "Just destroy it"),
+        ("B", "Back")
+    ])
+    
+    # Render and get input
+    key_char = _render_menu(con, root_console, screen_width, screen_height,
+                           title, dialogue, choices)
+    
+    if key_char is None or key_char == 'b':
+        return None, GameStates.CONFRONTATION  # Back to main menu
+    
+    if key_char == 'n' and knows_true_name:
+        # Ending 5: Sacrifice & Redemption (best ending)
+        return '5', GameStates.VICTORY  # Golden light, everyone freed
+    elif key_char == 'j':
+        # Ending 4: Mercy & Corruption (tragic - fight Grief Dragon)
+        return '4', GameStates.CONFRONTATION  # Will transition to boss fight
+    
+    return None, GameStates.CONFRONTATION
+
+
+def _render_menu(con, root_console, screen_width, screen_height,
+                title: str, dialogue: list, choices: list) -> Optional[str]:
+    """Render a menu and return the selected key.
+    
+    Args:
+        con: Console to draw on
+        root_console: Root console
+        screen_width: Screen width
+        screen_height: Screen height
+        title: Menu title
+        dialogue: List of dialogue lines
+        choices: List of (key, text) tuples
+        
+    Returns:
+        Selected key character (lowercase) or None if ESC pressed
+    """
     # Calculate dimensions
     dialogue_height = len(dialogue) + 2
-    choices_height = len(choices) + 3
-    total_height = dialogue_height + choices_height + 2
-    menu_width = 70
+    choices_height = len(choices) + 2
+    total_height = dialogue_height + choices_height + 6
+    menu_width = 75
     
     x = screen_width // 2 - menu_width // 2
-    y = screen_height // 2 - total_height // 2
+    y = max(2, screen_height // 2 - total_height // 2)
     
-    # Draw background window
+    # Draw background
     tcod.console_set_default_background(con, tcod.black)
-    tcod.console_set_default_foreground(con, tcod.white)
     tcod.console_clear(con)
     
     # Draw title
@@ -77,16 +270,15 @@ def confrontation_menu(con, root_console, screen_width, screen_height):
     )
     
     # Draw dialogue
-    tcod.console_set_default_foreground(con, tcod.light_gray)
     current_y = 5
     for line in dialogue:
-        if line == "":  # Empty line for spacing
+        if line == "":
             current_y += 1
             continue
         
-        # Highlight Entity's speech in different color
+        # Highlight quoted speech
         if line.startswith("\""):
-            tcod.console_set_default_foreground(con, tcod.light_red)
+            tcod.console_set_default_foreground(con, tcod.crimson)
         else:
             tcod.console_set_default_foreground(con, tcod.light_gray)
         
@@ -104,58 +296,36 @@ def confrontation_menu(con, root_console, screen_width, screen_height):
     current_y += 2
     
     # Draw choices
-    tcod.console_set_default_foreground(con, tcod.white)
     for letter, text in choices:
+        if "[SECRET]" in text:
+            tcod.console_set_default_foreground(con, tcod.purple)
+        else:
+            tcod.console_set_default_foreground(con, tcod.white)
+        
         choice_text = f"({letter}) {text}"
         tcod.console_print(con, 5, current_y, choice_text)
-        current_y += 2
+        current_y += 1
     
     # Draw instruction
-    current_y += 1
+    current_y += 2
     tcod.console_set_default_foreground(con, tcod.dark_gray)
     tcod.console_print_ex(
         con, menu_width // 2, current_y,
         tcod.BKGND_NONE, tcod.CENTER,
-        "[Press a key to make your choice]"
+        "[Press a key to make your choice, ESC to go back]"
     )
     
-    # Blit to root console
-    tcod.console_blit(con, 0, 0, menu_width, total_height, root_console, x, y, 1.0, 0.8)
+    # Blit to root
+    tcod.console_blit(con, 0, 0, menu_width, screen_height - 4, 
+                     root_console, x, y, 1.0, 0.85)
     tcod.console_flush()
     
-    # Wait for key input
+    # Wait for input
     key = tcod.console_wait_for_keypress(True)
     
-    # Handle choice
     if key.vk == tcod.KEY_ESCAPE:
-        return None, GameStates.CONFRONTATION  # Stay in confrontation
+        return None
     
     key_char = chr(key.c).lower() if key.c > 0 else ''
-    
-    if key_char == 'a':
-        # Give Amulet - Bad Ending
-        return 'bad', GameStates.FAILURE
-    elif key_char == 'b':
-        # Keep Amulet - Good Ending
-        return 'good', GameStates.VICTORY
-    
-    return None, GameStates.CONFRONTATION  # Invalid input, stay in confrontation
-
-
-def get_entity_anxiety_dialogue(anxiety_level):
-    """Get Entity's dialogue based on how long player has delayed.
-    
-    Args:
-        anxiety_level: 0-3 representing Entity's anxiety
-        
-    Returns:
-        str: Dialogue line to display
-    """
-    anxiety_lines = {
-        0: "\"Excellent. Now, let's conclude our arrangement.\"",
-        1: "\"What took you so long? No matter. Hand it over.\"",
-        2: "\"Where have you BEEN? I've been waiting! The Amulet. NOW.\"",
-        3: "\"FINALLY! Do you have ANY idea how long— Never mind. Give. It. To. Me.\""
-    }
-    return anxiety_lines.get(anxiety_level, anxiety_lines[0])
+    return key_char if key_char else None
 
