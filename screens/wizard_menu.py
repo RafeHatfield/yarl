@@ -22,8 +22,9 @@ from message_builder import MessageBuilder as MB
 # Wizard mode color (purple to distinguish from game messages)
 WIZARD_COLOR = (138, 43, 226)
 
-# Global console reference for helper functions
+# Global references for helper functions
 _wizard_console = None
+_wizard_game_state_manager = None
 
 
 def show_wizard_menu(con, game_state_manager):
@@ -43,9 +44,10 @@ def show_wizard_menu(con, game_state_manager):
     if not config.wizard_mode:
         return game_state_manager.state.current_state
     
-    # Store console for helper functions
-    global _wizard_console
+    # Store console and game state for helper functions
+    global _wizard_console, _wizard_game_state_manager
     _wizard_console = con
+    _wizard_game_state_manager = game_state_manager
     
     # Menu dimensions
     menu_width = 40
@@ -316,7 +318,11 @@ def wizard_teleport_to_level(game_state_manager):
     
     for i in range(levels_to_descend):
         # Use the same next_floor logic as normal descent
-        game_map.next_floor(player, message_log, constants)
+        # IMPORTANT: next_floor returns a NEW entities list!
+        entities = game_map.next_floor(player, message_log, constants)
+    
+    # Update the entities in the game state
+    state.entities = entities
     
     # Heal player after teleport
     player.fighter.hp = player.fighter.max_hp
@@ -438,6 +444,100 @@ def wizard_unlock_knowledge(game_state_manager):
 # HELPER FUNCTIONS
 # ============================================================================
 
+def _draw_wizard_menu_background(con):
+    """Draw the wizard menu background (for use when showing prompts on top)."""
+    import tcod as libtcod
+    from config.testing_config import get_testing_config
+    
+    config = get_testing_config()
+    
+    # Menu dimensions
+    menu_width = 40
+    menu_height = 20
+    
+    # Center the menu
+    screen_width = con.width
+    screen_height = con.height
+    x = screen_width // 2 - menu_width // 2
+    y = screen_height // 2 - menu_height // 2
+    
+    # Draw solid black background for readability
+    for i in range(menu_width):
+        for j in range(menu_height):
+            libtcod.console_set_char_background(con, x + i, y + j, libtcod.black, libtcod.BKGND_SET)
+            libtcod.console_put_char(con, x + i, y + j, ' ')
+    
+    # Draw border
+    libtcod.console_put_char(con, x, y, libtcod.CHAR_NE)
+    libtcod.console_put_char(con, x + menu_width - 1, y, libtcod.CHAR_NW)
+    for i in range(1, menu_width - 1):
+        libtcod.console_put_char(con, x + i, y, libtcod.CHAR_HLINE)
+    
+    libtcod.console_put_char(con, x, y + menu_height - 1, libtcod.CHAR_SE)
+    libtcod.console_put_char(con, x + menu_width - 1, y + menu_height - 1, libtcod.CHAR_SW)
+    for i in range(1, menu_width - 1):
+        libtcod.console_put_char(con, x + i, y + menu_height - 1, libtcod.CHAR_HLINE)
+    
+    for j in range(1, menu_height - 1):
+        libtcod.console_put_char(con, x, y + j, libtcod.CHAR_VLINE)
+        libtcod.console_put_char(con, x + menu_width - 1, y + j, libtcod.CHAR_VLINE)
+    
+    # Title
+    title = "WIZARD MODE"
+    libtcod.console_print_ex(
+        con, 
+        x + menu_width // 2, 
+        y + 1,
+        libtcod.BKGND_NONE,
+        libtcod.CENTER,
+        title
+    )
+    
+    # Menu options
+    row = 3
+    libtcod.console_print(con, x + 2, y + row, "H - Heal to Full HP")
+    row += 1
+    
+    god_status = "[ON]" if config.god_mode else "[OFF]"
+    libtcod.console_print(con, x + 2, y + row, f"G - Toggle God Mode {god_status}")
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "R - Reveal Entire Map")
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "X - Gain XP")
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "L - Teleport to Level...")
+    row += 2
+    
+    for i in range(1, menu_width - 1):
+        libtcod.console_put_char(con, x + i, y + row, libtcod.CHAR_HLINE)
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "N - Spawn NPC...")
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "M - Spawn Monster...")
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "I - Spawn Item...")
+    row += 2
+    
+    for i in range(1, menu_width - 1):
+        libtcod.console_put_char(con, x + i, y + row, libtcod.CHAR_HLINE)
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "K - Unlock Knowledge...")
+    row += 2
+    
+    for i in range(1, menu_width - 1):
+        libtcod.console_put_char(con, x + i, y + row, libtcod.CHAR_HLINE)
+    row += 1
+    
+    libtcod.console_print(con, x + 2, y + row, "ESC - Close Menu")
+
+
 def _get_number_input(min_val: int, max_val: int):
     """Get a number input from the user with visual feedback.
     
@@ -450,50 +550,55 @@ def _get_number_input(min_val: int, max_val: int):
     """
     import tcod as libtcod
     
+    global _wizard_console
+    if _wizard_console is None:
+        return None
+    
+    con = _wizard_console
     input_string = ""
     
-    # Work with root console (0) directly for immediate visibility
-    root = 0
-    
-    # Input box dimensions - use fixed screen size
+    # Input box dimensions
     box_width = 50
     box_height = 5
-    screen_width = 80  # Standard screen width
-    screen_height = 50  # Standard screen height
+    screen_width = con.width
+    screen_height = con.height
     x = screen_width // 2 - box_width // 2
     y = screen_height // 2 - box_height // 2
     
     while True:
-        # Draw input box with solid background directly to root console
+        # Redraw wizard menu background first
+        _draw_wizard_menu_background(con)
+        
+        # Draw input box with solid background on top of wizard menu
         for i in range(box_width):
             for j in range(box_height):
-                libtcod.console_set_char_background(root, x + i, y + j, libtcod.black, libtcod.BKGND_SET)
-                libtcod.console_put_char(root, x + i, y + j, ' ')
+                libtcod.console_set_char_background(con, x + i, y + j, libtcod.black, libtcod.BKGND_SET)
+                libtcod.console_put_char(con, x + i, y + j, ' ')
         
         # Draw border
         for i in range(box_width):
-            libtcod.console_put_char(root, x + i, y, libtcod.CHAR_HLINE)
-            libtcod.console_put_char(root, x + i, y + box_height - 1, libtcod.CHAR_HLINE)
+            libtcod.console_put_char(con, x + i, y, libtcod.CHAR_HLINE)
+            libtcod.console_put_char(con, x + i, y + box_height - 1, libtcod.CHAR_HLINE)
         for j in range(box_height):
-            libtcod.console_put_char(root, x, y + j, libtcod.CHAR_VLINE)
-            libtcod.console_put_char(root, x + box_width - 1, y + j, libtcod.CHAR_VLINE)
+            libtcod.console_put_char(con, x, y + j, libtcod.CHAR_VLINE)
+            libtcod.console_put_char(con, x + box_width - 1, y + j, libtcod.CHAR_VLINE)
         
         # Draw prompt with green color (wizard mode theme)
-        libtcod.console_set_default_foreground(root, libtcod.green)
+        libtcod.console_set_default_foreground(con, libtcod.green)
         prompt = f"Enter level ({min_val}-{max_val}):"
-        libtcod.console_print(root, x + 2, y + 1, prompt)
+        libtcod.console_print(con, x + 2, y + 1, prompt)
         
         # Draw input with bright green
-        libtcod.console_set_default_foreground(root, libtcod.light_green)
+        libtcod.console_set_default_foreground(con, libtcod.light_green)
         input_display = input_string + "_"
-        libtcod.console_print(root, x + 2, y + 2, input_display)
+        libtcod.console_print(con, x + 2, y + 2, input_display)
         
         # Draw help text
-        libtcod.console_set_default_foreground(root, libtcod.dark_green)
+        libtcod.console_set_default_foreground(con, libtcod.dark_green)
         help_text = "ENTER=confirm ESC=cancel"
-        libtcod.console_print(root, x + 2, y + 3, help_text)
+        libtcod.console_print(con, x + 2, y + 3, help_text)
         
-        # Flush to screen
+        # Flush to screen (this flushes the root console which has the wizard console blitted to it)
         libtcod.console_flush()
         
         # Wait for key press
