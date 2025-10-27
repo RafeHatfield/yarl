@@ -212,24 +212,27 @@ encounters:
           The ghost's tone gets serious.
           
           *'But write this down, because it matters: ZHYRAXION. Say it when you
-          destroy the prison, or you're just freeing a monster. Say it, and maybe...
+          destroy the amulet, or you're just freeing a monster. Say it, and maybe...
           maybe you fix what's broken.'*
         unlocks_knowledge: "entity_true_name_zhyraxion"
         grants_achievement: "learned_true_name"
-        leads_to: ["why_important"]
-        
+        leads_to: ["why_important", "what_should_do"]
+      
       - id: "why_important"
         player_option: "Why does the name matter?"
         npc_response: >
-          *'Because true names have POWER. Whatever you do with that amulet - use it,
-          destroy it, whatever - speaking the true name changes EVERYTHING. Without it?
-          You're just playing with forces you don't understand. WITH it?'*
+          *'Because true names have POWER. The dragon's name is ZHYRAXION. Remember it.
+          Whatever you do with that amulet - use it, destroy it, whatever - speaking
+          the true name changes EVERYTHING. Without it? You're just playing with forces
+          you don't understand. WITH it?'*
           
           The ghost's voice softens slightly.
           
           *'You might actually break the curse. Purify the corruption. Turn the monster
           back into... whatever it was before it went bad. Maybe even free us. Both of us.'*
-        leads_to: ["what_should_do"]
+        unlocks_knowledge: "entity_true_name_zhyraxion"
+        grants_achievement: "learned_true_name"
+        leads_to: ["the_name", "what_should_do"]
         
       - id: "what_should_do"
         player_option: "So what should I do?"
