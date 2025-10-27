@@ -50,10 +50,11 @@ def show_wizard_menu(con, game_state_manager):
     x = screen_width // 2 - menu_width // 2
     y = screen_height // 2 - menu_height // 2
     
-    # Draw menu background
+    # Draw solid black background for readability
     for i in range(menu_width):
         for j in range(menu_height):
-            libtcod.console_put_char_ex(con, x + i, y + j, ' ', libtcod.white, libtcod.black)
+            libtcod.console_set_char_background(con, x + i, y + j, libtcod.black, libtcod.BKGND_SET)
+            libtcod.console_put_char(con, x + i, y + j, ' ')
     
     # Draw border
     # Top border
