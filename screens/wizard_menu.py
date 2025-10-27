@@ -38,7 +38,7 @@ def show_wizard_menu(con, game_state_manager):
     
     # Safety check - shouldn't be able to access without wizard mode
     if not config.wizard_mode:
-        return game_state_manager.get_game_state()
+        return game_state_manager.state.current_state
     
     # Menu dimensions
     menu_width = 40
@@ -171,7 +171,7 @@ def show_wizard_menu(con, game_state_manager):
         return wizard_unlock_knowledge(game_state_manager)
     
     # Invalid key, stay in menu
-    return game_state_manager.get_game_state()
+    return game_state_manager.state.current_state
 
 
 # ============================================================================
