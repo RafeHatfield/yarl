@@ -173,6 +173,12 @@ encounters:
           *'Now I'm stuck here watching YOU try. And when you take too long? It'll
           find someone else. There's always another soul in the collection. Always
           another puppet to wind up and send down.'*
+          
+          The figure gestures at the dungeon around you.
+          
+          *'You'll recognize your predecessor when you trip over their sword. I know
+          I recognize mine. Level 18, rusty longsword, lying in a corner. That was
+          my LAST run. Still there. Probably always will be.'*
         leads_to: ["leave"]
         
       - id: "leave"
@@ -252,6 +258,12 @@ encounters:
           
           *'...probably unleashes something worse. But destroy it WITH the name? That
           might break EVERYTHING. The curse, the cycle, all of it. Might. Don't quote me.'*
+          
+          The figure glances down at the dungeon floor.
+          
+          *'Just... when you're stepping over all those swords and shields down there?
+          Remember each one was someone who thought they had it figured out too. Don't
+          be another piece of junk on the floor.'*
         leads_to: ["leave"]
         
       - id: "leave"
@@ -303,6 +315,12 @@ encounters:
           
           *'Maybe that works. Maybe you break the curse, free us both. Maybe I finally
           get some peace. Maybe pigs fly. But it's your best shot at REAL freedom.'*
+          
+          The figure's voice drops to barely a whisper.
+          
+          *'And hey... if you fail? At least your sword will look good on the pile
+          with all the others. Twenty levels deep, that's prime real estate for corpse
+          loot. The next guy will appreciate the upgrade.'*
         leads_to: ["will_see_again"]
         
       - id: "will_see_again"
