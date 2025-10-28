@@ -548,6 +548,32 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         "fov_recompute": True
     })
     
+    # Check if player stepped on victory portal (Phase 5)
+    # Check if player has Ruby Heart (via victory component)
+    from components.component_registry import ComponentType
+    victory_comp = player.get_component_optional(ComponentType.VICTORY)
+    
+    if victory_comp and victory_comp.has_ruby_heart:
+        from victory_manager import get_victory_manager
+        victory_mgr = get_victory_manager()
+        
+        # Check if player stepped on portal
+        if victory_mgr.check_portal_entry(player, entities):
+            from game_messages import MessageLog
+            # Get or create message log for portal entry messages
+            # (It should already exist in game state, but we need a reference)
+            # The calling function will handle the actual message log
+            pathfinding.interrupt_movement("Stepped on portal")
+            
+            # Signal portal entry to game loop (calling function will handle messages and state transition)
+            results.append({
+                "portal_entry": True
+            })
+            results.append({
+                "enemy_turn": False  # Don't give enemies a turn, go straight to confrontation
+            })
+            return {"results": results}
+    
     # Check if player stepped on a hazard - interrupt movement if so
     try:
         # hazard_manager is a direct attribute on game_map

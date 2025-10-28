@@ -418,22 +418,37 @@ class ActionProcessor:
             
             # Check if player stepped on victory portal
             if current_state == GameStates.RUBY_HEART_OBTAINED:
+                print(f"\n>>> CHECKING PORTAL ENTRY: Player at ({player.x}, {player.y}), State = {current_state}")
+                logger.info(f"=== MOVEMENT: Checking portal entry, Player at ({player.x}, {player.y}), State = {current_state}")
+                
                 from victory_manager import get_victory_manager
                 victory_mgr = get_victory_manager()
                 entities = self.state_manager.state.entities
                 message_log = self.state_manager.state.message_log
+                
                 # Debug: Find portal in entities
                 portal_found = False
+                portal_entity = None
                 for entity in entities:
                     if hasattr(entity, 'is_portal') and entity.is_portal:
                         print(f">>> PORTAL FOUND at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
+                        print(f">>> Portal has is_portal={entity.is_portal}, same coords? {entity.x == player.x and entity.y == player.y}")
                         logger.info(f"=== MOVEMENT: Portal found at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
                         portal_found = True
+                        portal_entity = entity
+                
                 if not portal_found:
                     print(">>> WARNING: NO PORTAL IN ENTITIES LIST!")
+                    print(f">>> Total entities: {len(entities)}")
+                    print(f">>> Entities with is_portal attr: {sum(1 for e in entities if hasattr(e, 'is_portal'))}")
                     logger.warning("=== MOVEMENT: NO PORTAL FOUND IN ENTITIES LIST!")
+                    logger.warning(f"Total entities: {len(entities)}, with is_portal: {sum(1 for e in entities if hasattr(e, 'is_portal'))}")
                 
-                if victory_mgr.check_portal_entry(player, entities):
+                portal_check_result = victory_mgr.check_portal_entry(player, entities)
+                print(f">>> check_portal_entry returned: {portal_check_result}")
+                logger.info(f"=== MOVEMENT: check_portal_entry returned: {portal_check_result}")
+                
+                if portal_check_result:
                     print("\n" + "!"*80)
                     print("PORTAL ENTRY DETECTED!!! TRIGGERING CONFRONTATION!!!")
                     print("!"*80 + "\n")
@@ -443,7 +458,12 @@ class ActionProcessor:
                     self.state_manager.set_game_state(GameStates.CONFRONTATION)
                     return  # Don't process turn end, go straight to confrontation
                 else:
-                    print(">>> Portal entry check returned False (coordinates don't match)")
+                    if portal_entity:
+                        print(f">>> Portal entry check returned False even though portal exists!")
+                        print(f">>> Portal coords: ({portal_entity.x}, {portal_entity.y}), Player coords: ({player.x}, {player.y})")
+                        print(f">>> Match? x={portal_entity.x == player.x}, y={portal_entity.y == player.y}")
+                    else:
+                        print(">>> Portal entry check returned False (no portal found)")
                     logger.info("=== MOVEMENT: Portal entry check returned False")
             
             # Check for passive secret door reveals
@@ -1675,6 +1695,8 @@ class ActionProcessor:
         # Process results
         end_turn = False
         victory_triggered = False
+        portal_entry = False
+        
         for result in movement_result.get("results", []):
             message = result.get("message")
             if message:
@@ -1683,6 +1705,24 @@ class ActionProcessor:
             # Handle FOV recompute
             if result.get("fov_recompute"):
                 self.state_manager.request_fov_recompute()
+            
+            # Handle portal entry (Phase 5)
+            if result.get("portal_entry"):
+                logger.info("=== PATHFINDING: Portal entry detected! Transitioning to CONFRONTATION ===")
+                print(">>> PATHFINDING: Portal entry detected! Going to confrontation...")
+                
+                # Add portal entry messages
+                from message_builder import MessageBuilder as MB
+                message_log.add_message(MB.item_effect("You step through the portal..."))
+                message_log.add_message(MB.warning("Reality twists around you!"))
+                
+                # Mark confrontation started on player
+                victory_comp = player.get_component_optional(ComponentType.VICTORY)
+                if victory_comp:
+                    victory_comp.start_confrontation()
+                
+                portal_entry = True
+                # Don't end turn normally, jump straight to confrontation
             
             # Handle victory trigger
             if result.get("victory_triggered"):
@@ -1704,7 +1744,12 @@ class ActionProcessor:
                 end_turn = True
         
         # Transition to appropriate state
-        if victory_triggered:
+        if portal_entry:
+            # Player stepped on portal - go straight to confrontation
+            self.state_manager.set_game_state(GameStates.CONFRONTATION)
+            logger.info("=== PATHFINDING: State transitioned to CONFRONTATION ===")
+            print(">>> PATHFINDING: State is now CONFRONTATION")
+        elif victory_triggered:
             # Victory sequence initiated - set to special state
             self.state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
         elif end_turn:
