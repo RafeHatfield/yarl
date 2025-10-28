@@ -6,11 +6,14 @@ the rendering backend to allow for future sprite support.
 """
 
 from typing import List, Dict, Any, Optional
+import logging
 import tcod.libtcodpy as libtcod
 
 from ..system import System
 from render_functions import render_all, clear_all, draw_entity, clear_entity
 from fov_functions import recompute_fov
+
+logger = logging.getLogger(__name__)
 
 
 class RenderSystem(System):
@@ -101,7 +104,13 @@ class RenderSystem(System):
         camera = game_state.get("camera")  # Get camera from game state (Phase 2)
 
         if not all([player, game_map, message_log]):
+            logger.error(f"RenderSystem: Missing critical components! player={player is not None}, game_map={game_map is not None}, message_log={message_log is not None}")
             return
+        
+        # BLACK SCREEN BUG DETECTION
+        if not self.fov_map:
+            logger.error(f"!!! BLACK SCREEN BUG: FOV map is None! Player at ({player.x}, {player.y}), Level {game_map.dungeon_level}")
+            logger.error(f"!!! fov_recompute={self.fov_recompute}, entities count={len(entities) if entities else 0}")
 
         # Recompute FOV if needed
         if self.fov_recompute and self.fov_map:

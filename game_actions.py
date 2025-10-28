@@ -1124,8 +1124,11 @@ class ActionProcessor:
     
     def _handle_stairs(self, _) -> None:
         """Handle taking stairs to next level."""
+        logger.debug("=== _handle_stairs() called ===")
+        
         current_state = self.state_manager.state.current_state
         if current_state != GameStates.PLAYERS_TURN:
+            logger.debug(f"_handle_stairs: Wrong state ({current_state}), returning")
             return
         
         player = self.state_manager.state.player
@@ -1134,27 +1137,40 @@ class ActionProcessor:
         message_log = self.state_manager.state.message_log
         
         if not all([player, entities is not None, game_map, message_log]):
+            logger.warning("_handle_stairs: Missing required components!")
             return
         
+        logger.info(f"_handle_stairs: Player at ({player.x}, {player.y}), checking for stairs")
+        
         # Check if player is on stairs
+        stairs_found = False
         for entity in entities:
             if (entity.components.has(ComponentType.STAIRS) and 
                 entity.x == player.x and entity.y == player.y):
+                stairs_found = True
+                logger.info(f"=== TAKING STAIRS: Level {game_map.dungeon_level} → {game_map.dungeon_level + 1} ===")
                 
                 # Generate next floor
                 new_entities = game_map.next_floor(player, message_log, self.constants)
                 self.state_manager.update_state(entities=new_entities)
+                logger.info(f"Floor generated: {len(new_entities)} entities")
                 
                 # Initialize new FOV map for the new level
                 from fov_functions import initialize_fov
                 new_fov_map = initialize_fov(game_map)
+                logger.info(f"FOV map initialized: {new_fov_map is not None}")
+                
                 self.state_manager.update_state(fov_map=new_fov_map)
                 self.state_manager.request_fov_recompute()
+                logger.info("FOV recompute requested")
                 
                 # Center camera on player's new position (fixes black screen on level transition)
                 camera = self.state_manager.state.camera
                 if camera:
                     camera.update(player.x, player.y)
+                    logger.info(f"Camera centered on player at ({player.x}, {player.y})")
+                else:
+                    logger.warning("Camera not found! This may cause rendering issues.")
                 
                 # Entity comments on level transition (Phase 1 feature!)
                 entity_quote = EntityDialogue.get_level_transition_quote(game_map.dungeon_level)
@@ -1172,8 +1188,10 @@ class ActionProcessor:
                                 if ring_message:
                                     message_log.add_message(ring_message)
                 
+                logger.info("=== STAIRS TRANSITION COMPLETE ===")
                 break
         else:
+            logger.warning(f"No stairs found at player position ({player.x}, {player.y})")
             message = MB.warning("There are no stairs here.")
             message_log.add_message(message)
     
