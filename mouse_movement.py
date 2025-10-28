@@ -476,7 +476,7 @@ def _is_valid_click(x: int, y: int, game_map: 'GameMap') -> bool:
 
 
 def process_pathfinding_movement(player: 'Entity', entities: List['Entity'], 
-                                game_map: 'GameMap', fov_map) -> dict:
+                                game_map: 'GameMap', fov_map, state_manager) -> dict:
     """Process one step of pathfinding movement using MovementService (REFACTORED).
     
     This function should be called during the player's turn when they are
@@ -496,12 +496,12 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         entities (List[Entity]): List of all entities
         game_map (GameMap): The game map (may include hazard_manager)
         fov_map: Field of view map for enemy detection
+        state_manager: Game state manager
         
     Returns:
         dict: Dictionary containing movement results and messages
     """
     from components.component_registry import ComponentType
-    from state_management.state_config import get_state_manager
     
     results = []
     
@@ -528,7 +528,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     # Use MovementService for actual movement (REFACTORED - single source of truth)
     # This handles: move validation, camera, FOV, portal checks, secret doors
     from services.movement_service import get_movement_service
-    state_manager = get_state_manager()
     movement_service = get_movement_service(state_manager)
     
     movement_result = movement_service.execute_movement(dx, dy, source="pathfinding")
@@ -641,7 +640,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
                 print(f">>> PATHFINDING: Attempting to pick up item: {target_item.name}")
                 
                 from services.pickup_service import get_pickup_service
-                state_manager = get_state_manager()
                 pickup_service = get_pickup_service(state_manager)
                 
                 pickup_result = pickup_service.execute_pickup(source="pathfinding")

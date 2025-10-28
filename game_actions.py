@@ -1598,7 +1598,7 @@ class ActionProcessor:
             return
         
         # Process pathfinding movement
-        movement_result = process_pathfinding_movement(player, entities, game_map, fov_map)
+        movement_result = process_pathfinding_movement(player, entities, game_map, fov_map, self.state_manager)
         
         # Update camera to follow player (Phase 2)
         camera = self.state_manager.state.camera
