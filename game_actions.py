@@ -350,11 +350,14 @@ class ActionProcessor:
             self.turn_controller.end_player_action(turn_consumed=True)
     
     def _handle_movement(self, move_data: Tuple[int, int]) -> None:
-        """Handle player movement.
+        """Handle player movement via MovementService (REFACTORED - single source of truth).
         
         Args:
             move_data: Tuple of (dx, dy) movement deltas
         """
+        from game_states import GameStates
+        from message_builder import MessageBuilder as MB
+        
         current_state = self.state_manager.state.current_state
         
         # Use StateManager to check if movement is allowed in current state
@@ -377,7 +380,6 @@ class ActionProcessor:
         if (hasattr(player, 'has_status_effect') and 
             callable(player.has_status_effect) and 
             player.has_status_effect('paralysis')):
-            from message_builder import MessageBuilder as MB
             self.state_manager.state.message_log.add_message(
                 MB.warning("You are paralyzed and cannot move!")
             )
@@ -386,94 +388,43 @@ class ActionProcessor:
             self.turn_controller.end_player_action(turn_consumed=True)
             return
         
-        destination_x = player.x + dx
-        destination_y = player.y + dy
+        # Use MovementService for all movement logic (REFACTORED - single source of truth)
+        from services.movement_service import get_movement_service
+        movement_service = get_movement_service(self.state_manager)
         
-        game_map = self.state_manager.state.game_map
-        if not game_map or game_map.is_blocked(destination_x, destination_y):
+        result = movement_service.execute_movement(dx, dy, source="keyboard")
+        
+        # Handle blocking entity (combat)
+        if result.blocked_by_entity:
+            self._handle_combat(player, result.blocked_by_entity)
             return
         
-        # Check for blocking entities
-        from entity import get_blocking_entities_at_location
-        target = get_blocking_entities_at_location(
-            self.state_manager.state.entities, destination_x, destination_y
-        )
+        # Handle blocked by wall (no action needed, just return)
+        if result.blocked_by_wall:
+            return
         
-        if target:
-            self._handle_combat(player, target)
-        else:
-            # Move player
-            player.move(dx, dy)
-            self.state_manager.request_fov_recompute()
+        # Handle successful movement
+        if result.success:
+            # Display any messages
+            message_log = self.state_manager.state.message_log
+            for msg_dict in result.messages:
+                message_log.add_message(msg_dict["message"])
             
-            # Update camera to follow player (Phase 2)
-            camera = self.state_manager.state.camera
-            if camera:
-                old_camera_pos = (camera.x, camera.y)
-                camera_moved = camera.update(player.x, player.y)
-                if camera_moved:
-                    logger.debug(f"Camera updated: {old_camera_pos} → ({camera.x}, {camera.y}) following player at ({player.x}, {player.y})")
-            else:
-                logger.warning(f"!!! CAMERA MISSING during movement! Player at ({player.x}, {player.y})")
+            # Request FOV recompute if needed
+            if result.fov_recompute:
+                self.state_manager.request_fov_recompute()
             
-            # Check if player stepped on victory portal
-            if current_state == GameStates.RUBY_HEART_OBTAINED:
-                print(f"\n>>> CHECKING PORTAL ENTRY: Player at ({player.x}, {player.y}), State = {current_state}")
-                logger.info(f"=== MOVEMENT: Checking portal entry, Player at ({player.x}, {player.y}), State = {current_state}")
-                
-                from victory_manager import get_victory_manager
-                victory_mgr = get_victory_manager()
-                entities = self.state_manager.state.entities
-                message_log = self.state_manager.state.message_log
-                
-                # Debug: Find portal in entities
-                portal_found = False
-                portal_entity = None
-                for entity in entities:
-                    if hasattr(entity, 'is_portal') and entity.is_portal:
-                        print(f">>> PORTAL FOUND at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
-                        print(f">>> Portal has is_portal={entity.is_portal}, same coords? {entity.x == player.x and entity.y == player.y}")
-                        logger.info(f"=== MOVEMENT: Portal found at ({entity.x}, {entity.y}), Player at ({player.x}, {player.y})")
-                        portal_found = True
-                        portal_entity = entity
-                
-                if not portal_found:
-                    print(">>> WARNING: NO PORTAL IN ENTITIES LIST!")
-                    print(f">>> Total entities: {len(entities)}")
-                    print(f">>> Entities with is_portal attr: {sum(1 for e in entities if hasattr(e, 'is_portal'))}")
-                    logger.warning("=== MOVEMENT: NO PORTAL FOUND IN ENTITIES LIST!")
-                    logger.warning(f"Total entities: {len(entities)}, with is_portal: {sum(1 for e in entities if hasattr(e, 'is_portal'))}")
-                
-                portal_check_result = victory_mgr.check_portal_entry(player, entities)
-                print(f">>> check_portal_entry returned: {portal_check_result}")
-                logger.info(f"=== MOVEMENT: check_portal_entry returned: {portal_check_result}")
-                
-                if portal_check_result:
-                    print("\n" + "!"*80)
-                    print("PORTAL ENTRY DETECTED!!! TRIGGERING CONFRONTATION!!!")
-                    print("!"*80 + "\n")
-                    logger.info("=== MOVEMENT: PORTAL ENTRY DETECTED! Triggering confrontation")
-                    victory_mgr.enter_portal(player, message_log)
-                    # Transition to confrontation state
-                    self.state_manager.set_game_state(GameStates.CONFRONTATION)
-                    return  # Don't process turn end, go straight to confrontation
-                else:
-                    if portal_entity:
-                        print(f">>> Portal entry check returned False even though portal exists!")
-                        print(f">>> Portal coords: ({portal_entity.x}, {portal_entity.y}), Player coords: ({player.x}, {player.y})")
-                        print(f">>> Match? x={portal_entity.x == player.x}, y={portal_entity.y == player.y}")
-                    else:
-                        print(">>> Portal entry check returned False (no portal found)")
-                    logger.info("=== MOVEMENT: Portal entry check returned False")
+            # Handle portal entry (Phase 5)
+            if result.portal_entry:
+                # Transition to confrontation state
+                self.state_manager.set_game_state(GameStates.CONFRONTATION)
+                return  # Don't process turn end, go straight to confrontation
             
-            # Check for passive secret door reveals
-            self._check_secret_reveals(player, game_map)
-        
-        # Process status effects at end of player turn
-        self._process_player_status_effects()
-        
-        # Switch to enemy turn
-        self.turn_controller.end_player_action(turn_consumed=True)
+            # Process status effects at end of player turn
+            self._process_player_status_effects()
+            
+            # Switch to enemy turn
+            self.turn_controller.end_player_action(turn_consumed=True)
     
     def _check_secret_reveals(self, player, game_map) -> None:
         """Check for passive secret door reveals near the player.
@@ -706,7 +657,7 @@ class ActionProcessor:
         
         Priority:
         1. NPCs at player position - start dialogue (NO TURN)
-        2. Items at player position - pick up (TAKES 1 TURN)
+        2. Items at player position - pick up via PickupService (TAKES 1 TURN)
         """
         current_state = self.state_manager.state.current_state
         
@@ -746,62 +697,24 @@ class ActionProcessor:
                 logger.info(f"Started conversation with {entity.name} at dungeon level {dungeon_level}")
                 return  # Don't consume turn for dialogue
         
-        # SECOND: Look for items at player's position
-        item_found = False
-        for entity in entities:
-            if entity.item and entity.x == player.x and entity.y == player.y:
-                item_found = True
-                if not player.inventory:
-                    message = MB.warning("You cannot carry items.")
-                    message_log.add_message(message)
-                    break
-                
-                pickup_results = player.inventory.add_item(entity)
-                
-                for result in pickup_results:
-                    message = result.get("message")
-                    if message:
-                        message_log.add_message(message)
-                    
-                    item_added = result.get("item_added")
-                    item_consumed = result.get("item_consumed")
-                    
-                    # Remove entity if it was added to inventory OR consumed (e.g., scroll recharged a wand)
-                    if item_added or item_consumed:
-                        # Check if this is Aurelyn's Ruby Heart (triggers victory sequence!)
-                        if hasattr(entity, 'triggers_victory') and entity.triggers_victory:
-                            logger.info(f"=== RUBY HEART PICKED UP! Triggering victory sequence ===")
-                            try:
-                                from victory_manager import get_victory_manager
-                                victory_mgr = get_victory_manager()
-                                game_map = self.state_manager.state.game_map
-                                # Check if victory sequence succeeded
-                                if victory_mgr.handle_ruby_heart_pickup(player, entities, game_map, message_log):
-                                    # Victory sequence succeeded - transition to RUBY_HEART_OBTAINED state
-                                    self.state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
-                                    logger.info("Victory sequence triggered successfully")
-                                    entities.remove(entity)
-                                    # DON'T transition to enemy turn - stay in RUBY_HEART_OBTAINED state!
-                                    return  # Exit handler immediately
-                                else:
-                                    # Victory sequence failed - fall through to normal pickup
-                                    logger.warning("Victory sequence failed, treating as normal pickup")
-                            except Exception as e:
-                                logger.error(f"Error triggering victory sequence: {e}", exc_info=True)
-                                message_log.add_message(MB.warning(f"[DEBUG] Victory sequence error: {e}"))
-                                # Fall through to normal pickup on error
-                        
-                        entities.remove(entity)
-                        
-                        # TURN ECONOMY: Picking up an item takes 1 turn
-                        self._process_player_status_effects()
-                        self.turn_controller.end_player_action(turn_consumed=True)
-                
-                break
+        # SECOND: Use PickupService for item pickup (REFACTORED - single source of truth)
+        from services.pickup_service import get_pickup_service
+        pickup_service = get_pickup_service(self.state_manager)
         
-        if not item_found:
-            message = MB.warning("There is nothing here to pick up.")
-            message_log.add_message(message)
+        result = pickup_service.execute_pickup(source="keyboard")
+        
+        # Display messages
+        for msg_dict in result.messages:
+            message_log.add_message(msg_dict["message"])
+        
+        # If pickup successful, consume turn
+        if result.success:
+            # TURN ECONOMY: Picking up an item takes 1 turn
+            self._process_player_status_effects()
+            self.turn_controller.end_player_action(turn_consumed=True)
+            
+            # If victory was triggered, state transition already handled by PickupService
+            # No need to call end_player_action again
             # No item to pick up = no turn consumed
     
     def _handle_search(self, _) -> None:
