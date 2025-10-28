@@ -228,6 +228,10 @@ class GameMap:
                 entities.append(ruby_heart)
                 # Logger already imported at module level (line 28)
                 logger.info(f"=== RUBY HEART SPAWNED at ({heart_x}, {heart_y}) ===")
+            
+            # PHASE 5: Create secret room with Crimson Ritual Codex
+            # Hidden room accessed via secret door (becomes visible after heart pickup)
+            self._create_secret_ritual_room(rooms, entities)
         
         # PHASE 3: Spawn Ghost Guide on levels 5, 10, 15, 20
         if self.dungeon_level in [5, 10, 15, 20]:
@@ -1548,6 +1552,106 @@ class GameMap:
                 
         # Could not find a position after max_attempts
         return (None, None)
+    
+    def _create_secret_ritual_room(self, rooms, entities):
+        """Create a hidden room with Corrupted Ritualists and Crimson Ritual Codex (Phase 5).
+        
+        This secret room is only accessible after picking up the Ruby Heart.
+        Contains 2-3 Corrupted Ritualists and the Crimson Ritual Codex.
+        
+        Args:
+            rooms: List of room rectangles
+            entities: List of entities to add enemies and item to
+        """
+        if not rooms or len(rooms) < 2:
+            logger.warning("Not enough rooms for secret ritual room on Level 25")
+            return
+        
+        # Pick a room that's not the last room (where Ruby Heart/stairs are)
+        # Prefer a room further from the start
+        if len(rooms) > 3:
+            secret_room = rooms[randint(len(rooms) // 2, len(rooms) - 2)]
+        else:
+            secret_room = rooms[0]
+        
+        # Create a small hidden room attached to this room
+        # Try to place it off to the side
+        room_center_x = (secret_room.x1 + secret_room.x2) // 2
+        room_center_y = (secret_room.y1 + secret_room.y2) // 2
+        
+        # Create a 7x7 secret room to the right of the chosen room
+        secret_x = secret_room.x2 + 2  # 2 tiles away for secret door
+        secret_y = room_center_y - 3   # Centered vertically
+        secret_w = 7
+        secret_h = 7
+        
+        # Make sure it fits in the map
+        if secret_x + secret_w >= self.width - 1 or secret_y + secret_h >= self.height - 1:
+            # Try left side instead
+            secret_x = max(1, secret_room.x1 - secret_w - 2)
+            if secret_x < 1:
+                logger.warning("Cannot place secret room on Level 25")
+                return
+        
+        # Create the secret room
+        from map_objects.rectangular_room import Rect
+        ritual_room = Rect(secret_x, secret_y, secret_w, secret_h)
+        self.create_room(ritual_room)
+        
+        # Create a secret door connecting to the main room
+        # Find a good connection point
+        if secret_x > secret_room.x2:
+            # Secret room is to the right
+            door_x = secret_room.x2 + 1
+            door_y = room_center_y
+        else:
+            # Secret room is to the left
+            door_x = secret_room.x1 - 1
+            door_y = room_center_y
+        
+        # Create a tunnel with a secret door
+        self.create_h_tunnel(secret_room.x2, secret_x, door_y)
+        
+        # Mark one tile as a secret door (will be revealed when Ruby Heart is picked up)
+        # Secret doors are just normal floor tiles that look like walls
+        if hasattr(self, 'secret_doors'):
+            self.secret_doors.append((door_x, door_y))
+        else:
+            self.secret_doors = [(door_x, door_y)]
+        
+        logger.info(f"=== SECRET RITUAL ROOM CREATED at ({secret_x}, {secret_y}) ===")
+        
+        # Spawn 2-3 Corrupted Ritualists in the secret room
+        from config.entity_factory import get_entity_factory
+        factory = get_entity_factory()
+        
+        num_ritualists = randint(2, 3)
+        ritual_center_x = secret_x + secret_w // 2
+        ritual_center_y = secret_y + secret_h // 2
+        
+        for i in range(num_ritualists):
+            # Spawn ritualists around the room
+            offset_x = randint(-2, 2)
+            offset_y = randint(-2, 2)
+            ritualist_x = ritual_center_x + offset_x
+            ritualist_y = ritual_center_y + offset_y
+            
+            # Make sure spawn point is valid
+            if (secret_x < ritualist_x < secret_x + secret_w and
+                secret_y < ritualist_y < secret_y + secret_h):
+                ritualist = factory.create_enemy('corrupted_ritualist', ritualist_x, ritualist_y)
+                if ritualist:
+                    entities.append(ritualist)
+                    logger.info(f"Spawned Corrupted Ritualist at ({ritualist_x}, {ritualist_y})")
+        
+        # Spawn Crimson Ritual Codex in the center
+        codex_x = ritual_center_x
+        codex_y = ritual_center_y
+        
+        codex = factory.create_unique_item('crimson_ritual_codex', codex_x, codex_y)
+        if codex:
+            entities.append(codex)
+            logger.info(f"=== CRIMSON RITUAL CODEX SPAWNED at ({codex_x}, {codex_y}) ===")
     
     def _spawn_ghost_guide(self, rooms, entities):
         """Spawn the Ghost Guide NPC in a camp room (Phase 3).

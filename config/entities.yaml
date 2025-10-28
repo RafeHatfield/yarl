@@ -395,6 +395,33 @@ monsters:
         death: ["The only... thing I had left... of her..."]
       status_immunities: ["confusion", "fear"]  # Already mad, can't be feared
 
+  # Corrupted Ritualist - Guards the Crimson Ritual Codex
+  # Remnants of the Crimson Order, corrupted by Aurelyn's absorbed power
+  # Found in secret room on Level 25
+  corrupted_ritualist:
+    stats:
+      hp: 60                   # Tough elite enemy
+      power: 7                 # Strong magical power (corrupted)
+      defense: 8               # Good defense (ritual armor)
+      xp: 400                  # Good XP reward
+      damage_min: 12           # Strong attacks: 12-18 + STR
+      damage_max: 18
+      # D&D-style stats - Corrupted cultist
+      strength: 16             # Strong (+3 damage modifier)
+      dexterity: 14            # Agile (+2 to-hit, +2 AC)
+      constitution: 16         # Corrupted vitality (+3 HP modifier)
+      # Resistances: Corrupted by dragon power
+      resistances:
+        fire: 50               # Absorbed dragon fire resistance
+        poison: 25             # Some poison resistance
+    char: "R"                  # R for Ritualist
+    color: [150, 0, 150]       # Dark purple (corrupted)
+    ai_type: "basic_monster"   # Standard aggressive AI
+    render_order: "actor"
+    blocks: true
+    name: "Corrupted Ritualist"
+    description: "A mad remnant of the Crimson Order, corrupted by Aurelyn's absorbed power. Flesh rotting, eyes glowing crimson, mumbling about 'the completion'."
+
 # Weapon definitions
 #
 # Weapon Properties (D&D-style):
@@ -1401,6 +1428,18 @@ unique_items:
     is_quest_item: true
     triggers_victory: true
     cannot_drop: true  # Cannot be dropped once picked up
+  
+  # Crimson Ritual Codex - Unlocks secret Ending 1b
+  # Found in hidden room on Level 25, guarded by Corrupted Ritualists
+  crimson_ritual_codex:
+    char: "?"  # Book symbol
+    color: [139, 0, 0]  # Dark red
+    render_order: "item"
+    blocks: false
+    description: "An ancient journal detailing the dragon-binding ritual. The final entry reads: 'The ritual succeeded beyond measure. One heart extracted, one dragon bound. If only there were two...'"
+    is_quest_item: true
+    cannot_drop: true  # Cannot be dropped once picked up
+    use_function: "unlock_crimson_ritual"  # Special function to unlock knowledge
   
   # Entity's Portal - Gateway to the final confrontation
   # Appears when player obtains the Ruby Heart

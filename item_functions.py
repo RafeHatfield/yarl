@@ -1161,3 +1161,67 @@ def drink_experience_potion(*args, **kwargs):
     
     return results
 
+
+# ============================================================================
+# PHASE 5: QUEST ITEM FUNCTIONS
+# ============================================================================
+
+def unlock_crimson_ritual(*args, **kwargs):
+    """Read the Crimson Ritual Codex and unlock knowledge of the ritual.
+    
+    This ancient journal reveals the secret of the dragon-binding ritual,
+    unlocking the alternate "Give (Ritual)" option in Ending 1b.
+    
+    The journal describes how the Crimson Order extracted Aurelyn's heart
+    and bound Zhyraxion, suggesting the ritual could be reversed.
+    
+    Args:
+        *args: First argument should be the entity reading the codex
+        **kwargs: Optional parameters
+    
+    Returns:
+        list: List of result dictionaries with messages
+    """
+    from components.component_registry import ComponentType
+    from message_builder import MessageBuilder as MB
+    
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No one to read the codex!")}]
+    
+    results = []
+    
+    # Get victory component (only player should have this)
+    victory_comp = entity.get_component_optional(ComponentType.VICTORY)
+    if not victory_comp:
+        results.append({
+            "consumed": False,
+            "message": MB.warning(f"{entity.name} cannot comprehend the ritual!")
+        })
+        return results
+    
+    # Unlock the crimson ritual knowledge
+    if victory_comp.unlock_knowledge('crimson_ritual'):
+        results.append({
+            "message": MB.quest(
+                "You read the ancient journal. The ritual is clear: "
+                "extract a dragon's heart to bind them, or return a heart to free them. "
+                "If Zhyraxion had two hearts... one could be given back."
+            )
+        })
+        results.append({
+            "message": MB.discovery(
+                "New knowledge unlocked: The Crimson Ritual! "
+                "A new choice will be available at the final confrontation."
+            )
+        })
+    else:
+        results.append({
+            "message": MB.info("You already understand the Crimson Ritual.")
+        })
+    
+    # This item is not consumed - it stays in inventory as a quest item
+    results.append({"consumed": False})
+    
+    return results
+

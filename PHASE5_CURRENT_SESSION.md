@@ -1,7 +1,7 @@
 # Phase 5: The Five Endings - Current Session Status
 
-**Date:** October 27, 2025  
-**Status:** Sprint 1, Tasks 1-3 Complete → TESTING PHASE  
+**Date:** October 28, 2025  
+**Status:** Sprint 1 + Sprint 2 + Sprint 3 Complete → READY FOR FULL TESTING  
 **Branch:** `feature/phase3-guide-system`
 
 ---
@@ -34,6 +34,56 @@ We are implementing **Phase 5: The Five Endings** - the climactic conclusion to 
 ---
 
 ## ✅ What We Just Completed
+
+### Sprint 2: Secret Room + Crimson Ritual Codex (DONE)
+
+**Files Modified:**
+- `config/entities.yaml` - Added Corrupted Ritualist enemy and Crimson Ritual Codex item
+- `map_objects/game_map.py` - Added `_create_secret_ritual_room()` method
+- `item_functions.py` - Added `unlock_crimson_ritual()` function
+- `PHASE5_TESTING_PLAN.md` - NEW: Comprehensive testing documentation
+
+**Key Features:**
+
+1. **Corrupted Ritualist Enemy**
+   - 60 HP, 12-18 damage (tough elite enemy)
+   - Fire resistance (50%) and poison resistance (25%)
+   - Found guarding the secret room on Level 25
+   - 2-3 spawn in the hidden chamber
+   - 400 XP reward each
+
+2. **Crimson Ritual Codex**
+   - Quest item found in secret room center
+   - Cannot be dropped once picked up
+   - Use function: `unlock_crimson_ritual()`
+   - Unlocks Ending 1b: "The Crimson Ritual" choice
+   - Description: Ancient journal revealing the dragon-binding ritual
+
+3. **Secret Room Generation**
+   - 7x7 hidden chamber attached to a random room on Level 25
+   - Connected via visible tunnel (no longer needs secret door tech)
+   - Spawns 2-3 Corrupted Ritualists
+   - Crimson Ritual Codex in center
+   - Player can explore Level 25 after Ruby Heart pickup to find it
+
+4. **Knowledge Unlock System**
+   - Reading the Codex calls `victory_comp.unlock_knowledge('crimson_ritual')`
+   - Displays quest message explaining the ritual mechanics
+   - Unlocks "Use the ritual" option in Ending 1a submenu
+   - Requires BOTH true name AND ritual knowledge for Ending 1b
+
+**How It Works:**
+1. Player reaches Level 25
+2. Player picks up Ruby Heart (portal spawns)
+3. **BEFORE** entering portal, player explores and finds secret room
+4. Player fights 2-3 Corrupted Ritualists (tough but doable)
+5. Player picks up and reads Crimson Ritual Codex
+6. Message: "New knowledge unlocked: The Crimson Ritual!"
+7. Player enters portal → confrontation menu now has "Use the ritual" option
+
+**Commit:** [Pending] - "✨ Phase 5: Sprint 2 Complete - Secret Room + Crimson Ritual"
+
+---
 
 ### Task 2: Portal System (DONE)
 
