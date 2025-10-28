@@ -409,7 +409,12 @@ class ActionProcessor:
             # Update camera to follow player (Phase 2)
             camera = self.state_manager.state.camera
             if camera:
-                camera.update(player.x, player.y)
+                old_camera_pos = (camera.x, camera.y)
+                camera_moved = camera.update(player.x, player.y)
+                if camera_moved:
+                    logger.debug(f"Camera updated: {old_camera_pos} → ({camera.x}, {camera.y}) following player at ({player.x}, {player.y})")
+            else:
+                logger.warning(f"!!! CAMERA MISSING during movement! Player at ({player.x}, {player.y})")
             
             # Check if player stepped on victory portal
             if current_state == GameStates.RUBY_HEART_OBTAINED:
