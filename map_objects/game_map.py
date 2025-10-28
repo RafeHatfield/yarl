@@ -1654,7 +1654,7 @@ class GameMap:
             # Make sure spawn point is valid
             if (secret_x < ritualist_x < secret_x + secret_w and
                 secret_y < ritualist_y < secret_y + secret_h):
-                ritualist = factory.create_enemy('corrupted_ritualist', ritualist_x, ritualist_y)
+                ritualist = factory.create_monster('corrupted_ritualist', ritualist_x, ritualist_y)
                 if ritualist:
                     entities.append(ritualist)
                     logger.info(f"Spawned Corrupted Ritualist at ({ritualist_x}, {ritualist_y})")
