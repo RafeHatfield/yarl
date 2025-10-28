@@ -628,6 +628,19 @@ class ActionProcessor:
                     entity_message = MB.custom(entity_quote, (180, 180, 150))  # Muted gold
                     message_log.add_message(entity_message)
             
+            # Phase 5: Check if this was a boss for an ending fight
+            pending_ending = self.state_manager.get_extra_data("pending_ending")
+            if pending_ending and hasattr(dead_entity, 'is_boss') and dead_entity.is_boss:
+                # Boss defeated! Trigger the ending screen
+                logger.info(f"=== BOSS DEFEATED: Triggering ending {pending_ending} ===")
+                
+                # Store that we should show ending screen next frame
+                self.state_manager.set_extra_data("show_ending", pending_ending)
+                self.state_manager.set_extra_data("pending_ending", None)  # Clear pending
+                
+                # Transition to a victory state that will show the ending
+                self.state_manager.set_game_state(GameStates.VICTORY)
+            
             # Handle dropped loot
             if hasattr(dead_entity, '_dropped_loot') and dead_entity._dropped_loot:
                 # Add dropped items to the entities list

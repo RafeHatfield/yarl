@@ -271,6 +271,130 @@ monsters:
     # No equipment spawning - demonic power is innate
     equipment: null
 
+  # =========================================================================
+  # PHASE 5: ZHYRAXION BOSS VARIANTS
+  # Three forms of the bound dragon for different endings
+  # =========================================================================
+
+  # Human Zhyraxion - Ending 1a: Escape Through Battle
+  # Medium-Hard difficulty, technical Dark Souls-inspired fight
+  zhyraxion_human:
+    stats:
+      hp: 70                   # Medium-Hard boss health
+      power: 6                 # Moderate magical power (bound form)
+      defense: 6               # Good defense (dragon in human shell)
+      xp: 1000                 # Epic victory reward
+      damage_min: 12           # Fast strikes: 12-18 + STR
+      damage_max: 18
+      # D&D-style stats - Bound dragon in human form
+      strength: 18             # Dragon strength (+4 damage modifier)
+      dexterity: 16            # Fast, technical (+3 to-hit, +3 AC)
+      constitution: 16         # Dragon endurance (+3 HP modifier)
+      # Resistances: Partial dragon nature
+      resistances:
+        fire: 50               # Partial fire resistance (bound dragon)
+        cold: 25               # Some cold resistance
+    char: "Z"                  # Z for Zhyraxion
+    color: [200, 50, 50]       # Dark crimson
+    ai_type: "boss"            # Boss AI
+    render_order: "actor"
+    blocks: true
+    is_boss: true
+    boss_name: "Zhyraxion, the Bound"
+    can_seek_items: false
+    inventory_size: 0
+    boss:
+      boss_type: "dragon_human"
+      enrage_threshold: 0.5    # Enrages at 50% HP
+      enrage_damage_multiplier: 1.5
+      dialogue:
+        spawn: ["So... you would deny me? After everything?"]
+        hit: ["Impressive. But futile.", "You dare strike ME?!"]
+        enrage: ["ENOUGH! I've waited TOO LONG!"]
+        low_hp: ["This... this cannot... not after everything..."]
+        death: ["Aurelyn... I tried... I'm sorry..."]
+      status_immunities: ["confusion", "slow", "fear"]
+
+  # Full Dragon Zhyraxion - Ending 3: Fool's Freedom
+  # EXTREME difficulty, designed to kill player (0.1% win rate)
+  zhyraxion_full_dragon:
+    stats:
+      hp: 200                  # MASSIVE health pool
+      power: 12                # Devastating magical power
+      defense: 15              # Extremely high defense
+      xp: 5000                 # Legendary achievement reward
+      damage_min: 25           # Crushing damage: 25-40 + STR
+      damage_max: 40
+      # D&D-style stats - Ancient dragon unleashed
+      strength: 24             # Legendary strength (+7 damage modifier)
+      dexterity: 14            # Large but agile (+2 to-hit, +2 AC)
+      constitution: 22         # Ancient endurance (+6 HP modifier)
+      # Resistances: Full dragon immunity
+      resistances:
+        fire: 100              # Immune to fire (dragon)
+        cold: 75               # Highly resistant to cold
+        poison: 100            # Immune to poison
+        lightning: 50          # Resistant to lightning
+    char: "D"                  # D for Dragon (capital)
+    color: [220, 20, 20]       # Bright crimson
+    ai_type: "boss"            # Boss AI
+    render_order: "actor"
+    blocks: true
+    is_boss: true
+    boss_name: "Zhyraxion the Unbound"
+    can_seek_items: false
+    inventory_size: 0
+    boss:
+      boss_type: "full_dragon"
+      enrage_threshold: 0.7    # Enrages early at 70%
+      enrage_damage_multiplier: 2.0   # Doubles damage when enraged
+      dialogue:
+        spawn: ["AT LAST! TRUE FORM! TRUE POWER!"]
+        hit: ["Pitiful.", "You INSECTS!"]
+        enrage: ["WITNESS MY FURY!"]
+        low_hp: ["Impossible... HOW?!"]
+        death: ["Aurelyn... I'm... coming..."]
+      status_immunities: ["confusion", "slow", "fear", "poison", "bleed"]
+
+  # Grief-Corrupted Dragon - Ending 4: Mercy & Corruption
+  # Hard difficulty, erratic berserker with unpredictable patterns
+  zhyraxion_grief_dragon:
+    stats:
+      hp: 100                  # Hard boss health
+      power: 8                 # Moderate magical power (corrupted)
+      defense: 8               # Moderate defense (damaged form)
+      xp: 2000                 # Tragic victory reward
+      damage_min: 15           # Wild strikes: 15-25 + STR
+      damage_max: 25
+      # D&D-style stats - Grief-mad incomplete transformation
+      strength: 20             # Dragon strength (+5 damage modifier)
+      dexterity: 12            # Erratic, uncontrolled (+1 to-hit, +1 AC)
+      constitution: 18         # Dragon endurance (+4 HP modifier)
+      # Resistances: Corrupted dragon (unstable)
+      resistances:
+        fire: 50               # Partial fire resistance (incomplete)
+        cold: 25               # Some cold resistance
+    char: "D"                  # D for Dragon
+    color: [100, 20, 100]      # Dark purple (corrupted)
+    ai_type: "boss"            # Boss AI
+    render_order: "actor"
+    blocks: true
+    is_boss: true
+    boss_name: "Grief-Mad Zhyraxion"
+    can_seek_items: false
+    inventory_size: 0
+    boss:
+      boss_type: "grief_dragon"
+      enrage_threshold: 0.3    # Enrages late at 30% (already mad)
+      enrage_damage_multiplier: 1.8   # High damage when enraged
+      dialogue:
+        spawn: ["AURELYN! NO! WHAT HAVE YOU—"]
+        hit: ["PAIN! MORE PAIN!", "WHY?! WHY DID YOU—"]
+        enrage: ["I'LL TEAR YOU APART!"]
+        low_hp: ["The heart... you destroyed... her heart..."]
+        death: ["The only... thing I had left... of her..."]
+      status_immunities: ["confusion", "fear"]  # Already mad, can't be feared
+
 # Weapon definitions
 #
 # Weapon Properties (D&D-style):

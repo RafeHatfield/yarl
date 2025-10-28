@@ -271,7 +271,45 @@ def play_game_with_engine(
             )
             
             if choice:
-                # Player made a choice, show ending screen
+                # Check if this ending requires a boss fight
+                boss_fights = {
+                    '1a': 'zhyraxion_human',        # Human Zhyraxion (Medium-Hard)
+                    '3': 'zhyraxion_full_dragon',   # Full Dragon (EXTREME)
+                    '4': 'zhyraxion_grief_dragon'   # Grief Dragon (Hard)
+                }
+                
+                if choice in boss_fights:
+                    # Spawn boss and transition to combat
+                    from config.entity_factory import get_entity_factory
+                    entity_factory = get_entity_factory()
+                    
+                    # Get player position and spawn boss nearby
+                    player = engine.state_manager.state.player
+                    entities = engine.state_manager.state.entities
+                    game_map = engine.state_manager.state.game_map
+                    message_log = engine.state_manager.state.message_log
+                    
+                    # Find a good spawn location (in front of player or nearby)
+                    boss_x, boss_y = player.x + 3, player.y
+                    
+                    # Create the appropriate boss
+                    boss = entity_factory.create_unique_item(boss_fights[choice], boss_x, boss_y)
+                    if boss:
+                        entities.append(boss)
+                        from message_builder import MessageBuilder as MB
+                        message_log.add_message(MB.warning(f"{boss.name} appears!"))
+                        
+                        # Store which ending this boss fight is for
+                        engine.state_manager.set_extra_data("pending_ending", choice)
+                        
+                        # Transition to combat
+                        engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                        engine.state_manager.request_fov_recompute()
+                        
+                        # Continue game loop for combat
+                        continue
+                
+                # No boss fight needed - show ending screen immediately
                 victory_mgr = get_victory_manager()
                 player_stats = victory_mgr.get_player_stats_for_ending(
                     engine.state_manager.state.player,
@@ -293,6 +331,41 @@ def play_game_with_engine(
                     hall = get_hall_of_fame()
                     player_name = engine.state_manager.state.player.name
                     hall.add_victory(player_name, choice, player_stats)
+                
+                if result == 'restart':
+                    engine.stop()
+                    return {"restart": True}
+                elif result == 'quit':
+                    break
+        
+        # Phase 5: Handle post-boss victory (show ending screen)
+        elif current_state == GameStates.VICTORY:
+            ending_code = engine.state_manager.get_extra_data("show_ending")
+            if ending_code:
+                from victory_manager import get_victory_manager
+                from screens.victory_screen import show_ending_screen
+                from systems.hall_of_fame import get_hall_of_fame
+                
+                victory_mgr = get_victory_manager()
+                player_stats = victory_mgr.get_player_stats_for_ending(
+                    engine.state_manager.state.player,
+                    engine.state_manager.state.game_map
+                )
+                
+                result = show_ending_screen(
+                    con, 0,
+                    constants['screen_width'], constants['screen_height'],
+                    ending_code, player_stats
+                )
+                
+                # Record in Hall of Fame
+                if ending_code in ('1a', '1b', '4', '5', 'good'):
+                    hall = get_hall_of_fame()
+                    player_name = engine.state_manager.state.player.name
+                    hall.add_victory(player_name, ending_code, player_stats)
+                
+                # Clear the flag
+                engine.state_manager.set_extra_data("show_ending", None)
                 
                 if result == 'restart':
                     engine.stop()
