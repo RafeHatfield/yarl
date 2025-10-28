@@ -192,7 +192,15 @@ class GameMap:
                         self.create_v_tunnel(prev_y, new_y, prev_x)
                         self.create_h_tunnel(prev_x, new_x, new_y)
 
-                self.place_entities(new_room, entities)
+                # Place entities in this room
+                # If this will be the last room, exclude the center (where stairs will go)
+                exclude_coords = None
+                if num_rooms + 1 >= max_rooms:
+                    # This will be the last room - stairs will be at center
+                    exclude_coords = (new_x, new_y)
+                    logger.debug(f"Last room detected - excluding stairs location ({new_x}, {new_y}) from entity spawns")
+                
+                self.place_entities(new_room, entities, exclude_coords=exclude_coords)
                 
                 # Place exploration features (chests, signposts)
                 self.place_exploration_features(new_room, entities)
@@ -286,7 +294,7 @@ class GameMap:
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
 
-    def place_entities(self, room, entities):
+    def place_entities(self, room, entities, exclude_coords=None):
         """Place monsters and items in a room based on dungeon level.
 
         Uses probability tables that scale with dungeon level to determine
@@ -296,7 +304,14 @@ class GameMap:
         Args:
             room (Rect): Room to place entities in
             entities (list): List to add new entities to
+            exclude_coords (tuple or list of tuples, optional): Coordinates (x, y) to avoid 
+                when placing entities. Used to prevent items spawning on stairs.
         """
+        # Normalize exclude_coords to a list of tuples
+        if exclude_coords is None:
+            exclude_coords = []
+        elif isinstance(exclude_coords, tuple):
+            exclude_coords = [exclude_coords]
         config = get_testing_config()
         
         # Get spawn limits from configuration
@@ -389,9 +404,10 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
 
-            # SAFETY: Check tile is walkable AND no entity already there
+            # SAFETY: Check tile is walkable, no entity already there, and not on excluded coords (stairs)
             if (not self.is_blocked(x, y) and 
-                not any([entity for entity in entities if entity.x == x and entity.y == y])):
+                not any([entity for entity in entities if entity.x == x and entity.y == y]) and
+                (x, y) not in exclude_coords):
                 item_choice = random_choice_from_dict(item_chances)
                 
                 # Get entity factory for equipment creation
