@@ -1172,8 +1172,16 @@ class ActionProcessor:
                 # Center camera on player's new position (fixes black screen on level transition)
                 camera = self.state_manager.state.camera
                 if camera:
+                    # CRITICAL: Update camera's map dimensions for the new level
+                    # Without this, camera clamping uses old map size and positions incorrectly
+                    old_dims = (camera.map_width, camera.map_height)
+                    camera.map_width = game_map.width
+                    camera.map_height = game_map.height
+                    logger.info(f"Camera map dimensions updated: {old_dims} → ({camera.map_width}, {camera.map_height})")
+                    
+                    # Now center on player
                     camera.update(player.x, player.y)
-                    logger.info(f"Camera centered on player at ({player.x}, {player.y})")
+                    logger.info(f"Camera centered on player at ({player.x}, {player.y}), camera at ({camera.x}, {camera.y})")
                 else:
                     logger.warning("Camera not found! This may cause rendering issues.")
                 

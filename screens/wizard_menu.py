@@ -345,8 +345,11 @@ def wizard_teleport_to_level(game_state_manager):
     # Center camera on player after teleport
     camera = state.camera
     if camera:
+        # Update camera's map dimensions for the new level
+        camera.map_width = game_map.width
+        camera.map_height = game_map.height
         camera.update(player.x, player.y)
-        logger.info(f"Camera centered on player at ({player.x}, {player.y})")
+        logger.info(f"Camera centered on player at ({player.x}, {player.y}), camera at ({camera.x}, {camera.y})")
     
     message_log.add_message(MB.custom(f"🧙 WIZARD: Arrived at dungeon level {game_map.dungeon_level}", WIZARD_COLOR))
     
