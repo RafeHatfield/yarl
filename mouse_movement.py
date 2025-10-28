@@ -501,6 +501,8 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     Returns:
         dict: Dictionary containing movement results and messages
     """
+    from components.component_registry import ComponentType
+    
     results = []
     
     pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
@@ -550,7 +552,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     
     # Check if player stepped on victory portal (Phase 5)
     # Check if player has Ruby Heart (via victory component)
-    from components.component_registry import ComponentType
     victory_comp = player.get_component_optional(ComponentType.VICTORY)
     
     if victory_comp and victory_comp.has_ruby_heart:
