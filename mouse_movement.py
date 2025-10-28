@@ -477,20 +477,19 @@ def _is_valid_click(x: int, y: int, game_map: 'GameMap') -> bool:
 
 def process_pathfinding_movement(player: 'Entity', entities: List['Entity'], 
                                 game_map: 'GameMap', fov_map) -> dict:
-    """Process one step of pathfinding movement.
+    """Process one step of pathfinding movement using MovementService (REFACTORED).
     
     This function should be called during the player's turn when they are
     following a pathfinding route. It handles:
-    - Moving to the next step in the path
+    - Delegating actual movement to MovementService (single source of truth)
     - Interrupting on ground hazards (fire, poison gas)
     - Checking for enemies in FOV (interruption)
-    - Auto-attacking enemies within weapon range
-    - Completing or continuing movement
+    - Pathfinding-specific logic (path validation, interrupts)
     
     Movement interrupts when:
     - Player steps on a ground hazard (damage tile)
-    - Enemy comes into weapon range (auto-attack)
     - Enemy spotted within threat range (stops movement)
+    - Portal entry detected (Phase 5)
     
     Args:
         player (Entity): The player entity
@@ -502,6 +501,7 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         dict: Dictionary containing movement results and messages
     """
     from components.component_registry import ComponentType
+    from state_management.state_config import get_state_manager
     
     results = []
     
@@ -522,56 +522,48 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
         return {"results": results}
     
     next_x, next_y = next_pos
+    dx = next_x - player.x
+    dy = next_y - player.y
     
-    # Validate the move is still possible
-    if game_map.is_blocked(next_x, next_y):
+    # Use MovementService for actual movement (REFACTORED - single source of truth)
+    # This handles: move validation, camera, FOV, portal checks, secret doors
+    from services.movement_service import get_movement_service
+    state_manager = get_state_manager()
+    movement_service = get_movement_service(state_manager)
+    
+    movement_result = movement_service.execute_movement(dx, dy, source="pathfinding")
+    
+    # Handle movement blocked by wall
+    if movement_result.blocked_by_wall:
         pathfinding.interrupt_movement("Path blocked")
         results.append({
             "message": MB.warning("Path blocked - movement stopped.")
         })
-        # Path blocked before moving, no enemy turn needed
         return {"results": results}
     
-    # Check for entities at destination
-    blocking_entity = get_blocking_entities_at_location(entities, next_x, next_y)
-    if blocking_entity:
+    # Handle movement blocked by entity
+    if movement_result.blocked_by_entity:
         pathfinding.interrupt_movement("Entity blocking path")
         results.append({
-            "message": MB.warning(f"Path blocked by {blocking_entity.name}.")
+            "message": MB.warning(f"Path blocked by {movement_result.blocked_by_entity.name}.")
         })
-        # Path blocked before moving, no enemy turn needed
         return {"results": results}
     
-    # Move player first
-    player.move(next_x - player.x, next_y - player.y)
-    
-    # Request FOV recompute for enemy detection
-    results.append({
-        "fov_recompute": True
-    })
-    
-    # Check if player stepped on victory portal (Phase 5)
-    # Check if player has Ruby Heart (via victory component)
-    # Note: victory is a direct attribute, not in ComponentRegistry
-    if hasattr(player, 'victory') and player.victory and player.victory.has_ruby_heart:
-        from victory_manager import get_victory_manager
-        victory_mgr = get_victory_manager()
+    # Movement succeeded - forward results from MovementService
+    if movement_result.success:
+        # Forward FOV recompute request
+        if movement_result.fov_recompute:
+            results.append({"fov_recompute": True})
         
-        # Check if player stepped on portal
-        if victory_mgr.check_portal_entry(player, entities):
-            from game_messages import MessageLog
-            # Get or create message log for portal entry messages
-            # (It should already exist in game state, but we need a reference)
-            # The calling function will handle the actual message log
+        # Forward any messages from MovementService
+        results.extend(movement_result.messages)
+        
+        # Check if portal entry was detected (Phase 5)
+        if movement_result.portal_entry:
             pathfinding.interrupt_movement("Stepped on portal")
-            
-            # Signal portal entry to game loop (calling function will handle messages and state transition)
-            results.append({
-                "portal_entry": True
-            })
-            results.append({
-                "enemy_turn": False  # Don't give enemies a turn, go straight to confrontation
-            })
+            # Signal portal entry to game loop
+            results.append({"portal_entry": True})
+            results.append({"enemy_turn": False})  # Don't give enemies a turn
             return {"results": results}
     
     # Check if player stepped on a hazard - interrupt movement if so
@@ -638,49 +630,45 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             "message": MB.info("Arrived at destination.")
         })
         
-        # Check if we were pathfinding to pick up an item
+        # Check if we were pathfinding to pick up an item (REFACTORED - uses PickupService)
         # auto_pickup_target is a direct attribute on pathfinding
         if hasattr(pathfinding, 'auto_pickup_target') and pathfinding.auto_pickup_target:
             target_item = pathfinding.auto_pickup_target
             
             # Check if item is at player's location
             if target_item in entities and target_item.x == player.x and target_item.y == player.y:
-                # Pick it up!
-                print(f">>> PATHFINDING: Picking up item: {target_item.name}")
-                print(f">>> Has triggers_victory attr: {hasattr(target_item, 'triggers_victory')}")
-                if hasattr(target_item, 'triggers_victory'):
-                    print(f">>> triggers_victory value: {target_item.triggers_victory}")
-                inventory = player.get_component_optional(ComponentType.INVENTORY)
-                if inventory:
-                    pickup_results = inventory.add_item(target_item)
-                    item_was_added = False
-                    
-                    for pickup_result in pickup_results:
-                        message = pickup_result.get("message")
-                        if message:
-                            results.append({"message": message})
-                        
-                        item_added = pickup_result.get("item_added")
-                        item_consumed = pickup_result.get("item_consumed")
-                        if item_added or item_consumed:
-                            entities.remove(target_item)
-                            item_was_added = True
-                            # Use display name to respect identification status
-                            display_name = target_item.name
-                            if target_item.item:
-                                display_name = target_item.item.get_display_name(show_quantity=False)
-                            results.append({
-                                "message": MB.item_pickup(f"Auto-picked up {display_name}!")
-                            })
-                    
-                    # Check for victory condition trigger (Ruby Heart)
-                    if item_was_added and hasattr(target_item, 'triggers_victory') and target_item.triggers_victory:
-                        logger.info("=== PATHFINDING ARRIVAL PICKUP: Victory trigger detected! ===")
-                        print(">>> PATHFINDING: Ruby Heart picked up, signaling victory trigger!")
-                        # Signal to caller to handle victory sequence
-                        results.append({
-                            "victory_triggered": True
-                        })
+                # Use PickupService for pickup (single source of truth)
+                print(f">>> PATHFINDING: Attempting to pick up item: {target_item.name}")
+                
+                from services.pickup_service import get_pickup_service
+                state_manager = get_state_manager()
+                pickup_service = get_pickup_service(state_manager)
+                
+                pickup_result = pickup_service.execute_pickup(source="pathfinding")
+                
+                # Forward messages from PickupService
+                for msg_dict in pickup_result.messages:
+                    results.append(msg_dict)
+                
+                # If pickup was successful, add confirmation message
+                if pickup_result.success:
+                    # Use display name to respect identification status
+                    display_name = target_item.name
+                    if hasattr(target_item, 'item') and target_item.item:
+                        display_name = target_item.item.get_display_name(show_quantity=False)
+                    results.append({
+                        "message": MB.item_pickup(f"Auto-picked up {display_name}!")
+                    })
+                
+                # Check if victory was triggered (Ruby Heart)
+                if pickup_result.victory_triggered:
+                    logger.info("=== PATHFINDING ARRIVAL PICKUP: Victory trigger detected! ===")
+                    print(">>> PATHFINDING: Ruby Heart picked up, signaling victory trigger!")
+                    # Signal to caller to handle victory sequence
+                    # (State transition already handled by PickupService)
+                    results.append({
+                        "victory_triggered": True
+                    })
             
             # Clear the auto-pickup target
             pathfinding.auto_pickup_target = None
