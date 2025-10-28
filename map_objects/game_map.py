@@ -1609,8 +1609,7 @@ class GameMap:
                 logger.warning("Cannot place secret room on Level 25")
                 return
         
-        # Create the secret room
-        from map_objects.rectangular_room import Rect
+        # Create the secret room (Rect already imported at module level)
         ritual_room = Rect(secret_x, secret_y, secret_w, secret_h)
         self.create_room(ritual_room)
         
