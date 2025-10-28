@@ -552,9 +552,8 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     
     # Check if player stepped on victory portal (Phase 5)
     # Check if player has Ruby Heart (via victory component)
-    victory_comp = player.get_component_optional(ComponentType.VICTORY)
-    
-    if victory_comp and victory_comp.has_ruby_heart:
+    # Note: victory is a direct attribute, not in ComponentRegistry
+    if hasattr(player, 'victory') and player.victory and player.victory.has_ruby_heart:
         from victory_manager import get_victory_manager
         victory_mgr = get_victory_manager()
         

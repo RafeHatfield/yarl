@@ -1182,7 +1182,6 @@ def unlock_crimson_ritual(*args, **kwargs):
     Returns:
         list: List of result dictionaries with messages
     """
-    from components.component_registry import ComponentType
     from message_builder import MessageBuilder as MB
     
     entity = args[0] if args else None
@@ -1192,8 +1191,8 @@ def unlock_crimson_ritual(*args, **kwargs):
     results = []
     
     # Get victory component (only player should have this)
-    victory_comp = entity.get_component_optional(ComponentType.VICTORY)
-    if not victory_comp:
+    # Note: victory is a direct attribute, not in ComponentRegistry
+    if not hasattr(entity, 'victory') or not entity.victory:
         results.append({
             "consumed": False,
             "message": MB.warning(f"{entity.name} cannot comprehend the ritual!")
@@ -1201,7 +1200,7 @@ def unlock_crimson_ritual(*args, **kwargs):
         return results
     
     # Unlock the crimson ritual knowledge
-    if victory_comp.unlock_knowledge('crimson_ritual'):
+    if entity.victory.unlock_knowledge('crimson_ritual'):
         results.append({
             "message": MB.quest(
                 "You read the ancient journal. The ritual is clear: "

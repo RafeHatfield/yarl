@@ -1717,9 +1717,9 @@ class ActionProcessor:
                 message_log.add_message(MB.warning("Reality twists around you!"))
                 
                 # Mark confrontation started on player
-                victory_comp = player.get_component_optional(ComponentType.VICTORY)
-                if victory_comp:
-                    victory_comp.start_confrontation()
+                # Note: victory is a direct attribute, not in ComponentRegistry
+                if hasattr(player, 'victory') and player.victory:
+                    player.victory.start_confrontation()
                 
                 portal_entry = True
                 # Don't end turn normally, jump straight to confrontation
