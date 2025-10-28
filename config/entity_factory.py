@@ -169,6 +169,8 @@ class EntityFactory:
         Returns:
             Entity instance if monster type exists, None otherwise
         """
+        from components.component_registry import ComponentType
+        
         monster_def = self.registry.get_monster(monster_type)
         if not monster_def:
             logger.warning(f"Unknown monster type: {monster_type}")
@@ -232,7 +234,6 @@ class EntityFactory:
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai
-                from components.component_registry import ComponentType
                 item_seeking_ai = create_item_seeking_ai(monster, monster_def)
                 if item_seeking_ai:
                     monster.item_seeking_ai = item_seeking_ai  # Legacy attribute for backward compatibility
@@ -760,22 +761,25 @@ class EntityFactory:
         """Create a Boss component for a boss monster.
         
         Args:
-            monster_type: Type of monster (e.g., "dragon_lord", "demon_king")
+            monster_type: Type of monster (e.g., "dragon_lord", "demon_king", "zhyraxion_human")
             boss_name: Display name for the boss
             
         Returns:
             Boss component instance
         """
-        from components.boss import create_dragon_lord_boss, create_demon_king_boss
+        from components.boss import create_dragon_lord_boss, create_demon_king_boss, Boss
         
         # Use prefab boss configurations
         if monster_type == "dragon_lord":
             return create_dragon_lord_boss()
         elif monster_type == "demon_king":
             return create_demon_king_boss()
+        elif monster_type in ["zhyraxion_human", "zhyraxion_full_dragon", "zhyraxion_grief_dragon"]:
+            # Phase 5 Zhyraxion bosses - use generic Boss with their configured boss_name
+            logger.info(f"Creating Zhyraxion boss: {boss_name or monster_type}")
+            return Boss(boss_name=boss_name or monster_type.replace('_', ' ').title())
         else:
             # Generic boss for unknown types
-            from components.boss import Boss
             logger.warning(f"Unknown boss type: {monster_type}, using generic boss")
             return Boss(boss_name=boss_name or monster_type.title())
 
