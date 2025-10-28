@@ -292,12 +292,14 @@ def play_game_with_engine(
                     # Find a good spawn location (in front of player or nearby)
                     boss_x, boss_y = player.x + 3, player.y
                     
-                    # Create the appropriate boss
-                    boss = entity_factory.create_unique_item(boss_fights[choice], boss_x, boss_y)
+                    # Create the appropriate boss (bosses are monsters, not items!)
+                    from message_builder import MessageBuilder as MB
+                    boss = entity_factory.create_monster(boss_fights[choice], boss_x, boss_y)
                     if boss:
                         entities.append(boss)
-                        from message_builder import MessageBuilder as MB
                         message_log.add_message(MB.warning(f"{boss.name} appears!"))
+                        logger.info(f"=== CONFRONTATION: Boss spawned: {boss.name} at ({boss_x}, {boss_y}) for ending {choice} ===")
+                        print(f">>> BOSS SPAWNED: {boss.name} for ending {choice}")
                         
                         # Store which ending this boss fight is for
                         engine.state_manager.set_extra_data("pending_ending", choice)
@@ -308,6 +310,11 @@ def play_game_with_engine(
                         
                         # Continue game loop for combat
                         continue
+                    else:
+                        # Boss failed to spawn - critical error!
+                        logger.error(f"=== CONFRONTATION: FAILED to spawn boss '{boss_fights[choice]}' for ending {choice} ===")
+                        print(f">>> ERROR: Boss '{boss_fights[choice]}' failed to spawn!")
+                        message_log.add_message(MB.failure(f"ERROR: Boss failed to spawn!"))
                 
                 # No boss fight needed - show ending screen immediately
                 victory_mgr = get_victory_manager()
