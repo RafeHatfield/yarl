@@ -52,6 +52,7 @@ class GameState:
     fov_map: Any = None
     fov_recompute: bool = True
     camera: Any = None  # Camera for viewport scrolling
+    death_screen_quote: Optional[str] = None
 
     # Interaction state
     targeting_item: Any = None
@@ -131,6 +132,7 @@ class GameStateManager:
             "fov_map": self._state.fov_map,
             "fov_recompute": self._state.fov_recompute,
             "camera": self._state.camera,
+            "death_screen_quote": self._state.death_screen_quote,
             "targeting_item": self._state.targeting_item,
             "constants": self._state.constants,
             **self._state.extra_data,

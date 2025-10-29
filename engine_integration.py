@@ -12,17 +12,6 @@ from engine import GameEngine
 logger = logging.getLogger(__name__)
 
 
-# Global reference to current state manager for accessing from render functions
-_current_state_manager = None
-
-
-def get_current_state_manager():
-    """Get the current state manager instance.
-    
-    Returns:
-        StateManager: The current state manager, or None if not set
-    """
-    return _current_state_manager
 from engine.systems import (
     RenderSystem,
     InputSystem,
@@ -134,7 +123,7 @@ def initialize_game_engine(
     camera.center_on(player.x, player.y)
     
     # Store camera in game state
-    engine.state_manager.update_state(camera=camera)
+    engine.state_manager.update_state(camera=camera, death_screen_quote=None)
 
     # Set up the render system's FOV map
     render_system = engine.get_system("render")
@@ -162,17 +151,12 @@ def play_game_with_engine(
         status_console: Status panel console (HP, messages)
         constants: Game configuration constants
     """
-    global _current_state_manager
-    
     # Create and initialize the engine with 3-console layout
     engine = create_game_engine(constants, sidebar_console, viewport_console, status_console)
-    
+
     # Legacy aliases for compatibility during transition
     con = viewport_console
     panel = status_console
-    
-    # Store state manager globally for access from render functions
-    _current_state_manager = engine.state_manager
     
     initialize_game_engine(
         engine, player, entities, game_map, message_log, game_state, constants
