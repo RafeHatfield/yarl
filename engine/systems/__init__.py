@@ -8,5 +8,12 @@ from .render_system import RenderSystem
 from .input_system import InputSystem
 from .ai_system import AISystem
 from .performance_system import PerformanceSystem
+from .environment_system import EnvironmentSystem
 
-__all__ = ["RenderSystem", "InputSystem", "AISystem", "PerformanceSystem"]
+__all__ = [
+    "RenderSystem",
+    "InputSystem",
+    "AISystem",
+    "PerformanceSystem",
+    "EnvironmentSystem",
+]
