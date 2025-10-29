@@ -86,12 +86,21 @@ class PickupService:
         
         logger.debug(f"Pickup attempt at ({player.x}, {player.y}) via {source}")
         print(f">>> PickupService: Pickup at ({player.x}, {player.y}) via {source}")
+        print(f">>> PickupService: Total entities: {len(entities)}")
         
         # Find items at player's location
         items_at_location = [
             entity for entity in entities
             if entity.x == player.x and entity.y == player.y and hasattr(entity, 'item') and entity.item
         ]
+        
+        # Debug: Show what we're filtering
+        entities_at_location = [e for e in entities if e.x == player.x and e.y == player.y]
+        print(f">>> PickupService: Entities at ({player.x}, {player.y}): {len(entities_at_location)}")
+        for e in entities_at_location:
+            has_item_attr = hasattr(e, 'item')
+            item_value = getattr(e, 'item', None)
+            print(f">>>   - {e.name}: has_item={has_item_attr}, item={item_value}")
         
         if not items_at_location:
             result.no_items = True
