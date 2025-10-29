@@ -289,8 +289,48 @@ def play_game_with_engine(
                     game_map = engine.state_manager.state.game_map
                     message_log = engine.state_manager.state.message_log
                     
-                    # Find a good spawn location (in front of player or nearby)
-                    boss_x, boss_y = player.x + 3, player.y
+                    # Find a valid spawn location near player (not in walls!)
+                    # Try tiles in expanding radius: adjacent first, then 2 tiles away, etc.
+                    from entity import get_blocking_entities_at_location
+                    boss_x, boss_y = None, None
+                    
+                    # Directions to try (cardinal + diagonal)
+                    directions = [
+                        (1, 0), (-1, 0), (0, 1), (0, -1),  # Cardinal
+                        (1, 1), (-1, 1), (1, -1), (-1, -1),  # Diagonal
+                        (2, 0), (-2, 0), (0, 2), (0, -2),  # 2 tiles away
+                        (2, 1), (-2, 1), (2, -1), (-2, -1),  # 2 tiles + 1
+                        (1, 2), (-1, 2), (1, -2), (-1, -2),
+                        (3, 0), (-3, 0), (0, 3), (0, -3),  # 3 tiles away
+                    ]
+                    
+                    for dx, dy in directions:
+                        test_x = player.x + dx
+                        test_y = player.y + dy
+                        
+                        # Check bounds
+                        if not (0 <= test_x < game_map.width and 0 <= test_y < game_map.height):
+                            continue
+                        
+                        # Check if tile is walkable
+                        if game_map.is_blocked(test_x, test_y):
+                            continue
+                        
+                        # Check if no entity blocking
+                        if get_blocking_entities_at_location(entities, test_x, test_y):
+                            continue
+                        
+                        # Found a valid spot!
+                        boss_x, boss_y = test_x, test_y
+                        break
+                    
+                    # Fallback: spawn on player if no valid location found (shouldn't happen)
+                    if boss_x is None:
+                        logger.warning("No valid boss spawn location found, spawning on player!")
+                        boss_x, boss_y = player.x, player.y
+                    
+                    logger.info(f"Boss spawn location: ({boss_x}, {boss_y}), player at ({player.x}, {player.y})")
+                    print(f">>> BOSS SPAWN: Location ({boss_x}, {boss_y}), player at ({player.x}, {player.y})")
                     
                     # Create the appropriate boss (bosses are monsters, not items!)
                     from message_builder import MessageBuilder as MB
