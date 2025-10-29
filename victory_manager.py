@@ -23,7 +23,7 @@ class VictoryManager:
     
     def handle_ruby_heart_pickup(self, player, entities, game_map, message_log) -> bool:
         """Handle the pickup of Aurelyn's Ruby Heart.
-        
+
         This triggers the portal spawn and Zhyraxion's reaction.
         
         Args:
@@ -81,6 +81,19 @@ class VictoryManager:
         else:
             logger.error("Failed to spawn victory portal!")
             return False
+
+    # ------------------------------------------------------------------
+    # Backwards compatibility
+    # ------------------------------------------------------------------
+    def handle_amulet_pickup(self, player, entities, game_map, message_log) -> bool:
+        """Legacy entry point that now delegates to :meth:`handle_ruby_heart_pickup`.
+
+        Older test suites and save-game migrations still reference the amulet
+        terminology.  Keeping this shim prevents attribute errors while the rest
+        of the codebase adopts the updated Ruby Heart naming.
+        """
+
+        return self.handle_ruby_heart_pickup(player, entities, game_map, message_log)
     
     def _find_adjacent_open_tile(self, player, game_map, entities):
         """Find an open tile adjacent to the player for portal spawning.

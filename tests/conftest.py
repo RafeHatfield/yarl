@@ -3,7 +3,7 @@ Pytest configuration and shared fixtures for rlike game testing.
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, patch
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.item import Item
@@ -11,6 +11,50 @@ from entity import Entity
 from render_functions import RenderOrder
 from spells.spell_catalog import register_all_spells
 from spells import get_spell_registry
+
+
+# ---------------------------------------------------------------------------
+# pytest-mock fallback
+# ---------------------------------------------------------------------------
+
+try:  # pragma: no cover - imported for typing/availability check only
+    import pytest_mock  # type: ignore
+except Exception:  # pragma: no cover - fallback path when plugin missing
+    pytest_mock = None  # type: ignore
+
+
+if not pytest_mock:  # pragma: no cover - executed only when plugin unavailable
+
+    @pytest.fixture
+    def mocker():
+        """Minimal fallback for the ``pytest-mock`` fixture.
+
+        Some CI environments in this codebase run without the optional
+        ``pytest-mock`` dependency installed.  The majority of tests only need
+        the fixture's ``patch`` helper, so we provide a tiny shim that mirrors
+        the subset of behaviour our tests rely on.
+        """
+
+        active_patches = []
+
+        class _Mocker:
+            """Lightweight substitute exposing ``patch`` and ``stopall``."""
+
+            def patch(self, target, *args, **kwargs):
+                patcher = patch(target, *args, **kwargs)
+                mocked = patcher.start()
+                active_patches.append(patcher)
+                return mocked
+
+            def stopall(self):
+                while active_patches:
+                    active_patches.pop().stop()
+
+        helper = _Mocker()
+        try:
+            yield helper
+        finally:
+            helper.stopall()
 
 
 @pytest.fixture(autouse=True)
