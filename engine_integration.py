@@ -6,6 +6,7 @@ architecture and the existing game loop, allowing for gradual migration.
 
 import logging
 import tcod.libtcodpy as libtcod
+from contextlib import contextmanager
 
 from engine import GameEngine
 
@@ -460,6 +461,46 @@ def play_game_with_engine(
     
     # Return to main menu (no restart)
     return {"restart": False}
+
+
+@contextmanager
+def _manual_input_system_update(engine, delta_time):
+    """Context manager to manually update the input system.
+    
+    This helper temporarily disables normal input system scheduling and forces
+    a single manual update pass within the context. Useful for testing input
+    behavior with controlled timing.
+    
+    Args:
+        engine (GameEngine): The game engine instance
+        delta_time (float): Time delta to pass to the input system update
+        
+    Yields:
+        None: Context is ready for code execution
+        
+    Example:
+        with _manual_input_system_update(engine, 0.016):
+            actions = engine.state_manager.get_extra_data("keyboard_actions")
+            # Test the actions
+    """
+    # Find the input system in the engine
+    input_systems = [s for s in engine.systems if isinstance(s, InputSystem)]
+    if not input_systems:
+        # No input system found, just yield without doing anything
+        yield
+        return
+    
+    input_system = input_systems[0]
+    was_enabled = input_system.enabled
+    
+    try:
+        # Force enable and manually update the input system
+        input_system.enabled = True
+        input_system.update(delta_time)
+        yield
+    finally:
+        # Restore previous enabled state
+        input_system.enabled = was_enabled
 
 
 def _should_exit_game(action, mouse_action, current_state):

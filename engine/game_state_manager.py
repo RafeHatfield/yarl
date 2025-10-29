@@ -90,6 +90,15 @@ class GameStateManager:
         """
         return self._state
 
+    @state.setter
+    def state(self, new_state: GameState) -> None:
+        """Set the current game state.
+
+        Args:
+            new_state (GameState): The new game state to set
+        """
+        self._state = new_state
+
     def update_state(self, **kwargs) -> None:
         """Update game state with new values.
 

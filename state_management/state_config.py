@@ -24,6 +24,11 @@ from typing import Optional, Callable, Dict
 from game_states import GameStates
 
 
+# Legacy import support: GameState was moved to engine.game_state_manager
+# but tests may still import it from here
+from engine.game_state_manager import GameState
+
+
 class StateConfig:
     """Configuration for a single game state.
     

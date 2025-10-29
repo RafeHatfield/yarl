@@ -53,15 +53,51 @@ class EntityFactory:
         """Initialize the entity factory.
         
         Args:
-            entity_registry: EntityRegistry instance. If None, uses global registry.
-            game_constants: GameConstants instance. If None, loads from default path.
+            entity_registry: EntityRegistry instance. If None, uses global registry (lazy-loaded).
+            game_constants: GameConstants instance. If None, loads from default path (lazy-loaded).
             difficulty_level: Difficulty level for item identification ("easy", "medium", "hard")
         """
-        self.registry = entity_registry or get_entity_registry()
-        self.game_constants = game_constants or GameConstants.load_from_file("config/game_constants.yaml")
+        # Store the registry reference but don't load it yet (lazy loading)
+        self._registry = entity_registry
+        self._registry_loaded = (entity_registry is not None)
+        
+        # Store the game constants reference but don't load it yet (lazy loading)
+        self._game_constants = game_constants
+        self._game_constants_loaded = (game_constants is not None)
+        
         self.difficulty_level = difficulty_level
         self.appearance_generator = get_appearance_generator()
     
+    @property
+    def registry(self):
+        """Lazily load and return the entity registry.
+        
+        The registry is loaded on first access, allowing lightweight scripts
+        to avoid loading large YAML files if they don't need the registry.
+        
+        Returns:
+            EntityRegistry: The entity registry instance
+        """
+        if not self._registry_loaded:
+            self._registry = get_entity_registry()
+            self._registry_loaded = True
+        return self._registry
+    
+    @property
+    def game_constants(self):
+        """Lazily load and return game constants.
+        
+        Constants are loaded on first access to avoid expensive file I/O
+        for lightweight scripts.
+        
+        Returns:
+            GameConstants: The game constants instance
+        """
+        if not self._game_constants_loaded:
+            self._game_constants = GameConstants.load_from_file("config/game_constants.yaml")
+            self._game_constants_loaded = True
+        return self._game_constants
+
     def _apply_identification_logic(self, item: Item, item_type: str, item_category: str) -> None:
         """Apply identification logic to an item based on game settings.
         
