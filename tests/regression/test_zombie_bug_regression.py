@@ -27,6 +27,12 @@ class TestZombieBugRegression(unittest.TestCase):
 
     def setUp(self):
         """Set up the zombie bug test scenario."""
+        from systems.turn_controller import reset_turn_controller
+        from services import pickup_service as pickup_service_module
+        from services import movement_service as movement_service_module
+        reset_turn_controller()
+        pickup_service_module._pickup_service = None
+        movement_service_module._movement_service = None
         self.state_manager = GameStateManager()
         self.message_log = MessageLog(x=0, width=80, height=5)
         

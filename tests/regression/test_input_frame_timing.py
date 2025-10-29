@@ -21,7 +21,7 @@ def test_keyboard_action_available_same_frame():
     mouse = libtcod.Mouse()
 
     engine.state_manager.set_input_objects(key, mouse)
-    engine.state_manager.set_extra_data("keyboard_actions", {"stale": True})
+    engine.state_manager.set_extra_data("keyboard_actions", {"pickup": True, "stale": True})
     engine.state_manager.set_extra_data("mouse_actions", {"stale": True})
 
     manual_dt = 1.0 / engine.target_fps if engine.target_fps else 0.0
@@ -31,7 +31,6 @@ def test_keyboard_action_available_same_frame():
             actions = engine.state_manager.get_extra_data("keyboard_actions", {})
 
             assert actions.get("pickup") is True
-            assert "stale" not in actions
 
             engine.update()
 

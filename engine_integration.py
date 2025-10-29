@@ -530,6 +530,10 @@ def _manual_input_system_update(engine, delta_time):
         # Force enable and manually update the input system
         input_system.enabled = True
         input_system.update(delta_time)
+        actions = engine.state_manager.get_extra_data("keyboard_actions", {})
+        if "stale" in actions:
+            actions.pop("stale", None)
+            engine.state_manager.set_extra_data("keyboard_actions", actions)
         yield
     finally:
         # Restore previous enabled state

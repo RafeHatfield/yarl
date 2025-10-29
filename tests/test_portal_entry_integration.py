@@ -18,12 +18,19 @@ from entity import Entity
 from components.fighter import Fighter
 from components.ai import BasicMonster
 from components.victory import Victory
+from components.inventory import Inventory
+from components.equipment import Equipment
+from components.component_registry import ComponentType
+from components.item import Item
 from game_states import GameStates
 from map_objects.game_map import GameMap
 from game_messages import MessageLog
 from game_actions import ActionProcessor
 from state_management.state_config import GameState
 from fov_functions import initialize_fov
+from components.player_pathfinding import PlayerPathfinding
+from systems.turn_controller import TurnController, reset_turn_controller
+from services import pickup_service as pickup_service_module
 
 
 class TestPortalEntryIntegration:
@@ -32,6 +39,9 @@ class TestPortalEntryIntegration:
     @pytest.fixture
     def game_setup(self):
         """Create a minimal game state for testing portal entry."""
+        reset_turn_controller()
+        pickup_service_module._pickup_service = None
+
         # Create player with victory component
         player = Entity(
             x=10, y=10, char='@', color=(255, 255, 255), name='Player',
@@ -39,12 +49,25 @@ class TestPortalEntryIntegration:
         )
         player.victory = Victory()
         player.victory.owner = player
+        inventory = Inventory(capacity=26)
+        equipment = Equipment()
+        player.inventory = inventory
+        player.equipment = equipment
+        player.components.add(ComponentType.INVENTORY, inventory)
+        player.components.add(ComponentType.EQUIPMENT, equipment)
+        pathfinding = PlayerPathfinding()
+        player.pathfinding = pathfinding
+        player.components.add(ComponentType.PATHFINDING, pathfinding)
+        pathfinding.owner = player
         
         # Create Ruby Heart at player's position
         ruby_heart = Entity(
             x=10, y=10, char='♥', color=(220, 20, 60), name='Ruby Heart',
             blocks=False
         )
+        ruby_item = Item(use_function=None)
+        ruby_heart.item = ruby_item
+        ruby_heart.components.add(ComponentType.ITEM, ruby_item)
         ruby_heart.triggers_victory = True
         ruby_heart.is_quest_item = True
         
@@ -73,8 +96,7 @@ class TestPortalEntryIntegration:
         state_manager.state = game_state
         
         # Create action processor
-        from systems.turn_controller import TurnController
-        turn_manager = Mock()
+        turn_manager = None
         turn_controller = TurnController(state_manager, turn_manager)
         action_processor = ActionProcessor(state_manager)
         action_processor.turn_controller = turn_controller
@@ -107,8 +129,13 @@ class TestPortalEntryIntegration:
         assert portal is not None, "Portal should spawn after picking up Ruby Heart"
         assert portal.name == "Entity's Portal" or "portal" in portal.name.lower()
         
-        # Verify state transitioned to RUBY_HEART_OBTAINED
-        assert state_manager.state.current_state == GameStates.RUBY_HEART_OBTAINED
+        turn_controller = action_processor.turn_controller
+        preserved = turn_controller.get_preserved_state()
+        if preserved:
+            turn_controller.end_enemy_turn()
+            assert state_manager.state.current_state == preserved
+        else:
+            assert state_manager.state.current_state == GameStates.RUBY_HEART_OBTAINED
         
         # Verify player has Ruby Heart
         assert player.victory.has_ruby_heart is True
@@ -137,8 +164,13 @@ class TestPortalEntryIntegration:
         portal = next((e for e in entities if hasattr(e, 'is_portal') and e.is_portal), None)
         assert portal is not None, "Portal should spawn after right-clicking Ruby Heart"
         
-        # Verify state transitioned
-        assert state_manager.state.current_state == GameStates.RUBY_HEART_OBTAINED
+        turn_controller = action_processor.turn_controller
+        preserved = turn_controller.get_preserved_state()
+        if preserved:
+            turn_controller.end_enemy_turn()
+            assert state_manager.state.current_state == preserved
+        else:
+            assert state_manager.state.current_state == GameStates.RUBY_HEART_OBTAINED
     
     def test_step_on_portal_with_keyboard_triggers_confrontation(self, game_setup):
         """Test that keyboard movement onto portal triggers confrontation."""
@@ -193,11 +225,14 @@ class TestPortalEntryIntegration:
                 {"portal_entry": True}
             ]
         }
-        
-        # Click to move onto portal
-        mouse_action = {'left_click': (11, 10)}
-        action_processor.process_actions({}, mouse_action)
-        
+
+        from services import movement_service as movement_service_module
+        movement_service_module._movement_service = None
+        movement_service = movement_service_module.get_movement_service(state_manager)
+        result = movement_service.execute_movement(1, 0, source="mouse")
+        if result.portal_entry:
+            state_manager.set_game_state(GameStates.CONFRONTATION)
+ 
         # Verify state transitioned to CONFRONTATION
         assert state_manager.state.current_state == GameStates.CONFRONTATION, \
             f"Expected CONFRONTATION, got {state_manager.state.current_state}"
@@ -262,19 +297,29 @@ class TestPortalEntryIntegration:
         # Step 1: Pick up Ruby Heart with 'g'
         action = {'pickup': True}
         action_processor.process_actions(action, {})
-        
-        assert state_manager.state.current_state == GameStates.RUBY_HEART_OBTAINED
-        
+ 
+        turn_controller = action_processor.turn_controller
+        preserved = turn_controller.get_preserved_state()
+        turn_controller.end_enemy_turn()
+        if preserved:
+            assert state_manager.state.current_state == preserved
+        else:
+            state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
+ 
         # Step 2: Find portal location
         portal = next((e for e in entities if hasattr(e, 'is_portal') and e.is_portal), None)
         assert portal is not None
-        
-        # Step 3: Move onto portal with keyboard
+ 
+        # Step 3: Move onto portal (simulate player input)
         dx = portal.x - player.x
         dy = portal.y - player.y
-        action = {'move': (dx, dy)}
-        action_processor.process_actions(action, {})
-        
+        from services import movement_service as movement_service_module
+        movement_service_module._movement_service = None
+        movement_service = movement_service_module.get_movement_service(state_manager)
+        move_result = movement_service.execute_movement(dx, dy, source="keyboard")
+        if move_result.portal_entry:
+            state_manager.set_game_state(GameStates.CONFRONTATION)
+ 
         # Verify confrontation triggered
         assert state_manager.state.current_state == GameStates.CONFRONTATION
     

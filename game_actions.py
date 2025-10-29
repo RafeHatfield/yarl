@@ -541,6 +541,11 @@ class ActionProcessor:
             if dead_entity:
                 # Combat deaths should transform to corpses (keep in entities list)
                 self._handle_entity_death(dead_entity, remove_from_entities=False)
+
+        # Player attacks should consume the turn (even if target survived)
+        if attacker == self.state_manager.state.player:
+            self._process_player_status_effects()
+            self.turn_controller.end_player_action(turn_consumed=True)
     
     def _handle_entity_death(self, dead_entity, remove_from_entities=False) -> None:
         """Handle entity death.

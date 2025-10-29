@@ -22,6 +22,14 @@ from map_objects.game_map import GameMap
 from map_objects.rectangle import Rect
 
 
+def make_basic_game_map(width=20, height=20, explored=False):
+    game_map = Mock()
+    game_map.width = width
+    game_map.height = height
+    game_map.is_explored = Mock(return_value=explored)
+    return game_map
+
+
 class TestAutoExploreComponent:
     """Test AutoExplore component initialization and basic functionality."""
     
@@ -41,7 +49,7 @@ class TestAutoExploreComponent:
         player = Entity(5, 5, '@', (255, 255, 255), "Player")
         auto_explore.owner = player
         
-        game_map = Mock()
+        game_map = make_basic_game_map()
         entities = []
         
         quote = auto_explore.start(game_map, entities)
@@ -112,8 +120,9 @@ class TestStopConditions:
         # Components are auto-added by Entity constructor
         
         entities = [auto_explore.owner, sword]
+        game_map = make_basic_game_map()
         
-        result = auto_explore._valuable_item_in_fov(entities, fov_map)
+        result = auto_explore._valuable_item_in_fov(entities, fov_map, game_map)
         
         assert result == sword
     

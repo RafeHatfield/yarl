@@ -81,6 +81,10 @@ class EntityFactory:
         if not self._registry_loaded:
             self._registry = get_entity_registry()
             self._registry_loaded = True
+
+        if self._registry and hasattr(self._registry, "is_loaded") and not self._registry.is_loaded():
+            from config.entity_registry import load_entity_config
+            load_entity_config()
         return self._registry
     
     @property
