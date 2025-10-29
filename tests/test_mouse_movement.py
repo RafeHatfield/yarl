@@ -446,8 +446,9 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
     
     def test_no_active_pathfinding(self):
         """Test processing when no pathfinding is active."""
+        mock_state_manager = Mock()
         result = process_pathfinding_movement(
-            self.player, self.entities, self.game_map, self.fov_map
+            self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
         
         self.assertEqual(result["results"], [])
@@ -470,8 +471,9 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         mock_check_range.return_value = None  # Not in weapon range yet
         mock_check_close.return_value = True  # But dangerously close (within threat range)
         
+        mock_state_manager = Mock()
         result = process_pathfinding_movement(
-            self.player, self.entities, self.game_map, self.fov_map
+            self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
         
         results = result["results"]
@@ -505,8 +507,9 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         mock_check_close.return_value = False
         mock_get_blocking.return_value = None
         
+        mock_state_manager = Mock()
         result = process_pathfinding_movement(
-            self.player, self.entities, self.game_map, self.fov_map
+            self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
         
         results = result["results"]
@@ -540,8 +543,9 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         blocking_entity.name = "Wall"
         mock_get_blocking.return_value = blocking_entity
         
+        mock_state_manager = Mock()
         result = process_pathfinding_movement(
-            self.player, self.entities, self.game_map, self.fov_map
+            self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
         
         results = result["results"]
@@ -565,8 +569,9 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         mock_check_close.return_value = False
         self.game_map.is_blocked.return_value = True
         
+        mock_state_manager = Mock()
         result = process_pathfinding_movement(
-            self.player, self.entities, self.game_map, self.fov_map
+            self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
         
         results = result["results"]
@@ -591,8 +596,9 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         mock_check_close.return_value = False
         mock_get_blocking.return_value = None
         
+        mock_state_manager = Mock()
         result = process_pathfinding_movement(
-            self.player, self.entities, self.game_map, self.fov_map
+            self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
         
         results = result["results"]

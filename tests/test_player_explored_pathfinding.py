@@ -191,8 +191,9 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
         for _ in range(5):
             if not self.player.pathfinding.is_path_active():
                 break
+            mock_state_manager = Mock()
             result = process_pathfinding_movement(
-                self.player, self.entities, self.game_map, self.fov_map
+                self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
             )
             # Check if we hit the hazard
             if self.player.x == 7 and self.player.y == 5:
@@ -233,8 +234,9 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
         for _ in range(5):
             if not self.player.pathfinding.is_path_active():
                 break
+            mock_state_manager = Mock()
             process_pathfinding_movement(
-                self.player, self.entities, self.game_map, self.fov_map
+                self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
             )
             if self.player.x == 8:
                 break
@@ -256,8 +258,9 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
         for _ in range(3):
             if not self.player.pathfinding.is_path_active():
                 break
+            mock_state_manager = Mock()
             process_pathfinding_movement(
-                self.player, self.entities, self.game_map, self.fov_map
+                self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
             )
         
         # Should still be moving (or reached destination)

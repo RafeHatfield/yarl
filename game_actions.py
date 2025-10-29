@@ -306,7 +306,8 @@ class ActionProcessor:
             player,
             self.state_manager.state.entities,
             self.state_manager.state.game_map,
-            self.state_manager.state.fov_map
+            self.state_manager.state.fov_map,
+            self.state_manager
         )
         
         # Process the results
