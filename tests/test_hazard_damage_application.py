@@ -10,10 +10,10 @@ of each turn, including:
 """
 
 import unittest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import patch
 
+from engine import GameEngine, TurnPhase
 from engine.systems.environment_system import EnvironmentSystem
-from engine.game_state_manager import GameState
 from map_objects.game_map import GameMap
 from components.ground_hazard import GroundHazard, HazardType
 from components.fighter import Fighter
@@ -45,20 +45,26 @@ class TestHazardDamageApplication(unittest.TestCase):
         )
         
         self.entities = [self.player, self.monster]
-        
-        # Create game state
-        self.game_state = GameState(
+
+        # Initialize engine and register environment system
+        self.engine = GameEngine()
+        self.env_system = EnvironmentSystem()
+        self.engine.register_system(self.env_system)
+
+        # Populate engine game state
+        self.engine.state_manager.update_state(
             player=self.player,
             entities=self.entities,
             game_map=self.game_map,
-            message_log=self.message_log
+            message_log=self.message_log,
         )
-        
-        # Create Environment system (replaces old AI system hazard processing)
-        self.env_system = EnvironmentSystem()
-        self.env_system._engine = Mock()
-        self.env_system._engine.state_manager = Mock()
-        self.env_system._engine.state_manager.state = self.game_state
+        self.game_state = self.engine.state_manager.state
+        self.turn_manager = self.engine.turn_manager
+
+    def _run_environment_phase(self):
+        """Advance the turn manager through the environment phase."""
+        self.turn_manager.advance_turn(to_phase=TurnPhase.ENVIRONMENT)
+        self.turn_manager.advance_turn(to_phase=TurnPhase.PLAYER)
     
     def test_entity_takes_damage_from_hazard(self):
         """Test that an entity takes damage when standing on a hazard."""
@@ -76,7 +82,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_hp = self.player.fighter.hp
         
         # Process hazard turn
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # Player should have taken damage
         self.assertLess(self.player.fighter.hp, initial_hp)
@@ -97,20 +103,20 @@ class TestHazardDamageApplication(unittest.TestCase):
         
         # Turn 1: Full damage (12)
         initial_hp = self.player.fighter.hp
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         damage_turn1 = initial_hp - self.player.fighter.hp
         self.assertEqual(damage_turn1, 12)  # 100% damage
         
         # Turn 2: Reduced damage (8)
         hp_turn2 = self.player.fighter.hp
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         damage_turn2 = hp_turn2 - self.player.fighter.hp
         self.assertLess(damage_turn2, damage_turn1)  # Less than turn 1
         self.assertEqual(damage_turn2, 8)  # 66% damage
         
         # Turn 3: Further reduced damage (4)
         hp_turn3 = self.player.fighter.hp
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         damage_turn3 = hp_turn3 - self.player.fighter.hp
         self.assertLess(damage_turn3, damage_turn2)  # Less than turn 2
         self.assertEqual(damage_turn3, 4)  # 33% damage
@@ -128,10 +134,10 @@ class TestHazardDamageApplication(unittest.TestCase):
         self.game_map.hazard_manager.add_hazard(fire)
         
         # Process turns until hazard expires
-        self.env_system.process(self.game_state)  # Turn 1
+        self._run_environment_phase()  # Turn 1
         self.assertTrue(self.game_map.hazard_manager.has_hazard_at(10, 10))
         
-        self.env_system.process(self.game_state)  # Turn 2
+        self._run_environment_phase()  # Turn 2
         self.assertFalse(self.game_map.hazard_manager.has_hazard_at(10, 10))
     
     def test_multiple_entities_take_damage(self):
@@ -160,7 +166,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         monster_initial_hp = self.monster.fighter.hp
         
         # Process hazard turn
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # Both entities should have taken damage
         self.assertEqual(self.player.fighter.hp, player_initial_hp - 10)
@@ -183,7 +189,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         monster_initial_hp = self.monster.fighter.hp
         
         # Process hazard turn
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # No entities should have taken damage
         self.assertEqual(self.player.fighter.hp, player_initial_hp)
@@ -206,7 +212,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         self.game_map.hazard_manager.add_hazard(fire)
         
         # Process hazard turn (should not crash)
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # Dead monster HP stays at 0
         self.assertEqual(self.monster.fighter.hp, 0)
@@ -231,10 +237,10 @@ class TestHazardDamageApplication(unittest.TestCase):
         from game_messages import Message
         mock_death_message = Message("Monster died!", (255, 0, 0))
         with patch('death_functions.kill_monster', return_value=mock_death_message), \
-             patch('engine.systems.ai_system.invalidate_entity_cache'):
+             patch('engine.systems.environment_system.invalidate_entity_cache'):
             
             # Process hazard turn
-            self.env_system.process(self.game_state)
+            self._run_environment_phase()
             
             # Monster should have died (HP <= 0)
             self.assertLessEqual(self.monster.fighter.hp, 0)
@@ -254,7 +260,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_message_count = len(self.message_log.messages)
         
         # Process hazard turn
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # Message should have been added
         self.assertGreater(len(self.message_log.messages), initial_message_count)
@@ -279,7 +285,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_hp = self.player.fighter.hp
         
         # Process hazard turn
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # Player should have taken damage
         self.assertEqual(self.player.fighter.hp, initial_hp - 5)
@@ -307,7 +313,7 @@ class TestHazardDamageApplication(unittest.TestCase):
         initial_hp = self.player.fighter.hp
         
         # Process hazard turn
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # Player should have taken lethal damage (HP <= 0)
         self.assertLessEqual(self.player.fighter.hp, 0)
@@ -316,19 +322,26 @@ class TestHazardDamageApplication(unittest.TestCase):
 
 class TestHazardAgingWithoutEntities(unittest.TestCase):
     """Test hazard aging when no entities are affected."""
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.game_map = GameMap(width=40, height=40, dungeon_level=1)
-        self.game_state = GameState(
+        self.engine = GameEngine()
+        self.env_system = EnvironmentSystem()
+        self.engine.register_system(self.env_system)
+
+        self.engine.state_manager.update_state(
             player=None,
             entities=[],
             game_map=self.game_map,
-            message_log=None
+            message_log=None,
         )
-        
-        self.env_system = EnvironmentSystem()
-        self.env_system._engine = Mock()
+        self.turn_manager = self.engine.turn_manager
+
+    def _run_environment_phase(self):
+        """Advance through the environment phase to age hazards."""
+        self.turn_manager.advance_turn(to_phase=TurnPhase.ENVIRONMENT)
+        self.turn_manager.advance_turn(to_phase=TurnPhase.PLAYER)
     
     def test_hazards_age_without_entities(self):
         """Test that hazards age even if no entities are on them."""
@@ -343,7 +356,7 @@ class TestHazardAgingWithoutEntities(unittest.TestCase):
         self.game_map.hazard_manager.add_hazard(fire)
         
         # Process turn
-        self.env_system.process(self.game_state)
+        self._run_environment_phase()
         
         # Hazard should have aged
         hazard = self.game_map.hazard_manager.get_hazard_at(10, 10)

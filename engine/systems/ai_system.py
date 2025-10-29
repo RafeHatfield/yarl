@@ -142,14 +142,11 @@ class AISystem(System):
                 # Advance to ENVIRONMENT phase
                 if turn_manager:
                     turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
-                    
-                    # Process environment effects (hazards, etc.)
-                    self._process_environment_phase(game_state)
-                    
+
                     # Check if player died from environmental effects
                     if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                         return
-                    
+
                     # Advance to PLAYER phase
                     turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
                     
@@ -412,21 +409,6 @@ class AISystem(System):
                         invalidate_entity_cache("entity_added_spawned_ai")
                     
                     logger.debug(f"Monster {dead_entity.name} died and transformed to corpse")
-    
-    def _process_environment_phase(self, game_state) -> None:
-        """Process environmental effects during ENVIRONMENT phase.
-        
-        This is a temporary integration point. In the future, this should be
-        handled by EnvironmentSystem as a registered turn phase listener.
-        
-        Args:
-            game_state: Current game state
-        """
-        from engine.systems.environment_system import EnvironmentSystem
-        
-        # Create environment system and process
-        env_system = EnvironmentSystem(self.engine)
-        env_system.process(game_state)
     
     def _process_player_status_effects(self, game_state) -> None:
         """Process player status effects at the start of their turn.

@@ -9,9 +9,10 @@ Separated from AISystem for cleaner architecture and turn phase management.
 """
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from ..system import System
+from ..turn_manager import TurnPhase
 from components.component_registry import ComponentType
 from message_builder import MessageBuilder as MB
 from entity_sorting_cache import invalidate_entity_cache
@@ -34,15 +35,55 @@ class EnvironmentSystem(System):
     - Timed dungeon events
     """
     
-    def __init__(self, engine=None):
+    def __init__(self, priority: int = 60):
         """Initialize environment system.
-        
+
         Args:
-            engine: Game engine reference for state management
+            priority: System update priority (runs after AI)
         """
-        super().__init__("Environment System")
-        self._engine = engine
+        super().__init__("environment", priority)
+        self._turn_manager: Optional[Any] = None
         logger.info(f"{self.name} initialized")
+
+    def initialize(self, engine) -> None:
+        """Initialize the environment system with engine reference."""
+        super().initialize(engine)
+
+        turn_manager = getattr(engine, "turn_manager", None)
+        if not turn_manager:
+            logger.warning("EnvironmentSystem initialized without TurnManager; hazards will not process")
+            return
+
+        turn_manager.register_listener(TurnPhase.ENVIRONMENT, self._on_environment_phase_start, "start")
+        turn_manager.register_listener(TurnPhase.ENVIRONMENT, self._on_environment_phase_end, "end")
+        self._turn_manager = turn_manager
+        logger.debug("EnvironmentSystem registered for ENVIRONMENT phase callbacks")
+
+    def cleanup(self) -> None:
+        """Unregister listeners when system is cleaned up."""
+        if self._turn_manager:
+            self._turn_manager.unregister_listener(TurnPhase.ENVIRONMENT, self._on_environment_phase_start, "start")
+            self._turn_manager.unregister_listener(TurnPhase.ENVIRONMENT, self._on_environment_phase_end, "end")
+            self._turn_manager = None
+
+        super().cleanup()
+
+    def _on_environment_phase_start(self) -> None:
+        """Handle ENVIRONMENT phase start by processing hazards."""
+        if not self.engine or not hasattr(self.engine, "state_manager"):
+            logger.debug("EnvironmentSystem start callback without engine state; skipping")
+            return
+
+        game_state = getattr(self.engine.state_manager, "state", None)
+        if not game_state:
+            logger.debug("EnvironmentSystem start callback without game state; skipping")
+            return
+
+        self.process(game_state)
+
+    def _on_environment_phase_end(self) -> None:
+        """Handle ENVIRONMENT phase end."""
+        logger.debug("EnvironmentSystem ENVIRONMENT phase completed")
     
     def update(self, dt: float) -> None:
         """Update the environment system for one frame.

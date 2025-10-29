@@ -23,7 +23,13 @@ def get_current_state_manager():
         StateManager: The current state manager, or None if not set
     """
     return _current_state_manager
-from engine.systems import RenderSystem, InputSystem, AISystem, PerformanceSystem
+from engine.systems import (
+    RenderSystem,
+    InputSystem,
+    AISystem,
+    PerformanceSystem,
+    EnvironmentSystem,
+)
 from engine.systems.optimized_render_system import OptimizedRenderSystem
 from fov_functions import initialize_fov
 from game_actions import ActionProcessor
@@ -61,6 +67,10 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
     # Create and register the AI system (middle priority)
     ai_system = AISystem(priority=50)
     engine.register_system(ai_system)
+
+    # Create and register the environment system (after AI processing)
+    environment_system = EnvironmentSystem(priority=60)
+    engine.register_system(environment_system)
 
     # Create and register the optimized render system (late priority)
     # Pass all 3 consoles for split-screen layout
