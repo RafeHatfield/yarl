@@ -36,5 +36,9 @@ run: clean
 
 clean-run: clean run
 
+run-test: clean
+	@echo "🎮 Starting test game with fresh code..."
+	@$(PYTHON) engine.py --testing --start-level 20 --no-monsters --wizard
+
 .DEFAULT_GOAL := help
 

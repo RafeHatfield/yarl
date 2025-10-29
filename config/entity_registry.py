@@ -432,7 +432,7 @@ class EntityRegistry:
                 
                 # Create monster definition
                 monster_def = MonsterDefinition(
-                    name=monster_id.title(),
+                    name=monster_data.get('name', monster_id.title()),  # Use configured name or fallback to ID
                     stats=stats,
                     char=monster_data.get('char', '?'),
                     color=tuple(monster_data.get('color', [255, 255, 255])),

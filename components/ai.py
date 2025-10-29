@@ -107,6 +107,9 @@ class BossAI:
         monster = self.owner
         results = []
         
+        logger.debug(f"BossAI: {monster.name} taking turn, target at ({target.x}, {target.y})")
+        print(f">>> BossAI: {monster.name} taking turn")
+        
         # Check for paralysis - completely prevents all actions
         if (hasattr(monster, 'has_status_effect') and 
             callable(monster.has_status_effect) and 
@@ -139,19 +142,18 @@ class BossAI:
             distance = ((monster.x - target.x) ** 2 + (monster.y - target.y) ** 2) ** 0.5
             
             if distance <= 1:
-                # Adjacent - attack with boss damage multiplier!
-                base_damage = monster.fighter.attack(target)
+                # Adjacent - attack with d20 combat system!
+                print(f">>> BossAI: {monster.name} attacking {target.name}")
+                logger.info(f"BossAI: {monster.name} attacking {target.name}")
+                
+                attack_results = monster.fighter.attack_d20(target)
                 
                 # Apply boss damage multiplier if enraged
                 if boss and boss.is_enraged:
                     multiplier = boss.get_damage_multiplier()
-                    if multiplier > 1.0:
-                        # We already attacked, but the damage multiplier should be
-                        # applied in the attack() method itself. For now, just
-                        # track that we're enraged (visual indicator could be added)
-                        pass
+                    logger.debug(f"Boss {monster.name} enraged: {multiplier}x damage")
                 
-                results.extend(base_damage)
+                results.extend(attack_results)
             else:
                 # Move towards target
                 path = self._get_path_to(target, game_map, entities)

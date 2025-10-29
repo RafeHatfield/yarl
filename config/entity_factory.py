@@ -264,6 +264,7 @@ class EntityFactory:
                 if boss_component:
                     monster.boss = boss_component
                     monster.components.add(ComponentType.BOSS, boss_component)
+                    monster.is_boss = True  # Set attribute for death handler check (Phase 5)
                     logger.info(f"Created BOSS: {boss_component.boss_name}")
 
             logger.debug(f"Created monster: {monster_def.name} at ({x}, {y})")
