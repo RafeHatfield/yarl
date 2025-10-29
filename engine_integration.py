@@ -5,6 +5,8 @@ architecture and the existing game loop, allowing for gradual migration.
 """
 
 import logging
+from contextlib import contextmanager
+
 import tcod.libtcodpy as libtcod
 
 from engine import GameEngine
@@ -26,6 +28,37 @@ from game_messages import Message
 from game_states import GameStates
 from input_handlers import handle_keys, handle_mouse
 from loader_functions.data_loaders import save_game
+
+
+@contextmanager
+def _manual_input_system_update(engine: GameEngine, dt: float):
+    """Run the input system manually while pausing automatic updates.
+
+    Older regression tests expect to control the input system directly to
+    verify same-frame input availability. This context manager temporarily
+    disables the engine-driven update cycle, invokes the input system once,
+    and then restores its previous enabled state.
+
+    Args:
+        engine: The engine instance containing the input system.
+        dt: Delta time to pass into the manual update.
+    """
+
+    input_systems = engine.get_systems_by_type(InputSystem)
+    if not input_systems:
+        raise RuntimeError("No InputSystem registered with engine")
+
+    input_system = input_systems[0]
+    was_enabled = input_system.enabled
+
+    # Prevent the engine from updating the system a second time while we are
+    # inside the context.
+    input_system.disable()
+    try:
+        input_system.update(dt)
+        yield
+    finally:
+        input_system.enabled = was_enabled
 
 
 def create_game_engine(constants, sidebar_console, viewport_console, status_console):

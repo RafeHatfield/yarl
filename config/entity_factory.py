@@ -58,6 +58,13 @@ class EntityFactory:
             difficulty_level: Difficulty level for item identification ("easy", "medium", "hard")
         """
         self.registry = entity_registry or get_entity_registry()
+
+        # Ensure the registry has been hydrated with configuration data.
+        if not getattr(self.registry, "is_loaded", lambda: True)():
+            from config.entity_registry import load_entity_config
+
+            load_entity_config()
+
         self.game_constants = game_constants or GameConstants.load_from_file("config/game_constants.yaml")
         self.difficulty_level = difficulty_level
         self.appearance_generator = get_appearance_generator()

@@ -90,6 +90,27 @@ class GameStateManager:
         """
         return self._state
 
+    @state.setter
+    def state(self, new_state: GameState) -> None:
+        """Replace the current game state.
+
+        Args:
+            new_state (GameState): The new game state container.
+
+        Raises:
+            TypeError: If ``new_state`` is not an instance of :class:`GameState`.
+        """
+        if not isinstance(new_state, GameState):
+            raise TypeError(
+                "GameStateManager.state must be assigned a GameState instance"
+            )
+
+        previous_state = self._state.current_state
+        self._state = new_state
+
+        if new_state.current_state != previous_state:
+            self._notify_state_change(new_state.current_state)
+
     def update_state(self, **kwargs) -> None:
         """Update game state with new values.
 
