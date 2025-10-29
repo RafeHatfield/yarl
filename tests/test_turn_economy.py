@@ -8,6 +8,15 @@ from unittest.mock import Mock, MagicMock, patch
 from game_actions import ActionProcessor
 from game_states import GameStates
 from components.component_registry import ComponentType
+from components.inventory import Inventory
+from components.item import Item
+from components.fighter import Fighter
+from entity import Entity
+from map_objects.game_map import GameMap
+from game_messages import MessageLog
+from engine.game_state_manager import GameStateManager, GameState
+from systems.turn_controller import reset_turn_controller
+from services import pickup_service as pickup_service_module
 
 
 class TestPickupTurnEconomy:
@@ -15,39 +24,46 @@ class TestPickupTurnEconomy:
     
     def test_pickup_item_ends_turn(self):
         """Picking up an item should end the player's turn."""
-        # Setup
-        state_manager = Mock()
-        state_manager.state = Mock()
-        state_manager.state.current_state = GameStates.PLAYERS_TURN
-        state_manager.state.player = Mock()
-        state_manager.state.player.x = 5
-        state_manager.state.player.y = 5
-        state_manager.state.player.inventory = Mock()
-        state_manager.state.player.status_effects = Mock()
-        state_manager.state.player.status_effects.process_turn_start = Mock(return_value=[])
-        state_manager.state.player.process_status_effects_turn_end = Mock(return_value=[])  # Mock status effects
-        state_manager.state.entities = []
-        state_manager.state.message_log = Mock()
-        
-        # Create an item at player's location
-        item_entity = Mock()
-        item_entity.item = Mock()
-        item_entity.x = 5
-        item_entity.y = 5
-        state_manager.state.entities.append(item_entity)
-        
-        # Mock successful pickup
-        state_manager.state.player.inventory.add_item.return_value = [
-            {"message": "Picked up item", "item_added": item_entity}
-        ]
-        
+        reset_turn_controller()
+        pickup_service_module._pickup_service = None
+
+        state_manager = GameStateManager()
+
+        player = Entity(5, 5, '@', (255, 255, 255), 'Player',
+                        blocks=True, fighter=Fighter(hp=30, defense=2, power=4))
+        inventory = Inventory(capacity=26)
+        player.inventory = inventory
+        player.components.add(ComponentType.INVENTORY, inventory)
+
+        game_map = GameMap(width=10, height=10)
+        for x in range(10):
+            for y in range(10):
+                game_map.tiles[x][y].blocked = False
+                game_map.tiles[x][y].block_sight = False
+
+        message_log = MessageLog(x=0, width=40, height=5)
+
+        item_entity = Entity(5, 5, '!', (255, 255, 255), 'Potion',
+                             blocks=False, item=Item())
+
+        entities = [player, item_entity]
+
+        state = GameState(
+            player=player,
+            entities=entities,
+            game_map=game_map,
+            message_log=message_log,
+            current_state=GameStates.PLAYERS_TURN
+        )
+        state_manager.state = state
+
         processor = ActionProcessor(state_manager)
-        
-        # Execute pickup
+
+        # Execute pickup via keyboard handler
         processor._handle_pickup(None)
-        
-        # Verify turn ended
-        state_manager.set_game_state.assert_called_with(GameStates.ENEMY_TURN)
+
+        # After pickup, player turn should have ended
+        assert state_manager.state.current_state == GameStates.ENEMY_TURN
     
     def test_failed_pickup_does_not_end_turn(self):
         """Attempting to pick up with no item present should NOT end turn."""

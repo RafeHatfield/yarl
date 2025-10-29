@@ -4,6 +4,7 @@ source/
 *.pyc
 __pycache__/
 .direnv/
+.vscode/
 
 # Save files (user-specific game saves)
 savegame.dat*
@@ -16,6 +17,7 @@ errors.log
 monster_actions.log
 combat_debug.log
 debug.log
+my_test_results.log
 
 # Tools
 .pytest_cache/

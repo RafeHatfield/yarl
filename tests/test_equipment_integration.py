@@ -199,6 +199,10 @@ class TestEquipmentSpawning:
         mock_choice.return_value = "sword"
 
         game_map = GameMap(width=20, height=20, dungeon_level=4)
+        for x in range(game_map.width):
+            for y in range(game_map.height):
+                game_map.tiles[x][y].blocked = False
+                game_map.tiles[x][y].block_sight = False
         room = Rect(5, 5, 10, 10)
         entities = []
 
@@ -227,6 +231,10 @@ class TestEquipmentSpawning:
         mock_choice.return_value = "shield"
 
         game_map = GameMap(width=20, height=20, dungeon_level=8)
+        for x in range(game_map.width):
+            for y in range(game_map.height):
+                game_map.tiles[x][y].blocked = False
+                game_map.tiles[x][y].block_sight = False
         room = Rect(5, 5, 10, 10)
         entities = []
 

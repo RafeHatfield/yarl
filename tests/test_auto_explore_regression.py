@@ -20,8 +20,16 @@ from entity import Entity
 from components.fighter import Fighter
 from components.ai import BasicMonster
 from components.item import Item
-from map_objects.game_map import GameMap
-from map_objects.tile import Tile
+
+
+def make_basic_game_map(width=80, height=45, explored=False):
+    game_map = Mock()
+    game_map.width = width
+    game_map.height = height
+    game_map.is_explored = Mock(return_value=explored)
+    game_map.is_blocked = Mock(return_value=False)
+    game_map.secret_door_manager = None
+    return game_map
 
 
 class TestAutoExplorePathfinding:
@@ -219,7 +227,7 @@ class TestAutoExploreStopConditions:
     def test_known_items_do_not_stop_exploration(self):
         """Bug fix: Items visible when exploration started should not stop it."""
         # Create test environment
-        game_map = Mock()
+        game_map = make_basic_game_map()
         fov_map = Mock()
         
         # Create player
@@ -242,7 +250,7 @@ class TestAutoExploreStopConditions:
             auto_explore.start(game_map, [player, potion], fov_map)
             
             # Check if potion stops exploration
-            item = auto_explore._valuable_item_in_fov([player, potion], fov_map)
+            item = auto_explore._valuable_item_in_fov([player, potion], fov_map, game_map)
             
             # Should NOT stop for known item
             assert item is None, "Auto-explore stopped for item that was already visible"
@@ -250,7 +258,7 @@ class TestAutoExploreStopConditions:
     def test_new_items_do_stop_exploration(self):
         """New items discovered during exploration should stop it."""
         # Create test environment
-        game_map = Mock()
+        game_map = make_basic_game_map()
         fov_map = Mock()
         
         # Create player
@@ -273,7 +281,7 @@ class TestAutoExploreStopConditions:
         
         # Now potion comes into view
         with patch('fov_functions.map_is_in_fov', return_value=True):
-            item = auto_explore._valuable_item_in_fov([player, potion], fov_map)
+            item = auto_explore._valuable_item_in_fov([player, potion], fov_map, game_map)
             
             # Should stop for new item
             assert item == potion, "Auto-explore didn't stop for newly discovered item"
@@ -281,7 +289,7 @@ class TestAutoExploreStopConditions:
     def test_multiple_known_items_do_not_stop_exploration(self):
         """Multiple items visible at start should all be tracked."""
         # Create test environment
-        game_map = Mock()
+        game_map = make_basic_game_map()
         fov_map = Mock()
         
         # Create player
@@ -321,7 +329,7 @@ class TestAutoExploreStopConditions:
             assert len(auto_explore.known_items) == 3
             
             # Check none of them stop exploration
-            item = auto_explore._valuable_item_in_fov(entities, fov_map)
+            item = auto_explore._valuable_item_in_fov(entities, fov_map, game_map)
             assert item is None, "Auto-explore stopped for items that were already visible"
 
 
@@ -330,7 +338,7 @@ class TestAutoExploreIntegration:
     
     def test_start_and_stop(self):
         """Test basic start/stop functionality."""
-        game_map = Mock()
+        game_map = make_basic_game_map()
         fov_map = Mock()
         
         player = Entity(10, 10, '@', (255, 255, 255), 'Player', blocks=True)
@@ -355,7 +363,7 @@ class TestAutoExploreIntegration:
     
     def test_reset_known_items_on_new_exploration(self):
         """Starting new exploration should reset known items."""
-        game_map = Mock()
+        game_map = make_basic_game_map()
         fov_map = Mock()
         
         player = Entity(10, 10, '@', (255, 255, 255), 'Player', blocks=True)
