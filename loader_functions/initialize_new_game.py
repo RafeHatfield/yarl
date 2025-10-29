@@ -253,7 +253,14 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     
     # Descend through levels, capturing the entities list each time
     for i in range(target_level - 1):
-        entities = game_map.next_floor(player, message_log, constants)
+        maybe_new_entities = game_map.next_floor(player, message_log, constants)
+        if isinstance(maybe_new_entities, list):
+            entities = maybe_new_entities
+        elif maybe_new_entities is not None:
+            logger.debug(
+                "   Ignoring next_floor return value of type %s; keeping existing entities",
+                type(maybe_new_entities).__name__,
+            )
         logger.debug(f"   Descended to level {game_map.dungeon_level}")
     
     # Grant level-appropriate gear

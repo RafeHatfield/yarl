@@ -21,7 +21,13 @@ Example:
 """
 
 from typing import Optional, Callable, Dict
+
 from game_states import GameStates
+
+try:  # Backwards compatibility for legacy imports
+    from engine.game_state_manager import GameState as GameState  # type: ignore
+except Exception:  # pragma: no cover - fallback if engine module missing
+    GameState = None  # type: ignore
 
 
 # Legacy import support: GameState was moved to engine.game_state_manager

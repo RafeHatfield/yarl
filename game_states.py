@@ -26,6 +26,7 @@ class GameStates(Enum):
     THROW_TARGETING = 10   # Targeting throw location
     
     # Victory condition states
+    AMULET_OBTAINED = 11       # Backwards-compat alias for Ruby Heart pickup
     RUBY_HEART_OBTAINED = 11   # Player picked up Aurelyn's Ruby Heart
     CONFRONTATION = 12     # Facing Zhyraxion with choice to make
     VICTORY = 13           # Player achieved victory (any ending)
