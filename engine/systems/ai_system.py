@@ -278,17 +278,24 @@ class AISystem(System):
             # Get AI strategy for this entity
             ai_type = getattr(entity.ai, "ai_type", "basic")
             strategy = self.ai_strategies.get(ai_type)
+            
+            logger.debug(f"Processing AI turn for {entity.name}: ai_type={ai_type}, has_strategy={strategy is not None}")
+            print(f">>> AISystem: {entity.name} turn, ai_type={ai_type}, has_strategy={strategy is not None}")
 
             if strategy:
                 # Use custom strategy
+                print(f">>> AISystem: Using custom strategy for {entity.name}")
                 strategy(
                     entity, game_state.player, game_state.game_map, game_state.entities
                 )
             else:
                 # Use default AI behavior and process results
+                print(f">>> AISystem: Calling {entity.name}.ai.take_turn()")
                 ai_results = entity.ai.take_turn(
                     game_state.player, game_state.fov_map, game_state.game_map, game_state.entities
                 )
+                
+                print(f">>> AISystem: {entity.name} returned {len(ai_results)} results")
                 
                 # Process AI turn results (combat, death, etc.)
                 self._process_ai_results(ai_results, game_state)

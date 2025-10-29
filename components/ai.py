@@ -80,12 +80,14 @@ class BossAI:
     Attributes:
         owner (Entity): The entity that owns this AI component
         in_combat (bool): Tracks if boss has been attacked
+        ai_type (str): AI type identifier for strategy routing
     """
     
     def __init__(self):
         """Initialize a BossAI."""
         self.owner = None
         self.in_combat = False
+        self.ai_type = "boss"  # Required for AI system strategy routing
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of boss AI behavior.
