@@ -44,8 +44,7 @@ def setup_minimal_game():
     message_log = MessageLog(x=0, width=40, height=5)
     fov_map = initialize_fov(game_map)
     
-    from engine.game_state_manager import GameStateManager
-    from state_management.state_config import GameState
+    from engine.game_state_manager import GameStateManager, GameState
     state_manager = GameStateManager()
     game_state = GameState(
         player=player,

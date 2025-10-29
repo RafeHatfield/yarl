@@ -1,5 +1,8 @@
 .PHONY: clean test run quick-test help
 
+# Use whatever python is active (respects virtualenv)
+PYTHON := python
+
 help:
 	@echo "Phase 5 Development Commands:"
 	@echo ""
@@ -10,6 +13,7 @@ help:
 	@echo "  make clean-run   - Clear cache + start game"
 	@echo ""
 	@echo "IMPORTANT: Always run 'make clean' if game behaves unexpectedly!"
+	@echo "NOTE: Activate virtualenv first if using one: source ~/.virtualenvs/rlike/bin/activate"
 
 clean:
 	@echo "🧹 Clearing Python cache..."
@@ -19,16 +23,16 @@ clean:
 
 test:
 	@echo "🧪 Running Phase 5 critical tests..."
-	@python3 -m pytest tests/test_phase5_critical_paths.py -v --tb=short 2>/dev/null || \
-		echo "⚠️  pytest not available, skipping"
+	@$(PYTHON) -m pytest tests/test_phase5_critical_paths.py -v --tb=short || \
+		echo "⚠️  Tests failed or pytest not available"
 
 quick-test: clean
 	@echo "⚡ Running quick validation..."
-	@python3 test_phase5_quick.py
+	@$(PYTHON) test_phase5_quick.py
 
 run: clean
 	@echo "🎮 Starting game with fresh code..."
-	@python3 engine.py
+	@$(PYTHON) engine.py
 
 clean-run: clean run
 

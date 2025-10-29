@@ -84,8 +84,7 @@ except Exception as e:
 # Test 4: Create state manager and services
 print("Test 4: Creating state manager and services...")
 try:
-    from engine.game_state_manager import GameStateManager
-    from state_management.state_config import GameState
+    from engine.game_state_manager import GameStateManager, GameState
     from map_objects.game_map import GameMap
     from game_messages import MessageLog
     from fov_functions import initialize_fov
