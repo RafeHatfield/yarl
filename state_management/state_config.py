@@ -30,6 +30,11 @@ except Exception:  # pragma: no cover - fallback if engine module missing
     GameState = None  # type: ignore
 
 
+# Legacy import support: GameState was moved to engine.game_state_manager
+# but tests may still import it from here
+from engine.game_state_manager import GameState
+
+
 class StateConfig:
     """Configuration for a single game state.
     
