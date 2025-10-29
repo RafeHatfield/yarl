@@ -296,6 +296,7 @@ monsters:
         cold: 25               # Some cold resistance
     char: "Z"                  # Z for Zhyraxion
     color: [200, 50, 50]       # Dark crimson
+    name: "Zhyraxion, the Bound"  # Display name
     ai_type: "boss"            # Boss AI
     render_order: "actor"
     blocks: true
@@ -337,6 +338,7 @@ monsters:
         lightning: 50          # Resistant to lightning
     char: "D"                  # D for Dragon (capital)
     color: [220, 20, 20]       # Bright crimson
+    name: "Zhyraxion the Unbound"  # Display name
     ai_type: "boss"            # Boss AI
     render_order: "actor"
     blocks: true
@@ -376,6 +378,7 @@ monsters:
         cold: 25               # Some cold resistance
     char: "D"                  # D for Dragon
     color: [100, 20, 100]      # Dark purple (corrupted)
+    name: "Grief-Mad Zhyraxion"  # Display name
     ai_type: "boss"            # Boss AI
     render_order: "actor"
     blocks: true
