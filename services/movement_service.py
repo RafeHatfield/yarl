@@ -216,10 +216,10 @@ _movement_service = None
 
 def get_movement_service(state_manager=None):
     """Get the global movement service instance.
-    
+
     Args:
         state_manager: State manager (required on first call)
-        
+
     Returns:
         MovementService instance
     """
@@ -229,4 +229,10 @@ def get_movement_service(state_manager=None):
             raise ValueError("state_manager required to initialize MovementService")
         _movement_service = MovementService(state_manager)
     return _movement_service
+
+
+def reset_movement_service():
+    """Reset the global movement service instance (for testing)."""
+    global _movement_service
+    _movement_service = None
 

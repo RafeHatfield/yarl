@@ -9,6 +9,7 @@ from components.status_effects import InvisibilityEffect, StatusEffectManager
 from components.faction import Faction
 from item_functions import cast_invisibility
 from game_messages import Message
+from game_states import GameStates
 from config.entity_registry import load_entity_config
 from config.entity_factory import EntityFactory
 
@@ -296,14 +297,15 @@ class TestInvisibilityGameIntegration:
     
     def setup_method(self):
         """Set up test fixtures."""
-        self.player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True, 
+        self.player = Entity(0, 0, '@', (255, 255, 255), 'Player', blocks=True,
                            render_order=4, fighter=Fighter(hp=30, defense=2, power=5),
                            faction=Faction.PLAYER)
-        
+
         # Mock game state manager
         self.mock_state_manager = Mock()
         self.mock_state_manager.state.player = self.player
         self.mock_state_manager.state.message_log = Mock()
+        self.mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
     
     def test_invisibility_breaks_on_attack(self):
         """Test that invisibility breaks when the player attacks."""

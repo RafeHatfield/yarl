@@ -8,11 +8,16 @@ import pytest
 from unittest.mock import Mock
 from game_actions import ActionProcessor
 from game_states import GameStates
+from services.movement_service import reset_movement_service
 
 
 class TestMovementTurnEconomy:
     """Test that moving consumes a turn (CRITICAL)."""
-    
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        reset_movement_service()
+
     def test_normal_movement_ends_turn(self):
         """Moving to empty space should consume a turn.
         
@@ -68,6 +73,9 @@ class TestMovementTurnEconomy:
         player.x = 10
         player.y = 10
         player.has_status_effect = Mock(return_value=False)
+        player.status_effects = Mock()
+        player.status_effects.process_turn_start = Mock(return_value=[])
+        player.process_status_effects_turn_end = Mock(return_value=[])
         state_manager.state.player = player
         
         # Blocked destination

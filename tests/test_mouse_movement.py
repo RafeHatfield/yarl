@@ -17,6 +17,7 @@ from entity import Entity
 from components.fighter import Fighter
 from components.inventory import Inventory
 from game_messages import Message
+from game_states import GameStates
 from render_functions import RenderOrder
 
 
@@ -413,9 +414,12 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
+        from services.movement_service import reset_movement_service
+        reset_movement_service()  # Reset global service between tests
+
         # Create components first
         pathfinding = PlayerPathfinding()
-        
+
         # Create player with pathfinding
         self.player = Entity(
             x=5, y=5, char='@', color=(255, 255, 255), name='Player',
@@ -423,7 +427,7 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
             pathfinding=pathfinding
         )
         self.player.move = Mock()
-        
+
         # Create enemy
         enemy_fighter = Fighter(hp=20, defense=1, power=3)
         self.enemy = Entity(
@@ -431,152 +435,217 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
             blocks=True, render_order=RenderOrder.ACTOR,
             fighter=enemy_fighter
         )
-        
+
         # Create game map
         self.game_map = Mock()
         self.game_map.width = 20
         self.game_map.height = 20
         self.game_map.is_blocked = Mock(return_value=False)
         self.game_map.hazard_manager = None  # No hazards for these tests
-        
+
         # Create FOV map
         self.fov_map = Mock()
-        
+
         self.entities = [self.player, self.enemy]
     
     def test_no_active_pathfinding(self):
         """Test processing when no pathfinding is active."""
         mock_state_manager = Mock()
+        mock_state_manager.state.player = self.player
+        mock_state_manager.state.game_map = self.game_map
+        mock_state_manager.state.entities = self.entities
+        mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
         result = process_pathfinding_movement(
             self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
         
         self.assertEqual(result["results"], [])
     
+    @patch('services.movement_service.get_movement_service')
     @patch('mouse_movement._check_for_close_enemies')
     @patch('mouse_movement._check_for_enemy_in_weapon_range')
     @patch('mouse_movement.get_blocking_entities_at_location')
-    def test_enemy_spotted_interruption(self, mock_get_blocking, mock_check_range, mock_check_close):
+    def test_enemy_spotted_interruption(self, mock_get_blocking, mock_check_range, mock_check_close, mock_get_service):
         """Test movement interruption when close enemy is detected AFTER moving.
-        
+
         Updated for ranged weapons fix: Only stop if enemy is CLOSER than weapon range.
         """
+        from services.movement_service import MovementResult
+
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5), (7, 5)]
         self.player.pathfinding.is_moving = True
         self.player.pathfinding.path_index = 0
-        
+
         # Mock no blocking entities, no enemies in weapon range, but close enemy detected
         mock_get_blocking.return_value = None
         mock_check_range.return_value = None  # Not in weapon range yet
         mock_check_close.return_value = True  # But dangerously close (within threat range)
-        
+
+        # Mock MovementService to return successful movement
+        mock_service = Mock()
+        result = MovementResult(success=True, fov_recompute=True, new_position=(6, 5))
+        mock_service.execute_movement.return_value = result
+        # Make the mock service actually move the player
+        def mock_execute_movement(dx, dy, source=None):
+            self.player.move(dx, dy)
+            return result
+        mock_service.execute_movement.side_effect = mock_execute_movement
+        mock_get_service.return_value = mock_service
+
         mock_state_manager = Mock()
+        mock_state_manager.state.player = self.player
+        mock_state_manager.state.game_map = self.game_map
+        mock_state_manager.state.entities = self.entities
+        mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
         result = process_pathfinding_movement(
             self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
-        
+
         results = result["results"]
         messages = [r for r in results if "message" in r]
         fov_signals = [r for r in results if "fov_recompute" in r]
-        
+
         # Should have moved first, then detected enemy
         self.assertEqual(len(messages), 1)
         self.assertIn("enemy spotted", messages[0]["message"].text.lower())
         self.assertEqual(len(fov_signals), 1)  # FOV recompute should happen
-        
+
         # Verify player moved before detection
         self.player.move.assert_called_once_with(1, 0)  # (6,5) - (5,5) = (1,0)
-        
+
         # Movement should be interrupted
         self.assertFalse(self.player.pathfinding.is_moving)
         self.assertTrue(self.player.pathfinding.movement_interrupted)
     
+    @patch('services.movement_service.get_movement_service')
     @patch('mouse_movement._check_for_close_enemies')
     @patch('mouse_movement._check_for_enemy_in_weapon_range')
     @patch('mouse_movement.get_blocking_entities_at_location')
-    def test_successful_movement_step(self, mock_get_blocking, mock_check_range, mock_check_close):
+    def test_successful_movement_step(self, mock_get_blocking, mock_check_range, mock_check_close, mock_get_service):
         """Test successful movement step."""
+        from services.movement_service import MovementResult
+
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5), (7, 5)]
         self.player.pathfinding.is_moving = True
         self.player.pathfinding.path_index = 0
-        
+
         # Mock no enemies in range, no close enemies, and no blocking entities
         mock_check_range.return_value = None
         mock_check_close.return_value = False
         mock_get_blocking.return_value = None
-        
+
+        # Mock MovementService to return successful movement
+        mock_service = Mock()
+        result = MovementResult(success=True, fov_recompute=True, new_position=(6, 5))
+        mock_service.execute_movement.return_value = result
+        # Make the mock service actually move the player
+        def mock_execute_movement(dx, dy, source=None):
+            self.player.move(dx, dy)
+            return result
+        mock_service.execute_movement.side_effect = mock_execute_movement
+        mock_get_service.return_value = mock_service
+
         mock_state_manager = Mock()
+        mock_state_manager.state.player = self.player
+        mock_state_manager.state.game_map = self.game_map
+        mock_state_manager.state.entities = self.entities
+        mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
         result = process_pathfinding_movement(
             self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
-        
+
         results = result["results"]
-        
+
         # Should have FOV recompute and continue pathfinding signals
         fov_signals = [r for r in results if "fov_recompute" in r]
         continue_signals = [r for r in results if "continue_pathfinding" in r]
-        
+
         self.assertEqual(len(fov_signals), 1)
         self.assertEqual(len(continue_signals), 1)
         self.assertTrue(fov_signals[0]["fov_recompute"])
         self.assertTrue(continue_signals[0]["continue_pathfinding"])
-        
+
         # Verify player moved
         self.player.move.assert_called_once_with(1, 0)  # (6,5) - (5,5) = (1,0)
     
+    @patch('services.movement_service.get_movement_service')
     @patch('mouse_movement._check_for_close_enemies')
     @patch('mouse_movement._check_for_enemy_in_weapon_range')
-    @patch('mouse_movement.get_blocking_entities_at_location')
-    def test_path_blocked_by_entity(self, mock_get_blocking, mock_check_range, mock_check_close):
+    def test_path_blocked_by_entity(self, mock_check_range, mock_check_close, mock_get_service):
         """Test movement interruption when path is blocked by entity."""
+        from services.movement_service import MovementResult
+
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5)]
         self.player.pathfinding.is_moving = True
         self.player.pathfinding.path_index = 0
-        
-        # Mock no enemies but blocking entity
+
+        # Mock no enemies
         mock_check_range.return_value = None
         mock_check_close.return_value = False
+
+        # Mock MovementService to return blocked by entity
+        mock_service = Mock()
         blocking_entity = Mock()
         blocking_entity.name = "Wall"
-        mock_get_blocking.return_value = blocking_entity
-        
+        result = MovementResult(blocked_by_entity=blocking_entity)
+        # Don't actually move the player for blocked movement
+        mock_service.execute_movement.return_value = result
+        mock_get_service.return_value = mock_service
+
         mock_state_manager = Mock()
+        mock_state_manager.state.player = self.player
+        mock_state_manager.state.game_map = self.game_map
+        mock_state_manager.state.entities = self.entities
+        mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
         result = process_pathfinding_movement(
             self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
-        
+
         results = result["results"]
         messages = [r for r in results if "message" in r]
-        
+
         self.assertEqual(len(messages), 1)
         self.assertIn("blocked by wall", messages[0]["message"].text.lower())
         self.assertFalse(self.player.pathfinding.is_moving)
     
+    @patch('services.movement_service.get_movement_service')
     @patch('mouse_movement._check_for_close_enemies')
     @patch('mouse_movement._check_for_enemy_in_weapon_range')
-    def test_path_blocked_by_terrain(self, mock_check_range, mock_check_close):
+    def test_path_blocked_by_terrain(self, mock_check_range, mock_check_close, mock_get_service):
         """Test movement interruption when path is blocked by terrain."""
+        from services.movement_service import MovementResult
+
         # Set up active pathfinding
         self.player.pathfinding.current_path = [(6, 5)]
         self.player.pathfinding.is_moving = True
         self.player.pathfinding.path_index = 0
-        
-        # Mock no enemies but blocked terrain
+
+        # Mock no enemies
         mock_check_range.return_value = None
         mock_check_close.return_value = False
-        self.game_map.is_blocked.return_value = True
-        
+
+        # Mock MovementService to return blocked by wall
+        mock_service = Mock()
+        result = MovementResult(blocked_by_wall=True)
+        # Don't actually move the player for blocked movement
+        mock_service.execute_movement.return_value = result
+        mock_get_service.return_value = mock_service
+
         mock_state_manager = Mock()
+        mock_state_manager.state.player = self.player
+        mock_state_manager.state.game_map = self.game_map
+        mock_state_manager.state.entities = self.entities
+        mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
         result = process_pathfinding_movement(
             self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
-        
+
         results = result["results"]
         messages = [r for r in results if "message" in r]
-        
+
         self.assertEqual(len(messages), 1)
         self.assertIn("path blocked", messages[0]["message"].text.lower())
         self.assertFalse(self.player.pathfinding.is_moving)
@@ -597,6 +666,10 @@ class TestPathfindingMovementProcessing(unittest.TestCase):
         mock_get_blocking.return_value = None
         
         mock_state_manager = Mock()
+        mock_state_manager.state.player = self.player
+        mock_state_manager.state.game_map = self.game_map
+        mock_state_manager.state.entities = self.entities
+        mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
         result = process_pathfinding_movement(
             self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
         )
