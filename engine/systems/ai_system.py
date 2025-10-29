@@ -232,11 +232,37 @@ class AISystem(System):
         Args:
             state_manager: Game state manager
         """
-        # Import here to avoid circular imports
-        from game_actions import ActionProcessor
-        
-        # Create action processor and process pathfinding
-        action_processor = ActionProcessor(state_manager)
+        # Try to reuse the shared action processor configured by the engine
+        action_processor = state_manager.get_extra_data("action_processor")
+
+        if action_processor is None:
+            logger.warning("AISystem: Missing shared ActionProcessor; creating fallback instance")
+
+            # Import here to avoid circular imports
+            from game_actions import ActionProcessor
+
+            action_processor = ActionProcessor(state_manager)
+
+            # If the engine has a turn manager, make sure the processor uses it
+            turn_manager = getattr(self.engine, "turn_manager", None) if self.engine else None
+            if turn_manager:
+                action_processor.turn_manager = turn_manager
+
+                from systems.turn_controller import (
+                    get_turn_controller,
+                    initialize_turn_controller,
+                )
+
+                existing_controller = get_turn_controller()
+                if existing_controller and existing_controller.turn_manager is turn_manager:
+                    action_processor.turn_controller = existing_controller
+                else:
+                    action_processor.turn_controller = initialize_turn_controller(
+                        state_manager, turn_manager
+                    )
+
+            state_manager.set_extra_data("action_processor", action_processor)
+
         action_processor.process_pathfinding_turn()
 
     def _get_ai_entities(self, entities: List[Any], player: Any) -> List[Any]:

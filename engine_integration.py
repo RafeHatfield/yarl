@@ -215,7 +215,7 @@ def play_game_with_engine(
     # Create action processor for clean action handling
     action_processor = ActionProcessor(engine.state_manager)
     action_processor.turn_manager = engine.turn_manager  # Phase 3: Wire up TurnManager
-    
+
     # Reinitialize TurnController with turn_manager now that it's set
     from systems.turn_controller import initialize_turn_controller
     action_processor.turn_controller = initialize_turn_controller(
@@ -223,6 +223,9 @@ def play_game_with_engine(
         engine.turn_manager
     )
     logger.info(f"ActionProcessor turn_controller reinitialized with TurnManager: {engine.turn_manager}")
+
+    # Persist the action processor for systems that need to reuse it between phases
+    engine.state_manager.set_extra_data("action_processor", action_processor)
 
     # Main game loop
     while not libtcod.console_is_window_closed():
