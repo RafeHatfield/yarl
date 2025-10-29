@@ -155,6 +155,7 @@ class RenderSystem(System):
             use_optimization=False,
             sidebar_console=self.sidebar_console,
             camera=camera,  # Pass camera to render_all (Phase 2)
+            death_screen_quote=game_state.get("death_screen_quote"),
         )
 
         self.fov_recompute = False

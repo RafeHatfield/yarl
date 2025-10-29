@@ -134,6 +134,7 @@ def render_all(
     use_optimization=True,
     sidebar_console=None,
     camera=None,
+    death_screen_quote=None,
 ):
     """Render the entire game screen including map, entities, and UI.
 
@@ -165,6 +166,7 @@ def render_all(
         use_optimization (bool): Whether to use optimized tile rendering
         sidebar_console: Left sidebar console (optional, for new layout)
         camera: Camera for viewport scrolling (optional, defaults to no scrolling)
+        death_screen_quote: Pre-generated quote to show on the death screen
     """
     # Render map tiles with optional optimization
     if use_optimization:
@@ -293,14 +295,8 @@ def render_all(
         character_screen(player, 50, 40, screen_width, screen_height)
     
     elif game_state == GameStates.PLAYER_DEAD:
-        # Render death screen with statistics
-        # Get the pre-generated Entity quote from game state (prevents flickering)
-        from engine_integration import get_current_state_manager
-        state_manager = get_current_state_manager()
-        entity_quote = getattr(state_manager.state, 'death_screen_quote', None) if state_manager else None
-        
-        from death_screen import render_death_screen
-        render_death_screen(con, player, screen_width, screen_height, entity_quote)
+        # Render death screen with statistics using the provided quote
+        render_death_screen(con, player, screen_width, screen_height, death_screen_quote)
     
     # Render tooltips (if hovering over items or monsters)
     # This should be rendered LAST so it appears on top of everything

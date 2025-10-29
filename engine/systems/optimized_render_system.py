@@ -354,6 +354,7 @@ class OptimizedRenderSystem(RenderSystem):
             use_optimization=False,
             sidebar_console=self.sidebar_console,
             camera=camera,
+            death_screen_quote=game_state.get("death_screen_quote"),
         )
 
         self.fov_recompute = False
@@ -411,6 +412,7 @@ class OptimizedRenderSystem(RenderSystem):
             use_optimization=False,
             sidebar_console=self.sidebar_console,
             camera=camera,
+            death_screen_quote=game_state.get("death_screen_quote"),
         )
 
         # Track skipped entities

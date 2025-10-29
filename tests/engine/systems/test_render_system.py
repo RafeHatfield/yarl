@@ -235,6 +235,7 @@ class TestRenderSystemUpdate:
             use_optimization=False,
             sidebar_console=None,  # Added in v3.5.0 split-screen update
             camera=None,  # Added in Phase 2 (camera following)
+            death_screen_quote=None,
         )
 
         # Verify screen presentation
