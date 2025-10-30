@@ -41,6 +41,8 @@ class TestPortalEntryIntegration:
         """Create a minimal game state for testing portal entry."""
         reset_turn_controller()
         pickup_service_module._pickup_service = None
+        from services.movement_service import reset_movement_service
+        reset_movement_service()
 
         # Create player with victory component
         player = Entity(

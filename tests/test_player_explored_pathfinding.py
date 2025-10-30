@@ -14,6 +14,7 @@ from components.ground_hazard import GroundHazard, GroundHazardManager, HazardTy
 from map_objects.game_map import GameMap
 from mouse_movement import handle_mouse_click, process_pathfinding_movement
 from game_messages import Message
+from game_states import GameStates
 
 
 class TestPlayerExploredPathfinding(unittest.TestCase):
@@ -146,6 +147,9 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
+        from services.movement_service import reset_movement_service
+        reset_movement_service()  # Reset global service between tests
+
         self.game_map = GameMap(width=30, height=30, dungeon_level=1)
         
         # Mark all tiles as explored and walkable
@@ -192,6 +196,10 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
             if not self.player.pathfinding.is_path_active():
                 break
             mock_state_manager = Mock()
+            mock_state_manager.state.player = self.player
+            mock_state_manager.state.game_map = self.game_map
+            mock_state_manager.state.entities = self.entities
+            mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
             result = process_pathfinding_movement(
                 self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
             )
@@ -235,6 +243,10 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
             if not self.player.pathfinding.is_path_active():
                 break
             mock_state_manager = Mock()
+            mock_state_manager.state.player = self.player
+            mock_state_manager.state.game_map = self.game_map
+            mock_state_manager.state.entities = self.entities
+            mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
             process_pathfinding_movement(
                 self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
             )
@@ -259,6 +271,10 @@ class TestPlayerHazardInterrupt(unittest.TestCase):
             if not self.player.pathfinding.is_path_active():
                 break
             mock_state_manager = Mock()
+            mock_state_manager.state.player = self.player
+            mock_state_manager.state.game_map = self.game_map
+            mock_state_manager.state.entities = self.entities
+            mock_state_manager.state.current_state = GameStates.PLAYERS_TURN
             process_pathfinding_movement(
                 self.player, self.entities, self.game_map, self.fov_map, mock_state_manager
             )

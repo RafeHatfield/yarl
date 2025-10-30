@@ -132,6 +132,8 @@ class TestMonsterVariableDamage(unittest.TestCase):
         self.player.equipment.main_hand = Mock()
         self.player.equipment.main_hand.equippable = Mock()
         self.player.equipment.main_hand.equippable.roll_damage.return_value = 2
+        self.player.equipment.main_hand.equippable.damage_min = 1
+        self.player.equipment.main_hand.equippable.damage_max = 4
         self.player.equipment.main_hand.item = None  # Prevent reach check from returning Mock
         
         # Player fighter should not have monster damage
@@ -357,6 +359,8 @@ class TestBackwardCompatibility(unittest.TestCase):
         player.equipment.main_hand = Mock()
         player.equipment.main_hand.equippable = Mock()
         player.equipment.main_hand.equippable.roll_damage.return_value = 2
+        player.equipment.main_hand.equippable.damage_min = 1
+        player.equipment.main_hand.equippable.damage_max = 4
         player.equipment.defense_bonus = 0
         player.equipment.off_hand = None
         player.equipment.left_ring = None
