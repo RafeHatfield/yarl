@@ -1,3 +1,4 @@
+import logging
 from random import randint
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 
@@ -13,6 +14,8 @@ from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
     from entity import Entity
+
+logger = logging.getLogger(__name__)
 
 
 def find_taunted_target(entities: list) -> Optional['Entity']:
@@ -91,26 +94,26 @@ class BossAI:
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of boss AI behavior.
-        
+
         Bosses use standard monster AI but apply damage multipliers
         from their Boss component when enraged.
-        
+
         Args:
             target (Entity): The target entity (usually the player)
             fov_map: Field of view map for visibility checks
             game_map (GameMap): The game map for pathfinding
             entities (list): List of all entities for collision detection
-            
+
         Returns:
             list: List of result dictionaries with AI actions and effects
         """
         from components.component_registry import ComponentType
-        
+
         monster = self.owner
         results = []
-        
+
         logger.debug(f"BossAI: {monster.name} taking turn, target at ({target.x}, {target.y})")
-        print(f">>> BossAI: {monster.name} taking turn")
+        print(f">>> BossAI: {monster.name} taking turn at ({monster.x}, {monster.y}), target at ({target.x}, {target.y})")
         
         # Check for paralysis - completely prevents all actions
         if (hasattr(monster, 'has_status_effect') and 
@@ -139,39 +142,50 @@ class BossAI:
         
         # Check if monster can see the target (use same FOV check as BasicMonster)
         if map_is_in_fov(fov_map, target.x, target.y):
-            
-            # Calculate distance to target
-            distance = ((monster.x - target.x) ** 2 + (monster.y - target.y) ** 2) ** 0.5
-            
-            if distance <= 1:
+            print(f">>> BossAI: {monster.name} can see target")
+
+            # Calculate distance to target using Chebyshev distance (treats diagonals as adjacent)
+            distance = monster.chebyshev_distance_to(target)
+            weapon_reach = get_weapon_reach(monster)
+            print(f">>> BossAI: distance={distance}, weapon_reach={weapon_reach}")
+
+            if distance <= weapon_reach:
                 # Adjacent - attack with d20 combat system!
                 print(f">>> BossAI: {monster.name} attacking {target.name}")
                 logger.info(f"BossAI: {monster.name} attacking {target.name}")
-                
+
                 attack_results = monster.fighter.attack_d20(target)
-                
+
                 # Apply boss damage multiplier if enraged
                 if boss and boss.is_enraged:
                     multiplier = boss.get_damage_multiplier()
                     logger.debug(f"Boss {monster.name} enraged: {multiplier}x damage")
-                
+
                 results.extend(attack_results)
             else:
                 # Move towards target
+                print(f">>> BossAI: {monster.name} moving towards target")
                 path = self._get_path_to(target, game_map, entities)
                 if path:
                     next_x, next_y = path[0]
-                    
+
                     # Check if destination is blocked by another entity
                     blocking_entity = None
                     for entity in entities:
                         if entity.x == next_x and entity.y == next_y and entity.blocks:
                             blocking_entity = entity
                             break
-                    
+
                     if not blocking_entity:
                         monster.x = next_x
                         monster.y = next_y
+                        print(f">>> BossAI: {monster.name} moved to ({next_x}, {next_y})")
+                    else:
+                        print(f">>> BossAI: {monster.name} blocked from moving to ({next_x}, {next_y})")
+                else:
+                    print(f">>> BossAI: {monster.name} no path found to target")
+        else:
+            print(f">>> BossAI: {monster.name} cannot see target")
         
         # Process status effects at turn end (decrement durations, remove expired effects)
         status_effects = monster.get_component_optional(ComponentType.STATUS_EFFECTS)

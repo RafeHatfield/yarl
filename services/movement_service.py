@@ -21,11 +21,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MovementResult:
     """Result of a movement attempt.
-    
+
     Attributes:
         success: Whether movement succeeded
         blocked_by_wall: Movement blocked by wall/tile
         blocked_by_entity: Movement blocked by entity (combat target)
+        blocked_by_status: Movement blocked by status effect (immobilized, etc.)
         portal_entry: Player stepped on portal (triggers confrontation)
         messages: List of message dictionaries to display
         fov_recompute: Whether FOV needs recomputation
@@ -35,6 +36,7 @@ class MovementResult:
     success: bool = False
     blocked_by_wall: bool = False
     blocked_by_entity: Optional['Entity'] = None  # For combat
+    blocked_by_status: bool = False  # For immobilized, etc.
     portal_entry: bool = False
     messages: List[Dict[str, Any]] = None
     fov_recompute: bool = False
@@ -95,7 +97,17 @@ class MovementService:
         
         logger.debug(f"Movement attempt: ({player.x}, {player.y}) -> ({dest_x}, {dest_y}) via {source}")
         print(f">>> MovementService: ({player.x}, {player.y}) -> ({dest_x}, {dest_y}) via {source}, state={current_state}")
-        
+
+        # Check for immobilized status effect
+        from components.component_registry import ComponentType
+        if player.components.has(ComponentType.STATUS_EFFECTS):
+            status_effects = player.status_effects
+            if status_effects and status_effects.has_effect("immobilized"):
+                result.blocked_by_status = True
+                result.messages.append(MB.warning("You are stuck in place and cannot move!"))
+                logger.debug("Movement blocked by immobilized status effect")
+                return result
+
         # Check for wall/blocked tile
         if game_map.is_blocked(dest_x, dest_y):
             result.blocked_by_wall = True
@@ -135,26 +147,44 @@ class MovementService:
         # POST-MOVEMENT CHECKS (Phase 5: Portal Entry, Secret Doors, etc.)
         # ===================================================================
         
-        # Check for portal entry (Phase 5)
-        if current_state == GameStates.RUBY_HEART_OBTAINED:
-            print(f">>> MovementService: Checking portal entry (player at {result.new_position})")
-            logger.info(f"=== MOVEMENT_SERVICE: Checking portal entry, player at {result.new_position}")
-            
-            portal_entity = self._check_portal_entry(player, entities)
-            if portal_entity:
-                print(f">>> MovementService: PORTAL ENTRY DETECTED at {result.new_position}!")
-                logger.info(f"=== MOVEMENT_SERVICE: PORTAL ENTRY DETECTED!")
-                
-                result.portal_entry = True
-                result.messages.append({"message": MB.item_effect("You step through the portal...")})
-                result.messages.append({"message": MB.warning("Reality twists around you!")})
-                
-                # Mark confrontation started on player
-                if hasattr(player, 'victory') and player.victory:
+        # Check for portal entry (Phase 5) - always check when moving, regardless of state
+        logger.debug(f"MovementService: Checking portal entry at {result.new_position}")
+
+        portal_entity = self._check_portal_entry(player, entities)
+        if portal_entity:
+            print(f">>> MovementService: PORTAL ENTRY DETECTED at {result.new_position}!")
+            logger.info(f"=== MOVEMENT_SERVICE: PORTAL ENTRY DETECTED!")
+
+            # Only trigger confrontation if player has obtained Ruby Heart
+            player_has_ruby_heart = (hasattr(player, 'victory') and
+                                   player.victory and
+                                   player.victory.has_ruby_heart)
+
+            if player_has_ruby_heart:
+                # Check if confrontation has already started (prevent multiple boss spawns)
+                confrontation_already_started = (hasattr(player, 'victory') and
+                                               player.victory and
+                                               player.victory.confrontation_started)
+
+                if confrontation_already_started:
+                    # Player has already entered the portal - just move them
+                    logger.debug("Portal entry: confrontation already started, allowing movement")
+                    result.messages.append({"message": MB.info("You step through the portal once more...")})
+                else:
+                    # First time entering portal - trigger confrontation
+                    result.portal_entry = True
+                    result.messages.append({"message": MB.item_effect("You step through the portal...")})
+                    result.messages.append({"message": MB.warning("Reality twists around you!")})
+
+                    # Mark confrontation started on player
                     player.victory.start_confrontation()
                     logger.debug("Victory component: confrontation started")
             else:
-                logger.debug("Portal entry check: no portal at player position")
+                # Portal exists but doesn't trigger confrontation yet
+                logger.debug("Portal found but player hasn't obtained Ruby Heart")
+                result.messages.append({"message": MB.info("The portal hums with otherworldly energy, but nothing happens...")})
+        else:
+            logger.debug("Portal entry check: no portal at player position")
         
         # Check for passive secret door reveals
         self._check_secret_reveals(player, game_map)

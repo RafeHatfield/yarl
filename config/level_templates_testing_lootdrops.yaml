@@ -165,7 +165,7 @@ level_overrides:
           count: 1  # Two-handed option
         - type: "shield"
           count: 2
-        - type: "plate_armor"
+        - type: "plate_mail"
           count: 1  # Best armor
         - type: "chain_mail"
           count: 1
@@ -434,7 +434,7 @@ level_overrides:
           count: 2  # +1 AC
         - type: "chain_mail"
           count: 2  # +3 AC
-        - type: "plate_armor"
+        - type: "plate_mail"
           count: 2  # +5 AC
         
         # SHIELDS
@@ -555,7 +555,7 @@ level_overrides:
           count: 1
         - type: "longbow"
           count: 1
-        - type: "plate_armor"
+        - type: "plate_mail"
           count: 1
         - type: "shield"
           count: 1

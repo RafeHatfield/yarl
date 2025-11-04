@@ -120,50 +120,140 @@ def cast_confuse(*args, **kwargs):
 
 def enhance_weapon(*args, **kwargs):
     """Enhance the equipped weapon's damage range.
-    
-    This function now delegates to the spell registry system.
-    
+
+    Automatically targets the equipped weapon, or fails if no weapon equipped.
+
     Args:
         *args: First argument should be the entity using the scroll
         **kwargs: Should contain 'min_bonus' and 'max_bonus' for damage enhancement
-        
+
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    # Delegate to new spell system
+    from components.component_registry import ComponentType
+    from message_builder import MessageBuilder as MB
+    import random
+
     caster = args[0]
     min_bonus = kwargs.get("min_bonus", 1)
     max_bonus = kwargs.get("max_bonus", 2)
-    
-    return cast_spell_by_id(
-        "enhance_weapon",
-        caster,
-        min_bonus=min_bonus,
-        max_bonus=max_bonus
-    )
+
+    results = []
+
+    # Check for equipped weapon
+    equipment = caster.get_component_optional(ComponentType.EQUIPMENT)
+    if not equipment:
+        equipment = getattr(caster, 'equipment', None)
+
+    if (equipment and equipment.main_hand and
+        (equipment.main_hand.components.has(ComponentType.EQUIPPABLE) or
+         hasattr(equipment.main_hand, 'equippable'))):
+        weapon = equipment.main_hand
+        old_min = weapon.equippable.damage_min
+        old_max = weapon.equippable.damage_max
+
+        if old_min > 0 and old_max > 0:
+            # Apply random bonus within range
+            bonus = random.randint(min_bonus, max_bonus)
+            weapon.equippable.damage_min += bonus
+            weapon.equippable.damage_max += bonus
+
+            results.append({
+                "consumed": True,
+                "message": MB.item_effect(
+                    f"Your {weapon.name} glows briefly! Damage enhanced from "
+                    f"({old_min}-{old_max}) to ({weapon.equippable.damage_min}-{weapon.equippable.damage_max})."
+                )
+            })
+        else:
+            results.append({
+                "consumed": False,
+                "message": MB.warning(
+                    f"The {weapon.name} cannot be enhanced further."
+                )
+            })
+    else:
+        results.append({
+            "consumed": False,
+            "message": MB.warning(
+                "You must have a weapon equipped to use this scroll."
+            )
+        })
+
+    return results
 
 
 def enhance_armor(*args, **kwargs):
     """Enhance a random equipped armor piece's AC bonus.
-    
-    This function now delegates to the spell registry system.
-    
+
+    Automatically targets a random equipped armor piece, or fails if no armor equipped.
+
     Args:
         *args: First argument should be the entity using the scroll
         **kwargs: Should contain 'bonus' key for AC enhancement (default +1)
-        
+
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    entity = args[0]
+    from components.component_registry import ComponentType
+    from message_builder import MessageBuilder as MB
+    import random
+
+    caster = args[0]
     bonus = kwargs.get("bonus", 1)  # Default +1 AC
-    
-    # Delegate to new spell system
-    return cast_spell_by_id(
-        "enhance_armor",
-        entity,
-        bonus=bonus
-    )
+
+    results = []
+
+    # Check for equipment
+    equipment = caster.get_component_optional(ComponentType.EQUIPMENT)
+    if not equipment:
+        equipment = getattr(caster, 'equipment', None)
+
+    if not equipment:
+        results.append({
+            "consumed": False,
+            "message": MB.warning("You have no equipment to enhance!")
+        })
+        return results
+
+    # Find equipped armor pieces
+    armor_pieces = []
+    for slot_name in ['head', 'chest', 'off_hand']:
+        armor = getattr(equipment, slot_name, None)
+        if armor and (armor.components.has(ComponentType.EQUIPPABLE) or hasattr(armor, 'equippable')):
+            # Check if it's armor (not a weapon) - has armor_class_bonus > 0
+            equippable = None
+            if hasattr(armor, 'get_component_optional'):
+                equippable = armor.get_component_optional(ComponentType.EQUIPPABLE)
+            if equippable is None and hasattr(armor, 'equippable'):
+                equippable = armor.equippable
+
+            if equippable and hasattr(equippable, 'armor_class_bonus') and equippable.armor_class_bonus > 0:
+                armor_pieces.append((slot_name, armor))
+
+    if not armor_pieces:
+        results.append({
+            "consumed": False,
+            "message": MB.warning("You have no armor equipped to enhance!")
+        })
+        return results
+
+    # Randomly select an armor piece
+    slot_name, armor = random.choice(armor_pieces)
+    old_bonus = armor.equippable.armor_class_bonus
+
+    # Apply enhancement
+    armor.equippable.armor_class_bonus += bonus
+
+    results.append({
+        "consumed": True,
+        "message": MB.item_effect(
+            f"Your {armor.name} glows briefly! AC bonus enhanced from "
+            f"+{old_bonus} to +{armor.equippable.armor_class_bonus}."
+        )
+    })
+
+    return results
 
 
 def cast_invisibility(*args, **kwargs):
@@ -1190,34 +1280,37 @@ def unlock_crimson_ritual(*args, **kwargs):
     
     results = []
     
-    # Get victory component (only player should have this)
-    # Note: victory is a direct attribute, not in ComponentRegistry
-    if not hasattr(entity, 'victory') or not entity.victory:
+    # The codex can always be read, but knowledge is stored for when victory component exists
+    results.append({
+        "message": MB.item_effect(
+            "You read the ancient journal. The ritual is clear: "
+            "extract a dragon's heart to bind them, or return a heart to free them. "
+            "If Zhyraxion had two hearts... one could be given back."
+        )
+    })
+
+    # Try to unlock knowledge if victory component exists
+    knowledge_unlocked = False
+    if hasattr(entity, 'victory') and entity.victory:
+        knowledge_unlocked = entity.victory.unlock_knowledge('crimson_ritual_knowledge')
+
+    if knowledge_unlocked:
         results.append({
-            "consumed": False,
-            "message": MB.warning(f"{entity.name} cannot comprehend the ritual!")
-        })
-        return results
-    
-    # Unlock the crimson ritual knowledge
-    if entity.victory.unlock_knowledge('crimson_ritual'):
-        results.append({
-            "message": MB.quest(
-                "You read the ancient journal. The ritual is clear: "
-                "extract a dragon's heart to bind them, or return a heart to free them. "
-                "If Zhyraxion had two hearts... one could be given back."
-            )
-        })
-        results.append({
-            "message": MB.discovery(
+            "message": MB.success(
                 "New knowledge unlocked: The Crimson Ritual! "
                 "A new choice will be available at the final confrontation."
             )
         })
     else:
-        results.append({
-            "message": MB.info("You already understand the Crimson Ritual.")
-        })
+        # Either already unlocked or no victory component yet
+        if hasattr(entity, 'victory') and entity.victory and entity.victory.has_knowledge('crimson_ritual_knowledge'):
+            results.append({
+                "message": MB.info("You already understand the Crimson Ritual.")
+            })
+        else:
+            results.append({
+                "message": MB.info("The knowledge of the Crimson Ritual remains locked until you face the Entity.")
+            })
     
     # This item is not consumed - it stays in inventory as a quest item
     results.append({"consumed": False})
