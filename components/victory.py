@@ -79,29 +79,33 @@ class Victory:
         """
         self.ending_achieved = ending_type
     
-    def unlock_knowledge(self, knowledge_id: str) -> bool:
+    def unlock_knowledge(self, knowledge_id) -> bool:
         """Unlock a piece of knowledge from Guide dialogue or items.
 
         Args:
-            knowledge_id: ID of the knowledge (e.g., "entity_true_name_zhyraxion", "crimson_ritual_knowledge")
+            knowledge_id: ID or list of IDs of knowledge (e.g., "entity_true_name_zhyraxion", "crimson_ritual_knowledge")
 
         Returns:
-            bool: True if knowledge was newly unlocked, False if already known
+            bool: True if any knowledge was newly unlocked, False if all were already known
         """
-        if knowledge_id in self.knowledge_unlocked:
-            return False  # Already unlocked
+        # Handle both single knowledge ID and list of IDs
+        knowledge_ids = [knowledge_id] if isinstance(knowledge_id, str) else knowledge_id
 
-        self.knowledge_unlocked.add(knowledge_id)
+        any_newly_unlocked = False
+        for kid in knowledge_ids:
+            if kid not in self.knowledge_unlocked:
+                self.knowledge_unlocked.add(kid)
+                any_newly_unlocked = True
 
-        # Special handling for true name
-        if knowledge_id == "entity_true_name_zhyraxion":
-            self.knows_entity_true_name = True
+                # Special handling for true name
+                if kid == "entity_true_name_zhyraxion":
+                    self.knows_entity_true_name = True
 
-        # Special handling for crimson ritual knowledge
-        if knowledge_id == "crimson_ritual_knowledge":
-            self.knows_crimson_ritual = True
+                # Special handling for crimson ritual knowledge
+                if kid == "crimson_ritual_knowledge":
+                    self.knows_crimson_ritual = True
 
-        return True  # Successfully unlocked
+        return any_newly_unlocked
     
     def has_knowledge(self, knowledge_id: str) -> bool:
         """Check if player has unlocked specific knowledge.
