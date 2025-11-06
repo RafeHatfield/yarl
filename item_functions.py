@@ -132,7 +132,6 @@ def enhance_weapon(*args, **kwargs):
     """
     from components.component_registry import ComponentType
     from message_builder import MessageBuilder as MB
-    import random
 
     caster = args[0]
     min_bonus = kwargs.get("min_bonus", 1)
@@ -153,10 +152,9 @@ def enhance_weapon(*args, **kwargs):
         old_max = weapon.equippable.damage_max
 
         if old_min > 0 and old_max > 0:
-            # Apply random bonus within range
-            bonus = random.randint(min_bonus, max_bonus)
-            weapon.equippable.damage_min += bonus
-            weapon.equippable.damage_max += bonus
+            # Apply bonus to minimum damage and max damage (min gets min_bonus, max gets max_bonus)
+            weapon.equippable.damage_min += min_bonus
+            weapon.equippable.damage_max += max_bonus
 
             results.append({
                 "consumed": True,

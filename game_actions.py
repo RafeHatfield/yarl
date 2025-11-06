@@ -409,7 +409,11 @@ class ActionProcessor:
             # Display any messages
             message_log = self.state_manager.state.message_log
             for msg_dict in result.messages:
-                message_log.add_message(msg_dict["message"])
+                # Handle both dict format and direct Message objects
+                if isinstance(msg_dict, dict) and "message" in msg_dict:
+                    message_log.add_message(msg_dict["message"])
+                else:
+                    message_log.add_message(msg_dict)
             return
 
         # Handle successful movement
@@ -417,7 +421,11 @@ class ActionProcessor:
             # Display any messages
             message_log = self.state_manager.state.message_log
             for msg_dict in result.messages:
-                message_log.add_message(msg_dict["message"])
+                # Handle both dict format and direct Message objects
+                if isinstance(msg_dict, dict) and "message" in msg_dict:
+                    message_log.add_message(msg_dict["message"])
+                else:
+                    message_log.add_message(msg_dict)
             
             # Request FOV recompute if needed
             if result.fov_recompute:

@@ -430,7 +430,7 @@ class TestEnhancementScrolls(unittest.TestCase):
         self.assertEqual(len(results), 1)
         result = results[0]
         self.assertTrue(result["consumed"])
-        self.assertIn("AC bonus increased from +2 to +3", result["message"].text)
+        self.assertIn("AC bonus enhanced from +2 to +3", result["message"].text)
     
     def test_enhance_armor_no_armor_equipped(self):
         """Test armor enhancement with no armor equipped."""

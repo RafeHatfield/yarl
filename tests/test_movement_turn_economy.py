@@ -37,6 +37,8 @@ class TestMovementTurnEconomy:
         player.status_effects = Mock()
         player.status_effects.process_turn_start = Mock(return_value=[])
         player.process_status_effects_turn_end = Mock(return_value=[])
+        player.components = Mock()
+        player.components.has = Mock(return_value=False)  # No status effects component
         
         state_manager.state.player = player
         
@@ -76,6 +78,8 @@ class TestMovementTurnEconomy:
         player.status_effects = Mock()
         player.status_effects.process_turn_start = Mock(return_value=[])
         player.process_status_effects_turn_end = Mock(return_value=[])
+        player.components = Mock()
+        player.components.has = Mock(return_value=False)  # No status effects component
         state_manager.state.player = player
         
         # Blocked destination
