@@ -304,28 +304,28 @@ class TestNoMonsters:
 class TestRevealMap:
     """Test --reveal-map flag functionality."""
     
-    def test_reveal_map_increases_fov_radius(self):
-        """Test that reveal_map flag sets FOV radius to 999."""
+    def test_reveal_map_does_not_change_fov_radius(self):
+        """Test that reveal_map flag does NOT change FOV radius (stays at 10)."""
         from config.game_constants import GameConstants
         from config.testing_config import TestingConfig
-        
+
         # Test normal FOV
         config_normal = TestingConfig(testing_mode=False)
         config_normal.reveal_map = False
-        
+
         with patch('config.testing_config.get_testing_config', return_value=config_normal):
             constants_obj = GameConstants()
             fov_radius = constants_obj._get_fov_radius()
             assert fov_radius == 10  # Default
-        
-        # Test reveal map FOV
+
+        # Test reveal map FOV - should still be 10 (reveal_map doesn't affect FOV)
         config_reveal = TestingConfig(testing_mode=True)
         config_reveal.reveal_map = True
-        
+
         with patch('config.testing_config.get_testing_config', return_value=config_reveal):
             constants_obj = GameConstants()
             fov_radius = constants_obj._get_fov_radius()
-            assert fov_radius == 999  # Infinite
+            assert fov_radius == 10  # Still 10 - reveal_map doesn't change FOV
 
 
 class TestIntegration:

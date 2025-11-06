@@ -792,15 +792,12 @@ class GameConstants:
         }
     
     def _get_fov_radius(self) -> int:
-        """Get FOV radius, accounting for debug reveal-map mode.
-        
+        """Get FOV radius.
+        Note: --reveal-map does NOT change FOV, it only marks tiles as explored.
+
         Returns:
-            FOV radius (10 normally, 999 in reveal-map mode)
+            FOV radius (always 10, reveal-map doesn't affect FOV)
         """
-        from config.testing_config import get_testing_config
-        config = get_testing_config()
-        if config.reveal_map:
-            return 999  # Infinite FOV - see entire map
         return self.rendering.DEFAULT_FOV_RADIUS
     
     def to_legacy_constants(self) -> Dict[str, Any]:
