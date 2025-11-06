@@ -1290,7 +1290,10 @@ def unlock_crimson_ritual(*args, **kwargs):
     # Try to unlock knowledge if victory component exists
     knowledge_unlocked = False
     if hasattr(entity, 'victory') and entity.victory:
+        print(f">>> CRIMSON CODEX: Unlocking knowledge for entity {entity.name}")
         knowledge_unlocked = entity.victory.unlock_knowledge('crimson_ritual_knowledge')
+        print(f">>> CRIMSON CODEX: knowledge_unlocked = {knowledge_unlocked}")
+        print(f">>> CRIMSON CODEX: knows_crimson_ritual = {entity.victory.knows_crimson_ritual}")
 
     if knowledge_unlocked:
         results.append({
@@ -1305,6 +1308,9 @@ def unlock_crimson_ritual(*args, **kwargs):
             results.append({
                 "message": MB.info("You already understand the Crimson Ritual.")
             })
+            print(f">>> CRIMSON CODEX: Already have knowledge")
+        else:
+            print(f">>> CRIMSON CODEX: No victory component or knowledge not unlocked yet")
         else:
             results.append({
                 "message": MB.info("The knowledge of the Crimson Ritual remains locked until you face the Entity.")

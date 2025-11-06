@@ -43,6 +43,16 @@ def confrontation_menu(con, root_console, screen_width, screen_height, player):
     if hasattr(player, 'victory') and player.victory:
         knows_true_name = player.victory.knows_entity_true_name
         knows_ritual = player.victory.knows_crimson_ritual
+
+        # DEBUG: Log knowledge flags for Ending 2 troubleshooting
+        print(f">>> CONFRONTATION: knows_true_name={knows_true_name}, knows_ritual={knows_ritual}")
+        print(f">>> CONFRONTATION: knowledge_unlocked={player.victory.knowledge_unlocked}")
+        import logging
+        logging.info(f"=== CONFRONTATION: true_name={knows_true_name}, ritual={knows_ritual} ===")
+    else:
+        print(">>> CONFRONTATION: Player has no victory component!")
+        import logging
+        logging.info("=== CONFRONTATION: Player has no victory component ===")
     
     # Start with main menu
     return _main_choice_menu(con, root_console, screen_width, screen_height, 
@@ -154,10 +164,17 @@ def _keep_submenu(con, root_console, screen_width, screen_height,
         ("F", "Fight for your freedom"),
         ("A", "Accept his transformation offer"),
     ]
-    
+
+    # DEBUG: Log ritual option logic
+    print(f">>> KEEP SUBMENU: knows_ritual={knows_ritual}, knows_true_name={knows_true_name}")
+    print(f">>> KEEP SUBMENU: will add ritual option = {knows_ritual and knows_true_name}")
+
     # CRITICAL: Ending 2 requires BOTH knowledge flags!
     if knows_ritual and knows_true_name:
         choices.append(("R", "Use the Crimson Ritual [SECRET]"))
+        print(">>> KEEP SUBMENU: Added ritual option!")
+    else:
+        print(">>> KEEP SUBMENU: Ritual option NOT added")
     
     choices.append(("B", "Back"))
     
