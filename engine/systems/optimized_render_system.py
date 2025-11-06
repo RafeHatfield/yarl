@@ -214,23 +214,26 @@ class OptimizedRenderSystem(RenderSystem):
         if self.fov_map:
             performance_system = self.engine.get_system("performance")
             
+            # Get constants from game state
+            constants = game_state.get("constants", {})
+
             # Check if we should recompute based on position (for caching optimization)
             should_recompute_for_position = (
-                not performance_system or 
+                not performance_system or
                 performance_system.should_recompute_fov(
-                    player.x, player.y, game_state.get("fov_radius", 10)
+                    player.x, player.y, constants.get("fov_radius", 10)
                 )
             )
-            
+
             # Always recompute when fov_recompute=True, or when position changed
             if original_fov_recompute or should_recompute_for_position:
                 recompute_fov(
                     self.fov_map,
                     player.x,
                     player.y,
-                    game_state.get("fov_radius", 10),
-                    game_state.get("fov_light_walls", True),
-                    game_state.get("fov_algorithm", 12),
+                    constants.get("fov_radius", 10),
+                    constants.get("fov_light_walls", True),
+                    constants.get("fov_algorithm", 12),
                 )
 
                 # Cache the result
@@ -238,7 +241,7 @@ class OptimizedRenderSystem(RenderSystem):
                     performance_system.cache_fov_result(
                         player.x,
                         player.y,
-                        game_state.get("fov_radius", 10),
+                        constants.get("fov_radius", 10),
                         self.fov_map,
                     )
 

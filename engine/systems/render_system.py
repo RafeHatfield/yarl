@@ -114,24 +114,27 @@ class RenderSystem(System):
 
         # Recompute FOV if needed
         if self.fov_recompute and self.fov_map:
+            # Get constants from game state
+            constants = game_state.get("constants", {})
+
             # Get base FOV radius
-            base_fov_radius = game_state.get("fov_radius", 10)
-            
+            base_fov_radius = constants.get("fov_radius", 10)
+
             # Check for blindness - reduces FOV to 1
-            if (hasattr(player, 'has_status_effect') and 
-                callable(player.has_status_effect) and 
+            if (hasattr(player, 'has_status_effect') and
+                callable(player.has_status_effect) and
                 player.has_status_effect('blindness')):
                 effective_fov_radius = 1  # Severely reduced vision when blind
             else:
                 effective_fov_radius = base_fov_radius
-            
+
             recompute_fov(
                 self.fov_map,
                 player.x,
                 player.y,
                 effective_fov_radius,
-                game_state.get("fov_light_walls", True),
-                game_state.get("fov_algorithm", 12),
+                constants.get("fov_light_walls", True),
+                constants.get("fov_algorithm", 12),
             )
 
         # Render everything (use original tile rendering for base system)
