@@ -62,6 +62,22 @@ class VictoryManager:
                 "The knowledge from the Crimson Ritual Codex awakens! "
                 "A new choice will be available at the final confrontation."
             ))
+
+        # Check if player has already learned the Entity's true name from the Guide
+        # If so, unlock the knowledge now that victory component exists
+        has_true_name = False
+        if hasattr(player, 'npc_dialogue') and player.npc_dialogue:
+            has_true_name = player.npc_dialogue.has_knowledge('entity_true_name_zhyraxion')
+
+        print(f">>> VICTORY_MANAGER: Checking for true name knowledge, has_true_name={has_true_name}")
+
+        if has_true_name and not player.victory.has_knowledge('entity_true_name_zhyraxion'):
+            print("DEBUG: Player has true name knowledge, unlocking retroactively")
+            player.victory.unlock_knowledge('entity_true_name_zhyraxion')
+            message_log.add_message(MB.success(
+                "The Entity's true name echoes in your mind! "
+                "Zhyraxion... A new choice will be available at the final confrontation."
+            ))
         
         # Display Zhyraxion's reaction (dramatic moment!)
         message_log.add_message(MB.item_effect("The Ruby Heart pulses with warmth in your hands!"))

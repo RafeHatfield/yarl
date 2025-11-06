@@ -238,7 +238,13 @@ def show_npc_dialogue_screen(npc, game_state_manager) -> GameStates:
                 # Sync knowledge with player's Victory component
                 if chosen_option.unlocks_knowledge:
                     player = game_state_manager.state.player
-                    if player and hasattr(player, 'victory') and player.victory:
+                    if player:
+                        # Ensure player has victory component (create if needed for early-game knowledge)
+                        if not hasattr(player, 'victory') or not player.victory:
+                            from components.victory import Victory
+                            player.victory = Victory()
+                            player.victory.owner = player
+
                         player.victory.unlock_knowledge(chosen_option.unlocks_knowledge)
                         import logging
                         logger = logging.getLogger(__name__)
