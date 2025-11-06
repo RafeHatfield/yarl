@@ -177,8 +177,10 @@ class TestLevel25SecretRoom:
             codex = codices[0]
             assert hasattr(codex, 'item'), "Codex should be an item"
             assert codex.item is not None, "Codex should have an item component"
-            assert getattr(codex.item, 'use_function', None) is None, \
-                "Codex is a quest item and should not have an immediate use function"
+            assert getattr(codex.item, 'use_function', None) is not None, \
+                "Codex should have a use function to unlock crimson ritual knowledge"
+            assert codex.item.use_function.__name__ == 'unlock_crimson_ritual', \
+                "Codex should have the unlock_crimson_ritual use function"
 
 
 class TestLevel25EntityFactoryIntegration:

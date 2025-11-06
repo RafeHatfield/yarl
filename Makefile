@@ -11,6 +11,7 @@ help:
 	@echo "  make quick-test  - Quick validation (no full game needed)"
 	@echo "  make run         - Start game with fresh code"
 	@echo "  make clean-run   - Clear cache + start game"
+	@echo "  make run-test    - Start test game with fresh code"
 	@echo ""
 	@echo "IMPORTANT: Always run 'make clean' if game behaves unexpectedly!"
 	@echo "NOTE: Activate virtualenv first if using one: source ~/.virtualenvs/rlike/bin/activate"

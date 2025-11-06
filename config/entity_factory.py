@@ -1323,6 +1323,17 @@ class EntityFactory:
             entity.triggers_victory = True
         if item_def.get('is_portal'):
             entity.is_portal = True
+
+        # Handle use_function for unique items (like Crimson Ritual Codex)
+        if item_def.get('use_function'):
+            use_function_name = item_def['use_function']
+            # Import item_functions module and get the function by name
+            import item_functions
+            try:
+                use_function = getattr(item_functions, use_function_name)
+                item_component.use_function = use_function
+            except AttributeError:
+                logger.warning(f"Unknown use_function '{use_function_name}' for unique item '{item_type}'")
         
         # Store description on entity for examine text
         entity.description = description

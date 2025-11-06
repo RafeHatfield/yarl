@@ -226,7 +226,7 @@ def handle_mouse(mouse, camera=None, game_state=None):
         camera_x, camera_y = camera.x, camera.y
     
     world_coords = ui_layout.screen_to_world(screen_x, screen_y, camera_x, camera_y)
-    
+
     # Check if click is in sidebar (for inventory interaction!)
     if ui_layout.is_in_sidebar(screen_x, screen_y):
         # Handle sidebar clicks (inventory items)

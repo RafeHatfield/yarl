@@ -547,7 +547,14 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             "message": MB.warning(f"Path blocked by {movement_result.blocked_by_entity.name}.")
         })
         return {"results": results}
-    
+
+    # Handle movement blocked by status effect
+    if movement_result.blocked_by_status:
+        pathfinding.interrupt_movement("Status effect blocking movement")
+        # Forward messages from MovementService
+        results.extend(movement_result.messages)
+        return {"results": results}
+
     # Movement succeeded - forward results from MovementService
     if movement_result.success:
         # Forward FOV recompute request

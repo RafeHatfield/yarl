@@ -42,16 +42,56 @@ class VictoryManager:
         
         # Mark Ruby Heart as obtained
         player.victory.obtain_ruby_heart(player.x, player.y)
+
+        # Check if player has already read the Crimson Ritual Codex
+        # If so, unlock the knowledge now that victory component exists
+        has_codex = False
+        if hasattr(player, 'inventory') and hasattr(player.inventory, 'items'):
+            has_codex = any(item.name == "Crimson Ritual Codex" for item in player.inventory.items)
+        
+        if has_codex and not player.victory.has_knowledge('crimson_ritual_knowledge'):
+            print("DEBUG: Player has codex, unlocking crimson ritual knowledge retroactively")
+            player.victory.unlock_knowledge('crimson_ritual_knowledge')
+            message_log.add_message(MB.success(
+                "The knowledge from the Crimson Ritual Codex awakens! "
+                "A new choice will be available at the final confrontation."
+            ))
         
         # Display Zhyraxion's reaction (dramatic moment!)
         message_log.add_message(MB.item_effect("The Ruby Heart pulses with warmth in your hands!"))
         message_log.add_message(MB.warning("You feel its rhythm - not quite alive, not quite dead..."))
         message_log.add_message(MB.warning("\"You have it. After all these centuries...\""))
         
+        # Check if portal already exists (prevent duplicate spawning)
+        portal_already_exists = any(hasattr(e, 'is_portal') and e.is_portal for e in entities)
+        if portal_already_exists:
+            logger.info("Portal already exists, skipping duplicate spawn")
+            message_log.add_message(MB.warning("A shimmering portal tears open before you!"))
+            message_log.add_message(MB.info("The Entity's voice echoes from within..."))
+            # Calculate direction for better UX (find existing portal)
+            existing_portal = next((e for e in entities if hasattr(e, 'is_portal') and e.is_portal), None)
+            if existing_portal:
+                dx = existing_portal.x - player.x
+                dy = existing_portal.y - player.y
+                direction = ""
+                if dx > 0:
+                    direction = "to your right" if dy == 0 else ("to your lower right" if dy > 0 else "to your upper right")
+                elif dx < 0:
+                    direction = "to your left" if dy == 0 else ("to your lower left" if dy > 0 else "to your upper left")
+                elif dy > 0:
+                    direction = "below you"
+                elif dy < 0:
+                    direction = "above you"
+                else:
+                    direction = "at your feet"
+
+                message_log.add_message(MB.info(f"[The portal is {direction} at ({existing_portal.x}, {existing_portal.y})]"))
+            return True
+
         # Spawn portal adjacent to player (not on them!)
         # Try to find an open tile next to player
         portal_x, portal_y = self._find_adjacent_open_tile(player, game_map, entities)
-        
+
         logger.info(f"Attempting to spawn portal adjacent to player: ({portal_x}, {portal_y})")
         portal = self.entity_factory.create_unique_item('entity_portal', portal_x, portal_y)
         

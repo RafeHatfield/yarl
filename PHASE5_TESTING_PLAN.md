@@ -13,7 +13,7 @@ python engine.py --testing --start-level 25 --god-mode --reveal-map
 
 ### Required Knowledge Flags
 - **Ending 1a**: Requires knowing Entity's true name (Zhyraxion)
-- **Ending 1b**: Requires BOTH true name AND Crimson Ritual knowledge
+- **Ending 1b**: Requires Crimson Ritual knowledge (from Codex)
 - **Ending 2**: No knowledge required
 - **Ending 3**: No knowledge required
 - **Ending 4**: No knowledge required
@@ -28,7 +28,7 @@ python engine.py --testing --start-level 25 --god-mode --reveal-map
 | Ending | Choice Path | Boss Fight? | Knowledge Needed | Expected Outcome |
 |--------|-------------|-------------|------------------|------------------|
 | 1a | Keep → Fight him | YES (human form) | True Name | Become new deity |
-| 1b | Keep → Ritual | NO | True Name + Ritual | Restore both dragons |
+| 1b | Keep → Ritual | NO | Ritual | Restore both dragons |
 | 2 | Give | NO | None | Zhyraxion restored |
 | 3 | Destroy | YES (full dragon) | None | Nearly impossible fight |
 | 4 | Keep → Destroy it | YES (grief dragon) | None | Corrupted Zhyraxion |
@@ -66,9 +66,7 @@ python engine.py --testing --start-level 25 --god-mode --reveal-map
 
 ### Test 2: Ending 1b - "The Crimson Ritual"
 **Setup:**
-1. Start game with `--testing --start-level 20`
-2. Find Ghost Guide and learn Zhyraxion's true name
-3. Descend to Level 25
+1. Start game with `--testing --start-level 25`
 4. **Find secret room** (look for hidden passage near one of the rooms)
 5. **Defeat 2-3 Corrupted Ritualists** in secret room
 6. **Pick up Crimson Ritual Codex** and use it (read it)

@@ -79,21 +79,29 @@ class Victory:
         """
         self.ending_achieved = ending_type
     
-    def unlock_knowledge(self, knowledge_id: str):
+    def unlock_knowledge(self, knowledge_id: str) -> bool:
         """Unlock a piece of knowledge from Guide dialogue or items.
-        
+
         Args:
             knowledge_id: ID of the knowledge (e.g., "entity_true_name_zhyraxion", "crimson_ritual_knowledge")
+
+        Returns:
+            bool: True if knowledge was newly unlocked, False if already known
         """
+        if knowledge_id in self.knowledge_unlocked:
+            return False  # Already unlocked
+
         self.knowledge_unlocked.add(knowledge_id)
-        
+
         # Special handling for true name
         if knowledge_id == "entity_true_name_zhyraxion":
             self.knows_entity_true_name = True
-        
+
         # Special handling for crimson ritual knowledge
         if knowledge_id == "crimson_ritual_knowledge":
             self.knows_crimson_ritual = True
+
+        return True  # Successfully unlocked
     
     def has_knowledge(self, knowledge_id: str) -> bool:
         """Check if player has unlocked specific knowledge.

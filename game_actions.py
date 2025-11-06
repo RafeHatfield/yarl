@@ -403,13 +403,29 @@ class ActionProcessor:
         # Handle blocked by wall (no action needed, just return)
         if result.blocked_by_wall:
             return
-        
+
+        # Handle blocked by status effect (immobilized, etc.)
+        if result.blocked_by_status:
+            # Display any messages
+            message_log = self.state_manager.state.message_log
+            for msg_dict in result.messages:
+                # Handle both dict format and direct Message objects
+                if isinstance(msg_dict, dict) and "message" in msg_dict:
+                    message_log.add_message(msg_dict["message"])
+                else:
+                    message_log.add_message(msg_dict)
+            return
+
         # Handle successful movement
         if result.success:
             # Display any messages
             message_log = self.state_manager.state.message_log
             for msg_dict in result.messages:
-                message_log.add_message(msg_dict["message"])
+                # Handle both dict format and direct Message objects
+                if isinstance(msg_dict, dict) and "message" in msg_dict:
+                    message_log.add_message(msg_dict["message"])
+                else:
+                    message_log.add_message(msg_dict)
             
             # Request FOV recompute if needed
             if result.fov_recompute:
@@ -917,13 +933,13 @@ class ActionProcessor:
     
     def _use_inventory_item(self, item) -> None:
         """Use an item from inventory. TAKES 1 TURN (unless entering targeting mode).
-        
+
         Args:
             item: The item entity to use
         """
         player = self.state_manager.state.player
         message_log = self.state_manager.state.message_log
-        
+
         # Check if this is equipment (weapon, armor, ring) - EQUIP instead of USE
         from components.component_registry import ComponentType
         if item.components.has(ComponentType.EQUIPPABLE):
@@ -934,29 +950,28 @@ class ActionProcessor:
                     message = result.get("message")
                     if message:
                         message_log.add_message(message)
-                
+
                 # TURN ECONOMY: Equipping/unequipping takes 1 turn
                 self._process_player_status_effects()
                 self.turn_controller.end_player_action(turn_consumed=True)
             return
-        
+
         # Not equipment - treat as consumable
         if not item.item:
             return
-        
+
         # Check if item requires targeting - if so, enter targeting mode
         if item.item.targeting:
             # Enter targeting mode for this item
             self.state_manager.set_extra_data("targeting_item", item)
-            self.state_manager.set_extra_data("previous_state", GameStates.PLAYERS_TURN)
             self.state_manager.set_game_state(GameStates.TARGETING)
-            
+
             # Show targeting message
             item_name = item.item.get_display_name() if hasattr(item, 'item') and hasattr(item.item, 'get_display_name') else item.name
             message_log.add_message(MB.info(f"Select a target for {item_name}. (Right-click or ESC to cancel)"))
-            
+
             return  # Don't consume turn yet - wait for targeting
-        
+
         # Use item directly (no targeting required)
         item_use_results = player.inventory.use(
             item,
@@ -1187,12 +1202,12 @@ class ActionProcessor:
     
     def _handle_left_click(self, click_pos: Tuple[int, int]) -> None:
         """Handle left mouse click.
-        
+
         Args:
             click_pos: Tuple of (x, y) click coordinates (world coords for targeting, screen coords for menus)
         """
         current_state = self.state_manager.state.current_state
-        
+
         # Handle clicks on inventory/drop/throw menus
         if current_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY, GameStates.THROW_SELECT_ITEM):
             player = self.state_manager.state.player
@@ -1249,22 +1264,6 @@ class ActionProcessor:
                 self._handle_inventory_action(clicked_index)
             return
         
-        if current_state == GameStates.TARGETING:
-            target_x, target_y = click_pos
-            targeting_item = self.state_manager.get_extra_data("targeting_item")
-            
-            if targeting_item and targeting_item.item:
-                player = self.state_manager.state.player
-                if player and player.inventory:
-                    item_use_results = player.inventory.use(
-                        targeting_item,
-                        entities=self.state_manager.state.entities,
-                        fov_map=self.state_manager.state.fov_map,
-                        game_map=self.state_manager.state.game_map,
-                        target_x=target_x,
-                        target_y=target_y
-                    )
-        
         elif current_state == GameStates.THROW_TARGETING:
             # Handle throw targeting click
             target_x, target_y = click_pos
@@ -1312,12 +1311,16 @@ class ActionProcessor:
         
         # Continue with regular TARGETING handling
         if current_state == GameStates.TARGETING:
+            print(f"DEBUG: TARGETING mode click at {click_pos}")
+            logger.warning(f"TARGETING mode click at {click_pos}")
             target_x, target_y = click_pos
             targeting_item = self.state_manager.get_extra_data("targeting_item")
-            
+            print(f"DEBUG: targeting_item = {targeting_item.name if targeting_item else None}")
+
             if targeting_item and targeting_item.item:
                 player = self.state_manager.state.player
                 if player and player.inventory:
+                    print(f"DEBUG: Using {targeting_item.name} at ({target_x}, {target_y})")
                     item_use_results = player.inventory.use(
                         targeting_item,
                         entities=self.state_manager.state.entities,
@@ -1326,28 +1329,33 @@ class ActionProcessor:
                         target_x=target_x,
                         target_y=target_y
                     )
-                    
+                    print(f"DEBUG: Item use results: {len(item_use_results) if item_use_results else 0} results")
+
                     player_died = False
                     for result in item_use_results:
                         message = result.get("message")
                         if message:
                             self.state_manager.state.message_log.add_message(message)
-                        
+
                         dead_entity = result.get("dead")
                         if dead_entity:
                             # Targeting/spell deaths should transform to corpse (not remove)
                             self._handle_entity_death(dead_entity, remove_from_entities=False)
                             if dead_entity == player:
                                 player_died = True
-                    
+
                     # Clear targeting state
                     self.state_manager.set_extra_data("targeting_item", None)
                     self.state_manager.set_extra_data("previous_state", None)
-                    
+
                     # TURN ECONOMY: Completing targeting (using targeted item) takes 1 turn
                     if not player_died:
                         self._process_player_status_effects()
                         self.turn_controller.end_player_action(turn_consumed=True)
+                else:
+                    print("DEBUG: No player or inventory")
+            else:
+                print("DEBUG: No targeting item or item has no item component")
         
         elif current_state == GameStates.THROW_TARGETING:
             # Handle throw targeting completion
@@ -1680,17 +1688,64 @@ class ActionProcessor:
     
     def _handle_left_click(self, click_pos: Tuple[int, int]) -> None:
         """Handle left mouse click (attack enemy or pathfind to location).
-        
+
         Uses the same logic as right-click: check for enemies first,
         then items/chests/signposts, then pathfind to empty space.
-        
+
         Args:
             click_pos: Tuple of (world_x, world_y) click coordinates
         """
         current_state = self.state_manager.state.current_state
+
+        # Handle targeting mode first
+        if current_state == GameStates.TARGETING:
+            target_x, target_y = click_pos
+            targeting_item = self.state_manager.get_extra_data("targeting_item")
+
+            if targeting_item and targeting_item.item:
+                player = self.state_manager.state.player
+                if player and player.inventory:
+                    item_use_results = player.inventory.use(
+                        targeting_item,
+                        entities=self.state_manager.state.entities,
+                        fov_map=self.state_manager.state.fov_map,
+                        game_map=self.state_manager.state.game_map,
+                        target_x=target_x,
+                        target_y=target_y
+                    )
+
+                    # Process results
+                    player_died = False
+                    for result in item_use_results:
+                        message = result.get("message")
+                        if message:
+                            self.state_manager.state.message_log.add_message(message)
+
+                        dead_entity = result.get("dead")
+                        if dead_entity:
+                            # Targeting/spell deaths should transform to corpse (not remove)
+                            self._handle_entity_death(dead_entity, remove_from_entities=False)
+                            if dead_entity == player:
+                                player_died = True
+
+                    # Clear targeting state and restore to player turn
+                    self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    self.state_manager.set_extra_data("targeting_item", None)
+                    self.state_manager.set_extra_data("previous_state", None)
+
+                    # TURN ECONOMY: Completing targeting (using targeted item) takes 1 turn
+                    if not player_died:
+                        self._process_player_status_effects()
+                        self.turn_controller.end_player_action(turn_consumed=True)
+                else:
+                    print("DEBUG: No player or inventory")
+            else:
+                print("DEBUG: No targeting item or item has no item component")
+            return
+
         if current_state not in (GameStates.PLAYERS_TURN, GameStates.RUBY_HEART_OBTAINED):
             return
-        
+
         # Delegate to the same handler as right-click
         # Left-click and right-click should do the same thing during gameplay
         self._handle_mouse_movement(click_pos)
@@ -1710,8 +1765,7 @@ class ActionProcessor:
         
         if current_state == GameStates.TARGETING:
             # Cancel targeting
-            previous_state = self.state_manager.get_extra_data("previous_state", GameStates.PLAYERS_TURN)
-            self.state_manager.set_game_state(previous_state)
+            self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
             self.state_manager.set_extra_data("targeting_item", None)
             self.state_manager.set_extra_data("previous_state", None)
             

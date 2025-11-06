@@ -8,6 +8,7 @@ input methods or key mappings.
 
 from typing import Dict, Any, Optional, Callable
 import tcod.libtcodpy as libtcod
+import logging
 
 from ..system import System
 from input_handlers import (
@@ -23,6 +24,8 @@ from input_handlers import (
 )
 from game_states import GameStates
 from state_management.state_config import StateManager
+
+logger = logging.getLogger(__name__)
 
 
 class InputSystem(System):
@@ -149,6 +152,10 @@ class InputSystem(System):
             Dict[str, Any]: Dictionary of actions generated from input
         """
         # Get handler from StateManager (single source of truth!)
+        # Defensive check: if state is corrupted, default to PLAYERS_TURN
+        if current_state is None:
+            logger.warning("Input system: current_state is None, defaulting to PLAYERS_TURN")
+            current_state = GameStates.PLAYERS_TURN
         handler = StateManager.get_input_handler(current_state)
         
         if handler and self.current_key:
@@ -170,6 +177,11 @@ class InputSystem(System):
         Returns:
             Dict[str, Any]: Dictionary of actions generated from mouse input
         """
+        # Defensive check: if state is corrupted, default to PLAYERS_TURN
+        if current_state is None:
+            logger.warning("Mouse input: current_state is None, defaulting to PLAYERS_TURN")
+            current_state = GameStates.PLAYERS_TURN
+
         # For now, use default mouse handler for all states
         handler = self.mouse_handlers.get("default")
         if handler and self.current_mouse:

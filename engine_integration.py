@@ -301,7 +301,11 @@ def play_game_with_engine(
                 player  # Pass player to check knowledge flags
             )
             
-            if choice:
+            if choice is None:
+                # Player pressed ESC - exit confrontation and return to normal gameplay
+                engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                continue
+            elif choice:
                 # Check if this ending requires a boss fight
                 boss_fights = {
                     '1a': 'zhyraxion_human',        # Human Zhyraxion (Medium-Hard)
