@@ -440,11 +440,10 @@ def play_game_with_engine(
                     ending_code, player_stats
                 )
                 
-                # Record in Hall of Fame
-                if ending_code in ('1a', '1b', '4', '5', 'good'):
-                    hall = get_hall_of_fame()
-                    player_name = engine.state_manager.state.player.name
-                    hall.add_victory(player_name, ending_code, player_stats)
+                # Record in Hall of Fame (all endings are valid victories)
+                hall = get_hall_of_fame()
+                player_name = engine.state_manager.state.player.name
+                hall.add_victory(player_name, ending_code, player_stats)
                 
                 # Clear the flag
                 engine.state_manager.set_extra_data("show_ending", None)

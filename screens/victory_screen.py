@@ -12,41 +12,55 @@ def show_ending_screen(con, root_console, screen_width, screen_height,
                        ending_type, player_stats):
     """Display the ending screen based on player's choice.
     
-    Phase 5: The Five Endings
-    - '1a': Escape Through Battle (fight Human Zhyraxion, neutral-good)
-    - '1b': Crimson Collector (ritual, dark victory)
-    - '2': Dragon's Bargain (transformation trap, failure)
-    - '3': Fool's Freedom (give heart, death or miracle)
-    - '4': Mercy & Corruption (destroy without name, tragic)
-    - '5': Sacrifice & Redemption (destroy with name, best ending)
-    - 'good'/'bad': Legacy endings (kept for compatibility)
+    Phase 5: The Six Endings
+    - '1': Escape Through Battle (fight Human Zhyraxion, neutral-good)
+    - '2': Crimson Collector (ritual, dark victory - requires BOTH knowledge flags)
+    - '3': Dragon's Bargain (transformation trap, bad ending)
+    - '4': Fool's Freedom (give heart immediately, bad ending)
+    - '5': Mercy & Corruption (destroy without name, tragic ending)
+    - '6': Sacrifice & Redemption (destroy with name, best ending)
+    - Legacy: '1a', '1b', 'good', 'bad' (kept for backward compatibility)
     
     Args:
         con: Console to draw on
         root_console: Root console for rendering
         screen_width: Width of the screen
         screen_height: Height of the screen
-        ending_type: Ending code ('1a', '1b', '2', '3', '4', '5', 'good', 'bad')
+        ending_type: Ending code ('1'-'6', '1a'/'1b', 'good'/'bad')
         player_stats: Dict containing player statistics
         
     Returns:
         str: 'restart' or 'quit' based on player input
     """
-    # Phase 5 endings
-    if ending_type == '1a':
+    # Phase 5: New six endings (primary codes)
+    if ending_type == '1':
+        return show_ending_1a(con, root_console, screen_width, screen_height, player_stats)
+    elif ending_type == '2':
+        return show_ending_1b(con, root_console, screen_width, screen_height, player_stats)
+    elif ending_type == '3':
+        return show_ending_2(con, root_console, screen_width, screen_height, player_stats)
+    elif ending_type == '4':
+        return show_ending_3(con, root_console, screen_width, screen_height, player_stats)
+    elif ending_type == '5':
+        return show_ending_4(con, root_console, screen_width, screen_height, player_stats)
+    elif ending_type == '6':
+        return show_ending_5(con, root_console, screen_width, screen_height, player_stats)
+    
+    # Backward compatibility with old codes
+    elif ending_type == '1a':
         return show_ending_1a(con, root_console, screen_width, screen_height, player_stats)
     elif ending_type == '1b':
         return show_ending_1b(con, root_console, screen_width, screen_height, player_stats)
-    elif ending_type == '2':
+    elif ending_type == '2_old':
         return show_ending_2(con, root_console, screen_width, screen_height, player_stats)
-    elif ending_type == '3':
+    elif ending_type == '3_old':
         return show_ending_3(con, root_console, screen_width, screen_height, player_stats)
-    elif ending_type == '4':
+    elif ending_type == '4_old':
         return show_ending_4(con, root_console, screen_width, screen_height, player_stats)
-    elif ending_type == '5':
+    elif ending_type == '5_old':
         return show_ending_5(con, root_console, screen_width, screen_height, player_stats)
     
-    # Legacy endings (kept for compatibility)
+    # Legacy endings (kept for compatibility with very old code)
     elif ending_type == 'good':
         return show_good_ending(con, root_console, screen_width, screen_height, player_stats)
     elif ending_type == 'bad':

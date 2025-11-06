@@ -3,10 +3,18 @@
 This module handles the critical moment when the player faces Zhyraxion
 with Aurelyn's Ruby Heart and must choose their fate across six possible endings.
 
-Phase 5: The Five Endings
+Phase 5: The Six Endings
 - Uses nested menu system (main choice → sub-choices)
 - Conditional options based on knowledge flags
-- Returns ending codes: '1a', '1b', '2', '3', '4', '5'
+- Returns ending codes: '1', '2', '3', '4', '5', '6'
+
+Ending Requirements:
+  1 - Escape Through Battle: No knowledge required
+  2 - Crimson Collector: BOTH entity_true_name_zhyraxion AND crimson_ritual_knowledge
+  3 - Dragon's Bargain: No knowledge required
+  4 - Fool's Freedom: No knowledge required
+  5 - Mercy & Corruption: No knowledge required
+  6 - Sacrifice & Redemption: entity_true_name_zhyraxion required
 """
 
 import tcod
@@ -27,7 +35,7 @@ def confrontation_menu(con, root_console, screen_width, screen_height, player):
         
     Returns:
         tuple: (ending_code, new_game_state) or (None, current_state)
-        ending_code: '1a', '1b', '2', '3', '4', '5' or None
+        ending_code: '1', '2', '3', '4', '5', '6' or None
     """
     # Get knowledge flags
     knows_true_name = False
@@ -46,6 +54,7 @@ def _main_choice_menu(con, root_console, screen_width, screen_height,
     
     Returns:
         tuple: (ending_code, game_state) or (None, CONFRONTATION)
+        ending_code: '1', '2', '3', '4', '5', '6' or None
     """
     title = "The Confrontation Chamber"
     
@@ -92,10 +101,10 @@ def _main_choice_menu(con, root_console, screen_width, screen_height,
     
     if key_char == 'k':
         # KEEP - Go to keep submenu
-        return _keep_submenu(con, root_console, screen_width, screen_height, knows_ritual)
+        return _keep_submenu(con, root_console, screen_width, screen_height, knows_ritual, knows_true_name)
     elif key_char == 'g':
-        # GIVE - Ending 3 (Fool's Freedom - give heart, fight Full Dragon)
-        return '3', GameStates.CONFRONTATION  # Will transition to boss fight
+        # GIVE - Ending 4 (Fool's Freedom - give heart immediately)
+        return '4', GameStates.CONFRONTATION  # Will transition to appropriate outcome
     elif key_char == 'd':
         # DESTROY - Go to destroy submenu
         return _destroy_submenu(con, root_console, screen_width, screen_height, knows_true_name)
@@ -104,11 +113,19 @@ def _main_choice_menu(con, root_console, screen_width, screen_height,
 
 
 def _keep_submenu(con, root_console, screen_width, screen_height, 
-                 knows_ritual: bool) -> Tuple[Optional[str], GameStates]:
+                 knows_ritual: bool, knows_true_name: bool) -> Tuple[Optional[str], GameStates]:
     """Display submenu for keeping the heart.
+    
+    Args:
+        knows_ritual: Player has read Crimson Ritual Codex
+        knows_true_name: Player knows Zhyraxion's true name
     
     Returns:
         tuple: (ending_code, game_state) or (None, CONFRONTATION)
+        Possible endings:
+          '1' - Escape Through Battle (fight)
+          '2' - Crimson Collector (ritual - requires BOTH flags)
+          '3' - Dragon's Bargain (accept transformation)
     """
     title = "You grip the heart tightly..."
     
@@ -135,10 +152,11 @@ def _keep_submenu(con, root_console, screen_width, screen_height,
     # Build choices based on knowledge
     choices = [
         ("F", "Fight for your freedom"),
-        ("T", "Accept his transformation offer"),
+        ("A", "Accept his transformation offer"),
     ]
     
-    if knows_ritual:
+    # CRITICAL: Ending 2 requires BOTH knowledge flags!
+    if knows_ritual and knows_true_name:
         choices.append(("R", "Use the Crimson Ritual [SECRET]"))
     
     choices.append(("B", "Back"))
@@ -151,14 +169,15 @@ def _keep_submenu(con, root_console, screen_width, screen_height,
         return None, GameStates.CONFRONTATION  # Back to main menu
     
     if key_char == 'f':
-        # Ending 1a: Fight Human Zhyraxion
-        return '1a', GameStates.CONFRONTATION  # Will transition to boss fight
-    elif key_char == 't':
-        # Ending 2: Dragon's Bargain (trapped)
-        return '2', GameStates.FAILURE  # Bad ending - player trapped
-    elif key_char == 'r' and knows_ritual:
-        # Ending 1b: Crimson Collector (dark power ending)
-        return '1b', GameStates.VICTORY  # Dark victory
+        # Ending 1: Escape Through Battle
+        return '1', GameStates.CONFRONTATION  # Will transition to Human Zhyraxion boss fight
+    elif key_char == 'a':
+        # Ending 3: Dragon's Bargain (accept transformation - trapped)
+        return '3', GameStates.FAILURE  # Bad ending - player trapped
+    elif key_char == 'r' and knows_ritual and knows_true_name:
+        # Ending 2: Crimson Collector (dark power - ritual sequence)
+        # CRITICAL: Only available if BOTH flags present
+        return '2', GameStates.VICTORY  # Dark victory
     
     return None, GameStates.CONFRONTATION
 
@@ -169,6 +188,9 @@ def _destroy_submenu(con, root_console, screen_width, screen_height,
     
     Returns:
         tuple: (ending_code, game_state) or (None, CONFRONTATION)
+        Possible endings:
+          '5' - Mercy & Corruption (destroy without name - grief dragon fight)
+          '6' - Sacrifice & Redemption (destroy with name - cutscene, best ending)
     """
     title = "You raise the heart..."
     
@@ -215,11 +237,11 @@ def _destroy_submenu(con, root_console, screen_width, screen_height,
         return None, GameStates.CONFRONTATION  # Back to main menu
     
     if key_char == 'n' and knows_true_name:
-        # Ending 5: Sacrifice & Redemption (best ending)
-        return '5', GameStates.VICTORY  # Golden light, everyone freed
+        # Ending 6: Sacrifice & Redemption (best ending - everyone freed)
+        return '6', GameStates.VICTORY  # Golden light cutscene, everyone freed
     elif key_char == 'j':
-        # Ending 4: Mercy & Corruption (tragic - fight Grief Dragon)
-        return '4', GameStates.CONFRONTATION  # Will transition to boss fight
+        # Ending 5: Mercy & Corruption (tragic - grief dragon fight)
+        return '5', GameStates.CONFRONTATION  # Will transition to Grief Dragon boss fight
     
     return None, GameStates.CONFRONTATION
 
