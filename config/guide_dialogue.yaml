@@ -329,13 +329,14 @@ encounters:
           *'Who knows? If you do the name thing, if you actually redeem Zhyraxion...
           maybe my curse lifts. Maybe I finally get to move on instead of being
           stuck here playing tour guide to idiots like you.'*
-          
+
           The form is fading fast now.
-          
+
           *'Look, I've been calling you an idiot this whole time, but... you made
           it here. You listened. That's more than I did. So maybe you're NOT an
           idiot. Maybe you're exactly what this place needs.'*
-        unlocks_knowledge: "guide_final_advice"
+        unlocks_knowledge: ["guide_final_advice", "entity_true_name_zhyraxion"]
+        grants_achievement: "learned_true_name"
         leads_to: ["farewell"]
         
       - id: "farewell"

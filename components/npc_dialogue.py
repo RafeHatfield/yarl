@@ -26,13 +26,19 @@ class DialogueOption:
     npc_response: str   # NPC's response text
     leads_to: List[str] = field(default_factory=list)  # IDs of next options
     ends_conversation: bool = False
-    unlocks_knowledge: Optional[str] = None  # Knowledge flag to set
+    unlocks_knowledge: Optional[List[str]] = None  # Knowledge flags to set
     grants_achievement: Optional[str] = None
     
     def __post_init__(self):
-        """Ensure leads_to is a list."""
+        """Ensure leads_to is a list and unlocks_knowledge is normalized."""
         if self.leads_to is None:
             self.leads_to = []
+
+        # Normalize unlocks_knowledge to always be a list or None
+        if isinstance(self.unlocks_knowledge, str):
+            self.unlocks_knowledge = [self.unlocks_knowledge]
+        elif self.unlocks_knowledge is None:
+            self.unlocks_knowledge = None
 
 
 @dataclass
@@ -177,8 +183,13 @@ class NPCDialogue:
         
         # Process effects
         if option.unlocks_knowledge:
-            self.knowledge_flags.add(option.unlocks_knowledge)
-            logger.info(f"Unlocked knowledge: {option.unlocks_knowledge}")
+            if isinstance(option.unlocks_knowledge, list):
+                for knowledge in option.unlocks_knowledge:
+                    self.knowledge_flags.add(knowledge)
+                    logger.info(f"Unlocked knowledge: {knowledge}")
+            else:
+                self.knowledge_flags.add(option.unlocks_knowledge)
+                logger.info(f"Unlocked knowledge: {option.unlocks_knowledge}")
         
         if option.grants_achievement:
             self.achievements.add(option.grants_achievement)
