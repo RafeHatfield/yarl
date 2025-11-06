@@ -46,9 +46,15 @@ class VictoryManager:
         # Check if player has already read the Crimson Ritual Codex
         # If so, unlock the knowledge now that victory component exists
         has_codex = False
+        codex_names = []
         if hasattr(player, 'inventory') and hasattr(player.inventory, 'items'):
+            codex_names = [item.name for item in player.inventory.items if 'Crimson' in item.name]
             has_codex = any(item.name == "Crimson Ritual Codex" for item in player.inventory.items)
-        
+
+        print(f">>> VICTORY_MANAGER: Checking for codex, has_codex={has_codex}")
+        print(f">>> VICTORY_MANAGER: Items with 'Crimson' in name: {codex_names}")
+        print(f">>> VICTORY_MANAGER: All inventory items: {[item.name for item in player.inventory.items]}")
+
         if has_codex and not player.victory.has_knowledge('crimson_ritual_knowledge'):
             print("DEBUG: Player has codex, unlocking crimson ritual knowledge retroactively")
             player.victory.unlock_knowledge('crimson_ritual_knowledge')

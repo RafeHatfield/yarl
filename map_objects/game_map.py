@@ -1667,6 +1667,10 @@ class GameMap:
         if codex:
             entities.append(codex)
             logger.info(f"=== CRIMSON RITUAL CODEX SPAWNED at ({codex_x}, {codex_y}) ===")
+            print(f">>> SECRET ROOM: Crimson Ritual Codex created with name '{codex.name}'")
+        else:
+            logger.error("=== FAILED TO CREATE CRIMSON RITUAL CODEX ===")
+            print(">>> SECRET ROOM: Failed to create Crimson Ritual Codex")
     
     def _spawn_ghost_guide(self, rooms, entities):
         """Spawn the Ghost Guide NPC in a camp room (Phase 3).
