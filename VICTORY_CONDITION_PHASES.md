@@ -118,38 +118,72 @@ python engine.py --testing
 
 ---
 
-## 🎭 **Phase 5: Multiple Endings** (2-3 weeks)
+## 🎭 **Phase 5: Multiple Endings** (In Progress)
 
-**Goal:** Implement all 4 endings from story concept
+**Goal:** Implement all 6 endings with distinct story paths
 
-### The Four Endings
+### The Six Endings
 
-#### 1. **Escape** (Good End - Current "Keep Amulet")
-- Player keeps amulet, Entity remains bound
-- Victory! Player escapes dungeon alive
-- **Status**: ✅ Implemented in Phase 1 MVP
+#### 1. ⚔️ **Escape Through Battle** (Neutral-Good)
+- **Path:** Keep Heart → Refuse Transform → Fight
+- **Boss:** Human Zhyraxion (Medium-Hard, 70 HP)
+- **Knowledge Required:** None
+- **Victory:** Escape with heart, Zhyraxion stays trapped, you absorb his power and become new Entity
+- **Theme:** Amber (power/ascension)
+- **Status:** Awaiting implementation
 
-#### 2. **False Alliance** (Bad End - Current "Give Amulet")
-- Player gives amulet, Entity betrays and kills them
-- Tragic failure ending
-- **Status**: ✅ Implemented in Phase 1 MVP
+#### 2. 💀 **Crimson Collector** (Secret Dark)
+- **Path:** Keep Heart → Use Ritual Knowledge
+- **Requires:** `crimson_ritual_knowledge` (from Crimson Ritual Codex in secret room) AND `entity_true_name_zhyraxion` (from Guide)
+- **Boss:** None (ritual sequence)
+- **Victory:** Extract both hearts, dark power ending - both dragons restored but you wield their combined power
+- **Theme:** Gold (ritual/power)
+- **Status:** Awaiting implementation
 
-#### 3. **Mercy & Betrayal** (Complex Bad End)
-- Player destroys amulet to free Entity out of mercy
-- Entity attacks anyway (still corrupted)
-- Tragic moral choice
+#### 3. 🐉 **Dragon's Bargain** (Bad - Trapped)
+- **Path:** Keep Heart → Accept Transformation
+- **Requires:** None
+- **Boss:** None (cutscene of curse transfer)
+- **Defeat:** You become trapped, Zhyraxion freed with Rickman wit/dark humor
+- **Theme:** Purple (corruption/transformation)
+- **Status:** Awaiting implementation
 
-#### 4. **Sacrifice & Redemption** (Secret Best End)
-- Player learns Entity's true name (from Guide)
-- Destroys amulet AND speaks true name
-- Entity freed AND purified, grateful
-- Most satisfying ending for thorough players
+#### 4. ☠️ **Fool's Freedom** (Bad - Unwinnable)
+- **Path:** Give Heart Immediately
+- **Requires:** None
+- **Boss:** Full Dragon Zhyraxion (EXTREME, 200 HP) - nearly impossible
+- **Expected:** Death (0.1% win for achievement)
+- **Theme:** Dark Red (danger/despair)
+- **Status:** Awaiting implementation
+
+#### 5. 🔥 **Mercy & Corruption** (Tragic)
+- **Path:** Destroy Heart (without true name)
+- **Requires:** None
+- **Boss:** Grief-Corrupted Dragon (Hard, 100 HP, erratic)
+- **Victory:** Escape but at horrific cost (destroyed his connection to partner, Aurelyn is permanently gone)
+- **Theme:** Crimson (grief/sorrow)
+- **Status:** Awaiting implementation
+
+#### 6. ✨ **Sacrifice & Redemption** (Best - Secret)
+- **Path:** Destroy Heart (WITH true name knowledge)
+- **Requires:** `entity_true_name_zhyraxion` (from Guide on Level 20)
+- **Boss:** None (golden light cutscene)
+- **Victory:** Everyone freed, Zhyraxion and Aurelyn reunited, curse broken
+- **Theme:** Gold (light/redemption)
+- **Status:** Awaiting implementation
 
 ### Technical Requirements
-- Third choice option: "Destroy the amulet"
-- True name knowledge tracking (from Guide encounters)
-- Fourth ending cinematic
-- Updated confrontation screen with 3 choices
+- Portal system (Ruby Heart pickup spawns portal)
+- Confrontation chamber with choice menu
+- Six distinct boss encounters (3 fights, 3 cutscenes)
+- Knowledge tracking system:
+  - `entity_true_name_zhyraxion` (from Guide on Level 20)
+  - `crimson_ritual_knowledge` (from Crimson Ritual Codex in secret room)
+- Conditional menu options based on knowledge flags
+- Secret room generation on Level 25
+- Corrupted Ritualist enemies in secret room
+- Six unique ending screens with different themes/colors
+- Hall of Fame recording of ending choice
 
 ---
 
