@@ -36,11 +36,11 @@ python engine.py --testing --start-level 20 --god-mode --reveal-map
 | # | Name | Choice Path | Boss Fight? | Knowledge Needed | Expected Theme | Status |
 |---|------|-------------|-------------|------------------|-----------------|--------|
 | 1 | Escape Through Battle | Keep → Refuse → Fight | YES (Human, 70 HP) | None | Amber | 🔲 TODO |
-| 2 | Crimson Collector | Keep → Use Ritual | NO | Name + Ritual | Gold | 🔲 TODO |
-| 3 | Dragon's Bargain | Keep → Accept Transform | NO | None | Purple | 🔲 TODO |
-| 4 | Fool's Freedom | Give Heart | YES (Dragon, 200 HP) | None | Dark Red | 🔲 TODO |
+| 2 | Crimson Collector | Keep → Use Ritual | NO (Ritual cutscene) | Name + Ritual | Gold | 🔲 TODO |
+| 3 | Dragon's Bargain | Keep → Accept Transform | NO (Transform cutscene) | None | Purple | 🔲 TODO |
+| 4 | Fool's Freedom | Give Heart | YES (Dragon, 200 HP) ⚠️ EXTREME | None | Dark Red | 🔲 TODO |
 | 5 | Mercy & Corruption | Destroy (no name) | YES (Grief, 100 HP) | None | Crimson | 🔲 TODO |
-| 6 | Sacrifice & Redemption | Destroy (WITH name) | NO | True Name | Gold | 🔲 TODO |
+| 6 | Sacrifice & Redemption | Destroy (WITH name) | NO (Redemption cutscene) | True Name | Gold | 🔲 TODO |
 
 ---
 
@@ -95,7 +95,7 @@ python engine.py --testing --start-level 20 --god-mode --reveal-map
 6. Verify **NO boss fight** occurs
 7. Verify ritual sequence plays
 8. Verify Ending 2 screen appears with gold theme
-9. Check story: "You perform the Crimson Ritual. Both dragons are restored, and their power flows through you."
+9. Check story: "You perform the Crimson Ritual. Both dragons are destroyed, and their power flows through you."
 
 **Secret Room Notes:**
 - 7x7 room attached to a random room on Level 25
@@ -145,22 +145,28 @@ python engine.py --testing --start-level 20 --god-mode --reveal-map
 **Setup:**
 1. Start game with `--testing --start-level 25 --god-mode --reveal-map`
 2. Pick up Ruby Heart (triggers portal)
+3. **IMPORTANT:** Use god mode or prepare to die - this fight is EXTREME difficulty
 
 **Test Steps:**
 1. Enter the portal
 2. Verify confrontation menu appears
 3. Select "Give the heart to Zhyraxion"
-4. Verify **NO boss fight** occurs (or immediate transition to victory trigger)
-5. Verify Ending 4 screen appears with dark red theme
-6. Check story: "You give the heart to Zhyraxion. He is restored to full power and immediately attacks."
+4. Verify Zhyraxion (Full Dragon) boss spawns: 200 HP, EXTREME difficulty
+5. Attempt to fight (or use god mode to verify fight mechanics)
+6. Defeat the boss (with god mode)
+7. Verify Ending 4 screen appears with dark red theme
+8. Check story: "You gave the heart to Zhyraxion. He is fully restored and shows no mercy."
 
-**Expected:**
-- Simple choice → immediate consequence
-- No boss fight required (different from original spec if needed)
-- Dark/tragic theme
+**Expected Boss Stats:**
+- Name: Zhyraxion the Betrayed (Full Dragon Form)
+- HP: 200
+- Damage: 25-40
+- Defense: 15
+- Area attacks (AOE)
+- Designed to be nearly impossible (0.1% win rate)
 
 **Knowledge Required:** None
-**Pass Criteria:** Ending screen displays correctly
+**Pass Criteria:** Full Dragon boss spawns, has expected stats, fight is brutally difficult
 
 ---
 

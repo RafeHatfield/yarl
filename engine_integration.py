@@ -307,10 +307,16 @@ def play_game_with_engine(
                 continue
             elif choice:
                 # Check if this ending requires a boss fight
+                # Phase 5: Six Endings with boss fights
                 boss_fights = {
-                    '1a': 'zhyraxion_human',        # Human Zhyraxion (Medium-Hard)
-                    '3': 'zhyraxion_full_dragon',   # Full Dragon (EXTREME)
-                    '4': 'zhyraxion_grief_dragon'   # Grief Dragon (Hard)
+                    # New ending codes (1-6)
+                    '1': 'zhyraxion_human',         # Escape Through Battle - Human form (Medium-Hard)
+                    '4': 'zhyraxion_full_dragon',   # Fool's Freedom - Full Dragon form (EXTREME)
+                    '5': 'zhyraxion_grief_dragon',  # Mercy & Corruption - Grief Dragon (Hard)
+                    # Old codes (for backward compatibility)
+                    '1a': 'zhyraxion_human',        # Escape Through Battle
+                    '3': 'zhyraxion_full_dragon',   # Fool's Freedom (old code)
+                    '4_old': 'zhyraxion_grief_dragon'  # Mercy & Corruption (old code)
                 }
                 
                 if choice in boss_fights:
