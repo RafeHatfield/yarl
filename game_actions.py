@@ -631,11 +631,12 @@ class ActionProcessor:
             if pending_ending and hasattr(dead_entity, 'is_boss') and dead_entity.is_boss:
                 # Boss defeated! Trigger the ending screen
                 logger.info(f"=== BOSS DEFEATED: Triggering ending {pending_ending} ===")
-                
+                print(f">>> BOSS DEFEATED: {dead_entity.name}, triggering ending '{pending_ending}'")
+
                 # Store that we should show ending screen next frame
                 self.state_manager.set_extra_data("show_ending", pending_ending)
                 self.state_manager.set_extra_data("pending_ending", None)  # Clear pending
-                
+
                 # Transition to a victory state that will show the ending
                 self.state_manager.set_game_state(GameStates.VICTORY)
             

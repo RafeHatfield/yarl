@@ -8,10 +8,10 @@ import tcod
 from typing import Dict, Any
 
 
-def show_ending_screen(con, root_console, screen_width, screen_height, 
+def show_ending_screen(con, root_console, screen_width, screen_height,
                        ending_type, player_stats):
     """Display the ending screen based on player's choice.
-    
+
     Phase 5: The Six Endings
     - '1': Escape Through Battle (fight Human Zhyraxion, neutral-good)
     - '2': Crimson Collector (ritual, dark victory - requires BOTH knowledge flags)
@@ -20,7 +20,7 @@ def show_ending_screen(con, root_console, screen_width, screen_height,
     - '5': Mercy & Corruption (destroy without name, tragic ending)
     - '6': Sacrifice & Redemption (destroy with name, best ending)
     - Legacy: '1a', '1b', 'good', 'bad' (kept for backward compatibility)
-    
+
     Args:
         con: Console to draw on
         root_console: Root console for rendering
@@ -28,10 +28,14 @@ def show_ending_screen(con, root_console, screen_width, screen_height,
         screen_height: Height of the screen
         ending_type: Ending code ('1'-'6', '1a'/'1b', 'good'/'bad')
         player_stats: Dict containing player statistics
-        
+
     Returns:
         str: 'restart' or 'quit' based on player input
     """
+    # DEBUG: Log which ending is being shown
+    print(f">>> VICTORY SCREEN: Showing ending type: '{ending_type}'")
+    import logging
+    logging.info(f"=== VICTORY SCREEN: Showing ending type: '{ending_type}' ===")
     # Phase 5: New six endings (primary codes)
     if ending_type == '1':
         return show_ending_1a(con, root_console, screen_width, screen_height, player_stats)

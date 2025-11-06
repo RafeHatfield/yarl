@@ -384,6 +384,9 @@ def play_game_with_engine(
                         
                         # Store which ending this boss fight is for
                         engine.state_manager.set_extra_data("pending_ending", choice)
+                        print(f">>> BOSS FIGHT START: pending_ending set to '{choice}' for boss {boss.name}")
+                        import logging
+                        logging.info(f"=== BOSS FIGHT START: pending_ending set to '{choice}' ===")
                         
                         # Transition to combat
                         engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
