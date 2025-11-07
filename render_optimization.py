@@ -267,6 +267,12 @@ class OptimizedTileRenderer:
         # Check if reveal_map is enabled (treat explored tiles as visible)
         from config.testing_config import get_testing_config
         config = get_testing_config()
+        
+        # DEBUG: Log first render to verify reveal_map config
+        if not hasattr(self, '_logged_reveal_map'):
+            self._logged_reveal_map = True
+            print(f">>> REVEAL_MAP RENDERER: config.reveal_map = {config.reveal_map}")
+        
         if config.reveal_map and explored:
             visible = True
         
