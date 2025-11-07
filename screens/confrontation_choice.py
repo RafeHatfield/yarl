@@ -70,9 +70,18 @@ def confrontation_menu(con, root_console, screen_width, screen_height, player):
         import logging
         logging.info("=== CONFRONTATION: Player has no victory component ===")
     
-    # Start with main menu
-    return _main_choice_menu(con, root_console, screen_width, screen_height, 
-                            knows_true_name, knows_ritual)
+    # Loop to handle "Back" button in submenus
+    while True:
+        result = _main_choice_menu(con, root_console, screen_width, screen_height, 
+                                   knows_true_name, knows_ritual)
+        
+        # Check if submenu returned "BACK" sentinel (go back to main menu)
+        if result[0] == 'BACK':
+            # Loop again to show main menu
+            continue
+        
+        # Otherwise return the result (ending code or None for ESC)
+        return result
 
 def _main_choice_menu(con, root_console, screen_width, screen_height, 
                      knows_true_name: bool, knows_ritual: bool) -> Tuple[Optional[str], GameStates]:
@@ -155,8 +164,13 @@ def _keep_submenu(con, root_console, screen_width, screen_height,
     key_char = _render_menu(con, root_console, screen_width, screen_height,
                            title, dialogue, choices)
     
-    if key_char is None or key_char == 'b':
-        return None, GameStates.CONFRONTATION  # Back to main menu
+    if key_char is None:
+        # ESC pressed - exit to gameplay
+        return None, GameStates.CONFRONTATION
+    
+    if key_char == 'b':
+        # Back button - return to main menu
+        return 'BACK', GameStates.CONFRONTATION
     
     if key_char == 'f':
         # Ending 1: Escape Through Battle
@@ -169,7 +183,8 @@ def _keep_submenu(con, root_console, screen_width, screen_height,
         # CRITICAL: Only available if BOTH flags present
         return '2', GameStates.VICTORY  # Dark victory
     
-    return None, GameStates.CONFRONTATION
+    # Invalid input - stay in submenu
+    return 'BACK', GameStates.CONFRONTATION
 
 
 def _destroy_submenu(con, root_console, screen_width, screen_height,
@@ -205,8 +220,13 @@ def _destroy_submenu(con, root_console, screen_width, screen_height,
     key_char = _render_menu(con, root_console, screen_width, screen_height,
                            title, dialogue, choices)
     
-    if key_char is None or key_char == 'b':
-        return None, GameStates.CONFRONTATION  # Back to main menu
+    if key_char is None:
+        # ESC pressed - exit to gameplay
+        return None, GameStates.CONFRONTATION
+    
+    if key_char == 'b':
+        # Back button - return to main menu
+        return 'BACK', GameStates.CONFRONTATION
     
     if key_char == 'n' and knows_true_name:
         # Ending 6: Sacrifice & Redemption (best ending - everyone freed)
@@ -215,7 +235,8 @@ def _destroy_submenu(con, root_console, screen_width, screen_height,
         # Ending 5: Mercy & Corruption (tragic - grief dragon fight)
         return '5', GameStates.CONFRONTATION  # Will transition to Grief Dragon boss fight
     
-    return None, GameStates.CONFRONTATION
+    # Invalid input - return to main menu
+    return 'BACK', GameStates.CONFRONTATION
 
 
 def _render_menu(con, root_console, screen_width, screen_height,

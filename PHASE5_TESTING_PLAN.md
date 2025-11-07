@@ -179,14 +179,14 @@ python engine.py --testing --start-level 20 --god-mode --reveal-map
 
 **Test Steps:**
 1. Enter the portal
-2. Verify confrontation menu appears
-3. Select "Keep the heart"
-4. Verify submenu appears
-5. Select "Destroy the heart" (at the bottom)
+2. Verify confrontation menu appears (3 options: Keep, Give, Destroy)
+3. Select "Destroy the heart"
+4. Verify submenu appears with destroy options
+5. Select "Just destroy it" (no true name option should appear)
 6. Verify Zhyraxion (Grief-Corrupted Dragon) boss spawns: 100 HP, erratic behavior
 7. Defeat the boss (or allow grief-driven attacks)
-8. Verify Ending 5 screen appears with crimson theme
-9. Check story: "You destroy the heart out of mercy, but it destroys him. Aurelyn is gone forever."
+8. Verify Ending 5 screen appears with gray theme (tragic)
+9. Check story: "You destroy the heart without speaking his name. Grief transforms him into a mad dragon."
 
 **Expected Boss Stats:**
 - Name: Zhyraxion the Betrayed (Grief-Mad Dragon)
@@ -210,16 +210,15 @@ python engine.py --testing --start-level 20 --god-mode --reveal-map
 
 **Test Steps:**
 1. Enter the portal
-2. Verify confrontation menu appears
-3. Select "Keep the heart"
-4. Verify submenu appears
-5. Select "Destroy the heart"
-6. Verify menu shows "Speak his true name: ZHYRAXION" option (because you know the name)
-7. Select "Speak his true name"
-8. Verify **NO boss fight** occurs
-9. Verify golden light cutscene plays
-10. Verify Ending 6 screen appears with gold theme
-11. Check story: "You speak Zhyraxion's true name as the heart breaks. The curse shatters. Zhyraxion is freed and Aurelyn returns. All is made whole."
+2. Verify confrontation menu appears (3 options: Keep, Give, Destroy)
+3. Select "Destroy the heart"
+4. Verify submenu appears with destroy options
+5. Verify menu shows "Speak his true name and destroy the heart" option (because you know the name)
+6. Select "Speak his true name and destroy the heart"
+7. Verify **NO boss fight** occurs
+8. Verify golden light cutscene plays
+9. Verify Ending 6 screen appears with gold theme
+10. Check story: "You speak Zhyraxion's true name as the heart breaks. Golden light. Everyone freed."
 
 **Expected:**
 - Peaceful resolution (best ending)
