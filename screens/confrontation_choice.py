@@ -234,6 +234,9 @@ def _destroy_submenu(con, root_console, screen_width, screen_height,
     elif key_char == 'j':
         # Ending 5: Mercy & Corruption (tragic - grief dragon fight)
         return '5', GameStates.CONFRONTATION  # Will transition to Grief Dragon boss fight
+    elif key_char == 't':
+        # Ending 3: Dragon's Bargain (alternate path from destroy menu)
+        return '3', GameStates.FAILURE  # Bad ending - player trapped
     
     # Invalid input - return to main menu
     return 'BACK', GameStates.CONFRONTATION

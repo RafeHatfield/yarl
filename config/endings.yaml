@@ -79,13 +79,19 @@ confrontation:
       - ""
       - "\"Please. I'm BEGGING you. Don't take her from me again.\""
       - ""
-      - "The heart pulses in your hands."
+      - "He steps closer, desperation turning to wild hope."
       - ""
-      - "You could speak his true name - redeem them both."
-      - "Or simply end this cursed cycle forever."
+      - "\"Wait—I can SAVE you from this choice. Become a dragon with me!\""
+      - "\"We'll BOTH escape! You'll have power beyond measure!\""
+      - ""
+      - "The heart pulses in your hands. A strange warmth flows through you."
+      - "If you knew his true name, perhaps you could redeem them both..."
+      - "Or you could accept his offer. Or simply end this."
     choices:
       - key: "J"
         text: "Just destroy it"
+      - key: "T"
+        text: "Accept his offer - become a dragon"
       - key: "N"
         text: "Speak his true name and destroy the heart"
         requires_true_name: true
@@ -95,6 +101,54 @@ confrontation:
 # =============================================================================
 
 cutscenes:
+  # Ending 5: Grief & Rage - Pre-Boss Fight Cutscene
+  # The player destroys the heart without speaking the true name.
+  # Zhyraxion's grief transforms into apocalyptic rage.
+  # Pure Alan Rickman grief-mad intensity.
+  grief_rage:
+    title: "The Heart Shatters"
+    
+    # Single stage: Destruction and transformation
+    # Color: Dark Red (grief and rage)
+    stage_1:
+      - "You raise Aurelyn's Ruby Heart high."
+      - ""
+      - "Zhyraxion's eyes widen. \"No. No, don't you DARE—\""
+      - ""
+      - "You SHATTER it."
+      - ""
+      - "Golden light explodes outward. The heart's essence scatters like dying stars."
+      - ""
+      - "For one terrible moment, there is silence."
+      - ""
+      - "Then Zhyraxion SCREAMS."
+      - ""
+      - "\"AURELYN! NO! NOT AGAIN! NOT—\""
+      - ""
+      - "His voice breaks, becomes something inhuman, something WRONG."
+      - ""
+      - "\"You... you destroyed... the only thing I had LEFT of her...\""
+      - ""
+      - "His form begins to twist. Bones crack. Skin tears."
+      - ""
+      - "\"Centuries. CENTURIES I waited. For NOTHING.\""
+      - ""
+      - "\"You didn't even know her NAME. And you... you just...\""
+      - ""
+      - "The grief becomes rage. The rage becomes MADNESS."
+      - ""
+      - "\"I will make you SUFFER for this. Every. Last. SECOND.\""
+      - ""
+      - "What emerges is no longer dragon or man."
+      - "It is grief made flesh. Rage made scale and claw."
+      - ""
+      - "It is Zhyraxion the Betrayed."
+      - ""
+      - "And it wants you DEAD."
+      - ""
+      - ""
+      - "[Press SPACE to face the Grief Dragon]"
+  
   # Ending 4: Fool's Freedom - Pre-Boss Fight Cutscene
   # The player gives the Ruby Heart to Zhyraxion without any plan.
   # Dragon displays overwhelming joy → cruel mockery → bored threat.

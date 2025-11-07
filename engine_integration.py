@@ -320,6 +320,20 @@ def play_game_with_engine(
                         continue
                     # Otherwise, fall through to boss fight below
                 
+                # Special handling for Ending 5 (Mercy & Corruption) - show grief cutscene first
+                if choice == '5':
+                    from screens.grief_rage_cutscene import show_grief_rage_cutscene
+                    continue_to_fight, _ = show_grief_rage_cutscene(
+                        con, 0,
+                        constants['screen_width'], constants['screen_height']
+                    )
+                    
+                    if not continue_to_fight:
+                        # Player escaped cutscene, return to normal gameplay
+                        engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                        continue
+                    # Otherwise, fall through to boss fight below
+                
                 # Check if this ending requires a boss fight
                 # Phase 5: Six Endings with boss fights
                 boss_fights = {

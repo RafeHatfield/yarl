@@ -71,3 +71,11 @@ victories:
   final_level: 25
   kills: 0
   turns: 0
+- character_name: Player
+  date: '2025-11-07 13:45:55'
+  deaths: 0
+  deepest_level: 25
+  ending: '5'
+  final_level: 25
+  kills: 0
+  turns: 0
