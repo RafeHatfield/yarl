@@ -214,11 +214,11 @@ def get_game_variables(constants):
         entities,
     )
 
-    # DEBUG: Tier 1 - Reveal entire map if requested
+    # Tier 1 - Reveal entire map if requested
     from config.testing_config import get_testing_config
     config = get_testing_config()
     if config.reveal_map:
-        # Mark all tiles as explored
+        # Mark all tiles as explored (will be rendered as visible)
         for x in range(game_map.width):
             for y in range(game_map.height):
                 game_map.tiles[x][y].explored = True
