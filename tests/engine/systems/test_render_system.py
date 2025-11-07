@@ -198,9 +198,11 @@ class TestRenderSystemUpdate:
             "message_log": message_log,
             "current_state": current_state,
             "mouse": mouse,
-            "fov_radius": 1,  # Updated to match current game constants
-            "fov_light_walls": True,
-            "fov_algorithm": 0,
+            "constants": {
+                "fov_radius": 1,
+                "fov_light_walls": True,
+                "fov_algorithm": 0,
+            }
         }
 
         fov_map = Mock()

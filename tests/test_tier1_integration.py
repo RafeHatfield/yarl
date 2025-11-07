@@ -184,11 +184,19 @@ class TestDirectGameInitialization:
         assert game_map.dungeon_level == 5
         assert config.reveal_map == True
         
-        # Verify FOV radius is extended
+        # Verify reveal_map only affects explored tiles, not FOV radius
+        # FOV should remain at the default 10
         from config.game_constants import GameConstants
         constants_obj = GameConstants()
         fov_radius = constants_obj._get_fov_radius()
-        assert fov_radius == 999  # Infinite FOV
+        assert fov_radius == 10  # FOV unaffected by reveal_map
+        
+        # Verify all tiles are marked as explored (reveal_map effect)
+        explored_count = sum(1 for x in range(game_map.width) 
+                           for y in range(game_map.height) 
+                           if game_map.tiles[x][y].explored)
+        total_tiles = game_map.width * game_map.height
+        assert explored_count == total_tiles, f"Expected all {total_tiles} tiles explored, got {explored_count}"
     
     def test_all_flags_combined(self):
         """Test that all debug flags work together."""

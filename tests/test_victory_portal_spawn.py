@@ -268,6 +268,8 @@ class TestPortalSpawnIntegration:
         player.x = 10
         player.y = 10
         player.victory = None
+        player.inventory = Mock()
+        player.inventory.items = []
         
         entities = []
         
