@@ -43,13 +43,41 @@
 
 ---
 
-## 🎯 **What's Next (Recommended Order)**
+## 🎯 **What's Next: TWO Strategic Paths**
 
-Based on ROADMAP.md, the next features to implement are (in priority order):
+### **🏆 Path A: Complete Story Arc (RECOMMENDED)**
 
-### **🔥 Phase 1: Core Roguelike Systems (Weeks 1-8)**
+We've completed Phases 1, 2, 3, and 5 of the Victory Condition story! 
 
-1. **Item Identification System** (2 weeks) ← **START HERE**
+**Next immediate priorities:**
+
+1. **Phase 4: Environmental Lore** (2-3 weeks) ← **START HERE**
+   - Add ending-specific lore to signposts
+   - Create murals/inscriptions with backstory
+   - Easter eggs for deep players
+   - Reference: `VICTORY_CONDITION_PHASES.md` Phase 4
+
+2. **Phase 7: The Assassins** (2-3 weeks after Phase 4)
+   - Add urgency/tension to ending choice
+   - Turn counter, assassin spawns if delayed
+   - Reinforces Entity's impatience
+
+3. **Portal System** (4-6 weeks)
+   - LEGENDARY feature - "Wand of Portals"
+   - Tactical gameplay like Portal the game
+   - Creates emergent strategies
+   - Community will love this
+   - Reference: `VICTORY_CONDITION_PHASES.md` Portal Mechanics
+
+**Timeline:** 8-12 weeks to complete story arc + legendary system
+
+---
+
+### **🎮 Path B: Core Roguelike Systems (From ROADMAP.md)**
+
+If you prefer traditional roguelike depth before polish:
+
+1. **Item Identification System** (2 weeks)
    - THE defining roguelike mechanic
    - Players discover what unknown potions/scrolls do
    - Difficulty scaling (Easy=80% pre-ID, Hard=5% pre-ID)
@@ -57,19 +85,30 @@ Based on ROADMAP.md, the next features to implement are (in priority order):
 
 2. **Item Stacking** (1 week)
    - "5x Healing Potion" instead of 5 separate items
-   - Inventory quality of life
 
 3. **Scroll/Potion Variety** (2 weeks)
    - Expand from 8 to 20 scrolls, 15+ potions
-   - Provides content for identification system
 
 4. **Resistance System** (2 weeks)
-   - Fire/cold/poison/electric resistances
-   - Equipment grants resistances, tactical choices
+   - Fire/cold/poison/electric resistances on equipment
 
 5. **Throwing System** (1 week)
    - Throw potions/daggers in combat
-   - Emergent gameplay opportunities
+
+---
+
+### **📊 Quick Comparison**
+
+| Aspect | Path A (Story) | Path B (Mechanics) |
+|--------|---|---|
+| **Narrative Depth** | ✅✅✅ Complete | ❌ On hold |
+| **Gameplay Innovation** | ✅✅ (Portals) | ✅✅✅ (ID System) |
+| **Time to "Wow"** | 2-3 weeks | 4-6 weeks |
+| **Community Impact** | Story lovers | Roguelike fans |
+| **Effort Level** | Medium | Medium |
+| **Risk Level** | Low (story polish) | Low (core systems) |
+
+**Recommendation:** Path A completes what you started with Phases 1-5, then Path B systems can enhance the core gameplay loop.
 
 ---
 
