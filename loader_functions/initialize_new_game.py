@@ -214,30 +214,24 @@ def get_game_variables(constants):
         entities,
     )
 
-    # Tier 1 - Reveal entire map if requested
-    from config.testing_config import get_testing_config
-    config = get_testing_config()
-    print(f">>> INIT: config.reveal_map = {config.reveal_map}")
-    if config.reveal_map:
-        # Mark all tiles as explored (will be rendered as visible)
-        print(f">>> INIT: Marking {game_map.width}x{game_map.height} tiles as explored")
-        for x in range(game_map.width):
-            for y in range(game_map.height):
-                game_map.tiles[x][y].explored = True
-        # Verify a few tiles
-        print(f">>> INIT: Sample tiles explored: (0,0)={game_map.tiles[0][0].explored}, (10,10)={game_map.tiles[10][10].explored}")
-
     message_log = MessageLog(
         constants["message_x"], constants["message_width"], constants["message_height"]
     )
 
     game_state = GameStates.PLAYERS_TURN
-    
+
     # DEBUG: Tier 1 - Skip to specific dungeon level if requested
     from config.testing_config import get_testing_config
     config = get_testing_config()
     if config.start_level > 1:
         entities = _skip_to_level(player, entities, game_map, message_log, config.start_level, constants)
+
+    # Tier 1 - Reveal entire map if requested (MUST be after level skip!)
+    if config.reveal_map:
+        # Mark all tiles as explored (will be rendered as visible)
+        for x in range(game_map.width):
+            for y in range(game_map.height):
+                game_map.tiles[x][y].explored = True
 
     return player, entities, game_map, message_log, game_state
 

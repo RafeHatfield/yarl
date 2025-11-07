@@ -383,15 +383,22 @@ def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
             from config.testing_config import get_testing_config
             config = get_testing_config()
             
-            # DEBUG: Log on first few tiles
-            if x < 3 and y < 3 and not hasattr(_render_tiles_original, '_debug_logged'):
-                print(f">>> ORIGINAL RENDERER tile ({x},{y}): config.reveal_map={config.reveal_map}, explored={tile.explored}, visible={visible}")
+            # DEBUG: Count tiles for first frame
+            if not hasattr(_render_tiles_original, '_debug_frame'):
+                _render_tiles_original._debug_frame = 0
+                _render_tiles_original._explored_count = 0
+                _render_tiles_original._visible_count = 0
+            
+            if _render_tiles_original._debug_frame == 0:
+                if tile.explored:
+                    _render_tiles_original._explored_count += 1
+                if visible:
+                    _render_tiles_original._visible_count += 1
             
             if config.reveal_map and tile.explored:
                 visible = True
-                if not hasattr(_render_tiles_original, '_debug_logged'):
-                    _render_tiles_original._debug_logged = True
-                    print(f">>> ORIGINAL RENDERER: reveal_map is ACTIVE, setting explored tiles as visible")
+                if _render_tiles_original._debug_frame == 0:
+                    _render_tiles_original._visible_count += 1
 
             if visible:
                 # Use tile's custom light color if set, otherwise use default
