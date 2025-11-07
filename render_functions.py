@@ -378,27 +378,6 @@ def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
             visible = map_is_in_fov(fov_map, x, y)
             wall = game_map.tiles[x][y].block_sight
             tile = game_map.tiles[x][y]
-            
-            # Check if reveal_map is enabled (treat explored tiles as visible)
-            from config.testing_config import get_testing_config
-            config = get_testing_config()
-            
-            # DEBUG: Count tiles for first frame
-            if not hasattr(_render_tiles_original, '_debug_frame'):
-                _render_tiles_original._debug_frame = 0
-                _render_tiles_original._explored_count = 0
-                _render_tiles_original._visible_count = 0
-            
-            if _render_tiles_original._debug_frame == 0:
-                if tile.explored:
-                    _render_tiles_original._explored_count += 1
-                if visible:
-                    _render_tiles_original._visible_count += 1
-            
-            if config.reveal_map and tile.explored:
-                visible = True
-                if _render_tiles_original._debug_frame == 0:
-                    _render_tiles_original._visible_count += 1
 
             if visible:
                 # Use tile's custom light color if set, otherwise use default
