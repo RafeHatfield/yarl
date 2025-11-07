@@ -1,7 +1,7 @@
 .PHONY: clean test run quick-test help
 
-# Use whatever python is active (respects virtualenv)
-PYTHON := python
+# Use python3 (or whatever python is active if in virtualenv)
+PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
 
 help:
 	@echo "Phase 5 Development Commands:"
