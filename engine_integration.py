@@ -315,7 +315,7 @@ def play_game_with_engine(
                     '5': 'zhyraxion_grief_dragon',  # Mercy & Corruption - Grief Dragon (Hard)
                     # Old codes (for backward compatibility)
                     '1a': 'zhyraxion_human',        # Escape Through Battle
-                    '3': 'zhyraxion_full_dragon',   # Fool's Freedom (old code)
+                    # '3': REMOVED - Ending 3 is not a boss fight, it's a failure ending
                     '4_old': 'zhyraxion_grief_dragon'  # Mercy & Corruption (old code)
                 }
                 
