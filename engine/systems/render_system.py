@@ -119,6 +119,7 @@ class RenderSystem(System):
 
             # Get base FOV radius
             base_fov_radius = constants.get("fov_radius", 10)
+            print(f">>> BASE RENDER: base_fov_radius from constants = {base_fov_radius}")
 
             # Check for blindness - reduces FOV to 1
             if (hasattr(player, 'has_status_effect') and

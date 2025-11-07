@@ -8,11 +8,27 @@ by cruel mockery of the player's foolish choice.
 This is the only ending where the player simply GIVES the heart to Zhyraxion
 without any plan, condition, or knowledge. It's the "bad" ending that shows
 the dragon's true nature before the hopeless boss fight begins.
+
+Dialogue is loaded from config/cutscenes.yaml for easy editing and internationalization.
 """
 
 import tcod
 import tcod.constants
+import yaml
+from pathlib import Path
 from game_states import GameStates
+
+
+def _load_cutscene_dialogue():
+    """Load cutscene dialogue from YAML file.
+    
+    Returns:
+        dict: Cutscene dialogue data
+    """
+    endings_file = Path("config/endings.yaml")
+    with open(endings_file, 'r') as f:
+        data = yaml.safe_load(f)
+    return data['cutscenes']['fool_freedom']
 
 
 def show_fool_freedom_cutscene(con, root_console, screen_width, screen_height):
@@ -20,6 +36,8 @@ def show_fool_freedom_cutscene(con, root_console, screen_width, screen_height):
     
     Shows Zhyraxion's reaction to receiving the heart - overwhelming joy
     transforming into cruel mockery. This sets up the hopeless boss fight.
+    
+    Dialogue is loaded from config/cutscenes.yaml for easy editing.
     
     Args:
         con: Console to draw on
@@ -31,35 +49,17 @@ def show_fool_freedom_cutscene(con, root_console, screen_width, screen_height):
         tuple: (continue, new_state) - continue=True to proceed to fight,
                False to exit, new_state is GameStates.PLAYERS_TURN to start fight
     """
+    # Load dialogue from YAML
+    dialogue = _load_cutscene_dialogue()
+    
     # Dramatic color scheme - starts hopeful (gold), transitions to ominous (deep red)
     color_joy = tcod.gold
     color_mockery = tcod.dark_red
     
-    title = "Fool's Freedom"
+    title = dialogue['title']
     
-    # Multi-stage cutscene showing Zhyraxion's personality
-    cutscene_text = [
-        # Stage 1: Overwhelming gratitude (deceptive)
-        "You step forward and extend the Ruby Heart toward Zhyraxion.",
-        "",
-        "His eyes WIDEN. His breath catches.",
-        "",
-        "\"You... you're GIVING it to me? Freely?\"",
-        "",
-        "He reaches out with trembling hands, reverently taking the heart.",
-        "",
-        "For a moment, you see genuine emotion in those ancient eyes.",
-        "Centuries of grief. Desperation. Longing.",
-        "",
-        "\"After so long... after so many failures...\"",
-        "",
-        "His voice breaks.",
-        "",
-        "\"You actually... you actually did it. Aurelyn... I can finally—\"",
-        "",
-        "",
-        "[Press SPACE to continue]"
-    ]
+    # Stage 1: Overwhelming gratitude (deceptive)
+    cutscene_text = dialogue['stage_1']
     
     # Draw the first stage
     con.clear()
@@ -100,34 +100,7 @@ def show_fool_freedom_cutscene(con, root_console, screen_width, screen_height):
         break
     
     # Stage 2: The transformation - joy becomes cruelty
-    cutscene_text_2 = [
-        "He absorbs the heart. Power floods through him.",
-        "",
-        "His form SHIFTS. The human facade cracks and falls away.",
-        "",
-        "What stands before you is NO LONGER HUMAN.",
-        "",
-        "An ANCIENT DRAGON. Massive. Overwhelming. Terrible.",
-        "",
-        "He spreads his wings and the chamber trembles.",
-        "",
-        "Then... he starts to LAUGH.",
-        "",
-        "\"Oh... oh this is DELICIOUS.\"",
-        "",
-        "\"You just... HANDED it to me. No negotiation. No conditions.\"",
-        "\"Not even a PLEASE. You just... walked up and GAVE it.\"",
-        "",
-        "He tilts his massive head, almost curious.",
-        "",
-        "\"I've seen adventurers try SO many things over the centuries.\"",
-        "\"Clever plans. Desperate bargains. Heroic last stands.\"",
-        "",
-        "\"But THIS? Simply... giving up? Exquisite.\"",
-        "",
-        "",
-        "[Press SPACE to continue]"
-    ]
+    cutscene_text_2 = dialogue['stage_2']
     
     # Draw stage 2
     con.clear()
@@ -165,37 +138,7 @@ def show_fool_freedom_cutscene(con, root_console, screen_width, screen_height):
         break
     
     # Stage 3: Final mockery and threat (Alan Rickman sardonic perfection)
-    cutscene_text_3 = [
-        "\"Now. Let me guess. You thought I'd be... what?\"",
-        "\"GRATEFUL? Merciful? That I'd pat you on the head\"",
-        "\"and send you off with a little bag of gold?\"",
-        "",
-        "He examines one massive claw with theatrical disinterest.",
-        "",
-        "\"The Ghost warned you. That tedious little specter.\"",
-        "\"Went on and ON about trust and dragons and consequences.\"",
-        "\"I could hear him from HERE. Exhausting.\"",
-        "",
-        "\"But you... oh YOU. You looked at a dragon—\"",
-        "\"A dragon who has been ALONE for CENTURIES—\"",
-        "\"A dragon with quite LITERALLY nothing left to lose—\"",
-        "",
-        "\"And you thought: 'Yes. HIM. He seems trustworthy.'\"",
-        "",
-        "His eyes gleam with cruel amusement.",
-        "",
-        "\"Brilliant. Truly. I haven't been this entertained in DECADES.\"",
-        "",
-        "\"Unfortunately for you, I don't actually need you alive anymore.\"",
-        "\"In fact—and I hope this doesn't hurt your feelings—\"",
-        "",
-        "His voice drops to a bored whisper.",
-        "",
-        "\"I'm going to kill you now. Try to make it interesting.\"",
-        "",
-        "",
-        "[Press SPACE to begin the fight]"
-    ]
+    cutscene_text_3 = dialogue['stage_3']
     
     # Draw stage 3
     con.clear()

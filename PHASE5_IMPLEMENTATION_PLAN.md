@@ -21,38 +21,39 @@ See `STORY_LORE_CANONICAL.md` for full backstory.
 
 ## 🎯 The Six Endings
 
-### 1a. ⚔️ Escape Through Battle (Neutral-Good)
+### 1. ⚔️ Escape Through Battle (Neutral-Good)
 - Keep Heart → Refuse Transform → Fight
 - **Boss: Human Zhyraxion** (Medium-Hard)
 - Style: Fast, technical, pattern-based (Dark Souls)
 - Victory: Escape with heart, Zhyraxion stays trapped
 
-### 1b. 💀 Crimson Collector (Secret Dark)
+### 2. 💀 Crimson Collector (Secret Dark)
 - Keep Heart → Use Ritual Knowledge
 - **Requires:** `crimson_ritual_knowledge` from secret room
+- **Requires:** `entity_true_name_zhyraxion` from Guide (Level 20)
 - No fight: ritual sequence
 - Victory: Extract both hearts, dark power ending
 
-### 2. 🐉 Dragon's Bargain (Bad - Trapped)
+### 3. 🐉 Dragon's Bargain (Bad - Trapped)
 - Keep Heart → Accept Transformation
 - No fight: cutscene of curse transfer
 - Defeat: You become trapped, Zhyraxion freed with Rickman wit
 
-### 3. ☠️ Fool's Freedom (Bad - Unwinnable)
+### 4. ☠️ Fool's Freedom (Bad - Unwinnable)
 - Give Heart Immediately
 - **Boss: Full Dragon Zhyraxion** (EXTREME)
 - Style: Overwhelming, massive damage, area attacks
 - Expected: Death (0.1% win for "Dragonslayer" achievement)
 
-### 4. 🔥 Mercy & Corruption (Tragic)
+### 5. 🔥 Mercy & Corruption (Tragic)
 - Destroy Heart (no true name)
 - **Boss: Grief-Corrupted Dragon** (Hard)
 - Style: Erratic, unpredictable, berserker rage
 - Victory: Escape but at horrific cost (destroyed his connection to partner)
 
-### 5. ✨ Sacrifice & Redemption (Best)
+### 6. ✨ Sacrifice & Redemption (Best)
 - Destroy Heart (WITH true name "ZHYRAXION")
-- **Requires:** `entity_true_name_zhyraxion` from Guide (Level 15)
+- **Requires:** `entity_true_name_zhyraxion` from Guide (Level 20)
 - No fight: golden light cutscene
 - Victory: Everyone freed, dragons reunited
 

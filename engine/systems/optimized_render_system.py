@@ -216,6 +216,7 @@ class OptimizedRenderSystem(RenderSystem):
             
             # Get constants from game state
             constants = game_state.get("constants", {})
+            fov_radius = constants.get("fov_radius", 10)
 
             # Check if we should recompute based on position (for caching optimization)
             should_recompute_for_position = (

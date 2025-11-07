@@ -1310,11 +1310,10 @@ def unlock_crimson_ritual(*args, **kwargs):
             })
             print(f">>> CRIMSON CODEX: Already have knowledge")
         else:
-            print(f">>> CRIMSON CODEX: No victory component or knowledge not unlocked yet")
-        else:
             results.append({
                 "message": MB.info("The knowledge of the Crimson Ritual remains locked until you face the Entity.")
             })
+            print(f">>> CRIMSON CODEX: No victory component or knowledge not unlocked yet")
     
     # This item is not consumed - it stays in inventory as a quest item
     results.append({"consumed": False})

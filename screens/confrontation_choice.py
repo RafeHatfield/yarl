@@ -15,12 +15,28 @@ Ending Requirements:
   4 - Fool's Freedom: No knowledge required
   5 - Mercy & Corruption: No knowledge required
   6 - Sacrifice & Redemption: entity_true_name_zhyraxion required
+
+Dialogue is loaded from config/endings.yaml for easy editing.
 """
 
 import tcod
-from typing import Optional, Tuple
+import yaml
+from pathlib import Path
+from typing import Optional, Tuple, List, Dict, Any
 
 from game_states import GameStates
+
+
+def _load_confrontation_dialogue() -> Dict[str, Any]:
+    """Load confrontation dialogue from YAML file.
+    
+    Returns:
+        dict: Confrontation dialogue data
+    """
+    endings_file = Path("config/endings.yaml")
+    with open(endings_file, 'r') as f:
+        data = yaml.safe_load(f)
+    return data['confrontation']
 
 
 def confrontation_menu(con, root_console, screen_width, screen_height, player):
@@ -66,40 +82,15 @@ def _main_choice_menu(con, root_console, screen_width, screen_height,
         tuple: (ending_code, game_state) or (None, CONFRONTATION)
         ending_code: '1', '2', '3', '4', '5', '6' or None
     """
-    title = "The Confrontation Chamber"
+    # Load dialogue from YAML
+    confrontation = _load_confrontation_dialogue()
+    main_data = confrontation['main']
     
-    dialogue = [
-        "You step through the portal into a circular chamber.",
-        "",
-        "Ritual circles glow on the floor. In the center lie golden scales -",
-        "all that remains of a dragon named Aurelyn.",
-        "",
-        "A figure stands before you. Human in shape, but the eyes...",
-        "ancient, draconic, burning with centuries of grief and rage.",
-        "",
-        "He speaks, voice like silk over steel:",
-        "",
-        "\"You have it. Aurelyn's heart. After all this time...\"",
-        "",
-        "\"I've waited centuries. Watched thousands die in this place.\"",
-        "\"All for this moment.\"",
-        "",
-        "He extends a hand, trembling with barely contained desperation.",
-        "",
-        "\"Give it to me. I'll grant you your freedom. We can both escape.\"",
-        "",
-        "The Ruby Heart pulses warm in your hands, beating with a rhythm",
-        "that isn't quite alive, isn't quite dead.",
-        "",
-        "What do you do with the heart?"
-    ]
+    title = main_data['title']
+    dialogue = main_data['dialogue']
     
-    # Main choices (3 options)
-    choices = [
-        ("K", "Keep the heart"),
-        ("G", "Give the heart to him"),
-        ("D", "Destroy the heart"),
-    ]
+    # Build choices from YAML
+    choices = [(c['key'], c['text']) for c in main_data['choices']]
     
     # Render the menu and get input
     key_char = _render_menu(con, root_console, screen_width, screen_height,
@@ -137,44 +128,26 @@ def _keep_submenu(con, root_console, screen_width, screen_height,
           '2' - Crimson Collector (ritual - requires BOTH flags)
           '3' - Dragon's Bargain (accept transformation)
     """
-    title = "You grip the heart tightly..."
+    # Load dialogue from YAML
+    confrontation = _load_confrontation_dialogue()
+    keep_data = confrontation['keep_submenu']
     
-    dialogue = [
-        "You pull the Ruby Heart close to your chest.",
-        "",
-        "Zhyraxion's expression shifts - surprise, then anger.",
-        "",
-        "\"You would... keep it? DENY me?\"",
-        "",
-        "His form flickers, barely holding human shape.",
-        "",
-        "\"Very well. Let me offer you... alternatives.\"",
-        "",
-        "\"You could FIGHT me for your freedom - though I assure you,\"",
-        "\"you won't win.\"",
-        "",
-        "\"Or... you could accept my gift. Become a dragon. We'll BOTH\"",
-        "\"escape. You'll have power beyond imagining.\"",
-        "",
-        "His smile is thin, dangerous.",
-    ]
+    title = keep_data['title']
+    dialogue = keep_data['dialogue']
     
     # Build choices based on knowledge
-    choices = [
-        ("F", "Fight for your freedom"),
-        ("A", "Accept his transformation offer"),
-    ]
+    choices = []
+    for choice_data in keep_data['choices']:
+        # Check if choice requires both knowledge flags
+        if choice_data.get('requires_both_knowledge', False):
+            if knows_ritual and knows_true_name:
+                choices.append((choice_data['key'], choice_data['text']))
+        else:
+            choices.append((choice_data['key'], choice_data['text']))
 
     # DEBUG: Log ritual option logic
     print(f">>> KEEP SUBMENU: knows_ritual={knows_ritual}, knows_true_name={knows_true_name}")
-    print(f">>> KEEP SUBMENU: will add ritual option = {knows_ritual and knows_true_name}")
-
-    # CRITICAL: Ending 2 requires BOTH knowledge flags!
-    if knows_ritual and knows_true_name:
-        choices.append(("R", "Use the Crimson Ritual [SECRET]"))
-        print(">>> KEEP SUBMENU: Added ritual option!")
-    else:
-        print(">>> KEEP SUBMENU: Ritual option NOT added")
+    print(f">>> KEEP SUBMENU: total choices = {len(choices)}")
     
     choices.append(("B", "Back"))
     
@@ -209,42 +182,24 @@ def _destroy_submenu(con, root_console, screen_width, screen_height,
           '5' - Mercy & Corruption (destroy without name - grief dragon fight)
           '6' - Sacrifice & Redemption (destroy with name - cutscene, best ending)
     """
-    title = "You raise the heart..."
+    # Load dialogue from YAML
+    confrontation = _load_confrontation_dialogue()
+    destroy_data = confrontation['destroy_submenu']
     
-    dialogue = [
-        "You lift Aurelyn's Ruby Heart above your head.",
-        "",
-        "Zhyraxion's eyes widen in horror.",
-        "",
-        "\"NO! Don't you DARE! That's all I have left of—\"",
-        "",
-        "\"Please. Don't do this. I'm begging you.\"",
-        "",
-        "The heart pulses in your hands. You feel its warmth,",
-        "its not-quite-alive rhythm.",
-        "",
-        "This is someone's heart. Someone who was loved.",
-    ]
+    title = destroy_data['title']
+    dialogue = destroy_data['dialogue']
     
-    if knows_true_name:
-        dialogue.extend([
-            "",
-            "You know his true name: Zhyraxion.",
-            "",
-            "If you speak it before destroying the heart...",
-            "...perhaps there's another way."
-        ])
-    
-    # Build choices
+    # Build choices based on knowledge
     choices = []
+    for choice_data in destroy_data['choices']:
+        # Check if choice requires true name
+        if choice_data.get('requires_true_name', False):
+            if knows_true_name:
+                choices.append((choice_data['key'], choice_data['text']))
+        else:
+            choices.append((choice_data['key'], choice_data['text']))
     
-    if knows_true_name:
-        choices.append(("N", "Speak his true name and destroy the heart"))
-    
-    choices.extend([
-        ("J", "Just destroy it"),
-        ("B", "Back")
-    ])
+    choices.append(("B", "Back"))
     
     # Render and get input
     key_char = _render_menu(con, root_console, screen_width, screen_height,
