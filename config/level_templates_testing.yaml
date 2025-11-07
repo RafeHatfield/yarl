@@ -64,9 +64,9 @@ level_overrides:
       
       items:
         # ========== VICTORY CONDITION TESTING ==========
-        # AMULET OF YENDOR - Test victory sequence on level 1!
-        - type: "amulet_of_yendor"
-          count: 1  # THE ultimate goal, spawns portal when picked up
+        # RUBY HEART - Test Phase 5 victory sequence on level 1!
+        - type: "ruby_heart"
+          count: 1  # THE ultimate goal, spawns portal when picked up (Phase 5)
         
         # SURVIVAL GEAR - Make it easy to survive
         - type: "healing_potion"

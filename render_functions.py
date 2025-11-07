@@ -378,7 +378,7 @@ def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
             visible = map_is_in_fov(fov_map, x, y)
             wall = game_map.tiles[x][y].block_sight
             tile = game_map.tiles[x][y]
-
+            
             # Check if reveal_map is enabled (treat explored tiles as visible)
             from config.testing_config import get_testing_config
             config = get_testing_config()
