@@ -328,7 +328,7 @@ monsters:
       damage_max: 40
       # D&D-style stats - Ancient dragon unleashed
       strength: 24             # Legendary strength (+7 damage modifier)
-      dexterity: 14            # Large but agile (+2 to-hit, +2 AC)
+      dexterity: 18            # Overwhelming accuracy (+4 to-hit, ~80% hit chance)
       constitution: 22         # Ancient endurance (+6 HP modifier)
       # Resistances: Full dragon immunity
       resistances:

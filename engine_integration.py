@@ -306,6 +306,20 @@ def play_game_with_engine(
                 engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
                 continue
             elif choice:
+                # Special handling for Ending 4 (Fool's Freedom) - show cutscene first
+                if choice == '4':
+                    from screens.fool_freedom_cutscene import show_fool_freedom_cutscene
+                    continue_to_fight, _ = show_fool_freedom_cutscene(
+                        con, 0,
+                        constants['screen_width'], constants['screen_height']
+                    )
+                    
+                    if not continue_to_fight:
+                        # Player escaped cutscene, return to normal gameplay
+                        engine.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                        continue
+                    # Otherwise, fall through to boss fight below
+                
                 # Check if this ending requires a boss fight
                 # Phase 5: Six Endings with boss fights
                 boss_fights = {
