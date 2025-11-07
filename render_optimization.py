@@ -264,6 +264,12 @@ class OptimizedTileRenderer:
         wall = game_map.tiles[x][y].block_sight
         explored = game_map.tiles[x][y].explored
         
+        # Check if reveal_map is enabled (treat explored tiles as visible)
+        from config.testing_config import get_testing_config
+        config = get_testing_config()
+        if config.reveal_map and explored:
+            visible = True
+        
         # Determine render state
         if visible:
             render_state = TileRenderState.VISIBLE_WALL if wall else TileRenderState.VISIBLE_FLOOR
