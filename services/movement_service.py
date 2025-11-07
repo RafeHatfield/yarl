@@ -161,24 +161,21 @@ class MovementService:
                                    player.victory.has_ruby_heart)
 
             if player_has_ruby_heart:
-                # Check if confrontation has already started (prevent multiple boss spawns)
-                confrontation_already_started = (hasattr(player, 'victory') and
-                                               player.victory and
-                                               player.victory.confrontation_started)
+                # Check if an ending has already been achieved (prevent re-entering after choice made)
+                ending_already_achieved = (hasattr(player, 'victory') and
+                                          player.victory and
+                                          player.victory.ending_achieved is not None)
 
-                if confrontation_already_started:
-                    # Player has already entered the portal - just move them
-                    logger.debug("Portal entry: confrontation already started, allowing movement")
+                if ending_already_achieved:
+                    # Player has already chosen an ending - just move them (shouldn't happen normally)
+                    logger.debug("Portal entry: ending already achieved, allowing movement")
                     result.messages.append({"message": MB.info("You step through the portal once more...")})
                 else:
-                    # First time entering portal - trigger confrontation
+                    # Trigger confrontation (can be triggered multiple times if player exits with ESC)
                     result.portal_entry = True
                     result.messages.append({"message": MB.item_effect("You step through the portal...")})
                     result.messages.append({"message": MB.warning("Reality twists around you!")})
-
-                    # Mark confrontation started on player
-                    player.victory.start_confrontation()
-                    logger.debug("Victory component: confrontation started")
+                    logger.debug("Portal entry: triggering confrontation (re-enterable until ending chosen)")
             else:
                 # Portal exists but doesn't trigger confrontation yet
                 logger.debug("Portal found but player hasn't obtained Ruby Heart")
