@@ -4,6 +4,7 @@ This module handles the creation of new games, setting up initial
 game state, player character, and game world configuration.
 """
 
+import logging
 from tcod import libtcodpy
 
 from components.component_registry import ComponentType
@@ -13,16 +14,22 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.item import Item
 from components.level import Level
+from components.player_pathfinding import PlayerPathfinding
 from components.statistics import Statistics
 from config.game_constants import get_constants as get_new_constants, get_combat_config, get_inventory_config
 from config.entity_registry import load_entity_config
 from config.entity_factory import get_entity_factory
+from config.identification_manager import reset_identification_manager
+from config.item_appearances import reset_appearance_generator
+from config.level_template_registry import get_level_template_registry
+from config.testing_config import get_testing_config
 from entity import Entity
 from equipment_slots import EquipmentSlots
 from game_messages import MessageLog
 from game_states import GameStates
 from map_objects.game_map import GameMap
 from render_functions import RenderOrder
+from spells.spell_catalog import register_all_spells
 
 
 def get_constants():
@@ -37,7 +44,6 @@ def get_constants():
     
     # Check for map size overrides from level templates (level 1)
     # This allows testing mode to set larger maps via level_templates_testing.yaml
-    from config.level_template_registry import get_level_template_registry
     registry = get_level_template_registry()
     
     level_1_override = registry.get_level_override(1)
@@ -84,15 +90,12 @@ def get_game_variables(constants):
     load_entity_config()
     
     # Register all spells in the spell registry
-    from spells.spell_catalog import register_all_spells
     register_all_spells()
     
     # Initialize appearance generator for item identification system
-    from config.item_appearances import reset_appearance_generator
     appearance_gen = reset_appearance_generator()
     
     # Reset the identification manager (tracks which item types are identified)
-    from config.identification_manager import reset_identification_manager
     reset_identification_manager()
     
     # Register all item types that need identification
@@ -162,7 +165,6 @@ def get_game_variables(constants):
     statistics_component = Statistics()
 
     # Create pathfinding component for mouse movement
-    from components.player_pathfinding import PlayerPathfinding
     pathfinding_component = PlayerPathfinding()
     
     # Use the new Entity.create_player method for cleaner code
@@ -226,7 +228,6 @@ def get_game_variables(constants):
     game_state = GameStates.PLAYERS_TURN
 
     # DEBUG: Tier 1 - Skip to specific dungeon level if requested
-    from config.testing_config import get_testing_config
     config = get_testing_config()
     if config.start_level > 1:
         entities = _skip_to_level(player, entities, game_map, message_log, config.start_level, constants)
@@ -257,7 +258,6 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     Returns:
         list: Updated entities list for the target level
     """
-    import logging
     logger = logging.getLogger(__name__)
     
     logger.info(f"⏭️  DEBUG: Skipping to level {target_level}...")
@@ -302,7 +302,6 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
         entities: List of all entities  
         dungeon_level: Current dungeon level
     """
-    import logging
     logger = logging.getLogger(__name__)
     
     entity_factory = get_entity_factory()
