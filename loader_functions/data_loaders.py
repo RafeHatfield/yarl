@@ -87,7 +87,6 @@ def load_game():
     """
     # CRITICAL: Load entity configuration before loading save game
     # This ensures all entity definitions are available for deserialization
-    from config.entity_registry import load_entity_config
     load_entity_config()
     
     try:
@@ -146,7 +145,6 @@ def _load_json_save():
 
 def _load_legacy_save():
     """Load game from legacy shelve format."""
-    import shelve
     
     with shelve.open("savegame.dat", "r") as data_file:
         # Validate that all required keys exist
@@ -356,7 +354,6 @@ def _serialize_message_log(message_log: MessageLog) -> Dict[str, Any]:
 
 def _deserialize_entity(data: Dict[str, Any]) -> Entity:
     """Deserialize an entity from JSON data."""
-    from render_functions import RenderOrder
     
     # Create base entity
     entity = Entity(

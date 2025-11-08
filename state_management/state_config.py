@@ -25,7 +25,6 @@ from typing import Optional, Callable, Dict
 from game_states import GameStates
 
 try:  # Backwards compatibility for legacy imports
-    from engine.game_state_manager import GameState as GameState  # type: ignore
 except Exception:  # pragma: no cover - fallback if engine module missing
     GameState = None  # type: ignore
 
@@ -94,7 +93,6 @@ def _initialize_state_configurations():
         return  # Already initialized
     
     # Import handlers here to avoid circular import
-    from input_handlers import (
         handle_player_turn_keys,
         handle_targeting_keys,
         handle_inventory_keys,  # Still used for THROW_SELECT_ITEM

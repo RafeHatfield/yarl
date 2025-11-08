@@ -53,7 +53,6 @@ def demo_surface_operations():
     print("=" * 50)
     
     # Create a mock surface for demonstration
-    from tests.test_rendering_abstraction import MockSurface
     surface = MockSurface(20, 10)
     
     # Basic character operations

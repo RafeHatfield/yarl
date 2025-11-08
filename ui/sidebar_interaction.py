@@ -111,7 +111,6 @@ def _handle_stairs_click(player: Any, game_map: Optional[Any]) -> Optional[dict]
         return None
     
     # Check if player is on stairs
-    from map_objects.tile import Tile
     tile = game_map.tiles[player.x][player.y]
     
     if hasattr(tile, 'tile_type'):

@@ -113,7 +113,6 @@ def main():
     and runs the main game loop until the player quits.
     """
     # Initialize debug logging FIRST (before anything else)
-    from debug_logging import setup_debug_logging
     debug_log = setup_debug_logging("debug.log", console_level="WARNING")
     print(f"🔍 Debug logging enabled: {debug_log}")
     
@@ -138,7 +137,6 @@ def main():
         print("🧪 TESTING MODE ENABLED: Via environment variable YARL_TESTING_MODE")
     
     # Configure Tier 1 debug flags
-    from config.testing_config import get_testing_config
     config = get_testing_config()
     
     if args.start_level:
@@ -162,7 +160,6 @@ def main():
         print("🧙 WIZARD MODE ENABLED: Press @ or F12 to open debug menu")
     
     # Initialize monster action logging if in testing mode
-    from config.testing_config import is_testing_mode
     if is_testing_mode():
         from components.monster_action_logger import MonsterActionLogger
         MonsterActionLogger.setup_logging()
@@ -232,7 +229,6 @@ def main():
     main_menu_background_image = libtcod.image_load("menu_background1.png")
     
     # Generate Entity quote ONCE to prevent flickering (Phase 1 feature)
-    from entity_dialogue import EntityDialogue
     entity_menu_quote = EntityDialogue.get_main_menu_quote()
 
     key = libtcod.Key()

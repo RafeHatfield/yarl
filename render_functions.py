@@ -52,7 +52,6 @@ def get_names_under_mouse(mouse, entities, fov_map, camera=None):
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
     
     # Translate to world coordinates using ui_layout and camera
-    from config.ui_layout import get_ui_layout
     ui_layout = get_ui_layout()
     
     # Get camera offset if available
@@ -191,7 +190,6 @@ def render_all(
     #                      'HP: {0:02}/{1:02}'.format(player.fighter.hp, player.fighter.max_hp))
 
     # Get UI layout for positioning consoles
-    from config.ui_layout import get_ui_layout
     ui_layout = get_ui_layout()
     
     # Blit viewport to screen
@@ -429,7 +427,6 @@ def _render_hazard_at_tile(con, game_map, world_x, world_y, viewport_x, viewport
         return
     
     # Get hazard character and color based on type
-    from components.ground_hazard import HazardType
     
     if hazard.hazard_type == HazardType.FIRE:
         # Fireball leaves burning embers - use * character

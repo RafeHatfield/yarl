@@ -17,7 +17,6 @@ from fov_functions import map_is_in_fov
 from game_messages import Message
 
 if TYPE_CHECKING:
-    from entity import Entity
     from map_objects.game_map import GameMap
 
 logger = logging.getLogger(__name__)

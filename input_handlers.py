@@ -201,7 +201,6 @@ def handle_mouse(mouse, camera=None, game_state=None):
     Returns:
         dict: Dictionary with mouse action keys (coordinates vary by context)
     """
-    from game_states import GameStates
     
     # Get raw screen coordinates
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
@@ -217,7 +216,6 @@ def handle_mouse(mouse, camera=None, game_state=None):
     
     # Translate screen coordinates to world coordinates
     # This accounts for sidebar offset, viewport positioning, AND camera offset
-    from config.ui_layout import get_ui_layout
     ui_layout = get_ui_layout()
     
     # Get camera coordinates for proper translation

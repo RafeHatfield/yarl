@@ -40,7 +40,6 @@ def show_wizard_menu(con, game_state_manager):
     Returns:
         GameStates: The new game state (PLAYERS_TURN or current state)
     """
-    from config.testing_config import get_testing_config
     config = get_testing_config()
     
     # Safety check - shouldn't be able to access without wizard mode
@@ -220,7 +219,6 @@ def wizard_toggle_god_mode(game_state_manager):
     Returns:
         GameStates: PLAYERS_TURN
     """
-    from config.testing_config import get_testing_config
     config = get_testing_config()
     state = game_state_manager.state
     message_log = state.message_log
@@ -331,8 +329,6 @@ def wizard_teleport_to_level(game_state_manager):
     player.fighter.hp = player.fighter.max_hp
     
     # Force FOV recompute to ensure map renders correctly
-    import tcod as libtcod
-    from fov_functions import initialize_fov, recompute_fov
     
     fov_recompute = True
     fov_map = initialize_fov(game_map)
@@ -376,7 +372,6 @@ def wizard_spawn_npc(game_state_manager):
     
     # For now, just spawn the Ghost Guide
     # In future, could add a submenu for different NPCs
-    from config.entity_factory import get_entity_factory
     entity_factory = get_entity_factory()
     
     # Find empty spot near player
@@ -458,8 +453,6 @@ def wizard_unlock_knowledge(game_state_manager):
 
 def _draw_wizard_menu_background(con):
     """Draw the wizard menu background (for use when showing prompts on top)."""
-    import tcod as libtcod
-    from config.testing_config import get_testing_config
     
     config = get_testing_config()
     
@@ -560,7 +553,6 @@ def _get_number_input(min_val: int, max_val: int):
     Returns:
         int or None: The entered number, or None if cancelled
     """
-    import tcod as libtcod
     
     global _wizard_console
     if _wizard_console is None:

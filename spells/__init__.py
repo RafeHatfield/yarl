@@ -50,7 +50,6 @@ def cast_spell_by_id(spell_id: str, caster, *args, **kwargs):
         ...     game_map=game_map
         ... )
     """
-    from game_messages import Message
     from message_builder import MessageBuilder as MB
     
     registry = get_spell_registry()

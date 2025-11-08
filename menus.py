@@ -452,7 +452,6 @@ def character_screen(
     # RESISTANCES
     # ═══════════════════════════════════════════════════════════
     # Display elemental resistances if any are > 0
-    from components.fighter import ResistanceType
     resistance_display = _get_resistance_display(player)
     if resistance_display:
         libtcodpy.console_print_rect_ex(
@@ -787,7 +786,6 @@ def _get_resistance_display(player):
     Returns:
         list[str]: List of formatted resistance lines, or empty list if no resistances
     """
-    from components.fighter import ResistanceType
     
     # Get all resistance values
     resistances = {}

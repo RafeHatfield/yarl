@@ -59,7 +59,6 @@ def _handle_slime_splitting(monster, game_map, entities=None) -> List:
     spawn_positions = _get_valid_spawn_positions(monster.x, monster.y, game_map, num_slimes, entities)
     
     # Create new slimes
-    from config.entity_factory import get_entity_factory
     entity_factory = get_entity_factory()
     
     for i, (x, y) in enumerate(spawn_positions):
@@ -160,8 +159,6 @@ def kill_monster(monster, game_map=None, entities=None):
         Message: Death message to display to the player
     """
     # Import MessageBuilder at the top so it's available throughout the function
-    from message_builder import MessageBuilder as MB
-    from components.component_registry import ComponentType
     
     # GUARD: Check if this monster has already been processed
     # This prevents duplicate loot drops if kill_monster is called multiple times
@@ -182,7 +179,6 @@ def kill_monster(monster, game_map=None, entities=None):
         boss.mark_defeated()
     
     # Drop loot before transforming to corpse
-    from components.monster_equipment import drop_loot_from_monster
     dropped_items = drop_loot_from_monster(monster, monster.x, monster.y, game_map)
     
     # Add dropped items to the game world

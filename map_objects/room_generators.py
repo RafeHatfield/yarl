@@ -26,7 +26,6 @@ from config.testing_config import get_testing_config
 import logging
 
 if TYPE_CHECKING:
-    from entity import Entity
     from map_objects.game_map import GameMap
 
 logger = logging.getLogger(__name__)

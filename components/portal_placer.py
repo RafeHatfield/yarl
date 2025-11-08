@@ -18,9 +18,7 @@ from typing import TYPE_CHECKING, Dict, Any, Optional
 from components.wand import Wand
 
 if TYPE_CHECKING:
-    from components.portal import Portal
     from entity import Entity
-    from map_objects.game_map import GameMap
 
 logger = logging.getLogger(__name__)
 

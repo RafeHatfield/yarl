@@ -27,7 +27,6 @@ import heapq
 from map_objects.rectangle import Rect
 
 if TYPE_CHECKING:
-    from entity import Entity
     from map_objects.game_map import GameMap
 
 logger = logging.getLogger(__name__)

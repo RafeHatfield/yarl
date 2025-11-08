@@ -12,7 +12,6 @@ def test_appearance_generator_initialization():
     
     Regression test for: AttributeError: 'NoneType' object has no attribute 'initialize'
     """
-    from config.item_appearances import reset_appearance_generator
     
     # Reset should return a valid generator
     appearance_gen = reset_appearance_generator()
@@ -34,7 +33,6 @@ def test_game_initialization_does_not_crash():
     
     This is the critical path that runs on every game start.
     """
-    from loader_functions.initialize_new_game import get_constants, get_game_variables
     
     # Get constants
     constants = get_constants()
@@ -56,7 +54,6 @@ def test_game_initialization_does_not_crash():
 
 def test_appearance_generator_has_potion_types():
     """Test that all new potion types are registered with appearance generator."""
-    from config.item_appearances import reset_appearance_generator
     
     appearance_gen = reset_appearance_generator()
     
@@ -92,7 +89,6 @@ def test_fighter_none_status_effects_check():
     The fix adds 'and self.owner.status_effects is not None' to prevent calling
     .get_effect() on None.
     """
-    from unittest.mock import Mock
     
     # Create entity with status_effects=None (common scenario)
     entity = Mock()

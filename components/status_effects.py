@@ -3,7 +3,6 @@ from message_builder import MessageBuilder as MB
 from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
-    from entity import Entity
 
 class StatusEffect:
     """Base class for all status effects."""

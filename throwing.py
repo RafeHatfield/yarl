@@ -113,7 +113,6 @@ def throw_item(
     final_x, final_y = path[-1]
     
     # Queue projectile animation
-    from visual_effect_queue import get_effect_queue
     effect_queue = get_effect_queue()
     
     # Determine projectile appearance
@@ -128,7 +127,6 @@ def throw_item(
     )
     
     # Check what we hit at final position
-    from components.component_registry import ComponentType
     target_entity = None
     for entity in entities:
         if entity.x == final_x and entity.y == final_y and entity != thrower:

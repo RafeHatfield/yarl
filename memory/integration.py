@@ -17,8 +17,6 @@ from .gc_optimizer import GCOptimizer, GCConfig, GCMode, optimize_gc_settings
 
 # Import game engine components
 try:
-    from engine.system import System
-    from engine.game_engine import GameEngine
     GAME_ENGINE_AVAILABLE = True
 except ImportError:
     GAME_ENGINE_AVAILABLE = False

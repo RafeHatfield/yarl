@@ -306,8 +306,6 @@ def create_dialogue_from_yaml(dialogue_data: Dict[str, Any]) -> NPCDialogue:
 
 if __name__ == "__main__":
     # Test the dialogue system
-    import yaml
-    from pathlib import Path
     
     logging.basicConfig(level=logging.DEBUG)
     

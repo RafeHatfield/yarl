@@ -44,7 +44,6 @@ def setup_minimal_game():
     message_log = MessageLog(x=0, width=40, height=5)
     fov_map = initialize_fov(game_map)
     
-    from engine.game_state_manager import GameStateManager, GameState
     state_manager = GameStateManager()
     game_state = GameState(
         player=player,
@@ -79,7 +78,6 @@ def test_pickup_ruby_heart():
     print(f"  Setup: Player at ({player.x}, {player.y}), Ruby Heart at ({ruby_heart.x}, {ruby_heart.y})")
     
     # Use PickupService
-    from services.pickup_service import get_pickup_service
     pickup_service = get_pickup_service(state_manager)
     result = pickup_service.execute_pickup(source="test")
     
@@ -135,7 +133,6 @@ def test_portal_entry():
     print(f"  Player has Ruby Heart: {player.victory.has_ruby_heart}")
     
     # Use MovementService to move onto portal
-    from services.movement_service import get_movement_service
     movement_service = get_movement_service(state_manager)
     result = movement_service.execute_movement(1, 0, source="test")
     
@@ -180,7 +177,6 @@ def test_full_flow():
     print(f"  Step 1: Picking up Ruby Heart at ({ruby_heart.x}, {ruby_heart.y})")
     
     # Step 2: Pick up Ruby Heart
-    from services.pickup_service import get_pickup_service
     pickup_service = get_pickup_service(state_manager)
     pickup_result = pickup_service.execute_pickup(source="test")
     
@@ -198,7 +194,6 @@ def test_full_flow():
     print(f"  Step 3: Moving player to portal...")
     
     # Step 4: Move to portal
-    from services.movement_service import get_movement_service
     movement_service = get_movement_service(state_manager)
     
     dx = portal.x - player.x

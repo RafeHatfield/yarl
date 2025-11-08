@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Dict, Any, List
 from components.map_feature import MapFeature, MapFeatureType
 
 if TYPE_CHECKING:
-    from entity import Entity
 
 
 class Signpost(MapFeature):

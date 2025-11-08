@@ -15,7 +15,6 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Dict, Any, List
 
 if TYPE_CHECKING:
-    from entity import Entity
 
 
 class MapFeatureType(Enum):

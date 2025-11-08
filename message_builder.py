@@ -5,7 +5,6 @@ across the codebase. Instead of scattering Message() calls with hardcoded colors
 use MessageBuilder methods for consistent formatting and colors.
 
 Usage:
-    from message_builder import MessageBuilder as MB
     
     # Combat messages
     results.append({"message": MB.combat("You hit the Orc for 10 damage!")})

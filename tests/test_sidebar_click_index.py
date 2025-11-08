@@ -140,8 +140,6 @@ def test_sidebar_click_excludes_equipped_items():
     
     # Equip the sword
     sword = player.inventory.items[2]
-    from components.equippable import Equippable
-    from equipment_slots import EquipmentSlots
     sword.equippable = Equippable(slot=EquipmentSlots.MAIN_HAND)
     player.equipment.main_hand = sword
     
@@ -185,8 +183,6 @@ def test_sidebar_right_click_drop_with_equipped_item():
     
     # Equip Blessed Shield
     blessed_shield = player.inventory.items[0]
-    from components.equippable import Equippable
-    from equipment_slots import EquipmentSlots
     blessed_shield.equippable = Equippable(slot=EquipmentSlots.OFF_HAND)
     player.equipment.off_hand = blessed_shield
     

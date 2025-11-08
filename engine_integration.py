@@ -75,7 +75,6 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
         GameEngine: Configured game engine ready to run
     """
     # Create the engine with configurable FPS
-    from config.game_constants import get_performance_config
     perf_config = get_performance_config()
     engine = GameEngine(target_fps=perf_config.TARGET_FPS)
 
@@ -141,8 +140,6 @@ def initialize_game_engine(
     engine.state_manager.set_fov_data(fov_map, fov_recompute=True)
     
     # Initialize Camera (Phase 2)
-    from rendering.camera import Camera, CameraMode
-    from config.ui_layout import get_ui_layout
     ui_layout = get_ui_layout()
     
     camera = Camera(
@@ -210,7 +207,6 @@ def play_game_with_engine(
     action_processor.turn_manager = engine.turn_manager  # Phase 3: Wire up TurnManager
 
     # Reinitialize TurnController with turn_manager now that it's set
-    from systems.turn_controller import initialize_turn_controller
     action_processor.turn_controller = initialize_turn_controller(
         engine.state_manager, 
         engine.turn_manager
@@ -647,7 +643,6 @@ def _process_game_actions(action, mouse_action, state_manager, targeting_item=No
         New code should use ActionProcessor directly. This will be removed
         in a future version once all tests are updated.
     """
-    from game_actions import ActionProcessor
     
     # Create a temporary action processor for this call
     action_processor = ActionProcessor(state_manager)
