@@ -115,7 +115,11 @@ class VictoryManager:
         portal_x, portal_y = self._find_adjacent_open_tile(player, game_map, entities)
 
         logger.info(f"Attempting to spawn portal adjacent to player: ({portal_x}, {portal_y})")
-        portal = self.entity_factory.create_unique_item('entity_portal', portal_x, portal_y)
+        
+        # Use PortalManager for centralized portal creation
+        from services.portal_manager import get_portal_manager
+        portal_manager = get_portal_manager()
+        portal = portal_manager.create_portal_entity('entity_portal', portal_x, portal_y)
         
         if portal:
             logger.info(f"Portal created successfully. Portal location: ({portal.x}, {portal.y})")

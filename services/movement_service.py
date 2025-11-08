@@ -150,9 +150,10 @@ class MovementService:
         # Check for portal entry (Phase 5) - always check when moving, regardless of state
         logger.debug(f"MovementService: Checking portal entry at {result.new_position}")
 
-        # Check for wand portal collision (teleportation)
-        from engine.portal_system import PortalSystem
-        portal_collision = PortalSystem.check_portal_collision(player, entities_list=entities)
+        # Check for wand portal collision (teleportation) using PortalManager
+        from services.portal_manager import get_portal_manager
+        portal_manager = get_portal_manager()
+        portal_collision = portal_manager.check_portal_collision(player, entities)
         if portal_collision and portal_collision.get('teleported'):
             logger.info(f"Portal teleportation: {portal_collision.get('from_pos')} -> {portal_collision.get('to_pos')}")
             result.messages.append({"message": MB.item_effect("You step through the portal...")})
@@ -163,7 +164,7 @@ class MovementService:
         
         # Check for victory portal entry (only triggers confrontation, doesn't teleport)
         # Victory portal only spawns after picking up Ruby Heart, so we can assume it always triggers confrontation
-        portal_entity = self._check_portal_entry(player, entities)
+        portal_entity = portal_manager.check_victory_portal_collision(player, entities)
         if portal_entity:
             print(f">>> MovementService: VICTORY PORTAL ENTRY DETECTED at {result.new_position}!")
             logger.info(f"=== MOVEMENT_SERVICE: VICTORY PORTAL ENTRY DETECTED!")
@@ -191,47 +192,8 @@ class MovementService:
         
         return result
     
-    def _check_portal_entry(self, player, entities) -> Optional['Entity']:
-        """Check if player is standing on a portal that should trigger teleportation or confrontation.
-        
-        Note: Wand portals (portal_entrance/portal_exit) are handled by collision detection in movement.
-        This only checks for special portals like the victory portal (entity_portal) which trigger confrontation.
-        
-        Args:
-            player: Player entity
-            entities: List of all entities
-            
-        Returns:
-            Portal entity if player is on it, None otherwise
-        """
-        portal_count = 0
-        portal_entity = None
-        
-        for entity in entities:
-            if hasattr(entity, 'is_portal') and entity.is_portal:
-                # Only handle the victory portal (entity_portal) for confrontation logic
-                # Wand portals (portal_entrance/portal_exit) are handled by normal collision/teleportation
-                if hasattr(entity, 'portal') and entity.portal and entity.portal.portal_type in ['entrance', 'exit']:
-                    # Skip wand portals - they're handled by collision detection
-                    continue
-                
-                portal_count += 1
-                logger.debug(f"Found special portal at ({entity.x}, {entity.y})")
-                print(f">>> MovementService: Found special portal at ({entity.x}, {entity.y})")
-                
-                if entity.x == player.x and entity.y == player.y:
-                    logger.info(f"Player on special portal at ({entity.x}, {entity.y})")
-                    print(f">>> MovementService: Player IS on special portal!")
-                    portal_entity = entity
-        
-        if portal_count == 0:
-            logger.warning("No portals found in entities list!")
-            print(f">>> MovementService: WARNING - No portals in entities list!")
-        elif portal_entity is None:
-            logger.debug(f"Portals exist ({portal_count}) but player not on any")
-            print(f">>> MovementService: {portal_count} portal(s) exist, but player not on one")
-        
-        return portal_entity
+    # NOTE: _check_portal_entry() moved to PortalManager.check_victory_portal_collision()
+    # PortalManager is now the single source of truth for all portal operations
     
     def _check_secret_reveals(self, player, game_map):
         """Check for passive secret door reveals near player.
