@@ -65,8 +65,9 @@ class PortalManager:
                 return None
             
             # Create or replace the Portal component
+            # Keep portal_type as-is (entity_portal is a special victory portal type)
             portal = Portal(
-                portal_type if portal_type != 'entity_portal' else 'entrance',  # Normalize type
+                portal_type,
                 linked_portal=linked_portal
             )
             portal.owner = entity

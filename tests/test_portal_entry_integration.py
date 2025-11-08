@@ -185,12 +185,10 @@ class TestPortalEntryIntegration:
         player.victory.obtain_ruby_heart(player.x, player.y)
         state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
         
-        # Spawn portal at adjacent tile
-        portal = Entity(
-            x=11, y=10, char='O', color=(255, 0, 255), name="Entity's Portal",
-            blocks=False
-        )
-        portal.is_portal = True
+        # Spawn portal at adjacent tile using PortalManager
+        from services.portal_manager import get_portal_manager
+        portal_manager = get_portal_manager()
+        portal = portal_manager.create_portal_entity('entity_portal', 11, 10)
         entities.append(portal)
         
         # Move player onto portal with keyboard
@@ -213,12 +211,10 @@ class TestPortalEntryIntegration:
         player.victory.obtain_ruby_heart(player.x, player.y)
         state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
         
-        # Spawn portal at adjacent tile
-        portal = Entity(
-            x=11, y=10, char='O', color=(255, 0, 255), name="Entity's Portal",
-            blocks=False
-        )
-        portal.is_portal = True
+        # Spawn portal at adjacent tile using PortalManager
+        from services.portal_manager import get_portal_manager
+        portal_manager = get_portal_manager()
+        portal = portal_manager.create_portal_entity('entity_portal', 11, 10)
         entities.append(portal)
         
         # Mock pathfinding to simulate clicking on portal
@@ -247,11 +243,9 @@ class TestPortalEntryIntegration:
         action_processor = game_setup['action_processor']
         
         # Setup: Portal exists but player does NOT have Ruby Heart
-        portal = Entity(
-            x=11, y=10, char='O', color=(255, 0, 255), name="Entity's Portal",
-            blocks=False
-        )
-        portal.is_portal = True
+        from services.portal_manager import get_portal_manager
+        portal_manager = get_portal_manager()
+        portal = portal_manager.create_portal_entity('entity_portal', 11, 10)
         entities.append(portal)
         
         # Player is in normal turn state (not RUBY_HEART_OBTAINED)
