@@ -178,6 +178,13 @@ def render_all(
 
     # Use cached entity sorting for performance optimization
     entities_in_render_order = get_sorted_entities(entities)
+    
+    # Debug: Check if portals are in the entities list
+    import logging
+    logger = logging.getLogger(__name__)
+    portal_count = sum(1 for e in entities_in_render_order if hasattr(e, 'is_portal') and e.is_portal)
+    if portal_count > 0:
+        logger.debug(f"Found {portal_count} portals in entities list ({len(entities_in_render_order)} total entities)")
 
     # Draw all entities in the list
     # for entity in entities:
@@ -503,22 +510,38 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
         (hasattr(entity, "is_portal") and entity.is_portal)
     )
     
+    # Debug: Log portal rendering attempts
+    import logging
+    logger = logging.getLogger(__name__)
+    if hasattr(entity, "is_portal") and entity.is_portal:
+        logger.warning(f"DEBUG: Drawing portal {entity.name} at ({entity.x}, {entity.y}), persistent={is_persistent_feature}")
+    
     # SAFETY: Use GameMap safe accessor method instead of direct tile access
     is_explored = game_map.is_explored(entity.x, entity.y) if game_map else False
     
-    if map_is_in_fov(fov_map, entity.x, entity.y) or (
-        is_persistent_feature and is_explored
-    ):
+    in_fov = map_is_in_fov(fov_map, entity.x, entity.y)
+    
+    if hasattr(entity, "is_portal") and entity.is_portal:
+        logger.debug(f"Portal visibility check: in_fov={in_fov}, is_explored={is_explored}, is_persistent_feature={is_persistent_feature}")
+    
+    if in_fov or (is_persistent_feature and is_explored):
         # Translate world coordinates to viewport coordinates using camera
         if camera:
+            if hasattr(entity, "is_portal") and entity.is_portal:
+                logger.debug(f"Portal has camera, checking viewport. Entity at world ({entity.x}, {entity.y}), camera pos: ({camera.x}, {camera.y}), viewport: {camera.viewport_width}x{camera.viewport_height}")
+            
             # Check if entity is in viewport
             if not camera.is_in_viewport(entity.x, entity.y):
+                if hasattr(entity, "is_portal") and entity.is_portal:
+                    logger.debug(f"Portal OUTSIDE viewport, skipping render")
                 return  # Entity is outside viewport, don't render
             
             # Translate to viewport coordinates
             viewport_x, viewport_y = camera.world_to_viewport(entity.x, entity.y)
         else:
             # No camera, use world coordinates directly (backward compatibility)
+            if hasattr(entity, "is_portal") and entity.is_portal:
+                logger.debug(f"Portal using no camera mode, world coords: ({entity.x}, {entity.y})")
             viewport_x, viewport_y = entity.x, entity.y
         
         # Determine rendering color based on entity state
@@ -543,6 +566,8 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
                 render_color = (100, 100, 100)  # Dark grey
         
         # Apply the rendering
+        if hasattr(entity, "is_portal") and entity.is_portal:
+            logger.debug(f"About to render portal at viewport ({viewport_x}, {viewport_y}) with char '{render_char}' and color {render_color}")
         libtcod.console_set_default_foreground(con, render_color)
         libtcod.console_put_char(con, viewport_x, viewport_y, render_char, libtcod.BKGND_NONE)
 

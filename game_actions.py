@@ -1750,6 +1750,8 @@ class ActionProcessor:
                 game_map = self.state_manager.state.game_map
                 message_log = self.state_manager.state.message_log
                 entities = self.state_manager.state.entities
+                logger = __import__('logging').getLogger(__name__)
+                logger.warning(f"DEBUG: Portal targeting - entities list id: {id(entities)}, state_manager.state.entities id: {id(self.state_manager.state.entities)}")
                 
                 # Check if portal placer needs entrance portal
                 if not portal_placer.active_entrance:
@@ -1773,7 +1775,10 @@ class ActionProcessor:
                                 # Update placer reference
                                 portal_placer.active_entrance = entrance_portal_component
                                 portal_placer.active_entrance.owner = entrance_entity
+                                logger = __import__('logging').getLogger(__name__)
+                                logger.warning(f"DEBUG: Adding entrance portal to entities: {entrance_entity.name} at ({entrance_entity.x}, {entrance_entity.y}), is_portal={entrance_entity.is_portal}")
                                 entities.append(entrance_entity)
+                                logger.warning(f"DEBUG: Entrance portal added. Total entities: {len(entities)}")
                         message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
                     else:
                         message_log.add_message(MB.warning(result.get('message', 'Invalid placement')))
@@ -1804,7 +1809,10 @@ class ActionProcessor:
                                         entity.portal.linked_portal = exit_portal_component
                                         break
                                 
+                                logger = __import__('logging').getLogger(__name__)
+                                logger.warning(f"DEBUG: Adding exit portal to entities: {exit_entity.name} at ({exit_entity.x}, {exit_entity.y}), is_portal={exit_entity.is_portal}")
                                 entities.append(exit_entity)
+                                logger.warning(f"DEBUG: Exit portal added. Total entities: {len(entities)}")
                         message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
                         
                         # Exit targeting mode - portals placed
