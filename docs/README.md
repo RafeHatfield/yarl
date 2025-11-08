@@ -1,139 +1,178 @@
-# Documentation Organization
+# Yarl Documentation Hub
 
-This directory contains all project documentation organized by category.
+Welcome to the Yarl documentation system. This folder contains detailed technical and development documentation.
 
-## 📁 Directory Structure
+## 📚 Quick Navigation
 
-### `/archive/` - Completed & Historical Documentation
+### For Game Designers & Reviewers
 
-Documentation for completed work, archived for reference.
+Start with these files in the root directory:
+- **[README.md](../README.md)** ← Main overview (START HERE)
+- **[STORY_LORE_CANONICAL.md](../STORY_LORE_CANONICAL.md)** - Complete narrative and themes
+- **[VICTORY_CONDITION_PHASES.md](../VICTORY_CONDITION_PHASES.md)** - How victory works
+- **[DESIGN_PRINCIPLES.md](../DESIGN_PRINCIPLES.md)** - Architectural philosophy
+- **[PLAYER_PAIN_POINTS.md](../PLAYER_PAIN_POINTS.md)** - Design challenges & solutions
+- **[TRADITIONAL_ROGUELIKE_FEATURES.md](../TRADITIONAL_ROGUELIKE_FEATURES.md)** - Feature roadmap
 
-#### `/archive/bug-fixes/`
-Completed bug fixes with detailed analysis:
-- AUTO_IDENTIFY_MESSAGE_FIX.md
-- EQUIPMENT_UNEQUIP_FIX.md
-- RESISTANCE_CONFIG_FIX.md
-- RING_EQUIPPING_BUG_FIX.md
-- RING_OF_REGENERATION_FIX.md
-- RING_UNEQUIP_BUG_FIX.md
-- SIDEBAR_YCOORD_BUG_FIX.md
-- SESSION_THROWING_FIXES.md
+### For Developers
 
-#### `/archive/completed-features/`
-Implemented systems and features:
-- RING_SYSTEM_COMPLETE.md
-- RING_SYSTEM_PLAN.md
-- RING_ISSUES_AND_FIXES.md
-- SCROLL_IMPLEMENTATION_COMPLETE.md
-- SCROLL_IMPLEMENTATION_PLAN.md
-- SCROLL_EXPANSION_PLAN.md
-- SCROLL_PROGRESS.md
-- RESISTANCE_SYSTEM_IMPLEMENTATION.md
-- THROWING_SYSTEM_COMPLETE.md
-- TURN_ECONOMY_COMPLETE.md
-- TURN_ECONOMY_IMPLEMENTATION.md
-- ITEM_STACKING_STATUS.md
-- SYSTEMS_ALREADY_COMPLETE.md
+- **[architecture/](architecture/)** - System design and specifications
+  - Portal System specification
+  - Session handoff template
+  
+- **[development/](development/)** - Feature development history
+  - Phase 4: Environmental Lore (complete)
+  - Phase 5: Victory Condition (complete)
+  - Portal System: Phase A & B (complete)
+  - Session handoff notes
 
-#### `/archive/sessions/`
-Development session summaries:
-- SESSION_CONTEXT_v3.11.0.md
-- SESSION_RING_FIXES_OCT17.md
-- SESSION_SUMMARY.md
-- SESSION_v3.10.0_SUMMARY.md
-- SESSION_v3.11.0_SUMMARY.md
-- QOL_IMPROVEMENTS_OCT17.md
-- QUICK_HANDOFF.md
-- CURRENT_STATUS.md
-- FINAL_STATUS.md
+## 📁 Folder Structure
 
-#### `/archive/releases/`
-Version release notes:
-- RELEASE_NOTES_v3.8.0.md
-- RELEASE_NOTES_v3.9.0.md
+```
+docs/
+├── README.md (this file)
+├── architecture/
+│   ├── README.md
+│   ├── portal_system.md
+│   └── session_handoff_template.md
+└── development/
+    ├── README.md
+    ├── phase4/
+    │   ├── README.md
+    │   ├── agent_answers.md
+    │   ├── completion_summary.md
+    │   ├── polish_roadmap.md
+    │   └── signpost_draft_revised.md
+    ├── phase5/
+    │   ├── README.md
+    │   ├── current_session.md
+    │   ├── implementation_plan.md
+    │   ├── session_complete.md
+    │   └── testing_plan.md
+    ├── portal/
+    │   ├── README.md
+    │   ├── phase_a_session_summary.md
+    │   ├── phase_b_complete.md
+    │   ├── phase_b_plan.md
+    │   ├── phase_b_session_summary.md
+    │   ├── playtest_checklist.md
+    │   ├── playtest_ready_summary.md
+    │   ├── playtest_setup_summary.md
+    │   └── refactoring_plan.md
+    ├── current_session_handoff.md
+    ├── next_session_request.md
+    ├── session_copy_paste.md
+    └── session_handoff_next.md
+```
 
-#### `/archive/` (root)
-Original design documents:
-- BOSS_FIGHT_CONCEPT.md
-- MONSTER_LOOT_DESIGN.md
-- POWER_SYSTEM_DESIGN.md
-- SLIME_SYSTEM_DESIGN.md
-- TURN_MANAGER_DESIGN.md
+## 🎯 Documentation by Purpose
+
+### Architecture & Design
+- [DESIGN_PRINCIPLES.md](../DESIGN_PRINCIPLES.md) - Why we design this way
+- [architecture/portal_system.md](architecture/portal_system.md) - Portal system specification
+- [architecture/session_handoff_template.md](architecture/session_handoff_template.md) - Development template
+
+### Game Design & Story
+- [STORY_LORE_CANONICAL.md](../STORY_LORE_CANONICAL.md) - Complete narrative
+- [VICTORY_CONDITION_PHASES.md](../VICTORY_CONDITION_PHASES.md) - Victory condition design
+- [PLAYER_PAIN_POINTS.md](../PLAYER_PAIN_POINTS.md) - Design challenges
+- [TRADITIONAL_ROGUELIKE_FEATURES.md](../TRADITIONAL_ROGUELIKE_FEATURES.md) - Feature roadmap
+
+### Project Information
+- [README.md](../README.md) - Main project overview
+- [PROJECT_STATS.md](../PROJECT_STATS.md) - Codebase metrics
+- [ROADMAP.md](../ROADMAP.md) - Future development plans
+- [CHANGELOG.md](../CHANGELOG.md) - Version history
+
+### Feature Development
+- **Phase 4 (Environmental Lore):** [development/phase4/](development/phase4/README.md)
+- **Phase 5 (Victory Condition):** [development/phase5/](development/phase5/README.md)
+- **Portal System:** [development/portal/](development/portal/README.md)
+
+### Session Management
+- [development/next_session_request.md](development/next_session_request.md) - Planned work
+- [development/current_session_handoff.md](development/current_session_handoff.md) - Current session
+- [development/session_handoff_next.md](development/session_handoff_next.md) - Next session prep
+
+## 🚀 Getting Started
+
+### If you're a...
+
+**Game Designer:**
+1. Read [README.md](../README.md) for overview
+2. Review [STORY_LORE_CANONICAL.md](../STORY_LORE_CANONICAL.md) for narrative
+3. Check [DESIGN_PRINCIPLES.md](../DESIGN_PRINCIPLES.md) for philosophy
+4. See [TRADITIONAL_ROGUELIKE_FEATURES.md](../TRADITIONAL_ROGULELIKE_FEATURES.md) for roadmap
+
+**Developer Joining the Project:**
+1. Read [README.md](../README.md) for overview
+2. Review [DESIGN_PRINCIPLES.md](../DESIGN_PRINCIPLES.md)
+3. Check [architecture/](architecture/) for system design
+4. Look at relevant phase docs in [development/](development/)
+
+**Code Reviewer:**
+1. Start with [README.md](../README.md)
+2. Review [PROJECT_STATS.md](../PROJECT_STATS.md)
+3. Check [DESIGN_PRINCIPLES.md](../DESIGN_PRINCIPLES.md)
+4. Deep-dive specific systems in [architecture/](architecture/)
+
+**Playtester:**
+- Read [development/portal/playtest_checklist.md](development/portal/playtest_checklist.md)
+- Check [README.md](../README.md#-how-to-play) for gameplay tips
+
+## 📊 Current Status
+
+- ✅ **Portal System** - Phase A & B complete (91/91 tests passing)
+- ✅ **Story Arcs** - Phases 1-5 complete with 6 endings
+- ✅ **Core Gameplay** - Combat, exploration, items fully implemented
+- ✅ **Test Coverage** - 2500+ tests, 100% critical path
+- 🔄 **Next** - Gameplay expansion and balance refinement
+
+## 📝 Documentation Guidelines
+
+When adding documentation:
+
+1. **Strategic Docs** (keep in root):
+   - Architecture philosophy
+   - Game design principles
+   - Narrative and lore
+   - Feature roadmaps
+
+2. **Development Docs** (put in `development/`):
+   - Phase summaries
+   - Implementation plans
+   - Session notes
+   - Playtest results
+
+3. **Architecture Docs** (put in `architecture/`):
+   - System specifications
+   - Design patterns
+   - Integration points
+   - Technical decisions
+
+4. **Each Folder Gets a README.md**:
+   - Quick navigation
+   - Purpose statement
+   - Key files listed
+   - Links to related docs
+
+## 🔗 External References
+
+- **Game Code:** See `../` for Python source files
+- **Tests:** `../tests/` for test suite (2500+ tests)
+- **Configuration:** `../config/` for YAML entity definitions
+- **Components:** `../components/` for ECS components
+
+## 💡 Tips
+
+- Each section has a `README.md` - start there for navigation
+- Strategic docs in root are easiest to find and reference
+- Development history is organized by phase/feature
+- Architecture docs explain "why," not "how"
+- Code examples in main README.md
 
 ---
 
-### `/testing/` - Test Documentation
+**Last Updated:** November 2025 | Documentation Reorganization Complete
 
-Testing strategies, results, and guidelines:
-- TESTING_LESSONS_LEARNED.md
-- TESTING_STRATEGY.md
-- TESTING_RESISTANCE_EXAMPLE.md
-- TESTING_RESISTANCE_SYSTEM.md
-- KNOWN_TEST_POLLUTION.md
-- QUARANTINED_TESTS.md
-- TEST_CLEANUP_COMPLETE.md
-- TEST_EVALUATION_PLAN.md
-- TEST_FIXES_PLAN.md
-- TEST_FIX_SESSION_SUMMARY.md
-- TEST_RESULTS_FINAL.md
-- TESTS_NEEDING_REVIEW.md
-
----
-
-### `/guides/` - User & Playtesting Guides
-
-Documentation for players and playtesters:
-- PLAYTESTING_CHEAT_SHEET.md
-- PLAYTESTING_GUIDE.md
-
----
-
-### `/reference/` - Game Content Reference
-
-Reference documentation for game content:
-- ITEMS_REFERENCE.md
-- POTION_VARIETY_SUMMARY.md
-- RING_NOT_IMPLEMENTED.md
-
----
-
-### `/planning/` - Design & Planning Documents
-
-Active planning and design documents:
-- BALANCE_NOTES.md
-- DUNGEON_LEVELS_PLAN.md
-- RIGHT_CLICK_FEATURES.md
-- TECH_DEBT.md
-
----
-
-## 📄 Root Directory Documents (Active)
-
-The following documents remain in the project root for quick access:
-
-- **DEPTH_SCORE_TRACKING.md** - KPI dashboard for game depth progress
-- **NEXT_FEATURES_REAL.md** - Prioritized feature list
-- **PLAYER_PAIN_POINTS.md** - Design guidelines to avoid common frustrations
-- **PROJECT_STATS.md** - Codebase statistics and metrics
-- **README.md** - Main project README
-- **ROADMAP.md** - Project roadmap
-- **TRADITIONAL_ROGUELIKE_FEATURES.md** - Beloved features from classic roguelikes
-
----
-
-## 🔍 Finding Documents
-
-**Looking for...**
-- Bug fix documentation? → `/archive/bug-fixes/`
-- Completed feature docs? → `/archive/completed-features/`
-- Session summaries? → `/archive/sessions/`
-- Release notes? → `/archive/releases/`
-- Testing docs? → `/testing/`
-- Playtesting guides? → `/guides/`
-- Item/content reference? → `/reference/`
-- Design plans? → `/planning/`
-- Active priorities? → **Root directory**
-
----
-
-*Last updated: October 18, 2025*
+**Questions?** Check the README in the relevant folder or see the main [README.md](../README.md)
