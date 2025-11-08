@@ -222,12 +222,17 @@ class TestTeleportation:
         """Teleport through entrance to exit."""
         player, dungeon = game_data
         
-        # Create portal pair
+        # Create portal pair with entities
         entrance = Portal('entrance')
-        entrance.x, entrance.y = 10, 10
+        entrance_entity = Entity(10, 10, 'Θ', (100, 200, 255), 'Entrance')
+        entrance_entity.portal = entrance
+        entrance.owner = entrance_entity
         
         exit_portal = Portal('exit')
-        exit_portal.x, exit_portal.y = 20, 20
+        exit_entity = Entity(20, 20, 'Θ', (255, 180, 80), 'Exit')
+        exit_entity.portal = exit_portal
+        exit_portal.owner = exit_entity
+        
         exit_portal.linked_portal = entrance
         entrance.linked_portal = exit_portal
         
@@ -245,10 +250,15 @@ class TestTeleportation:
         player, dungeon = game_data
         
         entrance = Portal('entrance')
-        entrance.x, entrance.y = 10, 10
+        entrance_entity = Entity(10, 10, 'Θ', (100, 200, 255), 'Entrance')
+        entrance_entity.portal = entrance
+        entrance.owner = entrance_entity
         
         exit_portal = Portal('exit')
-        exit_portal.x, exit_portal.y = 20, 20
+        exit_entity = Entity(20, 20, 'Θ', (255, 180, 80), 'Exit')
+        exit_entity.portal = exit_portal
+        exit_portal.owner = exit_entity
+        
         exit_portal.linked_portal = entrance
         entrance.linked_portal = exit_portal
         
@@ -354,10 +364,15 @@ class TestMonsterWithPortals:
         
         # Create portal pair
         entrance = Portal('entrance')
-        entrance.x, entrance.y = 10, 10
+        entrance_entity = Entity(10, 10, 'Θ', (100, 200, 255), 'Entrance')
+        entrance_entity.portal = entrance
+        entrance.owner = entrance_entity
         
         exit_portal = Portal('exit')
-        exit_portal.x, exit_portal.y = 20, 20
+        exit_entity = Entity(20, 20, 'Θ', (255, 180, 80), 'Exit')
+        exit_entity.portal = exit_portal
+        exit_portal.owner = exit_entity
+        
         exit_portal.linked_portal = entrance
         entrance.linked_portal = exit_portal
         
@@ -411,9 +426,21 @@ class TestPortalPhaseAIntegration:
         result2 = wand.place_exit(20, 20, dungeon)
         assert result2['success']
         
+        # Create entity wrappers with owners set
+        entrance_portal = wand.active_entrance
+        exit_portal = wand.active_exit
+        
+        entrance_entity = Entity(15, 15, 'Θ', (100, 200, 255), 'Entrance')
+        entrance_entity.portal = entrance_portal
+        entrance_portal.owner = entrance_entity
+        
+        exit_entity = Entity(20, 20, 'Θ', (255, 180, 80), 'Exit')
+        exit_entity.portal = exit_portal
+        exit_portal.owner = exit_entity
+        
         # Teleport player
         player.x, player.y = 15, 15
-        results = wand.active_entrance.teleport_through(player, dungeon)
+        results = entrance_portal.teleport_through(player, dungeon)
         assert results[0]['teleported']
         assert player.x == 20
         assert player.y == 20

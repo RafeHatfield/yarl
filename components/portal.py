@@ -131,9 +131,17 @@ class Portal(MapFeature):
         # Store old position
         old_x, old_y = actor.x, actor.y
         
-        # Teleport
-        actor.x = self.linked_portal.x
-        actor.y = self.linked_portal.y
+        # Teleport to linked portal's position
+        # Note: linked_portal is a Portal component, but we need to get position from owner entity
+        if not self.linked_portal or not self.linked_portal.owner:
+            from message_builder import MessageBuilder as MB
+            results.append({
+                'message': MB.warning("The portal destination is unstable.")
+            })
+            return results
+        
+        actor.x = self.linked_portal.owner.x
+        actor.y = self.linked_portal.owner.y
         
         # Invalidate entity sorting cache
         from entity_sorting_cache import invalidate_entity_cache

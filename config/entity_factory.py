@@ -909,6 +909,7 @@ class EntityFactory:
             # Attach portal component
             portal = Portal(portal_type, linked_portal=linked)
             entity.portal = portal
+            portal.owner = entity  # Set owner so we can get position
             
             from components.component_registry import ComponentType
             entity.components.add(ComponentType.PORTAL, portal)

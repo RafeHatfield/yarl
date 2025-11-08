@@ -30,21 +30,16 @@ class PortalSystem:
         if not entity or not dungeon:
             return None
         
-        # Find entity at player position
-        entities_at_pos = [
-            e for e in dungeon.entities 
-            if e.x == entity.x and e.y == entity.y and e != entity
-        ]
-        
-        # Check if any are portals
-        for ent in entities_at_pos:
-            if hasattr(ent, 'portal'):
-                portal = ent.portal
-                if portal.is_deployed and portal.linked_portal:
-                    # Teleport through portal
-                    results = portal.teleport_through(entity, dungeon)
-                    if results and results[0].get('teleported'):
-                        return results[0]
+        # Find portals at entity position
+        for ent in dungeon.entities:
+            if ent.x == entity.x and ent.y == entity.y and ent != entity:
+                if hasattr(ent, 'portal'):
+                    portal = ent.portal
+                    if portal.is_deployed and portal.linked_portal and portal.linked_portal.owner:
+                        # Teleport through portal
+                        results = portal.teleport_through(entity, dungeon)
+                        if results and results[0].get('teleported'):
+                            return results[0]
         
         return None
     

@@ -110,7 +110,7 @@ class PortalPlacer(Wand):
         entrance.x = x
         entrance.y = y
         entrance.is_deployed = True
-        entrance.owner = None
+        entrance.owner = None  # Will be set when placed in dungeon
         
         self.active_entrance = entrance
         self.targeting_stage = 2
