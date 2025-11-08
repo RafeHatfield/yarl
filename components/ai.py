@@ -91,6 +91,7 @@ class BossAI:
         self.owner = None
         self.in_combat = False
         self.ai_type = "boss"  # Required for AI system strategy routing
+        self.portal_usable = False  # Bosses don't use portals (tactical advantage for player)
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of boss AI behavior.
@@ -327,6 +328,7 @@ class BasicMonster:
         """Initialize a BasicMonster AI."""
         self.owner = None  # Will be set by Entity when component is registered
         self.in_combat = False  # Tracks if monster has been attacked
+        self.portal_usable = True  # Basic monsters can use portals tactically
 
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of AI behavior.
@@ -825,6 +827,7 @@ class MindlessZombieAI:
         self.owner = None
         self.current_target = None  # Track current target for sticky behavior
         self.in_combat = False  # Tracks if zombie has been attacked (for consistency)
+        self.portal_usable = True  # Mindless zombies can use portals (mindless = no tactics)
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of mindless zombie behavior.
@@ -1082,6 +1085,7 @@ class ConfusedMonster:
         self.previous_ai = previous_ai
         self.number_of_turns = number_of_turns
         self.owner = None  # Will be set by Entity when component is registered
+        self.portal_usable = False  # Confused monsters won't use portals (too chaotic)
 
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of confused AI behavior.
@@ -1136,6 +1140,7 @@ class SlimeAI:
         """Initialize a SlimeAI."""
         self.owner = None  # Will be set by Entity when component is registered
         self.in_combat = False  # Tracks if slime has been attacked (for consistency)
+        self.portal_usable = True  # Slimes can use portals (they're somewhat tactical)
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of slime AI behavior.

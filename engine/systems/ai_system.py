@@ -322,6 +322,16 @@ class AISystem(System):
                 
                 # Process AI turn results (combat, death, etc.)
                 self._process_ai_results(ai_results, game_state)
+            
+            # Check for portal collision AFTER AI moves (for monsters with portal_usable=True)
+            from services.portal_manager import get_portal_manager
+            portal_manager = get_portal_manager()
+            portal_collision = portal_manager.check_portal_collision(entity, game_state.entities)
+            if portal_collision and portal_collision.get('teleported'):
+                logger.info(f"Monster portal teleportation: {entity.name} {portal_collision.get('from_pos')} -> {portal_collision.get('to_pos')}")
+                message = portal_collision.get('message', f"{entity.name} vanishes through the portal!")
+                if isinstance(message, str):
+                    ai_results.append({'message': message})
 
             # Update turn statistics
             turn_time = time.time() - turn_start_time

@@ -129,8 +129,10 @@ class PortalManager:
         - PortalSystem.check_portal_collision()
         - MovementService portal detection
         
+        For monsters, checks the AI's portal_usable flag before allowing teleportation.
+        
         Args:
-            entity: Entity to check (usually player)
+            entity: Entity to check (usually player, but can be monsters)
             entities: List of all entities in the dungeon
             
         Returns:
@@ -140,6 +142,22 @@ class PortalManager:
             return None
         
         try:
+            # Monsters must be allowed to use portals by their AI
+            # Players can always use portals
+            if hasattr(entity, 'ai') and entity.ai:
+                # Check if this monster's AI allows portal usage
+                if hasattr(entity.ai, 'portal_usable') and not entity.ai.portal_usable:
+                    logger.debug(f"Monster {entity.name} cannot use portals (portal_usable=False)")
+                    return None
+            
+            # Check if entity is carrying the entry portal (prevents portal entry then)
+            if hasattr(entity, 'inventory') and entity.inventory:
+                for item in entity.inventory.items:
+                    if hasattr(item, 'portal') and item.portal:
+                        if item.portal.portal_type == 'entrance':
+                            logger.debug(f"Entity {entity.name} cannot use portals (carrying entry portal)")
+                            return None
+            
             # Find portals at entity position
             for ent in entities:
                 if (ent.x == entity.x and 
@@ -162,14 +180,15 @@ class PortalManager:
                             from entity_sorting_cache import invalidate_entity_cache
                             invalidate_entity_cache("portal_teleportation")
                             
-                            logger.info(f"Portal teleportation: ({old_x}, {old_y}) -> ({entity.x}, {entity.y})")
+                            entity_type = "Monster" if hasattr(entity, 'ai') and entity.ai else "Player"
+                            logger.info(f"{entity_type} portal teleportation: ({old_x}, {old_y}) -> ({entity.x}, {entity.y})")
                             
                             return {
                                 'teleported': True,
                                 'actor': entity,
                                 'from_pos': (old_x, old_y),
                                 'to_pos': (entity.x, entity.y),
-                                'message': "You step through the portal..."
+                                'message': f"{entity.name} steps through the portal..." if hasattr(entity, 'ai') and entity.ai else "You step through the portal..."
                             }
             
             return None
