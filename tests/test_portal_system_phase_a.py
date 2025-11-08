@@ -307,7 +307,7 @@ class TestPortalInventory:
         assert portal_entity is not None
         assert portal_entity.portal is not None
         assert portal_entity.portal.portal_type == 'entrance'
-        assert portal_entity.char == 'Θ'
+        assert portal_entity.char == '['  # Entrance portal char
     
     def test_create_wand_of_portals(self, factory):
         """Create Wand of Portals."""

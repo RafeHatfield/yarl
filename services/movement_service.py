@@ -150,36 +150,39 @@ class MovementService:
         # Check for portal entry (Phase 5) - always check when moving, regardless of state
         logger.debug(f"MovementService: Checking portal entry at {result.new_position}")
 
+        # Check for wand portal collision (teleportation)
+        from engine.portal_system import PortalSystem
+        portal_collision = PortalSystem.check_portal_collision(player, entities_list=entities)
+        if portal_collision and portal_collision.get('teleported'):
+            logger.info(f"Portal teleportation: {portal_collision.get('from_pos')} -> {portal_collision.get('to_pos')}")
+            result.messages.append({"message": MB.item_effect("You step through the portal...")})
+            result.messages.append({"message": MB.warning("Reality bends around you!")})
+            # FOV needs recompute after teleportation
+            result.fov_recompute = True
+            return result  # Exit early after teleportation
+        
+        # Check for victory portal entry (only triggers confrontation, doesn't teleport)
+        # Victory portal only spawns after picking up Ruby Heart, so we can assume it always triggers confrontation
         portal_entity = self._check_portal_entry(player, entities)
         if portal_entity:
-            print(f">>> MovementService: PORTAL ENTRY DETECTED at {result.new_position}!")
-            logger.info(f"=== MOVEMENT_SERVICE: PORTAL ENTRY DETECTED!")
+            print(f">>> MovementService: VICTORY PORTAL ENTRY DETECTED at {result.new_position}!")
+            logger.info(f"=== MOVEMENT_SERVICE: VICTORY PORTAL ENTRY DETECTED!")
 
-            # Only trigger confrontation if player has obtained Ruby Heart
-            player_has_ruby_heart = (hasattr(player, 'victory') and
-                                   player.victory and
-                                   player.victory.has_ruby_heart)
+            # Check if an ending has already been achieved (prevent re-entering after choice made)
+            ending_already_achieved = (hasattr(player, 'victory') and
+                                      player.victory and
+                                      player.victory.ending_achieved is not None)
 
-            if player_has_ruby_heart:
-                # Check if an ending has already been achieved (prevent re-entering after choice made)
-                ending_already_achieved = (hasattr(player, 'victory') and
-                                          player.victory and
-                                          player.victory.ending_achieved is not None)
-
-                if ending_already_achieved:
-                    # Player has already chosen an ending - just move them (shouldn't happen normally)
-                    logger.debug("Portal entry: ending already achieved, allowing movement")
-                    result.messages.append({"message": MB.info("You step through the portal once more...")})
-                else:
-                    # Trigger confrontation (can be triggered multiple times if player exits with ESC)
-                    result.portal_entry = True
-                    result.messages.append({"message": MB.item_effect("You step through the portal...")})
-                    result.messages.append({"message": MB.warning("Reality twists around you!")})
-                    logger.debug("Portal entry: triggering confrontation (re-enterable until ending chosen)")
+            if ending_already_achieved:
+                # Player has already chosen an ending - just move them (shouldn't happen normally)
+                logger.debug("Portal entry: ending already achieved, allowing movement")
+                result.messages.append({"message": MB.info("You step through the portal once more...")})
             else:
-                # Portal exists but doesn't trigger confrontation yet
-                logger.debug("Portal found but player hasn't obtained Ruby Heart")
-                result.messages.append({"message": MB.info("The portal hums with otherworldly energy, but nothing happens...")})
+                # Trigger confrontation (can be triggered multiple times if player exits with ESC)
+                result.portal_entry = True
+                result.messages.append({"message": MB.item_effect("You step through the portal...")})
+                result.messages.append({"message": MB.warning("Reality twists around you!")})
+                logger.debug("Portal entry: triggering confrontation (re-enterable until ending chosen)")
         else:
             logger.debug("Portal entry check: no portal at player position")
         
@@ -189,7 +192,10 @@ class MovementService:
         return result
     
     def _check_portal_entry(self, player, entities) -> Optional['Entity']:
-        """Check if player is standing on a portal.
+        """Check if player is standing on a portal that should trigger teleportation or confrontation.
+        
+        Note: Wand portals (portal_entrance/portal_exit) are handled by collision detection in movement.
+        This only checks for special portals like the victory portal (entity_portal) which trigger confrontation.
         
         Args:
             player: Player entity
@@ -203,13 +209,19 @@ class MovementService:
         
         for entity in entities:
             if hasattr(entity, 'is_portal') and entity.is_portal:
+                # Only handle the victory portal (entity_portal) for confrontation logic
+                # Wand portals (portal_entrance/portal_exit) are handled by normal collision/teleportation
+                if hasattr(entity, 'portal') and entity.portal and entity.portal.portal_type in ['entrance', 'exit']:
+                    # Skip wand portals - they're handled by collision detection
+                    continue
+                
                 portal_count += 1
-                logger.debug(f"Found portal at ({entity.x}, {entity.y})")
-                print(f">>> MovementService: Found portal at ({entity.x}, {entity.y})")
+                logger.debug(f"Found special portal at ({entity.x}, {entity.y})")
+                print(f">>> MovementService: Found special portal at ({entity.x}, {entity.y})")
                 
                 if entity.x == player.x and entity.y == player.y:
-                    logger.info(f"Player on portal at ({entity.x}, {entity.y})")
-                    print(f">>> MovementService: Player IS on portal!")
+                    logger.info(f"Player on special portal at ({entity.x}, {entity.y})")
+                    print(f">>> MovementService: Player IS on special portal!")
                     portal_entity = entity
         
         if portal_count == 0:

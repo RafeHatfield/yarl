@@ -17,27 +17,41 @@ class PortalSystem:
     """Central system for portal game mechanics."""
     
     @staticmethod
-    def check_portal_collision(entity, dungeon) -> Optional[Dict[str, Any]]:
+    def check_portal_collision(entity, dungeon_or_entities=None, entities_list=None) -> Optional[Dict[str, Any]]:
         """Check if entity is on a portal and handle teleportation.
         
         Args:
             entity: Entity to check (usually player)
-            dungeon: Current dungeon
+            dungeon_or_entities: Either a dungeon object (with .entities), GameMap, or list of entities
+            entities_list: Optional explicit list of entities (if dungeon_or_entities is GameMap)
             
         Returns:
             Result dict if entity teleported, None otherwise
         """
-        if not entity or not dungeon:
+        if not entity:
+            return None
+        
+        # Figure out which entities list to use
+        entities = None
+        if entities_list is not None:
+            entities = entities_list
+        elif dungeon_or_entities is not None:
+            if hasattr(dungeon_or_entities, 'entities'):
+                entities = dungeon_or_entities.entities
+            elif isinstance(dungeon_or_entities, list):
+                entities = dungeon_or_entities
+        
+        if not entities:
             return None
         
         # Find portals at entity position
-        for ent in dungeon.entities:
+        for ent in entities:
             if ent.x == entity.x and ent.y == entity.y and ent != entity:
                 if hasattr(ent, 'portal'):
                     portal = ent.portal
                     if portal.is_deployed and portal.linked_portal and portal.linked_portal.owner:
                         # Teleport through portal
-                        results = portal.teleport_through(entity, dungeon)
+                        results = portal.teleport_through(entity, dungeon_or_entities if hasattr(dungeon_or_entities, 'tiles') else None)
                         if results and results[0].get('teleported'):
                             return results[0]
         

@@ -896,10 +896,10 @@ class EntityFactory:
         portal_type: str = 'entrance',
         linked: Optional['Portal'] = None
     ) -> Optional[Entity]:
-        """Create a portal entity.
+        """Create a portal entity using YAML definitions.
         
         Portals are dimensional gateways that teleport entities.
-        - Entrance (blue): Entry point
+        - Entrance (cyan): Entry point
         - Exit (orange): Destination point
         
         Args:
@@ -913,25 +913,18 @@ class EntityFactory:
         """
         try:
             from components.portal import Portal
-            from render_functions import RenderOrder
             
-            # Determine color based on type
-            if portal_type == 'entrance':
-                color = (100, 200, 255)  # Blue
-            else:
-                color = (255, 180, 80)   # Orange
+            # Determine which YAML entity to use based on portal type
+            yaml_entity_type = 'portal_entrance' if portal_type == 'entrance' else 'portal_exit'
             
-            # Create portal entity
-            entity = Entity(
-                x=x,
-                y=y,
-                char='Θ',
-                color=color,
-                name=f'{portal_type.title()} Portal',
-                blocks=False
-            )
+            # Create base entity from YAML (will have char, color, name, is_portal flag, and Item component)
+            entity = self.create_unique_item(yaml_entity_type, x, y)
             
-            # Attach portal component
+            if not entity:
+                logger.error(f"Failed to create portal entity from YAML: {yaml_entity_type}")
+                return None
+            
+            # Attach portal component (Item component is already added by create_unique_item)
             portal = Portal(portal_type, linked_portal=linked)
             entity.portal = portal
             portal.owner = entity  # Set owner so we can get position
@@ -939,17 +932,13 @@ class EntityFactory:
             from components.component_registry import ComponentType
             entity.components.add(ComponentType.PORTAL, portal)
             
-            # Mark as portal for detection systems
-            entity.is_portal = True
-            
-            # Set render order
-            entity.render_order = RenderOrder.ITEM
-            
-            logger.debug(f"Created {portal_type} portal at ({x}, {y})")
+            logger.debug(f"Created {portal_type} portal at ({x}, {y}) using YAML definition")
             return entity
         
         except Exception as e:
+            import traceback
             logger.error(f"Error creating portal: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return None
 
     def get_player_stats(self) -> Optional[EntityStats]:

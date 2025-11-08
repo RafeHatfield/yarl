@@ -1758,27 +1758,26 @@ class ActionProcessor:
                     # Place entrance portal
                     result = portal_placer.place_entrance(target_x, target_y, game_map)
                     if result.get('success'):
-                        # Create Entity wrapper for portal
-                        from config.entity_factory import EntityFactory
+                        # Get the Portal component created by PortalPlacer
                         entrance_portal_component = result.get('portal')
                         if entrance_portal_component:
-                            # Create entity with proper rendering support
+                            # Create Entity wrapper using YAML definitions, reusing the Portal component
+                            from config.entity_factory import EntityFactory
+                            from render_functions import RenderOrder
+                            from entity import Entity
+                            
                             factory = EntityFactory()
-                            entrance_entity = factory.create_portal(
-                                target_x, target_y, 
-                                portal_type='entrance'
-                            )
-                            if entrance_entity:
-                                # Link the component from PortalPlacer
-                                entrance_entity.portal = entrance_portal_component
-                                entrance_portal_component.owner = entrance_entity
-                                # Update placer reference
+                            # Load portal from YAML to get appearance
+                            portal_yaml = factory.create_unique_item('portal_entrance', target_x, target_y)
+                            if portal_yaml:
+                                # Replace the portal component with the one from PortalPlacer (which has is_deployed=True)
+                                portal_yaml.portal = entrance_portal_component
+                                entrance_portal_component.owner = portal_yaml
+                                
+                                # Update placer's reference
                                 portal_placer.active_entrance = entrance_portal_component
-                                portal_placer.active_entrance.owner = entrance_entity
-                                logger = __import__('logging').getLogger(__name__)
-                                logger.warning(f"DEBUG: Adding entrance portal to entities: {entrance_entity.name} at ({entrance_entity.x}, {entrance_entity.y}), is_portal={entrance_entity.is_portal}")
-                                entities.append(entrance_entity)
-                                logger.warning(f"DEBUG: Entrance portal added. Total entities: {len(entities)}")
+                                
+                                entities.append(portal_yaml)
                         message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
                     else:
                         message_log.add_message(MB.warning(result.get('message', 'Invalid placement')))
@@ -1788,31 +1787,28 @@ class ActionProcessor:
                     # Place exit portal
                     result = portal_placer.place_exit(target_x, target_y, game_map)
                     if result.get('success'):
-                        # Create Entity wrapper for portal
-                        from config.entity_factory import EntityFactory
+                        # Get the Portal components created by PortalPlacer
                         exit_portal_component = result.get('exit')
                         entrance_portal_component = result.get('entrance')
                         if exit_portal_component and entrance_portal_component:
+                            # Create Entity wrapper using YAML definitions, reusing the Portal component
+                            from config.entity_factory import EntityFactory
+                            
                             factory = EntityFactory()
-                            exit_entity = factory.create_portal(
-                                target_x, target_y,
-                                portal_type='exit'
-                            )
-                            if exit_entity:
-                                # Link components
-                                exit_entity.portal = exit_portal_component
-                                exit_portal_component.owner = exit_entity
+                            # Load exit portal from YAML to get appearance
+                            portal_yaml = factory.create_unique_item('portal_exit', target_x, target_y)
+                            if portal_yaml:
+                                # Replace the portal component with the one from PortalPlacer (which has is_deployed=True)
+                                portal_yaml.portal = exit_portal_component
+                                exit_portal_component.owner = portal_yaml
                                 
-                                # Make sure entrance entity is also properly set
-                                for entity in entities:
-                                    if hasattr(entity, 'portal') and entity.portal.portal_type == 'entrance':
-                                        entity.portal.linked_portal = exit_portal_component
-                                        break
+                                # Update placer's reference
+                                portal_placer.active_exit = exit_portal_component
                                 
-                                logger = __import__('logging').getLogger(__name__)
-                                logger.warning(f"DEBUG: Adding exit portal to entities: {exit_entity.name} at ({exit_entity.x}, {exit_entity.y}), is_portal={exit_entity.is_portal}")
-                                entities.append(exit_entity)
-                                logger.warning(f"DEBUG: Exit portal added. Total entities: {len(entities)}")
+                                # Link the entrance portal to this exit portal
+                                entrance_portal_component.linked_portal = exit_portal_component
+                                
+                                entities.append(portal_yaml)
                         message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
                         
                         # Exit targeting mode - portals placed

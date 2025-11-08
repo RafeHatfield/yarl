@@ -366,8 +366,10 @@ class OptimizedRenderSystem(RenderSystem):
         # DON'T reset the game state's fov_recompute flag here
         # Let the game logic control when to reset it
 
-        # Standard entity clearing
-        clear_all(self.console, entities)
+        # NOTE: We don't call clear_all() here because it would erase entities
+        # from the console AFTER they've been drawn but BEFORE the frame is flushed.
+        # This causes all entities to disappear. Instead, the next frame's tile
+        # and entity rendering will overwrite the previous frame naturally.
 
     def _render_full_optimized(
         self,

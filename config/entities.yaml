@@ -1455,6 +1455,23 @@ unique_items:
     description: "A shimmering portal wreathed in temporal distortions. The Entity's voice echoes from within."
     is_portal: true  # Pickupable! (Future: Portal system mechanics, easter eggs, tactical gameplay)
 
+  # Wand of Portals - User-placed portals
+  portal_entrance:
+    char: "["  # Portal entrance symbol
+    color: [0, 255, 255]  # Pure bright cyan (max brightness)
+    render_order: "item"
+    blocks: false
+    description: "A shimmering portal entrance, pulsing with cyan light. Step through to teleport."
+    is_portal: true  # Mark as portal for detection
+
+  portal_exit:
+    char: "]"  # Portal exit symbol
+    color: [255, 255, 0]  # Pure bright yellow (max brightness)
+    render_order: "item"
+    blocks: false
+    description: "A shimmering portal exit, glowing with yellow light. This is your destination."
+    is_portal: true  # Mark as portal for detection
+
 # Unique NPCs
 # Special entities that provide story, dialogue, or quests
 unique_npcs:
