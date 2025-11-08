@@ -76,6 +76,8 @@ class ComponentType(Enum):
     CHEST = auto()
     SIGNPOST = auto()
     MURAL = auto()
+    PORTAL = auto()
+    PORTAL_PLACER = auto()
     LOCKED_DOOR = auto()
 
 

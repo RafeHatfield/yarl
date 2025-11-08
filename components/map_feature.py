@@ -23,6 +23,7 @@ class MapFeatureType(Enum):
     CHEST = auto()
     SIGNPOST = auto()
     MURAL = auto()
+    PORTAL = auto()
     SECRET_DOOR = auto()
     VAULT_DOOR = auto()
     DOOR = auto()  # Generic locked door
@@ -117,6 +118,7 @@ class MapFeature:
             MapFeatureType.CHEST: "Chest",
             MapFeatureType.SIGNPOST: "Signpost",
             MapFeatureType.MURAL: "Mural",
+            MapFeatureType.PORTAL: "Portal",
             MapFeatureType.SECRET_DOOR: "Secret Door",
             MapFeatureType.VAULT_DOOR: "Vault Door"
         }

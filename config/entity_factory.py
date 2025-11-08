@@ -819,6 +819,109 @@ class EntityFactory:
         except Exception as e:
             logger.error(f"Error creating mural: {e}")
             return None
+    
+    def create_wand_of_portals(self, x: int, y: int) -> Optional[Entity]:
+        """Create Wand of Portals legendary item.
+        
+        The wand allows creation of two-portal pairs for tactical teleportation.
+        Infinite uses with a simple cycle: create entrance, create exit, repeat.
+        
+        Args:
+            x: X coordinate for wand
+            y: Y coordinate for wand
+            
+        Returns:
+            Entity instance if creation succeeds, None otherwise
+        """
+        try:
+            from components.portal_placer import PortalPlacer
+            from render_functions import RenderOrder
+            
+            # Create wand entity
+            wand_entity = Entity(
+                x=x,
+                y=y,
+                char='/',
+                color=(100, 255, 200),
+                name='Wand of Portals',
+                blocks=False
+            )
+            
+            # Attach portal placer component
+            portal_placer = PortalPlacer()
+            wand_entity.portal_placer = portal_placer
+            
+            from components.component_registry import ComponentType
+            wand_entity.components.add(ComponentType.PORTAL_PLACER, portal_placer)
+            
+            # Set render order
+            wand_entity.render_order = RenderOrder.ITEM
+            
+            logger.debug(f"Created Wand of Portals at ({x}, {y})")
+            return wand_entity
+        
+        except Exception as e:
+            logger.error(f"Error creating Wand of Portals: {e}")
+            return None
+    
+    def create_portal(
+        self,
+        x: int,
+        y: int,
+        portal_type: str = 'entrance',
+        linked: Optional['Portal'] = None
+    ) -> Optional[Entity]:
+        """Create a portal entity.
+        
+        Portals are dimensional gateways that teleport entities.
+        - Entrance (blue): Entry point
+        - Exit (orange): Destination point
+        
+        Args:
+            x: X coordinate for portal
+            y: Y coordinate for portal
+            portal_type: 'entrance' or 'exit'
+            linked: Linked portal (if creating pair)
+            
+        Returns:
+            Entity instance if creation succeeds, None otherwise
+        """
+        try:
+            from components.portal import Portal
+            from render_functions import RenderOrder
+            
+            # Determine color based on type
+            if portal_type == 'entrance':
+                color = (100, 200, 255)  # Blue
+            else:
+                color = (255, 180, 80)   # Orange
+            
+            # Create portal entity
+            entity = Entity(
+                x=x,
+                y=y,
+                char='Θ',
+                color=color,
+                name=f'{portal_type.title()} Portal',
+                blocks=False
+            )
+            
+            # Attach portal component
+            portal = Portal(portal_type, linked_portal=linked)
+            entity.portal = portal
+            
+            from components.component_registry import ComponentType
+            entity.components.add(ComponentType.PORTAL, portal)
+            
+            # Set render order
+            entity.render_order = RenderOrder.ITEM
+            
+            logger.debug(f"Created {portal_type} portal at ({x}, {y})")
+            return entity
+        
+        except Exception as e:
+            logger.error(f"Error creating portal: {e}")
+            return None
 
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get player starting stats from configuration.
