@@ -248,7 +248,7 @@ class PortalPlacer(Wand):
         tile = dungeon.tiles[x][y]
         
         # Can't place on walls
-        if tile.block_movement:
+        if tile.blocked:
             logger.debug(f"Portal placement on wall at ({x}, {y})")
             return False
         

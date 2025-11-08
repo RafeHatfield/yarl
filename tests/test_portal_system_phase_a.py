@@ -103,7 +103,7 @@ class TestPortalPlacer:
         
         class MockTile:
             def __init__(self):
-                self.block_movement = False
+                self.blocked = False
                 self.tile_type = 'floor'
         
         return MockDungeon()
@@ -170,7 +170,7 @@ class TestPortalPlacer:
         wand.start_targeting()
         
         # Create a wall tile
-        dungeon.tiles[10][10].block_movement = True
+        dungeon.tiles[10][10].blocked = True
         
         result = wand.place_entrance(10, 10, dungeon)
         assert not result['success']
@@ -210,7 +210,7 @@ class TestTeleportation:
         
         class MockTile:
             def __init__(self):
-                self.block_movement = False
+                self.blocked = False
                 self.tile_type = 'floor'
         
         player = Entity(10, 10, '@', (255, 255, 255), 'Player')
@@ -349,7 +349,7 @@ class TestMonsterWithPortals:
         
         class MockTile:
             def __init__(self):
-                self.block_movement = False
+                self.blocked = False
                 self.tile_type = 'floor'
         
         monster = Entity(15, 15, 'o', (255, 100, 100), 'Orc')
@@ -401,7 +401,7 @@ class TestPortalPhaseAIntegration:
         
         class MockTile:
             def __init__(self):
-                self.block_movement = False
+                self.blocked = False
                 self.tile_type = 'floor'
         
         player = Entity(10, 10, '@', (255, 255, 255), 'Player')

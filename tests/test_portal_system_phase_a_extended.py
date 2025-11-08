@@ -36,7 +36,7 @@ class TestPortalPickupAndDeploy:
         
         class MockTile:
             def __init__(self):
-                self.block_movement = False
+                self.blocked = False
                 self.tile_type = 'floor'
         
         return MockDungeon()
@@ -99,7 +99,7 @@ class TestPortalPickupAndDeploy:
         portal_entity = factory.create_portal(0, 0, 'entrance')
         
         # Create wall at target location
-        dungeon.tiles[15][15].block_movement = True
+        dungeon.tiles[15][15].blocked = True
         
         # Try to deploy to wall
         portal_system = get_portal_system()
@@ -123,7 +123,7 @@ class TestPortalCollisionDetection:
         
         class MockTile:
             def __init__(self):
-                self.block_movement = False
+                self.blocked = False
                 self.tile_type = 'floor'
         
         return MockDungeon()
@@ -225,7 +225,7 @@ class TestPortalSystemIntegration:
         
         class MockTile:
             def __init__(self):
-                self.block_movement = False
+                self.blocked = False
                 self.tile_type = 'floor'
         
         return MockDungeon()
