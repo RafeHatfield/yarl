@@ -22,6 +22,7 @@ class MapFeatureType(Enum):
     """Types of map features that can be interacted with."""
     CHEST = auto()
     SIGNPOST = auto()
+    MURAL = auto()
     SECRET_DOOR = auto()
     VAULT_DOOR = auto()
     DOOR = auto()  # Generic locked door
@@ -115,6 +116,7 @@ class MapFeature:
         feature_names = {
             MapFeatureType.CHEST: "Chest",
             MapFeatureType.SIGNPOST: "Signpost",
+            MapFeatureType.MURAL: "Mural",
             MapFeatureType.SECRET_DOOR: "Secret Door",
             MapFeatureType.VAULT_DOOR: "Vault Door"
         }

@@ -56,6 +56,124 @@ messages:
     
     - text: "Every stone here is stained with the blood of failed heroes."
       min_depth: 5
+    
+    # ===== PHASE 4 ADDITIONS: TIER 1 - Early Mystery (Levels 1-10) =====
+    - text: "Something ancient dreams beneath these stones. We call it the Entity."
+      min_depth: 1
+      max_depth: 10
+    
+    - text: "The Crimson Order built these catacombs centuries ago. Few remember why."
+      min_depth: 2
+      max_depth: 10
+    
+    - text: "These halls grew silent long ago. Now only whispers remain."
+      min_depth: 1
+      max_depth: 8
+    
+    - text: "A prisoner lies at the heart of this place. Some say it was not always human."
+      min_depth: 3
+      max_depth: 10
+    
+    - text: "Someone left this armor behind. Not by choice, I suspect."
+      min_depth: 2
+      max_depth: 8
+    
+    - text: "How many adventurers have walked these halls? The Entity remembers every one."
+      min_depth: 5
+      max_depth: 10
+    
+    # ===== PHASE 4 ADDITIONS: TIER 2 - Ritual Awakening (Levels 11-20) =====
+    - text: "Two dragons came to these lands long ago. Only one remained imprisoned."
+      min_depth: 11
+      max_depth: 20
+    
+    - text: "A ritual was performed here. It succeeded and failed in equal measure."
+      min_depth: 12
+      max_depth: 20
+    
+    - text: "The Entity whispers of something precious, locked away far below. It sounds... desperate."
+      min_depth: 11
+      max_depth: 19
+    
+    - text: "Aurelyn was the name. Ruby was the color. The ritualists were thorough."
+      min_depth: 13
+      max_depth: 20
+    
+    - text: "How many souls has the Entity claimed? The walls refuse to count."
+      min_depth: 14
+      max_depth: 20
+    
+    - text: "The body fails. The cycle repeats. The soul endures. Is that a curse or a gift?"
+      min_depth: 11
+      max_depth: 18
+    
+    - text: "They say the Entity was not always cursed. Some say it still remembers freedom."
+      min_depth: 15
+      max_depth: 20
+    
+    - text: "A heart still beats in the deepest vault. Not metaphorically."
+      min_depth: 16
+      max_depth: 20
+    
+    - text: "Every corpse here was once a vessel. The Entity simply moved on to the next."
+      min_depth: 12
+      max_depth: 20
+    
+    - text: "This gold belonged to someone else. Someone who descended as far as you. We know how it ended."
+      min_depth: 14
+      max_depth: 20
+    
+    - text: "Zhyraxion waited. Zhyraxion raged. Zhyraxion was bound. Now Zhyraxion waits again."
+      min_depth: 17
+      max_depth: 20
+    
+    - text: "The Entity's collection grows. So does its stock of spare bodies."
+      min_depth: 13
+      max_depth: 20
+    
+    # ===== PHASE 4 ADDITIONS: TIER 3 - The Final Choice (Levels 21-25) =====
+    - text: "Zhyraxion's heart was taken. The dragon's heart remains locked here. Choose wisely what you do with it."
+      min_depth: 21
+    
+    - text: "The rituals can be completed or unmade. Power lies in both paths, though not the power you might seek."
+      min_depth: 22
+    
+    - text: "To name something is to have power over it. The Entity's true name is a key, not a weapon."
+      min_depth: 23
+    
+    - text: "One soul has tried for decades. Will you succeed where they failed? And what then?"
+      min_depth: 21
+    
+    - text: "The heart glows red—not with fire, but with centuries of grief."
+      min_depth: 24
+      max_depth: 25
+    
+    - text: "Breaking the cycle requires understanding the prisoner. Understanding requires naming what was lost."
+      min_depth: 23
+    
+    - text: "Three choices await: claim the power, share the burden, or set it free. Each leads somewhere different."
+      min_depth: 24
+    
+    - text: "Aurelyn fell first. Then came Zhyraxion, too late to save them. Neither could stop what came next."
+      min_depth: 21
+      max_depth: 25
+    
+    - text: "How many souls lie discarded below? How many will join them after you?"
+      min_depth: 22
+      max_depth: 25
+    
+    # ===== PHASE 4 ADDITIONS: Meta/Atmospheric (All Depths) =====
+    - text: "The Entity is patient. It has centuries. You have yourself. Choose wisely."
+      min_depth: 1
+    
+    - text: "Every adventurer who reads this sign is asking the same question: 'Can I actually win?'"
+      min_depth: 5
+    
+    - text: "The ghost of the last attempt watches from the shadows. Does it pity you? Or envy you?"
+      min_depth: 10
+    
+    - text: "One ritual trapped the Entity. Another might free it. Which would you choose?"
+      min_depth: 7
 
   # ==========================================================================
   # WARNING MESSAGES - Alerts about dangers

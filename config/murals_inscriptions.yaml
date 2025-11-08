@@ -1,0 +1,242 @@
+# Murals & Inscriptions Configuration
+#
+# This file defines examinable wall murals and ancient inscriptions throughout the dungeon.
+# These provide environmental storytelling about the Entity's backstory and the ritual.
+#
+# Mural Types:
+#   - mural: Visual depiction of a scene (gold-tinted walls, visual descriptions)
+#   - inscription: Carved text into stone (written messages, scholarly records)
+#
+# Depth Filtering:
+#   Murals can optionally specify min_depth and/or max_depth to only appear
+#   on certain dungeon levels. Deeper levels have more detailed lore.
+
+version: "1.0"
+
+murals:
+  # ==========================================================================
+  # TIER 1: Early Mystery (Levels 1-10)
+  # General dungeon history, mysterious ritual preparations
+  # ==========================================================================
+  
+  - id: mural_ancient_site
+    type: mural
+    min_depth: 1
+    max_depth: 10
+    text: |
+      A vast mural depicts an ancient citadel being carved from living stone.
+      Hooded figures work methodically, their faces obscured. Runes glow
+      faintly around the construction. The scene conveys obsessive preparation
+      for something momentous. At the mural's edge, two shapes loom in the sky—
+      winged silhouettes, barely sketched.
+  
+  - id: inscription_founding_order
+    type: inscription
+    min_depth: 2
+    max_depth: 8
+    text: |
+      Carved in archaic script, worn by centuries:
+      "Here stands the Citadel of the Crimson Order.
+      We seek what immortals possess.
+      We will have it."
+  
+  - id: mural_ritual_ground
+    type: mural
+    min_depth: 3
+    max_depth: 9
+    text: |
+      A faded mural shows hooded ritualists arranging objects in geometric
+      patterns. Torches burn at cardinal points. In the center lies a massive
+      circle inscribed with symbols that seem to writhe even in stone.
+      The craftsmanship is exceptional—every detail obsessively precise.
+      Centuries of dust coat the image, but the intent remains clear:
+      this was meant to endure.
+  
+  - id: inscription_warning_previous
+    type: inscription
+    min_depth: 4
+    max_depth: 7
+    text: |
+      Scratched hastily into stone, in different hands than the formal carvings:
+      "Don't go deeper. The ritual is still active.
+      Bodies don't stay buried here. They get taken."
+  
+  # ==========================================================================
+  # TIER 2: The Two Dragons (Levels 11-20)
+  # Ritual backstory, the dragons, preparation and first attempt
+  # ==========================================================================
+  
+  - id: mural_golden_pair
+    type: mural
+    min_depth: 11
+    max_depth: 18
+    text: |
+      A breathtaking mural portrays two massive dragons in flight. They are
+      rendered in gold and silver leaf, their wings spread wide. They fly
+      together across an expansive sky, circling ancient mountains. Below them,
+      small cities and forests stretch out. The dragons move with perfect
+      synchronization, bonded. Their eyes glow with intelligence. Whoever
+      carved this understood dragon nature intimately—or worshipped them.
+  
+  - id: mural_ritual_preparation
+    type: mural
+    min_depth: 12
+    max_depth: 19
+    text: |
+      Ritualists work methodically, year after year rendered in sequential
+      panels. In early scenes, they study books and artifacts. Middle panels
+      show construction: raising walls, inscribing circles. Later scenes depict
+      scholars pointing at scrolls, intense debate frozen in stone. The final
+      panel shows them standing at the ritual ground, arms raised, ready.
+      Each figure's face shows absolute determination. This was their life's work.
+  
+  - id: inscription_ritual_theory
+    type: inscription
+    min_depth: 13
+    max_depth: 18
+    text: |
+      Written in scholarly hand, precise and academic:
+      "The dragon's immortal power resides in the Ruby Heart.
+      Binding ritual: attraction → capture → completion.
+      One dragon, perfectly prepared. Nothing can stop this."
+  
+  - id: mural_aurelyn_captured
+    type: mural
+    min_depth: 14
+    max_depth: 20
+    text: |
+      A golden dragon descends on the ritual ground, wings spread, magnificent.
+      Then: the circle ignites. Binding runes explode with light. The dragon
+      writhes, trapped. The ritualists circle it, chanting. The next panel shows
+      the dragon falling, weakening. The final panel: only a crystalline Ruby Heart
+      remains, glowing on the stone. The muralists rendered the dragon's face
+      with astonishing detail—noble, powerful, tragically beautiful.
+  
+  - id: inscription_first_success
+    type: inscription
+    min_depth: 15
+    max_depth: 19
+    text: |
+      Triumphant script, exuberant and bold:
+      "AURELYN IS BOUND.
+      AURELYN IS BROKEN.
+      THE RUBY HEART IS OURS.
+      TODAY, IMMORTALITY. TOMORROW, THE WORLD."
+  
+  # ==========================================================================
+  # TIER 3: Zhyraxion's Arrival (Levels 18-22)
+  # The second dragon, the failed ritual, the incomplete binding
+  # ==========================================================================
+  
+  - id: mural_zhyraxion_arrives
+    type: mural
+    min_depth: 18
+    max_depth: 22
+    text: |
+      A second dragon, darker and more terrible than the first, descends on
+      the ritual ground in blind rage. Claws rake across stone. Fire erupts.
+      Ritualists scatter, falling. The dragon's face is contorted with grief
+      and fury—a heartbreak rendered in such detail that the stone itself
+      seems to scream. In the next panel: the dragon is surrounded by binding
+      runes, but something is wrong. The ritual doesn't complete. Incomplete
+      circles glow with unstable power. The dragon transforms—scales recede,
+      wings fold, the magnificent being collapses into human form.
+  
+  - id: mural_incomplete_binding
+    type: mural
+    min_depth: 19
+    max_depth: 22
+    text: |
+      A human figure lies bound in glowing chains that don't quite fit.
+      The runes are corrupted, flickering, barely holding. Around the figure,
+      ritualists collapse from exhaustion. Many don't move at all. The binding
+      worked—partially. The dragon is trapped. Zhyraxion is trapped. But the
+      ritual failed to destroy him. Failed to extract his heart. Incomplete.
+      The muralist left this scene deliberately rough, imperfect, unstable.
+  
+  - id: inscription_zhyraxion_named
+    type: inscription
+    min_depth: 20
+    max_depth: 22
+    text: |
+      Carved frantically, almost illegibly, by hands that shook:
+      "ZHYRAXION. The dragon's name is ZHYRAXION.
+      He is BOUND but not BROKEN.
+      He will not die. He will not leave.
+      We cannot kill what we have already half-destroyed.
+      What do we do? WHAT DO WE DO?"
+  
+  # ==========================================================================
+  # TIER 4: The Prison (Levels 21-25)
+  # Zhyraxion imprisoned, soul rotation begins, Ruby Heart locked away
+  # ==========================================================================
+  
+  - id: mural_souls_collection
+    type: mural
+    min_depth: 21
+    max_depth: 25
+    text: |
+      A haunting mural shows the bound dragon reaching out with one hand.
+      Around him, translucent figures appear—souls trapped in spectral form.
+      Bodies appear and disappear in a cycle: the soul animates a body,
+      descends the dungeon, returns dead, is replaced by another soul.
+      The cycle is rendered over and over, spiraling down. Centuries rendered
+      in repetition. The dragon stands at the center of this wheel, trapped,
+      watching, waiting. His expression contains infinite despair.
+  
+  - id: mural_ruby_heart_vault
+    type: mural
+    min_depth: 22
+    max_depth: 25
+    text: |
+      The deepest vault. Massive doors, sealed with ritual symbols. Guards
+      stand eternal (rendered as statues?), watching. Inside: a single Ruby Heart
+      on a pedestal, glowing with inner light. It pulses like a living thing.
+      The muralists rendered it with obsessive detail—every facet perfect.
+      Above it: Aurelyn's face, noble and sad. Below the vault: the bound
+      Zhyraxion, imprisoned in the level above, unable to reach what he seeks
+      most. The cruelty of the separation is the mural's central theme.
+  
+  - id: inscription_heart_sealed
+    type: inscription
+    min_depth: 23
+    max_depth: 25
+    text: |
+      Written in Crimson Order script, on the vault door itself:
+      "AURELYN'S RUBY HEART.
+      SEALED FOREVER.
+      May this dragon rot in darkness for all eternity.
+      May his desperation keep him company as centuries pass.
+      This is mercy compared to what he deserves."
+  
+  - id: mural_crossroads
+    type: mural
+    min_depth: 24
+    max_depth: 25
+    text: |
+      The final mural is unusual: unfinished, deliberately incomplete.
+      It shows a figure standing before the bound dragon. The figure's face
+      is blank—waiting to be filled in. The figure holds Aurelyn's Ruby Heart,
+      glowing. Before them branch six paths:
+      - One path climbs (escape)
+      - One path descends (deeper still)
+      - One path transforms (becomes dragon)
+      - One path destroys (shatters the heart)
+      - One path speaks (names the dragon)
+      - One path frees (redemption)
+      The muralists seemed to be asking: what will YOU choose?
+  
+  - id: inscription_six_endings
+    type: inscription
+    min_depth: 24
+    max_depth: 25
+    text: |
+      In a hand different from any seen before—fresh, urgent, personal:
+      "Six paths from the Ruby Heart.
+      Six endings wait below.
+      Zhyraxion is patient, but not kind.
+      You are not the first to reach this vault.
+      You may not be the last.
+      Choose wisely. The dragon's fate is not yours to decide,
+      but perhaps your own is."
+

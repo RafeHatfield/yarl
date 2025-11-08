@@ -75,6 +75,7 @@ class ComponentType(Enum):
     MAP_FEATURE = auto()
     CHEST = auto()
     SIGNPOST = auto()
+    MURAL = auto()
     LOCKED_DOOR = auto()
 
 

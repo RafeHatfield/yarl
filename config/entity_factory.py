@@ -765,6 +765,60 @@ class EntityFactory:
         except Exception as e:
             logger.error(f"Error creating signpost {sign_type}: {e}")
             return None
+    
+    def create_mural(self, x: int, y: int, depth: int = 1) -> Optional[Entity]:
+        """Create a mural or inscription map feature entity.
+        
+        Murals display environmental lore about the dungeon's history and
+        the tragedy of Zhyraxion and Aurelyn. Text is depth-aware.
+        
+        Args:
+            x: X coordinate for the mural
+            y: Y coordinate for the mural
+            depth: Dungeon level for depth-specific murals
+            
+        Returns:
+            Entity instance if mural creation succeeds, None otherwise
+        """
+        try:
+            from components.mural import Mural
+            
+            # Get a random mural for this depth
+            mural_text, mural_id = Mural.get_random_mural(depth)
+            
+            if not mural_text:
+                # No murals available for this depth
+                return None
+            
+            # Create mural component
+            mural_component = Mural(text=mural_text, mural_id=mural_id)
+            
+            # Create entity
+            mural_entity = Entity(
+                x=x,
+                y=y,
+                char="M",  # Mural character
+                color=(220, 20, 60),  # Crimson red
+                name="Mural",
+                blocks=False
+            )
+            
+            # Attach mural component
+            mural_entity.mural = mural_component
+            mural_component.owner = mural_entity
+            from components.component_registry import ComponentType
+            mural_entity.components.add(ComponentType.MURAL, mural_component)
+            
+            # Set render order
+            from render_functions import RenderOrder
+            mural_entity.render_order = RenderOrder.ITEM
+            
+            logger.debug(f"Created mural at ({x}, {y}) [id: {mural_id}, depth: {depth}]")
+            return mural_entity
+        
+        except Exception as e:
+            logger.error(f"Error creating mural: {e}")
+            return None
 
     def get_player_stats(self) -> Optional[EntityStats]:
         """Get player starting stats from configuration.

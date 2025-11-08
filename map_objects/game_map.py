@@ -483,11 +483,12 @@ class GameMap:
                 invalidate_entity_cache("entity_added_item")
 
     def place_exploration_features(self, room, entities):
-        """Place exploration features (chests, signposts, secret doors) in a room.
+        """Place exploration features (chests, signposts, murals, secret doors) in a room.
         
         Spawns exploration content based on dungeon level and probability tables:
         - Chests: 30% chance per room (quality scales with depth)
         - Signposts: 20% chance per room (random messages)
+        - Murals: 15% chance per room (environmental lore)
         - Secret doors: 15% chance per level (placed between rooms)
         
         Args:
@@ -529,6 +530,17 @@ class GameMap:
             if signpost:
                 entities.append(signpost)
                 logger.debug(f"Placed {sign_type} at ({x}, {y}) in room (depth {self.dungeon_level})")
+        
+        # MURALS - 15% chance per room (Phase 4 environmental lore)
+        if random() < 0.15:
+            # Random position in room (not at edges)
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            mural = entity_factory.create_mural(x, y, depth=self.dungeon_level)
+            if mural:
+                entities.append(mural)
+                logger.debug(f"Placed mural at ({x}, {y}) in room (depth {self.dungeon_level})")
     
     def place_secret_doors_between_rooms(self, rooms):
         """Place secret doors between some rooms.
