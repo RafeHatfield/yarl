@@ -939,6 +939,9 @@ class EntityFactory:
             from components.component_registry import ComponentType
             entity.components.add(ComponentType.PORTAL, portal)
             
+            # Mark as portal for detection systems
+            entity.is_portal = True
+            
             # Set render order
             entity.render_order = RenderOrder.ITEM
             

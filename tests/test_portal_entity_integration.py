@@ -275,6 +275,16 @@ class TestPortalRenderingSystem:
         
         # Portal components should track position via owner
         assert entrance.portal.owner == entrance
+    
+    def test_portal_detection_flag(self):
+        """Portal entities have is_portal flag for detection systems."""
+        factory = EntityFactory()
+        entrance = factory.create_portal(10, 10, 'entrance')
+        exit_portal = factory.create_portal(20, 20, 'exit')
+        
+        assert hasattr(entrance, 'is_portal')
+        assert entrance.is_portal is True
+        assert exit_portal.is_portal is True
 
 
 if __name__ == '__main__':
