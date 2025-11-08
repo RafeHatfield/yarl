@@ -1755,11 +1755,24 @@ class ActionProcessor:
                     # Place entrance portal
                     result = portal_placer.place_entrance(target_x, target_y, game_map)
                     if result.get('success'):
-                        # Add portal to entities list so it's rendered and interactive
-                        entrance_portal = result.get('portal')
-                        if entrance_portal:
-                            entrance_portal.owner = entrance_portal  # Portal owns itself for location tracking
-                            entities.append(entrance_portal)
+                        # Create Entity wrapper for portal
+                        from config.entity_factory import EntityFactory
+                        entrance_portal_component = result.get('portal')
+                        if entrance_portal_component:
+                            # Create entity with proper rendering support
+                            factory = EntityFactory()
+                            entrance_entity = factory.create_portal(
+                                target_x, target_y, 
+                                portal_type='entrance'
+                            )
+                            if entrance_entity:
+                                # Link the component from PortalPlacer
+                                entrance_entity.portal = entrance_portal_component
+                                entrance_portal_component.owner = entrance_entity
+                                # Update placer reference
+                                portal_placer.active_entrance = entrance_portal_component
+                                portal_placer.active_entrance.owner = entrance_entity
+                                entities.append(entrance_entity)
                         message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
                     else:
                         message_log.add_message(MB.warning(result.get('message', 'Invalid placement')))
@@ -1769,11 +1782,28 @@ class ActionProcessor:
                     # Place exit portal
                     result = portal_placer.place_exit(target_x, target_y, game_map)
                     if result.get('success'):
-                        # Add portal to entities list
-                        exit_portal = result.get('exit')
-                        if exit_portal:
-                            exit_portal.owner = exit_portal  # Portal owns itself for location tracking
-                            entities.append(exit_portal)
+                        # Create Entity wrapper for portal
+                        from config.entity_factory import EntityFactory
+                        exit_portal_component = result.get('exit')
+                        entrance_portal_component = result.get('entrance')
+                        if exit_portal_component and entrance_portal_component:
+                            factory = EntityFactory()
+                            exit_entity = factory.create_portal(
+                                target_x, target_y,
+                                portal_type='exit'
+                            )
+                            if exit_entity:
+                                # Link components
+                                exit_entity.portal = exit_portal_component
+                                exit_portal_component.owner = exit_entity
+                                
+                                # Make sure entrance entity is also properly set
+                                for entity in entities:
+                                    if hasattr(entity, 'portal') and entity.portal.portal_type == 'entrance':
+                                        entity.portal.linked_portal = exit_portal_component
+                                        break
+                                
+                                entities.append(exit_entity)
                         message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
                         
                         # Exit targeting mode - portals placed
