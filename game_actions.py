@@ -47,8 +47,8 @@ class ActionProcessor:
         
         # Map action types to their handler methods
         self.action_handlers = {
-            'show_inventory': self._handle_show_inventory,
-            'drop_inventory': self._handle_drop_inventory,
+            'show_inventory': self._handle_show_inventory_deprecated,  # DEPRECATED - use sidebar
+            'drop_inventory': self._handle_drop_inventory_deprecated,  # DEPRECATED - use sidebar
             'show_character_screen': self._handle_show_character_screen,
             'show_wizard_menu': self._handle_show_wizard_menu,  # Tier 2: Wizard Mode
             'exit': self._handle_exit,
@@ -139,13 +139,24 @@ class ActionProcessor:
                 except Exception as e:
                     logger.error(f"Error processing mouse action {mouse_action_type}: {e}", exc_info=True)
     
-    def _handle_show_inventory(self, _) -> None:
-        """Handle showing the inventory screen."""
-        self.state_manager.set_game_state(GameStates.SHOW_INVENTORY)
     
-    def _handle_drop_inventory(self, _) -> None:
-        """Handle showing the drop inventory screen."""
-        self.state_manager.set_game_state(GameStates.DROP_INVENTORY)
+    def _handle_show_inventory_deprecated(self, _) -> None:
+        """DEPRECATED: Handle showing inventory menu (use sidebar UI instead).
+        
+        This is maintained for backwards compatibility only.
+        The 'i' key binding has been removed. Use the sidebar UI for inventory.
+        """
+        logger.warning("DEPRECATED: show_inventory action triggered. Use sidebar UI instead.")
+        # Don't actually enter the old inventory state - it's deprecated
+    
+    def _handle_drop_inventory_deprecated(self, _) -> None:
+        """DEPRECATED: Handle showing drop inventory menu (use sidebar UI instead).
+        
+        This is maintained for backwards compatibility only.
+        The 'd' key binding has been removed. Use the sidebar UI for inventory.
+        """
+        logger.warning("DEPRECATED: drop_inventory action triggered. Use sidebar UI instead.")
+        # Don't actually enter the old inventory state - it's deprecated
     
     def _handle_show_character_screen(self, _) -> None:
         """Handle showing the character screen."""

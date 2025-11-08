@@ -16,7 +16,7 @@ from input_handlers import (
     handle_mouse,
     handle_main_menu,
     handle_targeting_keys,
-    handle_inventory_keys,
+    handle_inventory_keys,  # Still used for THROW_SELECT_ITEM
     handle_player_turn_keys,
     handle_player_dead_keys,
     handle_level_up_menu,

@@ -97,7 +97,7 @@ def _initialize_state_configurations():
     from input_handlers import (
         handle_player_turn_keys,
         handle_targeting_keys,
-        handle_inventory_keys,
+        handle_inventory_keys,  # Still used for THROW_SELECT_ITEM
         handle_player_dead_keys,
         handle_level_up_menu,
         handle_character_screen,
@@ -162,20 +162,20 @@ def _initialize_state_configurations():
         description="Targeting thrown item"
     ),
     
-    # Viewing inventory
+    # DEPRECATED: Viewing inventory (use sidebar UI instead)
     GameStates.SHOW_INVENTORY: StateConfig(
         input_handler=handle_inventory_keys,
         allows_movement=False,
         allows_pickup=False,
-        description="Viewing inventory to use item"
+        description="DEPRECATED: Viewing inventory to use item (use sidebar UI)"
     ),
     
-    # Dropping items
+    # DEPRECATED: Dropping items (use sidebar UI instead)
     GameStates.DROP_INVENTORY: StateConfig(
         input_handler=handle_inventory_keys,
         allows_movement=False,
         allows_pickup=False,
-        description="Selecting item to drop"
+        description="DEPRECATED: Selecting item to drop (use sidebar UI)"
     ),
     
     # Player is dead

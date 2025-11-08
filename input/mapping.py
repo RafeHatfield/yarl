@@ -55,7 +55,6 @@ class InputAction(Enum):
     WAIT = "wait"
     
     # Interface
-    SHOW_INVENTORY = "show_inventory"
     SHOW_CHARACTER = "show_character"
     SHOW_HELP = "show_help"
     SHOW_MENU = "show_menu"
@@ -720,10 +719,6 @@ class InputMapping:
         default_profile.add_mapping(ActionMapping(
             InputAction.CANCEL,
             [KeyBinding(key="escape")]
-        ))
-        default_profile.add_mapping(ActionMapping(
-            InputAction.SHOW_INVENTORY,
-            [KeyBinding(key="i")]
         ))
         default_profile.add_mapping(ActionMapping(
             InputAction.SHOW_CHARACTER,

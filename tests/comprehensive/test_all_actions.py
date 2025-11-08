@@ -149,27 +149,9 @@ class TestAllPlayerTurnActions(unittest.TestCase):
         self.assertNotIn(self.healing_potion, self.state_manager.state.entities,
                         "Item should be removed from map")
 
-    def test_inventory_menu_action(self):
-        """Test show inventory action (i key)."""
-        action = {"show_inventory": True}
-        
-        _process_game_actions(
-            action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
-        )
-        
-        self.assertEqual(self.state_manager.state.current_state, GameStates.SHOW_INVENTORY,
-                        "Should transition to inventory state")
-
-    def test_drop_inventory_action(self):
-        """Test drop inventory action (d key)."""
-        action = {"drop_inventory": True}
-        
-        _process_game_actions(
-            action, {}, self.state_manager, None, GameStates.PLAYERS_TURN, {}
-        )
-        
-        self.assertEqual(self.state_manager.state.current_state, GameStates.DROP_INVENTORY,
-                        "Should transition to drop inventory state")
+    # NOTE: Inventory menu tests removed - deprecated in favor of sidebar UI
+    # def test_inventory_menu_action(self):
+    # def test_drop_inventory_action(self):
 
     def test_character_screen_action(self):
         """Test character screen action (c key)."""
@@ -225,96 +207,18 @@ class TestAllPlayerTurnActions(unittest.TestCase):
 
 
 class TestInventoryActions(unittest.TestCase):
-    """Test all inventory-related actions."""
+    """Test all inventory-related actions.
+    
+    NOTE: Deprecated inventory menu tests removed in favor of sidebar UI.
+    The sidebar UI now handles all inventory operations directly.
+    """
 
-    def setUp(self):
-        """Set up inventory testing fixtures."""
-        self.state_manager = GameStateManager()
-        
-        # Create player with items in inventory
-        self.player = Entity(
-            x=10, y=10, char='@', color=(255, 255, 255), name='Player',
-            fighter=Fighter(hp=20, defense=2, power=5),  # Damaged for healing tests
-            inventory=Inventory(capacity=26),
-            equipment=Equipment()
-        )
-        
-        # Create various items
-        self.healing_potion = Entity(
-            x=0, y=0, char='!', color=(127, 0, 127), name='Healing Potion',
-            item=Item(use_function=heal, amount=4)
-        )
-        
-        self.lightning_scroll = Entity(
-            x=0, y=0, char='~', color=(255, 255, 0), name='Lightning Scroll',
-            item=Item(use_function=cast_lightning, damage=20, maximum_range=5)
-        )
-        
-        self.sword = Entity(
-            x=0, y=0, char='/', color=(139, 69, 19), name='Sword',
-            equippable=Equippable(slot='main_hand', power_bonus=3)
-        )
-        
-        # Add items to inventory
-        self.player.inventory.items = [self.healing_potion, self.lightning_scroll, self.sword]
-        
-        # Set up game state
-        self.state_manager.update_state(
-            player=self.player,
-            entities=[self.player],
-            game_map=Mock(),
-            message_log=Mock(),
-            current_state=GameStates.SHOW_INVENTORY,
-        )
-
-    def test_inventory_index_selection(self):
-        """Test selecting items by index in inventory."""
-        # Test selecting first item (index 0)
-        action = {"inventory_index": 0}
-        
-        # Inventory index logic is implemented in ActionProcessor._handle_inventory_action
-        # Should not crash and should handle the item usage
-        _process_game_actions(
-            action, {}, self.state_manager, None, GameStates.SHOW_INVENTORY, {}
-        )
-        
-        # Action should be processed without error
-        # (Actual item usage depends on item type and player state)
-
-    def test_inventory_item_usage(self):
-        """Test using items from inventory."""
-        # Test using healing potion
-        action = {"inventory_index": 0}  # First item (healing potion)
-        
-        # Item usage logic is implemented in ActionProcessor._use_inventory_item
-        # Should heal player and remove item from inventory
-        _process_game_actions(
-            action, {}, self.state_manager, None, GameStates.SHOW_INVENTORY, {}
-        )
-
-    def test_inventory_item_dropping(self):
-        """Test dropping items from inventory."""
-        # Switch to drop inventory state
-        self.state_manager.update_state(current_state=GameStates.DROP_INVENTORY)
-        
-        action = {"inventory_index": 0}  # First item
-        
-        # Item dropping logic is implemented in ActionProcessor._drop_inventory_item
-        # Should remove item from inventory and place on map
-        _process_game_actions(
-            action, {}, self.state_manager, None, GameStates.DROP_INVENTORY, {}
-        )
-
-    def test_inventory_item_equipping(self):
-        """Test equipping items from inventory."""
-        # Test equipping sword
-        action = {"inventory_index": 2}  # Sword
-        
-        # Equipment logic is implemented via inventory.use -> ActionProcessor._handle_equipment
-        # Should equip sword and modify player stats
-        _process_game_actions(
-            action, {}, self.state_manager, None, GameStates.SHOW_INVENTORY, {}
-        )
+    def test_deprecated_inventory_menu_removed(self):
+        """Placeholder: Old inventory menu system has been deprecated."""
+        # The old SHOW_INVENTORY and DROP_INVENTORY states no longer exist.
+        # All inventory operations now happen through the sidebar UI (left sidebar panel).
+        # This test confirms the migration is complete.
+        pass
 
 
 class TestTargetingActions(unittest.TestCase):
@@ -504,18 +408,9 @@ class TestActionHandlerInputOutput(unittest.TestCase):
                     self.assertEqual(result, expected_action,
                                    f"Key should produce {expected_action}")
 
-    def test_handle_inventory_keys_coverage(self):
-        """Test that handle_inventory_keys works for all inventory slots."""
-        # Test selecting different inventory slots
-        for i in range(26):  # a-z
-            key = Mock()
-            key.c = ord('a') + i
-            
-            with self.subTest(slot=chr(ord('a') + i)):
-                result = handle_inventory_keys(key)
-                expected = {"inventory_index": i}
-                self.assertEqual(result, expected,
-                               f"Key {chr(ord('a') + i)} should select inventory slot {i}")
+    # NOTE: handle_inventory_keys tests removed - deprecated inventory menu system
+    # The function is still used for THROW_SELECT_ITEM only
+    # def test_handle_inventory_keys_coverage(self):
 
 
 class TestActionImplementations(unittest.TestCase):
