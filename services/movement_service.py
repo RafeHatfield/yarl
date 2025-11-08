@@ -156,8 +156,10 @@ class MovementService:
         portal_collision = portal_manager.check_portal_collision(player, entities)
         if portal_collision and portal_collision.get('teleported'):
             logger.info(f"Portal teleportation: {portal_collision.get('from_pos')} -> {portal_collision.get('to_pos')}")
-            result.messages.append({"message": MB.item_effect("You step through the portal...")})
-            result.messages.append({"message": MB.warning("Reality bends around you!")})
+            # Use the visual effect message from PortalManager
+            vfx_msg = portal_collision.get('message', MB.item_effect("You step through the portal..."))
+            result.messages.append({"message": vfx_msg})
+            result.messages.append({"message": MB.warning("✨ Reality bends around you!")})
             # FOV needs recompute after teleportation
             result.fov_recompute = True
             return result  # Exit early after teleportation

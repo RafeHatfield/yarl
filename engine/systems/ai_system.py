@@ -330,8 +330,8 @@ class AISystem(System):
             if portal_collision and portal_collision.get('teleported'):
                 logger.info(f"Monster portal teleportation: {entity.name} {portal_collision.get('from_pos')} -> {portal_collision.get('to_pos')}")
                 message = portal_collision.get('message', f"{entity.name} vanishes through the portal!")
-                if isinstance(message, str):
-                    ai_results.append({'message': message})
+                # Add message to results (handles both string messages and Message objects)
+                ai_results.append({'message': message})
 
             # Update turn statistics
             turn_time = time.time() - turn_start_time

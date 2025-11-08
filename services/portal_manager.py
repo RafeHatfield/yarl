@@ -181,14 +181,34 @@ class PortalManager:
                             invalidate_entity_cache("portal_teleportation")
                             
                             entity_type = "Monster" if hasattr(entity, 'ai') and entity.ai else "Player"
+                            is_monster = entity_type == "Monster"
+                            
                             logger.info(f"{entity_type} portal teleportation: ({old_x}, {old_y}) -> ({entity.x}, {entity.y})")
+                            
+                            # Create visual effect message
+                            from services.portal_visual_effects import PortalVFXSystem, get_portal_effect_queue
+                            vfx_msg = PortalVFXSystem.create_teleportation_message(
+                                entity.name, 
+                                is_player=not is_monster,
+                                is_monster=is_monster
+                            )
+                            
+                            # Add to visual effect queue for rendering
+                            effect_queue = get_portal_effect_queue()
+                            effect_queue.add_teleportation(
+                                (old_x, old_y),
+                                (entity.x, entity.y),
+                                entity.name,
+                                intensity='high' if not is_monster else 'medium'
+                            )
                             
                             return {
                                 'teleported': True,
                                 'actor': entity,
                                 'from_pos': (old_x, old_y),
                                 'to_pos': (entity.x, entity.y),
-                                'message': f"{entity.name} steps through the portal..." if hasattr(entity, 'ai') and entity.ai else "You step through the portal..."
+                                'message': vfx_msg.get('message', f"{entity.name} steps through the portal..."),
+                                'vfx': vfx_msg
                             }
             
             return None
