@@ -961,6 +961,35 @@ class ActionProcessor:
         if not item.item:
             return
 
+        # Check if this is a Wand of Portals - special handling for portal targeting
+        # Use more robust check: verify it's actually a PortalPlacer instance, not just a mock
+        from components.portal_placer import PortalPlacer
+        portal_placer = getattr(item, 'portal_placer', None)
+        if isinstance(portal_placer, PortalPlacer) and hasattr(item, 'item'):
+            # Portal wand - call its use function directly with wand_entity kwarg
+            # The use function will handle portal-specific targeting
+            item_use_results = player.inventory.use(
+                item,
+                entities=self.state_manager.state.entities,
+                fov_map=self.state_manager.state.fov_map,
+                game_map=self.state_manager.state.game_map,
+                wand_entity=item  # Pass the wand itself
+            )
+            
+            for result in item_use_results:
+                message = result.get("message")
+                if message:
+                    message_log.add_message(message)
+                
+                # Check if portal wand requested targeting mode
+                if result.get("targeting_mode"):
+                    # Store the wand in extra data for portal targeting
+                    self.state_manager.set_extra_data("portal_wand", item)
+                    self.state_manager.set_game_state(GameStates.TARGETING)
+                    message_log.add_message(MB.success("Portal targeting active. Click to place entrance portal."))
+            
+            return  # Portal wand usage handled
+
         # Check if item requires targeting - if so, enter targeting mode
         if item.item.targeting:
             # Enter targeting mode for this item
@@ -1309,6 +1338,43 @@ class ActionProcessor:
                         self._process_player_status_effects()
                         self.turn_controller.end_player_action(turn_consumed=True)
                     return
+        
+        # Handle Portal Wand targeting first
+        portal_wand = self.state_manager.get_extra_data("portal_wand")
+        if current_state == GameStates.TARGETING and portal_wand:
+            target_x, target_y = click_pos
+            player = self.state_manager.state.player
+            
+            if hasattr(portal_wand, 'portal_placer'):
+                portal_placer = portal_wand.portal_placer
+                game_map = self.state_manager.state.game_map
+                message_log = self.state_manager.state.message_log
+                
+                # Check if portal placer needs entrance portal
+                if not portal_placer.active_entrance:
+                    # Place entrance portal
+                    message = portal_placer.place_entrance(target_x, target_y, game_map, self.state_manager.state.entities)
+                    if message:
+                        message_log.add_message(message)
+                    message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
+                
+                # Check if portal placer needs exit portal
+                elif not portal_placer.active_exit:
+                    # Place exit portal
+                    message = portal_placer.place_exit(target_x, target_y, game_map, self.state_manager.state.entities)
+                    if message:
+                        message_log.add_message(message)
+                    message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
+                    
+                    # Exit targeting mode - portals placed
+                    self.state_manager.set_extra_data("portal_wand", None)
+                    self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                    
+                    # TURN ECONOMY: Portal placement takes 1 turn
+                    self._process_player_status_effects()
+                    self.turn_controller.end_player_action(turn_consumed=True)
+            
+            return  # Portal wand targeting handled
         
         # Continue with regular TARGETING handling
         if current_state == GameStates.TARGETING:

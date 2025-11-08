@@ -1320,3 +1320,53 @@ def unlock_crimson_ritual(*args, **kwargs):
     
     return results
 
+
+def use_wand_of_portals(*args, **kwargs):
+    """Use the Wand of Portals to create a portal pair.
+    
+    The wand enters targeting mode where the player places an entrance portal,
+    then an exit portal. The portals link together for teleportation.
+    
+    This function is called when the player selects the wand from inventory.
+    The actual targeting logic is handled by the game engine.
+    
+    Args:
+        *args: First argument should be the entity using the wand (player)
+        **kwargs: Optional parameters from the game engine
+    
+    Returns:
+        list: List of result dictionaries with status messages
+    """
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No one to use the wand!")}]
+    
+    results = []
+    
+    # Get the wand from kwargs (passed by the engine)
+    wand = kwargs.get("wand_entity")
+    if not wand or not hasattr(wand, 'portal_placer'):
+        return [{"consumed": False, "message": MB.failure("This wand is corrupted!")}]
+    
+    portal_placer = wand.portal_placer
+    
+    # Check if portals are already active
+    if portal_placer.has_active_portals():
+        results.append({
+            "message": MB.info(
+                "Portal pair already active. Use the wand again to recycle and place new portals."
+            )
+        })
+    else:
+        results.append({
+            "message": MB.success(
+                "Portal wand ready. Click to place the entrance portal."
+            )
+        })
+    
+    # Signal to game engine that targeting mode should start
+    results.append({"targeting_mode": True})
+    results.append({"consumed": False})  # Don't consume from inventory
+    
+    return results
+

@@ -835,7 +835,10 @@ class EntityFactory:
         """
         try:
             from components.portal_placer import PortalPlacer
+            from components.item import Item
+            from components.wand import Wand
             from render_functions import RenderOrder
+            from item_functions import use_wand_of_portals
             
             # Create wand entity
             wand_entity = Entity(
@@ -847,11 +850,31 @@ class EntityFactory:
                 blocks=False
             )
             
-            # Attach portal placer component
+            # Attach Item component with targeting enabled
+            # The use function will be called when selected from inventory
+            item_component = Item(
+                use_function=use_wand_of_portals,
+                targeting=True,  # Enters targeting mode when used
+                identified=True,
+                item_category="wand",
+                stackable=False
+            )
+            item_component.owner = wand_entity
+            wand_entity.item = item_component
+            
+            # Attach Wand component for charge tracking (infinite charges for portal wand)
+            wand_component = Wand(spell_type="portal", charges=0)  # 0 means infinite
+            wand_component.owner = wand_entity
+            wand_entity.wand = wand_component
+            
+            # Attach portal placer component (manages active portals)
             portal_placer = PortalPlacer()
+            portal_placer.owner = wand_entity
             wand_entity.portal_placer = portal_placer
             
             from components.component_registry import ComponentType
+            wand_entity.components.add(ComponentType.ITEM, item_component)
+            wand_entity.components.add(ComponentType.WAND, wand_component)
             wand_entity.components.add(ComponentType.PORTAL_PLACER, portal_placer)
             
             # Set render order
@@ -862,6 +885,8 @@ class EntityFactory:
         
         except Exception as e:
             logger.error(f"Error creating Wand of Portals: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def create_portal(

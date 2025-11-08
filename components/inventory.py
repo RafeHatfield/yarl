@@ -294,6 +294,8 @@ class Inventory:
                     else:
                         # Cast the spell first to see if it succeeds
                         kwargs = {**item_component.function_kwargs, **kwargs}
+                        # Pass the wand entity itself for items that need it (like Wand of Portals)
+                        kwargs["wand_entity"] = item_entity
                         item_use_results = item_component.use_function(self.owner, **kwargs)
                         
                         # Check if spell was successfully consumed (meaning it worked)
