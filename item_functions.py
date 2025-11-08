@@ -11,16 +11,27 @@ Some functions now delegate to the SpellExecutor for consistency.
 import tcod as libtcod
 import tcod.libtcodpy as libtcodpy
 import math
+from random import randint, random
 
 from components.ai import ConfusedMonster
 from components.component_registry import ComponentType
 from components.ground_hazard import GroundHazard, HazardType
 from components.status_effects import (
+    BlindnessEffect,
     DisorientationEffect,
-    SlowedEffect,
-    ImmobilizedEffect,
     EnragedEffect,
-    StatusEffectManager
+    HeroismEffect,
+    IdentifyModeEffect,
+    ImmobilizedEffect,
+    InvisibilityEffect,
+    LevitationEffect,
+    ParalysisEffect,
+    ProtectionEffect,
+    RegenerationEffect,
+    SlowedEffect,
+    SpeedEffect,
+    StatusEffectManager,
+    WeaknessEffect
 )
 from game_messages import Message
 from message_builder import MessageBuilder as MB
@@ -130,9 +141,6 @@ def enhance_weapon(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    from components.component_registry import ComponentType
-    from message_builder import MessageBuilder as MB
-
     caster = args[0]
     min_bonus = kwargs.get("min_bonus", 1)
     max_bonus = kwargs.get("max_bonus", 2)
@@ -193,10 +201,6 @@ def enhance_armor(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    from components.component_registry import ComponentType
-    from message_builder import MessageBuilder as MB
-    import random
-
     caster = args[0]
     bonus = kwargs.get("bonus", 1)  # Default +1 AC
 
@@ -291,8 +295,6 @@ def cast_teleport(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    from random import randint, random
-    
     entity = args[0]
     entities = kwargs.get("entities", [])
     game_map = kwargs.get("game_map")
@@ -800,8 +802,6 @@ def cast_identify(*args, **kwargs):
     Returns:
         list: List of result dictionaries with status effect application
     """
-    from components.status_effects import IdentifyModeEffect
-    
     caster = args[0]
     results = []
     duration = kwargs.get('duration', 5)
@@ -854,9 +854,6 @@ def drink_speed_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import SpeedEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply speed effect to!")}]
@@ -887,9 +884,6 @@ def drink_regeneration_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import RegenerationEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply regeneration effect to!")}]
@@ -923,9 +917,6 @@ def drink_invisibility_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import InvisibilityEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply invisibility effect to!")}]
@@ -958,9 +949,6 @@ def drink_levitation_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import LevitationEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply levitation effect to!")}]
@@ -993,9 +981,6 @@ def drink_protection_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import ProtectionEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply protection effect to!")}]
@@ -1028,9 +1013,6 @@ def drink_heroism_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import HeroismEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply heroism effect to!")}]
@@ -1068,9 +1050,6 @@ def drink_weakness_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import WeaknessEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply weakness effect to!")}]
@@ -1103,9 +1082,6 @@ def drink_slowness_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import SlowedEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply slowness effect to!")}]
@@ -1138,9 +1114,6 @@ def drink_blindness_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import BlindnessEffect
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply blindness effect to!")}]
@@ -1174,10 +1147,6 @@ def drink_paralysis_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and status effect info
     """
-    from components.status_effects import ParalysisEffect
-    from message_builder import MessageBuilder as MB
-    import random
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to apply paralysis effect to!")}]
@@ -1216,9 +1185,6 @@ def drink_experience_potion(*args, **kwargs):
     Returns:
         list: List of result dictionaries with consumption and level-up info
     """
-    from components.component_registry import ComponentType
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No entity to gain experience!")}]
@@ -1270,8 +1236,6 @@ def unlock_crimson_ritual(*args, **kwargs):
     Returns:
         list: List of result dictionaries with messages
     """
-    from message_builder import MessageBuilder as MB
-    
     entity = args[0] if args else None
     if not entity:
         return [{"consumed": False, "message": MB.failure("No one to read the codex!")}]
