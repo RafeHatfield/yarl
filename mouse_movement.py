@@ -8,13 +8,15 @@ from typing import Tuple, Optional, List, TYPE_CHECKING
 import logging
 
 from message_builder import MessageBuilder as MB
-from entity import get_blocking_entities_at_location
+from entity import get_blocking_entities_at_location, Entity
 from components.component_registry import ComponentType
+from components.player_pathfinding import PlayerPathfinding
+from fov_functions import map_is_in_fov
+from map_objects.game_map import GameMap
+from services.movement_service import get_movement_service
 
 if TYPE_CHECKING:
-    from entity import Entity
-    from map_objects.game_map import GameMap
-    from components.player_pathfinding import PlayerPathfinding
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -501,8 +503,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     Returns:
         dict: Dictionary containing movement results and messages
     """
-    from components.component_registry import ComponentType
-    
     results = []
     
     pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
@@ -527,7 +527,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     
     # Use MovementService for actual movement (REFACTORED - single source of truth)
     # This handles: move validation, camera, FOV, portal checks, secret doors
-    from services.movement_service import get_movement_service
     movement_service = get_movement_service(state_manager)
     
     movement_result = movement_service.execute_movement(dx, dy, source="pathfinding")
@@ -730,8 +729,6 @@ def _check_for_enemy_in_weapon_range(player: 'Entity', entities: List['Entity'],
     Returns:
         Entity or None: The closest enemy within weapon range, or None
     """
-    from fov_functions import map_is_in_fov
-    
     weapon_reach = _get_weapon_reach(player)
     max_attack_distance = weapon_reach * 1.5  # Account for diagonals
     
@@ -768,8 +765,6 @@ def _check_for_close_enemies(player: 'Entity', entities: List['Entity'], fov_map
     Returns:
         bool: True if any enemies are closer than weapon reach
     """
-    from fov_functions import map_is_in_fov
-    
     # For ranged weapons, only stop if enemy gets within melee range (2 tiles)
     # For melee weapons, stop immediately when spotted
     threat_distance = min(weapon_reach, 2) * 1.5  # Account for diagonals
@@ -795,8 +790,6 @@ def _check_for_enemies_in_fov(player: 'Entity', entities: List['Entity'], fov_ma
     Returns:
         bool: True if any enemies are visible
     """
-    from fov_functions import map_is_in_fov
-    
     for entity in entities:
         if (entity != player and entity.fighter and 
             map_is_in_fov(fov_map, entity.x, entity.y)):
