@@ -1748,30 +1748,43 @@ class ActionProcessor:
                 portal_placer = portal_wand.portal_placer
                 game_map = self.state_manager.state.game_map
                 message_log = self.state_manager.state.message_log
+                entities = self.state_manager.state.entities
                 
                 # Check if portal placer needs entrance portal
                 if not portal_placer.active_entrance:
                     # Place entrance portal
-                    message = portal_placer.place_entrance(target_x, target_y, game_map, self.state_manager.state.entities)
-                    if message:
-                        message_log.add_message(message)
-                    message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
+                    result = portal_placer.place_entrance(target_x, target_y, game_map)
+                    if result.get('success'):
+                        # Add portal to entities list so it's rendered and interactive
+                        entrance_portal = result.get('portal')
+                        if entrance_portal:
+                            entrance_portal.owner = entrance_portal  # Portal owns itself for location tracking
+                            entities.append(entrance_portal)
+                        message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
+                    else:
+                        message_log.add_message(MB.warning(result.get('message', 'Invalid placement')))
                 
                 # Check if portal placer needs exit portal
                 elif not portal_placer.active_exit:
                     # Place exit portal
-                    message = portal_placer.place_exit(target_x, target_y, game_map, self.state_manager.state.entities)
-                    if message:
-                        message_log.add_message(message)
-                    message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
-                    
-                    # Exit targeting mode - portals placed
-                    self.state_manager.set_extra_data("portal_wand", None)
-                    self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
-                    
-                    # TURN ECONOMY: Portal placement takes 1 turn
-                    self._process_player_status_effects()
-                    self.turn_controller.end_player_action(turn_consumed=True)
+                    result = portal_placer.place_exit(target_x, target_y, game_map)
+                    if result.get('success'):
+                        # Add portal to entities list
+                        exit_portal = result.get('exit')
+                        if exit_portal:
+                            exit_portal.owner = exit_portal  # Portal owns itself for location tracking
+                            entities.append(exit_portal)
+                        message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
+                        
+                        # Exit targeting mode - portals placed
+                        self.state_manager.set_extra_data("portal_wand", None)
+                        self.state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                        
+                        # TURN ECONOMY: Portal placement takes 1 turn
+                        self._process_player_status_effects()
+                        self.turn_controller.end_player_action(turn_consumed=True)
+                    else:
+                        message_log.add_message(MB.warning(result.get('message', 'Invalid placement')))
                 
                 return  # Portal wand targeting handled
             
