@@ -3,11 +3,16 @@ Pytest configuration and shared fixtures for rlike game testing.
 """
 
 import pytest
+import config.level_template_registry as ltr_module
 from unittest.mock import Mock, MagicMock, patch
+from components.ai import BasicMonster
+from components.equipment import Equipment
 from components.fighter import Fighter
 from components.inventory import Inventory
 from components.item import Item
 from entity import Entity
+from game_messages import Message
+from item_functions import heal, cast_fireball
 from render_functions import RenderOrder
 from spells.spell_catalog import register_all_spells
 from spells import get_spell_registry
@@ -17,8 +22,7 @@ from spells import get_spell_registry
 # pytest-mock fallback
 # ---------------------------------------------------------------------------
 
-try:  # pragma: no cover - imported for typing/availability check only
-    import pytest_mock  # type: ignore
+try:  # pragma: no cover - imported for typing/availability check only  # type: ignore
 except Exception:  # pragma: no cover - fallback path when plugin missing
     pytest_mock = None  # type: ignore
 
@@ -66,7 +70,6 @@ def reset_level_template_registry():
     for every test.
     """
     # Clear the global registry before each test
-    import config.level_template_registry as ltr_module
     ltr_module._level_template_registry = None
     yield
     # Clear it after the test too for good measure
@@ -147,7 +150,6 @@ def basic_inventory():
 @pytest.fixture
 def player_entity(basic_fighter, basic_inventory, mock_libtcod):
     """Create a basic player entity for testing."""
-    from components.equipment import Equipment
 
     equipment = Equipment()
     return Entity(
@@ -167,8 +169,6 @@ def player_entity(basic_fighter, basic_inventory, mock_libtcod):
 @pytest.fixture
 def enemy_entity(mock_libtcod):
     """Create a basic enemy entity for testing."""
-    from components.ai import BasicMonster
-    from components.equipment import Equipment
 
     fighter = Fighter(hp=20, defense=1, power=3)
     ai = BasicMonster()
@@ -190,7 +190,6 @@ def enemy_entity(mock_libtcod):
 @pytest.fixture
 def healing_potion(mock_libtcod):
     """Create a healing potion item for testing."""
-    from item_functions import heal
 
     item_component = Item(use_function=heal, amount=10)
     return Entity(
@@ -207,8 +206,6 @@ def healing_potion(mock_libtcod):
 @pytest.fixture
 def fireball_scroll(mock_libtcod):
     """Create a fireball scroll item for testing."""
-    from item_functions import cast_fireball
-    from game_messages import Message
 
     item_component = Item(
         use_function=cast_fireball,
