@@ -199,6 +199,11 @@ def get_game_variables(constants):
     starting_potion = entity_factory.create_spell_item("healing_potion", 0, 0)
     player.inventory.add_item(starting_potion)
     
+    # PLAYTEST: Add Wand of Portals for testing portal system mechanics
+    wand_of_portals = entity_factory.create_wand_of_portals(0, 0)
+    if wand_of_portals:
+        player.inventory.add_item(wand_of_portals)
+    
     # Set player HP to max_hp after all equipment and components are initialized
     # (max_hp includes CON modifier and equipment bonuses)
     player.fighter.hp = player.fighter.max_hp
