@@ -863,7 +863,7 @@ class EntityFactory:
             wand_entity.item = item_component
             
             # Attach Wand component for charge tracking (infinite charges for portal wand)
-            wand_component = Wand(spell_type="portal", charges=0)  # 0 means infinite
+            wand_component = Wand(spell_type="portal", charges=-1)  # -1 means infinite
             wand_component.owner = wand_entity
             wand_entity.wand = wand_component
             

@@ -34,10 +34,18 @@ class Wand:
         
         Returns:
             bool: True if charge was consumed, False if wand is empty
+        
+        Note: Charges = -1 means infinite charges (special case for portal wand)
         """
+        # Special case: charges = -1 means infinite (don't decrement)
+        if self.charges == -1:
+            return True  # Infinite charges, always has charges
+        
+        # Normal case: finite charges
         if self.charges > 0:
             self.charges -= 1
             return True
+        
         return False
     
     def add_charge(self, amount: int = 1) -> None:
@@ -53,7 +61,14 @@ class Wand:
         
         Returns:
             bool: True if wand has no charges
+        
+        Note: Charges = -1 means infinite charges (never empty)
         """
+        # Special case: charges = -1 means infinite (never empty)
+        if self.charges == -1:
+            return False  # Infinite charges
+        
+        # Normal case: finite charges
         return self.charges <= 0
     
     def get_display_name(self, compact: bool = False) -> str:
@@ -66,14 +81,22 @@ class Wand:
             str: Wand name with charge count and visual indicator
         """
         # Visual charge indicator based on charge level
-        if self.charges == 0:
+        if self.charges == -1:
+            # Special case: infinite charges (e.g., Wand of Portals)
+            indicator = "∞"  # Infinity symbol
+            display_charges = "∞"
+        elif self.charges == 0:
             indicator = "○"  # Empty circle - no charges
+            display_charges = "0"
         elif self.charges <= 2:
             indicator = "◐"  # Half-filled - low charges
+            display_charges = str(self.charges)
         elif self.charges <= 4:
             indicator = "◕"  # Three-quarter filled - medium charges
+            display_charges = str(self.charges)
         else:
             indicator = "●"  # Full circle - high charges
+            display_charges = str(self.charges)
         
         if self.owner and hasattr(self.owner, 'name'):
             base_name = self.owner.name
@@ -81,10 +104,10 @@ class Wand:
             if compact:
                 # Abbreviate for sidebar: "Wand of Fireball" -> "W.Fireball"
                 compact_name = base_name.replace(" of ", " ").replace("Wand ", "W.")
-                return f"{compact_name}{indicator}{self.charges}"
+                return f"{compact_name}{indicator}{display_charges}"
             else:
                 # Full name for tooltips/inventory: "Wand of Fireball ● 5"
-                return f"{base_name} {indicator} {self.charges}"
+                return f"{base_name} {indicator} {display_charges}"
         
-        return f"Wand {indicator} {self.charges}" if not compact else f"W.{indicator}{self.charges}"
+        return f"Wand {indicator} {display_charges}" if not compact else f"W.{indicator}{display_charges}"
 
