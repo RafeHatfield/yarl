@@ -976,28 +976,35 @@ class ActionProcessor:
         # Use more robust check: verify it's actually a PortalPlacer instance, not just a mock
         from components.portal_placer import PortalPlacer
         portal_placer = getattr(item, 'portal_placer', None)
+        logger.warning(f"PORTAL_WAND_CHECK: isinstance(portal_placer, PortalPlacer)={isinstance(portal_placer, PortalPlacer)}, hasattr(item, 'item')={hasattr(item, 'item')}")
         if isinstance(portal_placer, PortalPlacer) and hasattr(item, 'item'):
             # Portal wand - call its use function directly with wand_entity kwarg
             # The use function will handle portal-specific targeting
-            item_use_results = player.inventory.use(
-                item,
-                entities=self.state_manager.state.entities,
-                fov_map=self.state_manager.state.fov_map,
-                game_map=self.state_manager.state.game_map,
-                wand_entity=item  # Pass the wand itself
-            )
-            
-            for result in item_use_results:
-                message = result.get("message")
-                if message:
-                    message_log.add_message(message)
+            logger.warning(f"PORTAL_WAND: Detected! Calling use function...")
+            try:
+                item_use_results = player.inventory.use(
+                    item,
+                    entities=self.state_manager.state.entities,
+                    fov_map=self.state_manager.state.fov_map,
+                    game_map=self.state_manager.state.game_map,
+                    wand_entity=item  # Pass the wand itself
+                )
                 
-                # Check if portal wand requested targeting mode
-                if result.get("targeting_mode"):
-                    # Store the wand in extra data for portal targeting
-                    self.state_manager.set_extra_data("portal_wand", item)
-                    self.state_manager.set_game_state(GameStates.TARGETING)
-                    message_log.add_message(MB.success("Portal targeting active. Click to place entrance portal."))
+                logger.warning(f"PORTAL_WAND: Use results: {item_use_results}")
+                for result in item_use_results:
+                    message = result.get("message")
+                    if message:
+                        message_log.add_message(message)
+                    
+                    # Check if portal wand requested targeting mode
+                    if result.get("targeting_mode"):
+                        logger.warning(f"PORTAL_WAND: Entering targeting mode!")
+                        # Store the wand in extra data for portal targeting
+                        self.state_manager.set_extra_data("portal_wand", item)
+                        self.state_manager.set_game_state(GameStates.TARGETING)
+                        message_log.add_message(MB.success("Portal targeting active. Click to place entrance portal."))
+            except Exception as e:
+                logger.error(f"PORTAL_WAND ERROR: {e}", exc_info=True)
             
             return  # Portal wand usage handled
 

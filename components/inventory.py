@@ -274,95 +274,96 @@ class Inventory:
                     }
                 )
         else:
-            if item_component.targeting and not (
-                kwargs.get("target_x") or kwargs.get("target_y")
-            ):
-                results.append({"targeting": item_entity})
-            else:
-                # Check if this is a wand (multi-use item)
-                wand_component = getattr(item_entity, 'wand', None)
-                
-                if wand_component:
-                    # Wand usage: consume charge instead of destroying item
-                    if wand_component.is_empty():
-                        # Wand has no charges - can't use it
-                        results.append({
-                            "message": MB.warning(
-                                f"The {item_entity.name} fizzles uselessly. It has no charges!"
-                            )
-                        })
-                    else:
-                        # Cast the spell first to see if it succeeds
-                        kwargs = {**item_component.function_kwargs, **kwargs}
-                        # Pass the wand entity itself for items that need it (like Wand of Portals)
-                        kwargs["wand_entity"] = item_entity
-                        item_use_results = item_component.use_function(self.owner, **kwargs)
-                        
-                        # Check if spell was successfully consumed (meaning it worked)
-                        spell_consumed = any(r.get("consumed") for r in item_use_results)
-                        
-                        if spell_consumed:
-                            # Spell worked - consume a charge
-                            wand_component.use_charge()
-                        
-                        # Don't remove the wand - it stays in inventory
-                        # Pass through all messages/effects, but remove "consumed" flag (wands don't get consumed)
-                        for item_use_result in item_use_results:
-                            # Create a copy without the "consumed" key (wands stay in inventory)
-                            filtered_result = {k: v for k, v in item_use_result.items() if k != "consumed"}
-                            if filtered_result:  # Only append if there's something left (message, effects, etc.)
-                                results.append(filtered_result)
-                        
-                        # Add a message showing remaining charges (only if spell was consumed)
-                        if spell_consumed:
-                            remaining_charges = wand_component.charges
-                            if remaining_charges > 0:
-                                results.append({
-                                    "message": MB.item_charge(
-                                        f"The {item_entity.name} glows. ({remaining_charges} charges remaining)"
-                                    )
-                                })
-                            else:
-                                results.append({
-                                    "message": MB.item_charge(
-                                        f"The {item_entity.name} dims. (0 charges remaining)"
-                                    )
-                                })
+            # Check if this is a wand FIRST (multi-use item)
+            # Wands have special handling even if they have targeting=True
+            wand_component = getattr(item_entity, 'wand', None)
+            
+            if wand_component:
+                # Wand usage: consume charge instead of destroying item
+                if wand_component.is_empty():
+                    # Wand has no charges - can't use it
+                    results.append({
+                        "message": MB.warning(
+                            f"The {item_entity.name} fizzles uselessly. It has no charges!"
+                        )
+                    })
                 else:
-                    # Normal item usage (scrolls, potions): consume on use
+                    # Cast the spell first to see if it succeeds
                     kwargs = {**item_component.function_kwargs, **kwargs}
+                    # Pass the wand entity itself for items that need it (like Wand of Portals)
+                    kwargs["wand_entity"] = item_entity
                     item_use_results = item_component.use_function(self.owner, **kwargs)
                     
-                    # Check if item was successfully used (consumed)
-                    item_consumed = any(r.get("consumed") for r in item_use_results)
+                    # Check if spell was successfully consumed (meaning it worked)
+                    spell_consumed = any(r.get("consumed") for r in item_use_results)
                     
-                    # Identify item on successful use (before removal)
-                    if item_consumed and hasattr(item_component, 'identify'):
-                        # Pass entities to identify so ALL items of this type get identified
-                        entities = kwargs.get('entities', None)
-                        was_unidentified = item_component.identify(entities=entities)
-                        if was_unidentified:
-                            # Add identification message
+                    if spell_consumed:
+                        # Spell worked - consume a charge
+                        wand_component.use_charge()
+                    
+                    # Don't remove the wand - it stays in inventory
+                    # Pass through all messages/effects, but remove "consumed" flag (wands don't get consumed)
+                    for item_use_result in item_use_results:
+                        # Create a copy without the "consumed" key (wands stay in inventory)
+                        filtered_result = {k: v for k, v in item_use_result.items() if k != "consumed"}
+                        if filtered_result:  # Only append if there's something left (message, effects, etc.)
+                            results.append(filtered_result)
+                    
+                    # Add a message showing remaining charges (only if spell was consumed)
+                    if spell_consumed:
+                        remaining_charges = wand_component.charges
+                        if remaining_charges > 0:
                             results.append({
-                                "message": MB.item_pickup(
-                                    f"You now recognize this as {item_entity.name}!"
+                                "message": MB.item_charge(
+                                    f"The {item_entity.name} glows. ({remaining_charges} charges remaining)"
                                 )
                             })
+                        else:
+                            results.append({
+                                "message": MB.item_charge(
+                                    f"The {item_entity.name} dims. (0 charges remaining)"
+                                )
+                            })
+            elif item_component.targeting and not (
+                kwargs.get("target_x") or kwargs.get("target_y")
+            ):
+                # Regular targeting item (not a wand) - enter targeting mode
+                results.append({"targeting": item_entity})
+            else:
+                # Normal item usage (scrolls, potions): consume on use
+                kwargs = {**item_component.function_kwargs, **kwargs}
+                item_use_results = item_component.use_function(self.owner, **kwargs)
+                
+                # Check if item was successfully used (consumed)
+                item_consumed = any(r.get("consumed") for r in item_use_results)
+                
+                # Identify item on successful use (before removal)
+                if item_consumed and hasattr(item_component, 'identify'):
+                    # Pass entities to identify so ALL items of this type get identified
+                    entities = kwargs.get('entities', None)
+                    was_unidentified = item_component.identify(entities=entities)
+                    if was_unidentified:
+                        # Add identification message
+                        results.append({
+                            "message": MB.item_pickup(
+                                f"You now recognize this as {item_entity.name}!"
+                            )
+                        })
 
-                    for item_use_result in item_use_results:
-                        if item_use_result.get("consumed"):
-                            # Handle stacked items: decrement quantity instead of removing
-                            if item_component.stackable and item_component.quantity > 1:
-                                item_component.quantity -= 1
-                                # Don't remove, just decrement
-                            else:
-                                # Last one or not stackable - remove from inventory
-                                remove_results = self.remove_item(item_entity)
-                                # If removal failed, add the error to results
-                                if not remove_results[0].get("item_removed"):
-                                    results.extend(remove_results)
+                for item_use_result in item_use_results:
+                    if item_use_result.get("consumed"):
+                        # Handle stacked items: decrement quantity instead of removing
+                        if item_component.stackable and item_component.quantity > 1:
+                            item_component.quantity -= 1
+                            # Don't remove, just decrement
+                        else:
+                            # Last one or not stackable - remove from inventory
+                            remove_results = self.remove_item(item_entity)
+                            # If removal failed, add the error to results
+                            if not remove_results[0].get("item_removed"):
+                                results.extend(remove_results)
 
-                    results.extend(item_use_results)
+                results.extend(item_use_results)
 
         return results
 
