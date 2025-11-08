@@ -976,11 +976,8 @@ class ActionProcessor:
         # Use more robust check: verify it's actually a PortalPlacer instance, not just a mock
         from components.portal_placer import PortalPlacer
         portal_placer = getattr(item, 'portal_placer', None)
-        logger = __import__('logging').getLogger(__name__)
-        logger.warning(f"DEBUG _use_inventory_item: portal_placer={portal_placer}, isinstance check={isinstance(portal_placer, PortalPlacer)}, has item={hasattr(item, 'item')}")
         
         if isinstance(portal_placer, PortalPlacer) and hasattr(item, 'item'):
-            logger.warning(f"DEBUG: Detected Wand of Portals! Calling inventory.use()")
             # Portal wand - call its use function directly with wand_entity kwarg
             # The use function will handle portal-specific targeting
             item_use_results = player.inventory.use(
@@ -991,8 +988,6 @@ class ActionProcessor:
                 wand_entity=item  # Pass the wand itself
             )
             
-            logger.warning(f"DEBUG: item_use_results={item_use_results}")
-            
             for result in item_use_results:
                 message = result.get("message")
                 if message:
@@ -1000,13 +995,11 @@ class ActionProcessor:
                 
                 # Check if portal wand requested targeting mode
                 if result.get("targeting_mode"):
-                    logger.warning(f"DEBUG: Detected targeting_mode in result! Setting TARGETING state")
                     # Store the wand in extra data for portal targeting
                     self.state_manager.set_extra_data("portal_wand", item)
                     self.state_manager.set_game_state(GameStates.TARGETING)
                     message_log.add_message(MB.success("Portal targeting active. Click to place entrance portal."))
             
-            logger.warning(f"DEBUG: Portal wand usage handled, returning")
             return  # Portal wand usage handled
 
         # Check if item requires targeting - if so, enter targeting mode
@@ -1762,13 +1755,10 @@ class ActionProcessor:
                 if not portal_placer.active_entrance:
                     # Place entrance portal
                     result = portal_placer.place_entrance(target_x, target_y, game_map)
-                    logger = __import__('logging').getLogger(__name__)
-                    logger.warning(f"DEBUG: place_entrance result: {result}")
                     if result.get('success'):
                         # Create Entity wrapper for portal
                         from config.entity_factory import EntityFactory
                         entrance_portal_component = result.get('portal')
-                        logger.warning(f"DEBUG: entrance_portal_component type: {type(entrance_portal_component)}")
                         if entrance_portal_component:
                             # Create entity with proper rendering support
                             factory = EntityFactory()
@@ -1776,7 +1766,6 @@ class ActionProcessor:
                                 target_x, target_y, 
                                 portal_type='entrance'
                             )
-                            logger.warning(f"DEBUG: entrance_entity created: {entrance_entity}, has render_order: {hasattr(entrance_entity, 'render_order')}")
                             if entrance_entity:
                                 # Link the component from PortalPlacer
                                 entrance_entity.portal = entrance_portal_component
@@ -1784,7 +1773,6 @@ class ActionProcessor:
                                 # Update placer reference
                                 portal_placer.active_entrance = entrance_portal_component
                                 portal_placer.active_entrance.owner = entrance_entity
-                                logger.warning(f"DEBUG: Adding entrance_entity to entities list")
                                 entities.append(entrance_entity)
                         message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
                     else:
@@ -1794,21 +1782,17 @@ class ActionProcessor:
                 elif not portal_placer.active_exit:
                     # Place exit portal
                     result = portal_placer.place_exit(target_x, target_y, game_map)
-                    logger = __import__('logging').getLogger(__name__)
-                    logger.warning(f"DEBUG: place_exit result: {result}")
                     if result.get('success'):
                         # Create Entity wrapper for portal
                         from config.entity_factory import EntityFactory
                         exit_portal_component = result.get('exit')
                         entrance_portal_component = result.get('entrance')
-                        logger.warning(f"DEBUG: exit_portal_component type: {type(exit_portal_component)}")
                         if exit_portal_component and entrance_portal_component:
                             factory = EntityFactory()
                             exit_entity = factory.create_portal(
                                 target_x, target_y,
                                 portal_type='exit'
                             )
-                            logger.warning(f"DEBUG: exit_entity created: {exit_entity}, has render_order: {hasattr(exit_entity, 'render_order')}")
                             if exit_entity:
                                 # Link components
                                 exit_entity.portal = exit_portal_component
@@ -1820,7 +1804,6 @@ class ActionProcessor:
                                         entity.portal.linked_portal = exit_portal_component
                                         break
                                 
-                                logger.warning(f"DEBUG: Adding exit_entity to entities list")
                                 entities.append(exit_entity)
                         message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
                         
