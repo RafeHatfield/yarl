@@ -22,30 +22,65 @@ logger = get_logger(__name__)
 class ActionProcessor:
     """Processes game actions in a modular, maintainable way.
     
-    This class is logically organized into sections for easy navigation:
+    This class replaces the monolithic _process_game_actions function with
+    a clean, extensible system that separates concerns and improves testability.
     
-    SECTION 1: CORE (2 methods, 109 lines)
-      - Initialization and main action dispatch
+    LOGICAL ORGANIZATION - Jump to sections with Cmd+F:
+    ═══════════════════════════════════════════════════════════════════════════
+    
+    SECTION 1: CORE (2 methods, ~110 lines)
+      • __init__() - Initialize handlers and register actions
+      • process_actions() - Main dispatch loop for keyboard/mouse
       
-    SECTION 2: ITEM ACTIONS (8 methods, 458 lines)  
-      - Pickup, drop, use, throw, search items
+    SECTION 2: ITEM ACTIONS (8 methods, ~460 lines)
+      • _handle_pickup() - Pick up items from ground
+      • _handle_inventory_action() - Use items from inventory  
+      • _use_inventory_item() - Core item usage logic
+      • _drop_inventory_item() - Drop items from inventory
+      • _handle_throw_action() - Throw items at targets
+      • _handle_search() - Search for hidden items/doors
+      • _handle_show_inventory_deprecated() - Old inventory (DEPRECATED)
+      • _handle_drop_inventory_deprecated() - Old drop (DEPRECATED)
       
-    SECTION 3: MOVEMENT (5 methods, 282 lines)
-      - Movement, pathfinding, auto-explore
+    SECTION 3: MOVEMENT (6 methods, ~380 lines)
+      • _handle_movement() - Player movement and pathfinding
+      • _handle_start_auto_explore() - Start auto-exploration
+      • _process_auto_explore_turn() - Execute one auto-explore step
+      • _process_pathfinding_movement_action() - Execute pathfinding
+      • _handle_mouse_movement() - Mouse-based movement
+      • process_pathfinding_turn() - Pathfinding turn logic
       
-    SECTION 4: TURN ACTIONS (4 methods, 166 lines)
-      - Wait, stairs, level up, exit
+    SECTION 4: TURN ACTIONS (4 methods, ~170 lines)
+      • _handle_wait() - Wait/rest action
+      • _handle_stairs() - Ascend/descend stairs
+      • _handle_level_up() - Level up character
+      • _handle_exit() - Exit game
       
-    SECTION 5: UI ACTIONS (6 methods, 384 lines)
-      - Character screen, wizard menu, clicks, sidebar
+    SECTION 5: UI ACTIONS (6 methods, ~385 lines)
+      • _handle_show_character_screen() - Show character info
+      • _handle_show_wizard_menu() - Show debug/wizard menu
+      • _handle_left_click() - Mouse left-click handler
+      • _handle_right_click() - Mouse right-click handler
+      • _handle_sidebar_click() - Sidebar inventory click
+      • _handle_sidebar_right_click() - Sidebar right-click
       
-    SECTION 6: HELPERS (7 methods, 304 lines)
-      - Combat, death, equipment, secrets, status effects
+    SECTION 6: HELPERS (7 methods, ~305 lines)
+      • _handle_combat() - Execute combat between entities
+      • _handle_entity_death() - Handle entity death consequences
+      • _handle_equipment() - Equipment management
+      • _check_secret_reveals() - Reveal secret doors/passages
+      • _create_secret_door_marker() - Create secret door entity
+      • _process_player_status_effects() - Apply status effects
+      • _break_invisibility() - Break invisibility on action
+    
+    ═══════════════════════════════════════════════════════════════════════════
     
     Attributes:
         state_manager: Game state manager for accessing and updating game state
         constants: Game configuration constants
+        turn_controller: Centralized turn management
         action_handlers: Dictionary mapping action types to handler methods
+        mouse_handlers: Dictionary mapping mouse actions to handler methods
     """
     
     # ═════════════════════════════════════════════════════════════════════════════
