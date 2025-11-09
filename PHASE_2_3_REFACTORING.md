@@ -63,23 +63,25 @@ if fighter:
 
 ## Tier 1: High-Impact Files (Go First)
 
-### 1. game_actions.py
-- ~20 component accesses
+### 1. game_actions.py ✅ COMPLETE
+- ~35 component accesses refactored
 - Lines: 836
 - Priority: HIGH (main game loop)
-- **Status:** ⏳ PENDING
+- **Status:** ✅ COMPLETE
+- Changes: fighter → get_component_optional(), inventory → require_component(), equipment → get_component_optional()
 
-### 2. components/ai.py
-- ~35 component accesses
+### 2. components/ai.py ✅ COMPLETE
+- ~24 component accesses (4 new + 20 existing)
 - Lines: 909
 - Priority: HIGH (monster AI)
-- **Status:** ⏳ PENDING
+- **Status:** ✅ COMPLETE
+- Changes: fighter → require_component(), ai component assignment fixed, entity.fighter → get_component_optional()
 
-### 3. services/movement_service.py
-- ~10 component accesses
+### 3. services/movement_service.py ✅ COMPLETE
+- ~0 component accesses to refactor (already clean!)
 - Lines: ~400
 - Priority: HIGH (critical path)
-- **Status:** ⏳ PENDING
+- **Status:** ✅ ALREADY CLEAN
 
 ---
 
