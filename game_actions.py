@@ -22,14 +22,35 @@ logger = get_logger(__name__)
 class ActionProcessor:
     """Processes game actions in a modular, maintainable way.
     
-    This class replaces the monolithic _process_game_actions function with
-    a clean, extensible system that separates concerns and improves testability.
+    This class is logically organized into sections for easy navigation:
+    
+    SECTION 1: CORE (2 methods, 109 lines)
+      - Initialization and main action dispatch
+      
+    SECTION 2: ITEM ACTIONS (8 methods, 458 lines)  
+      - Pickup, drop, use, throw, search items
+      
+    SECTION 3: MOVEMENT (5 methods, 282 lines)
+      - Movement, pathfinding, auto-explore
+      
+    SECTION 4: TURN ACTIONS (4 methods, 166 lines)
+      - Wait, stairs, level up, exit
+      
+    SECTION 5: UI ACTIONS (6 methods, 384 lines)
+      - Character screen, wizard menu, clicks, sidebar
+      
+    SECTION 6: HELPERS (7 methods, 304 lines)
+      - Combat, death, equipment, secrets, status effects
     
     Attributes:
         state_manager: Game state manager for accessing and updating game state
         constants: Game configuration constants
         action_handlers: Dictionary mapping action types to handler methods
     """
+    
+    # ═════════════════════════════════════════════════════════════════════════════
+    # SECTION 1: CORE - Initialization & Main Dispatch (109 lines)
+    # ═════════════════════════════════════════════════════════════════════════════
     
     def __init__(self, state_manager):
         """Initialize the ActionProcessor.
@@ -140,6 +161,11 @@ class ActionProcessor:
                     logger.error(f"Error processing mouse action {mouse_action_type}: {e}", exc_info=True)
     
     
+
+    # ═════════════════════════════════════════════════════════════════════════════
+    # SECTION 2: ITEM ACTIONS - Pickup, Drop, Use, Search (458 lines, 8 methods)
+    # ═════════════════════════════════════════════════════════════════════════════
+
     def _handle_show_inventory_deprecated(self, _) -> None:
         """DEPRECATED: Handle showing inventory menu (use sidebar UI instead).
         
@@ -158,6 +184,11 @@ class ActionProcessor:
         logger.warning("DEPRECATED: drop_inventory action triggered. Use sidebar UI instead.")
         # Don't actually enter the old inventory state - it's deprecated
     
+
+    # ═════════════════════════════════════════════════════════════════════════════
+    # SECTION 5: UI ACTIONS - Screens, Clicks, Sidebar (384 lines, 6 methods)
+    # ═════════════════════════════════════════════════════════════════════════════
+
     def _handle_show_character_screen(self, _) -> None:
         """Handle showing the character screen."""
         self.state_manager.set_game_state(GameStates.CHARACTER_SCREEN)
@@ -360,6 +391,11 @@ class ActionProcessor:
         # Transition to enemy turn if player moved
         if end_turn:
             self.turn_controller.end_player_action(turn_consumed=True)
+
+    # ═════════════════════════════════════════════════════════════════════════════
+    # SECTION 3: MOVEMENT - Movement, Pathfinding, Auto-Explore (282 lines, 5 methods)
+    # ═════════════════════════════════════════════════════════════════════════════
+
     
     def _handle_movement(self, move_data: Tuple[int, int]) -> None:
         """Handle player movement via MovementService (REFACTORED - single source of truth).
@@ -542,6 +578,11 @@ class ActionProcessor:
         from entity_sorting_cache import invalidate_entity_cache
         invalidate_entity_cache("entity_added_secret_door")
     
+
+    # ═════════════════════════════════════════════════════════════════════════════
+    # SECTION 6: HELPERS - Combat, Death, Equipment, Secrets (304 lines, 7 methods)
+    # ═════════════════════════════════════════════════════════════════════════════
+
     def _handle_combat(self, attacker, target) -> None:
         """Handle combat between attacker and target.
         
@@ -678,6 +719,11 @@ class ActionProcessor:
                     # Invalidate entity sorting cache when entities are removed
                     invalidate_entity_cache("entity_removed_combat")
             
+
+    # ═════════════════════════════════════════════════════════════════════════════
+    # SECTION 4: TURN ACTIONS - Wait, Stairs, Level Up, Exit (166 lines, 4 methods)
+    # ═════════════════════════════════════════════════════════════════════════════
+
             self.state_manager.request_fov_recompute()
     
     def _handle_wait(self, _) -> None:
