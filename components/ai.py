@@ -13,6 +13,7 @@ from components.faction import Faction, are_factions_hostile, get_target_priorit
 from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 

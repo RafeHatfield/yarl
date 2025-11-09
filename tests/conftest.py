@@ -22,7 +22,8 @@ from spells import get_spell_registry
 # pytest-mock fallback
 # ---------------------------------------------------------------------------
 
-try:  # pragma: no cover - imported for typing/availability check only  # type: ignore
+try:  # pragma: no cover - imported for typing/availability check only
+    import pytest_mock  # type: ignore
 except Exception:  # pragma: no cover - fallback path when plugin missing
     pytest_mock = None  # type: ignore
 
