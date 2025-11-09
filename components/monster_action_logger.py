@@ -2,16 +2,17 @@
 
 This module provides comprehensive logging of all monster actions when in testing mode,
 including item usage, pickup, movement, combat, and equipment changes.
+
+NOTE: Uses centralized logger_config for consistency with rest of system.
 """
 
-import logging
 from typing import Any, Dict, List, Optional
 from config.testing_config import is_testing_mode
 from components.component_registry import ComponentType
+from logger_config import get_logger
 
-# Set up monster action logger
-monster_logger = logging.getLogger('monster_actions')
-monster_logger.setLevel(logging.DEBUG)
+# Get centralized monster logger
+monster_logger = get_logger('monsters')
 
 
 class MonsterActionLogger:
@@ -19,29 +20,14 @@ class MonsterActionLogger:
     
     @staticmethod
     def setup_logging():
-        """Set up file handler for monster action logs in testing mode."""
-        if not is_testing_mode():
-            return
-            
-        if not monster_logger.handlers:
-            # File handler - logs everything (DEBUG and above)
-            file_handler = logging.FileHandler('monster_actions.log', mode='a')
-            file_formatter = logging.Formatter('%(asctime)s - MONSTER: %(message)s', 
-                                        datefmt='%H:%M:%S')
-            file_handler.setFormatter(file_formatter)
-            file_handler.setLevel(logging.DEBUG)
-            monster_logger.addHandler(file_handler)
-            
-            # Console handler - only INFO and above (excludes DEBUG "no actions")
-            console_handler = logging.StreamHandler()
-            console_formatter = logging.Formatter('%(levelname)s: %(message)s')
-            console_handler.setFormatter(console_formatter)
-            console_handler.setLevel(logging.INFO)
-            monster_logger.addHandler(console_handler)
-            
-            monster_logger.setLevel(logging.DEBUG)
-            monster_logger.propagate = False  # Don't propagate to root logger
-            print("🤖 Monster action logging enabled: monster_actions.log")
+        """DEPRECATED: Logging is now handled by logger_config.py.
+        
+        This method is kept for backward compatibility but does nothing.
+        Monster actions are automatically logged to logs/rlike.log by the
+        centralized logger_config system.
+        """
+        if is_testing_mode():
+            print("🤖 Monster action logging enabled (via centralized logger_config)")
     
     @staticmethod
     def log_action_attempt(monster, action_type: str, details: str = ""):
