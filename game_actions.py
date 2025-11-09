@@ -839,9 +839,12 @@ class ActionProcessor:
             self.state_manager.state.message_log.add_message(message)
             return
         
+        # Get inventory using helper
+        inventory = player.require_component(ComponentType.INVENTORY)
+        
         # Defensive check: ensure inventory items list is valid
-        if not hasattr(player.inventory, 'items') or player.inventory.items is None:
-            logger.error(f"Player inventory.items is invalid: {player.inventory.items}")
+        if not hasattr(inventory, 'items') or inventory.items is None:
+            logger.error(f"Player inventory.items is invalid: {inventory.items}")
             message = MB.failure(
                 "Error: Inventory is corrupted. Please report this bug."
             )
@@ -850,9 +853,9 @@ class ActionProcessor:
         
         # Get inventory size safely
         try:
-            inventory_size = len(player.inventory.items)
+            inventory_size = len(inventory.items)
         except (TypeError, AttributeError) as e:
-            logger.error(f"Cannot get inventory size: {e}, items type: {type(player.inventory.items)}")
+            logger.error(f"Cannot get inventory size: {e}, items type: {type(inventory.items)}")
             message = MB.failure(
                 "Error: Inventory is corrupted. Please report this bug."
             )
@@ -879,7 +882,7 @@ class ActionProcessor:
         
         # IMPORTANT: Inventory menu sorts items alphabetically!
         # We must use the same sorted order here or indices won't match
-        sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+        sorted_items = sorted(inventory.items, key=lambda item: item.get_display_name().lower())
         item = sorted_items[inventory_index]
         
         logger.warning(f"Current state: {current_state}, item: {item.name if item else None}")
@@ -982,7 +985,7 @@ class ActionProcessor:
         if isinstance(portal_placer, PortalPlacer) and hasattr(item, 'item'):
             # Portal wand - call its use function directly with wand_entity kwarg
             # The use function will handle portal-specific targeting
-            item_use_results = player.inventory.use(
+            item_use_results = player.require_component(ComponentType.INVENTORY).use(
                 item,
                 entities=self.state_manager.state.entities,
                 fov_map=self.state_manager.state.fov_map,
@@ -1017,7 +1020,7 @@ class ActionProcessor:
             return  # Don't consume turn yet - wait for targeting
 
         # Use item directly (no targeting required)
-        item_use_results = player.inventory.use(
+        item_use_results = player.require_component(ComponentType.INVENTORY).use(
             item,
             entities=self.state_manager.state.entities,
             fov_map=self.state_manager.state.fov_map,
@@ -1079,7 +1082,7 @@ class ActionProcessor:
             item: The item entity to drop
         """
         player = self.state_manager.state.player
-        drop_results = player.inventory.drop_item(item)
+        drop_results = player.require_component(ComponentType.INVENTORY).drop_item(item)
         
         item_dropped = False
         for result in drop_results:
@@ -1268,25 +1271,28 @@ class ActionProcessor:
             ui_layout = get_ui_layout()
             
             # Build options list (same as inventory_menu in menus.py)
-            if len(player.inventory.items) == 0:
+            player_inventory = player.require_component(ComponentType.INVENTORY)
+            player_equipment = player.get_component_optional(ComponentType.EQUIPMENT)
+            
+            if len(player_inventory.items) == 0:
                 options = ["Inventory is empty."]
             else:
                 options = []
                 # IMPORTANT: Sort inventory alphabetically to match menu display!
-                sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+                sorted_items = sorted(player_inventory.items, key=lambda item: item.get_display_name().lower())
                 for item in sorted_items:
                     display_name = item.get_display_name()
                     
                     # Check if item is equipped
-                    if player.equipment.main_hand == item:
+                    if player_equipment and player_equipment.main_hand == item:
                         options.append("{0} (equipped)".format(display_name))
-                    elif player.equipment.off_hand == item:
+                    elif player_equipment and player_equipment.off_hand == item:
                         options.append("{0} (equipped)".format(display_name))
-                    elif player.equipment.head == item:
+                    elif player_equipment and player_equipment.head == item:
                         options.append("{0} (equipped)".format(display_name))
-                    elif player.equipment.chest == item:
+                    elif player_equipment and player_equipment.chest == item:
                         options.append("{0} (equipped)".format(display_name))
-                    elif player.equipment.feet == item:
+                    elif player_equipment and player_equipment.feet == item:
                         options.append("{0} (equipped)".format(display_name))
                     else:
                         options.append(display_name)
@@ -1306,7 +1312,7 @@ class ActionProcessor:
                 ui_layout.screen_width, ui_layout.screen_height
             )
             
-            if clicked_index is not None and clicked_index < len(player.inventory.items):
+            if clicked_index is not None and clicked_index < len(player.require_component(ComponentType.INVENTORY).items):
                 # User clicked on an inventory item!
                 # All menu states use the same handler which properly sorts items
                 self._handle_inventory_action(clicked_index)
@@ -1552,7 +1558,7 @@ class ActionProcessor:
             # CRITICAL: Must use FULL sorted inventory, same as _handle_inventory_action!
             # The sidebar_click handler returns an index into the FULL sorted inventory,
             # NOT just the unequipped items (even though sidebar only displays unequipped).
-            sorted_items = sorted(player.inventory.items, key=lambda item: item.get_display_name().lower())
+            sorted_items = sorted(player.require_component(ComponentType.INVENTORY).items, key=lambda item: item.get_display_name().lower())
             
             if inventory_index < 0 or inventory_index >= len(sorted_items):
                 message_log.add_message(
