@@ -919,7 +919,8 @@ class MindlessZombieAI:
                                 logger.info(f"Zombie {self.owner.name} switched target from {old_target.name} to {self.current_target.name}")
                         
                         # Attack current target (use new d20 system)
-                        attack_results = self.owner.fighter.attack_d20(self.current_target)
+                        owner_fighter = self.owner.require_component(ComponentType.FIGHTER)
+                        attack_results = owner_fighter.attack_d20(self.current_target)
                         results.extend(attack_results)
                         return results
                     else:
@@ -954,7 +955,8 @@ class MindlessZombieAI:
             melee_distance = self.owner.chebyshev_distance_to(closest)
             weapon_reach = get_weapon_reach(self.owner)
             if melee_distance <= weapon_reach:
-                attack_results = self.owner.fighter.attack_d20(closest)
+                owner_fighter = self.owner.require_component(ComponentType.FIGHTER)
+                attack_results = owner_fighter.attack_d20(closest)
                 results.extend(attack_results)
                 return results
             else:
@@ -1113,7 +1115,8 @@ class ConfusedMonster:
 
             self.number_of_turns -= 1
         else:
-            self.owner.ai = self.previous_ai
+            self.owner.components.add(ComponentType.AI, self.previous_ai)
+            self.previous_ai.owner = self.owner
             results.append(
                 {
                     "message": MB.status_effect(
@@ -1243,8 +1246,9 @@ class SlimeAI:
         visible_targets = []
         
         for entity in entities:
+            entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
             if (entity != self.owner and 
-                entity.fighter and 
+                entity_fighter and 
                 self._can_see_target(entity, fov_map) and
                 self._is_hostile_to(entity)):
                 
