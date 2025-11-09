@@ -179,7 +179,7 @@ class ActionProcessor:
         player = self.state_manager.state.player
         message_log = self.state_manager.state.message_log
         
-        if not player or not player.inventory or not player.inventory.items:
+        if not player or not player.get_component_optional(ComponentType.INVENTORY) or not player.get_component_optional(ComponentType.INVENTORY).items:
             from message_builder import MessageBuilder as MB
             message = MB.warning("You have nothing to throw.")
             if message_log:
@@ -549,7 +549,9 @@ class ActionProcessor:
             attacker: The attacking entity
             target: The target entity
         """
-        if not (attacker.fighter and target.fighter):
+        attacker_fighter = attacker.get_component_optional(ComponentType.FIGHTER)
+        target_fighter = target.get_component_optional(ComponentType.FIGHTER)
+        if not (attacker_fighter and target_fighter):
             return
         
         # Break invisibility if the attacker is attacking
@@ -557,7 +559,7 @@ class ActionProcessor:
             self._break_invisibility(attacker)
         
         # Use new d20-based attack system
-        attack_results = attacker.fighter.attack_d20(target)
+        attack_results = attacker_fighter.attack_d20(target)
         
         for result in attack_results:
             message = result.get("message")
@@ -824,7 +826,7 @@ class ActionProcessor:
         
         logger.warning(f"_handle_inventory_action called: index={inventory_index}, state={current_state}")
         
-        if not player or not player.inventory:
+        if not player or not player.get_component_optional(ComponentType.INVENTORY):
             logger.warning(f"No player or inventory!")
             return
         
@@ -901,7 +903,7 @@ class ActionProcessor:
                 target_x, target_y = throw_target
                 
                 # Remove item from inventory (it's being thrown)
-                player.inventory.remove_item(item)
+                player.require_component(ComponentType.INVENTORY).remove_item(item)
                 
                 # Execute throw
                 from throwing import throw_item
@@ -1217,19 +1219,23 @@ class ActionProcessor:
         player = self.state_manager.state.player
         message_log = self.state_manager.state.message_log
         
-        if not player or not player.fighter or not message_log:
+        if not player or not message_log:
+            return
+        
+        player_fighter = player.get_component_optional(ComponentType.FIGHTER)
+        if not player_fighter:
             return
         
         # Apply level up bonuses based on choice
         if level_up_choice == "hp":
-            player.fighter.base_max_hp += 20
-            player.fighter.hp += 20
+            player_fighter.base_max_hp += 20
+            player_fighter.hp += 20
             message = MB.level_up("Your health increases!")
         elif level_up_choice == "str":
-            player.fighter.base_power += 1
+            player_fighter.base_power += 1
             message = MB.level_up("You feel stronger!")
         elif level_up_choice == "def":
-            player.fighter.base_defense += 1
+            player_fighter.base_defense += 1
             message = MB.level_up("Your movements are getting swifter!")
         else:
             # Invalid choice, don't apply any bonuses
@@ -1315,7 +1321,7 @@ class ActionProcessor:
                 player = self.state_manager.state.player
                 if player and player.inventory:
                     # Remove item from inventory
-                    player.inventory.remove_item(targeting_item)
+                    player.require_component(ComponentType.INVENTORY).remove_item(targeting_item)
                     
                     # Execute throw
                     from throwing import throw_item
@@ -1362,7 +1368,7 @@ class ActionProcessor:
                 player = self.state_manager.state.player
                 if player and player.inventory:
                     print(f"DEBUG: Using {targeting_item.name} at ({target_x}, {target_y})")
-                    item_use_results = player.inventory.use(
+                    item_use_results = player.require_component(ComponentType.INVENTORY).use(
                         targeting_item,
                         entities=self.state_manager.state.entities,
                         fov_map=self.state_manager.state.fov_map,
@@ -1407,7 +1413,7 @@ class ActionProcessor:
                 player = self.state_manager.state.player
                 if player and player.inventory:
                     # Remove item from inventory (it's being thrown)
-                    player.inventory.remove_item(targeting_item)
+                    player.require_component(ComponentType.INVENTORY).remove_item(targeting_item)
                     
                     # Execute throw (Phase 3 will implement throwing.py)
                     from throwing import throw_item
@@ -1540,7 +1546,7 @@ class ActionProcessor:
             logger.warning(f"SIDEBAR INVENTORY ITEM RIGHT-CLICKED: dropping index {inventory_index}")
             
             # Safety checks (same as _handle_inventory_action)
-            if not player.inventory or not hasattr(player.inventory, 'items'):
+            if not player.get_component_optional(ComponentType.INVENTORY) or not hasattr(player.inventory, 'items'):
                 return
             
             # CRITICAL: Must use FULL sorted inventory, same as _handle_inventory_action!
