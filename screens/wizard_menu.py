@@ -203,7 +203,7 @@ def wizard_heal(game_state_manager):
     player = state.player
     message_log = state.message_log
     
-    if player and player.fighter:
+    if player and player.get_component_optional(ComponentType.FIGHTER):
         player.fighter.hp = player.fighter.max_hp
         message_log.add_message(MB.custom("🧙 WIZARD: Healed to full HP", WIZARD_COLOR))
     

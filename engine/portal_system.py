@@ -166,7 +166,7 @@ class PortalSystem:
         placer = None
         
         # Find wand to validate placement
-        for item in player.inventory.items if player.inventory else []:
+        for item in player.require_component(ComponentType.INVENTORY).items if player.require_component(ComponentType.INVENTORY) else []:
             if hasattr(item, 'portal_placer'):
                 placer = item.portal_placer
                 break

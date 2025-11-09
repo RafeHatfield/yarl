@@ -22,7 +22,7 @@ from random import randint, random, choice
 import logging
 
 from entity import Entity
-from components.item import Item
+from components.get_component_optional(ComponentType.ITEM) import Item
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
 from render_functions import RenderOrder

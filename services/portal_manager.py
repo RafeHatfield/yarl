@@ -77,8 +77,8 @@ class PortalManager:
             entity.portal = portal
             
             # Ensure Item component exists
-            if not hasattr(entity, 'item') or entity.item is None:
-                from components.item import Item
+            if not hasattr(entity, 'item') or entity.get_component_optional(ComponentType.ITEM) is None:
+                from components.get_component_optional(ComponentType.ITEM) import Item
                 entity.item = Item()
             
             # Register components properly
@@ -144,15 +144,15 @@ class PortalManager:
         try:
             # Monsters must be allowed to use portals by their AI
             # Players can always use portals
-            if hasattr(entity, 'ai') and entity.ai:
+            if hasattr(entity, 'ai') and entity.get_component_optional(ComponentType.AI):
                 # Check if this monster's AI allows portal usage
-                if hasattr(entity.ai, 'portal_usable') and not entity.ai.portal_usable:
+                if hasattr(entity.get_component_optional(ComponentType.AI), 'portal_usable') and not entity.get_component_optional(ComponentType.AI).portal_usable:
                     logger.debug(f"Monster {entity.name} cannot use portals (portal_usable=False)")
                     return None
             
             # Check if entity is carrying the entry portal (prevents portal entry then)
-            if hasattr(entity, 'inventory') and entity.inventory:
-                for item in entity.inventory.items:
+            if hasattr(entity, 'inventory') and entity.require_component(ComponentType.INVENTORY):
+                for item in entity.require_component(ComponentType.INVENTORY).items:
                     if hasattr(item, 'portal') and item.portal:
                         if item.portal.portal_type == 'entrance':
                             logger.debug(f"Entity {entity.name} cannot use portals (carrying entry portal)")
@@ -180,7 +180,7 @@ class PortalManager:
                             from entity_sorting_cache import invalidate_entity_cache
                             invalidate_entity_cache("portal_teleportation")
                             
-                            entity_type = "Monster" if hasattr(entity, 'ai') and entity.ai else "Player"
+                            entity_type = "Monster" if hasattr(entity, 'ai') and entity.get_component_optional(ComponentType.AI) else "Player"
                             is_monster = entity_type == "Monster"
                             
                             logger.info(f"{entity_type} portal teleportation: ({old_x}, {old_y}) -> ({entity.x}, {entity.y})")

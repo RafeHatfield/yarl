@@ -202,7 +202,7 @@ class TreasureRoomGenerator(RoomGenerator):
     ) -> None:
         """Populate with more items and fewer monsters."""
         from entity import Entity
-        from components.item import Item
+        from components.get_component_optional(ComponentType.ITEM) import Item
         from config.entity_factory import get_entity_factory
         
         # Fewer monsters (50% normal)

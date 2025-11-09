@@ -13,8 +13,8 @@ from unittest.mock import Mock
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from components.fighter import Fighter
-from components.equipment import Equipment
+from components.get_component_optional(ComponentType.FIGHTER) import Fighter
+from components.get_component_optional(ComponentType.EQUIPMENT) import Equipment
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
 from config.testing_config import set_testing_mode
@@ -47,8 +47,8 @@ def demo_combat_logging():
     player.equipment.owner = player
     
     print("📊 Scenario 1: Basic attack (no equipment)")
-    print(f"   Orc (power {orc.fighter.power}) attacks Player (defense {player.fighter.defense})")
-    results = orc.fighter.attack(player)
+    print(f"   Orc (power {orc.get_component_optional(ComponentType.FIGHTER).power}) attacks Player (defense {player.get_component_optional(ComponentType.FIGHTER).defense})")
+    results = orc.get_component_optional(ComponentType.FIGHTER).attack(player)
     for result in results:
         if 'message' in result:
             print(f"   💬 {result['message'].text}")
@@ -66,7 +66,7 @@ def demo_combat_logging():
     
     print("📊 Scenario 2: Attack with weapon")
     print(f"   Orc with sword (2-5 dmg) attacks Player")
-    results = orc.fighter.attack(player)
+    results = orc.get_component_optional(ComponentType.FIGHTER).attack(player)
     for result in results:
         if 'message' in result:
             print(f"   💬 {result['message'].text}")
@@ -84,7 +84,7 @@ def demo_combat_logging():
     
     print("📊 Scenario 3: Attack with weapon vs armor")
     print(f"   Orc with sword (2-5 dmg) attacks Player with shield (1-3 def)")
-    results = orc.fighter.attack(player)
+    results = orc.get_component_optional(ComponentType.FIGHTER).attack(player)
     for result in results:
         if 'message' in result:
             print(f"   💬 {result['message'].text}")
@@ -109,7 +109,7 @@ def demo_combat_logging():
     
     print("📊 Scenario 4: Attack completely blocked by armor")
     print(f"   Orc with sword attacks heavily armored knight")
-    results = orc.fighter.attack(tank)
+    results = orc.get_component_optional(ComponentType.FIGHTER).attack(tank)
     for result in results:
         if 'message' in result:
             print(f"   💬 {result['message'].text}")

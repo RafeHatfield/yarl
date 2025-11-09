@@ -8,11 +8,11 @@ import logging
 from tcod import libtcodpy
 
 from components.component_registry import ComponentType
-from components.equipment import Equipment
+from components.get_component_optional(ComponentType.EQUIPMENT) import Equipment
 from components.equippable import Equippable
-from components.fighter import Fighter
-from components.inventory import Inventory
-from components.item import Item
+from components.get_component_optional(ComponentType.FIGHTER) import Fighter
+from components.require_component(ComponentType.INVENTORY) import Inventory
+from components.get_component_optional(ComponentType.ITEM) import Item
 from components.level import Level
 from components.player_pathfinding import PlayerPathfinding
 from components.statistics import Statistics
@@ -189,22 +189,22 @@ def get_game_variables(constants):
 
     # Create starting equipment using EntityFactory
     dagger = entity_factory.create_weapon("dagger", 0, 0)
-    player.inventory.add_item(dagger)
-    player.equipment.toggle_equip(dagger)
+    player.require_component(ComponentType.INVENTORY).add_item(dagger)
+    player.get_component_optional(ComponentType.EQUIPMENT).toggle_equip(dagger)
     
     # Add starting leather armor for better survivability
     leather_armor = entity_factory.create_armor("leather_armor", 0, 0)
-    player.inventory.add_item(leather_armor)
-    player.equipment.toggle_equip(leather_armor)
+    player.require_component(ComponentType.INVENTORY).add_item(leather_armor)
+    player.get_component_optional(ComponentType.EQUIPMENT).toggle_equip(leather_armor)
     
     # Add starting healing potion for early game survivability (Option 6 balance)
     starting_potion = entity_factory.create_spell_item("healing_potion", 0, 0)
-    player.inventory.add_item(starting_potion)
+    player.require_component(ComponentType.INVENTORY).add_item(starting_potion)
     
     # PLAYTEST: Add Wand of Portals for testing portal system mechanics
     wand_of_portals = entity_factory.create_wand_of_portals(0, 0)
     if wand_of_portals:
-        player.inventory.add_item(wand_of_portals)
+        player.require_component(ComponentType.INVENTORY).add_item(wand_of_portals)
     
     # Set player HP to max_hp after all equipment and components are initialized
     # (max_hp includes CON modifier and equipment bonuses)
@@ -286,10 +286,10 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     
     logger.info(f"✅ Started at dungeon level {game_map.dungeon_level}")
     logger.info(f"   Player level: {player.level.current_level}")
-    logger.info(f"   HP: {player.fighter.hp}/{player.fighter.max_hp}")
+    logger.info(f"   HP: {player.get_component_optional(ComponentType.FIGHTER).hp}/{player.get_component_optional(ComponentType.FIGHTER).max_hp}")
     
     print(f"✅ Ready! You are on dungeon level {game_map.dungeon_level}")
-    print(f"   Player Level: {player.level.current_level} | HP: {player.fighter.hp}/{player.fighter.max_hp}")
+    print(f"   Player Level: {player.level.current_level} | HP: {player.get_component_optional(ComponentType.FIGHTER).hp}/{player.get_component_optional(ComponentType.FIGHTER).max_hp}")
     
     return entities
 
@@ -315,8 +315,8 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
         potion = entity_factory.create_spell_item('healing_potion', 0, 0)
         if potion:
             created_gear.append(potion)
-            if player.inventory:
-                player.inventory.add_item(potion)
+            if player.require_component(ComponentType.INVENTORY):
+                player.require_component(ComponentType.INVENTORY).add_item(potion)
     logger.info(f"   Granted {num_potions} healing potions")
     
     # Give weapon for deeper levels
@@ -324,12 +324,12 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
         sword = entity_factory.create_weapon('sword', 0, 0)
         if sword:
             created_gear.append(sword)
-            if player.equipment:
+            if player.get_component_optional(ComponentType.EQUIPMENT):
                 # Unequip starting dagger first
-                if player.equipment.main_hand:
-                    player.inventory.add_item(player.equipment.main_hand)
-                    player.equipment.toggle_equip(player.equipment.main_hand)
-                player.equipment.toggle_equip(sword)
+                if player.get_component_optional(ComponentType.EQUIPMENT).main_hand:
+                    player.require_component(ComponentType.INVENTORY).add_item(player.get_component_optional(ComponentType.EQUIPMENT).main_hand)
+                    player.get_component_optional(ComponentType.EQUIPMENT).toggle_equip(player.get_component_optional(ComponentType.EQUIPMENT).main_hand)
+                player.get_component_optional(ComponentType.EQUIPMENT).toggle_equip(sword)
                 logger.info("   Granted sword (replacing dagger)")
     
     # Give armor for deeper levels
@@ -337,12 +337,12 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
         chain_mail = entity_factory.create_armor('chain_mail', 0, 0)
         if chain_mail:
             created_gear.append(chain_mail)
-            if player.equipment:
+            if player.get_component_optional(ComponentType.EQUIPMENT):
                 # Unequip starting leather armor
-                if player.equipment.chest:
-                    player.inventory.add_item(player.equipment.chest)
-                    player.equipment.toggle_equip(player.equipment.chest)
-                player.equipment.toggle_equip(chain_mail)
+                if player.get_component_optional(ComponentType.EQUIPMENT).chest:
+                    player.require_component(ComponentType.INVENTORY).add_item(player.get_component_optional(ComponentType.EQUIPMENT).chest)
+                    player.get_component_optional(ComponentType.EQUIPMENT).toggle_equip(player.get_component_optional(ComponentType.EQUIPMENT).chest)
+                player.get_component_optional(ComponentType.EQUIPMENT).toggle_equip(chain_mail)
                 logger.info("   Granted chain mail (replacing leather armor)")
     
     # Give utility scrolls for deep levels
@@ -351,8 +351,8 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
             scroll = entity_factory.create_spell_item('teleport_scroll', 0, 0)
             if scroll:
                 created_gear.append(scroll)
-                if player.inventory:
-                    player.inventory.add_item(scroll)
+                if player.require_component(ComponentType.INVENTORY):
+                    player.require_component(ComponentType.INVENTORY).add_item(scroll)
         logger.info("   Granted 3 teleport scrolls")
     
     # Remove created gear from world entities list (they should only be in inventory/equipment)
@@ -372,8 +372,8 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
     if invalid_entities:
         logger.warning(f"   ⚠️  Found {len(invalid_entities)} entities with invalid coordinates:")
         for entity in invalid_entities:
-            has_item = hasattr(entity, 'item') and entity.item
-            has_fighter = hasattr(entity, 'fighter') and entity.fighter
+            has_item = hasattr(entity, 'item') and entity.get_component_optional(ComponentType.ITEM)
+            has_fighter = hasattr(entity, 'fighter') and entity.get_component_optional(ComponentType.FIGHTER)
             entity_type = "item" if has_item else "monster" if has_fighter else "other"
             logger.warning(f"      {entity.name} ({entity_type}) at ({entity.x}, {entity.y}) - removing from world")
             print(f"   ⚠️  DEBUG: Removed invalid entity: {entity.name} at ({entity.x}, {entity.y})")

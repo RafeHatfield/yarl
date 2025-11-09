@@ -8,9 +8,9 @@ room generation with connecting tunnels.
 from random import randint, random, choice
 import logging
 
-from components.ai import BasicMonster
+from components.get_component_optional(ComponentType.AI) import BasicMonster
 from components.equippable import Equippable
-from components.fighter import Fighter
+from components.get_component_optional(ComponentType.FIGHTER) import Fighter
 from config.entity_factory import get_entity_factory
 from config.level_template_registry import get_level_template_registry
 from entity import Entity
@@ -839,12 +839,12 @@ class GameMap:
                 monster_choice = random_choice_from_dict(monster_chances)
                 monster = entity_factory.create_monster(monster_choice, x, y)
                 
-                if monster and monster.fighter:
+                if monster and monster.get_component_optional(ComponentType.FIGHTER):
                     # Apply elite bonuses from theme
                     monster.fighter.base_max_hp = int(monster.fighter.base_max_hp * hp_multiplier)
                     monster.fighter.hp = monster.fighter.max_hp  # Heal to new max
-                    monster.fighter.base_power += power_bonus
-                    monster.fighter.base_defense += defense_bonus
+                    monster.get_component_optional(ComponentType.FIGHTER).base_power += power_bonus
+                    monster.get_component_optional(ComponentType.FIGHTER).base_defense += defense_bonus
                     
                     # Visual indication: append (Elite) to name
                     monster.name = f"{monster.name} (Elite)"
@@ -1093,7 +1093,7 @@ class GameMap:
             entities,
         )
 
-        player.fighter.heal(player.fighter.max_hp // 2)
+        player.get_component_optional(ComponentType.FIGHTER).heal(player.get_component_optional(ComponentType.FIGHTER).max_hp // 2)
 
         message_log.add_message(
             MB.custom(
@@ -1715,7 +1715,7 @@ class GameMap:
             # Clear monsters from this room to make it safe
             entities_to_remove = [
                 e for e in entities
-                if (hasattr(e, 'ai') and e.ai and 
+                if (hasattr(e, 'ai') and e.get_component_optional(ComponentType.AI) and 
                     camp_room.x1 < e.x < camp_room.x2 and 
                     camp_room.y1 < e.y < camp_room.y2)
             ]

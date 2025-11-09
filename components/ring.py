@@ -197,8 +197,8 @@ class Ring:
                 # Heal every effect_strength turns (default: 5)
                 # Skip turn 0 to avoid healing immediately on equip
                 if current_turn > 0 and current_turn % self.effect_strength == 0:
-                    if wearer.fighter and wearer.fighter.hp < wearer.fighter.max_hp:
-                        wearer.fighter.heal(1)
+                    if wearer.get_component_optional(ComponentType.FIGHTER) and wearer.get_component_optional(ComponentType.FIGHTER).hp < wearer.get_component_optional(ComponentType.FIGHTER).max_hp:
+                        wearer.get_component_optional(ComponentType.FIGHTER).heal(1)
                         from message_builder import MessageBuilder as MB
                         results.append({
                             'message': MB.status_effect(f"{wearer.name}'s ring glows softly. (+1 HP)")

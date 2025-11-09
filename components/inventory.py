@@ -47,8 +47,8 @@ class Inventory:
         if not (hasattr(item1, 'item') and hasattr(item2, 'item')):
             return False
         
-        item1_comp = item1.item
-        item2_comp = item2.item
+        item1_comp = item1.get_component_optional(ComponentType.ITEM)
+        item2_comp = item2.get_component_optional(ComponentType.ITEM)
         
         # Must both be stackable
         if not (item1_comp.stackable and item2_comp.stackable):
@@ -135,7 +135,7 @@ class Inventory:
             # Check for scroll-to-wand recharge mechanic
             # If picking up a scroll, check if we have a matching wand
             scroll_recharged_wand = False
-            if not wand_merged and item.item and item.item.use_function:  # It's a usable item (likely a scroll)
+            if not wand_merged and item.get_component_optional(ComponentType.ITEM) and item.get_component_optional(ComponentType.ITEM).use_function:  # It's a usable item (likely a scroll)
                 # Get the scroll's spell identifier (e.g., "fireball_scroll")
                 scroll_name = item.name.lower().replace(' ', '_')
                 
@@ -171,14 +171,14 @@ class Inventory:
             if not wand_merged and not scroll_recharged_wand:
                 # Check for stacking: Can we merge this with an existing item?
                 stacked = False
-                if item.item and item.item.stackable:
+                if item.get_component_optional(ComponentType.ITEM) and item.get_component_optional(ComponentType.ITEM).stackable:
                     for inv_item in self.items:
                         # Check if this is a stackable match
-                        if (inv_item.item and inv_item.item.stackable and
+                        if (inv_item.get_component_optional(ComponentType.ITEM) and inv_item.get_component_optional(ComponentType.ITEM).stackable and
                             self._can_stack_with(item, inv_item)):
                             # Stack them! Increment quantity
-                            quantity_to_add = item.item.quantity
-                            inv_item.item.quantity += quantity_to_add
+                            quantity_to_add = item.get_component_optional(ComponentType.ITEM).quantity
+                            inv_item.get_component_optional(ComponentType.ITEM).quantity += quantity_to_add
                             stacked = True
                             
                             # Get display name (respects identification)
@@ -191,7 +191,7 @@ class Inventory:
                                     "You pick up {0}x {1}! (now have {2})".format(
                                         quantity_to_add,
                                         item_display_name,
-                                        inv_item.item.quantity
+                                        inv_item.get_component_optional(ComponentType.ITEM).quantity
                                     )
                                 ),
                             })
@@ -222,7 +222,7 @@ class Inventory:
                         if inv_item == item:  # Skip the wand itself
                             continue
                         # Check if this is a scroll matching the wand's spell type
-                        if inv_item.item and inv_item.item.use_function:
+                        if inv_item.get_component_optional(ComponentType.ITEM) and inv_item.get_component_optional(ComponentType.ITEM).use_function:
                             scroll_name = inv_item.name.lower().replace(' ', '_')
                             if scroll_name == wand.spell_type:
                                 scrolls_to_consume.append(inv_item)
@@ -258,7 +258,7 @@ class Inventory:
         """
         results = []
 
-        item_component = item_entity.item
+        item_component = item_entity.get_component_optional(ComponentType.ITEM)
 
         if item_component.use_function is None:
             equippable_component = item_entity.equippable
@@ -416,15 +416,15 @@ class Inventory:
         # Check if item is equipped and unequip it (only if dropping entire stack)
         if (
             item
-            and self.owner.equipment
+            and self.owner.get_component_optional(ComponentType.EQUIPMENT)
             and (
-                self.owner.equipment.main_hand == item
-                or self.owner.equipment.off_hand == item
+                self.owner.get_component_optional(ComponentType.EQUIPMENT).main_hand == item
+                or self.owner.get_component_optional(ComponentType.EQUIPMENT).off_hand == item
             )
         ):
             # Can only unequip if dropping the entire stack
-            if not (hasattr(item, 'item') and item.item.stackable and item.item.quantity > quantity):
-                self.owner.equipment.toggle_equip(item)
+            if not (hasattr(item, 'item') and item.get_component_optional(ComponentType.ITEM).stackable and item.get_component_optional(ComponentType.ITEM).quantity > quantity):
+                self.owner.get_component_optional(ComponentType.EQUIPMENT).toggle_equip(item)
             else:
                 # Can't drop part of an equipped stack
                 results.append({
@@ -436,10 +436,10 @@ class Inventory:
                 return results
 
         # Handle stacked items
-        if hasattr(item, 'item') and item.item.stackable and item.item.quantity > 1:
-            drop_quantity = min(quantity, item.item.quantity)
+        if hasattr(item, 'item') and item.get_component_optional(ComponentType.ITEM).stackable and item.get_component_optional(ComponentType.ITEM).quantity > 1:
+            drop_quantity = min(quantity, item.get_component_optional(ComponentType.ITEM).quantity)
             
-            if drop_quantity < item.item.quantity:
+            if drop_quantity < item.get_component_optional(ComponentType.ITEM).quantity:
                 # Dropping part of the stack - create new entity for dropped portion
                 from entity import Entity
                 from copy import copy
@@ -452,17 +452,17 @@ class Inventory:
                 )
                 
                 # Copy the item component
-                dropped_item_component = copy(item.item)
+                dropped_item_component = copy(item.get_component_optional(ComponentType.ITEM))
                 dropped_item_component.quantity = drop_quantity
                 dropped_item_component.owner = dropped_item
                 dropped_item.item = dropped_item_component
                 dropped_item.components.add(ComponentType.ITEM, dropped_item_component)
                 
                 # Decrease quantity in inventory stack
-                item.item.quantity -= drop_quantity
+                item.get_component_optional(ComponentType.ITEM).quantity -= drop_quantity
                 
                 quantity_word = f"{drop_quantity}x" if drop_quantity > 1 else "1"
-                remaining = item.item.quantity
+                remaining = item.get_component_optional(ComponentType.ITEM).quantity
                 results.append({
                     "item_dropped": dropped_item,
                     "message": MB.item_drop(
@@ -478,7 +478,7 @@ class Inventory:
                     results.append({
                         "item_dropped": item,
                         "message": MB.item_drop(
-                            f"You dropped {item.item.quantity}x {item.name}"
+                            f"You dropped {item.get_component_optional(ComponentType.ITEM).quantity}x {item.name}"
                         )
                     })
                 else:

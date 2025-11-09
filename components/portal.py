@@ -88,8 +88,8 @@ class Portal(MapFeature):
             return True
         
         # Entrance blocked if carrying exit portal
-        if actor.inventory:
-            for item in actor.inventory.items:
+        if actor.require_component(ComponentType.INVENTORY):
+            for item in actor.require_component(ComponentType.INVENTORY).items:
                 if hasattr(item, 'portal'):
                     portal_component = item.portal
                     if portal_component.portal_type == 'exit':

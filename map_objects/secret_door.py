@@ -91,11 +91,11 @@ class SecretDoor:
             chance *= 0.25  # Quarter chance at 3+ tiles
         
         # Check for Ring of Searching (automatic reveal within 3 tiles)
-        if hasattr(observer, 'equipment') and observer.equipment:
+        if hasattr(observer, 'equipment') and observer.get_component_optional(ComponentType.EQUIPMENT):
             from components.component_registry import ComponentType
             from components.ring import RingEffect
             
-            rings = [observer.equipment.left_ring, observer.equipment.right_ring]
+            rings = [observer.get_component_optional(ComponentType.EQUIPMENT).left_ring, observer.get_component_optional(ComponentType.EQUIPMENT).right_ring]
             for ring_entity in rings:
                 if ring_entity and ring_entity.components.has(ComponentType.RING):
                     if ring_entity.ring.ring_effect == RingEffect.SEARCHING:

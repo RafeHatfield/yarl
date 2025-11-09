@@ -136,7 +136,7 @@ def throw_item(
                 break
     
     # Apply effects based on item type
-    if item.item and item.item.use_function:
+    if item.get_component_optional(ComponentType.ITEM) and item.get_component_optional(ComponentType.ITEM).use_function:
         # It's a potion/consumable - apply effect at target location
         results.extend(_throw_potion(
             item, thrower, target_entity, final_x, final_y, 
@@ -206,7 +206,7 @@ def _throw_potion(
         # Apply potion effect to target
         # IMPORTANT: Temporarily set potion's owner to the target so effect applies to them!
         # This is needed because most potion functions use item.owner to determine who to affect
-        original_owner = potion.item.owner if hasattr(potion.item, 'owner') else None
+        original_owner = potion.get_component_optional(ComponentType.ITEM).owner if hasattr(potion.get_component_optional(ComponentType.ITEM), 'owner') else None
         potion.item.owner = target
         
         # Ensure target has status_effects component for status effect potions
@@ -218,8 +218,8 @@ def _throw_potion(
         
         try:
             # Call the potion's use_function
-            # The function will use potion.item.owner (now set to target)
-            use_results = potion.item.use_function(
+            # The function will use potion.get_component_optional(ComponentType.ITEM).owner (now set to target)
+            use_results = potion.get_component_optional(ComponentType.ITEM).use_function(
                 target,  # Pass target as caster for compatibility
                 entities=entities,
                 game_map=game_map,

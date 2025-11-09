@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Tuple
 
 # Import game objects for type checking and reconstruction
 from entity import Entity
-from components.fighter import Fighter
-from components.inventory import Inventory
-from components.equipment import Equipment
-from components.ai import BasicMonster, ConfusedMonster
-from components.item import Item
+from components.get_component_optional(ComponentType.FIGHTER) import Fighter
+from components.require_component(ComponentType.INVENTORY) import Inventory
+from components.get_component_optional(ComponentType.EQUIPMENT) import Equipment
+from components.get_component_optional(ComponentType.AI) import BasicMonster, ConfusedMonster
+from components.get_component_optional(ComponentType.ITEM) import Item
 from components.equippable import Equippable
 from components.level import Level
 from map_objects.game_map import GameMap
@@ -227,20 +227,20 @@ def _serialize_entity(entity: Entity) -> Dict[str, Any]:
     }
     
     # Serialize components
-    if entity.fighter:
-        data["fighter"] = _serialize_fighter(entity.fighter)
-    if entity.ai:
-        data["ai"] = _serialize_ai(entity.ai)
-    if entity.item:
-        data["item"] = _serialize_item(entity.item)
-    if entity.inventory:
-        data["inventory"] = _serialize_inventory(entity.inventory)
+    if entity.get_component_optional(ComponentType.FIGHTER):
+        data["fighter"] = _serialize_fighter(entity.get_component_optional(ComponentType.FIGHTER))
+    if entity.get_component_optional(ComponentType.AI):
+        data["ai"] = _serialize_ai(entity.get_component_optional(ComponentType.AI))
+    if entity.get_component_optional(ComponentType.ITEM):
+        data["item"] = _serialize_item(entity.get_component_optional(ComponentType.ITEM))
+    if entity.require_component(ComponentType.INVENTORY):
+        data["inventory"] = _serialize_inventory(entity.require_component(ComponentType.INVENTORY))
     if entity.stairs:
         data["stairs"] = {"floor": entity.stairs.floor}
     if entity.level:
         data["level"] = _serialize_level(entity.level)
-    if entity.equipment:
-        data["equipment"] = _serialize_equipment(entity.equipment)
+    if entity.get_component_optional(ComponentType.EQUIPMENT):
+        data["equipment"] = _serialize_equipment(entity.get_component_optional(ComponentType.EQUIPMENT))
     
     return data
 

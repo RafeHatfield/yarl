@@ -118,9 +118,9 @@ class Chest(MapFeature):
         base_chance = 0.5
         
         # Check for Ring of Searching
-        if hasattr(actor, 'equipment') and actor.equipment:
+        if hasattr(actor, 'equipment') and actor.get_component_optional(ComponentType.EQUIPMENT):
             from components.component_registry import ComponentType
-            rings = [actor.equipment.left_ring, actor.equipment.right_ring]
+            rings = [actor.get_component_optional(ComponentType.EQUIPMENT).left_ring, actor.get_component_optional(ComponentType.EQUIPMENT).right_ring]
             for ring_entity in rings:
                 if ring_entity and ring_entity.components.has(ComponentType.RING):
                     from components.ring import RingEffect

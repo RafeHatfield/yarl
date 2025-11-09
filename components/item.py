@@ -123,7 +123,7 @@ class Item:
             # Update all other items of the same type
             if entities:
                 for entity in entities:
-                    if hasattr(entity, 'item') and entity.item and entity != self.owner:
+                    if hasattr(entity, 'item') and entity.get_component_optional(ComponentType.ITEM) and entity != self.owner:
                         # Check if this item is the same type
                         other_item_type = entity.name.lower().replace(' ', '_')
                         if other_item_type == item_type:
