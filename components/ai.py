@@ -1,4 +1,3 @@
-import logging
 from random import randint
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 
@@ -11,11 +10,12 @@ from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger
 from components.faction import Faction, are_factions_hostile, get_target_priority
 from components.component_registry import ComponentType
+from logger_config import get_logger
 
 if TYPE_CHECKING:
     pass
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def find_taunted_target(entities: list) -> Optional['Entity']:

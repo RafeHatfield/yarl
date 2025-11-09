@@ -1,4 +1,3 @@
-import logging
 import random
 from enum import Enum, auto
 from game_messages import Message
@@ -6,28 +5,25 @@ from message_builder import MessageBuilder as MB
 from config.testing_config import is_testing_mode
 from visual_effects import show_hit, show_miss
 from components.component_registry import ComponentType
+from logger_config import get_logger
 
-# Set up combat debug logger
-combat_logger = logging.getLogger('combat_debug')
-combat_logger.setLevel(logging.DEBUG)
+# Module-specific loggers (using centralized system)
+logger = get_logger(__name__)
+combat_logger = get_logger('combat_debug')
+resistance_logger = get_logger('resistance_debug')
 
-# General logger for this module
-logger = logging.getLogger(__name__)
-
-# Set up resistance logger for test mode visibility
-resistance_logger = logging.getLogger('resistance_debug')
-resistance_logger.setLevel(logging.INFO)
-
-# Create console handler if not already present
-if not resistance_logger.handlers:
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(message)s')
-    console_handler.setFormatter(formatter)
-    resistance_logger.addHandler(console_handler)
-    # Log that resistance system is active
-    resistance_logger.info("=" * 60)
-    resistance_logger.info("🛡️ RESISTANCE SYSTEM ACTIVE - Logging enabled")
+# Log that resistance system is active (on startup)
+if is_testing_mode():
+    import logging as _logging
+    resistance_logger.setLevel(_logging.INFO)
+    if not resistance_logger.handlers:
+        console_handler = _logging.StreamHandler()
+        console_handler.setLevel(_logging.INFO)
+        formatter = _logging.Formatter('%(message)s')
+        console_handler.setFormatter(formatter)
+        resistance_logger.addHandler(console_handler)
+        resistance_logger.info("=" * 60)
+        resistance_logger.info("🛡️ RESISTANCE SYSTEM ACTIVE - Logging enabled")
     resistance_logger.info("   Watch for resistance messages when damage is dealt")
     resistance_logger.info("=" * 60)
 

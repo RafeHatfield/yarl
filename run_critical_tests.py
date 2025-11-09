@@ -15,7 +15,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from entity import Entity
-from components.get_component_optional(ComponentType.FIGHTER) import Fighter
+from components.fighter import Fighter
 from components.victory import Victory
 from game_states import GameStates
 from map_objects.game_map import GameMap

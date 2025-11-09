@@ -12,6 +12,9 @@ import tcod.libtcodpy as libtcod
 
 from game_states import GameStates
 from state_management.state_config import StateManager
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def handle_keys(key, game_state, death_frame_counter=None):
@@ -229,13 +232,9 @@ def handle_mouse(mouse, camera=None, game_state=None):
     if ui_layout.is_in_sidebar(screen_x, screen_y):
         # Handle sidebar clicks (inventory items)
         if mouse.lbutton_pressed:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warning(f"SIDEBAR LEFT-CLICK detected at screen ({screen_x}, {screen_y})")
             return {"sidebar_click": (screen_x, screen_y)}
         elif mouse.rbutton_pressed:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warning(f"SIDEBAR RIGHT-CLICK detected at screen ({screen_x}, {screen_y})")
             return {"sidebar_right_click": (screen_x, screen_y)}
         return {}

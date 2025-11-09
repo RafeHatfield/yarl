@@ -1,4 +1,3 @@
-import logging
 import os
 import json
 from datetime import datetime
@@ -6,11 +5,11 @@ from typing import Any, Dict, List, Tuple
 
 # Import game objects for type checking and reconstruction
 from entity import Entity
-from components.get_component_optional(ComponentType.FIGHTER) import Fighter
-from components.require_component(ComponentType.INVENTORY) import Inventory
-from components.get_component_optional(ComponentType.EQUIPMENT) import Equipment
-from components.get_component_optional(ComponentType.AI) import BasicMonster, ConfusedMonster
-from components.get_component_optional(ComponentType.ITEM) import Item
+from components.fighter import Fighter
+from components.inventory import Inventory
+from components.equipment import Equipment
+from components.ai import BasicMonster, ConfusedMonster
+from components.item import Item
 from components.equippable import Equippable
 from components.level import Level
 from map_objects.game_map import GameMap
@@ -18,6 +17,9 @@ from map_objects.tile import Tile
 from game_messages import MessageLog, Message
 from game_states import GameStates
 from equipment_slots import EquipmentSlots
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def save_game(player, entities, game_map, message_log, game_state):

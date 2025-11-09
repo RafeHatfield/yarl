@@ -52,9 +52,9 @@ def run_phase5_quick_validation() -> int:
     print("Test 2: Creating minimal game state...")
     try:
         from entity import Entity
-        from components.get_component_optional(ComponentType.FIGHTER) import Fighter
+        from components.fighter import Fighter
         from components.victory import Victory
-        from components.require_component(ComponentType.INVENTORY) import Inventory
+        from components.inventory import Inventory
         from components.component_registry import ComponentType
         from game_states import GameStates
 
@@ -93,7 +93,7 @@ def run_phase5_quick_validation() -> int:
             name='Ruby Heart',
             blocks=False
         )
-        from components.get_component_optional(ComponentType.ITEM) import Item
+        from components.item import Item
 
         ruby_heart.item = Item(use_function=None)
         ruby_heart.triggers_victory = True

@@ -6,11 +6,10 @@ room generation with connecting tunnels.
 """
 
 from random import randint, random, choice
-import logging
 
-from components.get_component_optional(ComponentType.AI) import BasicMonster
+from components.ai import BasicMonster
 from components.equippable import Equippable
-from components.get_component_optional(ComponentType.FIGHTER) import Fighter
+from components.fighter import Fighter
 from config.entity_factory import get_entity_factory
 from config.level_template_registry import get_level_template_registry
 from entity import Entity
@@ -24,8 +23,9 @@ from random_utils import from_dungeon_level, random_choice_from_dict
 from render_functions import RenderOrder
 from stairs import Stairs
 from config.testing_config import get_testing_config
+from logger_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GameMap:

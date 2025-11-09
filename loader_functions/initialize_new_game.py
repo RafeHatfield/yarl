@@ -4,15 +4,14 @@ This module handles the creation of new games, setting up initial
 game state, player character, and game world configuration.
 """
 
-import logging
 from tcod import libtcodpy
 
 from components.component_registry import ComponentType
-from components.get_component_optional(ComponentType.EQUIPMENT) import Equipment
+from components.equipment import Equipment
 from components.equippable import Equippable
-from components.get_component_optional(ComponentType.FIGHTER) import Fighter
-from components.require_component(ComponentType.INVENTORY) import Inventory
-from components.get_component_optional(ComponentType.ITEM) import Item
+from components.fighter import Fighter
+from components.inventory import Inventory
+from components.item import Item
 from components.level import Level
 from components.player_pathfinding import PlayerPathfinding
 from components.statistics import Statistics
@@ -30,6 +29,9 @@ from game_states import GameStates
 from map_objects.game_map import GameMap
 from render_functions import RenderOrder
 from spells.spell_catalog import register_all_spells
+from logger_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_constants():

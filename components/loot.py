@@ -19,15 +19,15 @@ Usage:
 from enum import Enum
 from typing import Optional, Tuple, Dict, Any
 from random import randint, random, choice
-import logging
 
 from entity import Entity
-from components.get_component_optional(ComponentType.ITEM) import Item
+from components.item import Item
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
 from render_functions import RenderOrder
+from logger_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class LootRarity(Enum):

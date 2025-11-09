@@ -6,7 +6,6 @@ Also integrates Entity dialogue for key game moments (Phase 1 expansion).
 """
 
 from typing import Dict, Any, Optional, Tuple
-import logging
 
 from message_builder import MessageBuilder as MB
 from game_states import GameStates
@@ -15,8 +14,9 @@ from config.game_constants import get_constants
 from entity_sorting_cache import invalidate_entity_cache
 from entity_dialogue import EntityDialogue
 from components.component_registry import ComponentType
+from logger_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ActionProcessor:

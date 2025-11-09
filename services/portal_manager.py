@@ -78,7 +78,7 @@ class PortalManager:
             
             # Ensure Item component exists
             if not hasattr(entity, 'item') or entity.get_component_optional(ComponentType.ITEM) is None:
-                from components.get_component_optional(ComponentType.ITEM) import Item
+                from components.item import Item
                 entity.item = Item()
             
             # Register components properly

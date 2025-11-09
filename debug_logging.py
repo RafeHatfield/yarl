@@ -1,18 +1,24 @@
 """
 Configure debug logging to file for diagnostics.
 
-This module sets up comprehensive debug logging that captures:
-- Movement and turn economy
+NOTE: This module is DEPRECATED. Use logger_config.py instead.
+logger_config.py provides centralized logging with rotation and better organization.
+
+This module is kept for backward compatibility but should not be used for new code.
+
+Historical behavior:
+- Movement and turn economy logging
 - State transitions
 - AI system processing
 - Turn controller operations
-
-All debug output goes to debug.log for analysis.
 """
 
 import logging
 import sys
 from pathlib import Path
+from logger_config import get_logger
+
+_deprecation_logger = get_logger(__name__)
 
 
 def setup_debug_logging(log_file: str = "debug.log", console_level: str = "WARNING"):
