@@ -85,11 +85,19 @@ if fighter:
 
 ---
 
-## Tier 2: Moderate-Impact Files
+## Tier 2: Moderate-Impact Files ✅ COMPLETE
 
-### 4. spells/spell_executor.py (1466 lines)
-### 5. item_functions.py (1323 lines)
-### 6. components/fighter.py (1150 lines)
+### 4. spells/spell_executor.py ✅ COMPLETE (1466 lines)
+- ~7 accesses refactored
+- Changes: entity.fighter → get_component_optional(), target.fighter → require_component()
+
+### 5. item_functions.py ✅ COMPLETE (1323 lines)
+- ~5 accesses refactored
+- Changes: entity.fighter → get_component_optional(), ai component → components.add()
+
+### 6. components/fighter.py ✅ COMPLETE (1150 lines)
+- ~9 accesses refactored
+- Changes: All target.fighter → require_component()
 
 ---
 
