@@ -659,10 +659,10 @@ class Fighter:
             total_attack = int(total_attack * multiplier)
         
         # Get variable armor defense from target
-        armor_defense = target.fighter._get_armor_defense()
+        armor_defense = target.require_component(ComponentType.FIGHTER)._get_armor_defense()
         
         # Apply defense (including base defense, equipment defense_bonus, and variable armor)
-        total_defense = target.fighter.defense + armor_defense
+        total_defense = target.require_component(ComponentType.FIGHTER).defense + armor_defense
         final_damage = max(0, total_attack - total_defense)
 
         if final_damage > 0:
@@ -677,7 +677,7 @@ class Fighter:
             
             defense_breakdown = f"{total_defense} defense"
             if armor_defense > 0:
-                defense_breakdown = f"{total_defense} defense ({target.fighter.defense} base + {armor_defense} armor)"
+                defense_breakdown = f"{total_defense} defense ({target.require_component(ComponentType.FIGHTER).defense} base + {armor_defense} armor)"
             
             message_text = "{0} attacks {1} for {2} damage ({3} - {4}).".format(
                 self.owner.name.capitalize(), 
@@ -695,7 +695,7 @@ class Fighter:
             if is_testing_mode():
                 self._log_combat_debug(target, total_attack, variable_damage, damage_source, total_defense, armor_defense, final_damage)
             
-            results.extend(target.fighter.take_damage(final_damage))
+            results.extend(target.require_component(ComponentType.FIGHTER).take_damage(final_damage))
             
             # Apply corrosion effects if attacker has corrosion ability
             corrosion_results = self._apply_corrosion_effects(target, final_damage)
@@ -711,7 +711,7 @@ class Fighter:
             
             defense_breakdown = f"{total_defense} defense"
             if armor_defense > 0:
-                defense_breakdown = f"{total_defense} defense ({target.fighter.defense} base + {armor_defense} armor)"
+                defense_breakdown = f"{total_defense} defense ({target.require_component(ComponentType.FIGHTER).defense} base + {armor_defense} armor)"
             
             message_text = "{0} attacks {1} for 0 damage ({2} - {3}) - attack blocked!".format(
                 self.owner.name.capitalize(), 
@@ -820,7 +820,7 @@ class Fighter:
         attack_roll = d20_roll + to_hit_bonus + weapon_bonus
         
         # Get target's AC
-        target_ac = target.fighter.armor_class
+        target_ac = target.require_component(ComponentType.FIGHTER).armor_class
         
         # Check for critical hit or fumble
         is_critical = (d20_roll == 20)
@@ -896,7 +896,7 @@ class Fighter:
                                     target_ac, hit, is_critical, damage, base_damage)
             
             # Apply damage
-            results.extend(target.fighter.take_damage(damage))
+            results.extend(target.require_component(ComponentType.FIGHTER).take_damage(damage))
             
             # Apply corrosion effects if applicable
             corrosion_results = self._apply_corrosion_effects(target, damage)
@@ -1026,8 +1026,8 @@ class Fighter:
         
         debug_text = (f"{attacker_name} [power:{self.base_power}+{self.power-self.base_power}]{damage_range} attacks for {total_attack} "
                      f"({self.power} power + {variable_damage} rolled), "
-                     f"{target_name} [def:{target.fighter.base_defense}+{target.fighter.defense-target.fighter.base_defense}]{armor_range} blocks {total_defense} "
-                     f"({target.fighter.defense} defense + {armor_defense} rolled) "
+                     f"{target_name} [def:{target.require_component(ComponentType.FIGHTER).base_defense}+{target.require_component(ComponentType.FIGHTER).defense-target.require_component(ComponentType.FIGHTER).base_defense}]{armor_range} blocks {total_defense} "
+                     f"({target.require_component(ComponentType.FIGHTER).defense} defense + {armor_defense} rolled) "
                      f"= {final_damage} total damage")
         
         combat_logger.debug(debug_text)

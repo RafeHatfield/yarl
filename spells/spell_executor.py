@@ -159,8 +159,9 @@ class SpellExecutor:
         closest_distance = max_range + 1
         
         for entity in entities:
+            entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
             if (
-                entity.fighter
+                entity_fighter
                 and entity != caster
                 and map_is_in_fov(fov_map, entity.x, entity.y)
             ):
@@ -202,7 +203,8 @@ class SpellExecutor:
                 "message": MB.spell_effect(message_text.format(target.name, damage)),
             }
         )
-        results.extend(target.fighter.take_damage(damage, damage_type=damage_type_str))
+        target_fighter = target.require_component(ComponentType.FIGHTER)
+        results.extend(target_fighter.take_damage(damage, damage_type=damage_type_str))
         
         return results
     
@@ -262,7 +264,8 @@ class SpellExecutor:
             damage = self._calculate_damage(spell.damage) if spell.damage else 0
         
         for entity in entities:
-            if entity.fighter:
+            entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
+            if entity_fighter:
                 distance = math.sqrt(
                     (entity.x - target_x) ** 2 + (entity.y - target_y) ** 2
                 )
@@ -276,7 +279,7 @@ class SpellExecutor:
                     )
                     # Apply damage with type for resistance
                     damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
-                    results.extend(entity.fighter.take_damage(damage, damage_type=damage_type_str))
+                    results.extend(entity_fighter.take_damage(damage, damage_type=damage_type_str))
         
         # Create ground hazards if defined
         if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager'):

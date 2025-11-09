@@ -566,9 +566,9 @@ def cast_dragon_fart(*args, **kwargs):
     # Apply confusion/sleep to all affected entities
     for target_entity in affected_entities:
         # Apply confusion AI (acts like sleep - random wandering)
-        confused_ai = ConfusedMonster(target_entity.ai, sleep_duration)
+        confused_ai = ConfusedMonster(target_entity.get_component_optional(ComponentType.AI), sleep_duration)
         confused_ai.owner = target_entity
-        target_entity.ai = confused_ai
+        target_entity.components.add(ComponentType.AI, confused_ai)
         
         results.append({
             "message": MB.spell_effect(
@@ -648,7 +648,8 @@ def cast_slow(*args, **kwargs):
     # Find target entity at coordinates
     target = None
     for entity in entities:
-        if entity.x == target_x and entity.y == target_y and entity.fighter:
+        entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
+        if entity.x == target_x and entity.y == target_y and entity_fighter:
             target = entity
             break
     
@@ -705,7 +706,8 @@ def cast_glue(*args, **kwargs):
     # Find target entity at coordinates
     target = None
     for entity in entities:
-        if entity.x == target_x and entity.y == target_y and entity.fighter:
+        entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
+        if entity.x == target_x and entity.y == target_y and entity_fighter:
             target = entity
             break
     
@@ -765,7 +767,8 @@ def cast_rage(*args, **kwargs):
     # Find target entity at coordinates
     target = None
     for entity in entities:
-        if entity.x == target_x and entity.y == target_y and entity.fighter:
+        entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
+        if entity.x == target_x and entity.y == target_y and entity_fighter:
             target = entity
             break
     
