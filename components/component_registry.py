@@ -52,6 +52,8 @@ class ComponentType(Enum):
         MAP_FEATURE: Base map feature (chests, signposts, etc.)
         CHEST: Interactive chest container
         SIGNPOST: Readable sign with messages
+        DOOR: Corridor door with locking/secret states
+        TRAP: Hazardous map trap (spike, web, alarm)
     """
     FIGHTER = auto()
     AI = auto()
@@ -79,6 +81,8 @@ class ComponentType(Enum):
     PORTAL = auto()
     PORTAL_PLACER = auto()
     LOCKED_DOOR = auto()
+    DOOR = auto()
+    TRAP = auto()
 
 
 class ComponentRegistry:

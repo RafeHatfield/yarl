@@ -18,6 +18,7 @@ from typing import Tuple, Optional, List, Dict, Any, TYPE_CHECKING
 import random
 
 if TYPE_CHECKING:
+    pass
 
 
 class SecretDoor:

@@ -6,7 +6,7 @@ component-based architecture for flexible object composition.
 """
 
 import math
-from typing import Optional, Tuple, List, Any, TYPE_CHECKING
+from typing import Optional, Tuple, List, Any, Dict, TYPE_CHECKING
 
 import tcod
 import tcod.libtcodpy as libtcodpy
@@ -142,8 +142,9 @@ class Entity:
         if self.equippable and not self.item:
             self.item = Item()
             self.item.owner = self
-            # Also register with ComponentRegistry
-            self.components.add(ComponentType.ITEM, self.item)
+            # Also register with ComponentRegistry (if not already registered)
+            if ComponentType.ITEM not in self.components._components:
+                self.components.add(ComponentType.ITEM, self.item)
     
     def _register_components(self, components: dict[str, Any]) -> None:
         """Register components and establish ownership relationships.
@@ -177,16 +178,63 @@ class Entity:
             component_type = component_type_mapping[component_name]
             self.components.add(component_type, component)
             
-            # BACKWARD COMPATIBILITY: Also set as direct attribute
-            # This allows existing code like "if entity.fighter:" to continue working
-            setattr(self, component_name, component)
+            # BACKWARD COMPATIBILITY: Also set as direct attribute using super().__setattr__
+            # This bypasses __setattr__ hook to avoid duplicate registration
+            super().__setattr__(component_name, component)
             
             # Establish ownership if the component supports it
             if component and hasattr(component, 'owner'):
                 component.owner = self
     
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Override setattr to automatically register components in the component registry.
+        
+        This allows tests and code to set components via direct assignment (entity.fighter = fighter)
+        while automatically registering them in the component system (entity.components.add(...)).
+        This maintains backward compatibility while ensuring the component registry stays in sync.
+        """
+        # Map component names to their ComponentType
+        component_mapping = {
+            'fighter': ComponentType.FIGHTER,
+            'ai': ComponentType.AI,
+            'item': ComponentType.ITEM,
+            'inventory': ComponentType.INVENTORY,
+            'stairs': ComponentType.STAIRS,
+            'level': ComponentType.LEVEL,
+            'equipment': ComponentType.EQUIPMENT,
+            'equippable': ComponentType.EQUIPPABLE,
+            'wand': ComponentType.WAND,
+            'portal': ComponentType.PORTAL,
+            'signpost': ComponentType.SIGNPOST,
+            'mural': ComponentType.MURAL,
+        }
+        
+        # Set the attribute normally
+        super().__setattr__(name, value)
+        
+        # If this is a component assignment AND we have a components registry initialized,
+        # automatically register it (if not already registered)
+        if name in component_mapping and value is not None and hasattr(self, 'components'):
+            component_type = component_mapping[name]
+            # Only add if not already in registry (to avoid duplicate registration)
+            if component_type not in self.components._components:
+                self.components.add(component_type, value)
+            
+            # Establish ownership if the component supports it
+            if hasattr(value, 'owner'):
+                value.owner = self
+    
     @classmethod
-    def create_player(cls, x, y, fighter, inventory, level, equipment, status_effects=None):
+    def create_player(
+        cls,
+        x: int,
+        y: int,
+        fighter: 'Fighter',
+        inventory: 'Inventory',
+        level: 'Level',
+        equipment: 'Equipment',
+        status_effects: Optional[Any] = None
+    ) -> 'Entity':
         """Create a player entity with standard components.
         
         Args:
@@ -219,7 +267,16 @@ class Entity:
         return player
     
     @classmethod
-    def create_monster(cls, x, y, char, color, name, fighter, ai):
+    def create_monster(
+        cls,
+        x: int,
+        y: int,
+        char: str,
+        color: Tuple[int, int, int],
+        name: str,
+        fighter: 'Fighter',
+        ai: Any
+    ) -> 'Entity':
         """Create a monster entity with standard components.
         
         Args:
@@ -241,7 +298,16 @@ class Entity:
         )
     
     @classmethod
-    def create_item(cls, x, y, char, color, name, item_component, equippable=None):
+    def create_item(
+        cls,
+        x: int,
+        y: int,
+        char: str,
+        color: Tuple[int, int, int],
+        name: str,
+        item_component: Item,
+        equippable: Optional['Equippable'] = None
+    ) -> 'Entity':
         """Create an item entity with standard components.
         
         Args:
@@ -552,7 +618,7 @@ class Entity:
         
         return display_name
     
-    def get_status_effect_manager(self):
+    def get_status_effect_manager(self) -> Any:
         """Get or create the status effect manager for this entity.
         
         Returns:
@@ -563,7 +629,7 @@ class Entity:
             self.status_effects = StatusEffectManager(self)
         return self.status_effects
     
-    def add_status_effect(self, effect):
+    def add_status_effect(self, effect: Any) -> List[Dict[str, Any]]:
         """Add a status effect to this entity.
         
         Args:
@@ -588,7 +654,7 @@ class Entity:
             return False
         return self.status_effects.has_effect(name)
     
-    def process_status_effects_turn_start(self):
+    def process_status_effects_turn_start(self) -> List[Dict[str, Any]]:
         """Process status effects at the start of this entity's turn.
         
         Returns:
@@ -598,7 +664,7 @@ class Entity:
             return []
         return self.status_effects.process_turn_start()
     
-    def process_status_effects_turn_end(self):
+    def process_status_effects_turn_end(self) -> List[Dict[str, Any]]:
         """Process status effects at the end of this entity's turn.
         
         Returns:

@@ -71,7 +71,6 @@ def create_test_ring(name="Test Ring", ring_effect=RingEffect.REGENERATION, iden
     # Attach ring component
     ring_entity.ring = ring_component
     ring_component.owner = ring_entity
-    ring_entity.components.add(ComponentType.RING, ring_component)
     
     return ring_entity
 

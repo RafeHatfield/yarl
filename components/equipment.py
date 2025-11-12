@@ -7,6 +7,7 @@ and calculates total stat bonuses from all equipped gear.
 import logging
 from typing import Optional, List, Dict, Any
 from equipment_slots import EquipmentSlots
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -208,11 +209,13 @@ class Equipment:
                 equippable_entity.equippable.two_handed is True and 
                 self.off_hand is not None):
                 # Add shield back to inventory before unequipping
-                if self.owner and hasattr(self.owner, 'inventory') and self.owner.require_component(ComponentType.INVENTORY):
-                    if self.off_hand not in self.owner.require_component(ComponentType.INVENTORY).items:
-                        if len(self.owner.require_component(ComponentType.INVENTORY).items) < self.owner.require_component(ComponentType.INVENTORY).capacity:
-                            self.owner.require_component(ComponentType.INVENTORY).items.append(self.off_hand)
-                            logger.debug(f"Added auto-unequipped {self.off_hand.name} back to inventory")
+                if self.owner:
+                    inventory = self.owner.get_component_optional(ComponentType.INVENTORY)
+                    if inventory:
+                        if self.off_hand not in inventory.items:
+                            if len(inventory.items) < inventory.capacity:
+                                inventory.items.append(self.off_hand)
+                                logger.debug(f"Added auto-unequipped {self.off_hand.name} back to inventory")
                 
                 # Auto-unequip the shield
                 results.append({"dequipped": self.off_hand})
@@ -225,11 +228,13 @@ class Equipment:
                   hasattr(self.main_hand.equippable, 'two_handed') and
                   self.main_hand.equippable.two_handed is True):
                 # Add two-handed weapon back to inventory before unequipping
-                if self.owner and hasattr(self.owner, 'inventory') and self.owner.require_component(ComponentType.INVENTORY):
-                    if self.main_hand not in self.owner.require_component(ComponentType.INVENTORY).items:
-                        if len(self.owner.require_component(ComponentType.INVENTORY).items) < self.owner.require_component(ComponentType.INVENTORY).capacity:
-                            self.owner.require_component(ComponentType.INVENTORY).items.append(self.main_hand)
-                            logger.debug(f"Added auto-unequipped {self.main_hand.name} back to inventory")
+                if self.owner:
+                    inventory = self.owner.get_component_optional(ComponentType.INVENTORY)
+                    if inventory:
+                        if self.main_hand not in inventory.items:
+                            if len(inventory.items) < inventory.capacity:
+                                inventory.items.append(self.main_hand)
+                                logger.debug(f"Added auto-unequipped {self.main_hand.name} back to inventory")
                 
                 # Auto-unequip the two-handed weapon
                 results.append({"dequipped": self.main_hand})
@@ -239,11 +244,13 @@ class Equipment:
             # Replace or equip
             if current_item:
                 # Add the replaced item back to inventory (if there's space)
-                if self.owner and hasattr(self.owner, 'inventory') and self.owner.require_component(ComponentType.INVENTORY):
-                    if current_item not in self.owner.require_component(ComponentType.INVENTORY).items:
-                        if len(self.owner.require_component(ComponentType.INVENTORY).items) < self.owner.require_component(ComponentType.INVENTORY).capacity:
-                            self.owner.require_component(ComponentType.INVENTORY).items.append(current_item)
-                            logger.debug(f"Added replaced {current_item.name} back to {self.owner.name}'s inventory")
+                if self.owner:
+                    inventory = self.owner.get_component_optional(ComponentType.INVENTORY)
+                    if inventory:
+                        if current_item not in inventory.items:
+                            if len(inventory.items) < inventory.capacity:
+                                inventory.items.append(current_item)
+                                logger.debug(f"Added replaced {current_item.name} back to {self.owner.name}'s inventory")
                 
                 results.append({"dequipped": current_item})
 
@@ -251,10 +258,12 @@ class Equipment:
             
             # CRITICAL: Remove from inventory when equipping (prevents duplicate drops on death)
             # When a monster equips an item, it should only be in the equipment slot, NOT inventory
-            if self.owner and hasattr(self.owner, 'inventory') and self.owner.require_component(ComponentType.INVENTORY):
-                if equippable_entity in self.owner.require_component(ComponentType.INVENTORY).items:
-                    self.owner.require_component(ComponentType.INVENTORY).items.remove(equippable_entity)
-                    logger.debug(f"Removed {equippable_entity.name} from {self.owner.name}'s inventory (now equipped)")
+            if self.owner:
+                inventory = self.owner.get_component_optional(ComponentType.INVENTORY)
+                if inventory:
+                    if equippable_entity in inventory.items:
+                        inventory.items.remove(equippable_entity)
+                        logger.debug(f"Removed {equippable_entity.name} from {self.owner.name}'s inventory (now equipped)")
             
             # Auto-identify equipment when equipped (traditional roguelike behavior)
             if hasattr(equippable_entity, 'item') and equippable_entity.get_component_optional(ComponentType.ITEM):

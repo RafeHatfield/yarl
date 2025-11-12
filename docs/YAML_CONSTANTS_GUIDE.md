@@ -1,38 +1,72 @@
-# 🎮 YAML Constants System Guide
+# 🎮 YAML Systems - Complete Coverage Guide
 
-**Date:** January 2025  
-**Status:** ✅ Implemented  
-**Version:** v3.8.1
+**Date:** November 2025  
+**Status:** ✅ Fully Documented  
+**Version:** v4.0 (Complete)
 
 ---
 
 ## 📋 Overview
 
-The game constants system now supports loading configuration values from a YAML file, making it easy to adjust game balance without modifying code.
+Yarl uses **YAML configuration** extensively for game balance, level design, entity definitions, and story content. This guide covers **ALL YAML systems** in the game.
 
-### Benefits
+### YAML Systems in Yarl
+
+| System | File | Purpose | Documentation |
+|--------|------|---------|-----------------|
+| **Game Constants** | `config/game_constants.yaml` | Balance tuning | This guide |
+| **Level Templates** | `config/level_templates.yaml` | Dungeon generation | `YAML_ROOM_GENERATION_*` |
+| **Entity Definitions** | `config/entities.yaml` | Monster/item stats | This guide |
+| **Signpost Messages** | `config/signpost_messages.yaml` | Environmental lore | This guide |
+| **Murals & Inscriptions** | `config/murals_inscriptions.yaml` | Story elements | This guide |
+| **Entity Dialogue** | `config/entity_dialogue.yaml` | NPC dialogue | This guide |
+| **Endings** | `config/endings.yaml` | Victory messages | This guide |
+| **Vault Themes** | `config/vault_themes.yaml` | Treasure room themes | This guide |
+
+### Benefits of YAML Configuration
 
 - **🎯 Easy Balance Tuning:** Adjust values without code changes
-- **🔧 Modding Support:** Players can customize game constants
-- **📊 Version Control:** Track balance changes in git
+- **🔧 Modding Support:** Players can customize game content
+- **📊 Version Control:** Track changes in git history
 - **🚀 Hot Reload:** Restart game to apply new values
-- **💾 Human Readable:** YAML format is easy to read and edit
+- **💾 Human Readable:** Easy to read and edit
+- **🎨 Creative Control:** Non-programmers can design content
 
 ---
 
-## 📁 Files
+## 📁 All YAML Files & Purposes
 
-### Configuration Files
+### Configuration Files (Primary - Edit These)
 
-- **`config/game_constants.yaml`** - Main configuration file (auto-loaded)
-- **`config/game_constants.py`** - Code with defaults and loading logic
+- **`config/game_constants.yaml`** - Game balance values
+- **`config/level_templates.yaml`** - Level generation overrides
+- **`config/entities.yaml`** - Monster/item/equipment definitions
+- **`config/signpost_messages.yaml`** - Signpost lore
+- **`config/murals_inscriptions.yaml`** - Mural descriptions
+- **`config/entity_dialogue.yaml`** - NPC and entity dialogue
+- **`config/endings.yaml`** - Victory/defeat messages
+- **`config/vault_themes.yaml`** - Treasure room configurations
 
-### How It Works
+### Testing Files (Testing Mode - Override Production)
 
-1. On startup, the system checks for `config/game_constants.yaml`
-2. If found, loads values from YAML
-3. If not found or error, uses hardcoded defaults
-4. Logs which approach was used
+- **`config/level_templates_testing.yaml`** - Testing level overrides
+- **`config/level_templates_testing_full.yaml`** - Full test suite
+- **`config/level_templates_testing_bosses.yaml`** - Boss testing
+- **`config/level_templates_testing_lootdrops.yaml`** - Loot testing
+- **`config/level_templates_testing_slimes.yaml`** - Slime testing
+
+### Reference Files (Read-Only - Copy Templates From Here)
+
+- **`config/level_templates_examples.yaml`** - Example level configs
+- **`config/examples/performance_config.yaml`** - Performance tuning reference
+
+### How YAML Loading Works
+
+1. **Startup:** System scans for YAML files in `config/`
+2. **Priority:** Testing files override production files if present
+3. **Fallback:** Missing values use hardcoded defaults
+4. **Logging:** System logs which files were loaded
+5. **Validation:** Some systems validate YAML before accepting
 
 ---
 
@@ -212,16 +246,272 @@ WARNING: Failed to load game constants ... Using defaults.   # ❌ Error
 
 ---
 
+## 2️⃣ ENTITY DEFINITIONS SYSTEM (`config/entities.yaml`)
+
+### Purpose
+Defines all monsters, items, equipment, and unique entities in the game.
+
+### Structure
+```yaml
+entities:
+  monsters:
+    orc:
+      char: 'o'
+      color: [63, 127, 63]
+      hp: 10
+      power: 3
+      defense: 0
+      xp: 35
+  
+  items:
+    healing_potion:
+      char: '!'
+      color: [127, 0, 255]
+      use_function: "heal"
+      amount: 40
+  
+  equipment:
+    sword:
+      char: '/'
+      power_bonus: 2
+      damage_min: 1
+      damage_max: 4
+```
+
+### Sections
+- **monsters** - All NPC/enemy definitions
+- **items** - Consumable and usable items
+- **equipment** - Weapons, armor, rings
+- **unique_items** - Special quest items (ruby heart, portal, etc.)
+
+### When to Edit
+- Adding new monster types
+- Tweaking monster stats
+- Creating new items or equipment
+- Balancing item effects
+
+---
+
+## 3️⃣ SIGNPOST MESSAGES SYSTEM (`config/signpost_messages.yaml`)
+
+### Purpose
+Environmental lore text discovered on signposts throughout the dungeon.
+
+### Structure
+```yaml
+signposts:
+  tier_1:
+    - "A weathered sign reads: 'Here lies the Valley of Sorrow.'"
+    - "The inscription fades with age..."
+  
+  tier_2:
+    - "You decipher: 'Two souls bound as one...'"
+  
+  crosscutting_lore:
+    - "An ominous warning about the dragons..."
+```
+
+### Tiers
+- **tier_1** - Early game discoveries
+- **tier_2** - Mid-game lore
+- **tier_3** - Late game revelations
+- **crosscutting_lore** - Soul rotation, dragon themes
+
+### When to Edit
+- Adding environmental story clues
+- Revealing backstory gradually
+- Thematic reinforcement
+- Player education
+
+---
+
+## 4️⃣ MURALS & INSCRIPTIONS SYSTEM (`config/murals_inscriptions.yaml`)
+
+### Purpose
+Detailed mural descriptions revealing deep story elements.
+
+### Structure
+```yaml
+murals:
+  - id: "mural_1"
+    name: "The Golden Pair"
+    depth: 5
+    description: "Two figures stand in radiant light..."
+    meaning: "The original dragon souls before the split"
+  
+  - id: "mural_2"
+    name: "The Ritual"
+    depth: 10
+    description: "A dark ceremony takes place..."
+    meaning: "How souls became trapped in mortal forms"
+```
+
+### Attributes
+- **id** - Unique identifier
+- **name** - Display title
+- **depth** - When discovered (level range)
+- **description** - Detailed visual description
+- **meaning** - Lore significance
+
+### When to Edit
+- Adding story progression markers
+- Revealing major plot points
+- Creating visual narrative
+
+---
+
+## 5️⃣ ENTITY DIALOGUE SYSTEM (`config/entity_dialogue.yaml`)
+
+### Purpose
+NPC dialogue and responses for interactive entities.
+
+### Structure
+```yaml
+entity_dialogue:
+  guide:
+    initial: "Welcome, traveler. I am your guide."
+    curious: "You seem to understand the truth..."
+    enraged: "You dare defy the dragons?!"
+  
+  interactions:
+    attack: "The entity attacks you!"
+    help: "The entity offers assistance."
+```
+
+### Progression States
+- **initial** - First meeting
+- **curious** - After learning lore
+- **enraged** - Upon conflict
+
+### When to Edit
+- Adding NPC interactions
+- Character development dialogue
+- Quest-related conversations
+- Dynamic responses
+
+---
+
+## 6️⃣ ENDINGS SYSTEM (`config/endings.yaml`)
+
+### Purpose
+Victory and defeat messages for each ending.
+
+### Structure
+```yaml
+endings:
+  victory_ending:
+    title: "Victory"
+    messages:
+      - "You have reclaimed the amulet!"
+      - "The dragons have been vanquished!"
+  
+  defeat_ending:
+    title: "Defeat"
+    messages:
+      - "Your adventure ends here..."
+```
+
+### When to Edit
+- Adding new endings
+- Customizing victory messages
+- Dramatic conclusion text
+- Defeat scenarios
+
+---
+
+## 7️⃣ VAULT THEMES SYSTEM (`config/vault_themes.yaml`)
+
+### Purpose
+Themed treasure room configurations for special encounters.
+
+### Structure
+```yaml
+vault_themes:
+  dragon_hoard:
+    description: "A hoard of dragon treasure"
+    equipment_count: "3-5"
+    items:
+      - type: "gold_coins"
+        count: "50-100"
+  
+  ancient_armory:
+    description: "Ancient weapons and armor"
+    equipment:
+      - "sword"
+      - "shield"
+```
+
+### When to Edit
+- Creating special treasure rooms
+- Thematic loot distributions
+- Boss encounter rewards
+- Level-specific treasures
+
+---
+
+## 🎯 YAML SYSTEM HIERARCHY
+
+```
+Game Startup
+  ├─ Load game_constants.yaml
+  │  └─ Balance values, performance, rendering
+  │
+  ├─ Load entities.yaml
+  │  └─ Monster/item/equipment definitions
+  │
+  ├─ Load level_templates.yaml (or testing)
+  │  └─ Dungeon generation parameters
+  │
+  ├─ Load signpost_messages.yaml
+  │  └─ Environmental lore
+  │
+  ├─ Load murals_inscriptions.yaml
+  │  └─ Story murals
+  │
+  ├─ Load entity_dialogue.yaml
+  │  └─ NPC dialogue
+  │
+  ├─ Load endings.yaml
+  │  └─ Victory/defeat messages
+  │
+  └─ Load vault_themes.yaml
+     └─ Treasure room themes
+
+Game Running
+  ├─ Constants used throughout
+  ├─ Entities spawned based on definitions
+  ├─ Levels generated from templates
+  └─ Content displayed from remaining systems
+```
+
+---
+
+## 📚 Complete YAML System Map
+
+| System | Config File | Python Loader | When Loaded | Can Hot-Reload |
+|--------|-------------|----------------|------------|---|
+| **Constants** | `game_constants.yaml` | `game_constants.py` | Startup | No (restart) |
+| **Entities** | `entities.yaml` | `entity_registry.py` | Startup | No (restart) |
+| **Levels** | `level_templates.yaml` | `level_template_registry.py` | Startup | No (restart) |
+| **Signposts** | `signpost_messages.yaml` | `signpost_registry.py` | Startup | No (restart) |
+| **Murals** | `murals_inscriptions.yaml` | `mural_registry.py` | Startup | No (restart) |
+| **Dialogue** | `entity_dialogue.yaml` | `entity_dialogue.py` | Startup | No (restart) |
+| **Endings** | `endings.yaml` | `endings.py` | Startup | No (restart) |
+| **Vault Themes** | `vault_themes.yaml` | `vault_themes.py` | Startup | No (restart) |
+
+---
+
 ## 📊 What's NOT in YAML?
 
 Some configuration is intentionally kept in code:
 
-- **Monster/Item Spawn Rates:** Complex level-based formulas (in `ItemSpawnConfig`)
-- **Entity Definitions:** Monster/item stats (in `config/entities.yaml`)
-- **Monster Equipment:** Equipment spawn logic (in `MonsterEquipmentConfig`)
-- **Colors:** Visual theme colors (in code)
+- **Visual Colors:** Theme colors (in rendering code)
+- **Complex Formulas:** Level-based spawn rate calculations
+- **UI Layout:** Screen positioning and sizing logic
+- **Algorithm Parameters:** Pathfinding tweaks, FOV calculations
+- **Hardcoded Logic:** Turn economy, combat resolution
 
-These may be added to YAML in future versions.
+These may be moved to YAML in future versions if needed.
 
 ---
 
@@ -300,7 +590,169 @@ Just edit `config/game_constants.yaml` and restart the game!
 
 ---
 
-**Last Updated:** January 2025  
+## 🗺️ Navigation: All YAML Documentation
+
+This guide covers ALL YAML systems. For specific deep-dives:
+
+| System | Main Guide | Purpose |
+|--------|-----------|---------|
+| **Room Generation** | `YAML_ROOM_GENERATION_SYSTEM.md` | Level design without code |
+| **Room Patterns** | `YAML_ROOM_GENERATION_DESIGN_PATTERNS.md` | Advanced level design |
+| **Room Quick Ref** | `YAML_ROOM_GENERATION_QUICK_REFERENCE.md` | Syntax reference |
+| **All Systems** | `YAML_CONSTANTS_GUIDE.md` (this file) | Complete YAML overview |
+
+---
+
+## 🎓 Learning Paths
+
+### For Game Designers
+1. Read: `YAML_ROOM_GENERATION_QUICK_REFERENCE.md`
+2. Design: 5+ levels in `config/level_templates.yaml`
+3. Add: Lore to `config/signpost_messages.yaml`
+4. Create: Murals in `config/murals_inscriptions.yaml`
+
+### For Balance Tuners
+1. Read: This guide (Game Constants section)
+2. Adjust: `config/game_constants.yaml`
+3. Test: `python3 engine.py` and playtest
+4. Iterate: Use `--testing --start-level` flag
+
+### For Content Creators
+1. Read: Entity Definitions & Dialogue sections
+2. Add: New monsters/items to `config/entities.yaml`
+3. Write: Dialogue in `config/entity_dialogue.yaml`
+4. Test: Restart and verify
+
+### For Story Writers
+1. Read: Signpost, Mural, Dialogue, Endings sections
+2. Write: Environmental lore
+3. Create: Mural descriptions and meanings
+4. Polish: Ending narratives
+
+---
+
+## 📋 Complete YAML Configuration Checklist
+
+- [ ] **Game Constants**
+  - [ ] Balance values adjusted?
+  - [ ] Performance settings optimized?
+  - [ ] Rendering config correct?
+
+- [ ] **Entities**
+  - [ ] All monsters defined?
+  - [ ] Items have stats?
+  - [ ] Equipment balanced?
+
+- [ ] **Levels**
+  - [ ] Level progression tuned?
+  - [ ] Boss levels special?
+  - [ ] Difficulty curve smooth?
+
+- [ ] **Story Content**
+  - [ ] Signposts placed strategically?
+  - [ ] Murals reveal lore progressively?
+  - [ ] Dialogue feels natural?
+  - [ ] Endings are satisfying?
+
+- [ ] **Testing**
+  - [ ] Testing files set up?
+  - [ ] Quick test level available?
+  - [ ] Balance tested with `--testing`?
+
+---
+
+## 🚀 Quick Start Template
+
+To add a new game feature via YAML:
+
+1. **Define the structure** in appropriate YAML file
+2. **Create a registry/loader** in Python (if new system)
+3. **Load at startup** in game initialization
+4. **Test with** `--testing` mode
+5. **Document in** this guide
+6. **Commit** with descriptive message
+
+Example commit message:
+```
+feat(yaml): Add enchantment system to equipment
+
+- Add enchantments section to entities.yaml
+- Create enchantment_registry.py for loading
+- Integrate with equipment component
+- Document in YAML_CONSTANTS_GUIDE.md
+```
+
+---
+
+## 🔄 YAML System Workflow
+
+```
+Design in YAML
+    ↓
+Load at Startup
+    ↓
+Use in Game
+    ↓
+Test with --testing
+    ↓
+Iterate Based on Feedback
+    ↓
+Commit Changes
+    ↓
+Update Documentation
+```
+
+---
+
+## 💾 Backup & Version Control
+
+All YAML files should be in version control:
+
+```bash
+# View changes to configuration
+git diff config/game_constants.yaml
+
+# See history of a file
+git log -p config/level_templates.yaml
+
+# Revert a balance change
+git checkout HEAD^ -- config/game_constants.yaml
+```
+
+---
+
+## 🎯 Summary: Complete YAML Ecosystem
+
+**Yarl's YAML configuration system provides:**
+
+✅ **Balance Tuning** - Without code changes  
+✅ **Level Design** - Structured dungeon generation  
+✅ **Entity Definitions** - Monster/item stats  
+✅ **Environmental Story** - Lore through signposts & murals  
+✅ **Character Dialogue** - NPC interactions  
+✅ **Narrative Endings** - Victory/defeat messages  
+✅ **Treasure Themes** - Special room customization  
+
+**All systems are:**
+- 📖 Fully documented
+- 🧪 Tested and working
+- 📊 Version controlled
+- 🔄 Easily modifiable
+- 🎮 Ready for production
+
+---
+
+**Last Updated:** November 2025  
+**Documentation Version:** v4.0 (Complete Coverage)  
+**Status:** ✅ Production Ready  
 **Maintainer:** Development Team  
-**Status:** Production Ready ✅
+
+---
+
+## 📞 Need Help?
+
+- **Level Design:** See `YAML_ROOM_GENERATION_*` guides
+- **Balance Questions:** See Game Constants section above
+- **Story/Content:** See Entity Dialogue, Signposts, Murals sections
+- **System Integration:** See YAML System Hierarchy section
 

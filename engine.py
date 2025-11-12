@@ -18,8 +18,10 @@ from loader_functions.data_loaders import load_game
 from loader_functions.initialize_new_game import get_constants, get_game_variables
 from menus import main_menu, message_box
 from engine_integration import play_game_with_engine
-from config.testing_config import set_testing_mode
+from config.testing_config import set_testing_mode, get_testing_config, is_testing_mode
 from config.ui_layout import get_ui_layout
+from debug_logging import setup_debug_logging
+from entity_dialogue import EntityDialogue
 
 # Set up basic logging (WARNING level to see exit triggers)
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
@@ -103,6 +105,14 @@ Examples:
         help='Enable wizard mode - in-game debug menu with & key (requires --testing)'
     )
     
+    # Telemetry collection
+    parser.add_argument(
+        '--telemetry-json',
+        type=str,
+        metavar='PATH',
+        help='Enable telemetry collection and write floor-by-floor JSON to PATH'
+    )
+    
     return parser.parse_args()
 
 
@@ -163,6 +173,14 @@ def main():
     if is_testing_mode():
         from components.monster_action_logger import MonsterActionLogger
         MonsterActionLogger.setup_logging()
+    
+    # Initialize telemetry service
+    telemetry_service = None
+    if args.telemetry_json:
+        from services.telemetry_service import get_telemetry_service
+        telemetry_service = get_telemetry_service(args.telemetry_json)
+        print(f"📊 TELEMETRY ENABLED: Will write to {args.telemetry_json}")
+    
     constants = get_constants()
     
     # Get UI layout configuration for split-screen design
@@ -322,6 +340,21 @@ def main():
             else:
                 # Return to main menu
                 show_main_menu = True
+    
+    # Dump telemetry on game exit
+    if telemetry_service:
+        try:
+            telemetry_service.dump_json()
+            stats = telemetry_service.get_stats()
+            print(f"\n📊 Telemetry Summary:")
+            print(f"   Floors: {stats.get('floors', 0)}")
+            print(f"   Avg ETP: {stats.get('avg_etp_per_floor', 0):.1f}")
+            print(f"   Traps: {stats.get('total_traps', 0)}")
+            print(f"   Secrets: {stats.get('total_secrets', 0)}")
+            print(f"   Doors: {stats.get('total_doors', 0)}")
+            print(f"   Keys: {stats.get('total_keys', 0)}")
+        except Exception as e:
+            print(f"\n❌ Failed to dump telemetry: {e}")
 
 
 if __name__ == "__main__":

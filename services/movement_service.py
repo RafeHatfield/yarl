@@ -12,8 +12,12 @@ for keyboard input but not mouse input (or vice versa).
 """
 
 import logging
-from typing import Tuple, Dict, Any, Optional, List
+from typing import Tuple, Dict, Any, Optional, List, TYPE_CHECKING
 from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from entity import Entity
+    from map_objects.game_map import GameMap
 
 logger = logging.getLogger(__name__)
 
@@ -192,12 +196,15 @@ class MovementService:
         # Check for passive secret door reveals
         self._check_secret_reveals(player, game_map)
         
+        # Check for traps on the new tile
+        self._check_trap_trigger(player, entities, game_map, result)
+        
         return result
     
     # NOTE: _check_portal_entry() moved to PortalManager.check_victory_portal_collision()
     # PortalManager is now the single source of truth for all portal operations
     
-    def _check_secret_reveals(self, player, game_map):
+    def _check_secret_reveals(self, player: 'Entity', game_map: 'GameMap') -> None:
         """Check for passive secret door reveals near player.
         
         Args:
@@ -211,13 +218,154 @@ class MovementService:
         revealed = game_map.reveal_secret_doors_near(player.x, player.y, radius=1)
         if revealed:
             logger.debug(f"Revealed {revealed} secret door(s) near player")
+    
+    def _check_trap_trigger(self, player: 'Entity', entities: list, game_map: 'GameMap', result) -> None:
+        """Check for traps on player's current tile and apply effects.
+        
+        This handles trap detection, triggering, and effect application.
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            game_map: Game map
+            result: MovementResult to append messages to
+        """
+        from components.component_registry import ComponentType
+        from random import random
+        from message_builder import MessageBuilder as MB
+        
+        # Find trap at player's position
+        trap_entity = None
+        for entity in entities:
+            if (entity.x == player.x and entity.y == player.y and 
+                entity.components.has(ComponentType.TRAP)):
+                trap_entity = entity
+                break
+        
+        if not trap_entity:
+            return
+        
+        trap = trap_entity.components.get(ComponentType.TRAP)
+        if not trap:
+            return
+        
+        # If trap is already disarmed, nothing happens
+        if trap.is_disarmed:
+            return
+        
+        # If trap is detected, player avoids it
+        if trap.is_detected:
+            result.messages.append({"message": MB.warning(f"You carefully avoid the {trap_entity.name}.")})
+            return
+        
+        # Check for passive detection
+        if trap.can_be_detected() and random() < trap.passive_detect_chance:
+            trap.detect("passive")
+            result.messages.append({"message": MB.success(f"You notice the {trap_entity.name}!")})
+            return
+        
+        # If trap was not detected, it triggers!
+        if trap.is_triggered():
+            result.messages.append({"message": MB.danger(f"You stepped on the {trap_entity.name}!")})
+            self._apply_trap_effects(player, trap_entity, trap, result)
+    
+    def _apply_trap_effects(self, player: 'Entity', trap_entity: 'Entity', trap, result) -> None:
+        """Apply trap effects to the player.
+        
+        Args:
+            player: Player entity
+            trap_entity: Entity containing the trap
+            trap: Trap component
+            result: MovementResult to append messages to
+        """
+        from components.component_registry import ComponentType
+        from components.fighter import Fighter
+        from message_builder import MessageBuilder as MB
+        
+        if trap.trap_type == "spike_trap":
+            # Spike trap: damage + bleed
+            fighter = player.components.get(ComponentType.FIGHTER)
+            if fighter:
+                damage = trap.spike_damage
+                fighter.take_damage(damage)
+                result.messages.append({"message": MB.player_hit(f"Spikes pierce you for {damage} damage!")})
+                
+                # Apply bleed status effect
+                status_effects = player.components.get(ComponentType.STATUS_EFFECTS)
+                if status_effects:
+                    status_effects.add_effect("bleed", {
+                        "severity": trap.spike_bleed_severity,
+                        "duration": trap.spike_bleed_duration
+                    })
+                    result.messages.append({"message": MB.warning(f"You are bleeding!")})
+        
+        elif trap.trap_type == "web_trap":
+            # Web trap: slow/snare
+            status_effects = player.components.get(ComponentType.STATUS_EFFECTS)
+            if status_effects:
+                status_effects.add_effect("slowed", {
+                    "severity": trap.web_slow_severity,
+                    "duration": trap.web_duration
+                })
+                result.messages.append({"message": MB.warning(f"You are stuck in sticky webs for {trap.web_duration} turns!")})
+            else:
+                result.messages.append({"message": MB.warning(f"You are stuck in sticky webs!")})
+        
+        elif trap.trap_type == "alarm_plate":
+            # Alarm trap: alert nearby mobs in faction
+            result.messages.append({"message": MB.danger(f"ALARM! The pressure plate triggers a loud gong!")})
+            self._alert_nearby_mobs(player, trap)
+    
+    def _alert_nearby_mobs(self, player: 'Entity', trap) -> None:
+        """Alert nearby monsters of the same faction as configured in trap.
+        
+        Args:
+            player: Player entity
+            trap: Trap component with alarm settings
+        """
+        from components.component_registry import ComponentType
+        from components.ai import BasicMonster
+        
+        state = self.state_manager.state
+        if not hasattr(state, 'entities'):
+            return
+        
+        # Find nearby monsters of matching faction
+        faction_to_alert = trap.alarm_faction
+        radius = trap.alarm_radius
+        
+        alerted_count = 0
+        for entity in state.entities:
+            if entity == player:
+                continue
+            
+            # Check distance
+            distance = player.distance(entity.x, entity.y)
+            if distance > radius:
+                continue
+            
+            # Check if entity has faction and AI
+            faction = entity.components.get(ComponentType.FACTION)
+            ai = entity.components.get(ComponentType.AI)
+            
+            if faction and faction.faction == faction_to_alert and ai:
+                # Alert this mob
+                if hasattr(ai, 'alert_location'):
+                    ai.alert_location(player.x, player.y)
+                    alerted_count += 1
+                elif hasattr(ai, 'set_target'):
+                    ai.set_target(player)
+                    alerted_count += 1
+        
+        if alerted_count > 0:
+            logger.info(f"Alarm trap: alerted {alerted_count} {faction_to_alert}(s)")
 
 
 # Singleton instance
 _movement_service = None
 
 
-def get_movement_service(state_manager=None):
+def get_movement_service(state_manager: Any = None) -> 'MovementService':
     """Get the global movement service instance.
 
     Args:
@@ -234,7 +382,7 @@ def get_movement_service(state_manager=None):
     return _movement_service
 
 
-def reset_movement_service():
+def reset_movement_service() -> None:
     """Reset the global movement service instance (for testing)."""
     global _movement_service
     _movement_service = None

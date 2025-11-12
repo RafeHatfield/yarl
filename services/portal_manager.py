@@ -12,6 +12,7 @@ This service replaces scattered portal logic across multiple files.
 import logging
 from typing import Optional, Dict, Any, List, Tuple
 from components.portal import Portal
+from components.component_registry import ComponentType
 from entity import Entity
 
 logger = logging.getLogger(__name__)

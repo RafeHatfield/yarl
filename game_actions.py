@@ -834,10 +834,48 @@ class ActionProcessor:
             # No need to call end_player_action again
             # No item to pick up = no turn consumed
     
+    def _search_for_traps(self, search_bounds) -> list:
+        """Search for traps in the given bounds and mark them as detected.
+        
+        Args:
+            search_bounds: (x_min, y_min, x_max, y_max) bounds to search
+            
+        Returns:
+            List of trap entities that were detected
+        """
+        from components.component_registry import ComponentType
+        
+        entities = self.state_manager.state.entities
+        revealed_traps = []
+        
+        x_min, y_min, x_max, y_max = search_bounds
+        
+        for entity in entities:
+            if not entity.components.has(ComponentType.TRAP):
+                continue
+            
+            trap = entity.components.get(ComponentType.TRAP)
+            if not trap or trap.is_detected or trap.is_disarmed:
+                continue
+            
+            # Check if trap is in search bounds
+            if not (x_min <= entity.x <= x_max and y_min <= entity.y <= y_max):
+                continue
+            
+            # Check if trap can be detected
+            if not trap.can_be_detected():
+                continue
+            
+            # Reveal the trap
+            trap.detect("search")
+            revealed_traps.append(entity)
+        
+        return revealed_traps
+    
     def _handle_search(self, _) -> None:
         """Handle room-wide search action. TAKES 1 TURN.
         
-        Searches the current room for secret doors, revealing any that are hidden.
+        Searches the current room for secret doors and traps, revealing any that are hidden.
         """
         current_state = self.state_manager.state.current_state
         if current_state != GameStates.PLAYERS_TURN:
@@ -871,7 +909,14 @@ class ActionProcessor:
         # Reveal all secret doors in the search area
         revealed_doors = game_map.secret_door_manager.search_room(search_bounds)
         
+        # Detect and reveal traps in the search area
+        revealed_traps = self._search_for_traps(search_bounds)
+        
+        # Combine findings
+        has_discoveries = False
+        
         if revealed_doors:
+            has_discoveries = True
             # Convert revealed doors to passable floor tiles and add visual markers
             for door in revealed_doors:
                 if 0 <= door.x < game_map.width and 0 <= door.y < game_map.height:
@@ -886,7 +931,18 @@ class ActionProcessor:
                 message_log.add_message(MB.success("You discover a secret door!"))
             else:
                 message_log.add_message(MB.success(f"You discover {len(revealed_doors)} secret doors!"))
-        else:
+        
+        if revealed_traps:
+            has_discoveries = True
+            # Add trap detection messages
+            if len(revealed_traps) == 1:
+                message_log.add_message(MB.success(f"You discover {revealed_traps[0].name}!"))
+            else:
+                message_log.add_message(MB.success(f"You discover {len(revealed_traps)} traps!"))
+                for trap_ent in revealed_traps:
+                    message_log.add_message(MB.info(f"  - {trap_ent.name}"))
+        
+        if not has_discoveries:
             message_log.add_message(MB.info("You search carefully but find nothing hidden here."))
         
         # TURN ECONOMY: Searching takes 1 turn
@@ -1210,7 +1266,7 @@ class ActionProcessor:
                 self.state_manager.state.message_log.add_message(message)
     
     def _handle_stairs(self, _) -> None:
-        """Handle taking stairs to next level."""
+        """Handle taking stairs (up or down) to different level."""
         logger.debug("=== _handle_stairs() called ===")
         
         current_state = self.state_manager.state.current_state
@@ -1235,7 +1291,68 @@ class ActionProcessor:
             if (entity.components.has(ComponentType.STAIRS) and 
                 entity.x == player.x and entity.y == player.y):
                 stairs_found = True
-                logger.info(f"=== TAKING STAIRS: Level {game_map.dungeon_level} → {game_map.dungeon_level + 1} ===")
+                stairs = entity.components.get(ComponentType.STAIRS)
+                
+                # Determine direction (up or down)
+                target_level = stairs.floor
+                is_going_down = target_level > game_map.dungeon_level
+                is_going_up = target_level < game_map.dungeon_level
+                
+                logger.info(f"=== TAKING STAIRS: Level {game_map.dungeon_level} → {target_level} ===")
+                
+                # Check stairs configuration
+                from config.level_template_registry import get_level_template_registry
+                template_registry = get_level_template_registry()
+                level_override = template_registry.get_level_override(game_map.dungeon_level)
+                
+                # Check if movement is allowed
+                if level_override and level_override.stairs:
+                    stairs_config = level_override.stairs
+                    
+                    # Check direction constraints
+                    if is_going_down and not stairs_config.can_go_down():
+                        message = MB.warning("You cannot go deeper from here.")
+                        message_log.add_message(message)
+                        logger.warning(f"Down stairs blocked by config at level {game_map.dungeon_level}")
+                        break
+                    
+                    if is_going_up and not stairs_config.can_go_up():
+                        message = MB.warning("You cannot return from here.")
+                        message_log.add_message(message)
+                        logger.warning(f"Up stairs blocked by config at level {game_map.dungeon_level}")
+                        break
+                    
+                    # Check return level restrictions
+                    if is_going_up:
+                        from services.floor_state_manager import get_floor_state_manager
+                        fsm = get_floor_state_manager()
+                        
+                        if not fsm.can_return_to_level(game_map.dungeon_level, target_level, 
+                                                      stairs_config.restrict_return_levels):
+                            min_level = max(1, game_map.dungeon_level - stairs_config.restrict_return_levels)
+                            message = MB.warning(f"You cannot return further than level {min_level}.")
+                            message_log.add_message(message)
+                            logger.warning(f"Return blocked: cannot go back {game_map.dungeon_level - target_level} levels")
+                            break
+                
+                # Save current floor state before leaving
+                from services.floor_state_manager import get_floor_state_manager
+                fsm = get_floor_state_manager()
+                fsm.save_floor_state(game_map.dungeon_level, entities, game_map, 
+                                    stairs_entry=(player.x, player.y))
+                logger.info(f"Saved floor {game_map.dungeon_level} state")
+                
+                # Generate next floor (or load previous if going up)
+                if is_going_up:
+                    # Load previous floor state if it was visited
+                    saved_floor = fsm.load_floor_state(target_level)
+                    if saved_floor:
+                        message = MB.info(f"You return to level {target_level}...")
+                        message_log.add_message(message)
+                        logger.info(f"Returning to previously visited level {target_level}")
+                    else:
+                        message = MB.info(f"You return to level {target_level}...")
+                        message_log.add_message(message)
                 
                 # Generate next floor
                 new_entities = game_map.next_floor(player, message_log, self.constants)

@@ -77,9 +77,13 @@ def reset_level_template_registry():
     ltr_module._level_template_registry = None
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_libtcod(mocker):
-    """Mock the libtcod library for headless testing."""
+    """Mock the libtcod library for headless testing.
+    
+    This fixture is automatically applied to all tests (autouse=True)
+    to ensure libtcod is mocked in headless environments.
+    """
     # Mock common libtcod functions
     mock_tcod = MagicMock()
 
@@ -128,7 +132,13 @@ def mock_libtcod(mocker):
     # Apply the mock at multiple levels to catch all imports
     mocker.patch("tcod.libtcodpy", mock_tcod)
     mocker.patch("item_functions.libtcodpy", mock_tcod)
-    mocker.patch("components.ai.libtcod", mock_tcod)
+    # Patch tcod in the submodules of components.ai (basic_monster, boss_ai, etc.)
+    mocker.patch("components.ai.basic_monster.libtcod", mock_tcod)
+    mocker.patch("components.ai.basic_monster.libtcodpy", mock_tcod)
+    mocker.patch("components.ai.boss_ai.libtcod", mock_tcod)
+    mocker.patch("components.ai.confused_monster.libtcod", mock_tcod)
+    mocker.patch("components.ai.mindless_zombie.libtcod", mock_tcod)
+    mocker.patch("components.ai.slime_ai.libtcod", mock_tcod)
     mocker.patch("entity.libtcodpy", mock_tcod)
     mocker.patch("entity.tcod", mock_tcod)
     mocker.patch("render_functions.libtcod", mock_tcod)
@@ -272,3 +282,88 @@ def reset_spell_registry():
     
     # Cleanup after test (optional - could leave for performance)
     # get_spell_registry().clear()
+
+
+class EntityBuilder:
+    """Flexible builder for creating test entities with any component combination."""
+    
+    def __init__(self):
+        """Initialize the builder."""
+        self._x = 0
+        self._y = 0
+        self._char = '@'
+        self._color = (255, 255, 255)
+        self._name = 'Test Entity'
+        self._blocks = False
+        self._render_order = RenderOrder.ITEM
+        self._components = {}
+    
+    def with_position(self, x, y):
+        """Set entity position."""
+        self._x = x
+        self._y = y
+        return self
+    
+    def with_char(self, char):
+        """Set entity character."""
+        self._char = char
+        return self
+    
+    def with_color(self, color):
+        """Set entity color."""
+        self._color = color
+        return self
+    
+    def with_name(self, name):
+        """Set entity name."""
+        self._name = name
+        return self
+    
+    def with_blocks(self, blocks):
+        """Set entity blocks property."""
+        self._blocks = blocks
+        return self
+    
+    def with_render_order(self, render_order):
+        """Set render order."""
+        self._render_order = render_order
+        return self
+    
+    def with_fighter(self, hp=10, defense=0, power=2):
+        """Add fighter component."""
+        self._components['fighter'] = Fighter(hp=hp, defense=defense, power=power)
+        return self
+    
+    def with_equipment(self):
+        """Add equipment component."""
+        self._components['equipment'] = Equipment()
+        return self
+    
+    def with_inventory(self, capacity=26):
+        """Add inventory component."""
+        self._components['inventory'] = Inventory(capacity=capacity)
+        return self
+    
+    def with_item(self, use_function=None):
+        """Add item component."""
+        self._components['item'] = Item(use_function=use_function)
+        return self
+    
+    def build(self):
+        """Build the entity with all configured components."""
+        return Entity(
+            x=self._x,
+            y=self._y,
+            char=self._char,
+            color=self._color,
+            name=self._name,
+            blocks=self._blocks,
+            render_order=self._render_order,
+            **self._components
+        )
+
+
+@pytest.fixture
+def entity_builder():
+    """Provide a flexible entity builder for tests."""
+    return EntityBuilder()

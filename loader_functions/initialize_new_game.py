@@ -260,8 +260,6 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
     Returns:
         list: Updated entities list for the target level
     """
-    logger = logging.getLogger(__name__)
-    
     logger.info(f"⏭️  DEBUG: Skipping to level {target_level}...")
     print(f"⏭️  Descending to level {target_level}...")
     
@@ -304,8 +302,6 @@ def _grant_level_appropriate_gear(player, entities, dungeon_level):
         entities: List of all entities  
         dungeon_level: Current dungeon level
     """
-    logger = logging.getLogger(__name__)
-    
     entity_factory = get_entity_factory()
     
     # Track entities created for gear (we'll remove them from world entities)

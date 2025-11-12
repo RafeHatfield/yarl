@@ -131,7 +131,6 @@ class TestSidebarEquipmentUnequip:
         )
         ring.ring = ring_component
         ring_component.owner = ring
-        ring.components.add(ComponentType.RING, ring_component)
         
         # Equip the ring
         player.inventory.add_item(ring)

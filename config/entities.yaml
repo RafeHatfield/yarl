@@ -1379,6 +1379,36 @@ map_features:
     sign_type: "hint"
   
   # ============================================================================
+  # CORRIDOR DOORS - Basic doors placed during corridor connections
+  # ============================================================================
+  # These doors are placed dynamically during level generation when door_rules
+  # are configured. They block passage but can be unlocked or searched.
+  
+  wooden_door:
+    char: "+"
+    color: [139, 69, 19]  # Brown/wooden
+    blocks: true
+    render_order: "item"
+    door_type: "corridor"
+    description: "A sturdy wooden door blocking the passage."
+  
+  iron_door:
+    char: "+"
+    color: [128, 128, 128]  # Gray/metallic
+    blocks: true
+    render_order: "item"
+    door_type: "corridor"
+    description: "A heavy iron door blocking the passage."
+  
+  stone_door:
+    char: "+"
+    color: [169, 169, 169]  # Light gray
+    blocks: true
+    render_order: "item"
+    door_type: "corridor"
+    description: "A thick stone door blocking the passage."
+  
+  # ============================================================================
   # LOCKED DOORS - Vault entrances and special areas
   # ============================================================================
   # Locked doors block passage until unlocked with the matching key.
@@ -1415,6 +1445,53 @@ map_features:
     render_order: "item"
     door_type: "locked"
     required_key: "dragon_scale"
+
+# ============================================================================
+# TRAPS - Hazardous map features
+# ============================================================================
+# Traps spawn on the map and trigger effects when stepped on.
+# They can be detected via search or passive checks, and disarmed safely.
+
+map_traps:
+  spike_trap:
+    char: "^"
+    color: [192, 32, 32]  # Dark red (dangerous)
+    blocks: false
+    render_order: "item"
+    description: "A series of sharp metal spikes jutting from the ground."
+    trap_type: "spike_trap"
+    is_detectable: true
+    passive_detect_chance: 0.1
+    # Spike trap effects
+    spike_damage: 7
+    spike_bleed_severity: 1
+    spike_bleed_duration: 3
+  
+  web_trap:
+    char: "w"
+    color: [220, 220, 220]  # Silvery white (web-like)
+    blocks: false
+    render_order: "item"
+    description: "A thick mass of sticky spider web. It glows faintly in the darkness."
+    trap_type: "web_trap"
+    is_detectable: true
+    passive_detect_chance: 0.15
+    # Web trap effects
+    web_slow_severity: 1
+    web_duration: 5
+  
+  alarm_plate:
+    char: "@"
+    color: [255, 192, 0]  # Orange/gold (warning)
+    blocks: false
+    render_order: "item"
+    description: "An ornate pressure plate attached to bells and gongs."
+    trap_type: "alarm_plate"
+    is_detectable: true
+    passive_detect_chance: 0.2
+    # Alarm trap effects
+    alarm_faction: "orc"
+    alarm_radius: 8
 
 # Unique Quest Items
 # Special items that trigger victory conditions and story events

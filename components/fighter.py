@@ -1,5 +1,6 @@
 import random
 from enum import Enum, auto
+from typing import Optional, Dict, Any, List
 from game_messages import Message
 from message_builder import MessageBuilder as MB
 from config.testing_config import is_testing_mode
@@ -38,7 +39,7 @@ class ResistanceType(Enum):
     PHYSICAL = auto()  # For future use
 
 
-def normalize_resistance_type(damage_type):
+def normalize_resistance_type(damage_type: Any) -> Optional[ResistanceType]:
     """Convert string or ResistanceType to ResistanceType enum.
     
     Args:
@@ -442,7 +443,7 @@ class Fighter:
 
         return self.base_defense + bonus
 
-    def take_damage(self, amount, damage_type=None):
+    def take_damage(self, amount: int, damage_type: Optional[str] = None) -> List[Dict[str, Any]]:
         """Apply damage to this fighter.
         
         Reduces current HP by the damage amount, applying resistances if damage_type specified.
@@ -543,7 +544,7 @@ class Fighter:
 
         return results
 
-    def heal(self, amount):
+    def heal(self, amount: int) -> None:
         """Restore health points to this fighter.
 
         Increases current HP by the heal amount, capped at maximum HP.
@@ -576,7 +577,7 @@ class Fighter:
         if statistics:
             statistics.record_healing(actual_healing)
 
-    def attack(self, target):
+    def attack(self, target: Any) -> List[Dict[str, Any]]:
         """Perform an attack against a target entity.
 
         Calculates damage based on attacker's power vs target's defense,

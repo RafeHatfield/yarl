@@ -17,6 +17,7 @@ Example:
 from typing import TYPE_CHECKING, Dict, Any, List, Optional, Tuple
 
 from components.map_feature import MapFeature, MapFeatureType
+from components.component_registry import ComponentType
 
 if TYPE_CHECKING:
     pass

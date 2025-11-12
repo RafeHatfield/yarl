@@ -10,6 +10,7 @@ from random import randint, random, choice
 from components.ai import BasicMonster
 from components.equippable import Equippable
 from components.fighter import Fighter
+from components.component_registry import ComponentType
 from config.entity_factory import get_entity_factory
 from config.level_template_registry import get_level_template_registry
 from entity import Entity
@@ -63,6 +64,9 @@ class GameMap:
         # Initialize secret door manager for hidden passages
         from map_objects.secret_door import SecretDoorManager
         self.secret_door_manager = SecretDoorManager()
+        
+        # Track corridor connections for door placement
+        self.corridor_connections = []  # List of (room_a, room_b, tunnel_type, start, end)
 
     def initialize_tiles(self):
         """Initialize the map with blocked wall tiles.
@@ -187,10 +191,24 @@ class GameMap:
                         # first move horizontally, then vertically
                         self.create_h_tunnel(prev_x, new_x, prev_y)
                         self.create_v_tunnel(prev_y, new_y, new_x)
+                        # Track this connection for door placement
+                        self.corridor_connections.append({
+                            'room_a': rooms[num_rooms - 1],
+                            'room_b': new_room,
+                            'h_corridor': (min(prev_x, new_x), max(prev_x, new_x), prev_y),
+                            'v_corridor': (prev_y, new_y, new_x)
+                        })
                     else:
                         # first move vertically, then horizontally
                         self.create_v_tunnel(prev_y, new_y, prev_x)
                         self.create_h_tunnel(prev_x, new_x, new_y)
+                        # Track this connection for door placement
+                        self.corridor_connections.append({
+                            'room_a': rooms[num_rooms - 1],
+                            'room_b': new_room,
+                            'v_corridor': (min(prev_y, new_y), max(prev_y, new_y), prev_x),
+                            'h_corridor': (prev_x, new_x, new_y)
+                        })
 
                 # Place entities in this room
                 # If this will be the last room, exclude the center (where stairs will go)
@@ -254,6 +272,15 @@ class GameMap:
         # Designate some rooms as treasure vaults (Phase 1: Simple Vaults)
         self.designate_vaults(rooms, entities)
         
+        # Place secret rooms adjacent to corridors (Tier 2)
+        self.place_secret_rooms(rooms, entities)
+        
+        # Place doors in corridors based on door_rules (Tier 2)
+        self.place_corridor_doors(entities)
+        
+        # Place traps based on trap_rules (Tier 2)
+        self.place_traps(rooms, entities)
+        
         # Place secret doors between rooms (15% chance per level)
         self.place_secret_doors_between_rooms(rooms)
 
@@ -293,6 +320,381 @@ class GameMap:
         for y in range(min(y1, y2), max(y1, y2) + 1):
             self.tiles[x][y].blocked = False
             self.tiles[x][y].block_sight = False
+    
+    def place_secret_rooms(self, rooms, entities):
+        """Place secret rooms adjacent to existing corridors.
+        
+        Secret rooms are carved from solid walls adjacent to existing corridors or dead ends.
+        They are connected via secret doors and marked with hint tiles outside.
+        
+        Called after all base rooms and corridors are generated but before other features.
+        
+        Args:
+            rooms (list): List of existing Rect rooms
+            entities (list): List to add entities (hints, etc.) to
+        """
+        # Get level template registry
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        # Get secret_rooms configuration
+        secret_rooms_config = None
+        if level_override and level_override.secret_rooms:
+            secret_rooms_config = level_override.secret_rooms
+        
+        if not secret_rooms_config or secret_rooms_config.target_per_floor <= 0:
+            logger.debug("No secret rooms configured for this level, skipping secret room placement")
+            return
+        
+        created_count = 0
+        for attempt in range(secret_rooms_config.target_per_floor * 3):  # Allow failed attempts
+            if created_count >= secret_rooms_config.target_per_floor:
+                break
+            
+            if self._try_create_secret_room(rooms, entities, secret_rooms_config):
+                created_count += 1
+        
+        logger.info(f"Created {created_count}/{secret_rooms_config.target_per_floor} secret rooms on level {self.dungeon_level}")
+    
+    def _try_create_secret_room(self, rooms, entities, config):
+        """Attempt to create a single secret room.
+        
+        Args:
+            rooms (list): List of existing rooms
+            entities (list): Entity list for hints
+            config (SecretRooms): Configuration for secret rooms
+            
+        Returns:
+            bool: True if successfully created, False otherwise
+        """
+        from random import randint, choice, random
+        
+        # Find valid position adjacent to a corridor or dead end
+        # Try multiple times to find suitable location
+        for _ in range(20):
+            # Pick a random edge tile that's solid and adjacent to a corridor
+            x = randint(1, self.width - 2)
+            y = randint(1, self.height - 2)
+            
+            # Check if this is solid (wall)
+            if not self.tiles[x][y].blocked:
+                continue
+            
+            # Check if adjacent to at least one corridor/room
+            adjacent_to_corridor = False
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.width and 0 <= ny < self.height:
+                    if not self.tiles[nx][ny].blocked:
+                        adjacent_to_corridor = True
+                        break
+            
+            if not adjacent_to_corridor:
+                continue
+            
+            # Try to carve secret room from this position
+            room_size = randint(config.min_room_size, config.min_room_size + 3)
+            
+            # Find space to carve (try in all directions)
+            carve_x, carve_y = None, None
+            for dx in [-1, 1]:
+                test_x = x + (dx * (room_size + 1))
+                if 1 <= test_x < self.width - room_size:
+                    # Check if this area is all solid
+                    all_solid = True
+                    for cx in range(test_x, test_x + room_size):
+                        for cy in range(y - room_size // 2, y + room_size // 2):
+                            if 0 <= cx < self.width and 0 <= cy < self.height:
+                                if not self.tiles[cx][cy].blocked:
+                                    all_solid = False
+                                    break
+                        if not all_solid:
+                            break
+                    
+                    if all_solid:
+                        carve_x, carve_y = test_x, y - room_size // 2
+                        break
+            
+            if carve_x is None:
+                continue
+            
+            # Carve the secret room
+            secret_room = Rect(carve_x, carve_y, room_size, room_size)
+            self.create_room(secret_room)
+            
+            # Create secret door at the wall
+            secret_door_x, secret_door_y = x, y
+            
+            # Create secret door entity with default door_rules.secret behavior
+            door_entity = self._create_secret_door_at(secret_door_x, secret_door_y, entities)
+            if door_entity:
+                entities.append(door_entity)
+                logger.debug(f"Created secret door at ({secret_door_x}, {secret_door_y})")
+            
+            # Place hint tile marker outside the wall
+            hint_tile_x, hint_tile_y = x - (1 if carve_x < x else -1), y
+            if 0 <= hint_tile_x < self.width and 0 <= hint_tile_y < self.height:
+                # Store hint information on the tile for rendering
+                hint_tile = self.tiles[hint_tile_x][hint_tile_y]
+                if not hasattr(hint_tile, 'hint_marker'):
+                    hint_tile.hint_marker = config.discovery.ambient_hint
+                    hint_tile.hint_discoverable = config.discovery.search_action
+                    logger.debug(f"Placed hint marker '{config.discovery.ambient_hint}' at ({hint_tile_x}, {hint_tile_y})")
+            
+            return True
+        
+        return False
+    
+    def _create_secret_door_at(self, x, y, entities):
+        """Create a secret door entity at the specified position.
+        
+        Args:
+            x, y: Position for the secret door
+            entities: List to check for collisions
+            
+        Returns:
+            Door entity or None
+        """
+        from components.door import Door
+        from config.entity_factory import get_entity_factory
+        
+        # Don't place if occupied
+        if any(e.x == x and e.y == y for e in entities):
+            return None
+        
+        factory = get_entity_factory()
+        door_entity = factory.create_door("wooden_door", x, y)
+        
+        if not door_entity:
+            return None
+        
+        # Create Door component and mark as secret
+        door_component = Door()
+        door_entity.door = door_component
+        door_component.owner = door_entity
+        
+        # Mark as secret with standard discovery settings
+        door_component.is_secret = True
+        door_component.is_discovered = False
+        door_component.search_dc = 12
+        
+        # Secret doors render as walls
+        door_entity.char = '#'
+        door_entity.color = (127, 127, 127)  # Wall-like gray
+        
+        return door_entity
+
+    def place_corridor_doors(self, entities):
+        """Place doors in corridors based on level template door_rules.
+        
+        This method is called after all corridors are created to place doors
+        at corridor entrance points where they meet rooms.
+        
+        Args:
+            entities (list): List to add door entities to
+        """
+        # Get level template registry
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        # Get door rules (level scope or per-connection defaults)
+        door_rules = None
+        if level_override and level_override.door_rules:
+            door_rules = level_override.door_rules
+        
+        if not door_rules or door_rules.spawn_ratio <= 0:
+            logger.debug("No door rules configured for this level, skipping door placement")
+            return
+        
+        # Place doors at corridor connections
+        for connection in self.corridor_connections:
+            self._place_door_for_connection(connection, door_rules, entities)
+    
+    def _place_door_for_connection(self, connection: dict, door_rules, entities):
+        """Place a door for a single corridor connection.
+        
+        Doors are placed at the edge where the corridor meets a room.
+        
+        Args:
+            connection: Dictionary with 'room_a', 'room_b', corridor info
+            door_rules: DoorRules configuration for this level
+            entities: List to add door entity to
+        """
+        from random import random, randint
+        
+        # Check spawn probability
+        if random() > door_rules.spawn_ratio:
+            return
+        
+        # Determine where to place the door (at corridor edges)
+        room_a = connection['room_a']
+        room_b = connection['room_b']
+        
+        door_pos = None
+        
+        # Try horizontal corridor first if available
+        if 'h_corridor' in connection:
+            x_min, x_max, y = connection['h_corridor']
+            # Pick position at corridor edge closest to room_a
+            if abs(room_a.x2 - x_min) < abs(room_a.x1 - x_max):
+                door_pos = (x_min, y)
+            else:
+                door_pos = (x_max, y)
+        
+        # If no horizontal corridor or can't place there, try vertical
+        if not door_pos and 'v_corridor' in connection:
+            y_min, y_max, x = connection['v_corridor']
+            # Pick position at corridor edge closest to room_a
+            if abs(room_a.y2 - y_min) < abs(room_a.y1 - y_max):
+                door_pos = (x, y_min)
+            else:
+                door_pos = (x, y_max)
+        
+        if not door_pos:
+            logger.warning("Could not find valid position for corridor door")
+            return
+        
+        # Create door entity
+        door_entity = self._create_door_entity(door_pos[0], door_pos[1], door_rules, entities)
+        if door_entity:
+            entities.append(door_entity)
+            logger.debug(f"Placed {door_entity.name} at ({door_pos[0]}, {door_pos[1]})")
+    
+    def _create_door_entity(self, x: int, y: int, door_rules, entities):
+        """Create a door entity at the specified position.
+        
+        Args:
+            x, y: Position for the door
+            door_rules: DoorRules configuration
+            entities: List of existing entities (to check for collisions)
+            
+        Returns:
+            Door entity, or None if creation failed
+        """
+        from random import random
+        from components.door import Door
+        from config.entity_factory import get_entity_factory
+        
+        # Don't place if already occupied
+        if any(e.x == x and e.y == y for e in entities):
+            return None
+        
+        # Select door style using weighted random
+        door_style = door_rules.get_random_style()
+        
+        # Create door entity
+        factory = get_entity_factory()
+        door_entity = factory.create_door(door_style, x, y)
+        
+        if not door_entity:
+            logger.warning(f"Failed to create door of type '{door_style}'")
+            return None
+        
+        # Get or create Door component
+        door_component = door_entity.get_component_optional(ComponentType.DOOR)
+        if not door_component:
+            door_component = Door()
+            door_entity.door = door_component
+            door_component.owner = door_entity
+        
+        # Apply locked state
+        if door_rules.locked and random() < door_rules.locked.chance:
+            door_component.is_locked = True
+            door_component.key_tag = door_rules.locked.key_tag
+            logger.debug(f"Door at ({x}, {y}) locked with key tag '{door_component.key_tag}'")
+        
+        # Apply secret state
+        if door_rules.secret and random() < door_rules.secret.chance:
+            door_component.is_secret = True
+            door_component.is_discovered = False
+            door_component.search_dc = door_rules.secret.search_dc
+            # Secret doors appear as walls
+            door_entity.char = '#'
+            door_entity.color = (127, 127, 127)  # Wall-like gray
+            logger.debug(f"Door at ({x}, {y}) is secret with DC {door_component.search_dc}")
+        
+        return door_entity
+    
+    def place_traps(self, rooms, entities):
+        """Place traps in rooms based on level template trap_rules.
+        
+        Traps are placed at configurable density within rooms, respecting
+        room type whitelists. Trap types are selected from configured trap_table
+        with weighted random selection.
+        
+        Args:
+            rooms (list): List of Rect room objects
+            entities (list): List to add trap entities to
+        """
+        from components.trap import Trap
+        from config.entity_factory import get_entity_factory
+        
+        # Get level template registry
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        
+        # Get trap rules (level scope takes precedence)
+        trap_rules = None
+        if level_override and level_override.trap_rules:
+            trap_rules = level_override.trap_rules
+        
+        if not trap_rules or trap_rules.density <= 0:
+            logger.debug("No trap rules configured for this level, skipping trap placement")
+            return
+        
+        factory = get_entity_factory()
+        
+        # Place traps in each room
+        for room in rooms:
+            self._place_traps_in_room(room, trap_rules, entities, factory, level_override)
+    
+    def _place_traps_in_room(self, room, trap_rules, entities, factory, level_override):
+        """Place traps in a single room based on trap_rules.
+        
+        Args:
+            room (Rect): Room to place traps in
+            trap_rules: TrapRules configuration (level scope)
+            entities (list): List to add trap entities to
+            factory: EntityFactory for creating trap entities
+            level_override: Level override config (for special room trap_rules)
+        """
+        from random import random
+        
+        # Check room type whitelist (for now, accept all rooms)
+        # Future: special_room types could have room_type set and filter by whitelist
+        
+        # Iterate through room tiles and place traps based on density
+        for x in range(room.x1 + 1, room.x2):
+            for y in range(room.y1 + 1, room.y2):
+                # Check density probability for this tile
+                if random() > trap_rules.density:
+                    continue
+                
+                # Don't place trap if tile is occupied
+                if any(e.x == x and e.y == y for e in entities):
+                    continue
+                
+                # Don't place trap on blocked tiles
+                if self.tiles[x][y].blocked:
+                    continue
+                
+                # Select trap type using weighted random selection
+                trap_type = trap_rules.get_random_trap()
+                if not trap_type:
+                    continue
+                
+                # Create trap entity
+                trap_entity = factory.create_trap(trap_type, x, y)
+                if trap_entity:
+                    # Apply trap_rules detection settings to the trap component
+                    if trap_entity.components.has(ComponentType.TRAP):
+                        trap = trap_entity.components.get(ComponentType.TRAP)
+                        trap.detectable = trap_rules.detection.detectable
+                        trap.passive_detect_chance = trap_rules.detection.passive_chance
+                        trap.reveal_tags = trap_rules.detection.reveal_on
+                    
+                    entities.append(trap_entity)
+                    logger.debug(f"Placed {trap_type} at ({x}, {y})")
 
     def place_entities(self, room, entities, exclude_coords=None):
         """Place monsters and items in a room based on dungeon level.
