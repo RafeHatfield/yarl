@@ -8,9 +8,8 @@ import logging
 from contextlib import contextmanager
 
 import tcod.libtcodpy as libtcod
-from contextlib import contextmanager
-
 from engine import GameEngine
+from performance.config import get_performance_config
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,8 @@ from game_messages import Message
 from game_states import GameStates
 from input_handlers import handle_keys, handle_mouse
 from loader_functions.data_loaders import save_game
+from config.ui_layout import get_ui_layout
+from rendering.camera import Camera, CameraMode
 
 
 @contextmanager
@@ -74,9 +75,12 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
     Returns:
         GameEngine: Configured game engine ready to run
     """
+    # Get performance config (precedence: env vars → constants["performance"] → defaults)
+    perf_config = get_performance_config(constants)
+    logger.info("Performance config: %s", perf_config)
+    
     # Create the engine with configurable FPS
-    perf_config = get_performance_config()
-    engine = GameEngine(target_fps=perf_config.TARGET_FPS)
+    engine = GameEngine(target_fps=perf_config["frame_rate_limit"])
 
     # Create and register the performance system (very early priority)
     performance_system = PerformanceSystem(priority=5)

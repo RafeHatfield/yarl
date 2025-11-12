@@ -3469,3 +3469,33 @@
 2025-11-09 22:06:58 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
 2025-11-09 22:07:02 - rlike.components.fighter - ERROR - heal() called with amount=None for Player
 2025-11-09 22:07:08 - rlike.map_objects.game_map - WARNING - Could not find unoccupied position for healing_potion, spawned 0/10
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - DEPRECATED: show_inventory action triggered. Use sidebar UI instead.
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - DEPRECATED: drop_inventory action triggered. Use sidebar UI instead.
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 10:53:27 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 10:53:30 - rlike.components.fighter - ERROR - heal() called with amount=None for Player
+2025-11-12 10:53:36 - rlike.map_objects.game_map - WARNING - Could not find unoccupied position for healing_potion, spawned 0/10
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - DEPRECATED: show_inventory action triggered. Use sidebar UI instead.
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - DEPRECATED: drop_inventory action triggered. Use sidebar UI instead.
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 11:02:55 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 11:02:59 - rlike.components.fighter - ERROR - heal() called with amount=None for Player
+2025-11-12 11:03:05 - rlike.map_objects.game_map - WARNING - Could not find unoccupied position for healing_potion, spawned 0/10
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - DEPRECATED: show_inventory action triggered. Use sidebar UI instead.
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - DEPRECATED: drop_inventory action triggered. Use sidebar UI instead.
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - Camera not found! This may cause rendering issues.
+2025-11-12 11:04:09 - rlike.game_actions - WARNING - No stairs found at player position (10, 10)
+2025-11-12 11:04:12 - rlike.components.fighter - ERROR - heal() called with amount=None for Player
+2025-11-12 11:04:18 - rlike.map_objects.game_map - WARNING - Could not find unoccupied position for healing_potion, spawned 0/10
