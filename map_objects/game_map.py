@@ -562,6 +562,9 @@ class GameMap:
         Doors are placed ONLY at junction tiles where a corridor meets a room.
         A junction tile is where the corridor is adjacent to a room's perimeter.
         
+        CONSTRAINT: Doors are only placed on 1-tile-wide corridors. Wider corridors
+        are skipped to avoid placing ineffective single doors that don't block passage.
+        
         Args:
             connection: Dictionary with 'room_a', 'room_b', corridor info
             door_rules: DoorRules configuration for this level
@@ -578,6 +581,7 @@ class GameMap:
         room_b = connection['room_b']
         
         door_pos = None
+        corridor_direction = None  # 'horizontal' or 'vertical'
         
         # Process horizontal corridor if available
         # Place door at the junction closest to room_a (only ONE per connection)
@@ -594,11 +598,13 @@ class GameMap:
                 candidate = (room_a.x2, h_y)
                 if self._is_valid_door_position(candidate[0], candidate[1]):
                     door_pos = candidate
+                    corridor_direction = 'horizontal'
             # If not found, try room_a's left edge (x1)
             elif h_x_actual_min <= room_a.x1 <= h_x_actual_max:
                 candidate = (room_a.x1, h_y)
                 if self._is_valid_door_position(candidate[0], candidate[1]):
                     door_pos = candidate
+                    corridor_direction = 'horizontal'
         
         # Process vertical corridor if available (and we haven't found a position yet)
         if 'v_corridor' in connection and not door_pos:
@@ -614,15 +620,26 @@ class GameMap:
                 candidate = (v_x, room_a.y2)
                 if self._is_valid_door_position(candidate[0], candidate[1]):
                     door_pos = candidate
+                    corridor_direction = 'vertical'
             # If not found, try room_a's top edge (y1)
             elif v_y_actual_min <= room_a.y1 <= v_y_actual_max:
                 candidate = (v_x, room_a.y1)
                 if self._is_valid_door_position(candidate[0], candidate[1]):
                     door_pos = candidate
+                    corridor_direction = 'vertical'
         
         # Place the door if we found a valid position
         if not door_pos:
             logger.debug("No valid door junction position found for corridor connection")
+            return
+        
+        # Check corridor width - only place doors on 1-tile-wide corridors
+        corridor_width = self._get_corridor_width_at(door_pos[0], door_pos[1], corridor_direction)
+        if corridor_width > 1:
+            logger.debug(
+                f"[DEBUG] Skipping door placement at ({door_pos[0]}, {door_pos[1]}) "
+                f"because corridor width is {corridor_width} > 1"
+            )
             return
         
         # Create door entity
@@ -654,6 +671,58 @@ class GameMap:
             return False
         
         return True
+    
+    def _get_corridor_width_at(self, x: int, y: int, direction: str) -> int:
+        """Determine the width of a corridor at a given position.
+        
+        For a horizontal corridor (running left-right), width is the number of
+        contiguous walkable floor tiles above/below the corridor at this x.
+        For a vertical corridor (running up-down), width is the number of
+        contiguous walkable floor tiles to the left/right at this y.
+        
+        Args:
+            x (int): X coordinate of the corridor tile
+            y (int): Y coordinate of the corridor tile
+            direction (str): 'horizontal' or 'vertical' - the corridor orientation
+            
+        Returns:
+            int: Number of walkable tiles perpendicular to the corridor direction.
+                 Returns 1 for a typical 1-tile-wide corridor, 2+ for wider corridors.
+        """
+        if direction == 'horizontal':
+            # For horizontal corridor, check tiles above and below (y-1, y+1)
+            # Count contiguous walkable tiles at the same y across different x values
+            width = 1  # The corridor tile itself
+            
+            # Check above (y - 1)
+            if self.is_in_bounds(x, y - 1) and not self.tiles[x][y - 1].blocked:
+                width += 1
+            
+            # Check below (y + 1)
+            if self.is_in_bounds(x, y + 1) and not self.tiles[x][y + 1].blocked:
+                width += 1
+            
+            return width
+        
+        elif direction == 'vertical':
+            # For vertical corridor, check tiles left and right (x-1, x+1)
+            # Count contiguous walkable tiles at the same x across different y values
+            width = 1  # The corridor tile itself
+            
+            # Check left (x - 1)
+            if self.is_in_bounds(x - 1, y) and not self.tiles[x - 1][y].blocked:
+                width += 1
+            
+            # Check right (x + 1)
+            if self.is_in_bounds(x + 1, y) and not self.tiles[x + 1][y].blocked:
+                width += 1
+            
+            return width
+        
+        else:
+            # Default to width 1 if direction is unknown
+            logger.warning(f"Unknown corridor direction: {direction}")
+            return 1
     
     def _create_door_entity(self, x: int, y: int, door_rules, entities):
         """Create a door entity at the specified position.
