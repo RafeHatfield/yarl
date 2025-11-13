@@ -88,6 +88,9 @@ class TestMovementTurnEconomy:
         game_map.secret_door_manager = None
         state_manager.state.game_map = game_map
         
+        # No entities blocking (must be iterable)
+        state_manager.state.entities = []
+        
         processor = ActionProcessor(state_manager)
         processor.turn_controller = Mock()
         
