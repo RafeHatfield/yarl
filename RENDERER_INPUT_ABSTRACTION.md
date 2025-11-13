@@ -74,26 +74,29 @@ while not libtcod.console_is_window_closed():
 
 ---
 
-## Current State
+## Current State (Phase 1: Input Abstraction Activated)
 
-### What Works
-✅ Abstractions defined and implemented  
-✅ ConsoleRenderer wraps existing rendering pipeline  
-✅ KeyboardInputSource wraps existing input handling  
-✅ Main game loop instantiates abstractions  
-✅ All 14 abstraction layer tests passing  
-✅ All import smoke tests passing (53/53)  
-✅ All golden path tests passing (6/6)  
-✅ Behavior identical to before refactoring  
+### ✅ What's Working Now
+- ✅ Abstractions fully defined and implemented
+- ✅ ConsoleRenderer wraps existing rendering pipeline  
+- ✅ **KeyboardInputSource is ACTIVE** — main loop uses `input_source.next_action()` as primary input source
+- ✅ Input is no longer dependent on InputSystem.update() in the main loop
+- ✅ Game loop gets actions from InputSource abstraction only
+- ✅ All 14 abstraction layer tests passing  
+- ✅ All import smoke tests passing (53/53)  
+- ✅ All golden path tests passing (6/6)  
+- ✅ Behavior identical to before refactoring  
 
-### What's Not Done (Future Work)
-- System-based architecture still handles rendering (RenderSystem)
-- System-based architecture still handles input (InputSystem)
-- Direct libtcod calls remain in system classes
-- Full migration would require:
-  1. Replacing `engine.update()` with explicit `renderer.render()` calls
-  2. Replacing internal input handling with `input_source.next_action()` calls
-  3. Removing direct libtcod dependencies from system classes
+### 🚧 What's In Progress
+- 🔄 ConsoleRenderer.render() exists but is NOT yet called from main game loop
+- 🔄 Rendering still driven by system-based architecture (RenderSystem.update())
+- 🔄 Systems still call libtcod directly for drawing
+
+### ⏳ What's Not Done (Next Phases)
+- [ ] **Phase 2 (Next)**: Route rendering through `Renderer.render()` as the canonical drawing path
+- [ ] **Phase 3**: Consolidate all drawing into ConsoleRenderer, retire RenderSystem drawing logic
+- [ ] **Phase 4**: Clean up direct libtcod usage in remaining system classes
+- [ ] **Phase 5** (future): Full system cleanup once all rendering is centralized
 
 ---
 
@@ -234,16 +237,43 @@ Results:
 
 ---
 
-## Next Steps
+## Implementation Roadmap (Phase-by-Phase)
 
-To complete the full migration to abstraction-based rendering:
+**Status**: Phase 1 (Input) ✅ COMPLETE — Phase 2 (Rendering) IN PROGRESS
 
-1. **Phase 1**: Gradually replace `RenderSystem.update()` with `renderer.render()` calls
-2. **Phase 2**: Gradually replace `InputSystem` with `input_source.next_action()` calls
-3. **Phase 3**: Remove system-based architecture when fully migrated
-4. **Phase 4**: Remove direct libtcod dependencies from system classes
+### Phase 1: Input Abstraction ✅ DONE
+- [x] Define InputSource protocol
+- [x] Implement KeyboardInputSource
+- [x] Wire input_source.next_action() into main loop
+- [x] Remove InputSystem.update() dependency from main loop
+- [x] All tests passing
 
-Each phase can be done incrementally without breaking existing functionality.
+### Phase 2: Rendering Abstraction (NEXT)
+- [ ] Call renderer.render() each frame in main loop
+- [ ] Ensure no double-rendering (ConsoleRenderer only draws to libtcod)
+- [ ] Identify which RenderSystem tasks are drawing vs. state management
+- [ ] Separate drawing concerns from game state concerns
+- [ ] Move FOV/camera logic out of RenderSystem if needed
+- [ ] All tests passing
+
+### Phase 3: System Cleanup
+- [ ] Remove RenderSystem's direct libtcod calls
+- [ ] Either remove RenderSystem entirely or keep it for non-drawing tasks only
+- [ ] Consolidate all drawing logic into ConsoleRenderer
+- [ ] Update any system tests
+
+### Phase 4: Direct libtcod Usage Cleanup
+- [ ] Audit all remaining `import tcod.libtcodpy` statements
+- [ ] Move any remaining drawing code to ConsoleRenderer
+- [ ] Move input handling to KeyboardInputSource
+- [ ] Clear documentation of any remaining libtcod usage (e.g., console creation)
+
+### Phase 5: Full System Cleanup (Future)
+- [ ] Remove system-based architecture if no longer needed
+- [ ] Simplify game loop
+- [ ] Finalize documentation
+
+Each phase is incremental and independently testable.
 
 ---
 
