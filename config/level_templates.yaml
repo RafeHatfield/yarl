@@ -48,3 +48,115 @@ level_overrides:
             - type: "sword"
               count: 1  # Boss drops a sword!
 
+  # Goal: confirm door placement ratios, locking, keys, secret discovery.
+  # How to test: spawn, try a few connections; confirm some need keys; run a search to reveal secret doors.
+  91:
+    parameters:
+      max_rooms: 8
+      min_room_size: 6
+      max_room_size: 10
+      max_monsters_per_room: 0
+      max_items_per_room: 0
+    guaranteed_spawns:
+      mode: "replace"
+      items:
+        - type: "iron_key"
+          count: 2
+    door_rules:
+      spawn_ratio: 1.0
+      styles:
+        - type: "wood"  # exercise basic style
+          weight: 100
+      locked:
+        chance: 0.5
+        key_tag: "iron_key"
+      secret:
+        chance: 0.25
+        search_dc: 10
+
+  # Goal: confirm secret room placement ratios, discovery mechanics.
+  # How to test: spawn, run a search to reveal secret rooms; confirm some are hidden.
+  92:
+    parameters:
+      max_rooms: 10
+      min_room_size: 6
+      max_room_size: 12
+    guaranteed_spawns:
+      mode: "replace"
+    secret_rooms:
+      target_per_floor: 2
+      min_room_size: 4
+      connection_bias: "dead_end"
+      discovery:
+        auto_on_map_item: null
+        search_action: true
+        ambient_hint: "misaligned_wall"
+
+  # Goal: confirm trap placement ratios, discovery mechanics, and no crashes.
+  # How to test: spawn, run a search to reveal traps; confirm some are hidden.
+  93:
+    parameters:
+      max_rooms: 10
+      max_monsters_per_room: 0
+    guaranteed_spawns:
+      mode: "replace"
+    trap_rules:
+      density: 0.10
+      whitelist_rooms: ["corridor", "smallest"]
+      trap_table:
+        - id: "spike_trap"   # dmg+bleed
+          weight: 40
+        - id: "web_trap"     # slow/snare
+          weight: 30
+        - id: "alarm_plate"  # call nearby mobs (none here; just ensure no crash)
+          weight: 30
+      detection:
+        passive_chance: 0.25
+        reveal_on: ["search"]
+
+  # Goal: go down→up→down with state persistence (opened doors, disarmed traps), and return-limit.
+  # How to test: start on 94, go to 95, return to 94, verify previous changes persisted; attempt to go beyond the return limit.
+  94:
+    parameters: { max_rooms: 8 }
+    guaranteed_spawns: { mode: "replace" }
+    stairs:
+      up: true
+      down: true
+      restrict_return_levels: 1
+      spawn_rules: { near_start_bias: 0.7 }
+
+  # Goal: map feel (MST vs extra loops), corridor style, door sprinkling.
+  95:
+    parameters:
+      max_rooms: 16
+    guaranteed_spawns:
+      mode: "replace"
+    connectivity:
+      min_connectivity: "mst_plus_loops"
+      loop_count: 3
+      corridor_style: "orthogonal"
+      door_every_n_tiles: 10
+
+  # Goal: ensure forced hostility in a tagged room regardless of global defaults.
+  # How to test: kite line-of-sight; confirm orcs fight undead without player provoking.
+  96:
+    parameters: { max_rooms: 6, max_monsters_per_room: 6 }
+    guaranteed_spawns:
+      mode: "replace"
+    special_rooms:
+      - type: "orc_clan_hall"
+        count: 1
+        placement: "largest"
+        guaranteed_spawns:
+          monsters:
+            - type: "orc"
+              count: 3
+            - type: "skeleton"
+              count: 3
+        faction:
+          room_tag: "orc_clan"
+          hostility_matrix:
+            vs: ["undead"]
+          behavior_mods:
+            troll:
+              door_priority: "high"
