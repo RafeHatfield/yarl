@@ -2,14 +2,22 @@
 
 This module provides functions to bridge the gap between the new GameEngine
 architecture and the existing game loop, allowing for gradual migration.
+
+After the renderer/input abstraction refactoring, the game loop is decoupled
+from specific rendering and input technologies through the Renderer and
+InputSource protocols defined in io_layer/interfaces.py.
 """
 
 import logging
 from contextlib import contextmanager
+from typing import Any
 
 import tcod.libtcodpy as libtcod
 from engine import GameEngine
 from performance.config import get_performance_config
+from io_layer.interfaces import Renderer, InputSource
+from io_layer.console_renderer import ConsoleRenderer
+from io_layer.keyboard_input import KeyboardInputSource
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +70,40 @@ def _manual_input_system_update(engine: GameEngine, dt: float):
         yield
     finally:
         input_system.enabled = was_enabled
+
+
+def create_renderer_and_input_source(
+    sidebar_console: Any,
+    viewport_console: Any,
+    status_console: Any,
+    colors: dict,
+) -> tuple[Renderer, InputSource]:
+    """Create renderer and input source instances.
+
+    This factory function instantiates the concrete implementations of the
+    Renderer and InputSource protocols, decoupling the game loop from specific
+    technologies. Future changes (e.g., sprite renderer, bot input) only require
+    creating new implementations; the game loop remains unchanged.
+
+    Args:
+        sidebar_console: libtcod console for sidebar
+        viewport_console: libtcod console for viewport
+        status_console: libtcod console for status panel
+        colors: Color configuration dictionary
+
+    Returns:
+        tuple: (Renderer instance, InputSource instance)
+    """
+    renderer: Renderer = ConsoleRenderer(
+        sidebar_console=sidebar_console,
+        viewport_console=viewport_console,
+        status_console=status_console,
+        colors=colors,
+    )
+
+    input_source: InputSource = KeyboardInputSource()
+
+    return renderer, input_source
 
 
 def create_game_engine(constants, sidebar_console, viewport_console, status_console):
@@ -221,32 +263,34 @@ def play_game_with_engine(
     # Persist the action processor for systems that need to reuse it between phases
     engine.state_manager.set_extra_data("action_processor", action_processor)
 
+    # =========================================================================
+    # ABSTRACTION LAYER: Renderer and InputSource Instances (Available but Not Used)
+    # 
+    # These abstractions are created for future extensibility, demonstrating how
+    # to decouple from specific rendering and input technologies. Currently, the
+    # game loop uses the existing system-based architecture (RenderSystem, InputSystem).
+    # To migrate to pure abstraction-based rendering, you would:
+    # 1. Replace engine.update() with explicit renderer.render() calls
+    # 2. Replace internal input handling with input_source.next_action() calls
+    # 3. Update the systems to remove direct libtcod dependencies
+    # =========================================================================
+    _renderer: Renderer = ConsoleRenderer(
+        sidebar_console=sidebar_console,
+        viewport_console=viewport_console,
+        status_console=status_console,
+        colors=constants["colors"],
+    )
+
+    _input_source: InputSource = KeyboardInputSource()
+
     # Main game loop
+    # NOTE: Current implementation uses system-based architecture for rendering/input.
+    # Future: Replace engine.update() with explicit _renderer.render() and
+    # _input_source.next_action() calls for pure abstraction-based rendering.
     while not libtcod.console_is_window_closed():
-        # Handle input
-        libtcod.sys_check_for_event(
-            libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse
-        )
-
-        # Update input objects in state manager
-        engine.state_manager.set_input_objects(key, mouse)
-
-        # Clear console
-        libtcod.console_clear(con)
-
-        # Ensure FOV is recomputed on first frame
-        if first_frame:
-            engine.state_manager.request_fov_recompute()
-            first_frame = False
-
-        # Get actions from the input system BEFORE updating other systems
-        # This ensures we process actions in the correct state
-        input_systems = [s for s in engine.systems if isinstance(s, InputSystem)]
-        if input_systems:
-            input_systems[0].update(0.016)  # Update input system first
-        
-        action = engine.state_manager.get_extra_data("keyboard_actions", {})
-        mouse_action = engine.state_manager.get_extra_data("mouse_actions", {})
+        # Handle input using the abstraction layer
+        action = _input_source.next_action(engine.state_manager.state)
+        mouse_action = {}  # Mouse actions are now included in the action dict
         
         # Check for restart action (from death screen)
         if action.get("restart"):
