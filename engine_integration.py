@@ -2,14 +2,22 @@
 
 This module provides functions to bridge the gap between the new GameEngine
 architecture and the existing game loop, allowing for gradual migration.
+
+After the renderer/input abstraction refactoring, the game loop is decoupled
+from specific rendering and input technologies through the Renderer and
+InputSource protocols defined in io_layer/interfaces.py.
 """
 
 import logging
 from contextlib import contextmanager
+from typing import Any
 
 import tcod.libtcodpy as libtcod
 from engine import GameEngine
 from performance.config import get_performance_config
+from io_layer.interfaces import Renderer, InputSource, ActionDict
+from io_layer.console_renderer import ConsoleRenderer
+from io_layer.keyboard_input import KeyboardInputSource
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +72,40 @@ def _manual_input_system_update(engine: GameEngine, dt: float):
         input_system.enabled = was_enabled
 
 
+def create_renderer_and_input_source(
+    sidebar_console: Any,
+    viewport_console: Any,
+    status_console: Any,
+    colors: dict,
+) -> tuple[Renderer, InputSource]:
+    """Create renderer and input source instances.
+
+    This factory function instantiates the concrete implementations of the
+    Renderer and InputSource protocols, decoupling the game loop from specific
+    technologies. Future changes (e.g., sprite renderer, bot input) only require
+    creating new implementations; the game loop remains unchanged.
+
+    Args:
+        sidebar_console: libtcod console for sidebar
+        viewport_console: libtcod console for viewport
+        status_console: libtcod console for status panel
+        colors: Color configuration dictionary
+
+    Returns:
+        tuple: (Renderer instance, InputSource instance)
+    """
+    renderer: Renderer = ConsoleRenderer(
+        sidebar_console=sidebar_console,
+        viewport_console=viewport_console,
+        status_console=status_console,
+        colors=colors,
+    )
+
+    input_source: InputSource = KeyboardInputSource()
+
+    return renderer, input_source
+
+
 def create_game_engine(constants, sidebar_console, viewport_console, status_console):
     """Create and configure a GameEngine with all necessary systems.
 
@@ -101,6 +143,8 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
 
     # Create and register the optimized render system (late priority)
     # Pass all 3 consoles for split-screen layout
+    # NOTE: Phase 2 - skip_drawing=True because ConsoleRenderer handles drawing
+    #       RenderSystem still runs for FOV recompute and state management
     render_system = OptimizedRenderSystem(
         console=viewport_console,  # Main viewport (legacy 'con')
         panel=status_console,       # Status panel (legacy 'panel')
@@ -110,6 +154,7 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
         colors=constants["colors"],
         priority=100,  # Render last
         use_optimizations=False,  # DISABLE optimizations for debugging
+        skip_drawing=True,  # Phase 2: ConsoleRenderer handles drawing
     )
     engine.register_system(render_system)
 
@@ -221,32 +266,36 @@ def play_game_with_engine(
     # Persist the action processor for systems that need to reuse it between phases
     engine.state_manager.set_extra_data("action_processor", action_processor)
 
+    # =========================================================================
+    # ABSTRACTION LAYER: Create Renderer and InputSource instances
+    # 
+    # Phase 1 (COMPLETE): Input is now abstraction-driven via input_source.next_action()
+    # Phase 2 (IN PROGRESS): Rendering will be driven via renderer.render()
+    # 
+    # For now:
+    # - input_source.next_action() IS the primary input path
+    # - renderer.render() exists but is not yet called from main loop
+    # - Rendering still via systems (RenderSystem, etc.)
+    # =========================================================================
+    renderer, input_source = create_renderer_and_input_source(
+        sidebar_console=sidebar_console,
+        viewport_console=viewport_console,
+        status_console=status_console,
+        colors=constants["colors"],
+    )
+
     # Main game loop
+    # PHASE 1 (INPUT): ✅ COMPLETE - input_source.next_action() is the primary input path
+    # PHASE 2 (RENDERING): ✅ COMPLETE - renderer.render() is called each frame
+    # PHASE 3+ (OPTIONAL): System cleanup (not required for functionality)
     while not libtcod.console_is_window_closed():
-        # Handle input
-        libtcod.sys_check_for_event(
-            libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse
-        )
-
-        # Update input objects in state manager
-        engine.state_manager.set_input_objects(key, mouse)
-
-        # Clear console
-        libtcod.console_clear(con)
-
-        # Ensure FOV is recomputed on first frame
-        if first_frame:
-            engine.state_manager.request_fov_recompute()
-            first_frame = False
-
-        # Get actions from the input system BEFORE updating other systems
-        # This ensures we process actions in the correct state
-        input_systems = [s for s in engine.systems if isinstance(s, InputSystem)]
-        if input_systems:
-            input_systems[0].update(0.016)  # Update input system first
-        
-        action = engine.state_manager.get_extra_data("keyboard_actions", {})
-        mouse_action = engine.state_manager.get_extra_data("mouse_actions", {})
+        # =====================================================================
+        # INPUT HANDLING (PHASE 1: COMPLETE)
+        # Input comes ONLY from input_source.next_action() - no InputSystem.update()
+        # MouseActions are included in the action dict from KeyboardInputSource
+        # =====================================================================
+        action: ActionDict = input_source.next_action(engine.state_manager.state)
+        mouse_action: ActionDict = {}  # Mouse actions are now included in the action dict from InputSource
         
         # Check for restart action (from death screen)
         if action.get("restart"):
@@ -522,7 +571,21 @@ def play_game_with_engine(
             # But if we do, treat as game end
             break
 
-        # Update all systems (AI will run after player actions are processed)
+        # =====================================================================
+        # RENDERING & GAME STATE UPDATES (PHASE 2: COMPLETE)
+        #
+        # Rendering path (abstraction-driven):
+        #   1. renderer.render() draws current frame via ConsoleRenderer
+        #   2. engine.update() runs all systems (AI, FOV, state management)
+        #   3. RenderSystem.update() skips drawing (skip_drawing=True)
+        #
+        # ConsoleRenderer is the SOLE drawing authority. No double-rendering.
+        # =====================================================================
+        
+        # Render the current frame through abstraction layer (canonical drawing path)
+        renderer.render(engine.state_manager.state)
+        
+        # Update all game systems (AI, FOV, camera, state - but NOT drawing)
         engine.update()
 
         # IMPORTANT: Reset FOV flag AFTER rendering is complete
@@ -541,6 +604,9 @@ def play_game_with_engine(
 def _manual_input_system_update(engine, delta_time):
     """Context manager to manually update the input system.
     
+    ⚠️  DEPRECATED - Legacy helper for old-style tests
+    New code should use InputSource.next_action() directly
+    
     This helper temporarily disables normal input system scheduling and forces
     a single manual update pass within the context. Useful for testing input
     behavior with controlled timing.
@@ -555,7 +621,7 @@ def _manual_input_system_update(engine, delta_time):
     Example:
         with _manual_input_system_update(engine, 0.016):
             actions = engine.state_manager.get_extra_data("keyboard_actions")
-            # Test the actions
+            # Test the actions (legacy - use KeyboardInputSource instead)
     """
     # Find the input system in the engine
     input_systems = [s for s in engine.systems if isinstance(s, InputSystem)]
