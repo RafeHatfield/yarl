@@ -263,9 +263,18 @@ class PlayerPathfinding:
         for entity in entities:
             if (entity.blocks and entity != self.owner and 
                 not (entity.x == target_x and entity.y == target_y)):
-                # Set the tile as a wall so it must be navigated around
-                fov.transparent[entity.y, entity.x] = True
-                fov.walkable[entity.y, entity.x] = False
+                # SAFETY: Check bounds before accessing FOV array to prevent IndexError
+                # This is a defensive check for entities that may have invalid coordinates
+                if 0 <= entity.x < game_map.width and 0 <= entity.y < game_map.height:
+                    # Set the tile as a wall so it must be navigated around
+                    fov.transparent[entity.y, entity.x] = True
+                    fov.walkable[entity.y, entity.x] = False
+                else:
+                    # Log rogue entity with invalid coordinates
+                    logger.warning(
+                        f"Entity '{entity.name}' at ({entity.x}, {entity.y}) is out of bounds "
+                        f"(map: {game_map.width}x{game_map.height}). Skipping pathfinding collision."
+                    )
         
         # Get pathfinding configuration
         pathfinding_config = get_pathfinding_config()

@@ -624,3 +624,32 @@ level_overrides:
           count: 3
         - type: "enhance_armor_scroll"
           count: 3
+
+  # ============================================================================
+  # LEVEL 91: DOOR RULES TESTING
+  # ============================================================================
+  # Test door creation with various styles and configurations
+  # Focus: Door placement, locks, secrets, wooden_door entity ID validation
+  91:
+    parameters:
+      max_rooms: 8
+      min_room_size: 6
+      max_room_size: 10
+      max_monsters_per_room: 0
+      max_items_per_room: 0
+    guaranteed_spawns:
+      mode: "replace"
+      items:
+        - type: "bronze_key"
+          count: 2
+    door_rules:
+      spawn_ratio: 1.0
+      styles:
+        - type: "wooden_door"  # Standard wooden door entity ID
+          weight: 100
+      locked:
+        chance: 0.5
+        key_tag: "bronze_key"
+      secret:
+        chance: 0.25
+        search_dc: 10

@@ -827,6 +827,9 @@ class LevelTemplateRegistry:
         """
         Parse door rules configuration from YAML data.
         
+        Door style types must correspond to entity IDs in entities.yaml (e.g., 'wooden_door', 'iron_door').
+        Invalid door types will be logged at load time to aid debugging.
+        
         Args:
             data: The YAML data for door_rules
             
@@ -843,8 +846,9 @@ class LevelTemplateRegistry:
             )
             spawn_ratio = 0.0
         
-        # Parse door styles with weights
+        # Parse door styles with weights and validate entity IDs
         styles = []
+        invalid_styles = []
         for style_data in data.get('styles', []):
             style_type = style_data.get('type', 'wooden_door')
             weight = style_data.get('weight', 1)
@@ -856,6 +860,16 @@ class LevelTemplateRegistry:
                     f"using weight 1"
                 )
                 weight = 1
+            
+            # Validate that the door style corresponds to a valid entity ID
+            # This is done at configuration load time (not per-placement) to avoid log spam
+            if not self._is_valid_door_entity(style_type):
+                invalid_styles.append(style_type)
+                logger.warning(
+                    f"Door style '{style_type}' does not match any door entity in entities.yaml; "
+                    f"doors of this style will not be created during level generation. "
+                    f"Valid door entities: wooden_door, iron_door, stone_door, bronze_door, silver_door, gold_door, crimson_door"
+                )
             
             styles.append(DoorStyle(type=style_type, weight=weight))
         
@@ -913,6 +927,32 @@ class LevelTemplateRegistry:
             locked=locked,
             secret=secret
         )
+    
+    def _is_valid_door_entity(self, door_type: str) -> bool:
+        """Check if a door type corresponds to a valid door entity in entities.yaml.
+        
+        This method validates door style IDs at configuration load time to provide
+        early feedback on invalid door type references in door_rules configurations.
+        
+        Args:
+            door_type: The door type string to validate (e.g., 'wooden_door', 'iron_door')
+            
+        Returns:
+            True if the door type exists as a map_feature entity, False otherwise
+        """
+        # List of all valid door entities defined in entities.yaml
+        # These are the only valid values for door_rules.styles[*].type
+        valid_doors = {
+            'wooden_door',      # Standard corridor door
+            'iron_door',        # Standard corridor door
+            'stone_door',       # Standard corridor door
+            'bronze_door',      # Locked vault door
+            'silver_door',      # Locked vault door
+            'gold_door',        # Locked vault door
+            'crimson_door',     # Locked vault door (dragon-themed)
+        }
+        
+        return door_type in valid_doors
     
     def _parse_secret_rooms(self, data: Dict[str, Any]) -> SecretRooms:
         """

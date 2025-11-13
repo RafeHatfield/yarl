@@ -65,7 +65,7 @@ level_overrides:
     door_rules:
       spawn_ratio: 1.0
       styles:
-        - type: "wood"  # exercise basic style
+        - type: "wooden_door"  # Standard wooden door entity
           weight: 100
       locked:
         chance: 0.5
@@ -160,3 +160,65 @@ level_overrides:
           behavior_mods:
             troll:
               door_priority: "high"
+
+  # Goal: verify the encounter budgeter respects bounds (you’ll need etp_base on monsters).
+  # How to test: verify spawn lists don’t overshoot; check your generator/log for “trimmed to fit budget”.
+  97:
+    parameters: { max_rooms: 6, max_monsters_per_room: 10 }
+    guaranteed_spawns:
+      mode: "replace"
+    encounter_budget:
+      etp_min: 6
+      etp_max: 10
+      allow_spike: false
+    special_rooms:
+      - type: "budget_probe"
+        count: 4
+        placement: "random"
+        encounter_budget:
+          etp_min: 4
+          etp_max: 8
+
+  # Goal: observe soft-bias and eventual injection when a category goes dry (you’ll need your loot_policy in place).
+  # How to test: play a few 98→99→98 loops; confirm pity biases or injection events in logs/telemetry.
+  98:
+    parameters: { max_rooms: 10, max_items_per_room: 1 }
+    guaranteed_spawns:
+      mode: "replace"
+      items: []   # start empty so policy must do work
+
+  # Goal: smoke test everything at once. Use "replace" so only this content appears (deterministic).
+  99:
+    parameters:
+      max_rooms: 12
+      min_room_size: 6
+      max_room_size: 12
+      max_monsters_per_room: 4
+      max_items_per_room: 3
+    guaranteed_spawns:
+      mode: "replace"
+      monsters:
+        - type: "orc"      ; count: 4
+        - type: "skeleton" ; count: 4
+        - type: "slime"    ; count: 2
+      items:
+        - type: "healing_potion" ; count: 3
+    door_rules:
+      spawn_ratio: 0.7
+      locked: { chance: 0.2, key_tag: "iron_key" }
+      secret: { chance: 0.1, search_dc: 10 }
+    secret_rooms:
+      target_per_floor: 1
+      min_room_size: 4
+      connection_bias: "dead_end"
+      discovery: { search_action: true, ambient_hint: "misaligned_wall" }
+    trap_rules:
+      density: 0.08
+      trap_table:
+        - { id: "spike_trap", weight: 50 }
+        - { id: "web_trap", weight: 50 }
+    stairs: { up: true, down: true, restrict_return_levels: 2 }
+    connectivity:
+      min_connectivity: "mst_plus_loops"
+      loop_count: 2
+      corridor_style: "orthogonal"

@@ -532,7 +532,10 @@ class GameMap:
     def _place_door_for_connection(self, connection: dict, door_rules, entities):
         """Place a door for a single corridor connection.
         
-        Doors are placed at the edge where the corridor meets a room.
+        Doors are placed at the point where a corridor meets a room, ensuring:
+        - The door is at a valid junction between corridor and room
+        - The door position is within map bounds
+        - The door is placed on a walkable (non-blocked) floor tile
         
         Args:
             connection: Dictionary with 'room_a', 'room_b', corridor info
@@ -545,42 +548,103 @@ class GameMap:
         if random() > door_rules.spawn_ratio:
             return
         
-        # Determine where to place the door (at corridor edges)
+        # Get the two rooms connected by this corridor
         room_a = connection['room_a']
         room_b = connection['room_b']
         
-        door_pos = None
+        door_positions = []
         
-        # Try horizontal corridor first if available
+        # Process horizontal corridor if available
         if 'h_corridor' in connection:
-            x_min, x_max, y = connection['h_corridor']
-            # Pick position at corridor edge closest to room_a
-            if abs(room_a.x2 - x_min) < abs(room_a.x1 - x_max):
-                door_pos = (x_min, y)
-            else:
-                door_pos = (x_max, y)
+            h_x_min, h_x_max, h_y = connection['h_corridor']
+            
+            # Find door positions at the junction of corridor and rooms
+            # Horizontal corridor: corridor runs from x_min to x_max on row h_y
+            # We place a door at the edge where corridor meets room_a
+            
+            # Check junction with room_a (right edge of room_a or left edge)
+            room_a_x = room_a.x2 if room_a.x2 < h_x_min else room_a.x1
+            if h_x_min <= room_a_x <= h_x_max:
+                # This is where corridor meets room_a
+                candidate_pos = (room_a_x, h_y)
+                if self._is_valid_door_position(candidate_pos[0], candidate_pos[1]):
+                    door_positions.append(candidate_pos)
+            
+            # Check junction with room_b (right edge of room_b or left edge)
+            room_b_x = room_b.x2 if room_b.x1 > h_x_max else room_b.x1
+            if h_x_min <= room_b_x <= h_x_max:
+                # This is where corridor meets room_b
+                candidate_pos = (room_b_x, h_y)
+                if self._is_valid_door_position(candidate_pos[0], candidate_pos[1]):
+                    door_positions.append(candidate_pos)
         
-        # If no horizontal corridor or can't place there, try vertical
-        if not door_pos and 'v_corridor' in connection:
-            y_min, y_max, x = connection['v_corridor']
-            # Pick position at corridor edge closest to room_a
-            if abs(room_a.y2 - y_min) < abs(room_a.y1 - y_max):
-                door_pos = (x, y_min)
-            else:
-                door_pos = (x, y_max)
+        # Process vertical corridor if available
+        if 'v_corridor' in connection and not door_positions:
+            v_y_min, v_y_max, v_x = connection['v_corridor']
+            
+            # Find door positions at the junction of corridor and rooms
+            # Vertical corridor: corridor runs from y_min to y_max on column v_x
+            
+            # Check junction with room_a (bottom edge of room_a or top edge)
+            room_a_y = room_a.y2 if room_a.y2 < v_y_min else room_a.y1
+            if v_y_min <= room_a_y <= v_y_max:
+                # This is where corridor meets room_a
+                candidate_pos = (v_x, room_a_y)
+                if self._is_valid_door_position(candidate_pos[0], candidate_pos[1]):
+                    door_positions.append(candidate_pos)
+            
+            # Check junction with room_b (bottom edge of room_b or top edge)
+            room_b_y = room_b.y2 if room_b.y1 > v_y_max else room_b.y1
+            if v_y_min <= room_b_y <= v_y_max:
+                # This is where corridor meets room_b
+                candidate_pos = (v_x, room_b_y)
+                if self._is_valid_door_position(candidate_pos[0], candidate_pos[1]):
+                    door_positions.append(candidate_pos)
         
-        if not door_pos:
-            logger.warning("Could not find valid position for corridor door")
+        # Pick a random valid door position from candidates
+        if not door_positions:
+            logger.debug("No valid door junction positions found for corridor connection")
             return
+        
+        door_pos = choice(door_positions)
         
         # Create door entity
         door_entity = self._create_door_entity(door_pos[0], door_pos[1], door_rules, entities)
         if door_entity:
             entities.append(door_entity)
-            logger.debug(f"Placed {door_entity.name} at ({door_pos[0]}, {door_pos[1]})")
+            logger.debug(f"Placed {door_entity.name} at ({door_pos[0]}, {door_pos[1]}) for corridor junction")
+    
+    def _is_valid_door_position(self, x: int, y: int) -> bool:
+        """Check if a position is valid for door placement.
+        
+        A valid door position must be:
+        - Within map bounds
+        - On a non-blocked (walkable) floor tile
+        
+        Args:
+            x (int): X coordinate to check
+            y (int): Y coordinate to check
+            
+        Returns:
+            bool: True if position is valid for door placement, False otherwise
+        """
+        # Check bounds
+        if not self.is_in_bounds(x, y):
+            return False
+        
+        # Check if tile is walkable (not blocked)
+        if self.tiles[x][y].blocked:
+            return False
+        
+        return True
     
     def _create_door_entity(self, x: int, y: int, door_rules, entities):
         """Create a door entity at the specified position.
+        
+        Doors are placed at corridor connections based on door_rules configuration.
+        The door style (e.g., 'wooden_door', 'iron_door') must be a valid entity ID
+        from entities.yaml. Invalid door styles should be caught at level load time
+        by the level template registry validator.
         
         Args:
             x, y: Position for the door
@@ -594,6 +658,14 @@ class GameMap:
         from components.door import Door
         from config.entity_factory import get_entity_factory
         
+        # SAFETY: Ensure position is within bounds before creating entity
+        if not self.is_in_bounds(x, y):
+            logger.error(
+                f"Cannot create door at ({x}, {y}): position is out of bounds "
+                f"(map: {self.width}x{self.height})"
+            )
+            return None
+        
         # Don't place if already occupied
         if any(e.x == x and e.y == y for e in entities):
             return None
@@ -606,7 +678,13 @@ class GameMap:
         door_entity = factory.create_door(door_style, x, y)
         
         if not door_entity:
-            logger.warning(f"Failed to create door of type '{door_style}'")
+            # Note: Invalid door_style should have been caught at configuration load time.
+            # If this warning appears, check that door_rules.styles[*].type matches a valid
+            # door entity ID (e.g., 'wooden_door', 'iron_door', 'stone_door', etc.)
+            logger.warning(
+                f"Failed to create door with entity ID '{door_style}' at ({x}, {y}). "
+                f"Verify that this door type is defined in entities.yaml 'map_features' section."
+            )
             return None
         
         # Get or create Door component
