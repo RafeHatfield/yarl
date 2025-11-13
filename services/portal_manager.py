@@ -107,17 +107,15 @@ class PortalManager:
             portal.owner = entity
             portal.is_deployed = True
             
-            # Replace any existing portal component
+            # Assign portal to entity - this automatically registers it via Entity.__setattr__
+            # which maps 'portal' to ComponentType.PORTAL and calls entity.components.add()
+            # Do NOT call .add() again after this assignment to avoid "already exists" error
             entity.portal = portal
             
             # Ensure Item component exists
             if not hasattr(entity, 'item') or entity.get_component_optional(ComponentType.ITEM) is None:
                 from components.item import Item
                 entity.item = Item()
-            
-            # Register portal component with the component registry
-            # Use ComponentType.PORTAL directly - the registry contract requires the enum member
-            entity.components.add(ComponentType.PORTAL, portal)
             
             logger.debug(f"Created portal entity: {portal_type} at ({x}, {y})")
             return entity
