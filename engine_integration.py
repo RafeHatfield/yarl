@@ -264,33 +264,31 @@ def play_game_with_engine(
     engine.state_manager.set_extra_data("action_processor", action_processor)
 
     # =========================================================================
-    # ABSTRACTION LAYER: Renderer and InputSource Instances (Available but Not Used)
+    # ABSTRACTION LAYER: Create Renderer and InputSource instances
     # 
-    # These abstractions are created for future extensibility, demonstrating how
-    # to decouple from specific rendering and input technologies. Currently, the
-    # game loop uses the existing system-based architecture (RenderSystem, InputSystem).
-    # To migrate to pure abstraction-based rendering, you would:
-    # 1. Replace engine.update() with explicit renderer.render() calls
-    # 2. Replace internal input handling with input_source.next_action() calls
-    # 3. Update the systems to remove direct libtcod dependencies
+    # Phase 1 (COMPLETE): Input is now abstraction-driven via input_source.next_action()
+    # Phase 2 (IN PROGRESS): Rendering will be driven via renderer.render()
+    # 
+    # For now:
+    # - input_source.next_action() IS the primary input path
+    # - renderer.render() exists but is not yet called from main loop
+    # - Rendering still via systems (RenderSystem, etc.)
     # =========================================================================
-    _renderer: Renderer = ConsoleRenderer(
+    renderer, input_source = create_renderer_and_input_source(
         sidebar_console=sidebar_console,
         viewport_console=viewport_console,
         status_console=status_console,
         colors=constants["colors"],
     )
 
-    _input_source: InputSource = KeyboardInputSource()
-
     # Main game loop
-    # NOTE: Current implementation uses system-based architecture for rendering/input.
-    # Future: Replace engine.update() with explicit _renderer.render() and
-    # _input_source.next_action() calls for pure abstraction-based rendering.
+    # Phase 1 (INPUT): input_source.next_action() is the primary input path
+    # Phase 2 (RENDERING): Will add renderer.render() calls (system-based rendering for now)
+    # Phase 3 (CLEANUP): Will retire RenderSystem drawing logic
     while not libtcod.console_is_window_closed():
-        # Handle input using the abstraction layer
-        action = _input_source.next_action(engine.state_manager.state)
-        mouse_action = {}  # Mouse actions are now included in the action dict
+        # Get player action from abstraction layer (Phase 1: INPUT ABSTRACTION ACTIVE)
+        action = input_source.next_action(engine.state_manager.state)
+        mouse_action = {}  # Mouse actions are now included in the action dict from InputSource
         
         # Check for restart action (from death screen)
         if action.get("restart"):
