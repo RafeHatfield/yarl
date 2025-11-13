@@ -321,6 +321,11 @@ def wizard_teleport_to_level(game_state_manager):
         # Use the same next_floor logic as normal descent
         # IMPORTANT: next_floor returns a NEW entities list!
         entities = game_map.next_floor(player, message_log, constants)
+        
+        # Update mural manager for each floor
+        from services.mural_manager import get_mural_manager
+        mural_mgr = get_mural_manager()
+        mural_mgr.set_current_floor(game_map.dungeon_level)
     
     # Update the entities in the game state
     state.entities = entities

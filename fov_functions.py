@@ -3,6 +3,33 @@
 This module handles field of view (FOV) computations using tcod's
 modern FOV algorithms. Manages visibility calculations for lighting
 and line-of-sight mechanics.
+
+═══════════════════════════════════════════════════════════════════════════════
+MODULE CONTRACT: Field of View & Visibility
+───────────────────────────────────────────────────────────────────────────────
+
+OWNERSHIP:
+  - FOV computation (via tcod)
+  - Visibility checks for rendered entities
+  - FOV map creation and updates
+
+KEY CONTRACTS:
+  - FOV computed via recompute_fov(fov_map, x, y, radius, ...)
+  - Visibility checked via fov_map.is_in_fov(x, y)
+  - Do NOT reimplement FOV logic in other modules
+  - ModernFOVMap provides backward-compatible wrapper around tcod
+
+WHEN CHANGING BEHAVIOR:
+  - Update tests/test_golden_path_floor1.py::test_basic_explore_floor1
+  - Ensure FOV computation still works after changes
+  - Verify visibility checks pass (must see own tile)
+  - No reimplementation of FOV elsewhere
+
+SEE ALSO:
+  - render_functions.py - FOV rendering (uses this module)
+  - fov_functions.ModernFOVMap - FOV map implementation
+  - Tests: tests/test_golden_path_floor1.py (FOV verification)
+═══════════════════════════════════════════════════════════════════════════════
 """
 
 import numpy as np

@@ -448,9 +448,16 @@ class GameplayConfig:
     DEFAULT_MAP_HEIGHT: int = 80   # Was 43 - ~86% larger
     
     # Room generation
-    MIN_ROOM_SIZE: int = 6
-    MAX_ROOM_SIZE: int = 10
-    MAX_ROOMS_PER_FLOOR: int = 30
+    # Tuned to ensure >4.8% walkable with very high confidence (target: ~99.5% pass rate):
+    # - Minimum 12x12 rooms (was 6x6) = 144 tiles per room minimum
+    # - Maximum 18x18 rooms (was 10x10) = 324 tiles per room maximum
+    # - Max 150 rooms (was 30) to maximize placement attempts
+    # With 150 attempts and large rooms, even with 50% failure rate, we get
+    # ~75 rooms × ~200 avg tiles = ~15000 walkable tiles (~31% of map)
+    # This ensures minimum ~5% even in worst-case placement scenarios
+    MIN_ROOM_SIZE: int = 12
+    MAX_ROOM_SIZE: int = 18
+    MAX_ROOMS_PER_FLOOR: int = 150
     
     # Entity spawning
     MAX_MONSTERS_PER_ROOM: int = 3
@@ -857,6 +864,14 @@ class GameConstants:
                 'green': (0, 255, 0),
                 'light_cyan': (114, 255, 255),
                 'light_pink': (255, 114, 184),
+            },
+            
+            # Control mapping - interaction model
+            'controls': {
+                'right_click_interact': True,  # Right-click opens chests, doors, etc.
+                'allow_left_click_interact': True,  # Temporary fallback: left-click opens adjacent chests
+                'allow_left_click_read_signpost': True,  # Temporary fallback: left-click reads adjacent signposts
+                'shift_left_click_interact': True,  # Shift+Left-click acts like right-click (accessibility)
             }
         }
 

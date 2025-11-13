@@ -20,6 +20,23 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Track if deprecation hint has been shown this session
+_interact_hint_shown = False
+
+
+def _show_interact_hint_once() -> None:
+    """Show deprecation hint for left-click chest opening (once per session).
+    
+    This guides players to the new right-click interaction model.
+    """
+    global _interact_hint_shown
+    
+    if not _interact_hint_shown:
+        _interact_hint_shown = True
+        # Log to console and message log via caller
+        logger.info("💡 Tip: Use RIGHT-CLICK to interact with chests, doors, and other objects!")
+        logger.info("   Left-click is now for movement and attacking enemies.")
+
 
 def handle_mouse_click(click_x: int, click_y: int, player: 'Entity', 
                       entities: List['Entity'], game_map: 'GameMap', fov_map=None) -> dict:
@@ -143,10 +160,13 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
 
 def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list, 
                        entities: List['Entity'], game_map: 'GameMap') -> dict:
-    """Handle clicking on a chest.
+    """Handle LEFT-click on a chest (DEPRECATED FALLBACK).
     
-    Opens the chest if the player is adjacent. If not adjacent, pathfinds to it.
-    Drops loot on the ground near the chest for the player to pick up.
+    This is a temporary fallback for left-click chest opening. The canonical
+    way to interact with chests is now right-click (which uses the
+    InteractionSystem). This left-click handler only works when adjacent.
+    
+    If not adjacent, returns empty result so right-click can take over.
     
     Args:
         player (Entity): The player entity
@@ -158,10 +178,22 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
     Returns:
         dict: Dictionary containing action results
     """
+    from config.game_constants import get_constants
+    
+    constants = get_constants()
+    allow_left_click_interact = constants.get('controls', {}).get('allow_left_click_interact', True)
+    
     # Calculate distance to chest
     distance = player.distance_to(chest_entity)
     
     if distance <= 1.5:  # Adjacent (including diagonals)
+        if not allow_left_click_interact:
+            # Feature disabled - don't interact on left-click
+            return {"results": results}
+        
+        # Show deprecation hint (once per session)
+        _show_interact_hint_once()
+        
         # Open the chest
         chest = chest_entity.chest
         if chest:
@@ -273,21 +305,21 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
                 "message": MB.warning("This chest cannot be opened.")
             })
     else:
-        # Too far - pathfind to the chest
-        results.append({
-            "message": MB.info(f"Moving toward the {chest_entity.name}...")
-        })
-        results.append({
-            "pathfind_to_target": (chest_entity.x, chest_entity.y)
-        })
+        # Too far away - don't interact on left-click
+        # Right-click will handle pathfinding to interact via InteractionSystem
+        pass
     
     return {"results": results}
 
 
 def _handle_signpost_click(player: 'Entity', sign_entity: 'Entity', results: list) -> dict:
-    """Handle clicking on a signpost.
+    """Handle LEFT-click on a signpost (DEPRECATED FALLBACK).
     
-    Reads the signpost if the player is adjacent. If not adjacent, pathfinds to it.
+    This is a temporary fallback for left-click signpost reading. The canonical
+    way to interact with signposts is now right-click (which uses the
+    InteractionSystem). This left-click handler only works when adjacent.
+    
+    If not adjacent, returns empty result so right-click can take over.
     
     Args:
         player (Entity): The player entity
@@ -297,10 +329,22 @@ def _handle_signpost_click(player: 'Entity', sign_entity: 'Entity', results: lis
     Returns:
         dict: Dictionary containing action results
     """
+    from config.game_constants import get_constants
+    
+    constants = get_constants()
+    allow_left_click_read = constants.get('controls', {}).get('allow_left_click_read_signpost', True)
+    
     # Calculate distance to signpost
     distance = player.distance_to(sign_entity)
     
     if distance <= 1.5:  # Adjacent (including diagonals)
+        if not allow_left_click_read:
+            # Feature disabled - don't interact on left-click
+            return {"results": results}
+        
+        # Show deprecation hint (once per session)
+        _show_interact_hint_once()
+        
         # Read the signpost
         signpost = sign_entity.signpost
         if signpost:
@@ -314,13 +358,9 @@ def _handle_signpost_click(player: 'Entity', sign_entity: 'Entity', results: lis
                 "message": MB.warning("This sign cannot be read.")
             })
     else:
-        # Too far - pathfind to the signpost
-        results.append({
-            "message": MB.info(f"Moving toward the {sign_entity.name}...")
-        })
-        results.append({
-            "pathfind_to_target": (sign_entity.x, sign_entity.y)
-        })
+        # Too far away - don't interact on left-click
+        # Right-click will handle pathfinding to interact via InteractionSystem
+        pass
     
     return {"results": results}
 
@@ -712,6 +752,91 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             
             # Clear the auto-talk target
             pathfinding.auto_talk_target = None
+        
+        # Check if we were pathfinding to open a chest
+        if hasattr(pathfinding, 'auto_open_target') and pathfinding.auto_open_target:
+            target_chest = pathfinding.auto_open_target
+            
+            # Check if chest is adjacent
+            distance = player.distance_to(target_chest)
+            if target_chest in entities and distance <= 1.0:
+                # Adjacent! Open the chest
+                if (hasattr(target_chest, 'chest') and target_chest.chest):
+                    chest = target_chest.chest
+                    
+                    # Verify chest can still be interacted with
+                    if chest.can_interact():
+                        # Open the chest
+                        open_results = chest.open(player, has_key=False)  # TODO: Check for actual keys
+                        
+                        # Collect loot items and messages from chest opening
+                        loot_items = []
+                        messages = []
+                        for result in open_results:
+                            if 'message' in result:
+                                messages.append(result['message'])
+                            if result.get('loot'):
+                                loot_items.extend(result['loot'])
+                        
+                        # Build composite message with loot details (same as ChestInteractionStrategy)
+                        if loot_items:
+                            # Build loot description
+                            display_names = []
+                            for item in loot_items:
+                                if hasattr(item, 'item') and item.item:
+                                    display_names.append(item.item.get_display_name(show_quantity=False))
+                                else:
+                                    display_names.append(item.name)
+                            
+                            loot_desc = ", ".join(display_names)
+                            composite_message = MB.success(f"You open the chest! It contains: {loot_desc}")
+                        else:
+                            composite_message = MB.info("You open the chest, but it's empty.")
+                        
+                        results.append({
+                            "message": composite_message
+                        })
+                        
+                        # Add loot to entities so they appear on the map
+                        if loot_items:
+                            entities.extend(loot_items)
+                            
+                            # Invalidate entity sorting cache when new entities are added
+                            from entity_sorting_cache import invalidate_entity_cache
+                            invalidate_entity_cache("entity_added_chest_loot_auto_open")
+                        
+                        logger.info(f"Auto-opened chest: {target_chest.name}")
+                    else:
+                        results.append({
+                            "message": MB.info(f"{target_chest.name} is already open.")
+                        })
+            
+            # Clear the auto-open target
+            pathfinding.auto_open_target = None
+        
+        # Check if we were pathfinding to read a mural or signpost
+        if hasattr(pathfinding, 'auto_read_target') and pathfinding.auto_read_target:
+            target_readable = pathfinding.auto_read_target
+            
+            # Check if entity is adjacent
+            distance = player.distance_to(target_readable)
+            if target_readable in entities and distance <= 1.0:
+                # Adjacent! Read the mural or signpost
+                if hasattr(target_readable, 'mural') and target_readable.mural:
+                    mural = target_readable.mural
+                    results.append({
+                        "message": MB.custom(mural.text, (220, 20, 60))  # Crimson red for mural text
+                    })
+                    logger.info(f"Auto-read mural: {target_readable.name}")
+                elif hasattr(target_readable, 'signpost') and target_readable.signpost:
+                    signpost = target_readable.signpost
+                    results.append({
+                        "message": MB.custom(signpost.message, (200, 200, 200))  # Light gray for signpost text
+                    })
+                    logger.info(f"Auto-read signpost: {target_readable.name}")
+            
+            # Clear the auto-read target
+            pathfinding.auto_read_target = None
     
     return {"results": results}
 

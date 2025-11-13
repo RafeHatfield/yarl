@@ -155,7 +155,7 @@ class PerformanceSystem(System):
 
                 in_fov = map_is_in_fov(game_state.fov_map, entity.x, entity.y)
                 
-                # Special entities visible on explored tiles (stairs, chests, signposts, secret doors, portals)
+                # Special entities visible on explored tiles (stairs, chests, signposts, murals, secret doors, portals)
                 # SAFETY: Use GameMap safe accessor method instead of manual bounds check
                 is_persistent_feature_on_explored = False
                 if game_state.game_map:
@@ -165,6 +165,7 @@ class PerformanceSystem(System):
                             (hasattr(entity, "stairs") and entity.stairs) or
                             (hasattr(entity, "chest") and entity.chest) or
                             (hasattr(entity, "signpost") and entity.signpost) or
+                            (hasattr(entity, "mural") and entity.mural) or
                             (hasattr(entity, "is_secret_door_marker") and entity.is_secret_door_marker) or
                             (hasattr(entity, "is_portal") and entity.is_portal)
                         )

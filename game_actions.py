@@ -1033,6 +1033,16 @@ class ActionProcessor:
             # Update the targeting_item to the newly selected item
             self.state_manager.set_extra_data("targeting_item", item)
             logger.warning(f"Switched targeting to: {item.name}")
+        elif current_state == GameStates.THROW_TARGETING:
+            # Player pressed a key to switch to a different item while in throw targeting mode
+            # This allows: press 't' -> select item -> press 'a' to switch items -> click to throw
+            self.state_manager.state.targeting_item = item
+            # Stay in THROW_TARGETING state (don't go back to THROW_SELECT_ITEM)
+            # Player can now click with the new item selected
+            message = MB.info(f"Switched to throwing {item.name}. Click target to throw.")
+            self.state_manager.state.message_log.add_message(message)
+            return
+        
         elif current_state == GameStates.THROW_SELECT_ITEM:
             # Selected item to throw - check if we have a pre-selected target from right-click
             throw_target = self.state_manager.get_extra_data("throw_target")
@@ -1354,6 +1364,12 @@ class ActionProcessor:
                         message = MB.info(f"You return to level {target_level}...")
                         message_log.add_message(message)
                 
+                # Update mural manager for new floor (for unique message selection)
+                from services.mural_manager import get_mural_manager
+                mural_mgr = get_mural_manager()
+                mural_mgr.set_current_floor(game_map.dungeon_level)
+                logger.debug(f"Mural manager updated for floor {game_map.dungeon_level}")
+                
                 # Generate next floor
                 new_entities = game_map.next_floor(player, message_log, self.constants)
                 self.state_manager.update_state(entities=new_entities)
@@ -1607,49 +1623,6 @@ class ActionProcessor:
                     print("DEBUG: No player or inventory")
             else:
                 print("DEBUG: No targeting item or item has no item component")
-        
-        elif current_state == GameStates.THROW_TARGETING:
-            # Handle throw targeting completion
-            target_x, target_y = click_pos
-            targeting_item = self.state_manager.state.targeting_item
-            
-            if targeting_item:
-                player = self.state_manager.state.player
-                if player and player.inventory:
-                    # Remove item from inventory (it's being thrown)
-                    player.require_component(ComponentType.INVENTORY).remove_item(targeting_item)
-                    
-                    # Execute throw (Phase 3 will implement throwing.py)
-                    from throwing import throw_item
-                    throw_results = throw_item(
-                        thrower=player,
-                        item=targeting_item,
-                        target_x=target_x,
-                        target_y=target_y,
-                        entities=self.state_manager.state.entities,
-                        game_map=self.state_manager.state.game_map,
-                        fov_map=self.state_manager.state.fov_map
-                    )
-                    
-                    player_died = False
-                    for result in throw_results:
-                        message = result.get("message")
-                        if message:
-                            self.state_manager.state.message_log.add_message(message)
-                        
-                        dead_entity = result.get("dead")
-                        if dead_entity:
-                            self._handle_entity_death(dead_entity, remove_from_entities=False)
-                            if dead_entity == player:
-                                player_died = True
-                    
-                    # Clear targeting state
-                    self.state_manager.state.targeting_item = None
-                    
-                    # TURN ECONOMY: Throwing takes 1 turn
-                    if not player_died:
-                        self._process_player_status_effects()
-                        self.turn_controller.end_player_action(turn_consumed=True)
         
         elif current_state == GameStates.PLAYERS_TURN:
             # Handle mouse movement/combat during player turn
@@ -2127,6 +2100,15 @@ class ActionProcessor:
                 # Handle NPC dialogue
                 if result.npc_dialogue:
                     self.state_manager.state.current_dialogue_npc = result.npc_dialogue
+                
+                # Handle loot items from chests, etc.
+                if result.loot_items:
+                    # Add loot to entities so they appear on the map
+                    entities.extend(result.loot_items)
+                    
+                    # Invalidate entity sorting cache when new entities are added
+                    from entity_sorting_cache import invalidate_entity_cache
+                    invalidate_entity_cache("entity_added_chest_loot_right_click")
                 
                 # Handle victory trigger (Ruby Heart pickup)
                 if result.victory_triggered:

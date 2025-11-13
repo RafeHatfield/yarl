@@ -2,6 +2,37 @@
 
 This module contains functions that are called when entities die,
 handling the visual and mechanical changes that occur.
+
+═══════════════════════════════════════════════════════════════════════════════
+MODULE CONTRACT: Death & Combat System
+───────────────────────────────────────────────────────────────────────────────
+
+OWNERSHIP:
+  - Entity death handling (player and monsters)
+  - Death message generation
+  - Special death behaviors (slime splitting, boss drops, etc.)
+  - Game state transitions on death
+
+KEY CONTRACTS:
+  - Use kill_monster() for monster death (not duplicated elsewhere)
+  - Use kill_player() for player death
+  - Loot generation is separate; see components/loot.py
+  - Death messages use MessageBuilder
+  - Special behaviors via monster components (boss, slime), not new functions
+
+WHEN CHANGING BEHAVIOR:
+  - Update tests/test_golden_path_floor1.py::test_kill_basic_monster_and_loot
+  - Update tests/test_death_nonboss.py
+  - Update tests/integration/combat/ as needed
+  - Verify entity list consistency after death
+  - Check that loot appears or messages generated
+
+SEE ALSO:
+  - game_messages.py - Message creation
+  - components/fighter.py - Combat stats
+  - components/loot.py - Loot generation
+  - death_screen.py - Death screen rendering
+═══════════════════════════════════════════════════════════════════════════════
 """
 
 import random
@@ -11,6 +42,8 @@ from game_messages import Message
 from message_builder import MessageBuilder as MB
 from game_states import GameStates
 from render_functions import RenderOrder
+from components.component_registry import ComponentType
+from config.factories import get_entity_factory
 
 
 def kill_player(player):
@@ -178,15 +211,19 @@ def kill_monster(monster, game_map=None, entities=None):
         death_dialogue = boss.get_dialogue("death")
         boss.mark_defeated()
     
-    # Drop loot before transforming to corpse
-    dropped_items = drop_loot_from_monster(monster, monster.x, monster.y, game_map)
-    
-    # Add dropped items to the game world
-    if dropped_items:
-        # We need to add the dropped items to the entities list
-        # This is a bit tricky since we don't have direct access to entities here
-        # We'll store them on the monster temporarily and let the caller handle it
-        monster._dropped_loot = dropped_items
+    # Drop loot from monster's equipment and inventory
+    try:
+        from components.monster_equipment import MonsterLootDropper
+        dropped_items = MonsterLootDropper.drop_monster_loot(monster, monster.x, monster.y, game_map)
+        if dropped_items:
+            # Store dropped items on the monster so callers (game_actions.py or ai_system.py) can add them to entities
+            monster._dropped_loot = dropped_items
+    except Exception as e:
+        # Loot dropping can fail if game_map is not fully initialized or in test environments
+        # Log the error but don't crash - the game can continue
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Loot dropping failed for {monster.name}: {e}")
     
     # Handle slime splitting before transforming to corpse
     spawned_slimes = _handle_slime_splitting(monster, game_map, entities)

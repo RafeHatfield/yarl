@@ -7,15 +7,65 @@ Single source of truth for all portal operations:
 - Managing portal pairs
 
 This service replaces scattered portal logic across multiple files.
+
+═══════════════════════════════════════════════════════════════════════════════
+MODULE CONTRACT: Portal System
+───────────────────────────────────────────────────────────────────────────────
+
+OWNERSHIP:
+  - ALL portal creation (use PortalManager.create_portal_entity)
+  - Portal collision detection and teleportation
+  - Portal pair linking via Portal component
+  - AI interaction with portals
+
+KEY CONTRACTS:
+  - MUST use PortalManager.create_portal_entity() for all portal creation
+  - Do NOT create Portal entities directly
+  - Portal pairs linked via Portal component
+  - Collision detection via check_portal_collision()
+  - Extend via Portal component, not new functions
+
+WHEN CHANGING BEHAVIOR:
+  - Update tests/test_golden_path_floor1.py::test_use_wand_of_portals_on_floor1
+  - Update tests/integration/portals/test_portal_entity_integration.py
+  - Update tests/integration/portals/test_victory_portal_entry.py
+  - Verify portals placed on valid tiles
+  - Ensure portal system integrates with victory condition
+  - Check monster AI still respects portals
+
+SEE ALSO:
+  - components/portal.py - Portal component definition
+  - engine/portal_system.py - Portal engine integration
+  - components/victory.py - Victory state tied to portals
+═══════════════════════════════════════════════════════════════════════════════
 """
 
 import logging
 from typing import Optional, Dict, Any, List, Tuple
 from components.portal import Portal
-from components.component_registry import ComponentType
 from entity import Entity
 
 logger = logging.getLogger(__name__)
+
+# Move ComponentType import to module scope to avoid UnboundLocalError
+try:
+    from components.component_registry import ComponentType
+except Exception:
+    ComponentType = None
+
+
+def _ck(key):
+    """Normalize component keys to handle both Enum and string forms.
+    
+    Args:
+        key: ComponentType enum value or string
+        
+    Returns:
+        String representation of the key
+    """
+    if hasattr(key, "value"):
+        return key.value
+    return key
 
 
 class PortalManager:
@@ -78,13 +128,12 @@ class PortalManager:
             entity.portal = portal
             
             # Ensure Item component exists
-            if not hasattr(entity, 'item') or entity.get_component_optional(ComponentType.ITEM) is None:
+            if not hasattr(entity, 'item') or entity.get_component_optional(_ck(ComponentType.ITEM if ComponentType else "item")) is None:
                 from components.item import Item
                 entity.item = Item()
             
             # Register components properly
-            from components.component_registry import ComponentType
-            entity.components.add(ComponentType.PORTAL, portal)
+            entity.components.add(_ck(ComponentType.PORTAL if ComponentType else "portal"), portal)
             
             logger.debug(f"Created portal entity: {portal_type} at ({x}, {y})")
             return entity
@@ -145,14 +194,15 @@ class PortalManager:
         try:
             # Monsters must be allowed to use portals by their AI
             # Players can always use portals
-            if hasattr(entity, 'ai') and entity.get_component_optional(ComponentType.AI):
+            if hasattr(entity, 'ai') and entity.get_component_optional(_ck(ComponentType.AI if ComponentType else "ai")):
                 # Check if this monster's AI allows portal usage
-                if hasattr(entity.get_component_optional(ComponentType.AI), 'portal_usable') and not entity.get_component_optional(ComponentType.AI).portal_usable:
+                if hasattr(entity.get_component_optional(_ck(ComponentType.AI if ComponentType else "ai")), 'portal_usable') and not entity.get_component_optional(_ck(ComponentType.AI if ComponentType else "ai")).portal_usable:
                     logger.debug(f"Monster {entity.name} cannot use portals (portal_usable=False)")
                     return None
             
             # Check if entity is carrying the entry portal (prevents portal entry then)
-            if hasattr(entity, 'inventory') and entity.require_component(ComponentType.INVENTORY):
+            # Note: require_component() needs the actual ComponentType enum, not the integer value
+            if hasattr(entity, 'inventory') and ComponentType and entity.require_component(ComponentType.INVENTORY):
                 for item in entity.require_component(ComponentType.INVENTORY).items:
                     if hasattr(item, 'portal') and item.portal:
                         if item.portal.portal_type == 'entrance':
@@ -181,7 +231,7 @@ class PortalManager:
                             from entity_sorting_cache import invalidate_entity_cache
                             invalidate_entity_cache("portal_teleportation")
                             
-                            entity_type = "Monster" if hasattr(entity, 'ai') and entity.get_component_optional(ComponentType.AI) else "Player"
+                            entity_type = "Monster" if hasattr(entity, 'ai') and entity.get_component_optional(_ck(ComponentType.AI if ComponentType else "ai")) else "Player"
                             is_monster = entity_type == "Monster"
                             
                             logger.info(f"{entity_type} portal teleportation: ({old_x}, {old_y}) -> ({entity.x}, {entity.y})")

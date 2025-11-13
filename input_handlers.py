@@ -13,6 +13,7 @@ import tcod.libtcodpy as libtcod
 from game_states import GameStates
 from state_management.state_config import StateManager
 from logger_config import get_logger
+from config.ui_layout import get_ui_layout
 
 logger = get_logger(__name__)
 
@@ -56,6 +57,35 @@ def handle_targeting_keys(key):
     if key.vk == libtcod.KEY_ESCAPE:
         return {"exit": True}
 
+    return {}
+
+
+def handle_throw_targeting_keys(key):
+    """Handle input during throw targeting mode.
+    
+    In throw targeting mode, the player can:
+    - Press a key (a-z) to switch to a different item to throw
+    - Click to throw the current item
+    - Press ESC to cancel
+    
+    Args:
+        key: tcod Key object containing key press information
+
+    Returns:
+        dict: Dictionary with 'inventory_index', 'exit', or empty dict
+    """
+    # Check for alphanumeric key (inventory selection)
+    if key.c > 0:
+        index = key.c - ord("a")
+        if 0 <= index < 26:  # a-z
+            # Selecting a different item to throw
+            return {"inventory_index": index}
+    
+    # Check for escape (cancel throw)
+    if key.vk == libtcod.KEY_ESCAPE:
+        return {"exit": True}
+    
+    # Any other key is ignored
     return {}
 
 

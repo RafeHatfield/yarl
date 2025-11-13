@@ -3,6 +3,33 @@
 This module handles all rendering operations including entity drawing,
 UI panels, menus, and screen management. It defines render orders and
 provides functions for drawing the game world and interface.
+
+═══════════════════════════════════════════════════════════════════════════════
+MODULE CONTRACT: Rendering & Visibility System
+───────────────────────────────────────────────────────────────────────────────
+
+OWNERSHIP:
+  - Screen rendering, entity/map drawing
+  - Visual display of game state
+  - Death screen rendering and quote display
+
+KEY CONTRACTS:
+  - FOV visibility checks via fov_functions.py (NOT reimplemented here)
+  - Visibility checks use: fov_map.is_in_fov(x, y)
+  - Death screen quotes stored on game_state.death_screen_quote
+  - Do NOT reimplement visibility logic; extend via rendering parameters
+
+WHEN CHANGING BEHAVIOR:
+  - Update tests/test_golden_path_floor1.py::test_basic_explore_floor1
+  - Update tests/integration/portals/test_portal_visual_effects.py
+  - Verify FOV rendering still works correctly
+  - Check that visibility rules are respected
+
+SEE ALSO:
+  - fov_functions.py - FOV computation (don't duplicate)
+  - rendering/ - Modular rendering subsystems
+  - death_screen.py - Death screen specific rendering
+═══════════════════════════════════════════════════════════════════════════════
 """
 
 from enum import Enum, auto
@@ -17,6 +44,7 @@ from entity_sorting_cache import get_sorted_entities
 from death_screen import render_death_screen
 from visual_effect_queue import get_effect_queue
 from ui.sidebar import _render_sidebar
+from config.ui_layout import get_ui_layout
 
 
 class RenderOrder(Enum):
@@ -491,11 +519,12 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
         game_map (GameMap): Game map for tile information
         camera: Camera for viewport translation (optional, defaults to no offset)
     """
-    # Check if entity is a persistent feature (stairs, chests, signposts, secret doors, portals)
+    # Check if entity is a persistent feature (stairs, chests, signposts, murals, secret doors, portals)
     is_persistent_feature = (
         (hasattr(entity, "stairs") and entity.stairs) or
         (hasattr(entity, "chest") and entity.chest) or
         (hasattr(entity, "signpost") and entity.signpost) or
+        (hasattr(entity, "mural") and entity.mural) or
         (hasattr(entity, "is_secret_door_marker") and entity.is_secret_door_marker) or
         (hasattr(entity, "is_portal") and entity.is_portal)
     )

@@ -13,8 +13,9 @@ from unittest.mock import Mock
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from components.get_component_optional(ComponentType.FIGHTER) import Fighter
-from components.get_component_optional(ComponentType.EQUIPMENT) import Equipment
+from components.fighter import Fighter
+from components.equipment import Equipment
+from components.component_registry import ComponentType
 from components.equippable import Equippable
 from equipment_slots import EquipmentSlots
 from config.testing_config import set_testing_mode

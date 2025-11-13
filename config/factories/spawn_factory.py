@@ -70,20 +70,23 @@ class SpawnFactory(FactoryBase):
                 loot_quality=quality
             )
             
-            # Create entity
+            # Create entity - chests block movement
             chest_entity = Entity(
                 x=x,
                 y=y,
                 char=chest_def.char,
                 color=chest_def.color,
                 name=chest_def.name,
-                blocks=chest_def.blocks
+                blocks=True  # Chests block movement; interact via right-click adjacently
             )
             
             # Attach chest component
             # Note: Setting chest_entity.chest triggers __setattr__ which auto-registers in components
             chest_entity.chest = chest_component
             chest_component.owner = chest_entity
+            
+            # Mark chest as openable (for right-click interaction)
+            chest_entity.tags.add("openable")
             
             # Set render order
             chest_entity.render_order = getattr(RenderOrder, chest_def.render_order.upper(), RenderOrder.ITEM)
@@ -128,15 +131,17 @@ class SpawnFactory(FactoryBase):
                 sign_type=sign_def.sign_type
             )
             
-            # Create entity
+            # Create entity - signposts block movement
             sign_entity = Entity(
                 x=x,
                 y=y,
                 char=sign_def.char,
                 color=sign_def.color,
                 name=sign_def.name,
-                blocks=sign_def.blocks
+                blocks=True  # Signposts block movement; interact via right-click adjacently
             )
+            # Mark as interactable
+            sign_entity.tags.add('interactable')
             
             # Attach signpost component
             # Note: Setting sign_entity.signpost triggers __setattr__ which auto-registers in components
@@ -157,7 +162,7 @@ class SpawnFactory(FactoryBase):
         """Create a mural or inscription map feature entity.
         
         Murals display environmental lore about the dungeon's history and
-        the tragedy of Zhyraxion and Aurelyn. Text is depth-aware.
+        the tragedy of Zhyraxion and Aurelyn. Text is depth-aware and unique per floor.
         
         Args:
             x: X coordinate for the mural
@@ -168,8 +173,10 @@ class SpawnFactory(FactoryBase):
             Entity instance if mural creation succeeds, None otherwise
         """
         try:
-            # Get a random mural for this depth
-            mural_text, mural_id = Mural.get_random_mural(depth)
+            # Get a unique mural for this depth (no repeats on same floor)
+            from services.mural_manager import get_mural_manager
+            mural_manager = get_mural_manager()
+            mural_text, mural_id = mural_manager.get_unique_mural(depth)
             
             if not mural_text:
                 # No murals available for this depth
@@ -178,15 +185,17 @@ class SpawnFactory(FactoryBase):
             # Create mural component
             mural_component = Mural(text=mural_text, mural_id=mural_id)
             
-            # Create entity
+            # Create entity - murals block movement
             mural_entity = Entity(
                 x=x,
                 y=y,
                 char="M",  # Mural character
                 color=(220, 20, 60),  # Crimson red
                 name="Mural",
-                blocks=False
+                blocks=True  # Murals block movement; interact via right-click adjacently
             )
+            # Mark as interactable
+            mural_entity.tags.add('interactable')
             
             # Attach mural component
             # Note: Setting mural_entity.mural triggers __setattr__ which auto-registers in components

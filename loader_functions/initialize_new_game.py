@@ -91,6 +91,11 @@ def get_game_variables(constants):
     # Load entity configuration from YAML files
     load_entity_config()
     
+    # Initialize mural manager for unique message selection per floor
+    from services.mural_manager import get_mural_manager
+    mural_mgr = get_mural_manager()
+    mural_mgr.set_current_floor(1)  # Start on floor 1
+    
     # Register all spells in the spell registry
     register_all_spells()
     
@@ -273,6 +278,10 @@ def _skip_to_level(player, entities, game_map, message_log, target_level, consta
                 "   Ignoring next_floor return value of type %s; keeping existing entities",
                 type(maybe_new_entities).__name__,
             )
+        # Update mural manager for each floor
+        from services.mural_manager import get_mural_manager
+        mural_mgr = get_mural_manager()
+        mural_mgr.set_current_floor(game_map.dungeon_level)
         logger.debug(f"   Descended to level {game_map.dungeon_level}")
     
     # Grant level-appropriate gear

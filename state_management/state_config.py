@@ -97,6 +97,7 @@ def _initialize_state_configurations():
     from input_handlers import (
         handle_player_turn_keys,
         handle_targeting_keys,
+        handle_throw_targeting_keys,
         handle_inventory_keys,  # Still used for THROW_SELECT_ITEM
         handle_player_dead_keys,
         handle_level_up_menu,
@@ -155,7 +156,7 @@ def _initialize_state_configurations():
     
     # Throwing item targeting
     GameStates.THROW_TARGETING: StateConfig(
-        input_handler=handle_targeting_keys,
+        input_handler=handle_throw_targeting_keys,
         allows_movement=False,
         allows_pickup=False,
         allows_inventory=False,

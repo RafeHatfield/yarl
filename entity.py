@@ -122,6 +122,9 @@ class Entity:
         # Initialize special abilities
         self.special_abilities = None
         
+        # Initialize tags (for entity classification and metadata)
+        self.tags: set[str] = set()
+        
         # Initialize component registry (NEW: Type-safe component system)
         self.components = ComponentRegistry()
         

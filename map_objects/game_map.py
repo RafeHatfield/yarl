@@ -79,6 +79,25 @@ class GameMap:
 
         return tiles
 
+    def get_walkable_stats(self):
+        """Calculate walkable tile statistics for the map.
+
+        Returns:
+            tuple: (walkable_count, total_tiles, walkable_percent)
+                - walkable_count: Number of non-blocked tiles
+                - total_tiles: Total number of tiles on map
+                - walkable_percent: Fraction of map that is walkable (0.0 to 1.0)
+        """
+        walkable_count = 0
+        for x in range(self.width):
+            for y in range(self.height):
+                if not self.tiles[x][y].blocked:
+                    walkable_count += 1
+
+        total_tiles = self.width * self.height
+        walkable_percent = walkable_count / total_tiles if total_tiles else 0.0
+        return walkable_count, total_tiles, walkable_percent
+
     def make_map(
         self,
         max_rooms,

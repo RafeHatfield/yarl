@@ -24,12 +24,47 @@ python engine.py --telemetry-json telemetry.json
 # Combine flags
 python engine.py --testing --start-level 10 --telemetry-json output/session.json
 
-# Run tests
+# Run tests (all)
 pytest tests/
 
 # Run specific test suite
 pytest tests/test_portal_system_phase_b.py -v
+
+# Run critical quality-assurance tests (fast feedback)
+pytest tests/test_golden_path_floor1.py \
+        tests/test_public_imports_smoke.py \
+        tests/test_component_contracts.py \
+        tests/test_world_invariants.py -v
+
+# Or use convenience runners
+python3 run_golden_path_tests.py              # Golden-path tests
+python3 run_critical_tests.py                 # Phase 5 critical tests
 ```
+
+---
+
+## 📋 Contributing & AI/Agent Changes
+
+**For AI assistants and automated agents:** See [`CONTRIBUTING_AUTOGEN.md`](CONTRIBUTING_AUTOGEN.md) before making broad changes.
+
+This document clarifies:
+- **Module ownership** (who owns rendering, portals, world generation, etc.)
+- **Testing requirements** (what tests to update for each module)
+- **Anti-patterns to avoid** (don't reimplement FOV, don't hardcode values, etc.)
+- **Code review checklist** for AI-generated changes
+
+**TL;DR:** When changing behavior, add a test that covers it. Check module ownership. Respect contracts.
+
+### Test Suites
+
+| Suite | Purpose | Runtime |
+|-------|---------|---------|
+| **Golden-Path** | Critical gameplay flows | 0.4s |
+| **Import Smoke** | Module availability & imports | 0.15s |
+| **Component Contracts** | ECS consistency | 0.2s |
+| **World Invariants** | Map generation properties | 1.0s |
+| **All Critical Tests** | Pre-merge gate | 1.78s |
+| **Full Suite** | 2500+ comprehensive tests | ~60s |
 
 ---
 

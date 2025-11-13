@@ -22,6 +22,16 @@ from config.testing_config import set_testing_mode, get_testing_config, is_testi
 from config.ui_layout import get_ui_layout
 from debug_logging import setup_debug_logging
 from entity_dialogue import EntityDialogue
+from rendering.camera import Camera, CameraMode
+from engine.systems import (
+    RenderSystem,
+    InputSystem,
+    AISystem,
+    PerformanceSystem,
+    EnvironmentSystem,
+)
+from engine.systems.optimized_render_system import OptimizedRenderSystem
+from systems.turn_controller import initialize_turn_controller
 
 # Set up basic logging (WARNING level to see exit triggers)
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")

@@ -30,6 +30,7 @@ from input_handlers import handle_keys, handle_mouse
 from loader_functions.data_loaders import save_game
 from config.ui_layout import get_ui_layout
 from rendering.camera import Camera, CameraMode
+from systems.turn_controller import initialize_turn_controller
 
 
 @contextmanager

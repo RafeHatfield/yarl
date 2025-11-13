@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Optional, Dict, Any, List
 from components.map_feature import MapFeature, MapFeatureType
 
 if TYPE_CHECKING:
+    from entity import Entity
 
 
 class DoorState(Enum):

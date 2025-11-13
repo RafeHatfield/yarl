@@ -56,6 +56,12 @@ class PlayerPathfinding:
         
         # Auto-pickup for double-click pathfinding
         self.auto_pickup_target: Optional['Entity'] = None
+        
+        # Auto-open for chest pathfinding
+        self.auto_open_target: Optional['Entity'] = None
+        
+        # Auto-read for mural pathfinding
+        self.auto_read_target: Optional['Entity'] = None
     
     def set_destination(self, x: int, y: int, game_map: 'GameMap', entities: List['Entity'], 
                         fov_map=None) -> bool:
@@ -137,6 +143,7 @@ class PlayerPathfinding:
             self.movement_interrupted = True
             self.interruption_count += 1
             self.auto_pickup_target = None  # Clear auto-pickup on interrupt
+            self.auto_open_target = None  # Clear auto-open on interrupt
             logger.debug(f"Movement interrupted: {reason}")
     
     def cancel_movement(self) -> None:
@@ -147,6 +154,7 @@ class PlayerPathfinding:
         self.path_index = 0
         self.movement_interrupted = False
         self.auto_pickup_target = None  # Clear auto-pickup on cancel
+        self.auto_open_target = None  # Clear auto-open on cancel
         logger.debug("Movement cancelled")
     
     def is_path_active(self) -> bool:

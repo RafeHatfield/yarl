@@ -206,7 +206,7 @@ class TestLootIntegrationWithMonsters:
         from entity import Entity
         from components.fighter import Fighter
         from map_objects.game_map import GameMap
-        from components.monster_equipment import drop_loot_from_monster
+        from components.monster_equipment import MonsterLootDropper
         
         # Create game map
         game_map = GameMap(50, 50, dungeon_level=5)
@@ -218,8 +218,8 @@ class TestLootIntegrationWithMonsters:
             blocks=True
         )
         
-        # Drop loot
-        dropped_items = drop_loot_from_monster(monster, 10, 10, game_map)
+        # Drop loot using MonsterLootDropper
+        dropped_items = MonsterLootDropper.drop_monster_loot(monster, 10, 10, game_map)
         
         # Should potentially drop loot (probability based)
         # At level 5, Orcs have 50% chance
