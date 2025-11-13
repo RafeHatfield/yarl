@@ -43,6 +43,7 @@ class OptimizedRenderSystem(RenderSystem):
         priority: int = 100,
         use_optimizations: bool = True,
         sidebar_console=None,
+        skip_drawing: bool = False,
     ):
         """Initialize the OptimizedRenderSystem.
 
@@ -55,8 +56,9 @@ class OptimizedRenderSystem(RenderSystem):
             priority (int, optional): System update priority. Defaults to 100.
             use_optimizations (bool, optional): Whether to use optimizations. Defaults to True.
             sidebar_console: Left sidebar console (optional)
+            skip_drawing (bool): If True, skip render_all/console_flush (for abstraction mode).
         """
-        super().__init__(console, panel, screen_width, screen_height, colors, priority, sidebar_console)
+        super().__init__(console, panel, screen_width, screen_height, colors, priority, sidebar_console, skip_drawing)
 
         # Optimization settings
         self.use_optimizations = use_optimizations

@@ -44,6 +44,7 @@ class RenderSystem(System):
         colors: Dict[str, Any],
         priority: int = 100,
         sidebar_console=None,
+        skip_drawing: bool = False,
     ):
         """Initialize the RenderSystem.
 
@@ -55,6 +56,8 @@ class RenderSystem(System):
             colors (Dict[str, Any]): Color configuration dictionary
             priority (int, optional): System update priority. Defaults to 100.
             sidebar_console: Left sidebar console (optional, for new layout)
+            skip_drawing (bool): If True, skip render_all/console_flush (for abstraction mode).
+                                Defaults to False.
         """
         super().__init__("render", priority)
         self.console = console
@@ -65,6 +68,7 @@ class RenderSystem(System):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.colors = colors
+        self.skip_drawing = skip_drawing
 
         # UI layout configuration
         from config.ui_layout import get_ui_layout
@@ -119,7 +123,6 @@ class RenderSystem(System):
 
             # Get base FOV radius
             base_fov_radius = constants.get("fov_radius", 10)
-            print(f">>> BASE RENDER: base_fov_radius from constants = {base_fov_radius}")
 
             # Check for blindness - reduces FOV to 1
             if (hasattr(player, 'has_status_effect') and
@@ -138,41 +141,45 @@ class RenderSystem(System):
                 constants.get("fov_algorithm", 12),
             )
 
-        # Render everything (use original tile rendering for base system)
-        render_all(
-            self.console,
-            self.panel,
-            entities,
-            player,
-            game_map,
-            self.fov_map,
-            self.fov_recompute,
-            message_log,
-            self.screen_width,
-            self.screen_height,
-            self.bar_width,
-            self.panel_height,
-            self.panel_y,
-            mouse,
-            self.colors,
-            current_game_state,
-            use_optimization=False,
-            sidebar_console=self.sidebar_console,
-            camera=camera,  # Pass camera to render_all (Phase 2)
-            death_screen_quote=game_state.get("death_screen_quote"),
-        )
+        # Phase 2: Abstraction Mode
+        # When using ConsoleRenderer, skip drawing here to avoid double-rendering
+        if not self.skip_drawing:
+            # Render everything (use original tile rendering for base system)
+            render_all(
+                self.console,
+                self.panel,
+                entities,
+                player,
+                game_map,
+                self.fov_map,
+                self.fov_recompute,
+                message_log,
+                self.screen_width,
+                self.screen_height,
+                self.bar_width,
+                self.panel_height,
+                self.panel_y,
+                mouse,
+                self.colors,
+                current_game_state,
+                use_optimization=False,
+                sidebar_console=self.sidebar_console,
+                camera=camera,  # Pass camera to render_all (Phase 2)
+                death_screen_quote=game_state.get("death_screen_quote"),
+            )
 
+            # Present the frame
+            import warnings
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning, 
+                                      message="This function is not supported if contexts are being used")
+                libtcod.console_flush()
+
+            # Clear entities for next frame
+            clear_all(self.console, entities)
+
+        # Reset FOV flag (whether we drew or not)
         self.fov_recompute = False
-
-        # Present the frame
-        import warnings
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=DeprecationWarning, 
-                                  message="This function is not supported if contexts are being used")
-            libtcod.console_flush()
-
-        # Clear entities for next frame
-        clear_all(self.console, entities)
 
     def set_fov_map(self, fov_map) -> None:
         """Set the field of view map.

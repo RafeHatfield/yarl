@@ -143,6 +143,8 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
 
     # Create and register the optimized render system (late priority)
     # Pass all 3 consoles for split-screen layout
+    # NOTE: Phase 2 - skip_drawing=True because ConsoleRenderer handles drawing
+    #       RenderSystem still runs for FOV recompute and state management
     render_system = OptimizedRenderSystem(
         console=viewport_console,  # Main viewport (legacy 'con')
         panel=status_console,       # Status panel (legacy 'panel')
@@ -152,6 +154,7 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
         colors=constants["colors"],
         priority=100,  # Render last
         use_optimizations=False,  # DISABLE optimizations for debugging
+        skip_drawing=True,  # Phase 2: ConsoleRenderer handles drawing
     )
     engine.register_system(render_system)
 
@@ -570,9 +573,18 @@ def play_game_with_engine(
 
         # =====================================================================
         # RENDERING & GAME STATE UPDATES (PHASE 2: IN PROGRESS)
-        # engine.update() runs all systems including RenderSystem
-        # TODO Phase 2: Replace engine.update() rendering with renderer.render()
+        #
+        # Rendering path (abstraction-driven):
+        #   renderer.render() is called BEFORE engine.update() to render frame
+        #
+        # Note: RenderSystem.update() still runs but should skip drawing to avoid
+        # double-rendering. This is temporary until we fully migrate rendering.
         # =====================================================================
+        
+        # Render the current frame through abstraction layer
+        renderer.render(engine.state_manager.state)
+        
+        # Update all game systems (AI, FOV management, etc.)
         engine.update()
 
         # IMPORTANT: Reset FOV flag AFTER rendering is complete
