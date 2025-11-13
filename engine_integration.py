@@ -286,7 +286,11 @@ def play_game_with_engine(
     # Phase 2 (RENDERING): Will add renderer.render() calls (system-based rendering for now)
     # Phase 3 (CLEANUP): Will retire RenderSystem drawing logic
     while not libtcod.console_is_window_closed():
-        # Get player action from abstraction layer (Phase 1: INPUT ABSTRACTION ACTIVE)
+        # =====================================================================
+        # INPUT HANDLING (PHASE 1: COMPLETE)
+        # Input comes ONLY from input_source.next_action() - no InputSystem.update()
+        # MouseActions are included in the action dict from KeyboardInputSource
+        # =====================================================================
         action = input_source.next_action(engine.state_manager.state)
         mouse_action = {}  # Mouse actions are now included in the action dict from InputSource
         
@@ -564,7 +568,11 @@ def play_game_with_engine(
             # But if we do, treat as game end
             break
 
-        # Update all systems (AI will run after player actions are processed)
+        # =====================================================================
+        # RENDERING & GAME STATE UPDATES (PHASE 2: IN PROGRESS)
+        # engine.update() runs all systems including RenderSystem
+        # TODO Phase 2: Replace engine.update() rendering with renderer.render()
+        # =====================================================================
         engine.update()
 
         # IMPORTANT: Reset FOV flag AFTER rendering is complete
@@ -583,6 +591,9 @@ def play_game_with_engine(
 def _manual_input_system_update(engine, delta_time):
     """Context manager to manually update the input system.
     
+    ⚠️  DEPRECATED - Legacy helper for old-style tests
+    New code should use InputSource.next_action() directly
+    
     This helper temporarily disables normal input system scheduling and forces
     a single manual update pass within the context. Useful for testing input
     behavior with controlled timing.
@@ -597,7 +608,7 @@ def _manual_input_system_update(engine, delta_time):
     Example:
         with _manual_input_system_update(engine, 0.016):
             actions = engine.state_manager.get_extra_data("keyboard_actions")
-            # Test the actions
+            # Test the actions (legacy - use KeyboardInputSource instead)
     """
     # Find the input system in the engine
     input_systems = [s for s in engine.systems if isinstance(s, InputSystem)]
