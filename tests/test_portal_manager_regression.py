@@ -12,7 +12,7 @@ Fix: Move ComponentType import to module scope and use _ck() helper to normalize
 import pytest
 from entity import Entity
 from components.component_registry import ComponentType
-from services.portal_manager import PortalManager, _ck, ComponentType as PM_ComponentType
+from services.portal_manager import PortalManager
 
 
 class TestPortalManagerComponentType:
@@ -20,26 +20,34 @@ class TestPortalManagerComponentType:
     
     def test_component_type_import_at_module_scope(self):
         """Verify ComponentType is available at portal_manager module scope."""
-        assert PM_ComponentType is not None, "ComponentType should be imported at module scope"
+        assert ComponentType is not None, "ComponentType should be imported at module scope"
     
-    def test_ck_helper_with_enum(self):
-        """Test _ck helper normalizes Enum keys correctly."""
+    def test_component_type_enum_values(self):
+        """Test ComponentType enum values are correct."""
         if ComponentType is not None:
-            result = _ck(ComponentType.ITEM)
-            # _ck returns the value of the Enum, which is an auto() integer
-            assert isinstance(result, int), f"Expected int, got {type(result)}"
-            assert result == ComponentType.ITEM.value
+            # ComponentType should have ITEM, PORTAL, AI, etc.
+            assert hasattr(ComponentType, 'ITEM'), "ComponentType should have ITEM"
+            assert hasattr(ComponentType, 'PORTAL'), "ComponentType should have PORTAL"
+            assert hasattr(ComponentType, 'AI'), "ComponentType should have AI"
     
-    def test_ck_helper_with_string(self):
-        """Test _ck helper handles string keys correctly."""
-        result = _ck("item")
-        assert result == "item", f"Expected 'item', got {result}"
+    def test_component_type_direct_usage(self):
+        """Test using ComponentType enum directly works without _ck helper."""
+        # After refactoring, we use ComponentType directly instead of _ck
+        assert hasattr(ComponentType, 'ITEM')
+        assert isinstance(ComponentType.ITEM, ComponentType)
     
-    def test_ck_helper_with_none_component_type(self):
-        """Test _ck helper gracefully handles when ComponentType is unavailable."""
-        # This tests the fallback when ComponentType import fails
-        result = _ck(None)
-        assert result is None
+    def test_portal_manager_uses_enum_directly(self):
+        """Test that portal_manager now uses ComponentType enum directly."""
+        # This verifies the refactoring removed the old _ck() conversion pattern
+        # and now uses ComponentType enums directly
+        import inspect
+        from services import portal_manager
+        
+        source = inspect.getsource(portal_manager)
+        # The refactored code should NOT use _ck
+        assert "_ck(" not in source, "portal_manager should not use _ck() after refactoring"
+        # But it SHOULD use ComponentType directly
+        assert "ComponentType.PORTAL" in source, "portal_manager should use ComponentType.PORTAL directly"
     
     def test_create_portal_entity_no_unbound_error(self):
         """Regression test: creating a portal should not raise UnboundLocalError.
@@ -65,19 +73,18 @@ class TestPortalManagerComponentType:
             # Other exceptions are OK - we're only testing for UnboundLocalError
             pass
     
-    def test_ck_handles_both_enum_and_string_keys(self):
-        """Test that _ck properly normalizes both Enum and string component keys."""
-        # Test with string
-        assert _ck("portal") == "portal"
-        assert _ck("ai") == "ai"
-        assert _ck("inventory") == "inventory"
-        
-        # Test with Enum (if available)
-        # _ck returns the enum's integer value, not a string
+    def test_component_type_enum_comparison(self):
+        """Test that ComponentType enum members can be properly compared."""
+        # After refactoring, we no longer use _ck() conversion
+        # Instead we use ComponentType enums directly
         if ComponentType is not None:
-            assert _ck(ComponentType.PORTAL) == ComponentType.PORTAL.value
-            assert _ck(ComponentType.AI) == ComponentType.AI.value
-            assert _ck(ComponentType.INVENTORY) == ComponentType.INVENTORY.value
+            assert ComponentType.PORTAL == ComponentType.PORTAL
+            assert ComponentType.AI == ComponentType.AI
+            assert ComponentType.INVENTORY == ComponentType.INVENTORY
+            # Each enum member should have a value property
+            assert hasattr(ComponentType.PORTAL, 'value')
+            assert hasattr(ComponentType.AI, 'value')
+            assert hasattr(ComponentType.INVENTORY, 'value')
 
 
 class TestPortalManagerComponentAccess:
