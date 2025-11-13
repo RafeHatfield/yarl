@@ -477,10 +477,23 @@ class ActionProcessor:
         
         result = movement_service.execute_movement(dx, dy, source="keyboard")
         
-        # Handle blocking entity (combat)
+        # Handle blocking entity (door or combat)
         if result.blocked_by_entity:
-            self._handle_combat(player, result.blocked_by_entity)
-            return
+            blocking_entity = result.blocked_by_entity
+            
+            # Check if blocking entity is a door - display messages, don't attack!
+            if blocking_entity.components.has(ComponentType.DOOR):
+                message_log = self.state_manager.state.message_log
+                for msg in result.messages:
+                    if isinstance(msg, dict) and "message" in msg:
+                        message_log.add_message(msg["message"])
+                    else:
+                        message_log.add_message(msg)
+                return
+            else:
+                # Regular blocking entity - handle combat
+                self._handle_combat(player, blocking_entity)
+                return
         
         # Handle blocked by wall (no action needed, just return)
         if result.blocked_by_wall:

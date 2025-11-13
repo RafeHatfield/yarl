@@ -112,7 +112,24 @@ class MovementService:
                 logger.debug("Movement blocked by immobilized status effect")
                 return result
 
-        # Check for wall/blocked tile
+        # Check for door at destination FIRST (before wall check)
+        # Doors may block tiles, but we want to handle them specially
+        door_entity = self._find_door_at_location(entities, dest_x, dest_y)
+        if door_entity and door_entity.components.has(ComponentType.DOOR):
+            door_result = self._handle_door_bump(player, door_entity, result)
+            if not door_result.success:
+                # Door blocked movement (locked or secret and undiscovered)
+                result.blocked_by_entity = door_entity
+                result.messages.extend(door_result.messages)
+                logger.debug(f"Movement blocked by door at ({dest_x}, {dest_y})")
+                return result
+            else:
+                # Door was opened - update tile to be passable and continue movement
+                result.messages.extend(door_result.messages)
+                # Door is now open, so tile should not block
+                # Continue to movement execution below
+        
+        # Check for wall/blocked tile (after door handling)
         if game_map.is_blocked(dest_x, dest_y):
             result.blocked_by_wall = True
             logger.debug(f"Movement blocked by wall at ({dest_x}, {dest_y})")
@@ -359,6 +376,148 @@ class MovementService:
         
         if alerted_count > 0:
             logger.info(f"Alarm trap: alerted {alerted_count} {faction_to_alert}(s)")
+    
+    def _find_door_at_location(self, entities: List['Entity'], x: int, y: int) -> Optional['Entity']:
+        """Find a door entity at the given location.
+        
+        Args:
+            entities: List of entities
+            x: X coordinate
+            y: Y coordinate
+            
+        Returns:
+            Door entity if found, None otherwise
+        """
+        from components.component_registry import ComponentType
+        
+        for entity in entities:
+            if entity.x == x and entity.y == y and entity.components.has(ComponentType.DOOR):
+                return entity
+        return None
+    
+    @dataclass
+    class DoorResult:
+        """Result of attempting to open/unlock a door."""
+        success: bool = False
+        messages: List[Dict[str, Any]] = None
+        
+        def __post_init__(self):
+            if self.messages is None:
+                self.messages = []
+    
+    def _handle_door_bump(self, player: 'Entity', door_entity: 'Entity', movement_result: 'MovementResult') -> 'DoorResult':
+        """Handle player bumping into a door.
+        
+        Attempts to open/unlock the door based on its state and player's inventory.
+        
+        Args:
+            player: Player entity
+            door_entity: Door entity being bumped into
+            movement_result: Current movement result (for context)
+            
+        Returns:
+            DoorResult indicating success/failure and messages
+        """
+        from components.component_registry import ComponentType
+        from message_builder import MessageBuilder as MB
+        
+        door_result = self.DoorResult()
+        door = door_entity.components.get(ComponentType.DOOR)
+        
+        if not door:
+            logger.error(f"Door entity at ({door_entity.x}, {door_entity.y}) has no Door component")
+            return door_result
+        
+        # If door is already open, allow passage
+        if not door.is_closed:
+            door_result.success = True
+            return door_result
+        
+        # If door is secret and undiscovered, treat as wall
+        if door.is_secret and not door.is_discovered:
+            door_result.messages.append(MB.warning("You bump into a solid wall."))
+            logger.debug(f"Bumped into undiscovered secret door at ({door_entity.x}, {door_entity.y})")
+            return door_result
+        
+        # Door is closed - try to open/unlock
+        if door.is_locked:
+            # Check for key in player inventory
+            # Keys can be matched by:
+            # 1. Entity ID (e.g., "iron_key")
+            # 2. key_type attribute (e.g., key_type="iron")
+            # 3. Item name normalized (e.g., "Iron Key" → "iron_key")
+            key_found = False
+            matching_key = None
+            
+            if player.components.has(ComponentType.INVENTORY):
+                inventory = player.inventory
+                
+                # Debug: Log all keys in inventory
+                keys_in_inventory = []
+                for item in inventory.items:
+                    if hasattr(item, 'key_type') or 'key' in item.name.lower():
+                        keys_in_inventory.append(f"{item.name} (id:{getattr(item, 'entity_id', '?')}, key_type:{getattr(item, 'key_type', '?')})")
+                
+                if keys_in_inventory:
+                    logger.debug(f"Keys in inventory: {keys_in_inventory}")
+                    print(f"[KEY DEBUG] Looking for '{door.key_tag}' in inventory with keys: {keys_in_inventory}")
+                
+                for item in inventory.items:
+                    # Try multiple matching strategies
+                    item_matches = False
+                    
+                    # Strategy 1: Match by entity_id
+                    if hasattr(item, 'entity_id') and item.entity_id == door.key_tag:
+                        item_matches = True
+                        logger.debug(f"Matched by entity_id: {item.entity_id} == {door.key_tag}")
+                    
+                    # Strategy 2: Match by key_type attribute  
+                    elif hasattr(item, 'key_type'):
+                        # door.key_tag might be "iron_key", item.key_type might be "iron"
+                        # Check if key_type matches any part of key_tag
+                        if item.key_type in door.key_tag or door.key_tag.replace('_key', '') == item.key_type:
+                            item_matches = True
+                            logger.debug(f"Matched by key_type: {item.key_type} matches {door.key_tag}")
+                    
+                    # Strategy 3: Match by normalized item name
+                    elif hasattr(item, 'name'):
+                        item_name_normalized = item.name.lower().replace(' ', '_')
+                        if item_name_normalized == door.key_tag:
+                            item_matches = True
+                            logger.debug(f"Matched by name: {item_name_normalized} == {door.key_tag}")
+                    
+                    if item_matches:
+                        key_found = True
+                        matching_key = item
+                        logger.info(f"Found matching key: {item.name} for door requiring {door.key_tag}")
+                        break
+            
+            if not key_found:
+                door_result.messages.append(MB.warning(f"The door is locked. (Need: {door.key_tag})"))
+                logger.debug(f"Player tried to open locked door but no {door.key_tag} in inventory")
+                print(f"[KEY DEBUG] NO MATCH FOUND for '{door.key_tag}'")
+                return door_result
+            
+            # Player has key - unlock and open
+            door.unlock()
+            door.open()
+            door_entity.char = '/'  # Open door glyph
+            door_entity.color = (200, 180, 100)  # Lighter brown for open
+            door_entity.blocks = False  # Allow passage through open door
+            door_result.messages.append(MB.success(f"You unlock and open the door!"))
+            logger.info(f"Player unlocked door at ({door_entity.x}, {door_entity.y}) with {door.key_tag}")
+            door_result.success = True
+            return door_result
+        else:
+            # Door is unlocked - just open it
+            door.open()
+            door_entity.char = '/'  # Open door glyph
+            door_entity.color = (200, 180, 100)  # Lighter brown for open
+            door_entity.blocks = False  # Allow passage through open door
+            door_result.messages.append(MB.success("You open the door."))
+            logger.debug(f"Player opened door at ({door_entity.x}, {door_entity.y})")
+            door_result.success = True
+            return door_result
 
 
 # Singleton instance

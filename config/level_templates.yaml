@@ -198,11 +198,15 @@ level_overrides:
     guaranteed_spawns:
       mode: "replace"
       monsters:
-        - type: "orc"      ; count: 4
-        - type: "skeleton" ; count: 4
-        - type: "slime"    ; count: 2
+        - type: "orc"
+          count: 4
+        - type: "skeleton"
+          count: 4
+        - type: "slime"
+          count: 2
       items:
-        - type: "healing_potion" ; count: 3
+        - type: "healing_potion"
+          count: 3
     door_rules:
       spawn_ratio: 0.7
       locked: { chance: 0.2, key_tag: "iron_key" }

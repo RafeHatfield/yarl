@@ -74,7 +74,7 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
     # Chests and signposts don't block, so we need to check non-blocking entities too
     entities_at_location = [e for e in entities if e.x == click_x and e.y == click_y]
     
-    # Priority 1: Check for interactive map features (chests, signposts, locked doors)
+    # Priority 1: Check for interactive map features (chests, signposts, doors)
     for entity in entities_at_location:
         if entity.components.has(ComponentType.CHEST):
             # Clicked on a chest - interact with it
@@ -82,8 +82,11 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
         elif entity.components.has(ComponentType.SIGNPOST):
             # Clicked on a signpost - read it
             return _handle_signpost_click(player, entity, results)
+        elif entity.components.has(ComponentType.DOOR):
+            # Clicked on a door (regular or locked) - try to open/unlock it
+            return _handle_door_click(player, entity, results, entities, game_map)
         elif entity.components.has(ComponentType.LOCKED_DOOR):
-            # Clicked on a locked door - try to unlock it
+            # Clicked on a locked door (legacy component) - try to unlock it
             return _handle_door_click(player, entity, results, entities, game_map)
     
     # Priority 2: Check for blocking entities (enemies)
@@ -367,14 +370,14 @@ def _handle_signpost_click(player: 'Entity', sign_entity: 'Entity', results: lis
 
 def _handle_door_click(player: 'Entity', door_entity: 'Entity', results: list,
                       entities: List['Entity'], game_map: 'GameMap') -> dict:
-    """Handle clicking on a locked door.
+    """Handle clicking on a door.
     
-    Attempts to unlock the door if the player is adjacent and has the required key.
-    If unlocked, the door transforms to passable floor.
+    If adjacent, attempts to open/unlock the door.
+    If not adjacent, pathfinds to the door.
     
     Args:
         player (Entity): The player entity
-        door_entity (Entity): The locked door entity
+        door_entity (Entity): The door entity
         results (list): List to append results to
         entities (List[Entity]): List of all entities
         game_map (GameMap): The game map
@@ -382,66 +385,31 @@ def _handle_door_click(player: 'Entity', door_entity: 'Entity', results: list,
     Returns:
         dict: Dictionary containing action results
     """
+    from message_builder import MessageBuilder as MB
+    
     # Calculate distance to door
     distance = player.distance_to(door_entity)
     
     if distance <= 1.5:  # Adjacent (including diagonals)
-        # Try to unlock the door
-        door = door_entity.locked_door
-        if door:
-            # Check if door is locked and requires a key
-            has_key = False
-            key_consumed = False
-            
-            if door.is_locked() and door.required_key:
-                # Check player inventory for matching key
-                inventory = player.get_component_optional(ComponentType.INVENTORY)
-                
-                if inventory:
-                    # Look for key in inventory
-                    matching_key = None
-                    for item in inventory.items:
-                        # Check if this is a key item
-                        if item.item and hasattr(item, 'name'):
-                            # Match key by name (e.g., "bronze_key" door needs "Bronze Key" item)
-                            item_name_normalized = item.name.lower().replace(' ', '_')
-                            if item_name_normalized == door.required_key:
-                                matching_key = item
-                                break
-                    
-                    if matching_key:
-                        # Player has the key! Remove it from inventory
-                        inventory.items.remove(matching_key)
-                        has_key = True
-                        key_consumed = True
-                    else:
-                        # Player doesn't have the key
-                        key_name = door.required_key.replace('_', ' ').title()
-                        results.append({
-                            "message": MB.warning(f"This door is locked. You need a {key_name}.")
-                        })
-                        return {"results": results}
-            
-            # Unlock the door
-            unlock_results = door.unlock(player, has_key=has_key)
-            results.extend(unlock_results)
-            
-            # Process results - check if door was opened
-            for result in unlock_results:
-                if result.get('door_opened'):
-                    # Remove the door entity from the map (it's now passable floor)
-                    entities.remove(door_entity)
-                    
-                    # Update the tile to be passable
-                    game_map.tiles[door_entity.x][door_entity.y].blocked = False
-                    game_map.tiles[door_entity.x][door_entity.y].block_sight = False
-            
-            # Trigger enemy turn after interaction
-            results.append({"enemy_turn": True})
-        else:
-            results.append({
-                "message": MB.warning("This door cannot be opened.")
-            })
+        # Use the movement service's door handling
+        from services.movement_service import get_movement_service
+        movement_service = get_movement_service()
+        
+        door_result = movement_service._handle_door_bump(player, door_entity, None)
+        
+        # Add messages from door interaction
+        for msg in door_result.messages:
+            if isinstance(msg, dict) and "message" in msg:
+                results.append(msg)
+            else:
+                results.append({"message": msg})
+        
+        if door_result.success:
+            # Door was opened successfully
+            logger.debug(f"Door at ({door_entity.x}, {door_entity.y}) opened via click")
+        
+        # Always trigger enemy turn after door interaction
+        results.append({"enemy_turn": True})
     else:
         # Too far - pathfind to the door
         results.append({

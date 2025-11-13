@@ -70,13 +70,15 @@ class Door:
             return False
         
         self.is_closed = False
-        logger.debug(f"Door at ({self.owner.x}, {self.owner.y}) opened")
+        if self.owner:
+            logger.debug(f"Door at ({self.owner.x}, {self.owner.y}) opened")
         return True
     
     def close(self) -> None:
         """Close the door."""
         self.is_closed = True
-        logger.debug(f"Door at ({self.owner.x}, {self.owner.y}) closed")
+        if self.owner:
+            logger.debug(f"Door at ({self.owner.x}, {self.owner.y}) closed")
     
     def unlock(self) -> bool:
         """Unlock the door (called when player uses matching key).
@@ -88,7 +90,8 @@ class Door:
             return False
         
         self.is_locked = False
-        logger.debug(f"Door at ({self.owner.x}, {self.owner.y}) unlocked")
+        if self.owner:
+            logger.debug(f"Door at ({self.owner.x}, {self.owner.y}) unlocked")
         return True
     
     def discover(self) -> bool:
@@ -101,7 +104,8 @@ class Door:
             return False
         
         self.is_discovered = True
-        logger.debug(f"Secret door at ({self.owner.x}, {self.owner.y}) discovered")
+        if self.owner:
+            logger.debug(f"Secret door at ({self.owner.x}, {self.owner.y}) discovered")
         return True
     
     def blocks_movement(self) -> bool:
