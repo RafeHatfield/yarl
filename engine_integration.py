@@ -15,7 +15,7 @@ from typing import Any
 import tcod.libtcodpy as libtcod
 from engine import GameEngine
 from performance.config import get_performance_config
-from io_layer.interfaces import Renderer, InputSource
+from io_layer.interfaces import Renderer, InputSource, ActionDict
 from io_layer.console_renderer import ConsoleRenderer
 from io_layer.keyboard_input import KeyboardInputSource
 
@@ -285,17 +285,17 @@ def play_game_with_engine(
     )
 
     # Main game loop
-    # Phase 1 (INPUT): input_source.next_action() is the primary input path
-    # Phase 2 (RENDERING): Will add renderer.render() calls (system-based rendering for now)
-    # Phase 3 (CLEANUP): Will retire RenderSystem drawing logic
+    # PHASE 1 (INPUT): ✅ COMPLETE - input_source.next_action() is the primary input path
+    # PHASE 2 (RENDERING): ✅ COMPLETE - renderer.render() is called each frame
+    # PHASE 3+ (OPTIONAL): System cleanup (not required for functionality)
     while not libtcod.console_is_window_closed():
         # =====================================================================
         # INPUT HANDLING (PHASE 1: COMPLETE)
         # Input comes ONLY from input_source.next_action() - no InputSystem.update()
         # MouseActions are included in the action dict from KeyboardInputSource
         # =====================================================================
-        action = input_source.next_action(engine.state_manager.state)
-        mouse_action = {}  # Mouse actions are now included in the action dict from InputSource
+        action: ActionDict = input_source.next_action(engine.state_manager.state)
+        mouse_action: ActionDict = {}  # Mouse actions are now included in the action dict from InputSource
         
         # Check for restart action (from death screen)
         if action.get("restart"):
@@ -572,19 +572,20 @@ def play_game_with_engine(
             break
 
         # =====================================================================
-        # RENDERING & GAME STATE UPDATES (PHASE 2: IN PROGRESS)
+        # RENDERING & GAME STATE UPDATES (PHASE 2: COMPLETE)
         #
         # Rendering path (abstraction-driven):
-        #   renderer.render() is called BEFORE engine.update() to render frame
+        #   1. renderer.render() draws current frame via ConsoleRenderer
+        #   2. engine.update() runs all systems (AI, FOV, state management)
+        #   3. RenderSystem.update() skips drawing (skip_drawing=True)
         #
-        # Note: RenderSystem.update() still runs but should skip drawing to avoid
-        # double-rendering. This is temporary until we fully migrate rendering.
+        # ConsoleRenderer is the SOLE drawing authority. No double-rendering.
         # =====================================================================
         
-        # Render the current frame through abstraction layer
+        # Render the current frame through abstraction layer (canonical drawing path)
         renderer.render(engine.state_manager.state)
         
-        # Update all game systems (AI, FOV management, etc.)
+        # Update all game systems (AI, FOV, camera, state - but NOT drawing)
         engine.update()
 
         # IMPORTANT: Reset FOV flag AFTER rendering is complete

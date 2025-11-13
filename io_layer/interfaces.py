@@ -11,7 +11,50 @@ This design allows future extensions (e.g., sprite renderer, bot input) without
 changing the main game loop.
 """
 
-from typing import Protocol, Any, Dict
+from typing import Protocol, Any, Dict, TypedDict, Tuple, Optional
+
+
+class ActionDict(TypedDict, total=False):
+    """Strongly-typed dictionary representing player actions from input.
+    
+    Keys are optional (total=False) to support the "sometimes-present" semantics
+    of current action dictionaries. Each key corresponds to a specific input action
+    and carries the relevant data for that action.
+    
+    Movement and click actions carry coordinate tuples.
+    Most other actions are boolean flags.
+    """
+    
+    # Movement (from keyboard or targeting)
+    move: Tuple[int, int]
+    wait: bool
+    
+    # Item/inventory actions
+    pickup: bool
+    show_inventory: bool
+    drop_inventory: bool
+    throw: bool
+    inventory_index: int
+    
+    # Navigation/level actions
+    take_stairs: bool
+    start_auto_explore: bool
+    search: bool
+    
+    # UI/menu actions
+    show_character_screen: bool
+    show_wizard_menu: bool
+    
+    # System actions
+    exit: bool
+    restart: bool
+    fullscreen: bool
+    
+    # Mouse/click actions (coordinates in game world or screen space)
+    left_click: Tuple[int, int]
+    right_click: Tuple[int, int]
+    sidebar_click: Tuple[int, int]
+    sidebar_right_click: Tuple[int, int]
 
 
 class Renderer(Protocol):
@@ -40,7 +83,7 @@ class InputSource(Protocol):
     depends only on this protocol, not on specific input hardware or methods.
     """
 
-    def next_action(self, game_state: Any) -> Dict[str, Any]:
+    def next_action(self, game_state: Any) -> ActionDict:
         """Get the next player action based on current input and game state.
 
         This may block for input or return an empty dict if no input is
@@ -51,8 +94,8 @@ class InputSource(Protocol):
                         (e.g., different input modes for different game states).
 
         Returns:
-            A dictionary mapping action keys to values (e.g., {"move": (1, 0)},
-            {"show_inventory": True}, or {} if no action is available).
+            An ActionDict (TypedDict) mapping action keys to values.
+            Returns an empty dict if no action is available.
         """
         ...
 

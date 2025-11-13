@@ -5,11 +5,12 @@ input handling system, adapting it to the InputSource protocol. This allows the 
 to be input-source-agnostic while maintaining all existing keyboard controls.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 import tcod.libtcodpy as libtcod
 
 from input_handlers import handle_keys, handle_mouse
 from game_states import GameStates
+from io_layer.interfaces import ActionDict
 
 
 class KeyboardInputSource:
@@ -34,7 +35,7 @@ class KeyboardInputSource:
         self.current_mouse = libtcod.Mouse()
         self.death_frame_counter = None
 
-    def next_action(self, game_state: Any) -> Dict[str, Any]:
+    def next_action(self, game_state: Any) -> ActionDict:
         """Get the next player action from keyboard/mouse input.
 
         Acquires input events from libtcod and translates them to game actions
@@ -47,8 +48,8 @@ class KeyboardInputSource:
                         - (optional) other state-specific information
 
         Returns:
-            A dictionary mapping action keys to values (e.g., {"move": (1, 0)},
-            {"show_inventory": True}, or {} if no input is available).
+            An ActionDict containing the next player action, or an empty dict if no
+            input is available.
         """
         # Check for input events (non-blocking)
         libtcod.sys_check_for_event(

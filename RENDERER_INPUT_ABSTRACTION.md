@@ -76,11 +76,12 @@ while not libtcod.console_is_window_closed():
 
 ## Current State (Phase 2: Rendering Abstraction Complete)
 
-### ✅ What's Working Now (Phase 1 + 2)
+### ✅ What's Working Now (Phase 1 + 2, STRONGLY TYPED)
 - ✅ Abstractions fully defined and implemented
+- ✅ **ActionDict TypedDict** — strongly-typed action dictionary for all player actions
 - ✅ **ConsoleRenderer is ACTIVE** — main loop calls `renderer.render()` each frame
 - ✅ **KeyboardInputSource is ACTIVE** — main loop uses `input_source.next_action()` for input
-- ✅ Input path: InputSource abstraction (no InputSystem.update() in loop)
+- ✅ Input path: InputSource abstraction returning `ActionDict` (no InputSystem.update() in loop)
 - ✅ Rendering path: ConsoleRenderer abstraction (RenderSystem.update() skips drawing)
 - ✅ RenderSystem still runs for FOV recompute and state management (non-drawing tasks)
 - ✅ No double-rendering: `skip_drawing=True` prevents system drawing
@@ -204,8 +205,9 @@ Results:
 1. **Minimal Protocol**: Only essential methods (single `render()`, single `next_action()`)
 2. **No Assumptions**: Protocols don't assume specific technologies
 3. **Duck Typing**: Runtime polymorphism via structural typing
-4. **Gradual Migration**: Abstractions available but system architecture still in place
-5. **Zero Dependencies**: No new packages required
+4. **Strong Typing**: ActionDict TypedDict provides type clarity for player actions
+5. **Gradual Migration**: Abstractions available but system architecture still in place
+6. **Zero Dependencies**: No new packages required
 
 ---
 
