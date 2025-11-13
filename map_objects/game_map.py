@@ -306,6 +306,12 @@ class GameMap:
         
         # Place secret doors between rooms (15% chance per level)
         self.place_secret_doors_between_rooms(rooms)
+        
+        # VALIDATION: Ensure locked doors have keys available
+        self._validate_and_guarantee_locked_door_keys(entities, rooms)
+        
+        # VALIDATION: Ensure secret doors are only on wall tiles
+        self._validate_secret_door_placement(entities)
 
     def create_room(self, room):
         """Create a room by making tiles passable.
@@ -2259,3 +2265,145 @@ class GameMap:
             logger.info(f"=== GHOST GUIDE SPAWNED at ({guide_x}, {guide_y}) on level {self.dungeon_level} ===")
         else:
             logger.error(f"Failed to create Ghost Guide on level {self.dungeon_level}")
+    
+    def _validate_and_guarantee_locked_door_keys(self, entities, rooms):
+        """Validate that every locked door has a reachable key on the same floor.
+        
+        If a locked door exists but no matching key is found:
+        1. Try to spawn a fallback key on the level
+        2. As a last resort, unlock the door
+        
+        Args:
+            entities (list): List of entities on the map
+            rooms (list): List of room Rect objects
+        """
+        from components.component_registry import ComponentType
+        from components.door import Door
+        from config.entity_factory import get_entity_factory
+        
+        # Find all locked doors and their key requirements
+        locked_doors = {}  # key_tag -> [door_entities]
+        for entity in entities:
+            if entity.components.has(ComponentType.DOOR):
+                door_comp = entity.components.get(ComponentType.DOOR)
+                if door_comp.is_locked and door_comp.key_tag:
+                    if door_comp.key_tag not in locked_doors:
+                        locked_doors[door_comp.key_tag] = []
+                    locked_doors[door_comp.key_tag].append(entity)
+        
+        if not locked_doors:
+            return  # No locked doors, nothing to validate
+        
+        # Check each key_tag for available keys
+        for key_tag, door_entities in locked_doors.items():
+            # Count available keys for this key_tag
+            available_keys = 0
+            for entity in entities:
+                if hasattr(entity, 'key_type'):
+                    # Match by key_type attribute
+                    if entity.key_type in key_tag or key_tag.replace('_key', '') == entity.key_type:
+                        available_keys += 1
+                elif hasattr(entity, 'entity_id') and entity.entity_id == key_tag:
+                    available_keys += 1
+                elif hasattr(entity, 'name'):
+                    item_name = entity.name.lower().replace(' ', '_')
+                    if item_name == key_tag or item_name.replace(' ', '_') == key_tag:
+                        available_keys += 1
+            
+            # If no keys found, spawn fallback key
+            if available_keys == 0:
+                logger.debug(f"No keys found for locked doors requiring '{key_tag}' on level {self.dungeon_level}")
+                
+                # Try to spawn fallback key
+                door_entity = door_entities[0]  # Pick first locked door location
+                spawn_pos = self._find_random_unoccupied_position(rooms, entities)
+                
+                if spawn_pos[0] is not None:
+                    x, y = spawn_pos
+                    factory = get_entity_factory()
+                    
+                    # Create key matching the key_tag
+                    key = factory.create_spell_item(key_tag, x, y)
+                    if key:
+                        entities.append(key)
+                        logger.info(f"[VALIDATION] Spawned fallback key '{key_tag}' at ({x}, {y}) on level {self.dungeon_level}")
+                    else:
+                        # Fallback: try to unlock the door
+                        logger.warning(
+                            f"Failed to spawn key '{key_tag}' on level {self.dungeon_level}, "
+                            f"unlocking {len(door_entities)} locked door(s) as last resort"
+                        )
+                        for door_ent in door_entities:
+                            door_ent.components.get(ComponentType.DOOR).unlock()
+                else:
+                    # No space to spawn key - unlock doors
+                    logger.warning(
+                        f"No space to spawn fallback key '{key_tag}' on level {self.dungeon_level}, "
+                        f"unlocking {len(door_entities)} locked door(s) as last resort"
+                    )
+                    for door_ent in door_entities:
+                        door_ent.components.get(ComponentType.DOOR).unlock()
+    
+    def _validate_secret_door_placement(self, entities):
+        """Validate that secret doors are only placed on wall tiles.
+        
+        Secret doors placed on walkable tiles are converted to normal doors.
+        This prevents the issue of "secret doors" in the middle of corridors
+        that were already walkable.
+        
+        Args:
+            entities (list): List of entities on the map
+        """
+        from components.component_registry import ComponentType
+        
+        secret_doors_invalid = []
+        
+        for entity in entities:
+            if entity.components.has(ComponentType.DOOR):
+                door_comp = entity.components.get(ComponentType.DOOR)
+                if door_comp.is_secret:
+                    # Check if the tile is currently walkable
+                    x, y = entity.x, entity.y
+                    if not self.is_in_bounds(x, y):
+                        logger.warning(f"Secret door at ({x}, {y}) is out of bounds!")
+                        secret_doors_invalid.append(entity)
+                        continue
+                    
+                    tile = self.tiles[x][y]
+                    if not tile.blocked:
+                        # Tile is walkable - this is invalid for a secret door
+                        logger.warning(
+                            f"Secret door at ({x}, {y}) is on a walkable floor tile, "
+                            f"converting to normal door"
+                        )
+                        # Convert to normal (non-secret) door
+                        door_comp.is_secret = False
+                        door_comp.is_discovered = True
+                        secret_doors_invalid.append(entity)
+                    else:
+                        # Verify it has at least one adjacent walkable tile
+                        has_adjacent_walkable = False
+                        for dx in [-1, 0, 1]:
+                            for dy in [-1, 0, 1]:
+                                if dx == 0 and dy == 0:
+                                    continue
+                                adj_x, adj_y = x + dx, y + dy
+                                if self.is_in_bounds(adj_x, adj_y):
+                                    if not self.tiles[adj_x][adj_y].blocked:
+                                        has_adjacent_walkable = True
+                                        break
+                            if has_adjacent_walkable:
+                                break
+                        
+                        if not has_adjacent_walkable:
+                            logger.warning(
+                                f"Secret door at ({x}, {y}) has no adjacent walkable tiles, "
+                                f"removing it"
+                            )
+                            secret_doors_invalid.append(entity)
+        
+        # Remove invalid secret doors
+        for entity in secret_doors_invalid:
+            if entity in entities:
+                entities.remove(entity)
+                logger.debug(f"Removed invalid secret door from level {self.dungeon_level}")
