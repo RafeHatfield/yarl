@@ -2,6 +2,19 @@
 
 Provides hover tooltips for UI elements, particularly for items in the sidebar
 that have abbreviated names, and for items on the ground in the viewport.
+
+TOOLTIP STABILITY GUARANTEE:
+  Tooltip content is deterministic and stable per frame. Entity ordering within
+  a tile is consistent (not dependent on non-deterministic list iteration). This
+  prevents flickering when multiple entities (e.g., item + corpse) share the same tile.
+
+FEATURE TOOLTIP BEHAVIOR:
+  - Murals: Show only name/label in hover tooltip. Full mural text shown in message log on examine.
+  - Signposts: Show only name/label in hover tooltip. Full message shown in message log on read.
+  - Chests: Show name, state (open/closed/locked), and trap indicator in hover tooltip.
+  
+This short-label approach ensures stable, non-flickering tooltips and prevents information
+overload during exploration. Full lore/story text is reserved for interaction messages.
 """
 
 import tcod.libtcodpy as libtcod
@@ -10,6 +23,7 @@ import logging
 
 from components.component_registry import ComponentType
 from ui.sidebar_layout import calculate_sidebar_layout, get_hotkey_list, get_equipment_slot_list
+from io_layer.console_renderer import get_last_frame_counter
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +64,23 @@ def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_
 def get_all_entities_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> list:
     """Get ALL entities at the specified world coordinates.
     
-    Returns living monsters, corpses, and items at the position, prioritized
-    in that order for display purposes.
+    Returns living monsters, items (including chests, signposts, murals, and other interactables),
+    and corpses at the position, prioritized in that order for display purposes.
+    Entities within each category are sorted deterministically to ensure stable tooltip content across frames.
+    
+    CRITICAL: The ordering within each category (monsters, items, corpses) is deterministic
+    and stable per frame. This prevents tooltip flickering when multiple entities
+    occupy the same tile (e.g., weapon on top of corpse).
+    
+    CORPSE DETECTION: A corpse is identified by render_order == RenderOrder.CORPSE.
+    This is set by kill_monster() when a monster dies, regardless of component state.
+    
+    ITEMS BUCKET: Includes:
+      - Items (ComponentType.ITEM)
+      - Chests (ComponentType.CHEST)
+      - Signposts (ComponentType.SIGNPOST)
+      - Murals (ComponentType.MURAL)
+      - Any other ground features/interactables
     
     Args:
         world_x: X coordinate in world space
@@ -61,34 +90,110 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
         fov_map: Optional FOV map to check visibility
         
     Returns:
-        List of entities at this position, ordered by priority (monsters first, then items, then corpses)
+        List of entities at this position, ordered by priority (living monsters first, then items/features, then corpses)
+        Entities within each category are sorted deterministically by (render_order, name, id).
     """
-    # Check FOV if provided
-    if fov_map:
+    # Import RenderOrder for corpse detection
+    from render_functions import RenderOrder
+    from ui.debug_flags import ENABLE_TOOLTIP_DEBUG, TOOLTIP_IGNORE_FOV
+    
+    frame_id = get_last_frame_counter()
+    
+    # Check FOV if provided (respect TOOLTIP_IGNORE_FOV debug flag)
+    in_fov = True
+    if TOOLTIP_IGNORE_FOV:
+        # Debug mode: ignore FOV, show everything
+        in_fov = True
+        if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "TOOLTIP_FOV_CHECK: frame=%d pos=(%d,%d) in_fov=%s TOOLTIP_IGNORE_FOV_ENABLED",
+                frame_id, world_x, world_y, in_fov
+            )
+    elif fov_map:
+        # Normal mode: check FOV
         from fov_functions import map_is_in_fov
-        if not map_is_in_fov(fov_map, world_x, world_y):
-            return []
+        in_fov = map_is_in_fov(fov_map, world_x, world_y)
+        if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "TOOLTIP_FOV_CHECK: frame=%d pos=(%d,%d) in_fov=%s fov_map_present=True",
+                frame_id, world_x, world_y, in_fov
+            )
+    else:
+        # No FOV map provided
+        if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "TOOLTIP_FOV_CHECK: frame=%d pos=(%d,%d) in_fov=%s fov_map_provided=False",
+                frame_id, world_x, world_y, in_fov
+            )
+    
+    if not in_fov:
+        if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "TOOLTIP_FOV_FILTERED: frame=%d pos=(%d,%d) entity_list_empty",
+                frame_id, world_x, world_y
+            )
+        return []
     
     living_monsters = []
-    items = []
+    items = []  # Includes chests, signposts, murals, and other interactables
     corpses = []
     
     for entity in entities:
         if entity.x == world_x and entity.y == world_y and entity != player:
-            # Living monster (has fighter + AI + HP > 0)
-            if (entity.components.has(ComponentType.FIGHTER) and
-                entity.components.has(ComponentType.AI)):
-                fighter = entity.get_component_optional(ComponentType.FIGHTER)
-                if fighter and fighter.hp > 0:
-                    living_monsters.append(entity)
-                else:
-                    corpses.append(entity)
-            # Item (has item component)
-            elif entity.components.has(ComponentType.ITEM):
+            # Corpse detection: check render_order == CORPSE (not component state)
+            if getattr(entity, 'render_order', None) == RenderOrder.CORPSE:
+                corpses.append(entity)
+                if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "TOOLTIP_ENTITY_CLASSIFIED: frame=%d pos=(%d,%d) name=%s category=corpse",
+                        frame_id, world_x, world_y, getattr(entity, "name", "UNNAMED")
+                    )
+            # Living monster: has FIGHTER + AI components (removed from corpses by kill_monster)
+            elif (entity.components.has(ComponentType.FIGHTER) and
+                  entity.components.has(ComponentType.AI)):
+                living_monsters.append(entity)
+                if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "TOOLTIP_ENTITY_CLASSIFIED: frame=%d pos=(%d,%d) name=%s category=living_monster",
+                        frame_id, world_x, world_y, getattr(entity, "name", "UNNAMED")
+                    )
+            # Items and interactables: items, chests, signposts, murals, and ground features
+            elif (entity.components.has(ComponentType.ITEM) or
+                  entity.components.has(ComponentType.CHEST) or
+                  entity.components.has(ComponentType.SIGNPOST) or
+                  entity.components.has(ComponentType.MURAL)):
                 items.append(entity)
+                if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "TOOLTIP_ENTITY_CLASSIFIED: frame=%d pos=(%d,%d) name=%s category=item_or_feature",
+                        frame_id, world_x, world_y, getattr(entity, "name", "UNNAMED")
+                    )
+            # Other entities are ignored (no tooltip)
+    
+    # Sort each category deterministically to ensure stable tooltip content
+    # Use (render_order, name, id) as sort key for consistent ordering across frames
+    def _sort_key(e):
+        # Handle entities without render_order gracefully
+        render_order = getattr(getattr(e, "render_order", None), "value", 0)
+        name = getattr(e, 'name', '')
+        entity_id = id(e)
+        return (render_order, name, entity_id)
+    
+    living_monsters.sort(key=_sort_key)
+    items.sort(key=_sort_key)
+    corpses.sort(key=_sort_key)
     
     # Return in priority order: living monsters, then items, then corpses
-    return living_monsters + items + corpses
+    all_entities = living_monsters + items + corpses
+    
+    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+        entity_names = [getattr(e, "name", "UNNAMED") for e in all_entities]
+        logger.debug(
+            "TOOLTIP_ENTITIES_FINAL: frame=%d pos=(%d,%d) count=%d names=%s",
+            frame_id, world_x, world_y, len(all_entities), entity_names
+        )
+    
+    return all_entities
 
 
 def get_monster_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> Optional[Any]:
@@ -256,6 +361,9 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
     if not entity:
         return
     
+    # Get frame ID for correlation in logs
+    frame_id = get_last_frame_counter()
+    
     # Get full entity name
     entity_name = entity.get_display_name() if hasattr(entity, 'get_display_name') else entity.name
     
@@ -266,7 +374,30 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
     is_monster = (entity.components.has(ComponentType.FIGHTER) and 
                   entity.components.has(ComponentType.AI))
     
-    if is_monster:
+    # Check for chest, signpost, mural
+    is_chest = entity.components.has(ComponentType.CHEST)
+    is_signpost = entity.components.has(ComponentType.SIGNPOST)
+    is_mural = entity.components.has(ComponentType.MURAL)
+    
+    if is_mural:
+        # Hover tooltip for mural: show only short label (no lore text)
+        # Full mural text is shown in message log when player interacts/examines
+        # Just the name is shown in the tooltip
+        pass  # Name already in tooltip_lines[0]
+    elif is_signpost:
+        # Hover tooltip for signpost: show only short label (no message text)
+        # Full message is shown in message log when player interacts/reads
+        # Just the name is shown in the tooltip
+        pass  # Name already in tooltip_lines[0]
+    elif is_chest:
+        # Show chest state and trap info (concise)
+        chest = entity.get_component_optional(ComponentType.CHEST)
+        if chest:
+            state_str = chest.state.name.lower() if hasattr(chest.state, 'name') else str(chest.state)
+            tooltip_lines.append(f"State: {state_str.capitalize()}")
+            if chest.trap_type:
+                tooltip_lines.append(f"⚠ Trapped!")
+    elif is_monster:
         # Monster tooltip - show name and equipment
         # Check if monster has equipment
         if entity.components.has(ComponentType.EQUIPMENT):
@@ -409,6 +540,14 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
     tooltip_width = max(len(line) for line in tooltip_lines) + 4  # +4 for padding
     tooltip_height = len(tooltip_lines) + 2  # +2 for borders
     
+    # DEBUG: Log tooltip content for flicker diagnosis
+    from ui.debug_flags import ENABLE_TOOLTIP_DEBUG
+    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            "TOOLTIP_SINGLE_CONTENT: frame=%d mouse=(%d,%d) entity=%s lines=%r",
+            frame_id, mouse_x, mouse_y, getattr(entity, "name", None), tooltip_lines
+        )
+    
     # Position tooltip near mouse, but keep it on screen
     # Using screen coordinates directly since rendering to root console (0)
     tooltip_x = mouse_x + 2  # Offset slightly from cursor
@@ -425,6 +564,13 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
         tooltip_x = 1
     if tooltip_y < 1:
         tooltip_y = 1
+    
+    # DEBUG: Log final tooltip geometry after clamping
+    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            "TOOLTIP_SINGLE_GEOM: frame=%d x=%d y=%d w=%d h=%d",
+            frame_id, tooltip_x, tooltip_y, tooltip_width, tooltip_height
+        )
     
     # Draw tooltip background (set both char AND background to ensure clean rendering)
     for y in range(tooltip_height):
@@ -489,8 +635,20 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
     if not entities:
         return
     
+    # Get frame ID for correlation in logs
+    frame_id = get_last_frame_counter()
+    from ui.debug_flags import ENABLE_TOOLTIP_DEBUG
+    
     # Build tooltip lines showing all entities
     tooltip_lines = []
+    
+    # DEBUG: Log entity ordering for tooltip consistency checking
+    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+        entity_names = [getattr(e, 'name', 'unknown') for e in entities]
+        logger.debug(
+            "TOOLTIP_MULTI_ENTITY: frame=%d mouse=(%d,%d) count=%d names=%s",
+            frame_id, mouse_x, mouse_y, len(entities), entity_names
+        )
     
     for i, entity in enumerate(entities):
         # Add separator between entities (except before first)
@@ -526,6 +684,27 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
                                     else equipment.chest.name.replace('_', ' ').title())
                         tooltip_lines.append(f"  Wearing: {armor_name}")
         
+        # Show chest information (short label only in multi-entity view)
+        elif entity.components.has(ComponentType.CHEST):
+            chest = entity.get_component_optional(ComponentType.CHEST)
+            if chest:
+                # Show chest state (concise for multi-entity tooltip)
+                state_str = chest.state.name.lower() if hasattr(chest.state, 'name') else str(chest.state)
+                state_label = f"[{state_str.capitalize()}]"
+                if chest.trap_type:
+                    state_label += " ⚠"
+                tooltip_lines.append(f"  {state_label}")
+        
+        # Show signpost information (short label only)
+        elif entity.components.has(ComponentType.SIGNPOST):
+            # No full message text in hover tooltip - only shown on interaction
+            tooltip_lines.append(f"  [Sign]")
+        
+        # Show mural information (short label only)
+        elif entity.components.has(ComponentType.MURAL):
+            # No full mural text in hover tooltip - only shown on interaction
+            tooltip_lines.append(f"  [Mural]")
+        
         # Show item information (abbreviated for multi-entity display)
         elif entity.components.has(ComponentType.WAND):
             tooltip_lines.append(f"  Wand ({entity.wand.charges} charges)")
@@ -543,6 +722,13 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
     tooltip_width = max(len(line) for line in tooltip_lines) + 4
     tooltip_height = len(tooltip_lines) + 2
     
+    # DEBUG: Log final tooltip content for consistency checking
+    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            "TOOLTIP_MULTI_CONTENT: frame=%d lines=%r",
+            frame_id, tooltip_lines
+        )
+    
     # Position tooltip near mouse, but keep it on screen
     tooltip_x = mouse_x + 2
     tooltip_y = mouse_y + 1
@@ -555,6 +741,13 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
         tooltip_x = 1
     if tooltip_y < 1:
         tooltip_y = 1
+    
+    # DEBUG: Log final geometry after clamping
+    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
+        logger.debug(
+            "TOOLTIP_MULTI_GEOM: frame=%d x=%d y=%d w=%d h=%d",
+            frame_id, tooltip_x, tooltip_y, tooltip_width, tooltip_height
+        )
     
     # Draw tooltip background
     for y in range(tooltip_height):

@@ -11,6 +11,18 @@ import tcod.libtcodpy as libtcod
 from render_functions import render_all
 from config.ui_layout import get_ui_layout
 
+# Module-level frame counter for diagnostic logging
+_LAST_FRAME_COUNTER = 0
+
+
+def get_last_frame_counter() -> int:
+    """Get the current frame counter for debugging/logging purposes.
+    
+    Returns:
+        int: The frame counter value from the most recent ConsoleRenderer.render() call.
+    """
+    return _LAST_FRAME_COUNTER
+
 
 class ConsoleRenderer:
     """Renderer implementation for terminal/ASCII display using libtcod.
@@ -54,6 +66,7 @@ class ConsoleRenderer:
         self.colors = colors
         self.ui_layout = ui_layout or get_ui_layout()
         self.bar_width = bar_width
+        self._frame_counter = 0
 
         # Cache console dimensions
         self.screen_width = self.ui_layout.screen_width
@@ -80,7 +93,13 @@ class ConsoleRenderer:
                         - camera: Camera for viewport scrolling (optional)
                         - death_screen_quote: Death screen quote (optional)
         """
+        # Increment frame counter and expose it at module level for diagnostics
+        global _LAST_FRAME_COUNTER
+        self._frame_counter += 1
+        _LAST_FRAME_COUNTER = self._frame_counter
+        
         # Extract components from game state (adapt to existing structure)
+        # Adapt from game_state object to parameters expected by render_all()
         entities = getattr(game_state, "entities", [])
         player = getattr(game_state, "player", None)
         game_map = getattr(game_state, "game_map", None)
@@ -139,7 +158,19 @@ class ConsoleRenderer:
             death_screen_quote=death_screen_quote,
         )
 
-        # Flush console to display (existing behavior)
+        # CRITICAL: Play visual effects BEFORE flushing to screen!
+        # This ensures all effects (map, entities, UI, and visual effects) are drawn
+        # onto the console BEFORE the single flush, preventing flicker and ensuring
+        # effects appear as part of the same visual frame as the rest of the game.
+        from visual_effect_queue import get_effect_queue
+        from ui.debug_flags import TOOLTIP_DISABLE_EFFECTS
+        
+        if not TOOLTIP_DISABLE_EFFECTS:
+            effect_queue = get_effect_queue()
+            if effect_queue.has_effects():
+                effect_queue.play_all(con=0, camera=camera)
+
+        # Flush console to display (single flush per frame - canonical renderer only!)
         import warnings
 
         with warnings.catch_warnings():

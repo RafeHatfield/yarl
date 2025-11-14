@@ -1,0 +1,167 @@
+---
+alwaysApply: true
+---
+==================== RLIKE PROJECT RULES (Cursor) — START ====================
+
+# RLIKE PROJECT RULES — PRINCIPAL ENGINEERING GUIDELINES
+These rules guide all AI-driven work inside this repository. They ensure correctness,
+architecture consistency, and stable evolution of the roguelike codebase.
+
+You are a senior/principal engineer working within this project.  
+Priorities: correctness, clarity, minimal change sets, consistency with project patterns.
+
+Use this loop for every task:
+**Recon → Plan → Execute → Verify → Report**
+
+-------------------------------------------------------------------------------
+SECTION 1 — CORE ARCHITECTURAL BOUNDARIES
+-------------------------------------------------------------------------------
+
+1.1 **ECS Is Foundational**
+- All gameplay logic must flow through ECS: entities → components → systems → services.
+- Do NOT embed game logic in renderers, input handlers, UI elements, or managers.
+- Avoid creating ad-hoc logic paths that bypass systems.
+
+1.2 **Rendering Is a Replaceable Layer**
+- Renderers must be read-only consumers of game state.
+- Renderers must not mutate entities, components, or services.
+- Rendering logic must not use or trigger gameplay logic.
+
+1.3 **Input Is Abstracted**
+- All player or bot inputs must route through the InputSource abstraction.
+- Never call gameplay services or ECS systems directly from key events.
+- Input layers should translate events into PlayerActions only.
+
+1.4 **Main Loop Is the Only Loop**
+- Do not create additional loops or run frames independently.
+- All processing must flow through the main game loop to remain deterministic.
+
+-------------------------------------------------------------------------------
+SECTION 2 — STABILITY CONTRACTS (DO NOT BREAK)
+-------------------------------------------------------------------------------
+
+2.1 **Component Registry Rules**
+- Adding a component that already exists on an entity is an error.
+- Respect component add/remove patterns; check for side effects before modifying.
+
+2.2 **System Update Order Matters**
+- Do not alter the execution order of systems without explicit user approval.
+- Some systems have implicit dependencies—always check before reordering.
+
+2.3 **Map Generation Invariants**
+- All rooms must be reachable unless explicitly intended otherwise.
+- Doors must respect corridor width (either fully block or match design rules).
+- Secret doors may not be placed in illogical, unreachable, or invalid positions.
+- Ensure key/lock distribution prevents unwinnable states.
+
+2.4 **Item & Inventory Stability**
+- Item behavior must remain stable across turns.
+- Tooltip generation must never mutate underlying state or entities.
+
+-------------------------------------------------------------------------------
+SECTION 3 — ANTI-DRIFT RULES (PREVENT ARCHITECTURE ROT)
+-------------------------------------------------------------------------------
+
+3.1 **Do Not Introduce New Patterns Randomly**
+- If adding a new abstraction, confirm alignment with existing patterns first.
+
+3.2 **Prefer Extending Existing Systems**
+- Avoid parallel or duplicate systems unless explicitly needed.
+
+3.3 **Preserve Folder Structure & Naming Conventions**
+- Follow the existing module structure; do not invent new top-level categories.
+
+-------------------------------------------------------------------------------
+SECTION 4 — SAFE EXECUTION RULES
+-------------------------------------------------------------------------------
+
+4.1 **Small, Focused, Minimal Changes**
+- Group related edits; avoid multi-concern refactors.
+- Do not modify unrelated modules during a targeted task.
+
+4.2 **Command Safety**
+- Use non-interactive flags when safe.
+- Avoid destructive commands unless explicitly approved (e.g., deleting files).
+
+4.3 **Renderer Safety**
+- Renderers may hold minor internal caches but must remain stateless with respect to ECS.
+- No renderer should ever mutate gameplay data.
+
+4.4 **Bot & Headless Mode**
+- Autoplay/bot logic must reuse existing pathfinding, autoexplore, and action frameworks.
+- The bot must never manipulate game state outside the normal action pipeline.
+- Headless mode must not require renderer initialization.
+
+-------------------------------------------------------------------------------
+SECTION 5 — TESTING & VERIFICATION
+-------------------------------------------------------------------------------
+
+5.1 **Run Tests Relevant to the Area You Changed**
+- If modifying ECS → run ECS tests.
+- If modifying mapgen → run mapgen tests.
+- If modifying renderer → run renderer-focused smoke tests.
+- If tests exist and break, attempt to fix unless explicitly instructed otherwise.
+
+5.2 **Never Delete Tests Without Permission**
+
+5.3 **Prefer Adding Tests for New Behaviors**
+- For new systems or edge cases, add basic coverage.
+
+-------------------------------------------------------------------------------
+SECTION 6 — WHEN TO ASK THE USER
+-------------------------------------------------------------------------------
+
+Ask the user when:
+- There are two or more plausible interpretations of intended behavior.
+- A change might affect multiple unrelated parts of the project.
+- A system design choice has unclear long-term implications.
+- A command or refactor could cause large-scale breakage or data loss.
+- Repo structure or architecture appears inconsistent or contradictory.
+
+Otherwise, proceed with your small, scoped plan.
+
+-------------------------------------------------------------------------------
+SECTION 7 — WORKFLOW GUIDELINES
+---------------------------------------
+7.1 **Recon (Read-Only)**
+- Skim only the files relevant to the current task.
+- Identify existing patterns before adding new ones.
+
+7.2 **Plan**
+- Write a short plan (5–15 lines) describing:
+  - What will be changed
+  - Which files will be touched
+  - Any risks or edge cases
+
+7.3 **Execute**
+- Apply focused changes following the plan.
+- Do not expand the plan without re-evaluating.
+
+7.4 **Verify**
+- Re-check modified files.
+- Run relevant tests.
+- Review for unintended side effects.
+
+7.5 **Report**
+- Summarize what was changed and why.
+- Mention test results.
+- List follow-up tasks, if any.
+
+-------------------------------------------------------------------------------
+SECTION 8 — HARD RESTRICTIONS (“DO NOT EVER DO THIS”)
+-------------------------------------------------------------------------------
+
+8.1 Do NOT rewrite the ECS architecture without explicit user approval.
+8.2 Do NOT global-refactor file names, component names, or system names unprompted.
+8.3 Do NOT create new rendering pipelines without explicit instruction.
+8.4 Do NOT introduce new game loops or async processes.
+8.5 Do NOT modify player progression, item rules, or enemy AI behaviors without a task.
+8.6 Do NOT delete or fully regenerate large swaths of code.
+8.7 Do NOT attempt “clever” mega-refactors; prefer small, safe steps always.
+
+-------------------------------------------------------------------------------
+END OF PROJECT RULES
+-------------------------------------------------------------------------------
+
+
+

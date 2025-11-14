@@ -252,8 +252,16 @@ def kill_monster(monster, game_map=None, entities=None):
     monster.char = "%"
     monster.color = (127, 0, 0)
     monster.blocks = False
+    
+    # Remove combat components from the registry (not just set to None)
+    # This ensures get_all_entities_at_position() correctly identifies corpses
+    # vs living monsters (checks components.has(ComponentType.FIGHTER/AI))
+    if hasattr(monster, 'components'):
+        monster.components.remove(ComponentType.FIGHTER)
+        monster.components.remove(ComponentType.AI)
     monster.fighter = None
     monster.ai = None
+    
     monster.name = "remains of " + monster.name
     monster.render_order = RenderOrder.CORPSE
 

@@ -37,11 +37,9 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         # Reset UI layout to default
         set_ui_layout(None)
     
-    @patch('visual_effect_queue.libtcodpy.console_flush')
     @patch('visual_effect_queue.libtcodpy.console_put_char')
     @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
-    @patch('visual_effect_queue.time.sleep')
-    def test_fireball_coordinates_with_camera_scroll(self, mock_sleep, mock_fg, mock_put, mock_flush):
+    def test_fireball_coordinates_with_camera_scroll(self, mock_fg, mock_put):
         """Test that fireball renders at correct screen position with camera scrolling.
         
         Bug: Visual effects appeared "far off" from intended location.
@@ -88,11 +86,9 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         self.assertEqual(screen_y, expected_screen_y,
                         f"Fireball Y should be {expected_screen_y}, got {screen_y}")
     
-    @patch('visual_effect_queue.libtcodpy.console_flush')
     @patch('visual_effect_queue.libtcodpy.console_put_char')
     @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
-    @patch('visual_effect_queue.time.sleep')
-    def test_lightning_coordinates_with_camera_scroll(self, mock_sleep, mock_fg, mock_put, mock_flush):
+    def test_lightning_coordinates_with_camera_scroll(self, mock_fg, mock_put):
         """Test that lightning renders at correct screen position with camera scrolling."""
         # Lightning path from (55, 40) to (60, 40) in world coords
         lightning_path = [(55, 40), (56, 40), (57, 40), (58, 40), (59, 40), (60, 40)]
@@ -128,11 +124,9 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         self.assertEqual(screen_y, expected_screen_y,
                         f"Lightning start Y should be {expected_screen_y}, got {screen_y}")
     
-    @patch('visual_effect_queue.libtcodpy.console_flush')
     @patch('visual_effect_queue.libtcodpy.console_put_char')
     @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
-    @patch('visual_effect_queue.time.sleep')
-    def test_dragon_fart_coordinates_with_camera_scroll(self, mock_sleep, mock_fg, mock_put, mock_flush):
+    def test_dragon_fart_coordinates_with_camera_scroll(self, mock_fg, mock_put):
         """Test that dragon fart renders at correct screen position with camera scrolling."""
         # Dragon fart cone tiles in world coords
         cone_tiles = [(62, 40), (63, 41), (63, 39), (64, 42), (64, 38)]
@@ -168,11 +162,9 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         self.assertEqual(screen_y, expected_screen_y,
                         f"Dragon fart Y should be {expected_screen_y}, got {screen_y}")
     
-    @patch('visual_effect_queue.libtcodpy.console_flush')
     @patch('visual_effect_queue.libtcodpy.console_put_char')
     @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
-    @patch('visual_effect_queue.time.sleep')
-    def test_effects_cull_outside_viewport(self, mock_sleep, mock_fg, mock_put, mock_flush):
+    def test_effects_cull_outside_viewport(self, mock_fg, mock_put):
         """Test that effects outside viewport are culled and not drawn.
         
         This prevents rendering effects that are off-screen, improving performance
@@ -201,11 +193,9 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         self.assertEqual(mock_put.call_count, 0,
                         "Should not draw tiles outside viewport")
     
-    @patch('visual_effect_queue.libtcodpy.console_flush')
     @patch('visual_effect_queue.libtcodpy.console_put_char')
     @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
-    @patch('visual_effect_queue.time.sleep')
-    def test_effects_partially_visible(self, mock_sleep, mock_fg, mock_put, mock_flush):
+    def test_effects_partially_visible(self, mock_fg, mock_put):
         """Test that partially visible effects only draw visible tiles.
         
         If an effect has some tiles in viewport and some outside, only the

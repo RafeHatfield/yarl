@@ -87,6 +87,18 @@ class OptimizedRenderSystem(RenderSystem):
         if not self.enabled:
             return
 
+        # CRITICAL: Clear all consoles at start of frame to prevent trailing artifacts
+        # This must happen BEFORE rendering to ensure no stale data persists
+        if not self.skip_drawing:
+            try:
+                libtcod.console_clear(0)  # Clear root console
+                libtcod.console_clear(self.console)  # Clear viewport
+                libtcod.console_clear(self.panel)  # Clear status panel
+                if self.sidebar_console:
+                    libtcod.console_clear(self.sidebar_console)  # Clear sidebar
+            except (TypeError, AttributeError):
+                pass  # Mock consoles in tests may fail - that's OK
+
         # Get game state
         game_state = self._get_game_state()
         if not game_state:
@@ -119,52 +131,82 @@ class OptimizedRenderSystem(RenderSystem):
         # Use the game state flag for rendering (this is the authoritative source)
         original_fov_recompute = game_state_fov_recompute
         
-        # Use optimized rendering if available and enabled
-        if self.use_optimizations and self._has_performance_data(game_state):
-            self._optimized_render(
-                game_state,
-                entities,
-                player,
-                game_map,
-                message_log,
-                current_game_state,
-                mouse,
-                original_fov_recompute,
-                camera,
-            )
+        # IMPORTANT: Only render if we're the drawing authority
+        # Phase 2: ConsoleRenderer handles drawing, so skip rendering here
+        if self.skip_drawing:
+            # Just do FOV computation, skip actual rendering
+            if self.fov_recompute and self.fov_map:
+                from fov_functions import recompute_fov
+                # Get base FOV radius
+                base_fov_radius = game_state.get("fov_radius", 10)
+                
+                # Check for blindness - reduces FOV to 1
+                if (hasattr(player, 'has_status_effect') and 
+                    callable(player.has_status_effect) and 
+                    player.has_status_effect('blindness')):
+                    effective_fov_radius = 1  # Severely reduced vision when blind
+                else:
+                    effective_fov_radius = base_fov_radius
+                
+                recompute_fov(
+                    self.fov_map,
+                    player.x,
+                    player.y,
+                    effective_fov_radius,
+                    game_state.get("fov_light_walls", True),
+                    game_state.get("fov_algorithm", 12),
+                )
+                self.fov_recompute = False
+            
+            # Skip rendering and console flush - let ConsoleRenderer handle it
         else:
-            # Fall back to standard rendering
-            self._standard_render(
-                game_state,
-                entities,
-                player,
-                game_map,
-                message_log,
-                current_game_state,
-                mouse,
-                original_fov_recompute,
-                camera,
-            )
+            # Normal mode: we handle rendering
+            # Use optimized rendering if available and enabled
+            if self.use_optimizations and self._has_performance_data(game_state):
+                self._optimized_render(
+                    game_state,
+                    entities,
+                    player,
+                    game_map,
+                    message_log,
+                    current_game_state,
+                    mouse,
+                    original_fov_recompute,
+                    camera,
+                )
+            else:
+                # Fall back to standard rendering
+                self._standard_render(
+                    game_state,
+                    entities,
+                    player,
+                    game_map,
+                    message_log,
+                    current_game_state,
+                    mouse,
+                    original_fov_recompute,
+                    camera,
+                )
+            
+            # Present the frame
+            console_flush_succeeded = False
+            try:
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=DeprecationWarning, 
+                                          message="This function is not supported if contexts are being used")
+                    libtcod.console_flush()
+                console_flush_succeeded = True
+            except RuntimeError:
+                # Handle case where no console context exists (e.g., during testing)
+                pass
 
-        # Present the frame
-        console_flush_succeeded = False
-        try:
-            import warnings
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning, 
-                                      message="This function is not supported if contexts are being used")
-                libtcod.console_flush()
-            console_flush_succeeded = True
-        except RuntimeError:
-            # Handle case where no console context exists (e.g., during testing)
-            pass
-
-        # Reset the game state fov_recompute flag after rendering
-        # This prevents unnecessary redraws on subsequent frames
-        # Only reset if we actually rendered successfully (not during mocked tests)
-        if (self.engine and hasattr(self.engine, 'state_manager') and 
-            original_fov_recompute and console_flush_succeeded):
-            self.engine.state_manager.state.fov_recompute = False
+            # Reset the game state fov_recompute flag after rendering
+            # This prevents unnecessary redraws on subsequent frames
+            # Only reset if we actually rendered successfully (not during mocked tests)
+            if (self.engine and hasattr(self.engine, 'state_manager') and 
+                original_fov_recompute and console_flush_succeeded):
+                self.engine.state_manager.state.fov_recompute = False
 
         # Update render tracking
         self.last_rendered_entities = set(entities)

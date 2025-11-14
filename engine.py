@@ -33,8 +33,10 @@ from engine.systems import (
 from engine.systems.optimized_render_system import OptimizedRenderSystem
 from systems.turn_controller import initialize_turn_controller
 
-# Set up basic logging (WARNING level to see exit triggers)
-logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+# Initialize centralized logging system (DEBUG level for tooltip debugging)
+from logger_config import setup_logging
+setup_logging(log_level=logging.DEBUG)  # Enable DEBUG for tooltip instrumentation
+print("📝 Centralized logging enabled: logs/rlike.log (DEBUG level for tooltip debugging)")
 
 # Set up error file logging to capture all errors for later review
 error_handler = logging.FileHandler('errors.log', mode='a')
@@ -45,7 +47,7 @@ error_formatter = logging.Formatter(
 )
 error_handler.setFormatter(error_formatter)
 logging.getLogger().addHandler(error_handler)
-print("📝 Error logging enabled: errors.log")
+print("📝 Error logging also enabled: errors.log")
 
 # Set up clean console output (suppress TCOD warnings and SDL messages)
 from config.tcod_warnings import setup_clean_console

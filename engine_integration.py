@@ -160,7 +160,7 @@ def create_game_engine(constants, sidebar_console, viewport_console, status_cons
         colors=constants["colors"],
         priority=100,  # Render last
         use_optimizations=False,  # DISABLE optimizations for debugging
-        skip_drawing=True,  # Phase 2: ConsoleRenderer handles drawing
+        skip_drawing=False,  # RenderSystem handles rendering for now
     )
     engine.register_system(render_system)
 
@@ -590,21 +590,18 @@ def play_game_with_engine(
             break
 
         # =====================================================================
-        # RENDERING & GAME STATE UPDATES (PHASE 2: COMPLETE)
+        # RENDERING & GAME STATE UPDATES
         #
-        # Rendering path (abstraction-driven):
-        #   1. renderer.render() draws current frame via ConsoleRenderer
-        #   2. engine.update() runs all systems (AI, FOV, state management)
-        #   3. RenderSystem.update() skips drawing (skip_drawing=True)
-        #
-        # ConsoleRenderer is the SOLE drawing authority. No double-rendering.
+        # For now: Use RenderSystem for rendering (it works reliably)
         # =====================================================================
         
-        # Render the current frame through abstraction layer (canonical drawing path)
-        renderer.render(engine.state_manager.state)
-        
-        # Update all game systems (AI, FOV, camera, state - but NOT drawing)
+        # Update all game systems (AI, FOV, camera, state)
         engine.update()
+        
+        # ConsoleRenderer is not yet fully integrated, causing FOV issues
+        # TODO: Fix FOV propagation to ConsoleRenderer for Phase 2 abstraction
+        # For now, RenderSystem handles rendering directly
+        # renderer.render(engine.state_manager.state)
 
         # IMPORTANT: Reset FOV flag AFTER rendering is complete
         # This ensures the flag stays active for the entire frame

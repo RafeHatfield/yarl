@@ -9,6 +9,8 @@ import pytest
 from config.entity_factory import EntityFactory
 from config.entity_registry import load_entity_config
 from ui.tooltip import get_all_entities_at_position
+from render_functions import RenderOrder
+from components.component_registry import ComponentType
 
 
 @pytest.fixture(scope="module")
@@ -91,9 +93,13 @@ class TestMultiEntityTooltips:
         # Create living orc
         living_orc = entity_factory.create_monster('orc', 5, 5)
         
-        # Create corpse (orc with 0 HP)
+        # Create corpse (simulating kill_monster behavior)
         dead_orc = entity_factory.create_monster('orc', 5, 5)
-        dead_orc.fighter.hp = 0
+        dead_orc.render_order = RenderOrder.CORPSE  # Mark as corpse
+        dead_orc.components.remove(ComponentType.FIGHTER)  # Remove combat components
+        dead_orc.components.remove(ComponentType.AI)
+        dead_orc.fighter = None
+        dead_orc.ai = None
         dead_orc.name = 'remains of Orc'
         
         # Create item
@@ -121,9 +127,13 @@ class TestMultiEntityTooltips:
         player = entity_factory.create_monster('orc', 0, 0)
         player.name = 'Player'
         
-        # Create corpse
+        # Create corpse (simulating kill_monster behavior)
         corpse = entity_factory.create_monster('orc', 5, 5)
-        corpse.fighter.hp = 0
+        corpse.render_order = RenderOrder.CORPSE  # Mark as corpse
+        corpse.components.remove(ComponentType.FIGHTER)  # Remove combat components
+        corpse.components.remove(ComponentType.AI)
+        corpse.fighter = None
+        corpse.ai = None
         corpse.name = 'remains of Orc'
         
         # Create dropped items (as if monster died and dropped loot)
@@ -135,7 +145,7 @@ class TestMultiEntityTooltips:
         # Get all entities at (5, 5)
         entities_at_pos = get_all_entities_at_position(5, 5, entities, player)
         
-        # Should show all 3: corpse and 2 items
+        # Should show all 3: items first, then corpse
         assert len(entities_at_pos) == 3
         assert weapon in entities_at_pos
         assert armor in entities_at_pos
@@ -202,9 +212,13 @@ class TestMonsterLootScenario:
         player = entity_factory.create_monster('orc', 0, 0)
         player.name = 'Player'
         
-        # Create "dead" orc (corpse)
+        # Create "dead" orc (corpse, simulating kill_monster behavior)
         orc_corpse = entity_factory.create_monster('orc', 10, 10)
-        orc_corpse.fighter.hp = 0
+        orc_corpse.render_order = RenderOrder.CORPSE  # Mark as corpse
+        orc_corpse.components.remove(ComponentType.FIGHTER)  # Remove combat components
+        orc_corpse.components.remove(ComponentType.AI)
+        orc_corpse.fighter = None
+        orc_corpse.ai = None
         orc_corpse.name = 'remains of Orc'
         
         # Create dropped loot at same position

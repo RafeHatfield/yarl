@@ -13,7 +13,6 @@ Architecture:
 
 from typing import List, Tuple, Optional, Dict, Any
 from enum import Enum, auto
-import time
 import tcod.libtcodpy as libtcodpy
 
 
@@ -117,9 +116,13 @@ class QueuedEffect:
             self._play_projectile(con, camera)
     
     def _play_hit(self, con=0) -> None:
-        """Play a hit effect."""
+        """Play a hit effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        """
         color = (255, 50, 50)  # Bright red
-        duration = 0.12  # 120ms
         
         # Get entity character
         if self.entity and hasattr(self.entity, 'char'):
@@ -132,14 +135,15 @@ class QueuedEffect:
         # Flash red at screen position (viewport offset already applied)
         libtcodpy.console_set_default_foreground(con, color)
         libtcodpy.console_put_char(con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE)
-        libtcodpy.console_flush()
-        
-        time.sleep(duration)
     
     def _play_critical_hit(self, con=0) -> None:
-        """Play a critical hit effect."""
+        """Play a critical hit effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        """
         color = (255, 255, 0)  # Bright yellow
-        duration = 0.20  # 200ms
         
         # Get entity character
         if self.entity and hasattr(self.entity, 'char'):
@@ -152,14 +156,15 @@ class QueuedEffect:
         # Flash yellow at screen position (viewport offset already applied)
         libtcodpy.console_set_default_foreground(con, color)
         libtcodpy.console_put_char(con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE)
-        libtcodpy.console_flush()
-        
-        time.sleep(duration)
     
     def _play_miss(self, con=0) -> None:
-        """Play a miss effect (fumbles only)."""
+        """Play a miss effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        """
         color = (128, 128, 128)  # Grey
-        duration = 0.10  # 100ms
         
         # Get entity character
         if self.entity and hasattr(self.entity, 'char'):
@@ -172,16 +177,20 @@ class QueuedEffect:
         # Flash grey at screen position (viewport offset already applied)
         libtcodpy.console_set_default_foreground(con, color)
         libtcodpy.console_put_char(con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE)
-        libtcodpy.console_flush()
-        
-        time.sleep(duration)
     
     def _play_fireball(self, con=0, camera=None) -> None:
-        """Play a fireball area effect with proper camera translation."""
+        """Play a fireball area effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        
+        TODO: Eventually reintroduce multi-frame animation for fireball spread
+        effect, but driven by main loop frame timing, not time.sleep().
+        """
         tiles = self.params.get('tiles', [])
         color = self.params.get('color', (255, 100, 0))  # Orange
         char = self.params.get('char', ord('*'))
-        duration = 0.25  # 250ms
         
         # Get viewport offset for coordinate translation
         from config.ui_layout import get_ui_layout
@@ -204,16 +213,20 @@ class QueuedEffect:
             
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
-        
-        libtcodpy.console_flush()
-        time.sleep(duration)
     
     def _play_lightning(self, con=0, camera=None) -> None:
-        """Play a lightning path effect with proper camera translation."""
+        """Play a lightning path effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        
+        TODO: Eventually reintroduce multi-frame lightning animation
+        (branching, pulsing), driven by main loop frame timing, not time.sleep().
+        """
         path = self.params.get('path', [])
         color = self.params.get('color', (255, 255, 100))  # Cyan-yellow
         char = self.params.get('char', ord('|'))
-        duration = 0.15  # 150ms
         
         # Get viewport offset for coordinate translation
         from config.ui_layout import get_ui_layout
@@ -236,16 +249,20 @@ class QueuedEffect:
             
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
-        
-        libtcodpy.console_flush()
-        time.sleep(duration)
     
     def _play_dragon_fart(self, con=0, camera=None) -> None:
-        """Play a dragon fart cone effect with proper camera translation."""
+        """Play a dragon fart cone effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        
+        TODO: Eventually reintroduce multi-frame cone expansion animation,
+        driven by main loop frame timing, not time.sleep().
+        """
         tiles = self.params.get('tiles', [])
         color = self.params.get('color', (100, 200, 50))  # Sickly green
         char = self.params.get('char', ord('~'))
-        duration = 0.25  # 250ms
         
         # Get viewport offset for coordinate translation
         from config.ui_layout import get_ui_layout
@@ -268,16 +285,20 @@ class QueuedEffect:
             
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
-        
-        libtcodpy.console_flush()
-        time.sleep(duration)
     
     def _play_area_effect(self, con=0, camera=None) -> None:
-        """Play a generic area effect with proper camera translation."""
+        """Play a generic area effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        
+        TODO: Eventually reintroduce multi-frame area animation,
+        driven by main loop frame timing, not time.sleep().
+        """
         tiles = self.params.get('tiles', [])
         color = self.params.get('color', (255, 100, 0))
         char = self.params.get('char', ord('*'))
-        duration = self.params.get('duration', 0.25)
         
         # Get viewport offset for coordinate translation
         from config.ui_layout import get_ui_layout
@@ -300,16 +321,20 @@ class QueuedEffect:
             
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
-        
-        libtcodpy.console_flush()
-        time.sleep(duration)
     
     def _play_path_effect(self, con=0, camera=None) -> None:
-        """Play a generic path effect with proper camera translation."""
+        """Play a generic path effect (draw only, no flush or sleep).
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        
+        TODO: Eventually reintroduce multi-frame path animation,
+        driven by main loop frame timing, not time.sleep().
+        """
         path = self.params.get('path', [])
         color = self.params.get('color', (255, 255, 100))
         char = self.params.get('char', ord('|'))
-        duration = self.params.get('duration', 0.15)
         
         # Get viewport offset for coordinate translation
         from config.ui_layout import get_ui_layout
@@ -332,55 +357,56 @@ class QueuedEffect:
             
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
-        
-        libtcodpy.console_flush()
-        time.sleep(duration)
     
     def _play_wand_recharge(self, con=0) -> None:
-        """Play a wand recharge sparkle effect at screen position.
+        """Play a wand recharge sparkle effect (draw only, no flush or sleep).
         
-        Shows a beautiful sparkle/glow animation to indicate a wand gained a charge.
+        Shows a sparkle glyph to indicate a wand gained a charge.
         Effect plays at the player's position (self.screen_x, self.screen_y).
-        """
-        # Sparkle sequence: dim → bright → brighter → bright → dim (5 frames)
-        sparkle_sequence = [
-            {'char': ord('·'), 'color': (200, 180, 0), 'duration': 0.04},  # Dim gold dot
-            {'char': ord('*'), 'color': (255, 215, 0), 'duration': 0.06},  # Gold star
-            {'char': ord('✦'), 'color': (255, 255, 150), 'duration': 0.08},  # Bright sparkle
-            {'char': ord('*'), 'color': (255, 215, 0), 'duration': 0.06},  # Gold star
-            {'char': ord('·'), 'color': (200, 180, 0), 'duration': 0.04},  # Dim gold dot
-        ]
         
-        for frame in sparkle_sequence:
-            # Draw the sparkle at screen coordinates
-            libtcodpy.console_set_default_foreground(con, frame['color'])
-            libtcodpy.console_put_char(con, self.screen_x, self.screen_y, frame['char'], libtcodpy.BKGND_NONE)
-            libtcodpy.console_flush()
-            time.sleep(frame['duration'])
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
+        
+        TODO: Eventually reintroduce multi-frame sparkle animation,
+        driven by main loop frame timing, not time.sleep().
+        """
+        # For now, draw a simple bright sparkle (single frame)
+        # instead of the multi-frame sequence
+        libtcodpy.console_set_default_foreground(con, (255, 255, 150))  # Bright gold
+        libtcodpy.console_put_char(con, self.screen_x, self.screen_y, ord('✦'), libtcodpy.BKGND_NONE)
     
     def _play_projectile(self, con=0, camera=None) -> None:
-        """Play animated projectile flying from source to target.
+        """Play projectile effect (draw only, no flush or sleep).
         
-        Shows item/arrow traveling tile-by-tile with smooth animation.
+        Shows projectile at final destination. No longer animates tile-by-tile
+        as that requires blocking time.sleep() calls.
         Used for: arrows, thrown potions, thrown weapons, and any other projectiles.
+        
+        NOTE: This draws the effect but does NOT call console_flush().
+        The main renderer is responsible for all flush calls.
+        All timing is now driven by the main game loop.
         
         Params (from self.params):
             - path: List[(x, y)] of tiles projectile travels through
             - char: Character to display (arrow, potion char, etc.)
             - color: RGB tuple for projectile color
-            - frame_duration: Time per tile (default 0.04s = 40ms)
+            - frame_duration: UNUSED (for now)
+        
+        TODO: Reintroduce multi-frame projectile animation driven by main loop,
+        not time.sleep(). Track animation frame count and update over multiple
+        game loop iterations instead of within this single call.
         """
         path = self.params.get('path', [])
         char = self.params.get('char', ord('*'))
         color = self.params.get('color', (255, 255, 255))
-        frame_duration = self.params.get('frame_duration', 0.04)  # 40ms per tile
         
         # Get viewport offset for coordinate translation
         from config.ui_layout import get_ui_layout
         ui_layout = get_ui_layout()
         viewport_offset = ui_layout.viewport_position
         
-        # Animate projectile along path tile-by-tile
+        # Draw projectile at final destination (all tiles at once for single-frame effect)
         for world_x, world_y in path:
             # Step 1: Translate world → viewport via camera
             if camera:
@@ -397,9 +423,6 @@ class QueuedEffect:
             # Draw projectile at this position
             libtcodpy.console_set_default_foreground(con, color)
             libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
-            libtcodpy.console_flush()
-            
-            time.sleep(frame_duration)
 
 
 class VisualEffectQueue:

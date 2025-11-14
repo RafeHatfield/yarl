@@ -45,6 +45,7 @@ from death_screen import render_death_screen
 from visual_effect_queue import get_effect_queue
 from ui.sidebar import _render_sidebar
 from config.ui_layout import get_ui_layout
+from components.component_registry import ComponentType
 
 
 class RenderOrder(Enum):
@@ -231,11 +232,9 @@ def render_all(
         0, viewport_pos[0], viewport_pos[1]
     )
     
-    # Play any queued visual effects NOW (after entities are rendered)
-    # This is the key to fixing the double-entity bug!
-    effect_queue = get_effect_queue()
-    if effect_queue.has_effects():
-        effect_queue.play_all(con=0, camera=camera)  # Play with camera translation
+    # NOTE: Visual effects are NOT played here anymore!
+    # They are played AFTER frame flush to avoid blocking during rendering.
+    # See ConsoleRenderer.render() for where effects are actually played.
 
     libtcod.console_set_default_background(panel, (0, 0, 0))
     libtcod.console_clear(panel)
@@ -320,8 +319,21 @@ def render_all(
     # Render tooltips (if hovering over items or monsters)
     # This should be rendered LAST so it appears on top of everything
     if mouse and hasattr(mouse, 'cx') and hasattr(mouse, 'cy'):
+        import logging
+        tooltip_logger = logging.getLogger(__name__)
+        from io_layer.console_renderer import get_last_frame_counter
+        from ui.debug_flags import ENABLE_TOOLTIP_DEBUG, TOOLTIP_IGNORE_FOV
+        
+        # DEBUG: Very basic check to see if we're even in this code
+        frame_id = get_last_frame_counter()
+        is_debug_enabled = ENABLE_TOOLTIP_DEBUG
+        log_level = tooltip_logger.level if hasattr(tooltip_logger, 'level') else 'unknown'
+        # Print to console to verify tooltip code is running
+        # (temporary diagnostic, will remove after we confirm the code path)
+        # print(f"[TOOLTIP_DEBUG] frame={frame_id} debug_flag={is_debug_enabled} logger_level={log_level}")
+        
         from ui.tooltip import (get_sidebar_item_at_position, get_sidebar_equipment_at_position, 
-                               get_ground_item_at_position, get_monster_at_position, render_tooltip)
+                               render_tooltip)
         
         # First check if hovering over equipment in sidebar
         hovered_entity = get_sidebar_equipment_at_position(mouse.cx, mouse.cy, player, ui_layout)
@@ -332,6 +344,8 @@ def render_all(
         
         # If hovering over sidebar item, show single-entity tooltip
         if hovered_entity:
+            if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
+                tooltip_logger.debug("TOOLTIP_DRAW_CALL: frame=%d sidebar_entity", get_last_frame_counter())
             render_tooltip(0, hovered_entity, mouse.cx, mouse.cy, ui_layout)
         # Otherwise check viewport for monsters/items
         elif ui_layout.is_in_viewport(mouse.cx, mouse.cy):
@@ -344,18 +358,43 @@ def render_all(
             if world_coords:
                 world_x, world_y = world_coords
                 
-                # Import the new function for multiple entities
+                # DEBUG: Log viewport coordinates for flicker debugging
+                if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
+                    tooltip_logger.debug(
+                        "TOOLTIP_VIEWPORT_START: frame=%d mouse=(%d,%d) world=(%d,%d)",
+                        get_last_frame_counter(), mouse.cx, mouse.cy, world_x, world_y
+                    )
+                
+                # Import functions for viewport entity tooltips
                 from ui.tooltip import get_all_entities_at_position, render_multi_entity_tooltip
                 
-                # Get ALL entities at this position
-                entities_at_position = get_all_entities_at_position(world_x, world_y, entities, player, fov_map)
+                # Debug: optionally ignore FOV for entity gathering
+                effective_fov_map = None if TOOLTIP_IGNORE_FOV else fov_map
+                
+                # Get ALL entities at this position using unified, deterministic ordering
+                entities_at_position = get_all_entities_at_position(world_x, world_y, entities, player, effective_fov_map)
+                
+                if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
+                    entity_names = [getattr(e, "name", "UNNAMED") for e in entities_at_position]
+                    tooltip_logger.debug(
+                        "TOOLTIP_VIEWPORT_ENTITIES: frame=%d count=%d names=%s",
+                        get_last_frame_counter(), len(entities_at_position), entity_names
+                    )
                 
                 if entities_at_position:
-                    # Show multi-entity tooltip if there are multiple entities
+                    if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
+                        tooltip_logger.debug(
+                            "TOOLTIP_DRAW_CALL: frame=%d kind=%s",
+                            get_last_frame_counter(),
+                            "multi" if len(entities_at_position) > 1 else "single"
+                        )
+                    
+                    # Unified tooltip path: always use get_all_entities_at_position ordering
                     if len(entities_at_position) > 1:
+                        # Multiple entities at same tile: show multi-entity tooltip
                         render_multi_entity_tooltip(0, entities_at_position, mouse.cx, mouse.cy, ui_layout)
                     else:
-                        # Single entity - use regular tooltip
+                        # Single entity: show single-entity tooltip
                         render_tooltip(0, entities_at_position[0], mouse.cx, mouse.cy, ui_layout)
 
 
