@@ -133,7 +133,6 @@ class OptimizedRenderSystem(RenderSystem):
         if self.skip_drawing:
             # Just do FOV computation, skip actual rendering
             if self.fov_recompute and self.fov_map:
-                from fov_functions import recompute_fov
                 # Get base FOV radius
                 base_fov_radius = game_state.get("fov_radius", 10)
                 
