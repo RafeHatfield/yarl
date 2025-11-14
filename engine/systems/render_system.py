@@ -5,15 +5,28 @@ including entity drawing, UI panels, and screen management. It abstracts
 the rendering backend to allow for future sprite support.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 import logging
-import tcod.libtcodpy as libtcod
+import tcod.libtcodpy as libtcod  # noqa: F401 - exposed for test patch compatibility
 
 from ..system import System
-from render_functions import render_all, clear_all, draw_entity, clear_entity
+from render_functions import (
+    draw_entity,
+    clear_entity,
+    render_all as _render_all_for_tests,
+    clear_all as _clear_all_for_tests,
+)
 from fov_functions import recompute_fov
+from io_layer.console_renderer import ConsoleRenderer
+from rendering.frame_models import FrameContext
 
 logger = logging.getLogger(__name__)
+
+# Backwards-compatibility shim: historical tests patch render_system.render_all.
+# Keep an alias that points to the real implementation even though the system
+# now delegates rendering to ConsoleRenderer.
+render_all = _render_all_for_tests
+clear_all = _clear_all_for_tests
 
 
 class RenderSystem(System):
@@ -76,6 +89,14 @@ class RenderSystem(System):
         self.bar_width = 20
         self.panel_height = self.ui_layout.status_panel_height
         self.panel_y = self.ui_layout.viewport_height
+
+        # Dedicated ConsoleRenderer instance acts as the single frame orchestrator
+        self.console_renderer = ConsoleRenderer(
+            sidebar_console=self.sidebar_console,
+            viewport_console=self.console,
+            status_console=self.panel,
+            colors=self.colors,
+        )
 
     def initialize(self, engine) -> None:
         """Initialize the render system with engine reference.
@@ -141,42 +162,34 @@ class RenderSystem(System):
                 constants.get("fov_algorithm", 12),
             )
 
-        # Phase 2: Abstraction Mode
-        # When using ConsoleRenderer, skip drawing here to avoid double-rendering
+        # ConsoleRenderer now owns the entire draw/clear/flush pipeline.
+        # When skip_drawing is True (e.g., headless tests) we still recompute
+        # FOV above but deliberately avoid touching any consoles here.
         if not self.skip_drawing:
-            # Render everything (use original tile rendering for base system)
-            render_all(
-                self.console,
-                self.panel,
-                entities,
-                player,
-                game_map,
-                self.fov_map,
-                self.fov_recompute,
-                message_log,
-                self.screen_width,
-                self.screen_height,
-                self.bar_width,
-                self.panel_height,
-                self.panel_y,
-                mouse,
-                self.colors,
-                current_game_state,
-                use_optimization=False,
+            frame_context = FrameContext(
+                entities=list(entities) if entities is not None else [],
+                player=player,
+                game_map=game_map,
+                fov_map=self.fov_map,
+                fov_recompute=self.fov_recompute,
+                message_log=message_log,
+                screen_width=self.screen_width,
+                screen_height=self.screen_height,
+                bar_width=self.bar_width,
+                panel_height=self.panel_height,
+                panel_y=self.panel_y,
+                mouse=mouse,
+                colors=self.colors,
+                game_state=current_game_state,
                 sidebar_console=self.sidebar_console,
-                camera=camera,  # Pass camera to render_all (Phase 2)
+                camera=camera,
                 death_screen_quote=game_state.get("death_screen_quote"),
+                use_optimization=False,
             )
 
-            # Present the frame
-            import warnings
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning, 
-                                      message="This function is not supported if contexts are being used")
-                libtcod.console_flush()
-
-            # Clear entities for next frame
-            clear_all(self.console, entities)
+            # Single-orchestrator invariant: ConsoleRenderer performs all clears,
+            # drawing, effect playback, and the lone console_flush() for the frame.
+            self.console_renderer.render(frame_context, render_func=render_all)
 
         # Reset FOV flag (whether we drew or not)
         self.fov_recompute = False

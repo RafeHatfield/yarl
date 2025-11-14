@@ -65,7 +65,10 @@ def resolve_hover(hover_probe: Optional[HoverProbe], frame_ctx: FrameContext) ->
     if mouse is None or not hasattr(mouse, "cx") or not hasattr(mouse, "cy"):
         return TooltipModel(TooltipKind.NONE, [], TooltipAnchor.VIEWPORT)
 
-    screen_pos = (int(mouse.cx), int(mouse.cy))
+    try:
+        screen_pos = (int(mouse.cx), int(mouse.cy))
+    except (TypeError, ValueError):
+        return TooltipModel(TooltipKind.NONE, [], TooltipAnchor.VIEWPORT)
     ui_layout = get_ui_layout()
 
     sidebar_entity = get_sidebar_equipment_at_position(screen_pos[0], screen_pos[1], frame_ctx.player, ui_layout)
