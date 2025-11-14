@@ -119,14 +119,25 @@ class OptimizedRenderSystem(RenderSystem):
             return
 
         # Get the authoritative fov_recompute flag from game state
-        game_state_fov_recompute = game_state.get("fov_recompute", False)
-        
-        
-        # Update our internal flag from game state
-        self.fov_recompute = game_state_fov_recompute
-        
-        # Use the game state flag for rendering (this is the authoritative source)
-        original_fov_recompute = game_state_fov_recompute
+        requested_fov_recompute = bool(game_state.get("fov_recompute", False))
+
+        # Combine engine-side requests with the game state's flag.  The optimized
+        # renderer historically tracked its own "need redraw" bit (set to True on
+        # first frame) while the state manager separately toggles fov_recompute
+        # when gameplay events expand visibility.  Overwriting our internal flag
+        # with the game-state value caused the very first frame to skip the FOV
+        # computation entirely, leaving the viewport black except for entity
+        # glyphs.  Instead we treat the effective flag as the union of both
+        # sources and drive rendering from that combined value.
+        effective_fov_recompute = self.fov_recompute or requested_fov_recompute
+
+        # Update our internal flag to reflect the combined request
+        self.fov_recompute = effective_fov_recompute
+
+        # Downstream helpers (render_all, tests, etc.) still expect the name
+        # "original_fov_recompute"; keep using that alias but now it represents
+        # the combined request.
+        original_fov_recompute = effective_fov_recompute
         
         # IMPORTANT: Only render if we're the drawing authority
         # Phase 2: ConsoleRenderer handles drawing, so skip rendering here
@@ -204,7 +215,7 @@ class OptimizedRenderSystem(RenderSystem):
             if (
                 self.engine
                 and hasattr(self.engine, "state_manager")
-                and original_fov_recompute
+                and requested_fov_recompute
             ):
                 self.engine.state_manager.state.fov_recompute = False
 
