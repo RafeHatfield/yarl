@@ -63,6 +63,27 @@ class GameState:
     # Extensible data storage
     extra_data: Dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def game_state(self) -> GameStates:
+        """Alias for current_state for backward compatibility with input handlers.
+        
+        Some input handlers (e.g., KeyboardInputSource) expect a 'game_state' attribute
+        that contains the current GameStates enum value.
+        
+        Returns:
+            GameStates: The current game state
+        """
+        return self.current_state
+    
+    @game_state.setter
+    def game_state(self, value: GameStates) -> None:
+        """Set the game state via the alias.
+        
+        Args:
+            value: The new GameStates enum value
+        """
+        self.current_state = value
+
 
 class GameStateManager:
     """Manages game state for the engine systems.

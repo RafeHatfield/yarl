@@ -530,7 +530,7 @@ class MuralInteractionStrategy(InteractionStrategy):
                 )
             
             # Find a walkable adjacent tile to the mural (since murals block movement)
-            adjacent_tile = self._find_adjacent_walkable_tile(
+            adjacent_tile = PathfindingHelper._find_adjacent_walkable_tile(
                 entity.x, entity.y, game_map, entities
             )
             

@@ -771,8 +771,6 @@ class ActionProcessor:
     # ═════════════════════════════════════════════════════════════════════════════
     # SECTION 4: TURN ACTIONS - Wait, Stairs, Level Up, Exit (166 lines, 4 methods)
     # ═════════════════════════════════════════════════════════════════════════════
-
-            self.state_manager.request_fov_recompute()
     
     def _handle_wait(self, _) -> None:
         """Handle wait action (player skips turn)."""

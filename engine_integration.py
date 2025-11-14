@@ -18,6 +18,7 @@ from performance.config import get_performance_config
 from io_layer.interfaces import Renderer, InputSource, ActionDict
 from io_layer.console_renderer import ConsoleRenderer
 from io_layer.keyboard_input import KeyboardInputSource
+from io_layer.bot_input import BotInputSource
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,7 @@ def create_renderer_and_input_source(
     viewport_console: Any,
     status_console: Any,
     colors: dict,
+    input_mode: str = "keyboard",
 ) -> tuple[Renderer, InputSource]:
     """Create renderer and input source instances.
 
@@ -90,6 +92,7 @@ def create_renderer_and_input_source(
         viewport_console: libtcod console for viewport
         status_console: libtcod console for status panel
         colors: Color configuration dictionary
+        input_mode: Input source mode - "keyboard" (default) or "bot" for autoplay
 
     Returns:
         tuple: (Renderer instance, InputSource instance)
@@ -101,7 +104,10 @@ def create_renderer_and_input_source(
         colors=colors,
     )
 
-    input_source: InputSource = KeyboardInputSource()
+    if input_mode == "bot":
+        input_source: InputSource = BotInputSource()
+    else:
+        input_source: InputSource = KeyboardInputSource()
 
     return renderer, input_source
 
@@ -277,11 +283,13 @@ def play_game_with_engine(
     # - renderer.render() exists but is not yet called from main loop
     # - Rendering still via systems (RenderSystem, etc.)
     # =========================================================================
+    input_mode = "bot" if constants.get("input_config", {}).get("bot_enabled") else "keyboard"
     renderer, input_source = create_renderer_and_input_source(
         sidebar_console=sidebar_console,
         viewport_console=viewport_console,
         status_console=status_console,
         colors=constants["colors"],
+        input_mode=input_mode,
     )
 
     # Main game loop
@@ -292,10 +300,20 @@ def play_game_with_engine(
         # =====================================================================
         # INPUT HANDLING (PHASE 1: COMPLETE)
         # Input comes ONLY from input_source.next_action() - no InputSystem.update()
-        # MouseActions are included in the action dict from KeyboardInputSource
+        # Mouse and keyboard actions are mixed in the dict from KeyboardInputSource
         # =====================================================================
-        action: ActionDict = input_source.next_action(engine.state_manager.state)
-        mouse_action: ActionDict = {}  # Mouse actions are now included in the action dict from InputSource
+        combined_action: ActionDict = input_source.next_action(engine.state_manager.state)
+        
+        # Update game state with current mouse position for tooltip rendering
+        # KeyboardInputSource maintains current_mouse with libtcod mouse events
+        if isinstance(input_source, KeyboardInputSource):
+            engine.state_manager.state.mouse = input_source.current_mouse
+        
+        # Separate mouse actions from keyboard actions
+        # KeyboardInputSource mixes both into one dict, but ActionProcessor expects them separate
+        mouse_action_keys = {'left_click', 'right_click', 'sidebar_click', 'sidebar_right_click'}
+        action: ActionDict = {k: v for k, v in combined_action.items() if k not in mouse_action_keys}
+        mouse_action: ActionDict = {k: v for k, v in combined_action.items() if k in mouse_action_keys}
         
         # Check for restart action (from death screen)
         if action.get("restart"):

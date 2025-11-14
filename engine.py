@@ -123,6 +123,13 @@ Examples:
         help='Enable telemetry collection and write floor-by-floor JSON to PATH'
     )
     
+    # Bot/autoplay mode
+    parser.add_argument(
+        '--bot',
+        action='store_true',
+        help='Enable bot/autoplay input source instead of keyboard input'
+    )
+    
     return parser.parse_args()
 
 
@@ -192,6 +199,12 @@ def main():
         print(f"📊 TELEMETRY ENABLED: Will write to {args.telemetry_json}")
     
     constants = get_constants()
+    
+    # Propagate bot/autoplay configuration into constants for engine_integration
+    constants.setdefault("input_config", {})
+    constants["input_config"]["bot_enabled"] = bool(args.bot)
+    if args.bot:
+        print("🤖 BOT MODE ENABLED: Using autoplay input source (behavior minimal for now)")
     
     # Get UI layout configuration for split-screen design
     ui_layout = get_ui_layout()

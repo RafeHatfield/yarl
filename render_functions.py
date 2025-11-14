@@ -68,14 +68,18 @@ def get_names_under_mouse(mouse, entities, fov_map, camera=None):
     """Get the names of all visible entities under the mouse cursor.
 
     Args:
-        mouse: Mouse object with cursor coordinates (screen space)
+        mouse: Mouse object with cursor coordinates (screen space), or None
         entities (list): List of all entities to check
         fov_map: Field of view map for visibility checking
         camera: Camera for coordinate translation (optional)
 
     Returns:
-        str: Comma-separated string of entity names under the cursor
+        str: Comma-separated string of entity names under the cursor, or empty string if mouse is None
     """
+    # Handle case where mouse is None (e.g., at startup or in headless mode)
+    if mouse is None:
+        return ""
+    
     # Get screen coordinates from mouse
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
     
