@@ -189,6 +189,8 @@ class OptimizedRenderSystem(RenderSystem):
                     game_state.get("fov_algorithm", 12),
                 )
 
+            # ConsoleRenderer owns clearing, drawing, effects, and the single flush.
+            # Our responsibility is to prepare the frame context and hand it off.
             frame_context = FrameContext(
                 entities=list(entities) if entities is not None else [],
                 player=player,
