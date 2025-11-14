@@ -600,18 +600,18 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
             # Render invisible entities with a translucent/faded appearance
             render_color = (
                 max(0, entity.color[0] // 3),  # Reduce red by 2/3
-                max(0, entity.color[1] // 3),  # Reduce green by 2/3  
+                max(0, entity.color[1] // 3),  # Reduce green by 2/3
                 max(0, entity.color[2] // 3)   # Reduce blue by 2/3
             )
             render_char = '?' if entity.name == "Player" else entity.char
-        
+
         # Check if entity is an opened chest (render as greyed out)
-    elif hasattr(entity, 'chest') and entity.chest:
-        from components.chest import ChestState
-        if entity.chest.state == ChestState.OPEN:
-            # Render opened chests in grey/whitewashed color
-            render_color = (100, 100, 100)  # Dark grey
-        
+        if hasattr(entity, 'chest') and entity.chest:
+            from components.chest import ChestState
+            if entity.chest.state == ChestState.OPEN:
+                # Render opened chests in grey/whitewashed color
+                render_color = (100, 100, 100)  # Dark grey
+
         # Get the current background color at this tile and render the entity
         bg_color = libtcod.console_get_char_background(con, viewport_x, viewport_y)
         libtcod.console_put_char_ex(con, viewport_x, viewport_y, render_char, render_color, bg_color)
