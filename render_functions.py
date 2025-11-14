@@ -35,6 +35,7 @@ SEE ALSO:
 from enum import Enum, auto
 
 import tcod.libtcodpy as libtcod
+from typing import Any, Optional, Sequence
 
 from game_states import GameStates
 from menus import character_screen, inventory_menu, level_up_menu
@@ -44,6 +45,7 @@ from entity_sorting_cache import get_sorted_entities
 from death_screen import render_death_screen
 from visual_effect_queue import get_effect_queue
 from ui.sidebar import _render_sidebar
+from rendering.frame_models import FrameContext, FrameVisuals, HoverProbe
 from config.ui_layout import get_ui_layout
 from components.component_registry import ComponentType
 
@@ -65,7 +67,13 @@ class RenderOrder(Enum):
     # ACTOR = 4
 
 
-def get_names_under_mouse(mouse, entities, fov_map, camera=None):
+def get_names_under_mouse(
+    mouse,
+    entities,
+    fov_map,
+    camera=None,
+    hover_probe: Optional["HoverProbe"] = None,
+):
     """Get the names of all visible entities under the mouse cursor.
 
     Args:
@@ -77,39 +85,73 @@ def get_names_under_mouse(mouse, entities, fov_map, camera=None):
     Returns:
         str: Comma-separated string of entity names under the cursor, or empty string if mouse is None
     """
-    # Handle case where mouse is None (e.g., at startup or in headless mode)
+    if hover_probe:
+        return _format_names_from_entities(hover_probe.entities)
+
     if mouse is None:
         return ""
-    
-    # Get screen coordinates from mouse
+
     screen_x, screen_y = int(mouse.cx), int(mouse.cy)
-    
-    # Translate to world coordinates using ui_layout and camera
-    ui_layout = get_ui_layout()
-    
-    # Get camera offset if available
-    camera_x, camera_y = 0, 0
-    if camera:
-        camera_x, camera_y = camera.x, camera.y
-    
-    world_coords = ui_layout.screen_to_world(screen_x, screen_y, camera_x, camera_y)
-    
-    # If mouse is not over viewport, return empty string
-    if world_coords is None:
-        return ""
-    
-    (x, y) = world_coords
+    probe = _build_hover_probe_from_screen(screen_x, screen_y, entities, None, fov_map, camera)
+    return _format_names_from_entities(probe.entities)
 
-    names = [
-        entity.name
-        for entity in entities
-        if entity.x == x
-        and entity.y == y
-        and map_is_in_fov(fov_map, entity.x, entity.y)
-    ]
-    names = ", ".join(names)
 
-    return names.capitalize()
+def render_all(*args, **kwargs):
+    """Render a full frame using either legacy args or a FrameContext.
+
+    When invoked with a :class:`~rendering.frame_models.FrameContext` this
+    function populates the supplied :class:`FrameVisuals` surfaces and returns
+    them with a populated :class:`HoverProbe` describing the hover target for
+    downstream tooltip rendering.
+    """
+
+    if args and isinstance(args[0], FrameContext):
+        frame_ctx: FrameContext = args[0]
+        visuals: Optional[FrameVisuals]
+
+        if len(args) > 1:
+            visuals = args[1]
+        else:
+            visuals = kwargs.get("frame_visuals")
+
+        if visuals is None:
+            raise TypeError("FrameVisuals must be provided when calling render_all with FrameContext")
+
+        sidebar_console = (
+            visuals.sidebar_console if visuals.sidebar_console is not None else frame_ctx.sidebar_console
+        )
+
+        hover_probe = _build_hover_probe(frame_ctx)
+
+        _legacy_render_all(
+            visuals.viewport_console,
+            visuals.status_console,
+            frame_ctx.entities,
+            frame_ctx.player,
+            frame_ctx.game_map,
+            frame_ctx.fov_map,
+            frame_ctx.fov_recompute,
+            frame_ctx.message_log,
+            frame_ctx.screen_width,
+            frame_ctx.screen_height,
+            frame_ctx.bar_width,
+            frame_ctx.panel_height,
+            frame_ctx.panel_y,
+            frame_ctx.mouse,
+            frame_ctx.colors,
+            frame_ctx.game_state,
+            use_optimization=frame_ctx.use_optimization,
+            sidebar_console=sidebar_console,
+            camera=frame_ctx.camera,
+            death_screen_quote=frame_ctx.death_screen_quote,
+            draw_tooltips=False,
+            hover_probe=hover_probe,
+        )
+
+        visuals.hover_probe = hover_probe
+        return visuals
+
+    return _legacy_render_all(*args, **kwargs)
 
 
 def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_color):
@@ -146,7 +188,7 @@ def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_c
     )
 
 
-def render_all(
+def _legacy_render_all(
     con,
     panel,
     entities,
@@ -167,6 +209,8 @@ def render_all(
     sidebar_console=None,
     camera=None,
     death_screen_quote=None,
+    draw_tooltips=True,
+    hover_probe: Optional[HoverProbe] = None,
 ):
     """Render the entire game screen including map, entities, and UI.
 
@@ -237,7 +281,6 @@ def render_all(
     # See ConsoleRenderer.render() for where effects are actually played.
 
     libtcod.console_set_default_background(panel, (0, 0, 0))
-    libtcod.console_clear(panel)
 
     # Print the game messages, one line at a time
     y = 1
@@ -269,13 +312,14 @@ def render_all(
     )
 
     libtcod.console_set_default_foreground(panel, (159, 159, 159))
+    names_text = get_names_under_mouse(mouse, entities, fov_map, camera, hover_probe)
     libtcod.console_print_ex(
         panel,
         1,
         0,
         libtcod.BKGND_NONE,
         libtcod.LEFT,
-        get_names_under_mouse(mouse, entities, fov_map, camera),
+        names_text,
     )
 
     # Blit status panel below viewport (not full width, just viewport width)
@@ -315,87 +359,43 @@ def render_all(
     elif game_state == GameStates.PLAYER_DEAD:
         # Render death screen with statistics using the provided quote
         render_death_screen(con, player, screen_width, screen_height, death_screen_quote)
-    
-    # Render tooltips (if hovering over items or monsters)
-    # This should be rendered LAST so it appears on top of everything
-    if mouse and hasattr(mouse, 'cx') and hasattr(mouse, 'cy'):
-        import logging
-        tooltip_logger = logging.getLogger(__name__)
-        from io_layer.console_renderer import get_last_frame_counter
-        from ui.debug_flags import ENABLE_TOOLTIP_DEBUG, TOOLTIP_IGNORE_FOV
-        
-        # DEBUG: Very basic check to see if we're even in this code
-        frame_id = get_last_frame_counter()
-        is_debug_enabled = ENABLE_TOOLTIP_DEBUG
-        log_level = tooltip_logger.level if hasattr(tooltip_logger, 'level') else 'unknown'
-        # Print to console to verify tooltip code is running
-        # (temporary diagnostic, will remove after we confirm the code path)
-        # print(f"[TOOLTIP_DEBUG] frame={frame_id} debug_flag={is_debug_enabled} logger_level={log_level}")
-        
-        from ui.tooltip import (get_sidebar_item_at_position, get_sidebar_equipment_at_position, 
-                               render_tooltip)
-        
-        # First check if hovering over equipment in sidebar
-        hovered_entity = get_sidebar_equipment_at_position(mouse.cx, mouse.cy, player, ui_layout)
-        
-        # If not hovering over equipment, check if hovering over a sidebar inventory item
-        if not hovered_entity:
-            hovered_entity = get_sidebar_item_at_position(mouse.cx, mouse.cy, player, ui_layout)
-        
-        # If hovering over sidebar item, show single-entity tooltip
-        if hovered_entity:
-            if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
-                tooltip_logger.debug("TOOLTIP_DRAW_CALL: frame=%d sidebar_entity", get_last_frame_counter())
-            render_tooltip(0, hovered_entity, mouse.cx, mouse.cy, ui_layout)
-        # Otherwise check viewport for monsters/items
-        elif ui_layout.is_in_viewport(mouse.cx, mouse.cy):
-            # Convert screen coordinates to world coordinates
-            camera_x, camera_y = 0, 0
-            if camera:
-                camera_x, camera_y = camera.x, camera.y
-            
-            world_coords = ui_layout.screen_to_world(mouse.cx, mouse.cy, camera_x, camera_y)
-            if world_coords:
-                world_x, world_y = world_coords
-                
-                # DEBUG: Log viewport coordinates for flicker debugging
-                if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
-                    tooltip_logger.debug(
-                        "TOOLTIP_VIEWPORT_START: frame=%d mouse=(%d,%d) world=(%d,%d)",
-                        get_last_frame_counter(), mouse.cx, mouse.cy, world_x, world_y
-                    )
-                
-                # Import functions for viewport entity tooltips
-                from ui.tooltip import get_all_entities_at_position, render_multi_entity_tooltip
-                
-                # Debug: optionally ignore FOV for entity gathering
-                effective_fov_map = None if TOOLTIP_IGNORE_FOV else fov_map
-                
-                # Get ALL entities at this position using unified, deterministic ordering
-                entities_at_position = get_all_entities_at_position(world_x, world_y, entities, player, effective_fov_map)
-                
-                if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
-                    entity_names = [getattr(e, "name", "UNNAMED") for e in entities_at_position]
-                    tooltip_logger.debug(
-                        "TOOLTIP_VIEWPORT_ENTITIES: frame=%d count=%d names=%s",
-                        get_last_frame_counter(), len(entities_at_position), entity_names
-                    )
-                
-                if entities_at_position:
-                    if ENABLE_TOOLTIP_DEBUG and tooltip_logger.isEnabledFor(logging.DEBUG):
-                        tooltip_logger.debug(
-                            "TOOLTIP_DRAW_CALL: frame=%d kind=%s",
-                            get_last_frame_counter(),
-                            "multi" if len(entities_at_position) > 1 else "single"
-                        )
-                    
-                    # Unified tooltip path: always use get_all_entities_at_position ordering
-                    if len(entities_at_position) > 1:
-                        # Multiple entities at same tile: show multi-entity tooltip
-                        render_multi_entity_tooltip(0, entities_at_position, mouse.cx, mouse.cy, ui_layout)
-                    else:
-                        # Single entity: show single-entity tooltip
-                        render_tooltip(0, entities_at_position[0], mouse.cx, mouse.cy, ui_layout)
+
+    if draw_tooltips and mouse and hasattr(mouse, "cx") and hasattr(mouse, "cy"):
+        from ui import tooltip
+
+        if hover_probe is None:
+            hover_probe = _build_hover_probe_from_screen(
+                int(mouse.cx),
+                int(mouse.cy),
+                entities,
+                player,
+                fov_map,
+                camera,
+            )
+
+        frame_context = FrameContext(
+            entities=entities,
+            player=player,
+            game_map=game_map,
+            fov_map=fov_map,
+            fov_recompute=fov_recompute,
+            message_log=message_log,
+            screen_width=screen_width,
+            screen_height=screen_height,
+            bar_width=bar_width,
+            panel_height=panel_height,
+            panel_y=panel_y,
+            mouse=mouse,
+            colors=colors,
+            game_state=game_state,
+            sidebar_console=sidebar_console,
+            camera=camera,
+            death_screen_quote=death_screen_quote,
+            use_optimization=use_optimization,
+        )
+
+        tooltip_model = tooltip.resolve_hover(hover_probe, frame_context)
+        tooltip.render(tooltip_model, con, sidebar_console)
 
 
 def _render_tiles_original(con, game_map, fov_map, colors, camera=None):
@@ -606,15 +606,94 @@ def draw_entity(con, entity, fov_map, game_map, camera=None):
             render_char = '?' if entity.name == "Player" else entity.char
         
         # Check if entity is an opened chest (render as greyed out)
-        elif hasattr(entity, 'chest') and entity.chest:
-            from components.chest import ChestState
-            if entity.chest.state == ChestState.OPEN:
-                # Render opened chests in grey/whitewashed color
-                render_color = (100, 100, 100)  # Dark grey
+    elif hasattr(entity, 'chest') and entity.chest:
+        from components.chest import ChestState
+        if entity.chest.state == ChestState.OPEN:
+            # Render opened chests in grey/whitewashed color
+            render_color = (100, 100, 100)  # Dark grey
         
         # Get the current background color at this tile and render the entity
         bg_color = libtcod.console_get_char_background(con, viewport_x, viewport_y)
         libtcod.console_put_char_ex(con, viewport_x, viewport_y, render_char, render_color, bg_color)
+
+
+def _build_hover_probe(frame_ctx: FrameContext) -> HoverProbe:
+    mouse = getattr(frame_ctx, "mouse", None)
+    if mouse is None or not hasattr(mouse, "cx") or not hasattr(mouse, "cy"):
+        return HoverProbe(screen_position=None, world_position=None, entities=(), visible=False)
+
+    screen_x, screen_y = int(mouse.cx), int(mouse.cy)
+    return _build_hover_probe_from_screen(
+        screen_x,
+        screen_y,
+        frame_ctx.entities,
+        frame_ctx.player,
+        frame_ctx.fov_map,
+        frame_ctx.camera,
+    )
+
+
+def _build_hover_probe_from_screen(
+    screen_x: int,
+    screen_y: int,
+    entities,
+    player,
+    fov_map,
+    camera,
+) -> HoverProbe:
+    ui_layout = get_ui_layout()
+
+    camera_x = getattr(camera, "x", 0) if camera else 0
+    camera_y = getattr(camera, "y", 0) if camera else 0
+    world_coords = ui_layout.screen_to_world(screen_x, screen_y, camera_x, camera_y)
+
+    if world_coords is None:
+        return HoverProbe(
+            screen_position=(screen_x, screen_y),
+            world_position=None,
+            entities=(),
+            visible=False,
+        )
+
+    world_x, world_y = world_coords
+    visible = True
+    if fov_map is not None:
+        visible = map_is_in_fov(fov_map, world_x, world_y)
+
+    from ui.tooltip import get_all_entities_at_position
+
+    entities_at_position = get_all_entities_at_position(
+        world_x,
+        world_y,
+        entities,
+        player,
+        fov_map,
+    )
+
+    return HoverProbe(
+        screen_position=(screen_x, screen_y),
+        world_position=world_coords,
+        entities=entities_at_position,
+        visible=visible,
+    )
+
+
+def _format_names_from_entities(entities: Sequence[Any]) -> str:
+    if not entities:
+        return ""
+
+    names = [
+        getattr(entity, "get_display_name", None)()  # type: ignore[misc]
+        if hasattr(entity, "get_display_name")
+        else getattr(entity, "name", "")
+        for entity in entities
+    ]
+    names = [name for name in names if name]
+    if not names:
+        return ""
+
+    joined = ", ".join(names)
+    return joined.capitalize()
 
 
 def clear_entity(con, entity):

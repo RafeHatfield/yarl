@@ -18,47 +18,109 @@ overload during exploration. Full lore/story text is reserved for interaction me
 """
 
 import tcod.libtcodpy as libtcod
-from typing import Optional, Any
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Optional, Any, Sequence, Tuple, List
 import logging
 
 from components.component_registry import ComponentType
 from ui.sidebar_layout import calculate_sidebar_layout, get_hotkey_list, get_equipment_slot_list
-from io_layer.console_renderer import get_last_frame_counter
+from config.ui_layout import get_ui_layout
+# Tooltip rendering works with FrameContext/HoverProbe from the renderer pipeline
+from rendering.frame_models import FrameContext, HoverProbe
 
 logger = logging.getLogger(__name__)
 
 
-def get_ground_item_at_position(world_x: int, world_y: int, entities: list, fov_map=None) -> Optional[Any]:
-    """Get the item on the ground at the specified world coordinates.
-    
-    Args:
-        world_x: X coordinate in world space
-        world_y: Y coordinate in world space
-        entities: List of all entities in the game
-        fov_map: Optional FOV map to check visibility
-        
-    Returns:
-        Item entity if there's an item at that position, None otherwise
+class TooltipAnchor(Enum):
+    VIEWPORT = auto()
+    SIDEBAR = auto()
+
+
+class TooltipKind(Enum):
+    NONE = auto()
+    SINGLE = auto()
+    MULTI = auto()
+
+
+@dataclass
+class TooltipModel:
+    kind: TooltipKind
+    lines: Sequence[str]
+    anchor: TooltipAnchor = TooltipAnchor.VIEWPORT
+    screen_position: Optional[Tuple[int, int]] = None
+    world_position: Optional[Tuple[int, int]] = None
+    entities: Sequence[Any] = ()
+
+
+def resolve_hover(hover_probe: Optional[HoverProbe], frame_ctx: FrameContext) -> TooltipModel:
+    """Resolve the hover state into a :class:`TooltipModel`.
+
+    The resolver inspects sidebar regions first, then falls back to viewport
+    entities gathered via :class:`HoverProbe`. The resulting model is a pure
+    data description with no console references, enabling the renderer to draw
+    tooltips after all world/UI composition has completed.
     """
-    # Check FOV if provided (only show tooltips for visible items)
-    if fov_map:
-        from fov_functions import map_is_in_fov
-        if not map_is_in_fov(fov_map, world_x, world_y):
-            return None
-    
-    # Find items at this position (prioritize items over corpses)
-    items_at_pos = []
-    for entity in entities:
-        if entity.x == world_x and entity.y == world_y:
-            # Check if it's an item (has item component and not the player)
-            if entity.components.has(ComponentType.ITEM):
-                items_at_pos.append(entity)
-    
-    # Return the first item found (if multiple items stacked, show top one)
-    if items_at_pos:
-        return items_at_pos[0]
-    
-    return None
+    mouse = getattr(frame_ctx, "mouse", None)
+    if mouse is None or not hasattr(mouse, "cx") or not hasattr(mouse, "cy"):
+        return TooltipModel(TooltipKind.NONE, [], TooltipAnchor.VIEWPORT)
+
+    screen_pos = (int(mouse.cx), int(mouse.cy))
+    ui_layout = get_ui_layout()
+
+    sidebar_entity = get_sidebar_equipment_at_position(screen_pos[0], screen_pos[1], frame_ctx.player, ui_layout)
+    if not sidebar_entity:
+        sidebar_entity = get_sidebar_item_at_position(screen_pos[0], screen_pos[1], frame_ctx.player, ui_layout)
+
+    if sidebar_entity:
+        lines = _build_single_entity_lines(sidebar_entity)
+        return TooltipModel(
+            kind=TooltipKind.SINGLE,
+            lines=lines,
+            anchor=TooltipAnchor.SIDEBAR,
+            screen_position=screen_pos,
+            world_position=None,
+            entities=[sidebar_entity],
+        )
+
+    if hover_probe is None or hover_probe.world_position is None:
+        return TooltipModel(
+            kind=TooltipKind.NONE,
+            lines=[],
+            anchor=TooltipAnchor.VIEWPORT,
+            screen_position=screen_pos,
+            world_position=None,
+            entities=(),
+        )
+
+    entities = list(hover_probe.entities)
+    if not entities:
+        return TooltipModel(
+            kind=TooltipKind.NONE,
+            lines=[],
+            anchor=TooltipAnchor.VIEWPORT,
+            screen_position=hover_probe.screen_position or screen_pos,
+            world_position=hover_probe.world_position,
+            entities=(),
+        )
+
+    screen_reference = hover_probe.screen_position or screen_pos
+
+    if len(entities) == 1:
+        lines = _build_single_entity_lines(entities[0])
+        kind = TooltipKind.SINGLE
+    else:
+        lines = _build_multi_entity_lines(entities)
+        kind = TooltipKind.MULTI
+
+    return TooltipModel(
+        kind=kind,
+        lines=lines,
+        anchor=TooltipAnchor.VIEWPORT,
+        screen_position=screen_reference,
+        world_position=hover_probe.world_position,
+        entities=entities,
+    )
 
 
 def get_all_entities_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> list:
@@ -97,8 +159,6 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
     from render_functions import RenderOrder
     from ui.debug_flags import ENABLE_TOOLTIP_DEBUG, TOOLTIP_IGNORE_FOV
     
-    frame_id = get_last_frame_counter()
-    
     # Check FOV if provided (respect TOOLTIP_IGNORE_FOV debug flag)
     in_fov = True
     if TOOLTIP_IGNORE_FOV:
@@ -106,8 +166,8 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
         in_fov = True
         if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
             logger.debug(
-                "TOOLTIP_FOV_CHECK: frame=%d pos=(%d,%d) in_fov=%s TOOLTIP_IGNORE_FOV_ENABLED",
-                frame_id, world_x, world_y, in_fov
+                "TOOLTIP_FOV_CHECK: pos=(%d,%d) in_fov=%s TOOLTIP_IGNORE_FOV_ENABLED",
+                world_x, world_y, in_fov
             )
     elif fov_map:
         # Normal mode: check FOV
@@ -115,22 +175,22 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
         in_fov = map_is_in_fov(fov_map, world_x, world_y)
         if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
             logger.debug(
-                "TOOLTIP_FOV_CHECK: frame=%d pos=(%d,%d) in_fov=%s fov_map_present=True",
-                frame_id, world_x, world_y, in_fov
+                "TOOLTIP_FOV_CHECK: pos=(%d,%d) in_fov=%s fov_map_present=True",
+                world_x, world_y, in_fov
             )
     else:
         # No FOV map provided
         if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
             logger.debug(
-                "TOOLTIP_FOV_CHECK: frame=%d pos=(%d,%d) in_fov=%s fov_map_provided=False",
-                frame_id, world_x, world_y, in_fov
+                "TOOLTIP_FOV_CHECK: pos=(%d,%d) in_fov=%s fov_map_provided=False",
+                world_x, world_y, in_fov
             )
-    
+
     if not in_fov:
         if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
             logger.debug(
-                "TOOLTIP_FOV_FILTERED: frame=%d pos=(%d,%d) entity_list_empty",
-                frame_id, world_x, world_y
+                "TOOLTIP_FOV_FILTERED: pos=(%d,%d) entity_list_empty",
+                world_x, world_y
             )
         return []
     
@@ -145,8 +205,8 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
                 corpses.append(entity)
                 if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
-                        "TOOLTIP_ENTITY_CLASSIFIED: frame=%d pos=(%d,%d) name=%s category=corpse",
-                        frame_id, world_x, world_y, getattr(entity, "name", "UNNAMED")
+                        "TOOLTIP_ENTITY_CLASSIFIED: pos=(%d,%d) name=%s category=corpse",
+                        world_x, world_y, getattr(entity, "name", "UNNAMED")
                     )
             # Living monster: has FIGHTER + AI components (removed from corpses by kill_monster)
             elif (entity.components.has(ComponentType.FIGHTER) and
@@ -154,8 +214,8 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
                 living_monsters.append(entity)
                 if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
-                        "TOOLTIP_ENTITY_CLASSIFIED: frame=%d pos=(%d,%d) name=%s category=living_monster",
-                        frame_id, world_x, world_y, getattr(entity, "name", "UNNAMED")
+                        "TOOLTIP_ENTITY_CLASSIFIED: pos=(%d,%d) name=%s category=living_monster",
+                        world_x, world_y, getattr(entity, "name", "UNNAMED")
                     )
             # Items and interactables: items, chests, signposts, murals, and ground features
             elif (entity.components.has(ComponentType.ITEM) or
@@ -165,8 +225,8 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
                 items.append(entity)
                 if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
-                        "TOOLTIP_ENTITY_CLASSIFIED: frame=%d pos=(%d,%d) name=%s category=item_or_feature",
-                        frame_id, world_x, world_y, getattr(entity, "name", "UNNAMED")
+                        "TOOLTIP_ENTITY_CLASSIFIED: pos=(%d,%d) name=%s category=item_or_feature",
+                        world_x, world_y, getattr(entity, "name", "UNNAMED")
                     )
             # Other entities are ignored (no tooltip)
     
@@ -189,56 +249,11 @@ def get_all_entities_at_position(world_x: int, world_y: int, entities: list, pla
     if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
         entity_names = [getattr(e, "name", "UNNAMED") for e in all_entities]
         logger.debug(
-            "TOOLTIP_ENTITIES_FINAL: frame=%d pos=(%d,%d) count=%d names=%s",
-            frame_id, world_x, world_y, len(all_entities), entity_names
+            "TOOLTIP_ENTITIES_FINAL: pos=(%d,%d) count=%d names=%s",
+            world_x, world_y, len(all_entities), entity_names
         )
     
     return all_entities
-
-
-def get_monster_at_position(world_x: int, world_y: int, entities: list, player, fov_map=None) -> Optional[Any]:
-    """Get the monster at the specified world coordinates.
-    
-    Prioritizes LIVING monsters over dead ones (corpses). If a live monster
-    is standing on a corpse, the live monster's tooltip is shown.
-    
-    Args:
-        world_x: X coordinate in world space
-        world_y: Y coordinate in world space
-        entities: List of all entities in the game
-        player: Player entity (to exclude from results)
-        fov_map: Optional FOV map to check visibility
-        
-    Returns:
-        Monster entity if there's a monster at that position, None otherwise
-    """
-    # Check FOV if provided (only show tooltips for visible monsters)
-    if fov_map:
-        from fov_functions import map_is_in_fov
-        if not map_is_in_fov(fov_map, world_x, world_y):
-            return None
-    
-    # Find monsters at this position, prioritizing LIVING ones
-    living_monster = None
-    dead_monster = None
-    
-    for entity in entities:
-        if entity.x == world_x and entity.y == world_y:
-            # Check if it's a monster (has fighter and AI, and is not the player)
-            if (entity.components.has(ComponentType.FIGHTER) and
-                entity.components.has(ComponentType.AI) and
-                entity != player):
-                
-                fighter = entity.get_component_optional(ComponentType.FIGHTER)
-                if fighter and fighter.hp > 0:
-                    # Living monster - prioritize this!
-                    living_monster = entity
-                elif not dead_monster:
-                    # Dead monster (corpse) - only use if no living monster
-                    dead_monster = entity
-    
-    # Return living monster if found, otherwise return dead one
-    return living_monster if living_monster else dead_monster
 
 
 def get_sidebar_equipment_at_position(screen_x: int, screen_y: int, player, ui_layout) -> Optional[Any]:
@@ -338,418 +353,258 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     # Check if mouse is on an inventory item line
     for i, item in enumerate(inventory_items):
         item_y = inventory_start_y + i
-        
+
         # Check if hovering over this line
         if screen_y == item_y and screen_x >= padding and screen_x < ui_layout.sidebar_width - padding:
             return item
-    
+
     return None
 
 
-def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) -> None:
-    """Render a tooltip for an entity (item or monster) near the mouse cursor.
-    
-    The tooltip shows the full name and relevant stats/info.
-    
-    Args:
-        console: Console to render to (viewport console for proper positioning)
-        entity: The entity to show info for (item or monster)
-        mouse_x: Mouse X position (screen coordinates)
-        mouse_y: Mouse Y position (screen coordinates)
-        ui_layout: UILayoutConfig instance
-    """
+def _build_single_entity_lines(entity: Any) -> List[str]:
     if not entity:
-        return
-    
-    # Get frame ID for correlation in logs
-    frame_id = get_last_frame_counter()
-    
-    # Get full entity name
-    entity_name = entity.get_display_name() if hasattr(entity, 'get_display_name') else entity.name
-    
-    # Build tooltip lines
-    tooltip_lines = [entity_name]
-    
-    # Check if this is a monster (has fighter and AI)
-    is_monster = (entity.components.has(ComponentType.FIGHTER) and 
-                  entity.components.has(ComponentType.AI))
-    
-    # Check for chest, signpost, mural
+        return []
+
+    entity_name = (
+        entity.get_display_name() if hasattr(entity, "get_display_name") else getattr(entity, "name", "")
+    )
+    tooltip_lines: List[str] = [entity_name]
+
+    is_monster = (
+        entity.components.has(ComponentType.FIGHTER)
+        and entity.components.has(ComponentType.AI)
+    )
     is_chest = entity.components.has(ComponentType.CHEST)
     is_signpost = entity.components.has(ComponentType.SIGNPOST)
     is_mural = entity.components.has(ComponentType.MURAL)
-    
-    if is_mural:
-        # Hover tooltip for mural: show only short label (no lore text)
-        # Full mural text is shown in message log when player interacts/examines
-        # Just the name is shown in the tooltip
-        pass  # Name already in tooltip_lines[0]
-    elif is_signpost:
-        # Hover tooltip for signpost: show only short label (no message text)
-        # Full message is shown in message log when player interacts/reads
-        # Just the name is shown in the tooltip
-        pass  # Name already in tooltip_lines[0]
+
+    if is_mural or is_signpost:
+        pass  # Name only
     elif is_chest:
-        # Show chest state and trap info (concise)
         chest = entity.get_component_optional(ComponentType.CHEST)
         if chest:
-            state_str = chest.state.name.lower() if hasattr(chest.state, 'name') else str(chest.state)
+            state_str = chest.state.name.lower() if hasattr(chest.state, "name") else str(chest.state)
             tooltip_lines.append(f"State: {state_str.capitalize()}")
             if chest.trap_type:
-                tooltip_lines.append(f"⚠ Trapped!")
+                tooltip_lines.append("⚠ Trapped!")
     elif is_monster:
-        # Monster tooltip - show name and equipment
-        # Check if monster has equipment
-        if entity.components.has(ComponentType.EQUIPMENT):
-            equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
-            if equipment:
-                # Show wielded weapon
-                if equipment.main_hand:
-                    weapon_name = (equipment.main_hand.get_display_name() 
-                                 if hasattr(equipment.main_hand, 'get_display_name') 
-                                 else equipment.main_hand.name.replace('_', ' ').title())
-                    tooltip_lines.append(f"Wielding: {weapon_name}")
-                
-                # Show worn armor (check all armor slots)
-                armor_pieces = []
-                if equipment.off_hand:
-                    armor_name = (equipment.off_hand.get_display_name() 
-                                if hasattr(equipment.off_hand, 'get_display_name') 
-                                else equipment.off_hand.name.replace('_', ' ').title())
-                    armor_pieces.append(armor_name)
-                if equipment.chest:
-                    armor_name = (equipment.chest.get_display_name() 
-                                if hasattr(equipment.chest, 'get_display_name') 
-                                else equipment.chest.name.replace('_', ' ').title())
-                    armor_pieces.append(armor_name)
-                if equipment.head:
-                    armor_name = (equipment.head.get_display_name() 
-                                if hasattr(equipment.head, 'get_display_name') 
-                                else equipment.head.name.replace('_', ' ').title())
-                    armor_pieces.append(armor_name)
-                if equipment.feet:
-                    armor_name = (equipment.feet.get_display_name() 
-                                if hasattr(equipment.feet, 'get_display_name') 
-                                else equipment.feet.name.replace('_', ' ').title())
-                    armor_pieces.append(armor_name)
-                if equipment.left_ring:
-                    ring_name = (equipment.left_ring.get_display_name() 
-                                if hasattr(equipment.left_ring, 'get_display_name') 
-                                else equipment.left_ring.name.replace('_', ' ').title())
-                    armor_pieces.append(f"L:{ring_name}")
-                if equipment.right_ring:
-                    ring_name = (equipment.right_ring.get_display_name() 
-                                if hasattr(equipment.right_ring, 'get_display_name') 
-                                else equipment.right_ring.name.replace('_', ' ').title())
-                    armor_pieces.append(f"R:{ring_name}")
-                
-                if armor_pieces:
-                    tooltip_lines.append(f"Wearing: {', '.join(armor_pieces)}")
-    
-    # Otherwise, show item information
+        equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
+        if equipment:
+            if equipment.main_hand:
+                weapon_name = (
+                    equipment.main_hand.get_display_name()
+                    if hasattr(equipment.main_hand, "get_display_name")
+                    else equipment.main_hand.name.replace("_", " ").title()
+                )
+                tooltip_lines.append(f"Wielding: {weapon_name}")
+
+            armor_pieces: List[str] = []
+            for attr in ("off_hand", "chest", "head", "feet"):
+                item = getattr(equipment, attr, None)
+                if item:
+                    name = (
+                        item.get_display_name()
+                        if hasattr(item, "get_display_name")
+                        else item.name.replace("_", " ").title()
+                    )
+                    armor_pieces.append(name)
+
+            if equipment.left_ring:
+                ring_name = (
+                    equipment.left_ring.get_display_name()
+                    if hasattr(equipment.left_ring, "get_display_name")
+                    else equipment.left_ring.name.replace("_", " ").title()
+                )
+                armor_pieces.append(f"L:{ring_name}")
+            if equipment.right_ring:
+                ring_name = (
+                    equipment.right_ring.get_display_name()
+                    if hasattr(equipment.right_ring, "get_display_name")
+                    else equipment.right_ring.name.replace("_", " ").title()
+                )
+                armor_pieces.append(f"R:{ring_name}")
+
+            if armor_pieces:
+                tooltip_lines.append(f"Wearing: {', '.join(armor_pieces)}")
     elif entity.components.has(ComponentType.WAND):
         tooltip_lines.append(f"Wand ({entity.wand.charges} charges)")
     elif entity.components.has(ComponentType.EQUIPPABLE):
         eq = entity.equippable
-        
-        # Weapon information
-        if hasattr(eq, 'damage_dice') and eq.damage_dice:
+
+        if hasattr(eq, "damage_dice") and eq.damage_dice:
             weapon_info = f"Weapon: {eq.damage_dice} damage"
-            if hasattr(eq, 'to_hit_bonus') and eq.to_hit_bonus:
+            if hasattr(eq, "to_hit_bonus") and eq.to_hit_bonus:
                 weapon_info += f", +{eq.to_hit_bonus} to hit"
             tooltip_lines.append(weapon_info)
-            
-            # Reach info
-            if hasattr(eq, 'reach') and eq.reach and eq.reach > 1:
+
+            if hasattr(eq, "reach") and eq.reach and eq.reach > 1:
                 tooltip_lines.append(f"Range: {eq.reach} tiles")
-            
-            # Two-handed
-            if hasattr(eq, 'two_handed') and eq.two_handed:
+            if hasattr(eq, "two_handed") and eq.two_handed:
                 tooltip_lines.append("Two-handed")
-        
-        # Armor information
-        elif hasattr(eq, 'defense_bonus') and eq.defense_bonus:
-            armor_info = f"Armor: +{eq.defense_bonus} AC"
-            tooltip_lines.append(armor_info)
-            
-            # DEX cap for armor
-            if hasattr(eq, 'max_dex_bonus') and eq.max_dex_bonus is not None:
+        elif hasattr(eq, "defense_bonus") and eq.defense_bonus:
+            tooltip_lines.append(f"Armor: +{eq.defense_bonus} AC")
+            if hasattr(eq, "max_dex_bonus") and eq.max_dex_bonus is not None:
                 tooltip_lines.append(f"Max DEX bonus: +{eq.max_dex_bonus}")
-        
-        # Slot information
-        if hasattr(eq, 'slot'):
-            # slot is an EquipmentSlots enum, convert to string
-            slot_str = str(eq.slot.value) if hasattr(eq.slot, 'value') else str(eq.slot)
-            slot_name = slot_str.replace('_', ' ').title()
-            tooltip_lines.append(f"Slot: {slot_name}")
-    
+
+        if hasattr(eq, "slot"):
+            slot_str = eq.slot.value if hasattr(eq.slot, "value") else str(eq.slot)
+            tooltip_lines.append(f"Slot: {str(slot_str).replace('_', ' ').title()}")
     elif entity.components.has(ComponentType.ITEM) and entity.item:
         if entity.item.use_function:
-            # Only reveal function details if item is identified
             if entity.item.identified:
-                # Get function name for better description
-                func_name = entity.item.use_function.__name__ if hasattr(entity.item.use_function, '__name__') else 'Unknown'
-                
-                if 'heal' in func_name:
-                    tooltip_lines.append("Consumable: Healing")
-                elif 'lightning' in func_name:
-                    tooltip_lines.append("Scroll: Lightning Bolt")
-                elif 'fireball' in func_name:
-                    tooltip_lines.append("Scroll: Fireball")
-                elif 'confuse' in func_name:
-                    tooltip_lines.append("Scroll: Confusion")
-                elif 'teleport' in func_name:
-                    tooltip_lines.append("Scroll: Teleportation")
-                elif 'yo_mama' in func_name:
-                    tooltip_lines.append("Scroll: Yo Mama")
-                elif 'slow' in func_name:
-                    tooltip_lines.append("Scroll: Slow")
-                elif 'glue' in func_name:
-                    tooltip_lines.append("Scroll: Glue")
-                elif 'rage' in func_name:
-                    tooltip_lines.append("Scroll: Rage")
-                elif 'speed' in func_name:
-                    tooltip_lines.append("Potion: Speed")
-                elif 'regeneration' in func_name:
-                    tooltip_lines.append("Potion: Regeneration")
-                elif 'invisibility' in func_name:
-                    tooltip_lines.append("Potion: Invisibility")
-                elif 'levitation' in func_name:
-                    tooltip_lines.append("Potion: Levitation")
-                elif 'protection' in func_name:
-                    tooltip_lines.append("Potion: Protection")
-                elif 'heroism' in func_name:
-                    tooltip_lines.append("Potion: Heroism")
-                elif 'weakness' in func_name:
-                    tooltip_lines.append("Potion: Weakness")
-                elif 'slowness' in func_name:
-                    tooltip_lines.append("Potion: Slowness")
-                elif 'blindness' in func_name:
-                    tooltip_lines.append("Potion: Blindness")
-                elif 'paralysis' in func_name:
-                    tooltip_lines.append("Potion: Paralysis")
-                elif 'experience' in func_name:
-                    tooltip_lines.append("Potion: Experience")
-                else:
-                    tooltip_lines.append("Consumable")
+                func_name = (
+                    entity.item.use_function.__name__
+                    if hasattr(entity.item.use_function, "__name__")
+                    else ""
+                )
+                tooltip_lines.append(_describe_identified_item(func_name))
             else:
-                # Unidentified - don't reveal what it does!
                 tooltip_lines.append("Unidentified")
-    
-    # Calculate tooltip dimensions
-    tooltip_width = max(len(line) for line in tooltip_lines) + 4  # +4 for padding
-    tooltip_height = len(tooltip_lines) + 2  # +2 for borders
-    
-    # DEBUG: Log tooltip content for flicker diagnosis
-    from ui.debug_flags import ENABLE_TOOLTIP_DEBUG
-    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
-        logger.debug(
-            "TOOLTIP_SINGLE_CONTENT: frame=%d mouse=(%d,%d) entity=%s lines=%r",
-            frame_id, mouse_x, mouse_y, getattr(entity, "name", None), tooltip_lines
-        )
-    
-    # Position tooltip near mouse, but keep it on screen
-    # Using screen coordinates directly since rendering to root console (0)
-    tooltip_x = mouse_x + 2  # Offset slightly from cursor
-    tooltip_y = mouse_y + 1
-    
-    # Adjust if tooltip would go off screen (using full screen dimensions)
-    if tooltip_x + tooltip_width > ui_layout.screen_width:
-        tooltip_x = ui_layout.screen_width - tooltip_width - 1
-    if tooltip_y + tooltip_height > ui_layout.screen_height:
-        tooltip_y = ui_layout.screen_height - tooltip_height - 1
-    
-    # Ensure minimum position
-    if tooltip_x < 1:
-        tooltip_x = 1
-    if tooltip_y < 1:
-        tooltip_y = 1
-    
-    # DEBUG: Log final tooltip geometry after clamping
-    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
-        logger.debug(
-            "TOOLTIP_SINGLE_GEOM: frame=%d x=%d y=%d w=%d h=%d",
-            frame_id, tooltip_x, tooltip_y, tooltip_width, tooltip_height
-        )
-    
-    # Draw tooltip background (set both char AND background to ensure clean rendering)
-    for y in range(tooltip_height):
-        for x in range(tooltip_width):
-            # Clear the character (replace with space) to prevent text bleed-through
-            libtcod.console_put_char(console, tooltip_x + x, tooltip_y + y, ord(' '), libtcod.BKGND_SET)
-            # Set the background color
-            libtcod.console_set_char_background(
-                console,
-                tooltip_x + x,
-                tooltip_y + y,
-                libtcod.Color(40, 40, 40),
-                libtcod.BKGND_SET
-            )
-    
-    # Draw border
-    libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
-    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
-    
-    # Top and bottom borders
-    for x in range(tooltip_width):
-        libtcod.console_put_char(console, tooltip_x + x, tooltip_y, ord('─'), libtcod.BKGND_SET)
-        libtcod.console_put_char(console, tooltip_x + x, tooltip_y + tooltip_height - 1, ord('─'), libtcod.BKGND_SET)
-    
-    # Side borders
-    for y in range(tooltip_height):
-        libtcod.console_put_char(console, tooltip_x, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
-        libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
-    
-    # Corners
-    libtcod.console_put_char(console, tooltip_x, tooltip_y, ord('┌'), libtcod.BKGND_SET)
-    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y, ord('┐'), libtcod.BKGND_SET)
-    libtcod.console_put_char(console, tooltip_x, tooltip_y + tooltip_height - 1, ord('└'), libtcod.BKGND_SET)
-    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + tooltip_height - 1, ord('┘'), libtcod.BKGND_SET)
-    
-    # Draw tooltip content
-    libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
-    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
-    for i, line in enumerate(tooltip_lines):
-        libtcod.console_print_ex(
-            console,
-            tooltip_x + 2,  # Padding from left border
-            tooltip_y + 1 + i,  # +1 for top border
-            libtcod.BKGND_SET,  # BKGND_SET ensures solid background behind text
-            libtcod.LEFT,
-            line
-        )
+
+    return tooltip_lines
 
 
-def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: int, ui_layout) -> None:
-    """Render a tooltip showing multiple entities at the same location.
-    
-    Shows all entities at a tile: living monsters, items, and corpses.
-    
-    Args:
-        console: Console to render to (usually root console 0)
-        entities: List of entities to show (already filtered to same position)
-        mouse_x: Mouse X position (screen coordinates)
-        mouse_y: Mouse Y position (screen coordinates)
-        ui_layout: UILayoutConfig instance
-    """
-    if not entities:
-        return
-    
-    # Get frame ID for correlation in logs
-    frame_id = get_last_frame_counter()
+def _describe_identified_item(func_name: str) -> str:
+    lookup = {
+        "heal": "Consumable: Healing",
+        "lightning": "Scroll: Lightning Bolt",
+        "fireball": "Scroll: Fireball",
+        "confuse": "Scroll: Confusion",
+        "teleport": "Scroll: Teleportation",
+        "yo_mama": "Scroll: Yo Mama",
+        "slow": "Scroll: Slow",
+        "glue": "Scroll: Glue",
+        "rage": "Scroll: Rage",
+        "speed": "Potion: Speed",
+        "regeneration": "Potion: Regeneration",
+        "invisibility": "Potion: Invisibility",
+        "levitation": "Potion: Levitation",
+        "protection": "Potion: Protection",
+        "heroism": "Potion: Heroism",
+        "weakness": "Potion: Weakness",
+        "slowness": "Potion: Slowness",
+        "blindness": "Potion: Blindness",
+        "paralysis": "Potion: Paralysis",
+        "experience": "Potion: Experience",
+    }
+
+    for key, label in lookup.items():
+        if key in func_name:
+            return label
+    return "Consumable"
+
+
+def _build_multi_entity_lines(entities: Sequence[Any]) -> List[str]:
+    tooltip_lines: List[str] = []
+
     from ui.debug_flags import ENABLE_TOOLTIP_DEBUG
-    
-    # Build tooltip lines showing all entities
-    tooltip_lines = []
-    
-    # DEBUG: Log entity ordering for tooltip consistency checking
+
     if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
-        entity_names = [getattr(e, 'name', 'unknown') for e in entities]
-        logger.debug(
-            "TOOLTIP_MULTI_ENTITY: frame=%d mouse=(%d,%d) count=%d names=%s",
-            frame_id, mouse_x, mouse_y, len(entities), entity_names
-        )
-    
-    for i, entity in enumerate(entities):
-        # Add separator between entities (except before first)
-        if i > 0:
+        entity_names = [getattr(e, "name", "unknown") for e in entities]
+        logger.debug("TOOLTIP_MULTI_ENTITY_ORDER: names=%s", entity_names)
+
+    for index, entity in enumerate(entities):
+        if index > 0:
             tooltip_lines.append("---")
-        
-        # Get entity name
-        entity_name = entity.get_display_name() if hasattr(entity, 'get_display_name') else entity.name
+
+        entity_name = (
+            entity.get_display_name() if hasattr(entity, "get_display_name") else getattr(entity, "name", "")
+        )
         tooltip_lines.append(entity_name)
-        
-        # Check if this is a monster
-        is_monster = (entity.components.has(ComponentType.FIGHTER) and 
-                      entity.components.has(ComponentType.AI))
-        
+
+        is_monster = (
+            entity.components.has(ComponentType.FIGHTER)
+            and entity.components.has(ComponentType.AI)
+        )
+
         if is_monster:
-            # Show equipment for monsters
-            if entity.components.has(ComponentType.EQUIPMENT):
-                equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
-                if equipment:
-                    if equipment.main_hand:
-                        weapon_name = (equipment.main_hand.get_display_name() 
-                                     if hasattr(equipment.main_hand, 'get_display_name') 
-                                     else equipment.main_hand.name.replace('_', ' ').title())
-                        tooltip_lines.append(f"  Wielding: {weapon_name}")
-                    if equipment.off_hand:
-                        armor_name = (equipment.off_hand.get_display_name() 
-                                    if hasattr(equipment.off_hand, 'get_display_name') 
-                                    else equipment.off_hand.name.replace('_', ' ').title())
-                        tooltip_lines.append(f"  Wearing: {armor_name}")
-                    elif equipment.chest:
-                        armor_name = (equipment.chest.get_display_name() 
-                                    if hasattr(equipment.chest, 'get_display_name') 
-                                    else equipment.chest.name.replace('_', ' ').title())
-                        tooltip_lines.append(f"  Wearing: {armor_name}")
-        
-        # Show chest information (short label only in multi-entity view)
+            equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
+            if equipment:
+                if equipment.main_hand:
+                    weapon_name = (
+                        equipment.main_hand.get_display_name()
+                        if hasattr(equipment.main_hand, "get_display_name")
+                        else equipment.main_hand.name.replace("_", " ").title()
+                    )
+                    tooltip_lines.append(f"  Wielding: {weapon_name}")
+                if equipment.off_hand:
+                    armor_name = (
+                        equipment.off_hand.get_display_name()
+                        if hasattr(equipment.off_hand, "get_display_name")
+                        else equipment.off_hand.name.replace("_", " ").title()
+                    )
+                    tooltip_lines.append(f"  Wearing: {armor_name}")
+                elif equipment.chest:
+                    armor_name = (
+                        equipment.chest.get_display_name()
+                        if hasattr(equipment.chest, "get_display_name")
+                        else equipment.chest.name.replace("_", " ").title()
+                    )
+                    tooltip_lines.append(f"  Wearing: {armor_name}")
         elif entity.components.has(ComponentType.CHEST):
             chest = entity.get_component_optional(ComponentType.CHEST)
             if chest:
-                # Show chest state (concise for multi-entity tooltip)
-                state_str = chest.state.name.lower() if hasattr(chest.state, 'name') else str(chest.state)
+                state_str = chest.state.name.lower() if hasattr(chest.state, "name") else str(chest.state)
                 state_label = f"[{state_str.capitalize()}]"
                 if chest.trap_type:
                     state_label += " ⚠"
                 tooltip_lines.append(f"  {state_label}")
-        
-        # Show signpost information (short label only)
         elif entity.components.has(ComponentType.SIGNPOST):
-            # No full message text in hover tooltip - only shown on interaction
-            tooltip_lines.append(f"  [Sign]")
-        
-        # Show mural information (short label only)
+            tooltip_lines.append("  [Sign]")
         elif entity.components.has(ComponentType.MURAL):
-            # No full mural text in hover tooltip - only shown on interaction
-            tooltip_lines.append(f"  [Mural]")
-        
-        # Show item information (abbreviated for multi-entity display)
+            tooltip_lines.append("  [Mural]")
         elif entity.components.has(ComponentType.WAND):
             tooltip_lines.append(f"  Wand ({entity.wand.charges} charges)")
         elif entity.components.has(ComponentType.EQUIPPABLE):
             eq = entity.equippable
-            if hasattr(eq, 'damage_dice') and eq.damage_dice:
-                tooltip_lines.append(f"  {eq.damage_dice} damage")
-            elif hasattr(eq, 'defense_bonus') and eq.defense_bonus:
+            if hasattr(eq, "damage_dice") and eq.damage_dice:
+                tooltip_lines.append(f"  Damage: {eq.damage_dice}")
+            elif hasattr(eq, "defense_bonus") and eq.defense_bonus:
                 tooltip_lines.append(f"  +{eq.defense_bonus} AC")
         elif entity.components.has(ComponentType.ITEM):
-            # Just show it's consumable (abbreviated)
-            tooltip_lines.append(f"  Consumable")
-    
-    # Calculate tooltip dimensions
+            tooltip_lines.append("  Consumable")
+
+    return tooltip_lines
+
+
+def _draw_tooltip_box(console, tooltip_lines: Sequence[str], mouse_x: int, mouse_y: int, ui_layout) -> None:
+    if not tooltip_lines:
+        return
+
     tooltip_width = max(len(line) for line in tooltip_lines) + 4
     tooltip_height = len(tooltip_lines) + 2
-    
-    # DEBUG: Log final tooltip content for consistency checking
+
+    from ui.debug_flags import ENABLE_TOOLTIP_DEBUG
+
     if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
         logger.debug(
-            "TOOLTIP_MULTI_CONTENT: frame=%d lines=%r",
-            frame_id, tooltip_lines
+            "TOOLTIP_GEOMETRY_RAW: mouse=(%d,%d) w=%d h=%d",
+            mouse_x,
+            mouse_y,
+            tooltip_width,
+            tooltip_height,
         )
-    
-    # Position tooltip near mouse, but keep it on screen
+
     tooltip_x = mouse_x + 2
     tooltip_y = mouse_y + 1
-    
+
     if tooltip_x + tooltip_width > ui_layout.screen_width:
         tooltip_x = ui_layout.screen_width - tooltip_width - 1
     if tooltip_y + tooltip_height > ui_layout.screen_height:
         tooltip_y = ui_layout.screen_height - tooltip_height - 1
-    if tooltip_x < 1:
-        tooltip_x = 1
-    if tooltip_y < 1:
-        tooltip_y = 1
-    
-    # DEBUG: Log final geometry after clamping
+
+    tooltip_x = max(1, tooltip_x)
+    tooltip_y = max(1, tooltip_y)
+
     if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
         logger.debug(
-            "TOOLTIP_MULTI_GEOM: frame=%d x=%d y=%d w=%d h=%d",
-            frame_id, tooltip_x, tooltip_y, tooltip_width, tooltip_height
+            "TOOLTIP_GEOMETRY_CLAMPED: x=%d y=%d w=%d h=%d",
+            tooltip_x,
+            tooltip_y,
+            tooltip_width,
+            tooltip_height,
         )
-    
-    # Draw tooltip background
+
     for y in range(tooltip_height):
         for x in range(tooltip_width):
             libtcod.console_put_char(console, tooltip_x + x, tooltip_y + y, ord(' '), libtcod.BKGND_SET)
@@ -758,36 +613,87 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
                 tooltip_x + x,
                 tooltip_y + y,
                 libtcod.Color(40, 40, 40),
-                libtcod.BKGND_SET
+                libtcod.BKGND_SET,
             )
-    
-    # Draw border
+
     libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
     libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
-    
+
     for x in range(tooltip_width):
         libtcod.console_put_char(console, tooltip_x + x, tooltip_y, ord('─'), libtcod.BKGND_SET)
-        libtcod.console_put_char(console, tooltip_x + x, tooltip_y + tooltip_height - 1, ord('─'), libtcod.BKGND_SET)
-    
+        libtcod.console_put_char(
+            console, tooltip_x + x, tooltip_y + tooltip_height - 1, ord('─'), libtcod.BKGND_SET
+        )
+
     for y in range(tooltip_height):
         libtcod.console_put_char(console, tooltip_x, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
-        libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
-    
+        libtcod.console_put_char(
+            console, tooltip_x + tooltip_width - 1, tooltip_y + y, ord('│'), libtcod.BKGND_SET
+        )
+
     libtcod.console_put_char(console, tooltip_x, tooltip_y, ord('┌'), libtcod.BKGND_SET)
     libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y, ord('┐'), libtcod.BKGND_SET)
-    libtcod.console_put_char(console, tooltip_x, tooltip_y + tooltip_height - 1, ord('└'), libtcod.BKGND_SET)
-    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y + tooltip_height - 1, ord('┘'), libtcod.BKGND_SET)
-    
-    # Draw tooltip content
+    libtcod.console_put_char(
+        console, tooltip_x, tooltip_y + tooltip_height - 1, ord('└'), libtcod.BKGND_SET
+    )
+    libtcod.console_put_char(
+        console,
+        tooltip_x + tooltip_width - 1,
+        tooltip_y + tooltip_height - 1,
+        ord('┘'),
+        libtcod.BKGND_SET,
+    )
+
     libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
     libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
-    for i, line in enumerate(tooltip_lines):
+    for idx, line in enumerate(tooltip_lines):
         libtcod.console_print_ex(
             console,
             tooltip_x + 2,
-            tooltip_y + 1 + i,
+            tooltip_y + 1 + idx,
             libtcod.BKGND_SET,
             libtcod.LEFT,
-            line
+            line,
         )
+
+
+def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) -> None:
+    if not entity:
+        return
+
+    tooltip_lines = _build_single_entity_lines(entity)
+    _draw_tooltip_box(console, tooltip_lines, int(mouse_x), int(mouse_y), ui_layout)
+
+
+def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: int, ui_layout) -> None:
+    if not entities:
+        return
+
+    tooltip_lines = _build_multi_entity_lines(entities)
+    _draw_tooltip_box(console, tooltip_lines, int(mouse_x), int(mouse_y), ui_layout)
+
+
+def render(model: TooltipModel, viewport_console, sidebar_console) -> None:
+    """Draw the tooltip described by ``model`` onto the supplied console."""
+    if model.kind == TooltipKind.NONE or model.screen_position is None:
+        return
+
+    target_console = viewport_console if model.anchor is TooltipAnchor.VIEWPORT else sidebar_console
+    if target_console is None:
+        return
+
+    mouse_x, mouse_y = model.screen_position
+    ui_layout = get_ui_layout()
+
+    if model.lines:
+        tooltip_lines = list(model.lines)
+    elif model.kind == TooltipKind.MULTI:
+        tooltip_lines = _build_multi_entity_lines(model.entities)
+    else:
+        entity = model.entities[0] if model.entities else None
+        tooltip_lines = _build_single_entity_lines(entity)
+
+    _draw_tooltip_box(target_console, tooltip_lines, mouse_x, mouse_y, ui_layout)
+
+
 
