@@ -191,3 +191,4 @@ This ensures rendering is deterministic and frame-aligned.
 - [x] All tests pass (no regressions ✅)
 
 
+

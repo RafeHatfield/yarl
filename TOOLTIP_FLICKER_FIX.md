@@ -202,3 +202,4 @@ This fix complements the earlier console rendering fixes:
 - HIT_FLICKER_BUG_FIX.md: Fixed combat effect flicker by centralizing console_flush()
 
 
+
