@@ -53,6 +53,50 @@ class TooltipModel:
     entities: Sequence[Any] = ()
 
 
+def _screen_to_console_coords(
+    anchor: TooltipAnchor,
+    screen_position: Tuple[int, int],
+    ui_layout,
+) -> Optional[Tuple[int, int, int, int]]:
+    """Translate absolute screen coordinates into the local console space."""
+
+    screen_x, screen_y = screen_position
+
+    if anchor is TooltipAnchor.VIEWPORT:
+        offset_x, offset_y = ui_layout.viewport_position
+        width, height = ui_layout.viewport_width, ui_layout.viewport_height
+    elif anchor is TooltipAnchor.SIDEBAR:
+        offset_x, offset_y = ui_layout.sidebar_position
+        width, height = ui_layout.sidebar_width, ui_layout.screen_height
+    else:
+        offset_x = offset_y = 0
+        width, height = ui_layout.screen_width, ui_layout.screen_height
+
+    local_x = screen_x - offset_x
+    local_y = screen_y - offset_y
+
+    # If the cursor isn't over the target console, bail out gracefully.
+    if local_x < 0 or local_y < 0 or local_x >= width or local_y >= height:
+        return None
+
+    return local_x, local_y, width, height
+
+
+def _render_lines_for_anchor(
+    console,
+    tooltip_lines: Sequence[str],
+    screen_position: Tuple[int, int],
+    anchor: TooltipAnchor,
+    ui_layout,
+) -> None:
+    coords = _screen_to_console_coords(anchor, screen_position, ui_layout)
+    if coords is None:
+        return
+
+    local_x, local_y, bounds_width, bounds_height = coords
+    _draw_tooltip_box(console, tooltip_lines, local_x, local_y, bounds_width, bounds_height)
+
+
 def resolve_hover(hover_probe: Optional[HoverProbe], frame_ctx: FrameContext) -> TooltipModel:
     """Resolve the hover state into a :class:`TooltipModel`.
 
@@ -570,7 +614,14 @@ def _build_multi_entity_lines(entities: Sequence[Any]) -> List[str]:
     return tooltip_lines
 
 
-def _draw_tooltip_box(console, tooltip_lines: Sequence[str], mouse_x: int, mouse_y: int, ui_layout) -> None:
+def _draw_tooltip_box(
+    console,
+    tooltip_lines: Sequence[str],
+    mouse_x: int,
+    mouse_y: int,
+    bounds_width: int,
+    bounds_height: int,
+) -> None:
     if not tooltip_lines:
         return
 
@@ -591,10 +642,10 @@ def _draw_tooltip_box(console, tooltip_lines: Sequence[str], mouse_x: int, mouse
     tooltip_x = mouse_x + 2
     tooltip_y = mouse_y + 1
 
-    if tooltip_x + tooltip_width > ui_layout.screen_width:
-        tooltip_x = ui_layout.screen_width - tooltip_width - 1
-    if tooltip_y + tooltip_height > ui_layout.screen_height:
-        tooltip_y = ui_layout.screen_height - tooltip_height - 1
+    if tooltip_x + tooltip_width > bounds_width:
+        tooltip_x = bounds_width - tooltip_width - 1
+    if tooltip_y + tooltip_height > bounds_height:
+        tooltip_y = bounds_height - tooltip_height - 1
 
     tooltip_x = max(1, tooltip_x)
     tooltip_y = max(1, tooltip_y)
@@ -665,7 +716,8 @@ def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) 
         return
 
     tooltip_lines = _build_single_entity_lines(entity)
-    _draw_tooltip_box(console, tooltip_lines, int(mouse_x), int(mouse_y), ui_layout)
+    screen_pos = (int(mouse_x), int(mouse_y))
+    _render_lines_for_anchor(console, tooltip_lines, screen_pos, TooltipAnchor.VIEWPORT, ui_layout)
 
 
 def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: int, ui_layout) -> None:
@@ -673,7 +725,8 @@ def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: 
         return
 
     tooltip_lines = _build_multi_entity_lines(entities)
-    _draw_tooltip_box(console, tooltip_lines, int(mouse_x), int(mouse_y), ui_layout)
+    screen_pos = (int(mouse_x), int(mouse_y))
+    _render_lines_for_anchor(console, tooltip_lines, screen_pos, TooltipAnchor.VIEWPORT, ui_layout)
 
 
 def render(model: TooltipModel, viewport_console, sidebar_console) -> None:
@@ -696,7 +749,7 @@ def render(model: TooltipModel, viewport_console, sidebar_console) -> None:
         entity = model.entities[0] if model.entities else None
         tooltip_lines = _build_single_entity_lines(entity)
 
-    _draw_tooltip_box(target_console, tooltip_lines, mouse_x, mouse_y, ui_layout)
+    _render_lines_for_anchor(target_console, tooltip_lines, (mouse_x, mouse_y), model.anchor, ui_layout)
 
 
 

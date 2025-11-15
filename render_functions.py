@@ -281,6 +281,15 @@ def _legacy_render_all(
     # See ConsoleRenderer.render() for where effects are actually played.
 
     libtcod.console_set_default_background(panel, (0, 0, 0))
+    libtcod.console_rect(
+        panel,
+        0,
+        0,
+        ui_layout.status_panel_width,
+        ui_layout.status_panel_height,
+        True,
+        libtcod.BKGND_SET,
+    )
 
     # Print the game messages, one line at a time
     y = 1

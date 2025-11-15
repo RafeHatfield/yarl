@@ -153,20 +153,28 @@ class ConsoleRenderer:
             # Mock tests might not support this - that's OK
             pass
 
+        viewport_cleared = False
+
         # CRITICAL: Clear working consoles EVERY FRAME, not just on FOV recompute!
-        # Entities may move between frames, and old glyphs must be cleared from the 
-        # console before new ones are drawn. Failing to do this causes "double entity" 
+        # Entities may move between frames, and old glyphs must be cleared from the
+        # console before new ones are drawn. Failing to do this causes "double entity"
         # visual artifacts where old entity positions persist onscreen.
         #
         # This is the fix for the double-render bug where orcs appeared twice.
         try:
             libtcod.console_clear(self.viewport_console)
+            viewport_cleared = True
             libtcod.console_clear(self.status_console)
             if self.sidebar_console:
                 libtcod.console_clear(self.sidebar_console)
         except (TypeError, AttributeError):
             # Mock consoles in tests will fail - that's OK, we just skip clearing
             pass
+
+        if frame_context.use_optimization and viewport_cleared and not frame_context.fov_recompute:
+            # Clearing the viewport invalidates every cached tile. Force a full redraw so the
+            # optimized renderer repaints the map instead of leaving the viewport black.
+            frame_context.fov_recompute = True
 
         # Call the existing render_all function with all parameters
         render_callable = render_func or render_all
