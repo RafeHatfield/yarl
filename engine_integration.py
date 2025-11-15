@@ -281,8 +281,12 @@ def play_game_with_engine(
     targeting_item = None
     first_frame = True
     
+    # Detect bot mode early (before creating ActionProcessor)
+    input_mode = "bot" if constants.get("input_config", {}).get("bot_enabled") else "keyboard"
+    
     # Create action processor for clean action handling
-    action_processor = ActionProcessor(engine.state_manager)
+    # Pass is_bot_mode to suppress spammy per-frame logs during soak testing
+    action_processor = ActionProcessor(engine.state_manager, is_bot_mode=(input_mode == "bot"))
     action_processor.turn_manager = engine.turn_manager  # Phase 3: Wire up TurnManager
 
     # Reinitialize TurnController with turn_manager now that it's set
@@ -306,7 +310,7 @@ def play_game_with_engine(
     # - renderer.render() exists but is not yet called from main loop
     # - Rendering still via systems (RenderSystem, etc.)
     # =========================================================================
-    input_mode = "bot" if constants.get("input_config", {}).get("bot_enabled") else "keyboard"
+    # input_mode was already detected above (before ActionProcessor creation)
     renderer, input_source = create_renderer_and_input_source(
         sidebar_console=sidebar_console,
         viewport_console=viewport_console,
