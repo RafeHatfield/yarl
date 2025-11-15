@@ -85,17 +85,18 @@ class TestFOVRenderingRegression(unittest.TestCase):
                     with patch('tcod.libtcodpy.console_flush'):
                         # Update render system (should render map)
                         self.render_system.update(0.016)
-                        
+
                         # Should call recompute_fov because fov_recompute=True
                         mock_recompute_fov.assert_called_once()
-                        
-                        # Should call render_all with fov_recompute=True
+
+                        # Should call render_all with FrameContext.fov_recompute=True
                         mock_render_all.assert_called_once()
-                        call_args = mock_render_all.call_args[0]
-                        fov_recompute_arg = call_args[6]  # 7th argument is fov_recompute
-                        
-                        self.assertTrue(fov_recompute_arg, 
-                                      "render_all should be called with fov_recompute=True for map to render")
+                        frame_context = mock_render_all.call_args[0][0]
+
+                        self.assertTrue(
+                            frame_context.fov_recompute,
+                            "render_all should receive a FrameContext with fov_recompute=True for map to render",
+                        )
 
     def test_fov_updates_on_movement_regression(self):
         """Regression test: Ensure FOV updates when player moves.
@@ -108,20 +109,21 @@ class TestFOVRenderingRegression(unittest.TestCase):
                 with patch('engine.systems.optimized_render_system.clear_all'):
                     # Simulate player movement by requesting FOV recompute
                     self.state_manager.request_fov_recompute()
-                    
+
                     # Update render system
                     self.render_system.update(0.016)
-                    
+
                     # Should call recompute_fov because player moved
                     mock_recompute_fov.assert_called_once()
-                    
-                    # Should call render_all with fov_recompute=True
+
+                    # Should call render_all with FrameContext.fov_recompute=True
                     mock_render_all.assert_called_once()
-                    call_args = mock_render_all.call_args[0]
-                    fov_recompute_arg = call_args[6]  # 7th argument is fov_recompute
-                    
-                    self.assertTrue(fov_recompute_arg, 
-                                  "render_all should be called with fov_recompute=True after movement")
+                    frame_context = mock_render_all.call_args[0][0]
+
+                    self.assertTrue(
+                        frame_context.fov_recompute,
+                        "render_all should receive a FrameContext with fov_recompute=True after movement",
+                    )
 
     def test_fov_recompute_flag_behavior_regression(self):
         """Regression test: Ensure FOV recompute flag behaves correctly.
@@ -139,11 +141,13 @@ class TestFOVRenderingRegression(unittest.TestCase):
                 with patch('engine.systems.optimized_render_system.clear_all'):
                     # Update render system
                     self.render_system.update(0.016)
-                    
+
                     # The game state's FOV flag should still be True
                     # (render system shouldn't reset it)
-                    self.assertTrue(self.state_manager.state.fov_recompute,
-                                  "Game state fov_recompute should remain True after rendering")
+                    self.assertTrue(
+                        self.state_manager.state.fov_recompute,
+                        "Game state fov_recompute should remain True after rendering",
+                    )
 
     def test_standard_rendering_path_used_regression(self):
         """Regression test: Ensure standard rendering is used when optimizations disabled.
@@ -160,15 +164,9 @@ class TestFOVRenderingRegression(unittest.TestCase):
                 with patch('engine.systems.optimized_render_system.clear_all'):
                     # Update render system
                     self.render_system.update(0.016)
-                    
+
                     # Should use standard rendering (render_all called directly)
                     mock_render_all.assert_called_once()
-                    
-                    # Should NOT use optimized rendering paths
-                    # (We can verify this by checking that render_all is called once, 
-                    # not multiple times as would happen in optimized rendering)
-                    self.assertEqual(mock_render_all.call_count, 1,
-                                   "Standard rendering should call render_all exactly once")
 
 
 class TestFOVIntegrationRegression(unittest.TestCase):

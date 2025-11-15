@@ -1,7 +1,10 @@
 """Tests for the RenderSystem."""
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+from render_functions import render_all
+from rendering.frame_models import FrameContext
 
 from engine.systems.render_system import RenderSystem
 
@@ -173,13 +176,8 @@ class TestRenderSystemUpdate:
             # Should not raise any exceptions
             self.render_system.update(0.016)
 
-    @patch("engine.systems.render_system.libtcod.console_flush")
-    @patch("engine.systems.render_system.clear_all")
-    @patch("engine.systems.render_system.render_all")
     @patch("engine.systems.render_system.recompute_fov")
-    def test_update_with_complete_game_state(
-        self, mock_recompute_fov, mock_render_all, mock_clear_all, mock_console_flush
-    ):
+    def test_update_with_complete_game_state(self, mock_recompute_fov):
         """Test update with complete game state."""
         # Set up complete game state
         entities = [Mock(), Mock()]
@@ -210,52 +208,31 @@ class TestRenderSystemUpdate:
 
         with patch.object(
             self.render_system, "_get_game_state", return_value=complete_state
-        ):
+        ), patch.object(self.render_system.console_renderer, "render") as mock_render:
             self.render_system.update(0.016)
 
         # Verify FOV recomputation
         mock_recompute_fov.assert_called_once_with(fov_map, 10, 15, 1, True, 0)
 
-        # Verify render_all call
-        mock_render_all.assert_called_once_with(
-            self.console,
-            self.panel,
-            entities,
-            player,
-            game_map,
-            fov_map,
-            True,  # fov_recompute was True initially
-            message_log,
-            80,  # screen_width
-            50,  # screen_height
-            20,  # bar_width
-            7,  # panel_height
-            45,  # panel_y (ui_layout.viewport_height, updated in v3.5.0)
-            mouse,
-            self.colors,
-            current_state,
-            use_optimization=False,
-            sidebar_console=None,  # Added in v3.5.0 split-screen update
-            camera=None,  # Added in Phase 2 (camera following)
-            death_screen_quote=None,
-        )
-
-        # Verify screen presentation
-        mock_console_flush.assert_called_once()
-
-        # Verify entity clearing
-        mock_clear_all.assert_called_once_with(self.console, entities)
+        # Verify renderer orchestrator receives a FrameContext and render function
+        mock_render.assert_called_once()
+        frame_context_arg, = mock_render.call_args[0][:1]
+        render_kwargs = mock_render.call_args.kwargs
+        assert isinstance(frame_context_arg, FrameContext)
+        assert frame_context_arg.entities == entities
+        assert frame_context_arg.player is player
+        assert frame_context_arg.game_map is game_map
+        assert frame_context_arg.fov_map is fov_map
+        assert frame_context_arg.message_log is message_log
+        assert frame_context_arg.game_state is current_state
+        assert frame_context_arg.mouse is mouse
+        assert render_kwargs.get("render_func") is render_all
 
         # Verify fov_recompute is reset
         assert self.render_system.fov_recompute is False
 
-    @patch("engine.systems.render_system.libtcod.console_flush")
-    @patch("engine.systems.render_system.clear_all")
-    @patch("engine.systems.render_system.render_all")
     @patch("engine.systems.render_system.recompute_fov")
-    def test_update_without_fov_recompute(
-        self, mock_recompute_fov, mock_render_all, mock_clear_all, mock_console_flush
-    ):
+    def test_update_without_fov_recompute(self, mock_recompute_fov):
         """Test update when FOV recompute is not needed."""
         # Set up game state
         complete_state = {
@@ -273,16 +250,16 @@ class TestRenderSystemUpdate:
 
         with patch.object(
             self.render_system, "_get_game_state", return_value=complete_state
-        ):
+        ), patch.object(self.render_system.console_renderer, "render") as mock_render:
             self.render_system.update(0.016)
 
         # FOV should not be recomputed
         mock_recompute_fov.assert_not_called()
 
-        # But rendering should still happen
-        mock_render_all.assert_called_once()
-        mock_console_flush.assert_called_once()
-        mock_clear_all.assert_called_once()
+        # Rendering still occurs via the orchestrator
+        mock_render.assert_called_once()
+        render_kwargs = mock_render.call_args.kwargs
+        assert render_kwargs.get("render_func") is render_all
 
 
 class TestRenderSystemIntegration:

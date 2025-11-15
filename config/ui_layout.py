@@ -172,8 +172,20 @@ class UILayoutConfig:
         # Convert to world coords (accounting for camera in Phase 2)
         world_x = viewport_x + camera_x
         world_y = viewport_y + camera_y
-        
+
         return (world_x, world_y)
+
+    def world_to_screen(self, world_x: int, world_y: int,
+                        camera_x: int = 0, camera_y: int = 0) -> Tuple[int, int]:
+        """Convert world coordinates to absolute screen coordinates."""
+
+        viewport_coords = self.world_to_viewport(world_x, world_y, camera_x, camera_y)
+        if viewport_coords is None:
+            return None
+
+        viewport_offset_x, viewport_offset_y = self.viewport_position
+        viewport_x, viewport_y = viewport_coords
+        return (viewport_offset_x + viewport_x, viewport_offset_y + viewport_y)
     
     def is_in_sidebar(self, screen_x: int, screen_y: int) -> bool:
         """Check if screen coordinates are within sidebar region.

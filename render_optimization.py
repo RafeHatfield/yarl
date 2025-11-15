@@ -119,7 +119,17 @@ class OptimizedTileRenderer:
         # Force full redraw on first render or when explicitly requested
         if force_full_redraw or self.first_render:
             self.optimization_stats['full_redraws'] += 1
-            self._render_all_tiles(con, game_map, fov_map, colors, camera)
+            # When force_full_redraw is requested we must repaint every tile even if
+            # the cached render state hasn't changed.  The orchestrator clears the
+            # viewport each frame, so skipping the redraw would leave the tile black.
+            self._render_all_tiles(
+                con,
+                game_map,
+                fov_map,
+                colors,
+                camera,
+                ignore_cache=True,
+            )
             self.first_render = False  # Clear first render flag
         else:
             self._render_dirty_tiles(con, game_map, fov_map, colors, camera)
@@ -169,7 +179,8 @@ class OptimizedTileRenderer:
         game_map,
         fov_map,
         colors: Dict[str, Any],
-        camera=None
+        camera=None,
+        ignore_cache: bool = False,
     ) -> None:
         """Render all tiles and update cache.
         
@@ -196,7 +207,17 @@ class OptimizedTileRenderer:
         
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
-                self._render_tile(con, x, y, game_map, fov_map, colors, update_cache=True, camera=camera)
+                self._render_tile(
+                    con,
+                    x,
+                    y,
+                    game_map,
+                    fov_map,
+                    colors,
+                    update_cache=True,
+                    camera=camera,
+                    ignore_cache=ignore_cache,
+                )
     
     def _render_dirty_tiles(
         self,
@@ -233,7 +254,8 @@ class OptimizedTileRenderer:
         fov_map,
         colors: Dict[str, Any],
         update_cache: bool = True,
-        camera=None
+        camera=None,
+        ignore_cache: bool = False,
     ) -> None:
         """Render a single tile and optionally update cache.
         
@@ -278,7 +300,12 @@ class OptimizedTileRenderer:
         cache_key = (x, y)
         cached_tile = self.tile_cache.get(cache_key)
         
-        if cached_tile and cached_tile.render_state == render_state and not cached_tile.needs_redraw:
+        if (
+            not ignore_cache
+            and cached_tile
+            and cached_tile.render_state == render_state
+            and not cached_tile.needs_redraw
+        ):
             self.optimization_stats['cache_hits'] += 1
             return  # No need to redraw
         

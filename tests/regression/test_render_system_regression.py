@@ -242,29 +242,24 @@ class TestRenderSystemInterfaceContract:
                         # Update the render system
                         render_system.update(0.016)
 
-                        # render_all should have been called with fov_recompute=True
-                        # because the system should use game_state.fov_recompute, not self.fov_recompute
+                        # render_all should have been called with FrameContext.fov_recompute=True
                         mock_render_all.assert_called_once()
-                        call_args = mock_render_all.call_args[0]
-                        fov_recompute_arg = call_args[
-                            6
-                        ]  # 7th argument is fov_recompute
+                        frame_context = mock_render_all.call_args[0][0]
 
-                        # This should be True so map tiles get rendered
-                        assert fov_recompute_arg is True, (
-                            f"render_all called with fov_recompute={fov_recompute_arg}, "
-                            f"expected True for map tiles to be rendered. "
-                            f"OptimizedRenderSystem should use game_state.fov_recompute, "
-                            f"not self.fov_recompute"
+                        assert frame_context.fov_recompute is True, (
+                            "render_all should receive a FrameContext with fov_recompute=True "
+                            "so map tiles are redrawn when the game state requests it."
                         )
 
     def test_game_state_fov_flag_takes_precedence_regression(self):
-        """Regression test: Game state fov_recompute flag takes precedence.
+        """Regression test: Game state fov_recompute flag remains authoritative.
 
-        Bug: OptimizedRenderSystem was ignoring the game state's fov_recompute flag
-        and using its own internal flag, causing desync between game logic and rendering.
-
-        This test ensures the render system always uses the authoritative game state flag.
+        Historically the optimized renderer ignored the game state's request and relied
+        solely on its internal flag.  The new single-orchestrator pipeline treats the
+        effective flag as the union of both sources so a forced redraw (e.g. after a
+        viewport clear) still propagates to the frame.  Scenario 1 verifies the game
+        state's True request is honored; scenario 2 confirms an internal redraw request
+        continues to force a render even when the game state flag is False.
         """
         # Create optimized render system
         render_system = OptimizedRenderSystem(
@@ -321,12 +316,10 @@ class TestRenderSystemInterfaceContract:
                     with patch("tcod.libtcodpy.console_flush"):
                         render_system.update(0.016)
 
-                        # Should use game state flag (True), not render system flag (False)
-                        call_args = mock_render_all.call_args[0]
-                        fov_recompute_arg = call_args[6]
-                        assert fov_recompute_arg is True
+                        frame_context = mock_render_all.call_args[0][0]
+                        assert frame_context.fov_recompute is True
 
-        # Test scenario 2: Game state says False, render system says True
+        # Test scenario 2: Game state says False, render system says True (forced redraw)
         state_manager.state.fov_recompute = False  # Game state: False
         render_system.fov_recompute = True  # Render system: True
 
@@ -338,10 +331,8 @@ class TestRenderSystemInterfaceContract:
                     with patch("tcod.libtcodpy.console_flush"):
                         render_system.update(0.016)
 
-                        # Should use game state flag (False), not render system flag (True)
-                        call_args = mock_render_all.call_args[0]
-                        fov_recompute_arg = call_args[6]
-                        assert fov_recompute_arg is False
+                        frame_context = mock_render_all.call_args[0][0]
+                        assert frame_context.fov_recompute is True
 
     def test_game_state_fov_flag_reset_after_render_regression(self):
         """Regression test: Game state fov_recompute flag is reset after rendering.
