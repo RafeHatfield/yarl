@@ -246,8 +246,11 @@ def _legacy_render_all(
     """
     # Render map tiles with optional optimization
     if use_optimization:
-        # Use optimized tile rendering with caching and camera
-        render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=fov_recompute, camera=camera)
+        # Use optimized tile rendering with caching and camera.  The viewport
+        # console is cleared every frame by the orchestrator, so we always force
+        # a full redraw to keep floor and wall tiles visible even when the FOV
+        # itself hasn't changed.
+        render_tiles_optimized(con, game_map, fov_map, colors, force_full_redraw=True, camera=camera)
     else:
         # Original tile rendering logic (kept for compatibility/debugging)
         _render_tiles_original(con, game_map, fov_map, colors, camera)
