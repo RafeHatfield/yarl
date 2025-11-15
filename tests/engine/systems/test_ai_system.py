@@ -237,6 +237,15 @@ class TestAISystemUpdate:
         self.mock_game_state.player.status_effects = mock_status_effects
         self.mock_game_state.player.get_component_optional = Mock(return_value=mock_pathfinding)
         
+        # Phase 2: Add mock turn_manager that returns True for ENEMY phase
+        from engine.turn_manager import TurnManager, TurnPhase
+        mock_turn_manager = Mock(spec=TurnManager)
+        mock_turn_manager.is_phase.return_value = True  # IS in ENEMY phase
+        self.mock_engine.turn_manager = mock_turn_manager
+        
+        # Ensure bot mode is NOT enabled (Mock auto-creates attributes, so we need to explicitly set False)
+        self.mock_engine.disable_enemy_ai_for_bot = False
+        
         with patch.object(self.ai_system, "_process_ai_turns") as mock_process:
             self.ai_system.update(0.016)
             mock_process.assert_called_once_with(self.mock_game_state)

@@ -164,8 +164,14 @@ class AISystem(System):
             # ENEMY TURN PROCESSING - SIMPLIFIED, BOUNDED, DETERMINISTIC
             # ═════════════════════════════════════════════════════════════════
             
-            # Process AI turns (will use _processed_entities_this_update to prevent duplicates)
-            self._process_ai_turns(game_state)
+            # Determine if AI should be disabled (Phase 0 bot mode)
+            disable_ai = getattr(self.engine, "disable_enemy_ai_for_bot", False)
+            
+            if not disable_ai:
+                # Process AI turns normally (will use _processed_entities_this_update to prevent duplicates)
+                self._process_ai_turns(game_state)
+            else:
+                logger.debug("AISystem: bot mode active, skipping enemy AI processing but preserving turn transitions")
             
             # ═════════════════════════════════════════════════════════════════
             # TRANSITION BACK TO PLAYER TURN

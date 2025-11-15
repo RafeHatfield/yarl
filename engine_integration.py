@@ -291,6 +291,11 @@ def play_game_with_engine(
         colors=constants["colors"],
         input_mode=input_mode,
     )
+    
+    # Phase 0 bot mode: Disable enemy AI when running in bot mode for soak/stability testing
+    if input_mode == "bot":
+        engine.disable_enemy_ai_for_bot = True
+        logger.info("BOT MODE ENABLED: Enemy AI disabled, bot input source active")
 
     # Main game loop
     # PHASE 1 (INPUT): ✅ COMPLETE - input_source.next_action() is the primary input path
@@ -303,6 +308,14 @@ def play_game_with_engine(
         # Mouse and keyboard actions are mixed in the dict from KeyboardInputSource
         # =====================================================================
         combined_action: ActionDict = input_source.next_action(engine.state_manager.state)
+        
+        # BOT MODE DIAGNOSTIC: Log frame state for debugging tight loops
+        if input_mode == "bot" and combined_action:
+            current_state = engine.state_manager.state.current_state
+            turn_phase = engine.turn_manager.current_phase if engine.turn_manager else None
+            logger.debug(
+                f"BOT FRAME: state={current_state}, turn_phase={turn_phase}, action={combined_action}"
+            )
         
         # Update game state with current mouse position for tooltip rendering
         # KeyboardInputSource maintains current_mouse with libtcod mouse events

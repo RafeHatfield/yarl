@@ -47,26 +47,49 @@ class TestBotModeEngineIntegration:
         assert isinstance(input_source, KeyboardInputSource)
     
     def test_bot_input_never_blocks_game_loop(self):
-        """Test that bot input returns quickly, never blocking the game loop."""
+        """Test that bot input throttles correctly to prevent tight loops.
+        
+        Note: After the throttling fix, bot.next_action() includes a small sleep
+        (~16ms) when generating actions to prevent OS unresponsiveness. This test
+        verifies that throttling works as expected.
+        
+        With action_interval=1, every call returns an action (with sleep).
+        With action_interval=2, pattern is: {} (no sleep), {'wait': True} (sleep).
+        """
         import time
         
-        bot = BotInputSource()
+        # Test with action_interval=2 to see both throttled and action-returning calls
+        bot = BotInputSource(action_interval=2)
         
         # Create a mock game state
         mock_state = Mock()
         mock_state.game_state = GameStates.PLAYERS_TURN
         mock_state.current_state = GameStates.PLAYERS_TURN
         
-        # Time 1000 calls to simulate continuous game loop
+        # First call: counter 0→1, 1 < 2, returns {} (no sleep, instant)
         start = time.time()
-        for _ in range(1000):
-            action = bot.next_action(mock_state)
-            assert action == {'wait': True}
-        
+        action1 = bot.next_action(mock_state)
         elapsed = time.time() - start
         
-        # 1000 calls should complete in < 100ms (definitely not blocking)
-        assert elapsed < 0.1, f"1000 bot.next_action() calls took {elapsed}s (should be fast)"
+        assert action1 == {}, "First call should be throttled (counter 1 < 2)"
+        assert elapsed < 0.001, f"Throttled call should be instant, got {elapsed}s"
+        
+        # Second call: counter 1→2, 2 >= 2, returns action with sleep (~16ms)
+        start = time.time()
+        action2 = bot.next_action(mock_state)
+        elapsed = time.time() - start
+        
+        assert action2 == {'wait': True}, "Second call should return action (counter 2 >= 2)"
+        # Sleep should be ~16ms, allow some variance for system timing
+        assert 0.015 <= elapsed <= 0.025, f"Action generation sleep should be ~16ms, got {elapsed}s"
+        
+        # Third call: counter 0→1 (reset), 1 < 2, returns {} (no sleep, instant)
+        start = time.time()
+        action3 = bot.next_action(mock_state)
+        elapsed = time.time() - start
+        
+        assert action3 == {}, "Third call should be throttled (counter 1 < 2)"
+        assert elapsed < 0.001, f"Throttled call should be instant, got {elapsed}s"
     
     def test_bot_input_vs_keyboard_input_both_return_dicts(self):
         """Test that both bot and keyboard input sources return ActionDicts."""
