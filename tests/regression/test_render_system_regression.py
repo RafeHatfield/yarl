@@ -99,6 +99,11 @@ class TestRenderSystemRegressions:
 
         Ensures that the fix doesn't break the caching optimization when
         fov_recompute is False.
+        
+        Note: The new architecture may recompute FOV once on the first frame
+        (due to engine initialization triggering fov_recompute=True), but should
+        not recompute again on subsequent frames when the flag is False and 
+        player hasn't moved.
         """
         with patch(
             "engine.systems.optimized_render_system.recompute_fov"
@@ -108,17 +113,26 @@ class TestRenderSystemRegressions:
                     with patch("tcod.libtcodpy.console_flush"):
                         # First frame with game state fov_recompute=False, same position
                         self.mock_engine.state_manager.state.fov_recompute = False
+                        # Ensure internal flag is also False
+                        self.render_system.fov_recompute = False
                         self.render_system.update(0.016)
 
-                        # Should not recompute when flag is False
-                        mock_recompute.assert_not_called()
+                        # Should not recompute when flag is False (no initialization override)
+                        initial_call_count = mock_recompute.call_count
+                        assert initial_call_count == 0, (
+                            f"Expected no recompute on first frame when fov_recompute=False, "
+                            f"but got {initial_call_count} calls"
+                        )
 
                         # Second frame, still False, same position
                         self.mock_engine.state_manager.state.fov_recompute = False
                         self.render_system.update(0.016)
 
-                        # Still should not recompute
-                        mock_recompute.assert_not_called()
+                        # Still should not recompute - caching optimization works
+                        assert mock_recompute.call_count == 0, (
+                            f"Expected no additional recomputes when fov_recompute stays False, "
+                            f"but got {mock_recompute.call_count} total calls"
+                        )
 
     def test_fov_recompute_overrides_position_caching_regression(self):
         """Regression test: fov_recompute=True overrides position-based caching.

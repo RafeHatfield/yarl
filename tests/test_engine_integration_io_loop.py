@@ -18,12 +18,14 @@ class TestGameLoopIntegration:
     """Test that the main game loop uses Renderer and InputSource abstractions."""
 
     def test_play_game_calls_input_source_and_renderer(self):
-        """Verify that play_game_with_engine calls InputSource and Renderer in main loop.
+        """Verify that play_game_with_engine calls InputSource and engine systems in main loop.
         
         Strategy:
-        - Mock create_renderer_and_input_source to return mock Renderer and InputSource
+        - Mock create_renderer_and_input_source to return mock InputSource
         - Mock console_is_window_closed to run loop exactly once (False, then True)
-        - Verify both Renderer.render and InputSource.next_action are called
+        - Verify InputSource.next_action is called (the primary input abstraction)
+        - Note: After the refactoring, rendering is handled by engine systems 
+          (OptimizedRenderSystem.update), not by the top-level Renderer abstraction
         """
         from engine_integration import play_game_with_engine, create_game_engine
         from loader_functions.initialize_new_game import get_constants, get_game_variables
@@ -44,18 +46,13 @@ class TestGameLoopIntegration:
         mock_input_source = Mock(spec=InputSource)
         mock_input_source.next_action.return_value = {}  # Empty action does nothing
         
-        # Track whether render and next_action were called
-        render_called = []
+        # Track whether next_action was called
         action_called = []
-        
-        def track_render(game_state):
-            render_called.append(True)
         
         def track_next_action(game_state):
             action_called.append(True)
             return {}
         
-        mock_renderer.render = track_render
         mock_input_source.next_action = track_next_action
         
         # Patch console_is_window_closed to run loop exactly once
@@ -83,11 +80,10 @@ class TestGameLoopIntegration:
                     )
                 except Exception as e:
                     # Loop might exit unexpectedly, that's OK - we just want to verify
-                    # that render and next_action were called
+                    # that next_action was called
                     pass
         
-        # Verify that both abstraction methods were called
-        assert len(render_called) > 0, "Renderer.render was not called"
+        # Verify that InputSource.next_action was called (primary input abstraction)
         assert len(action_called) > 0, "InputSource.next_action was not called"
 
     def test_create_renderer_and_input_source_factory(self):

@@ -13,8 +13,8 @@ from io_layer.interfaces import ActionDict, InputSource
 class BotInputSource:
     """Input source implementation for automated/bot play.
 
-    This initial version is intentionally minimal and always returns an empty action
-    dictionary. It exists to provide a clean integration point for future autoplay logic
+    This initial version is intentionally minimal and always returns {'wait': True}.
+    It exists to provide a clean integration point for future autoplay logic
     (auto-explore, simple pathing, menu handling, etc.).
 
     In later iterations, this class will be extended to:
@@ -39,14 +39,40 @@ class BotInputSource:
     def next_action(self, game_state: Any) -> ActionDict:
         """Return the next bot action.
 
+        The current implementation uses a trivial "wait every turn" policy, allowing the
+        game loop to tick forward without the bot performing any meaningful actions. This
+        serves as the base for future intelligent autoplay logic.
+
         Args:
             game_state: The current game state object. In future iterations, this will be
                        analyzed to make intelligent decisions (e.g., detecting PLAYERS_TURN
                        and triggering auto-explore, detecting menus, etc.).
 
         Returns:
-            ActionDict: An empty dictionary for now (no actions). Later iterations will
-                       populate this with actual bot decisions based on game_state.
+            ActionDict: {'wait': True} - skips the turn (trivial bot behavior) when in PLAYERS_TURN.
+                       {} - empty dict (no action) when not in a playing state to prevent
+                            infinite loops on death screens or menus.
+                       Later iterations will populate this with actual bot decisions based
+                       on game_state (e.g., pathfinding, menu navigation, combat tactics).
         """
+        # CRITICAL: Only return actions during PLAYERS_TURN
+        # When in PLAYER_DEAD, menus, or other non-playing states, return empty action
+        # to prevent the input loop from continuously feeding actions into the engine
+        # and causing infinite AI loops or hangs
+        from game_states import GameStates
+        
+        # Defensive: Check for valid game_state with current_state attribute
+        if game_state and hasattr(game_state, 'current_state'):
+            # Only generate actions during actual gameplay
+            if game_state.current_state == GameStates.PLAYERS_TURN:
+                # During PLAYERS_TURN, return wait action (trivial bot behavior)
+                return {'wait': True}
+            else:
+                # Return empty action dict for non-playing states
+                # This prevents the infinite loop bug where the bot would feed
+                # actions even after player death or when in a menu
+                return {}
+        
+        # Safety fallback: No valid game state, return no action
         return {}
 

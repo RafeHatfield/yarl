@@ -70,6 +70,12 @@ class AISystem(System):
             "average_turn_time": 0.0,
             "entities_processed": 0,
         }
+        
+        # ANTI-INFINITE-LOOP GUARDS
+        # Track which entities have been processed this update to prevent duplicates
+        self._processed_entities_this_update: set = set()
+        # Track update call depth to detect re-entrancy
+        self._update_call_depth: int = 0
 
     def initialize(self, engine) -> None:
         """Initialize the AI system with engine reference.
@@ -88,114 +94,139 @@ class AISystem(System):
         Args:
             dt (float): Delta time since last update in seconds
         """
-        if not self.engine or not hasattr(self.engine, "state_manager"):
+        # GUARD 1: Prevent re-entrancy (detect if update() is called recursively)
+        if self._update_call_depth > 0:
+            logger.error(f"CRITICAL: AISystem.update() called recursively! Depth={self._update_call_depth}. Blocking to prevent infinite loop.")
             return
-
-        state_manager = self.engine.state_manager
-        if not state_manager:
-            return
-
-        game_state = state_manager.state
-        current_state = game_state.current_state
-
-        # CRITICAL: Don't process AI if player is dead
-        if current_state == GameStates.PLAYER_DEAD:
-            return
-
-        # Only process AI during enemy turn
-        # Phase 2: Use TurnManager instead of GameStates check
-        turn_manager = getattr(self.engine, 'turn_manager', None)
-        if turn_manager:
-            # New system: Check TurnManager
-            from engine.turn_manager import TurnPhase
-            if not turn_manager.is_phase(TurnPhase.ENEMY):
-                # Only log mismatch if it occurs (critical error)
-                if current_state == GameStates.ENEMY_TURN and not hasattr(self, '_mismatch_logged'):
-                    logger.error(f"CRITICAL: State mismatch! GameState={current_state}, TurnManager phase={turn_manager.current_phase}")
-                    self._mismatch_logged = True
+        
+        self._update_call_depth += 1
+        try:
+            # GUARD 2: Ensure engine and state_manager exist
+            if not self.engine or not hasattr(self.engine, "state_manager"):
                 return
+
+            state_manager = self.engine.state_manager
+            if not state_manager:
+                return
+
+            game_state = state_manager.state
+            current_state = game_state.current_state
+
+            # GUARD 3: Don't process AI if player is dead or in other non-AI states
+            # These states should NEVER trigger AI processing
+            forbidden_states = {
+                GameStates.PLAYER_DEAD,
+                GameStates.SHOW_INVENTORY,
+                GameStates.DROP_INVENTORY,
+                GameStates.TARGETING,
+                GameStates.THROW_SELECT_ITEM,
+                GameStates.THROW_TARGETING,
+                GameStates.LEVEL_UP,
+                GameStates.CHARACTER_SCREEN,
+                GameStates.NPC_DIALOGUE,
+                GameStates.WIZARD_MENU,
+                GameStates.CONFRONTATION,
+                GameStates.VICTORY,
+                GameStates.FAILURE,
+            }
+            
+            if current_state in forbidden_states:
+                # Reset processed entities set when not in AI phase
+                self._processed_entities_this_update.clear()
+                return
+
+            # GUARD 4: Only process AI during enemy turn
+            # Phase 2: Use TurnManager instead of GameStates check
+            turn_manager = getattr(self.engine, 'turn_manager', None)
+            if turn_manager:
+                # New system: Check TurnManager
+                from engine.turn_manager import TurnPhase
+                if not turn_manager.is_phase(TurnPhase.ENEMY):
+                    # Only log mismatch if it occurs (critical error)
+                    if current_state == GameStates.ENEMY_TURN and not hasattr(self, '_mismatch_logged'):
+                        logger.error(f"CRITICAL: State mismatch! GameState={current_state}, TurnManager phase={turn_manager.current_phase}")
+                        self._mismatch_logged = True
+                    # Reset processed entities set when not in enemy phase
+                    self._processed_entities_this_update.clear()
+                    return
+                else:
+                    # Reset mismatch flag when we're back in sync
+                    if hasattr(self, '_mismatch_logged'):
+                        delattr(self, '_mismatch_logged')
             else:
-                # Reset mismatch flag when we're back in sync
-                if hasattr(self, '_mismatch_logged'):
-                    delattr(self, '_mismatch_logged')
-        else:
-            # Backward compatibility: Fall back to GameStates check
-            if current_state != GameStates.ENEMY_TURN:
-                return
+                # Backward compatibility: Fall back to GameStates check
+                if current_state != GameStates.ENEMY_TURN:
+                    # Reset processed entities set when not in enemy turn
+                    self._processed_entities_this_update.clear()
+                    return
 
-        # Process AI turns
-        self._process_ai_turns(game_state)
-
-        # Switch back to player turn when done (unless player died)
-        if not self.turn_processing:
-            # Check if player died during AI turn
+            # ═════════════════════════════════════════════════════════════════
+            # ENEMY TURN PROCESSING - SIMPLIFIED, BOUNDED, DETERMINISTIC
+            # ═════════════════════════════════════════════════════════════════
+            
+            # Process AI turns (will use _processed_entities_this_update to prevent duplicates)
+            self._process_ai_turns(game_state)
+            
+            # ═════════════════════════════════════════════════════════════════
+            # TRANSITION BACK TO PLAYER TURN
+            # This happens IMMEDIATELY after AI processing completes.
+            # No loops, no recursion, just one clean state transition.
+            # ═════════════════════════════════════════════════════════════════
+            
+            # GUARD: If player died during AI turn, stay in PLAYER_DEAD state
             if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                 return
             
             # Check if player has active pathfinding before switching to player turn
             player = game_state.player
             pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
-            if (pathfinding and pathfinding.is_path_active()):
+            if pathfinding and pathfinding.is_path_active():
                 # Process pathfinding movement instead of switching to player turn
                 self._process_pathfinding_turn(state_manager)
+                return
+            
+            # ─────────────────────────────────────────────────────────────────
+            # SIMPLIFIED TURN TRANSITION: Always go back to PLAYERS_TURN
+            # ─────────────────────────────────────────────────────────────────
+            
+            # Advance through turn phases if using TurnManager
+            if turn_manager:
+                turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
+                
+                # GUARD: Check if player died from environmental effects
+                if state_manager.state.current_state == GameStates.PLAYER_DEAD:
+                    return
+                
+                turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
+                
+                # Process player status effects at start of their turn
+                self._process_player_status_effects(game_state)
+                
+                # GUARD: Check if player died from status effects
+                if state_manager.state.current_state == GameStates.PLAYER_DEAD:
+                    return
+            
+            # Restore preserved state or return to PLAYERS_TURN
+            # (handles RUBY_HEART_OBTAINED preservation automatically)
+            from systems.turn_controller import get_turn_controller
+            turn_controller = get_turn_controller()
+            
+            if turn_controller and turn_controller.is_state_preserved():
+                restored_state = turn_controller.get_preserved_state()
+                state_manager.set_game_state(restored_state)
+                turn_controller.clear_preserved_state()
             else:
-                # Advance to ENVIRONMENT phase
-                if turn_manager:
-                    turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
-
-                    # Check if player died from environmental effects
-                    if state_manager.state.current_state == GameStates.PLAYER_DEAD:
-                        return
-
-                    # Advance to PLAYER phase
-                    turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
-                    
-                    # Process player status effects at start of their turn
-                    self._process_player_status_effects(game_state)
-                    
-                    # Check if player died from status effects
-                    if state_manager.state.current_state == GameStates.PLAYER_DEAD:
-                        return
-                    
-                    # Use TurnController to restore appropriate state
-                    # (handles RUBY_HEART_OBTAINED preservation automatically)
-                    from systems.turn_controller import get_turn_controller
-                    turn_controller = get_turn_controller()
-                    if turn_controller:
-                        # Restore preserved state or return to PLAYERS_TURN
-                        if turn_controller.is_state_preserved():
-                            restored_state = turn_controller.get_preserved_state()
-                            state_manager.set_game_state(restored_state)
-                            turn_controller.clear_preserved_state()
-                        else:
-                            state_manager.set_game_state(GameStates.PLAYERS_TURN)
-                    else:
-                        # Fallback if turn_controller not available
-                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
-                else:
-                    # Backward compatibility
-                    # Process player status effects at start of their turn
-                    self._process_player_status_effects(game_state)
-                    
-                    # Check if player died from status effects
-                    if state_manager.state.current_state == GameStates.PLAYER_DEAD:
-                        return
-                    
-                    # Use TurnController to restore appropriate state
-                    # (handles RUBY_HEART_OBTAINED preservation automatically)
-                    from systems.turn_controller import get_turn_controller
-                    turn_controller = get_turn_controller()
-                    if turn_controller:
-                        # Restore preserved state or return to PLAYERS_TURN
-                        if turn_controller.is_state_preserved():
-                            restored_state = turn_controller.get_preserved_state()
-                            state_manager.set_game_state(restored_state)
-                            turn_controller.clear_preserved_state()
-                        else:
-                            state_manager.set_game_state(GameStates.PLAYERS_TURN)
-                    else:
-                        # Fallback if turn_controller not available
-                        state_manager.set_game_state(GameStates.PLAYERS_TURN)
+                # DEFAULT: Always return to PLAYERS_TURN after enemy phase
+                state_manager.set_game_state(GameStates.PLAYERS_TURN)
+            
+            logger.debug(f"AISystem: Transitioned from ENEMY_TURN → {state_manager.state.current_state}")
+            
+        finally:
+            # Always decrement depth counter, even if exception occurs
+            self._update_call_depth -= 1
+            # Clear processed entities set at end of update for next cycle
+            if self._update_call_depth == 0:
+                self._processed_entities_this_update.clear()
 
     def _process_ai_turns(self, game_state) -> None:
         """Process all AI entity turns.
@@ -211,7 +242,11 @@ class AISystem(System):
         try:
             # Get all AI entities that need to take turns
             ai_entities = self._get_ai_entities(game_state.entities, game_state.player)
+            
+            logger.debug(f"AISystem: Processing {len(ai_entities)} AI entities")
 
+            # CRITICAL: Bounded loop - each enemy acts exactly ONCE per enemy phase
+            # No while loops, no recursion, no "loop until results"
             for entity in ai_entities:
                 if entity.fighter and entity.fighter.hp > 0:
                     self._process_entity_turn(entity, game_state)
@@ -219,6 +254,8 @@ class AISystem(System):
                     # Check if entity died during turn processing
                     if entity.fighter.hp <= 0:
                         self._handle_entity_death(entity, game_state)
+            
+            logger.debug(f"AISystem: processed {len(ai_entities)} enemies, ending ENEMY_TURN → PLAYERS_TURN")
 
         finally:
             self.turn_processing = False
@@ -287,7 +324,23 @@ class AISystem(System):
         Args:
             entity: The entity taking its turn
             game_state: Current game state
+        
+        CRITICAL INVARIANT:
+        Each entity should only take ONE ai.take_turn() call per ENEMY phase.
+        Calling take_turn() multiple times without state changes causes infinite loops,
+        especially in bot mode where there's no blocking input to break the cycle.
         """
+        # GUARD: Prevent processing the same entity multiple times in one update cycle
+        # Use entity's id() as a unique identifier (entities don't have stable IDs)
+        entity_id = id(entity)
+        if entity_id in self._processed_entities_this_update:
+            logger.warning(f"ANTI-LOOP: Skipping duplicate turn for {entity.name} (already processed this update)")
+            print(f">>> AISystem: SKIPPING duplicate turn for {entity.name} (already processed)")
+            return
+        
+        # Mark this entity as processed
+        self._processed_entities_this_update.add(entity_id)
+        
         import time
 
         turn_start_time = time.time()
