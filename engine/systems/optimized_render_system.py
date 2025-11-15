@@ -139,91 +139,70 @@ class OptimizedRenderSystem(RenderSystem):
         # the combined request.
         original_fov_recompute = effective_fov_recompute
         
-        # IMPORTANT: Only render if we're the drawing authority
-        # Phase 2: ConsoleRenderer handles drawing, so skip rendering here
-        if self.skip_drawing:
-            # Just do FOV computation, skip actual rendering
-            if self.fov_recompute and self.fov_map:
-                # Get base FOV radius
-                base_fov_radius = game_state.get("fov_radius", 10)
-                
-                # Check for blindness - reduces FOV to 1
-                if (hasattr(player, 'has_status_effect') and 
-                    callable(player.has_status_effect) and 
-                    player.has_status_effect('blindness')):
-                    effective_fov_radius = 1  # Severely reduced vision when blind
-                else:
-                    effective_fov_radius = base_fov_radius
-                
-                recompute_fov(
-                    self.fov_map,
-                    player.x,
-                    player.y,
-                    effective_fov_radius,
-                    game_state.get("fov_light_walls", True),
-                    game_state.get("fov_algorithm", 12),
-                )
-                self.fov_recompute = False
-            
-            # Skip rendering and console flush - let ConsoleRenderer handle it
-        else:
-            # Normal mode: delegate drawing to ConsoleRenderer orchestrator
-            if self.fov_recompute and self.fov_map:
-                base_fov_radius = game_state.get("fov_radius", 10)
+        if original_fov_recompute and self.fov_map:
+            base_fov_radius = game_state.get("fov_radius", 10)
 
-                if (
-                    hasattr(player, "has_status_effect")
-                    and callable(player.has_status_effect)
-                    and player.has_status_effect("blindness")
-                ):
-                    effective_fov_radius = 1
-                else:
-                    effective_fov_radius = base_fov_radius
+            if (
+                hasattr(player, "has_status_effect")
+                and callable(player.has_status_effect)
+                and player.has_status_effect("blindness")
+            ):
+                effective_fov_radius = 1
+            else:
+                effective_fov_radius = base_fov_radius
 
-                recompute_fov(
-                    self.fov_map,
-                    player.x,
-                    player.y,
-                    effective_fov_radius,
-                    game_state.get("fov_light_walls", True),
-                    game_state.get("fov_algorithm", 12),
-                )
-
-            # ConsoleRenderer owns clearing, drawing, effects, and the single flush.
-            # Our responsibility is to prepare the frame context and hand it off.
-            frame_context = FrameContext(
-                entities=list(entities) if entities is not None else [],
-                player=player,
-                game_map=game_map,
-                fov_map=self.fov_map,
-                fov_recompute=original_fov_recompute,
-                message_log=message_log,
-                screen_width=self.screen_width,
-                screen_height=self.screen_height,
-                bar_width=self.bar_width,
-                panel_height=self.panel_height,
-                panel_y=self.panel_y,
-                mouse=mouse,
-                colors=self.colors,
-                game_state=current_game_state,
-                sidebar_console=self.sidebar_console,
-                camera=camera,
-                death_screen_quote=game_state.get("death_screen_quote"),
-                use_optimization=True,
+            recompute_fov(
+                self.fov_map,
+                player.x,
+                player.y,
+                effective_fov_radius,
+                game_state.get("fov_light_walls", True),
+                game_state.get("fov_algorithm", 12),
             )
 
-            self.console_renderer.render(frame_context, render_func=render_all)
-
+        if self.skip_drawing:
+            # Headless/abstraction mode: respect flag resets without touching consoles.
             if (
                 self.engine
                 and hasattr(self.engine, "state_manager")
                 and requested_fov_recompute
             ):
                 self.engine.state_manager.state.fov_recompute = False
-
             self.fov_recompute = False
+            self.last_rendered_entities = set(entities)
+            return
 
-        # Update render tracking
+        frame_context = FrameContext(
+            entities=list(entities) if entities is not None else [],
+            player=player,
+            game_map=game_map,
+            fov_map=self.fov_map,
+            fov_recompute=original_fov_recompute,
+            message_log=message_log,
+            screen_width=self.screen_width,
+            screen_height=self.screen_height,
+            bar_width=self.bar_width,
+            panel_height=self.panel_height,
+            panel_y=self.panel_y,
+            mouse=mouse,
+            colors=self.colors,
+            game_state=current_game_state,
+            sidebar_console=self.sidebar_console,
+            camera=camera,
+            death_screen_quote=game_state.get("death_screen_quote"),
+            use_optimization=True,
+        )
+
+        self.console_renderer.render(frame_context, render_func=render_all)
+
+        if (
+            self.engine
+            and hasattr(self.engine, "state_manager")
+            and requested_fov_recompute
+        ):
+            self.engine.state_manager.state.fov_recompute = False
+
+        self.fov_recompute = False
         self.last_rendered_entities = set(entities)
 
     def _has_performance_data(self, game_state: Dict[str, Any]) -> bool:
