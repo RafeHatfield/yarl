@@ -82,25 +82,19 @@ class TestBotModeThrottle:
         action = bot.next_action(mock_state)
         assert action == {}, "Should return empty action for invalid state"
     
-    def test_bot_sleep_duration(self):
-        """Bot should sleep for approximately 16ms when generating actions.
-        
-        With action_interval=1, first call should return action with sleep.
-        """
+    def test_bot_does_not_block_when_returning_actions(self):
+        """Bot should not block; pacing is handled by the main loop."""
         bot = BotInputSource(action_interval=1)
-        
+
         mock_state = Mock()
         mock_state.current_state = GameStates.PLAYERS_TURN
-        
-        # With action_interval=1, first call returns action with sleep
+
         start = time.time()
         action = bot.next_action(mock_state)
         duration = time.time() - start
-        
-        # Should sleep for ~16ms (0.016s), allow some variance
+
         assert action == {'wait': True}, "First call should return action (counter 0→1, 1>=1)"
-        assert duration >= 0.015, f"Sleep duration too short: {duration}"
-        assert duration <= 0.025, f"Sleep duration too long: {duration}"
+        assert duration < 0.005, f"Bot action generation should not block, took {duration}s"
     
     def test_default_action_interval(self):
         """Bot should use action_interval=1 by default."""

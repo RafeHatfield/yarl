@@ -64,11 +64,21 @@ class StateSnapshot:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert snapshot to dictionary.
-        
+
         Returns:
             Dict[str, Any]: Snapshot data as dictionary
         """
-        return asdict(self)
+        return {
+            "timestamp": self.timestamp,
+            "version": self.version,
+            "machine_id": self.machine_id,
+            "current_state_id": self.current_state_id,
+            "previous_state_id": self.previous_state_id,
+            "context_data": dict(self.context_data) if self.context_data is not None else {},
+            "state_history": list(self.state_history) if self.state_history is not None else [],
+            "stats": dict(self.stats) if self.stats is not None else {},
+            "custom_data": dict(self.custom_data) if self.custom_data is not None else {},
+        }
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'StateSnapshot':
@@ -179,8 +189,10 @@ class JsonPersistenceBackend(PersistenceBackend):
             # Ensure directory exists
             full_path.parent.mkdir(parents=True, exist_ok=True)
             
+            serializer = self._json_serializer if callable(self._json_serializer) else None
+
             with open(full_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, default=self._json_serializer)
+                json.dump(data, f, indent=2, default=serializer)
             
             logger.debug(f"Saved data to {full_path}")
             
