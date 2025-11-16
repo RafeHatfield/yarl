@@ -370,9 +370,20 @@ def main():
     if telemetry_service:
         try:
             # Get run metrics from current game state if available (Phase 1.5)
-            from instrumentation.run_metrics import get_run_metrics_recorder
+            from instrumentation.run_metrics import get_run_metrics_recorder, finalize_run_metrics
             run_metrics_recorder = get_run_metrics_recorder()
-            run_metrics = run_metrics_recorder.get_metrics() if run_metrics_recorder else None
+            run_metrics = None
+            
+            # If recorder exists but hasn't been finalized, finalize it now
+            # (This handles quit from main menu or other exit paths)
+            if run_metrics_recorder and not run_metrics_recorder.is_finalized():
+                # Try to finalize with player/game_map if available
+                if player and game_map:
+                    run_metrics = finalize_run_metrics("quit", player, game_map)
+                else:
+                    logger.warning("Run metrics recorder exists but no player/game_map available for finalization")
+            elif run_metrics_recorder:
+                run_metrics = run_metrics_recorder.get_metrics()
             
             # Dump telemetry with run metrics
             telemetry_service.dump_json(run_metrics=run_metrics)
