@@ -30,6 +30,7 @@ from map_objects.game_map import GameMap
 from render_functions import RenderOrder
 from spells.spell_catalog import register_all_spells
 from logger_config import get_logger
+from instrumentation.run_metrics import initialize_run_metrics_recorder
 
 logger = get_logger(__name__)
 
@@ -245,6 +246,13 @@ def get_game_variables(constants):
         for x in range(game_map.width):
             for y in range(game_map.height):
                 game_map.tiles[x][y].explored = True
+    
+    # Initialize run metrics recorder (Phase 1.5: Run Metrics)
+    # Detect bot mode from constants (set by engine.py CLI parsing)
+    bot_enabled = constants.get("input_config", {}).get("bot_enabled", False)
+    run_mode = "bot" if bot_enabled else "human"
+    initialize_run_metrics_recorder(mode=run_mode, seed=None)
+    logger.info(f"Run metrics recorder initialized: mode={run_mode}")
 
     return player, entities, game_map, message_log, game_state
 

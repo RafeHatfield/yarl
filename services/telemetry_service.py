@@ -256,8 +256,11 @@ class TelemetryService:
                 **data
             })
     
-    def dump_json(self) -> None:
+    def dump_json(self, run_metrics=None) -> None:
         """Write telemetry to JSON file.
+        
+        Args:
+            run_metrics: Optional RunMetrics instance to include in output (Phase 1.5)
         
         Raises:
             RuntimeError: If output_path not set
@@ -281,6 +284,11 @@ class TelemetryService:
                     )
                 ]
             }
+            
+            # Add run metrics if available (Phase 1.5: Run Metrics)
+            if run_metrics is not None:
+                data['run_metrics'] = run_metrics.to_dict()
+                logger.info(f"Including run metrics in telemetry: {run_metrics.run_id}")
             
             # Write JSON
             with open(self.output_path, 'w') as f:

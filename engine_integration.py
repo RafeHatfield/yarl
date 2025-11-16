@@ -379,6 +379,17 @@ def play_game_with_engine(
             logger.warning(f"Exit action in actions: {action.get('exit', False)}")
             logger.warning(f"========================")
             
+            # Finalize run metrics on quit (Phase 1.5: Run Metrics)
+            # Only finalize if player is alive (death is handled separately)
+            if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
+                from instrumentation.run_metrics import finalize_run_metrics
+                player = engine.state_manager.state.player
+                game_map = engine.state_manager.state.game_map
+                run_metrics = finalize_run_metrics("quit", player, game_map)
+                if run_metrics:
+                    engine.state_manager.state.run_metrics = run_metrics
+                    logger.info(f"Run metrics finalized on quit: {run_metrics.run_id}")
+            
             # Save game before exiting (unless player is dead)
             if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
                 try:
@@ -594,6 +605,15 @@ def play_game_with_engine(
                 hall = get_hall_of_fame()
                 player_name = engine.state_manager.state.player.name
                 hall.add_victory(player_name, ending_code, player_stats)
+                
+                # Finalize run metrics on victory (Phase 1.5: Run Metrics)
+                from instrumentation.run_metrics import finalize_run_metrics
+                player = engine.state_manager.state.player
+                game_map = engine.state_manager.state.game_map
+                run_metrics = finalize_run_metrics("victory", player, game_map)
+                if run_metrics:
+                    engine.state_manager.state.run_metrics = run_metrics
+                    logger.info(f"Run metrics finalized on victory: {run_metrics.run_id}")
                 
                 # Clear the flag
                 engine.state_manager.set_extra_data("show_ending", None)

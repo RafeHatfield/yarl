@@ -369,7 +369,13 @@ def main():
     # Dump telemetry on game exit
     if telemetry_service:
         try:
-            telemetry_service.dump_json()
+            # Get run metrics from current game state if available (Phase 1.5)
+            from instrumentation.run_metrics import get_run_metrics_recorder
+            run_metrics_recorder = get_run_metrics_recorder()
+            run_metrics = run_metrics_recorder.get_metrics() if run_metrics_recorder else None
+            
+            # Dump telemetry with run metrics
+            telemetry_service.dump_json(run_metrics=run_metrics)
             stats = telemetry_service.get_stats()
             print(f"\n📊 Telemetry Summary:")
             print(f"   Floors: {stats.get('floors', 0)}")
@@ -378,6 +384,15 @@ def main():
             print(f"   Secrets: {stats.get('total_secrets', 0)}")
             print(f"   Doors: {stats.get('total_doors', 0)}")
             print(f"   Keys: {stats.get('total_keys', 0)}")
+            
+            # Show run metrics summary if available
+            if run_metrics:
+                print(f"\n🎮 Run Summary:")
+                print(f"   Mode: {run_metrics.mode}")
+                print(f"   Outcome: {run_metrics.outcome}")
+                print(f"   Duration: {run_metrics.duration_seconds:.1f}s" if run_metrics.duration_seconds else "   Duration: N/A")
+                print(f"   Floor: {run_metrics.deepest_floor}")
+                print(f"   Kills: {run_metrics.monsters_killed}")
         except Exception as e:
             print(f"\n❌ Failed to dump telemetry: {e}")
 

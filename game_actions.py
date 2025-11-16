@@ -701,6 +701,15 @@ class ActionProcessor:
                 )
             else:
                 self.state_manager.state.death_screen_quote = "How... disappointing."
+            
+            # Finalize run metrics on player death (Phase 1.5: Run Metrics)
+            from instrumentation.run_metrics import finalize_run_metrics
+            game_map = self.state_manager.state.game_map
+            run_metrics = finalize_run_metrics("death", player, game_map)
+            if run_metrics:
+                # Store metrics on game state for death screen display and telemetry
+                self.state_manager.state.run_metrics = run_metrics
+                logger.info(f"Run metrics finalized on death: {run_metrics.run_id}")
         else:
             # Monster died - always transform to corpse first
             from death_functions import kill_monster

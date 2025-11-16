@@ -370,7 +370,9 @@ def _legacy_render_all(
     
     elif game_state == GameStates.PLAYER_DEAD:
         # Render death screen with statistics using the provided quote
-        render_death_screen(con, player, screen_width, screen_height, death_screen_quote)
+        # Get run metrics if available (Phase 1.5: Run Metrics)
+        run_metrics = getattr(game_state, 'run_metrics', None)
+        render_death_screen(con, player, screen_width, screen_height, death_screen_quote, run_metrics)
 
     if draw_tooltips and mouse and hasattr(mouse, "cx") and hasattr(mouse, "cy"):
         from ui import tooltip
