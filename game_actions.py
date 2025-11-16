@@ -702,6 +702,13 @@ class ActionProcessor:
             else:
                 self.state_manager.state.death_screen_quote = "How... disappointing."
             
+            # Phase 1.5b: End telemetry for current floor on death
+            from services.telemetry_service import get_telemetry_service
+            telemetry_service = get_telemetry_service()
+            if telemetry_service.enabled:
+                telemetry_service.end_floor()
+                logger.info(f"Telemetry ended for floor on death")
+            
             # Finalize run metrics on player death (Phase 1.5: Run Metrics)
             from instrumentation.run_metrics import finalize_run_metrics
             game_map = self.state_manager.state.game_map
@@ -1369,6 +1376,13 @@ class ActionProcessor:
                             message_log.add_message(message)
                             logger.warning(f"Return blocked: cannot go back {game_map.dungeon_level - target_level} levels")
                             break
+                
+                # Phase 1.5b: End telemetry for current floor before leaving
+                from services.telemetry_service import get_telemetry_service
+                telemetry_service = get_telemetry_service()
+                if telemetry_service.enabled:
+                    telemetry_service.end_floor()
+                    logger.info(f"Telemetry ended for floor {game_map.dungeon_level}")
                 
                 # Save current floor state before leaving
                 from services.floor_state_manager import get_floor_state_manager

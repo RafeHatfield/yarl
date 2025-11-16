@@ -379,6 +379,14 @@ def play_game_with_engine(
             logger.warning(f"Exit action in actions: {action.get('exit', False)}")
             logger.warning(f"========================")
             
+            # Phase 1.5b: End telemetry for current floor on quit
+            if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
+                from services.telemetry_service import get_telemetry_service
+                telemetry_service = get_telemetry_service()
+                if telemetry_service.enabled:
+                    telemetry_service.end_floor()
+                    logger.info(f"Telemetry ended for floor on quit")
+            
             # Finalize run metrics on quit (Phase 1.5: Run Metrics)
             # Only finalize if player is alive (death is handled separately)
             if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
@@ -605,6 +613,13 @@ def play_game_with_engine(
                 hall = get_hall_of_fame()
                 player_name = engine.state_manager.state.player.name
                 hall.add_victory(player_name, ending_code, player_stats)
+                
+                # Phase 1.5b: End telemetry for current floor on victory
+                from services.telemetry_service import get_telemetry_service
+                telemetry_service = get_telemetry_service()
+                if telemetry_service.enabled:
+                    telemetry_service.end_floor()
+                    logger.info(f"Telemetry ended for floor on victory")
                 
                 # Finalize run metrics on victory (Phase 1.5: Run Metrics)
                 from instrumentation.run_metrics import finalize_run_metrics

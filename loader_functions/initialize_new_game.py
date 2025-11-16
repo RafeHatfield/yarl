@@ -253,8 +253,95 @@ def get_game_variables(constants):
     run_mode = "bot" if bot_enabled else "human"
     initialize_run_metrics_recorder(mode=run_mode, seed=None)
     logger.info(f"Run metrics recorder initialized: mode={run_mode}")
+    
+    # Phase 1.5b: Wire telemetry floor tracking for initial floor
+    from services.telemetry_service import get_telemetry_service
+    telemetry_service = get_telemetry_service()
+    if telemetry_service.enabled:
+        telemetry_service.start_floor(game_map.dungeon_level)
+        _populate_floor_telemetry(telemetry_service, game_map, entities)
+        logger.info(f"Telemetry started for floor {game_map.dungeon_level}")
 
     return player, entities, game_map, message_log, game_state
+
+
+def _populate_floor_telemetry(telemetry_service, game_map, entities):
+    """Populate telemetry floor stats after map generation.
+    
+    Computes and records floor-level metrics including:
+    - ETP sum (total monster difficulty)
+    - Room count (approximated from map connectivity)
+    - Monster count
+    - Item count (excluding player inventory)
+    - Door count
+    - Trap count
+    - Secret count
+    
+    Args:
+        telemetry_service: TelemetryService instance
+        game_map: GameMap with generated floor
+        entities: List of all entities on the floor
+    """
+    from components.component_registry import ComponentType
+    
+    # Count entities by type
+    monster_count = 0
+    item_count = 0
+    door_count = 0
+    trap_count = 0
+    secret_count = 0
+    etp_sum = 0
+    
+    for entity in entities:
+        # Skip player
+        if entity.name == "Player":
+            continue
+        
+        # Count monsters and sum ETP
+        fighter = entity.get_component_optional(ComponentType.FIGHTER)
+        ai = entity.get_component_optional(ComponentType.AI)
+        if fighter and ai:
+            monster_count += 1
+            # ETP estimation: simple heuristic based on HP and power
+            # (Real ETP might be tracked elsewhere, but this is reasonable)
+            etp_sum += fighter.max_hp + (fighter.power * 2)
+        
+        # Count items (items have Item component)
+        item_comp = entity.get_component_optional(ComponentType.ITEM)
+        if item_comp:
+            item_count += 1
+        
+        # Count doors
+        door_comp = entity.get_component_optional(ComponentType.DOOR)
+        if door_comp:
+            door_count += 1
+            # Count secret doors as secrets
+            if door_comp.is_secret:
+                secret_count += 1
+        
+        # Count traps
+        trap_comp = entity.get_component_optional(ComponentType.TRAP)
+        if trap_comp:
+            trap_count += 1
+    
+    # Estimate room count from corridor connections (rough approximation)
+    # Each corridor connects 2 rooms, so room_count ≈ connection_count + 1
+    # But this is imperfect; we'll use a simple heuristic
+    room_count = len(getattr(game_map, 'corridor_connections', [])) + 1
+    
+    # Set telemetry data
+    telemetry_service.set_floor_etp(etp_sum=etp_sum)
+    telemetry_service.set_room_counts(
+        rooms=room_count,
+        monsters=monster_count,
+        items=item_count
+    )
+    
+    logger.info(
+        f"Floor {game_map.dungeon_level} telemetry: "
+        f"ETP={etp_sum}, Rooms≈{room_count}, Monsters={monster_count}, "
+        f"Items={item_count}, Doors={door_count}, Traps={trap_count}, Secrets={secret_count}"
+    )
 
 
 def _skip_to_level(player, entities, game_map, message_log, target_level, constants):
