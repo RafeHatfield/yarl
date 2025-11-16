@@ -49,14 +49,17 @@ class TestBotModeEngineIntegration:
     def test_bot_input_never_blocks_game_loop(self):
         """Bot input should remain non-blocking; pacing is handled by main loop."""
         import time
-
+        
         # Test with action_interval=2 to see both throttled and action-returning calls
         bot = BotInputSource(action_interval=2)
         
-        # Create a mock game state
+        # Create a mock game state with player
         mock_state = Mock()
         mock_state.game_state = GameStates.PLAYERS_TURN
         mock_state.current_state = GameStates.PLAYERS_TURN
+        mock_player = Mock()
+        mock_player.get_component_optional = Mock(return_value=None)  # No auto-explore yet
+        mock_state.player = mock_player
         
         # First call: counter 0→1, 1 < 2, returns {} (no sleep, instant)
         start = time.time()
@@ -71,7 +74,7 @@ class TestBotModeEngineIntegration:
         action2 = bot.next_action(mock_state)
         elapsed = time.time() - start
 
-        assert action2 == {'wait': True}, "Second call should return action (counter 2 >= 2)"
+        assert action2 == {'start_auto_explore': True}, "Second call should trigger auto-explore (counter 2 >= 2)"
         assert elapsed < 0.005, f"Action generation should not block, got {elapsed}s"
 
         # Third call: counter 0→1 (reset), 1 < 2, returns {} (no sleep, instant)

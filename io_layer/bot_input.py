@@ -1,11 +1,11 @@
 """Bot/autoplay input source implementation.
 
 This module provides a BotInputSource class that implements the InputSource protocol
-for automated/bot play modes. The initial implementation is intentionally minimal,
-serving as a clean integration point for future autoplay logic.
+for automated/bot play modes. Phase 1 implements auto-exploration behavior, allowing
+the bot to systematically explore the dungeon.
 """
 
-from typing import Any
+from typing import Any, Optional
 
 from io_layer.interfaces import ActionDict, InputSource
 
@@ -13,26 +13,23 @@ from io_layer.interfaces import ActionDict, InputSource
 class BotInputSource:
     """Input source implementation for automated/bot play.
 
-    This initial version is intentionally minimal and always returns {'wait': True}.
-    It exists to provide a clean integration point for future autoplay logic
-    (auto-explore, simple pathing, menu handling, etc.).
-
-    In later iterations, this class will be extended to:
-    - Detect game state and trigger appropriate behaviors (e.g., auto-explore)
-    - Handle menu navigation
-    - Process level transitions
-    - Implement bot decision-making algorithms
+    Phase 1: Auto-Exploration Bot
+    - Automatically triggers auto-explore when the player has no active exploration
+    - Lets the existing auto-explore system handle pathfinding and movement
+    - Falls back to waiting if exploration completes or fails
+    
+    Phase 0 behavior (enemies don't act) is preserved - this is controlled by
+    the AISystem's bot-mode flag, not by this input source.
 
     Attributes:
-        _initialized: Marker flag indicating the bot is ready (placeholder for future state)
+        _initialized: Marker flag indicating the bot is ready
+        _frame_counter: Counter for throttling actions
+        _action_interval: Number of frames between actions
+        _auto_explore_started: Tracks if we've attempted to start auto-explore this session
     """
 
     def __init__(self, action_interval: int = 1) -> None:
         """Initialize the BotInputSource.
-
-        Sets up the bot for future behavioral logic. Currently a no-op initialization
-        but structured to accept internal bot state in later iterations (e.g., run counters,
-        decision trees, exploration logs).
 
         Args:
             action_interval: Number of frames to wait between actions. The bot
@@ -42,51 +39,72 @@ class BotInputSource:
         self._initialized = True
         self._frame_counter = 0
         self._action_interval = action_interval
+        self._auto_explore_started = False
 
     def next_action(self, game_state: Any) -> ActionDict:
-        """Return the next bot action.
+        """Return the next bot action using auto-explore behavior.
 
-        The current implementation uses a trivial "wait every turn" policy, allowing the
-        game loop to tick forward without the bot performing any meaningful actions. This
-        serves as the base for future intelligent autoplay logic.
+        Phase 1 Strategy:
+        1. If in PLAYERS_TURN and auto-explore is NOT active:
+           - Trigger auto-explore via {'start_auto_explore': True}
+        2. If auto-explore IS active:
+           - Return {} to let ActionProcessor._process_auto_explore_turn() handle it
+        3. If not in PLAYERS_TURN or game_state invalid:
+           - Return {} to prevent infinite loops
         
         Args:
-            game_state: The current game state object. In future iterations, this will be
-                       analyzed to make intelligent decisions (e.g., detecting PLAYERS_TURN
-                       and triggering auto-explore, detecting menus, etc.).
+            game_state: The current game state object with player, entities, map, etc.
 
         Returns:
-            ActionDict: {'wait': True} - skips the turn (trivial bot behavior) when in PLAYERS_TURN.
-                       {} - empty dict (no action) when not in a playing state to prevent
-                            infinite loops on death screens or menus.
-                       Later iterations will populate this with actual bot decisions based
-                       on game_state (e.g., pathfinding, menu navigation, combat tactics).
+            ActionDict: 
+                - {'start_auto_explore': True} - to initiate auto-explore
+                - {} - when auto-explore is active or not in playing state
+                - {'wait': True} - fallback if auto-explore cannot be started
         """
         # CRITICAL: Only return actions during PLAYERS_TURN
         # When in PLAYER_DEAD, menus, or other non-playing states, return empty action
         # to prevent the input loop from continuously feeding actions into the engine
         # and causing infinite AI loops or hangs
         from game_states import GameStates
+        from components.component_registry import ComponentType
         
         # Defensive: Check for valid game_state with current_state attribute
-        if game_state and hasattr(game_state, 'current_state'):
-            # Only generate actions during actual gameplay
-            if game_state.current_state == GameStates.PLAYERS_TURN:
-                # Throttle action generation to reduce tight-loop pressure; the
-                # main loop handles frame pacing and event pumping.
-                self._frame_counter += 1
-
-                if self._frame_counter >= self._action_interval:
-                    self._frame_counter = 0
-                    return {'wait': True}
-
-                return {}
-            else:
-                # Return empty action dict for non-playing states
-                # This prevents the infinite loop bug where the bot would feed
-                # actions even after player death or when in a menu
-                return {}
+        if not game_state or not hasattr(game_state, 'current_state'):
+            return {}
         
-        # Safety fallback: No valid game state, return no action
-        return {}
+        # Only generate actions during actual gameplay
+        if game_state.current_state != GameStates.PLAYERS_TURN:
+            # Return empty action dict for non-playing states
+            # This prevents the infinite loop bug where the bot would feed
+            # actions even after player death or when in a menu
+            return {}
+        
+        # Throttle action generation to reduce tight-loop pressure
+        self._frame_counter += 1
+        if self._frame_counter < self._action_interval:
+            return {}
+        
+        self._frame_counter = 0
+        
+        # Get player entity
+        player = getattr(game_state, 'player', None)
+        if not player:
+            return {'wait': True}
+        
+        # Check if auto-explore is already active
+        # Defensive: ensure player has get_component_optional method
+        if not hasattr(player, 'get_component_optional'):
+            return {'wait': True}
+        
+        auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+        
+        if auto_explore and auto_explore.is_active():
+            # Auto-explore is running - let ActionProcessor._process_auto_explore_turn() handle it
+            # We return {} because the action processor automatically processes auto-explore turns
+            return {}
+        
+        # Auto-explore is not active - trigger it
+        # The ActionProcessor will handle creating/initializing the component if needed
+        self._auto_explore_started = True
+        return {'start_auto_explore': True}
 
