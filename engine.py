@@ -132,6 +132,21 @@ Examples:
         help='Enable bot/autoplay input source instead of keyboard input'
     )
     
+    # Bot soak testing (Phase 1.6)
+    parser.add_argument(
+        '--bot-soak',
+        action='store_true',
+        help='Run multiple bot games back-to-back for soak testing (implies --bot)'
+    )
+    
+    parser.add_argument(
+        '--runs',
+        type=int,
+        default=10,
+        metavar='N',
+        help='Number of bot runs to execute when --bot-soak is active (default: 10)'
+    )
+    
     return parser.parse_args()
 
 
@@ -147,6 +162,35 @@ def main():
     
     # Parse command line arguments
     args = parse_arguments()
+    
+    # Phase 1.6: Handle bot soak mode early (before rendering setup)
+    if args.bot_soak:
+        # Bot soak runs headless-ish (no main menu, direct to harness)
+        # Force bot mode and enable telemetry
+        from engine.soak_harness import run_bot_soak
+        
+        # Enable telemetry (required for soak data collection)
+        telemetry_path = args.telemetry_json or "telemetry/soak_output.json"
+        
+        print(f"🧪 BOT SOAK MODE: Running {args.runs} bot games")
+        print(f"📊 Telemetry enabled: {telemetry_path}")
+        
+        # Get constants (needed for game initialization)
+        constants = get_constants()
+        
+        # Run soak harness
+        session_result = run_bot_soak(
+            runs=args.runs,
+            telemetry_enabled=True,
+            telemetry_output_path=telemetry_path,
+            constants=constants,
+        )
+        
+        # Print session summary
+        session_result.print_summary()
+        
+        # Exit without launching interactive mode
+        return
     
     # Validate that debug flags require --testing
     if (args.start_level or args.god_mode or args.no_monsters or args.reveal_map or args.wizard) and not args.testing:
