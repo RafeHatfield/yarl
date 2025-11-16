@@ -1,0 +1,41 @@
+{
+  "generated_at": "2025-11-16T08:47:25.484017",
+  "floor_count": 1,
+  "floors": [
+    {
+      "depth": 1,
+      "timestamp": "2025-11-16T08:46:36.488448",
+      "etp_sum": 168,
+      "etp_budget_min": null,
+      "etp_budget_max": null,
+      "ttk_hist": [],
+      "ttd_hist": [],
+      "traps_triggered": 0,
+      "traps_detected": 0,
+      "secrets_found": 0,
+      "doors_opened": 0,
+      "doors_unlocked": 0,
+      "keys_used": 0,
+      "pity_events": [],
+      "room_count": 21,
+      "monster_count": 8,
+      "item_count": 11
+    }
+  ],
+  "run_metrics": {
+    "run_id": "9c5b4835586947109351469f6d78a9c2",
+    "mode": "human",
+    "seed": null,
+    "start_time_utc": "2025-11-16T16:46:36.488164+00:00",
+    "end_time_utc": "2025-11-16T16:47:25.483590+00:00",
+    "duration_seconds": 48.995426,
+    "deepest_floor": 1,
+    "floors_visited": 1,
+    "steps_taken": 0,
+    "tiles_explored": 959,
+    "monsters_killed": 2,
+    "items_picked_up": 0,
+    "portals_used": 0,
+    "outcome": "quit"
+  }
+}

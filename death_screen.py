@@ -9,7 +9,7 @@ from entity_dialogue import get_entity_quote_for_death
 from components.component_registry import ComponentType
 
 
-def render_death_screen(con, player, screen_width, screen_height, entity_quote=None):
+def render_death_screen(con, player, screen_width, screen_height, entity_quote=None, run_metrics=None):
     """Render the death screen with statistics and restart options.
     
     Args:
@@ -18,6 +18,7 @@ def render_death_screen(con, player, screen_width, screen_height, entity_quote=N
         screen_width: Width of the screen
         screen_height: Height of the screen
         entity_quote: Pre-generated Entity quote (to prevent flickering)
+        run_metrics: Optional RunMetrics instance (Phase 1.5: Run Metrics)
     """
     # Clear the console with a dark overlay
     libtcodpy.console_set_default_background(con, libtcodpy.black)
@@ -191,6 +192,57 @@ def render_death_screen(con, player, screen_width, screen_height, entity_quote=N
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
                                     "No statistics available")
         y += 3
+    
+    # Run Summary (Phase 1.5: Run Metrics)
+    if run_metrics:
+        y += 1
+        libtcodpy.console_set_default_foreground(con, libtcodpy.Color(100, 200, 100))
+        libtcodpy.console_print_ex(con, screen_width // 2 - 15, y, 
+                                    libtcodpy.BKGND_NONE, libtcodpy.LEFT, "RUN SUMMARY")
+        y += 1
+        
+        libtcodpy.console_set_default_foreground(con, libtcodpy.Color(180, 180, 180))
+        
+        # Display mode indicator (unobtrusive)
+        if run_metrics.mode == "bot":
+            libtcodpy.console_print_ex(con, screen_width // 2 - 15, y, 
+                                        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+                                        "  [Bot Run]")
+            y += 1
+        
+        # Exploration summary
+        if run_metrics.tiles_explored > 0:
+            libtcodpy.console_print_ex(con, screen_width // 2 - 15, y, 
+                                        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+                                        f"  Explored {run_metrics.tiles_explored} tiles")
+            y += 1
+        
+        # Combat summary
+        if run_metrics.monsters_killed > 0:
+            libtcodpy.console_print_ex(con, screen_width // 2 - 15, y, 
+                                        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+                                        f"  Defeated {run_metrics.monsters_killed} monsters")
+            y += 1
+        
+        # Items collected
+        if run_metrics.items_picked_up > 0:
+            libtcodpy.console_print_ex(con, screen_width // 2 - 15, y, 
+                                        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+                                        f"  Collected {run_metrics.items_picked_up} items")
+            y += 1
+        
+        # Duration
+        if run_metrics.duration_seconds is not None and run_metrics.duration_seconds > 0:
+            minutes = int(run_metrics.duration_seconds // 60)
+            seconds = int(run_metrics.duration_seconds % 60)
+            if minutes > 0:
+                duration_str = f"{minutes}m {seconds}s"
+            else:
+                duration_str = f"{seconds}s"
+            libtcodpy.console_print_ex(con, screen_width // 2 - 15, y, 
+                                        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+                                        f"  Duration: {duration_str}")
+            y += 1
     
     # Instructions at bottom
     y = screen_height - 8

@@ -369,7 +369,24 @@ def main():
     # Dump telemetry on game exit
     if telemetry_service:
         try:
-            telemetry_service.dump_json()
+            # Get run metrics from current game state if available (Phase 1.5)
+            from instrumentation.run_metrics import get_run_metrics_recorder, finalize_run_metrics
+            run_metrics_recorder = get_run_metrics_recorder()
+            run_metrics = None
+            
+            # If recorder exists but hasn't been finalized, finalize it now
+            # (This handles quit from main menu or other exit paths)
+            if run_metrics_recorder and not run_metrics_recorder.is_finalized():
+                # Try to finalize with player/game_map if available
+                if player and game_map:
+                    run_metrics = finalize_run_metrics("quit", player, game_map)
+                else:
+                    logger.warning("Run metrics recorder exists but no player/game_map available for finalization")
+            elif run_metrics_recorder:
+                run_metrics = run_metrics_recorder.get_metrics()
+            
+            # Dump telemetry with run metrics
+            telemetry_service.dump_json(run_metrics=run_metrics)
             stats = telemetry_service.get_stats()
             print(f"\n📊 Telemetry Summary:")
             print(f"   Floors: {stats.get('floors', 0)}")
@@ -378,6 +395,15 @@ def main():
             print(f"   Secrets: {stats.get('total_secrets', 0)}")
             print(f"   Doors: {stats.get('total_doors', 0)}")
             print(f"   Keys: {stats.get('total_keys', 0)}")
+            
+            # Show run metrics summary if available
+            if run_metrics:
+                print(f"\n🎮 Run Summary:")
+                print(f"   Mode: {run_metrics.mode}")
+                print(f"   Outcome: {run_metrics.outcome}")
+                print(f"   Duration: {run_metrics.duration_seconds:.1f}s" if run_metrics.duration_seconds else "   Duration: N/A")
+                print(f"   Floor: {run_metrics.deepest_floor}")
+                print(f"   Kills: {run_metrics.monsters_killed}")
         except Exception as e:
             print(f"\n❌ Failed to dump telemetry: {e}")
 
