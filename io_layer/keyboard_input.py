@@ -34,6 +34,16 @@ class KeyboardInputSource:
         self.current_key = libtcod.Key()
         self.current_mouse = libtcod.Mouse()
         self.death_frame_counter = None
+        self._events_pumped_externally = False
+
+    def record_external_event_pump(self) -> None:
+        """Flag that events were pumped outside of next_action.
+
+        When the main loop pumps window events to keep the OS happy, this
+        marker prevents next_action from immediately overwriting the
+        Key/Mouse objects with a second call to sys_check_for_event.
+        """
+        self._events_pumped_externally = True
 
     def next_action(self, game_state: Any) -> ActionDict:
         """Get the next player action from keyboard/mouse input.
@@ -51,10 +61,15 @@ class KeyboardInputSource:
             An ActionDict containing the next player action, or an empty dict if no
             input is available.
         """
-        # Check for input events (non-blocking)
-        libtcod.sys_check_for_event(
-            libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, self.current_key, self.current_mouse
-        )
+        # Check for input events (non-blocking). If the main loop already
+        # pumped events for window responsiveness, reuse those values instead
+        # of clearing them here.
+        if self._events_pumped_externally:
+            self._events_pumped_externally = False
+        else:
+            libtcod.sys_check_for_event(
+                libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, self.current_key, self.current_mouse
+            )
 
         # Extract game state enum
         current_game_state = getattr(game_state, "game_state", GameStates.PLAYERS_TURN)

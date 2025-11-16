@@ -9,6 +9,7 @@ InputSource protocols defined in io_layer/interfaces.py.
 """
 
 import logging
+import time
 from contextlib import contextmanager
 from typing import Any
 
@@ -110,6 +111,28 @@ def create_renderer_and_input_source(
         input_source: InputSource = KeyboardInputSource()
 
     return renderer, input_source
+
+
+def pump_events_and_sleep(input_source: InputSource, frame_delay: float = 0.016) -> None:
+    """Pump OS/window events and throttle frame rate.
+
+    This keeps the libtcod window responsive even when input sources do not
+    block (e.g., bot mode) and provides consistent pacing for the main loop.
+    If the input source exposes current_key/current_mouse, they are passed to
+    libtcod so any polled events are preserved for consumption in next_action.
+    """
+
+    key = getattr(input_source, "current_key", None)
+    mouse = getattr(input_source, "current_mouse", None)
+    libtcod.sys_check_for_event(libtcod.EVENT_ANY, key, mouse)
+
+    # Inform input sources that events were pumped externally so they don't
+    # immediately clear the values when next_action runs.
+    record_hook = getattr(input_source, "record_external_event_pump", None)
+    if callable(record_hook):
+        record_hook()
+
+    time.sleep(frame_delay)
 
 
 def create_game_engine(constants, sidebar_console, viewport_console, status_console):
@@ -258,8 +281,12 @@ def play_game_with_engine(
     targeting_item = None
     first_frame = True
     
+    # Detect bot mode early (before creating ActionProcessor)
+    input_mode = "bot" if constants.get("input_config", {}).get("bot_enabled") else "keyboard"
+    
     # Create action processor for clean action handling
-    action_processor = ActionProcessor(engine.state_manager)
+    # Pass is_bot_mode to suppress spammy per-frame logs during soak testing
+    action_processor = ActionProcessor(engine.state_manager, is_bot_mode=(input_mode == "bot"))
     action_processor.turn_manager = engine.turn_manager  # Phase 3: Wire up TurnManager
 
     # Reinitialize TurnController with turn_manager now that it's set
@@ -283,7 +310,7 @@ def play_game_with_engine(
     # - renderer.render() exists but is not yet called from main loop
     # - Rendering still via systems (RenderSystem, etc.)
     # =========================================================================
-    input_mode = "bot" if constants.get("input_config", {}).get("bot_enabled") else "keyboard"
+    # input_mode was already detected above (before ActionProcessor creation)
     renderer, input_source = create_renderer_and_input_source(
         sidebar_console=sidebar_console,
         viewport_console=viewport_console,
@@ -302,6 +329,11 @@ def play_game_with_engine(
     # PHASE 2 (RENDERING): ✅ COMPLETE - renderer.render() is called each frame
     # PHASE 3+ (OPTIONAL): System cleanup (not required for functionality)
     while not libtcod.console_is_window_closed():
+        # Pump OS events and throttle frame rate so bot mode doesn't spin
+        # in a tight loop. Keyboard input still works because the pumped
+        # key/mouse objects are handed off to the input source.
+        pump_events_and_sleep(input_source)
+
         # =====================================================================
         # INPUT HANDLING (PHASE 1: COMPLETE)
         # Input comes ONLY from input_source.next_action() - no InputSystem.update()

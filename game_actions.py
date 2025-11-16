@@ -87,14 +87,16 @@ class ActionProcessor:
     # SECTION 1: CORE - Initialization & Main Dispatch (109 lines)
     # ═════════════════════════════════════════════════════════════════════════════
     
-    def __init__(self, state_manager):
+    def __init__(self, state_manager, is_bot_mode=False):
         """Initialize the ActionProcessor.
         
         Args:
             state_manager: Game state manager instance
+            is_bot_mode: If True, suppress per-frame debug logs (for bot mode soak testing)
         """
         self.state_manager = state_manager
         self.turn_manager = None  # Will be set by engine (Phase 3)
+        self.is_bot_mode = is_bot_mode  # Suppress spammy logs in bot mode
         self.constants = get_constants()
         
         # Initialize TurnController for centralized turn flow
@@ -173,17 +175,20 @@ class ActionProcessor:
         
         # Process keyboard actions
         if action:
-            print(f">>> KEYBOARD ACTION RECEIVED: {action}")
+            if not self.is_bot_mode:
+                print(f">>> KEYBOARD ACTION RECEIVED: {action}")
         for action_type, value in action.items():
             # Use 'is not None' instead of just 'value' to handle inventory_index=0
             if value is not None and action_type in self.action_handlers:
                 try:
-                    print(f">>> Calling handler for {action_type}")
+                    if not self.is_bot_mode:
+                        print(f">>> Calling handler for {action_type}")
                     self.action_handlers[action_type](value)
                 except Exception as e:
                     logger.error(f"Error processing action {action_type}: {e}", exc_info=True)
             else:
-                print(f">>> No handler for action {action_type}")
+                if not self.is_bot_mode:
+                    print(f">>> No handler for action {action_type}")
         
         # Process mouse actions
         for mouse_action_type, value in mouse_action.items():

@@ -2,6 +2,10 @@
 
 This test verifies that bot mode doesn't enter infinite loops and properly
 throttles action generation to prevent OS unresponsiveness.
+
+Note: These tests are updated for Phase 1 behavior where the bot triggers
+auto-explore instead of just waiting. The bot returns {'wait': True} as a
+fallback only when it cannot access the player or auto-explore component.
 """
 
 import time
@@ -21,14 +25,17 @@ class TestBotModeThrottle:
         With action_interval=3, bot returns action on every 3rd call:
         - Call 1: counter 0→1, 1 >= 3? No, return {}
         - Call 2: counter 1→2, 2 >= 3? No, return {}
-        - Call 3: counter 2→3, 3 >= 3? Yes, return {'wait': True}, reset to 0
+        - Call 3: counter 2→3, 3 >= 3? Yes, return {'start_auto_explore': True}, reset to 0
         - Call 4: counter 0→1, 1 >= 3? No, return {}
         """
         bot = BotInputSource(action_interval=3)
         
-        # Create mock game state in PLAYERS_TURN
+        # Create mock game state in PLAYERS_TURN with player
         mock_state = Mock()
         mock_state.current_state = GameStates.PLAYERS_TURN
+        mock_player = Mock()
+        mock_player.get_component_optional = Mock(return_value=None)  # No auto-explore yet
+        mock_state.player = mock_player
         
         # First call: counter 0→1, should return empty (throttling)
         action1 = bot.next_action(mock_state)
@@ -40,7 +47,7 @@ class TestBotModeThrottle:
         
         # Third call: counter 2→3, should return action
         action3 = bot.next_action(mock_state)
-        assert action3 == {'wait': True}, "Call 3 should return action (counter 3 >= 3)"
+        assert action3 == {'start_auto_explore': True}, "Call 3 should trigger auto-explore (counter 3 >= 3)"
         
         # Fourth call: counter 0→1 (reset), should return empty (throttling)
         action4 = bot.next_action(mock_state)
@@ -61,8 +68,11 @@ class TestBotModeThrottle:
         
         # Test PLAYERS_TURN state - with action_interval=1, first call returns action
         mock_state.current_state = GameStates.PLAYERS_TURN
+        mock_player = Mock()
+        mock_player.get_component_optional = Mock(return_value=None)  # No auto-explore yet
+        mock_state.player = mock_player
         action = bot.next_action(mock_state)
-        assert action == {'wait': True}, "Should return wait action during PLAYERS_TURN (counter 0→1, 1>=1)"
+        assert action == {'start_auto_explore': True}, "Should trigger auto-explore during PLAYERS_TURN (counter 0→1, 1>=1)"
         
         # Test SHOW_INVENTORY state
         mock_state.current_state = GameStates.SHOW_INVENTORY
@@ -82,25 +92,22 @@ class TestBotModeThrottle:
         action = bot.next_action(mock_state)
         assert action == {}, "Should return empty action for invalid state"
     
-    def test_bot_sleep_duration(self):
-        """Bot should sleep for approximately 16ms when generating actions.
-        
-        With action_interval=1, first call should return action with sleep.
-        """
+    def test_bot_does_not_block_when_returning_actions(self):
+        """Bot should not block; pacing is handled by the main loop."""
         bot = BotInputSource(action_interval=1)
-        
+
         mock_state = Mock()
         mock_state.current_state = GameStates.PLAYERS_TURN
-        
-        # With action_interval=1, first call returns action with sleep
+        mock_player = Mock()
+        mock_player.get_component_optional = Mock(return_value=None)  # No auto-explore yet
+        mock_state.player = mock_player
+
         start = time.time()
         action = bot.next_action(mock_state)
         duration = time.time() - start
-        
-        # Should sleep for ~16ms (0.016s), allow some variance
-        assert action == {'wait': True}, "First call should return action (counter 0→1, 1>=1)"
-        assert duration >= 0.015, f"Sleep duration too short: {duration}"
-        assert duration <= 0.025, f"Sleep duration too long: {duration}"
+
+        assert action == {'start_auto_explore': True}, "First call should trigger auto-explore (counter 0→1, 1>=1)"
+        assert duration < 0.005, f"Bot action generation should not block, took {duration}s"
     
     def test_default_action_interval(self):
         """Bot should use action_interval=1 by default."""
@@ -113,7 +120,7 @@ class TestBotModeThrottle:
         
         With action_interval=5:
         - Calls 1-4: counter 1,2,3,4 (all < 5), return {}
-        - Call 5: counter 5 (>= 5), return {'wait': True}, reset
+        - Call 5: counter 5 (>= 5), return {'start_auto_explore': True}, reset
         - Call 6: counter 1 (< 5), return {}
         """
         bot = BotInputSource(action_interval=5)
@@ -122,6 +129,9 @@ class TestBotModeThrottle:
         
         mock_state = Mock()
         mock_state.current_state = GameStates.PLAYERS_TURN
+        mock_player = Mock()
+        mock_player.get_component_optional = Mock(return_value=None)  # No auto-explore yet
+        mock_state.player = mock_player
         
         # Should throttle for first 4 calls, then return action on 5th
         for i in range(6):
@@ -129,7 +139,7 @@ class TestBotModeThrottle:
             if i < 4:
                 assert action == {}, f"Call {i+1} should be throttled (counter {i+1} < 5)"
             elif i == 4:
-                assert action == {'wait': True}, f"Call 5 should return action (counter 5 >= 5)"
+                assert action == {'start_auto_explore': True}, f"Call 5 should trigger auto-explore (counter 5 >= 5)"
             else:
                 assert action == {}, f"Call 6 should be throttled (counter reset to 1)"
 
@@ -142,16 +152,19 @@ class TestBotModeTurnTransitions:
         
         With action_interval=2:
         - Call 1: counter 0→1, 1 < 2, return {}
-        - Call 2: counter 1→2, 2 >= 2, return {'wait': True}, reset to 0
+        - Call 2: counter 1→2, 2 >= 2, return {'start_auto_explore': True}, reset to 0
         - Call 3: counter 0→1, 1 < 2, return {}
-        - Call 4: counter 1→2, 2 >= 2, return {'wait': True}, reset to 0
+        - Call 4: counter 1→2, 2 >= 2, return {'start_auto_explore': True}, reset to 0
         - ...
-        Pattern: [{}, {'wait': True}] repeated
+        Pattern: [{}, {'start_auto_explore': True}] repeated
         """
         bot = BotInputSource(action_interval=2)
         
         mock_state = Mock()
         mock_state.current_state = GameStates.PLAYERS_TURN
+        mock_player = Mock()
+        mock_player.get_component_optional = Mock(return_value=None)  # No auto-explore yet
+        mock_state.player = mock_player
         
         # Simulate 10 frames and track pattern
         actions = []
@@ -159,8 +172,8 @@ class TestBotModeTurnTransitions:
             action = bot.next_action(mock_state)
             actions.append(action)
         
-        # With action_interval=2, pattern should be: {}, {'wait': True}, {}, {'wait': True}, ...
-        expected_pattern = [{}, {'wait': True}] * 5
+        # With action_interval=2, pattern should be: {}, {'start_auto_explore': True}, ...
+        expected_pattern = [{}, {'start_auto_explore': True}] * 5
         assert actions == expected_pattern, f"Action pattern should be predictable: {actions}"
     
     def test_bot_mode_no_actions_in_non_player_states(self):
