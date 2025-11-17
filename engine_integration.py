@@ -6,6 +6,28 @@ architecture and the existing game loop, allowing for gradual migration.
 After the renderer/input abstraction refactoring, the game loop is decoupled
 from specific rendering and input technologies through the Renderer and
 InputSource protocols defined in io_layer/interfaces.py.
+
+LIBTCOD LIFECYCLE ASSUMPTIONS:
+-------------------------------
+play_game_with_engine() assumes that the libtcod root console has ALREADY been
+initialized by the caller (either engine.py main() or engine/soak_harness.py).
+
+It does NOT initialize libtcod itself. It only:
+1. Creates the GameEngine and systems
+2. Creates ConsoleRenderer (which wraps existing consoles)
+3. Runs the game loop with rendering via ConsoleRenderer.render()
+
+ConsoleRenderer.render() calls libtcod.console_flush(), which REQUIRES a valid
+root console. If the root console doesn't exist, flush() will crash with:
+"Console must not be NULL or root console must exist."
+
+Callers are responsible for:
+- Calling console_set_custom_font() before console_init_root()
+- Calling console_init_root() to create the root console
+- Creating viewport/sidebar/status consoles with console_new()
+- Passing those consoles to play_game_with_engine()
+
+See engine.py and engine/soak_harness.py for examples of proper initialization.
 """
 
 import logging
@@ -417,6 +439,31 @@ def play_game_with_engine(
 
         # Use the new action processor for clean, modular action handling
         action_processor.process_actions(action, mouse_action)
+        
+        # Phase 1.6: Check for bot run abort signal (floor fully explored in soak mode)
+        # This is a bot-only terminal condition that should exit the current run
+        if engine.state_manager.get_extra_data("bot_abort_run"):
+            logger.info("Bot abort run detected - finalizing run with bot_completed outcome")
+            
+            # End telemetry for current floor
+            from services.telemetry_service import get_telemetry_service
+            telemetry_service = get_telemetry_service()
+            if telemetry_service and telemetry_service.enabled:
+                telemetry_service.end_floor()
+                logger.info("Telemetry ended for floor on bot abort")
+            
+            # Finalize run metrics with bot_completed outcome
+            from instrumentation.run_metrics import finalize_run_metrics
+            player = engine.state_manager.state.player
+            game_map = engine.state_manager.state.game_map
+            run_metrics = finalize_run_metrics("bot_completed", player, game_map)
+            if run_metrics:
+                engine.state_manager.state.run_metrics = run_metrics
+                logger.info(f"Run metrics finalized on bot abort: {run_metrics.run_id}")
+            
+            # Clean up and return with bot_completed outcome
+            engine.stop()
+            return {"bot_completed": True}
         
         # Handle victory condition states
         current_state = engine.state_manager.state.current_state

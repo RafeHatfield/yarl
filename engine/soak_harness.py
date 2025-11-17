@@ -8,6 +8,27 @@ Phase 1.6: Bot Soak Harness
 - Capture run_metrics and telemetry per run
 - Aggregate session-level statistics
 - Write per-run telemetry to JSONL format
+
+LIBTCOD LIFECYCLE FOR BOT SOAK MODE:
+------------------------------------
+Bot soak mode requires a valid libtcod root console for the renderer to work.
+The lifecycle is:
+
+1. INITIALIZATION (once per session):
+   - run_bot_soak() calls _initialize_libtcod_for_soak() ONCE at session start
+   - This creates the root console and font setup needed for console_flush()
+   
+2. PER-RUN (N times):
+   - Each run creates its own viewport/sidebar/status consoles with console_new()
+   - play_game_with_engine() renders normally using the shared root console
+   - Consoles are automatically cleaned up by libtcod when the run ends
+   
+3. TEARDOWN (once per session):
+   - No explicit teardown needed - root console persists until process exit
+   - This is safe and matches normal mode behavior
+
+This approach ensures ConsoleRenderer.render() → console_flush() never crashes
+with "Console must not be NULL or root console must exist" errors.
 """
 
 import logging
@@ -17,6 +38,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 import json
+import tcod.libtcodpy as libtcod
 
 logger = logging.getLogger(__name__)
 
@@ -164,6 +186,40 @@ class SoakSessionResult:
                       f"{run.deepest_floor:<7} {run.monsters_killed:<7} {exception_str}")
 
 
+def _initialize_libtcod_for_soak(constants: Dict[str, Any]) -> None:
+    """Initialize libtcod root console for bot soak mode.
+    
+    This function must be called ONCE at the start of a soak session to create
+    the libtcod root console. Without this, ConsoleRenderer.render() will crash
+    when it calls console_flush() because no root console exists.
+    
+    This matches the initialization done in engine.py main() for normal mode,
+    but is isolated here for soak testing.
+    
+    Args:
+        constants: Game constants dictionary with screen dimensions and window title
+    """
+    from config.ui_layout import get_ui_layout
+    
+    ui_layout = get_ui_layout()
+    
+    # Set up font (required before init_root)
+    libtcod.console_set_custom_font(
+        "arial10x10.png", 
+        libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD
+    )
+    
+    # Initialize root console (creates the window/screen context)
+    libtcod.console_init_root(
+        ui_layout.screen_width,
+        ui_layout.screen_height,
+        constants.get("window_title", "Yarl - Bot Soak Testing"),
+        False,  # Not fullscreen
+    )
+    
+    logger.info(f"Libtcod root console initialized: {ui_layout.screen_width}x{ui_layout.screen_height}")
+
+
 def run_bot_soak(
     runs: int,
     telemetry_enabled: bool,
@@ -175,6 +231,27 @@ def run_bot_soak(
     This function orchestrates N sequential bot runs, capturing run_metrics
     and telemetry for each run. It resets global state between runs to ensure
     each run is independent.
+    
+    CRITICAL: SINGLETON SERVICE RESET REQUIREMENTS
+    ================================================
+    Each bot run creates a fresh game (new player, map, entities, state_manager).
+    However, many services are implemented as singletons that hold references to
+    the state_manager or game objects. Without resetting these singletons between
+    runs, run 2+ will use stale references from run 1, causing:
+    - Movement validation against the wrong map (blocked tiles from old map)
+    - Pickup checks against wrong inventory
+    - Stale floor state from previous game
+    
+    Services that MUST be reset before each run:
+    - RunMetricsRecorder: Tracks per-run statistics
+    - TelemetryService: Tracks per-run telemetry data
+    - MovementService: Holds state_manager reference for movement validation
+    - PickupService: Holds state_manager reference for item pickup
+    - FloorStateManager: Tracks cross-floor state (not used in soak but reset for cleanliness)
+    - BotInputSource: Per-run exploration tracking (reset via reset_bot_run_state())
+    
+    If a new singleton service is added that holds game object references,
+    add a reset call in the per-run loop below or you will see cross-run state leakage.
     
     Args:
         runs: Number of bot runs to execute
@@ -194,7 +271,6 @@ def run_bot_soak(
         finalize_run_metrics,
     )
     from game_states import GameStates
-    import tcod.libtcodpy as libtcod
     from config.ui_layout import get_ui_layout
     
     logger.info(f"Starting bot soak session: {runs} runs, telemetry={telemetry_enabled}")
@@ -209,6 +285,11 @@ def run_bot_soak(
     # Enable bot mode in constants
     constants.setdefault("input_config", {})
     constants["input_config"]["bot_enabled"] = True
+    
+    # CRITICAL: Initialize libtcod root console ONCE for the entire session
+    # Without this, ConsoleRenderer.render() will crash on console_flush()
+    # because no root console exists. This matches normal mode initialization.
+    _initialize_libtcod_for_soak(constants)
     
     # Get UI layout for console creation
     ui_layout = get_ui_layout()
@@ -232,8 +313,29 @@ def run_bot_soak(
         
         try:
             # Reset global singletons for clean run
+            # CRITICAL: These must be reset before each run to prevent state leakage
+            # between runs. Each run needs fresh service instances that reference
+            # the NEW state_manager for that run, not the old one from previous runs.
             reset_run_metrics_recorder()
             reset_telemetry_service()
+            
+            # Reset movement service (holds reference to state_manager)
+            # Without this, run 2+ will use run 1's stale state_manager for movement
+            # validation, causing all moves to fail against the wrong map
+            from services.movement_service import reset_movement_service
+            reset_movement_service()
+            logger.debug(f"Reset MovementService singleton for run {run_num}")
+            
+            # Reset pickup service (also holds state_manager reference)
+            from services.pickup_service import reset_pickup_service
+            reset_pickup_service()
+            logger.debug(f"Reset PickupService singleton for run {run_num}")
+            
+            # Reset floor state manager (tracks cross-floor state, not needed in soak)
+            # Each bot soak run is a fresh game starting at floor 1
+            from services.floor_state_manager import reset_floor_state_manager
+            reset_floor_state_manager()
+            logger.debug(f"Reset FloorStateManager singleton for run {run_num}")
             
             # Initialize telemetry for this run
             if telemetry_enabled and telemetry_output_path:
@@ -247,13 +349,21 @@ def run_bot_soak(
             player, entities, game_map, message_log, game_state = get_game_variables(constants)
             game_state = GameStates.PLAYERS_TURN
             
+            # Phase 1.6: Reset bot input source state for this run
+            # This clears any exploration tracking from previous runs
+            from io_layer.bot_input import BotInputSource
+            bot_input_source = BotInputSource()
+            bot_input_source.reset_bot_run_state()
+            logger.debug(f"Bot input source state reset for run {run_num}")
+            
             # Create consoles (required for rendering)
             sidebar_console = libtcod.console_new(ui_layout.sidebar_width, ui_layout.screen_height)
             viewport_console = libtcod.console_new(ui_layout.viewport_width, ui_layout.viewport_height)
             status_console = libtcod.console_new(ui_layout.status_panel_width, ui_layout.status_panel_height)
             
             # Play the game in bot mode
-            # Note: play_game_with_engine will return when the run ends (death/quit)
+            # Note: play_game_with_engine will return when the run ends (death/quit/bot_completed)
+            # The return dict may contain bot_completed=True, which indicates the bot finished exploring
             result = play_game_with_engine(
                 player,
                 entities,
@@ -269,6 +379,13 @@ def run_bot_soak(
             # Capture run metrics and telemetry
             run_metrics_recorder = get_run_metrics_recorder()
             run_metrics = run_metrics_recorder.get_metrics() if run_metrics_recorder else None
+            
+            # Phase 1.6: If play_game_with_engine returned bot_completed, ensure run_metrics reflects it
+            # The finalize_run_metrics("bot_completed", ...) should have been called in engine_integration
+            # but verify it's set correctly
+            if result and result.get("bot_completed") and run_metrics:
+                logger.info(f"Run {run_num}: bot_completed outcome confirmed from play_game_with_engine result")
+                # run_metrics should already have outcome="bot_completed" from finalize_run_metrics call
             
             telemetry_stats = telemetry_service.get_stats() if telemetry_service else {}
             

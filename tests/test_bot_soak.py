@@ -205,6 +205,110 @@ class TestSoakSessionResult:
 class TestRunBotSoakIntegration:
     """Integration-ish tests for run_bot_soak (with heavy mocking)."""
     
+    @patch('engine.soak_harness.libtcod.console_init_root')
+    @patch('engine.soak_harness.libtcod.console_set_custom_font')
+    @patch('tcod.libtcodpy.console_new')
+    @patch('loader_functions.initialize_new_game.get_game_variables')
+    @patch('engine_integration.play_game_with_engine')
+    @patch('instrumentation.run_metrics.get_run_metrics_recorder')
+    @patch('services.telemetry_service.get_telemetry_service')
+    @patch('instrumentation.run_metrics.reset_run_metrics_recorder')
+    @patch('services.telemetry_service.reset_telemetry_service')
+    def test_run_bot_soak_initializes_libtcod_root_console(
+        self,
+        mock_reset_telemetry,
+        mock_reset_run_metrics,
+        mock_get_telemetry,
+        mock_get_recorder,
+        mock_play_game,
+        mock_get_game_vars,
+        mock_console_new,
+        mock_set_font,
+        mock_init_root,
+    ):
+        """Test that run_bot_soak initializes libtcod root console before running games.
+        
+        This is the critical fix for the bug where bot-soak mode crashed with:
+        "Console must not be NULL or root console must exist."
+        
+        The fix ensures _initialize_libtcod_for_soak() is called ONCE before any
+        game runs, creating the root console that ConsoleRenderer.render() needs.
+        """
+        # Mock game setup
+        mock_player = Mock()
+        mock_entities = []
+        mock_game_map = Mock()
+        mock_message_log = Mock()
+        mock_game_state = Mock()
+        
+        mock_get_game_vars.return_value = (
+            mock_player, mock_entities, mock_game_map, 
+            mock_message_log, mock_game_state
+        )
+        
+        # Mock play_game returns successfully
+        mock_play_game.return_value = {"restart": False}
+        
+        # Mock run metrics recorder
+        mock_recorder = Mock()
+        mock_run_metrics = Mock()
+        mock_run_metrics.run_id = "test-run"
+        mock_run_metrics.outcome = "death"
+        mock_run_metrics.duration_seconds = 30.0
+        mock_run_metrics.deepest_floor = 2
+        mock_run_metrics.floors_visited = 2
+        mock_run_metrics.monsters_killed = 5
+        mock_run_metrics.tiles_explored = 100
+        mock_run_metrics.steps_taken = 150
+        mock_run_metrics.to_dict.return_value = {}
+        
+        mock_recorder.get_metrics.return_value = mock_run_metrics
+        mock_get_recorder.return_value = mock_recorder
+        
+        # Mock telemetry service
+        mock_telemetry = Mock()
+        mock_telemetry.get_stats.return_value = {
+            'floors': 2,
+            'avg_etp_per_floor': 20.0,
+        }
+        mock_get_telemetry.return_value = mock_telemetry
+        
+        # Mock console creation
+        mock_console_new.return_value = Mock()
+        
+        # Run soak with 2 runs
+        constants = {
+            'input_config': {},
+            'window_title': 'Test Game',
+        }
+        result = run_bot_soak(
+            runs=2,
+            telemetry_enabled=False,
+            telemetry_output_path=None,
+            constants=constants,
+        )
+        
+        # CRITICAL ASSERTIONS: Verify libtcod root console was initialized ONCE
+        # before any game runs started
+        mock_set_font.assert_called_once()
+        mock_init_root.assert_called_once()
+        
+        # Verify initialization happened with correct parameters
+        # (screen dimensions from ui_layout, window title from constants)
+        init_call_args = mock_init_root.call_args
+        assert init_call_args is not None
+        # Args are (width, height, title, fullscreen)
+        assert len(init_call_args[0]) >= 3
+        assert init_call_args[0][2] == 'Test Game'  # window title
+        
+        # Verify runs completed successfully (no crashes due to missing root console)
+        assert result.total_runs == 2
+        assert result.completed_runs == 2
+        assert result.bot_crashes == 0
+        assert len(result.runs) == 2
+    
+    @patch('tcod.libtcodpy.console_init_root')
+    @patch('tcod.libtcodpy.console_set_custom_font')
     @patch('tcod.libtcodpy.console_new')
     @patch('loader_functions.initialize_new_game.get_game_variables')
     @patch('engine_integration.play_game_with_engine')
@@ -221,6 +325,8 @@ class TestRunBotSoakIntegration:
         mock_play_game,
         mock_get_game_vars,
         mock_console_new,
+        mock_set_font,
+        mock_init_root,
     ):
         """Test that run_bot_soak completes N runs successfully."""
         # Mock game setup
@@ -295,6 +401,8 @@ class TestRunBotSoakIntegration:
         assert mock_reset_run_metrics.call_count == 3
         assert mock_reset_telemetry.call_count == 3
     
+    @patch('tcod.libtcodpy.console_init_root')
+    @patch('tcod.libtcodpy.console_set_custom_font')
     @patch('tcod.libtcodpy.console_new')
     @patch('loader_functions.initialize_new_game.get_game_variables')
     @patch('engine_integration.play_game_with_engine')
@@ -311,6 +419,8 @@ class TestRunBotSoakIntegration:
         mock_play_game,
         mock_get_game_vars,
         mock_console_new,
+        mock_set_font,
+        mock_init_root,
     ):
         """Test that run_bot_soak handles exceptions gracefully."""
         # First run succeeds, second run crashes, third run succeeds
@@ -367,4 +477,120 @@ class TestRunBotSoakIntegration:
         assert crashed_run.run_number == 2
         assert crashed_run.outcome == "crash"
         assert crashed_run.exception == "Test crash in run 2"
+    
+    @patch('tcod.libtcodpy.console_init_root')
+    @patch('tcod.libtcodpy.console_set_custom_font')
+    @patch('tcod.libtcodpy.console_new')
+    @patch('loader_functions.initialize_new_game.get_game_variables')
+    @patch('engine_integration.play_game_with_engine')
+    @patch('instrumentation.run_metrics.get_run_metrics_recorder')
+    @patch('services.telemetry_service.get_telemetry_service')
+    @patch('instrumentation.run_metrics.reset_run_metrics_recorder')
+    @patch('services.telemetry_service.reset_telemetry_service')
+    @patch('services.movement_service.reset_movement_service')
+    @patch('services.pickup_service.reset_pickup_service')
+    @patch('services.floor_state_manager.reset_floor_state_manager')
+    def test_run_bot_soak_resets_singleton_services_between_runs(
+        self,
+        mock_reset_floor_state,
+        mock_reset_pickup,
+        mock_reset_movement,
+        mock_reset_telemetry,
+        mock_reset_run_metrics,
+        mock_get_telemetry,
+        mock_get_recorder,
+        mock_play_game,
+        mock_get_game_vars,
+        mock_console_new,
+        mock_set_font,
+        mock_init_root,
+    ):
+        """Test that singleton services are reset between runs to prevent state leakage.
+        
+        This is the critical fix for the bug where run 2+ would fail because
+        MovementService and other singletons held stale references to run 1's
+        state_manager, causing movement validation against the wrong map.
+        
+        The fix ensures reset_*_service() is called for all singleton services
+        before each run starts, so each run gets fresh service instances with
+        the correct state_manager reference.
+        """
+        # Mock game setup
+        mock_player = Mock()
+        mock_player.get_component_optional.return_value = None
+        mock_entities = []
+        mock_game_map = Mock()
+        mock_message_log = Mock()
+        mock_game_state = Mock()
+        
+        mock_get_game_vars.return_value = (
+            mock_player, mock_entities, mock_game_map, 
+            mock_message_log, mock_game_state
+        )
+        
+        # Mock play_game returns successfully
+        mock_play_game.return_value = {"restart": False}
+        
+        # Mock run metrics recorder
+        mock_recorder = Mock()
+        mock_run_metrics = Mock()
+        mock_run_metrics.run_id = "test-run"
+        mock_run_metrics.outcome = "bot_completed"
+        mock_run_metrics.duration_seconds = 30.0
+        mock_run_metrics.deepest_floor = 1
+        mock_run_metrics.floors_visited = 1
+        mock_run_metrics.monsters_killed = 0
+        mock_run_metrics.tiles_explored = 100
+        mock_run_metrics.steps_taken = 150
+        mock_run_metrics.to_dict.return_value = {}
+        
+        mock_recorder.get_metrics.return_value = mock_run_metrics
+        mock_get_recorder.return_value = mock_recorder
+        
+        # Mock telemetry service
+        mock_telemetry = Mock()
+        mock_telemetry.enabled = False
+        mock_telemetry.get_stats.return_value = {
+            'floors': 1,
+            'avg_etp_per_floor': 15.0,
+        }
+        mock_get_telemetry.return_value = mock_telemetry
+        
+        # Mock console creation
+        mock_console_new.return_value = Mock()
+        
+        # Run soak with 3 runs to verify reset happens between each
+        constants = {'input_config': {}}
+        result = run_bot_soak(
+            runs=3,
+            telemetry_enabled=False,
+            telemetry_output_path=None,
+            constants=constants,
+        )
+        
+        # CRITICAL ASSERTIONS: Verify all singleton services were reset before EACH run
+        # This prevents state leakage where run 2+ uses run 1's stale references
+        
+        # Each service should be reset 3 times (once before each of 3 runs)
+        assert mock_reset_run_metrics.call_count == 3, \
+            "RunMetricsRecorder should be reset before each run"
+        assert mock_reset_telemetry.call_count == 3, \
+            "TelemetryService should be reset before each run"
+        assert mock_reset_movement.call_count == 3, \
+            "MovementService should be reset before each run (fixes movement validation bug)"
+        assert mock_reset_pickup.call_count == 3, \
+            "PickupService should be reset before each run"
+        assert mock_reset_floor_state.call_count == 3, \
+            "FloorStateManager should be reset before each run"
+        
+        # Verify all runs completed successfully (no hangs/crashes from stale state)
+        assert result.total_runs == 3
+        assert result.completed_runs == 3
+        assert result.bot_crashes == 0
+        
+        # Verify each run has valid results (not stuck in movement loops)
+        for i, run in enumerate(result.runs, start=1):
+            assert run.run_number == i
+            assert run.outcome == "bot_completed"  # Bot successfully completed exploration
+            assert run.exception is None  # No crashes from stale state
 

@@ -95,6 +95,7 @@ class AutoExplore:
         self.known_items: Set[int] = set()  # IDs of items visible when exploration started
         self.known_monsters: Set[int] = set()  # IDs of monsters visible when exploration started
         self.explored_tiles_at_start: Set[Tuple[int, int]] = set()  # Tiles explored before auto-explore started
+        self.known_stairs: Set[Tuple[int, int]] = set()  # Positions of stairs we've already discovered
     
     def start(self, game_map: 'GameMap', entities: List['Entity'], fov_map=None) -> str:
         """Begin auto-exploring the dungeon.
@@ -122,6 +123,7 @@ class AutoExplore:
         self.known_items = set()  # Reset known items
         self.known_monsters = set()  # Reset known monsters
         self.explored_tiles_at_start = set()  # Reset explored tiles snapshot
+        self.known_stairs = set()  # Reset known stairs
         
         # Store initial HP for damage detection
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
@@ -155,8 +157,13 @@ class AutoExplore:
                     if fighter and fighter.hp > 0:
                         if map_is_in_fov(fov_map, entity.x, entity.y):
                             self.known_monsters.add(id(entity))
+                
+                # Track known stairs (so we only stop for NEW stairs)
+                if entity.components.has(ComponentType.STAIRS):
+                    if map_is_in_fov(fov_map, entity.x, entity.y):
+                        self.known_stairs.add((entity.x, entity.y))
             
-            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items and {len(self.known_monsters)} known monsters in FOV")
+            logger.debug(f"Auto-explore initialized with {len(self.known_items)} known items, {len(self.known_monsters)} known monsters, and {len(self.known_stairs)} known stairs in FOV")
         
         logger.info(f"Auto-explore started for {self.owner.name}")
         return random.choice(ADVENTURE_QUOTES)
@@ -631,24 +638,39 @@ class AutoExplore:
         return None
     
     def _on_stairs(self, entities: List['Entity']) -> bool:
-        """Check if player is standing on stairs.
+        """Check if player is standing on NEW stairs (not already known).
+        
+        This prevents the bot from getting stuck in a loop when it stops on stairs
+        and then tries to restart auto-explore while still standing on them.
         
         Args:
             entities: All entities on the map
             
         Returns:
-            bool: True if on stairs
+            bool: True if on NEW stairs (position not in known_stairs)
         """
         if not self.owner:
             return False
         
         from components.component_registry import ComponentType
         
+        player_pos = (self.owner.x, self.owner.y)
+        
         # Check for stairs entity at player position
         for entity in entities:
             if entity.components.has(ComponentType.STAIRS):
                 if entity.x == self.owner.x and entity.y == self.owner.y:
-                    return True
+                    # Found stairs at player position
+                    # Only stop if these are NEW stairs (not already known)
+                    if player_pos not in self.known_stairs:
+                        # New stairs discovered! Add to known and return True to stop
+                        self.known_stairs.add(player_pos)
+                        logger.debug(f"New stairs discovered at {player_pos}")
+                        return True
+                    else:
+                        # Already knew about these stairs - don't stop
+                        logger.debug(f"Standing on known stairs at {player_pos} - continuing exploration")
+                        return False
         
         return False
     

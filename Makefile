@@ -41,6 +41,18 @@ run-test: clean
 	@echo "🎮 Starting test game with fresh code..."
 	@$(PYTHON) engine.py --testing --start-level 91 --wizard
 # @$(PYTHON) engine.py --testing --start-level 20 --no-monsters --wizard --god-mode --reveal-map
+# python engine.py --telemetry-json output.json
+# python engine.py --bot
+# python3 engine.py --bot-soak
+
+# Run 10 bot games (default)
+# python3 engine.py --bot-soak
+
+# Run custom number of games
+# python3 engine.py --bot-soak --runs 50
+
+# With custom telemetry path
+# python3 engine.py --bot-soak --runs 20 --telemetry-json telemetry/my_soak.json
 
 .DEFAULT_GOAL := help
 

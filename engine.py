@@ -3,6 +3,34 @@
 This module contains the main game loop, event handling, and core
 game logic coordination. It manages the game state, rendering,
 and player input processing.
+
+LIBTCOD LIFECYCLE ACROSS DIFFERENT MODES:
+------------------------------------------
+
+NORMAL MODE (python3 engine.py):
+1. main() calls console_set_custom_font() [line ~258]
+2. main() calls console_init_root() [line ~263] - ROOT CONSOLE CREATED
+3. main() creates sidebar/viewport/status consoles with console_new()
+4. main() enters game loop → play_game_with_engine()
+5. ConsoleRenderer.render() calls console_flush() ✅ WORKS (root exists)
+6. On exit, root console persists until process ends
+
+SINGLE BOT MODE (python3 engine.py --bot):
+1-6. IDENTICAL to normal mode, just uses BotInputSource instead of KeyboardInputSource
+
+BOT SOAK MODE (python3 engine.py --bot-soak):
+1. main() detects --bot-soak flag early [line ~167]
+2. main() calls run_bot_soak() which:
+   a. Calls _initialize_libtcod_for_soak() ONCE - ROOT CONSOLE CREATED
+   b. Loops N times, each iteration:
+      - Creates new viewport/sidebar/status consoles
+      - Calls play_game_with_engine()
+      - ConsoleRenderer.render() calls console_flush() ✅ WORKS (root exists)
+3. After all runs complete, returns to main() which exits
+4. Root console persists until process ends
+
+The key fix: bot-soak now initializes the root console via _initialize_libtcod_for_soak()
+before running any games, preventing "Console must not be NULL" crashes.
 """
 
 import argparse
