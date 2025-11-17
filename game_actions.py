@@ -119,6 +119,7 @@ class ActionProcessor:
             'start_auto_explore': self._handle_start_auto_explore,
             'throw': self._handle_throw_action,
             'search': self._handle_search,
+            'bot_abort_run': self._handle_bot_abort_run,  # Phase 1.6: End bot run in soak mode
         }
         
         # Map mouse actions to their handlers
@@ -294,6 +295,31 @@ class ActionProcessor:
         )
         
         logger.info("Auto-explore started")
+    
+    def _handle_bot_abort_run(self, _) -> None:
+        """Handle bot run abort signal (Phase 1.6: Bot Soak Harness).
+        
+        When the bot reaches a terminal condition (floor fully explored with no way
+        to continue in soak mode), this handler signals the end of the run by:
+        1. Logging the completion reason
+        2. Setting a special marker in engine state so play_game_with_engine can detect it
+        3. Allowing the game loop to exit gracefully
+        
+        This is a bot-only action that never occurs in normal human gameplay.
+        In normal --bot mode (single run), this will just quietly exit.
+        In --bot-soak mode, the soak harness will record this as a "bot_completed" outcome.
+        """
+        logger.info("Bot abort run signal received - floor fully explored, ending run")
+        
+        # Set marker so play_game_with_engine knows to exit with bot_completed outcome
+        self.state_manager.set_extra_data("bot_abort_run", True)
+        
+        # Add message to log if in normal --bot mode (for visibility)
+        message_log = self.state_manager.state.message_log
+        if message_log:
+            message_log.add_message(
+                MB.system("🤖 Floor fully explored. Bot run complete.")
+            )
     
     def _handle_exit(self, _) -> None:
         """Handle exit actions based on current game state.

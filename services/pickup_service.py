@@ -192,3 +192,13 @@ def get_pickup_service(state_manager=None):
         _pickup_service = PickupService(state_manager)
     return _pickup_service
 
+
+def reset_pickup_service() -> None:
+    """Reset the global pickup service instance.
+    
+    This should be called between bot soak runs to ensure each run gets a fresh
+    service instance with the correct state_manager reference.
+    """
+    global _pickup_service
+    _pickup_service = None
+

@@ -5,9 +5,12 @@ for automated/bot play modes. Phase 1 implements auto-exploration behavior, allo
 the bot to systematically explore the dungeon.
 """
 
+import logging
 from typing import Any, Optional
 
 from io_layer.interfaces import ActionDict, InputSource
+
+logger = logging.getLogger(__name__)
 
 
 class BotInputSource:
@@ -40,6 +43,9 @@ class BotInputSource:
         self._frame_counter = 0
         self._action_interval = action_interval
         self._auto_explore_started = False
+        self._failed_explore_attempts = 0  # Track consecutive failed explore start attempts on "fully explored"
+        self._last_auto_explore_active = False  # Track if autoexplore was active last call
+        self._fully_explored_detected = False  # Track if we've detected "All areas explored" condition
 
     def next_action(self, game_state: Any) -> ActionDict:
         """Return the next bot action using auto-explore behavior.
@@ -101,10 +107,51 @@ class BotInputSource:
         if auto_explore and auto_explore.is_active():
             # Auto-explore is running - let ActionProcessor._process_auto_explore_turn() handle it
             # We return {} because the action processor automatically processes auto-explore turns
+            self._last_auto_explore_active = True
             return {}
         
-        # Auto-explore is not active - trigger it
-        # The ActionProcessor will handle creating/initializing the component if needed
+        # Auto-explore is not active - check if we can even start it
+        # If autoexplore was active last frame and is now inactive, it completed or stopped
+        if self._last_auto_explore_active and auto_explore and not auto_explore.is_active():
+            # AutoExplore was just stopped - check the stop reason
+            stop_reason = auto_explore.stop_reason or ""
+            logger.debug(f"AutoExplore just stopped: {stop_reason}")
+            
+            # If it stopped because "All areas explored", we've reached a terminal condition in soak mode
+            if "All areas explored" in stop_reason:
+                self._fully_explored_detected = True
+                logger.info(f"Bot soak: Floor fully explored condition detected")
+            else:
+                # Different stop reason - not a "fully explored" scenario
+                self._fully_explored_detected = False
+                self._failed_explore_attempts = 0
+        
+        # If we're in the "fully explored" state, track failed restart attempts
+        if self._fully_explored_detected:
+            # After 3 failed restart attempts on a fully explored floor, signal end of run
+            if self._failed_explore_attempts >= 3:
+                logger.info("Bot soak: Ending run - floor fully explored and cannot restart autoexplore after 3 failed attempts")
+                self._failed_explore_attempts = 0
+                self._fully_explored_detected = False
+                self._last_auto_explore_active = False
+                return {'bot_abort_run': True}
+            
+            # Log this restart attempt and increment counter
+            self._failed_explore_attempts += 1
+            logger.info(f"Bot soak: Floor fully explored. Restart attempt #{self._failed_explore_attempts}")
+        
+        # Try to start auto-explore (this will fail if map is fully explored, but we keep trying)
         self._auto_explore_started = True
+        self._last_auto_explore_active = False
         return {'start_auto_explore': True}
+    
+    def reset_bot_run_state(self) -> None:
+        """Reset bot run state for a new run.
+        
+        Called when starting a fresh bot run to clear exploration attempt tracking.
+        """
+        self._failed_explore_attempts = 0
+        self._last_auto_explore_active = False
+        self._auto_explore_started = False
+        self._fully_explored_detected = False
 

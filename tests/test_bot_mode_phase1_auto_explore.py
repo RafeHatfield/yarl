@@ -139,11 +139,13 @@ class TestBotModePhase1AutoExplore:
         
         # First turn: auto-explore is active
         mock_auto_explore.is_active = Mock(return_value=True)
+        mock_auto_explore.stop_reason = None  # Not stopped yet
         action1 = self.bot_input.next_action(self.mock_game_state)
         assert action1 == {}
         
         # Second turn: auto-explore stopped (e.g., found monster)
         mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "Monster spotted: Orc"  # Stopped due to monster
         action2 = self.bot_input.next_action(self.mock_game_state)
         assert action2 == {'start_auto_explore': True}
 

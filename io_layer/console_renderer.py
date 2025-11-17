@@ -209,6 +209,12 @@ class ConsoleRenderer:
                 effect_queue.play_all(con=0, camera=camera)
 
         # Flush console to display (single flush per frame - canonical renderer only!)
+        # CRITICAL: console_flush() REQUIRES a valid libtcod root console!
+        # If console_init_root() was never called, this will crash with:
+        # "Console must not be NULL or root console must exist."
+        # 
+        # The caller (engine.py or soak_harness.py) is responsible for calling
+        # console_init_root() before creating a ConsoleRenderer instance.
         import warnings
 
         with warnings.catch_warnings():

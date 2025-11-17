@@ -3,6 +3,34 @@
 This module contains the main game loop, event handling, and core
 game logic coordination. It manages the game state, rendering,
 and player input processing.
+
+LIBTCOD LIFECYCLE ACROSS DIFFERENT MODES:
+------------------------------------------
+
+NORMAL MODE (python3 engine.py):
+1. main() calls console_set_custom_font() [line ~258]
+2. main() calls console_init_root() [line ~263] - ROOT CONSOLE CREATED
+3. main() creates sidebar/viewport/status consoles with console_new()
+4. main() enters game loop → play_game_with_engine()
+5. ConsoleRenderer.render() calls console_flush() ✅ WORKS (root exists)
+6. On exit, root console persists until process ends
+
+SINGLE BOT MODE (python3 engine.py --bot):
+1-6. IDENTICAL to normal mode, just uses BotInputSource instead of KeyboardInputSource
+
+BOT SOAK MODE (python3 engine.py --bot-soak):
+1. main() detects --bot-soak flag early [line ~167]
+2. main() calls run_bot_soak() which:
+   a. Calls _initialize_libtcod_for_soak() ONCE - ROOT CONSOLE CREATED
+   b. Loops N times, each iteration:
+      - Creates new viewport/sidebar/status consoles
+      - Calls play_game_with_engine()
+      - ConsoleRenderer.render() calls console_flush() ✅ WORKS (root exists)
+3. After all runs complete, returns to main() which exits
+4. Root console persists until process ends
+
+The key fix: bot-soak now initializes the root console via _initialize_libtcod_for_soak()
+before running any games, preventing "Console must not be NULL" crashes.
 """
 
 import argparse
@@ -132,6 +160,21 @@ Examples:
         help='Enable bot/autoplay input source instead of keyboard input'
     )
     
+    # Bot soak testing (Phase 1.6)
+    parser.add_argument(
+        '--bot-soak',
+        action='store_true',
+        help='Run multiple bot games back-to-back for soak testing (implies --bot)'
+    )
+    
+    parser.add_argument(
+        '--runs',
+        type=int,
+        default=10,
+        metavar='N',
+        help='Number of bot runs to execute when --bot-soak is active (default: 10)'
+    )
+    
     return parser.parse_args()
 
 
@@ -147,6 +190,35 @@ def main():
     
     # Parse command line arguments
     args = parse_arguments()
+    
+    # Phase 1.6: Handle bot soak mode early (before rendering setup)
+    if args.bot_soak:
+        # Bot soak runs headless-ish (no main menu, direct to harness)
+        # Force bot mode and enable telemetry
+        from engine.soak_harness import run_bot_soak
+        
+        # Enable telemetry (required for soak data collection)
+        telemetry_path = args.telemetry_json or "telemetry/soak_output.json"
+        
+        print(f"🧪 BOT SOAK MODE: Running {args.runs} bot games")
+        print(f"📊 Telemetry enabled: {telemetry_path}")
+        
+        # Get constants (needed for game initialization)
+        constants = get_constants()
+        
+        # Run soak harness
+        session_result = run_bot_soak(
+            runs=args.runs,
+            telemetry_enabled=True,
+            telemetry_output_path=telemetry_path,
+            constants=constants,
+        )
+        
+        # Print session summary
+        session_result.print_summary()
+        
+        # Exit without launching interactive mode
+        return
     
     # Validate that debug flags require --testing
     if (args.start_level or args.god_mode or args.no_monsters or args.reveal_map or args.wizard) and not args.testing:
