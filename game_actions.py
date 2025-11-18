@@ -365,11 +365,20 @@ class ActionProcessor:
         """
         player = self.state_manager.state.player
         if not player:
+            logger.debug("ActionProcessor._process_auto_explore_turn: no player")
             return
         
         auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
-        if not auto_explore or not auto_explore.is_active():
+        if not auto_explore:
+            logger.debug("ActionProcessor._process_auto_explore_turn: no auto_explore component")
             return
+        
+        if not auto_explore.is_active():
+            logger.debug("ActionProcessor._process_auto_explore_turn: auto_explore not active")
+            return
+        
+        player_pos = (player.x, player.y)
+        logger.debug(f"ActionProcessor._process_auto_explore_turn: processing at {player_pos}, active={auto_explore.is_active()}")
         
         # Get next action from auto-explore
         action = auto_explore.get_next_action(
@@ -381,6 +390,7 @@ class ActionProcessor:
         if action is None:
             # Auto-explore stopped
             reason = auto_explore.stop_reason or "Unknown reason"
+            logger.debug(f"ActionProcessor._process_auto_explore_turn: auto_explore stopped at {player_pos}, reason='{reason}'")
             self.state_manager.state.message_log.add_message(
                 MB.system(f"Auto-explore stopped: {reason}")
             )
@@ -389,6 +399,8 @@ class ActionProcessor:
         # Execute the movement
         dx = action.get('dx', 0)
         dy = action.get('dy', 0)
+        
+        logger.debug(f"ActionProcessor._process_auto_explore_turn: moving from {player_pos} by ({dx},{dy})")
         
         if dx != 0 or dy != 0:
             # Use the normal movement handler
