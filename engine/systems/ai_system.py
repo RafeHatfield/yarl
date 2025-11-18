@@ -164,7 +164,7 @@ class AISystem(System):
             # ENEMY TURN PROCESSING - SIMPLIFIED, BOUNDED, DETERMINISTIC
             # ═════════════════════════════════════════════════════════════════
             
-            # Determine if AI should be disabled (Phase 0 bot mode)
+            # Determine if AI should be disabled (Phase 2: only in bot soak mode, not regular bot mode)
             disable_ai = getattr(self.engine, "disable_enemy_ai_for_bot", False)
             
             if not disable_ai:

@@ -9,6 +9,7 @@ import logging
 from typing import Any, Optional
 
 from io_layer.interfaces import ActionDict, InputSource
+from io_layer.bot_brain import BotBrain
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +32,14 @@ class BotInputSource:
         _auto_explore_started: Tracks if we've attempted to start auto-explore this session
     """
 
-    def __init__(self, action_interval: int = 1) -> None:
+    def __init__(self, action_interval: int = 1, debug: bool = False) -> None:
         """Initialize the BotInputSource.
 
         Args:
             action_interval: Number of frames to wait between actions. The bot
                              will emit an action every Nth call when the game
                              is in PLAYERS_TURN.
+            debug: Enable debug logging in BotBrain
         """
         self._initialized = True
         self._frame_counter = 0
@@ -46,26 +48,44 @@ class BotInputSource:
         self._failed_explore_attempts = 0  # Track consecutive failed explore start attempts on "fully explored"
         self._last_auto_explore_active = False  # Track if autoexplore was active last call
         self._fully_explored_detected = False  # Track if we've detected "All areas explored" condition
+        self.bot_brain = BotBrain(debug=debug)
+    
+    def _is_soak_mode(self, game_state: Any) -> bool:
+        """Check if we are in bot soak mode.
+        
+        Soak mode is detected via game_state.constants["bot_soak_mode"] flag.
+        In soak mode, enemies are disabled and bot should only explore, never engage in combat.
+        
+        Args:
+            game_state: Game state object with constants dict
+            
+        Returns:
+            True if in soak mode, False otherwise
+        """
+        if not game_state or not hasattr(game_state, 'constants'):
+            return False
+        
+        constants = getattr(game_state, 'constants', {})
+        return constants.get("bot_soak_mode", False)
 
     def next_action(self, game_state: Any) -> ActionDict:
-        """Return the next bot action using auto-explore behavior.
+        """Return the next bot action using auto-explore behavior with BotBrain delegation.
 
-        Phase 1 Strategy:
-        1. If in PLAYERS_TURN and auto-explore is NOT active:
-           - Trigger auto-explore via {'start_auto_explore': True}
-        2. If auto-explore IS active:
-           - Return {} to let ActionProcessor._process_auto_explore_turn() handle it
-        3. If not in PLAYERS_TURN or game_state invalid:
-           - Return {} to prevent infinite loops
+        Phase 1 + Phase 2 Strategy:
+        1. Check if in PLAYERS_TURN and throttling allows action
+        2. If auto-explore IS active: return {} immediately (Phase 1)
+        3. Try BotBrain delegation for EXPLORE/COMBAT/LOOT decisions (Phase 2)
+        4. Fall back to Phase 1 auto-explore behavior if BotBrain unavailable or fails
+        5. Handle soak-specific terminal conditions
         
         Args:
             game_state: The current game state object with player, entities, map, etc.
 
         Returns:
             ActionDict: 
-                - {'start_auto_explore': True} - to initiate auto-explore
+                - {'start_auto_explore': True} - to initiate auto-explore (Phase 1)
                 - {} - when auto-explore is active or not in playing state
-                - {'wait': True} - fallback if auto-explore cannot be started
+                - Other BotBrain actions (Phase 2) or bot_abort_run (soak)
         """
         # CRITICAL: Only return actions during PLAYERS_TURN
         # When in PLAYER_DEAD, menus, or other non-playing states, return empty action
@@ -92,58 +112,83 @@ class BotInputSource:
         
         self._frame_counter = 0
         
-        # Get player entity
+        # Get player entity for auto-explore check and soak-related tracking
         player = getattr(game_state, 'player', None)
         if not player:
             return {'wait': True}
         
-        # Check if auto-explore is already active
-        # Defensive: ensure player has get_component_optional method
-        if not hasattr(player, 'get_component_optional'):
+        # REQUIRED FIX 1: Defensive fallback for missing get_component_optional method
+        if not hasattr(player, "get_component_optional"):
             return {'wait': True}
         
-        auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+        # AUTO-EXPLORE SHORT-CIRCUIT (Phase 1 compatibility)
+        # Check if auto-explore is already active
+        auto_explore = None
+        auto_explore_active = False
         
-        if auto_explore and auto_explore.is_active():
-            # Auto-explore is running - let ActionProcessor._process_auto_explore_turn() handle it
-            # We return {} because the action processor automatically processes auto-explore turns
-            self._last_auto_explore_active = True
-            return {}
+        if hasattr(player, 'get_component_optional') and callable(player.get_component_optional):
+            try:
+                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                auto_explore_active = auto_explore and callable(getattr(auto_explore, 'is_active', None)) and auto_explore.is_active()
+            except (AttributeError, TypeError):
+                # Player is a mock or incomplete - will use fallback below
+                auto_explore_active = False
         
-        # Auto-explore is not active - check if we can even start it
-        # If autoexplore was active last frame and is now inactive, it completed or stopped
-        if self._last_auto_explore_active and auto_explore and not auto_explore.is_active():
-            # AutoExplore was just stopped - check the stop reason
-            stop_reason = auto_explore.stop_reason or ""
-            logger.debug(f"AutoExplore just stopped: {stop_reason}")
+        # SOAK MODE CHECK: In soak mode, use simplified auto-explore-only behavior
+        # Non-soak mode delegates to BotBrain for combat-enabled behavior
+        if self._is_soak_mode(game_state):
+            # Soak mode: Simplified deterministic algorithm
+            # a. If auto-explore is active, let it run
+            if auto_explore_active:
+                self._last_auto_explore_active = True
+                self._fully_explored_detected = False
+                self._failed_explore_attempts = 0
+                return {}
             
-            # If it stopped because "All areas explored", we've reached a terminal condition in soak mode
-            if "All areas explored" in stop_reason:
-                self._fully_explored_detected = True
-                logger.info(f"Bot soak: Floor fully explored condition detected")
+            # b. If auto-explore exists but is inactive, check stop_reason
+            if auto_explore is not None:
+                stop_reason = getattr(auto_explore, "stop_reason", None)
+                
+                # If floor fully explored → immediately end run
+                if stop_reason == "All areas explored":
+                    logger.info("Bot soak: Floor fully explored - ending run immediately")
+                    return {"bot_abort_run": True}
+                
+                # Otherwise, auto-explore stopped for some other reason - restart it
+                self._auto_explore_started = True
+                self._last_auto_explore_active = auto_explore_active
+                return {"start_auto_explore": True}
+            
+            # c. If auto-explore is None, initialize it
+            self._auto_explore_started = True
+            self._last_auto_explore_active = auto_explore_active
+            return {"start_auto_explore": True}
+        else:
+            # Non-soak bot mode: Use BotBrain for combat-enabled behavior (Phase 2)
+            # Do not emit bot_abort_run in non-soak mode
+            action = None
+            try:
+                action = self.bot_brain.decide_action(game_state)
+            except Exception as e:
+                # BotBrain raised an exception - will use fallback
+                logger.debug(f"BotBrain.decide_action raised exception: {e}, falling back to Phase 1")
+                action = None
+            
+            # If BotBrain returned a valid action dict, use it
+            if isinstance(action, dict) and action:
+                # BotBrain returned a non-empty action (Phase 2 behavior)
+                self._auto_explore_started = True
+                self._last_auto_explore_active = auto_explore_active
+                return action
+            
+            # Fallback: Start auto-explore if available
+            if auto_explore is not None or hasattr(player, 'get_component_optional'):
+                self._auto_explore_started = True
+                self._last_auto_explore_active = auto_explore_active
+                return {"start_auto_explore": True}
             else:
-                # Different stop reason - not a "fully explored" scenario
-                self._fully_explored_detected = False
-                self._failed_explore_attempts = 0
-        
-        # If we're in the "fully explored" state, track failed restart attempts
-        if self._fully_explored_detected:
-            # After 3 failed restart attempts on a fully explored floor, signal end of run
-            if self._failed_explore_attempts >= 3:
-                logger.info("Bot soak: Ending run - floor fully explored and cannot restart autoexplore after 3 failed attempts")
-                self._failed_explore_attempts = 0
-                self._fully_explored_detected = False
-                self._last_auto_explore_active = False
-                return {'bot_abort_run': True}
-            
-            # Log this restart attempt and increment counter
-            self._failed_explore_attempts += 1
-            logger.info(f"Bot soak: Floor fully explored. Restart attempt #{self._failed_explore_attempts}")
-        
-        # Try to start auto-explore (this will fail if map is fully explored, but we keep trying)
-        self._auto_explore_started = True
-        self._last_auto_explore_active = False
-        return {'start_auto_explore': True}
+                self._last_auto_explore_active = auto_explore_active
+                return {}
     
     def reset_bot_run_state(self) -> None:
         """Reset bot run state for a new run.

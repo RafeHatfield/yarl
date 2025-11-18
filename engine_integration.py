@@ -102,6 +102,7 @@ def create_renderer_and_input_source(
     status_console: Any,
     colors: dict,
     input_mode: str = "keyboard",
+    constants: dict = None,
 ) -> tuple[Renderer, InputSource]:
     """Create renderer and input source instances.
 
@@ -116,6 +117,7 @@ def create_renderer_and_input_source(
         status_console: libtcod console for status panel
         colors: Color configuration dictionary
         input_mode: Input source mode - "keyboard" (default) or "bot" for autoplay
+        constants: Game constants dictionary (optional, needed for bot debug flag)
 
     Returns:
         tuple: (Renderer instance, InputSource instance)
@@ -128,7 +130,13 @@ def create_renderer_and_input_source(
     )
 
     if input_mode == "bot":
-        input_source: InputSource = BotInputSource()
+        # Extract bot debug flag from constants
+        bot_debug = False
+        if constants:
+            bot_config = constants.get("bot_config")
+            if isinstance(bot_config, dict):
+                bot_debug = bool(bot_config.get("debug", False))
+        input_source: InputSource = BotInputSource(action_interval=1, debug=bot_debug)
     else:
         input_source: InputSource = KeyboardInputSource()
 
@@ -339,12 +347,19 @@ def play_game_with_engine(
         status_console=status_console,
         colors=constants["colors"],
         input_mode=input_mode,
+        constants=constants,
     )
     
-    # Phase 0 bot mode: Disable enemy AI when running in bot mode for soak/stability testing
+    # Differentiate regular bot mode from soak bot mode
     if input_mode == "bot":
-        engine.disable_enemy_ai_for_bot = True
-        logger.info("BOT MODE ENABLED: Enemy AI disabled, bot input source active")
+        engine.bot_mode = True
+        engine.bot_soak_mode = constants.get("bot_soak_mode", False)
+        engine.disable_enemy_ai_for_bot = engine.bot_soak_mode
+        
+        if engine.bot_soak_mode:
+            logger.info("BOT SOAK MODE: Enemy AI disabled for stability testing")
+        else:
+            logger.info("BOT MODE: Enemy AI enabled, bot will fight monsters")
 
     # Main game loop
     # PHASE 1 (INPUT): ✅ COMPLETE - input_source.next_action() is the primary input path
