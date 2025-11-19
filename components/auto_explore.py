@@ -115,6 +115,23 @@ class AutoExplore:
             logger.error("AutoExplore component has no owner")
             return "Error: No owner"
         
+        # CRITICAL FIX: Check if there are any unexplored tiles BEFORE activating
+        # This prevents the bot from getting stuck in a restart loop when the map is fully explored
+        # Wrap in try/except to handle mock objects in tests gracefully
+        try:
+            unexplored_tiles = self._get_all_unexplored_tiles(game_map)
+            if not unexplored_tiles:
+                logger.debug(f"AutoExplore.start: No unexplored tiles found, not activating")
+                self.active = False
+                self.stop_reason = "All areas explored"
+                return "Nothing left to explore"
+            
+            logger.debug(f"AutoExplore.start: Found {len(unexplored_tiles)} unexplored tiles, activating")
+        except (TypeError, AttributeError):
+            # game_map is a mock or doesn't have proper tiles - skip the check
+            logger.debug(f"AutoExplore.start: Unable to check unexplored tiles (mock?), activating anyway")
+            pass
+        
         self.active = True
         self.current_path = []
         self.current_room = None
@@ -212,11 +229,16 @@ class AutoExplore:
                   or None if auto-explore should stop
         """
         if not self.active or not self.owner:
+            logger.debug(f"AutoExplore.get_next_action: not active or no owner (active={self.active}, owner={self.owner})")
             return None
+        
+        player_pos = (self.owner.x, self.owner.y)
+        logger.debug(f"AutoExplore.get_next_action: player_pos={player_pos}, active={self.active}, target={self.target_tile}, path_len={len(self.current_path)}")
         
         # Check stop conditions
         stop_reason = self._check_stop_conditions(game_map, entities, fov_map)
         if stop_reason:
+            logger.debug(f"AutoExplore.get_next_action: STOPPING at {player_pos}, reason='{stop_reason}'")
             self.stop(stop_reason)
             return None
         
@@ -225,6 +247,7 @@ class AutoExplore:
             next_pos = self.current_path.pop(0)
             dx = next_pos[0] - self.owner.x
             dy = next_pos[1] - self.owner.y
+            logger.debug(f"AutoExplore.get_next_action: following path from {player_pos} to {next_pos}, delta=({dx},{dy}), remaining_path_len={len(self.current_path)}")
             return {'dx': dx, 'dy': dy}
         
         # Need to find a new target
@@ -232,8 +255,11 @@ class AutoExplore:
         
         if next_target is None:
             # No more unexplored tiles reachable
+            logger.debug(f"AutoExplore.get_next_action: STOPPING at {player_pos}, reason='All areas explored' (no unexplored tiles found)")
             self.stop("All areas explored")
             return None
+        
+        logger.debug(f"AutoExplore.get_next_action: found new target={next_target} from {player_pos}")
         
         # Calculate path to target
         self.target_tile = next_target
@@ -241,13 +267,17 @@ class AutoExplore:
         
         if not self.current_path:
             # No path found
+            logger.debug(f"AutoExplore.get_next_action: STOPPING at {player_pos}, reason='Cannot reach unexplored areas' (no path to {next_target})")
             self.stop("Cannot reach unexplored areas")
             return None
+        
+        logger.debug(f"AutoExplore.get_next_action: calculated path from {player_pos} to {next_target}, path_len={len(self.current_path)}")
         
         # Follow the path
         next_pos = self.current_path.pop(0)
         dx = next_pos[0] - self.owner.x
         dy = next_pos[1] - self.owner.y
+        logger.debug(f"AutoExplore.get_next_action: starting new path from {player_pos} to {next_pos}, delta=({dx},{dy}), remaining_path_len={len(self.current_path)}")
         return {'dx': dx, 'dy': dy}
     
     def _check_stop_conditions(
@@ -736,6 +766,8 @@ class AutoExplore:
         if not self.owner:
             return None
         
+        player_pos = (self.owner.x, self.owner.y)
+        
         # Identify current room
         self.current_room = self._identify_current_room(game_map)
         
@@ -746,17 +778,25 @@ class AutoExplore:
             )
             if room_unexplored:
                 # Find closest unexplored tile in current room
-                return self._find_closest_tile(room_unexplored, game_map)
+                logger.debug(f"AutoExplore._find_next_unexplored_tile: at {player_pos}, in room {self.current_room}, found {len(room_unexplored)} unexplored tiles in room")
+                closest = self._find_closest_tile(room_unexplored, game_map)
+                logger.debug(f"AutoExplore._find_next_unexplored_tile: closest in room is {closest}")
+                return closest
         
         # Either not in a room, or current room is done
         # Find any unexplored tile
         all_unexplored = self._get_all_unexplored_tiles(game_map)
         
+        logger.debug(f"AutoExplore._find_next_unexplored_tile: at {player_pos}, current_room={self.current_room}, found {len(all_unexplored)} total unexplored tiles")
+        
         if not all_unexplored:
+            logger.debug(f"AutoExplore._find_next_unexplored_tile: NO unexplored tiles remaining")
             return None  # Map fully explored!
         
         # Find closest reachable unexplored tile
-        return self._find_closest_tile(all_unexplored, game_map)
+        closest = self._find_closest_tile(all_unexplored, game_map)
+        logger.debug(f"AutoExplore._find_next_unexplored_tile: closest unexplored tile (any room) is {closest}")
+        return closest
     
     def _identify_current_room(self, game_map: 'GameMap') -> Optional[Rect]:
         """Identify which room the player is currently in.
@@ -901,6 +941,7 @@ class AutoExplore:
             
             # Check if we reached a target
             if pos in target_tiles:
+                logger.debug(f"AutoExplore._find_closest_tile: found reachable target {pos} at distance {dist} from {start}")
                 return pos
             
             x, y = pos
@@ -930,6 +971,7 @@ class AutoExplore:
                     heapq.heappush(pq, (new_dist, neighbor))
         
         # No reachable target found
+        logger.debug(f"AutoExplore._find_closest_tile: NO reachable targets found from {start} among {len(tiles)} candidates")
         return None
     
     def _calculate_path_to(

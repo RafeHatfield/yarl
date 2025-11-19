@@ -160,6 +160,12 @@ Examples:
         help='Enable bot/autoplay input source instead of keyboard input'
     )
     
+    parser.add_argument(
+        '--bot-debug',
+        action='store_true',
+        help='Enable verbose BotBrain debug logging in bot mode'
+    )
+    
     # Bot soak testing (Phase 1.6)
     parser.add_argument(
         '--bot-soak',
@@ -279,6 +285,13 @@ def main():
     constants["input_config"]["bot_enabled"] = bool(args.bot)
     if args.bot:
         print("🤖 BOT MODE ENABLED: Using autoplay input source (behavior minimal for now)")
+    
+    # Propagate bot debug flag
+    if args.bot_debug:
+        constants.setdefault("bot_config", {})
+        constants["bot_config"]["debug"] = True
+        if args.bot:
+            print("🐛 BOT DEBUG LOGGING ENABLED: Verbose BotBrain decision logging")
     
     # Get UI layout configuration for split-screen design
     ui_layout = get_ui_layout()

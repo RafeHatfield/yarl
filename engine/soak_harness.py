@@ -286,6 +286,9 @@ def run_bot_soak(
     constants.setdefault("input_config", {})
     constants["input_config"]["bot_enabled"] = True
     
+    # Mark this as bot soak mode for engine_integration to disable enemy AI
+    constants["bot_soak_mode"] = True
+    
     # CRITICAL: Initialize libtcod root console ONCE for the entire session
     # Without this, ConsoleRenderer.render() will crash on console_flush()
     # because no root console exists. This matches normal mode initialization.
