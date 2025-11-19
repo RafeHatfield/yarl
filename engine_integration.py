@@ -46,20 +46,20 @@ from io_layer.bot_input import BotInputSource
 logger = logging.getLogger(__name__)
 
 
-def _print_bot_results_summary(run_metrics, constants: dict) -> None:
-    """Print lightweight bot run results summary.
+def _log_bot_results_summary(run_metrics, constants: dict) -> None:
+    """Log bot run results summary to a dedicated log file.
     
-    This function prints a summary after each bot run when running with --bot or --bot-soak.
+    This function logs a summary after each bot run when running with --bot or --bot-soak.
     It includes floors explored, enemies killed, death cause (or success), turn count,
     and optionally final inventory.
+    
+    The summary is written to 'bot_results.log' in the project root to avoid timing
+    issues with console output and ensure it's always captured.
     
     Args:
         run_metrics: RunMetrics instance with run statistics
         constants: Game constants dict (to check if bot mode is enabled)
     """
-    # Debug: Log constants structure to diagnose why summary might not print
-    logger.debug(f"_print_bot_results_summary called: run_metrics={run_metrics is not None}, constants keys={list(constants.keys()) if constants else 'None'}")
-    
     # Check bot mode - try multiple ways to detect it
     bot_enabled = False
     if constants:
@@ -71,12 +71,9 @@ def _print_bot_results_summary(run_metrics, constants: dict) -> None:
         # Method 2: Check bot_soak_mode flag (soak mode always implies bot mode)
         if not bot_enabled:
             bot_enabled = constants.get("bot_soak_mode", False)
-        
-        logger.debug(f"Bot mode check: input_config.bot_enabled={input_config.get('bot_enabled') if isinstance(input_config, dict) else 'N/A'}, bot_soak_mode={constants.get('bot_soak_mode')}, final bot_enabled={bot_enabled}")
     
-    # Only print if bot mode is enabled
+    # Only log if bot mode is enabled
     if not bot_enabled:
-        logger.debug("Bot results summary skipped: bot mode not enabled")
         return
     
     # Determine death cause or success
@@ -92,19 +89,35 @@ def _print_bot_results_summary(run_metrics, constants: dict) -> None:
     else:
         outcome_str = outcome_str.capitalize()
     
-    # Print summary
-    print("\n" + "="*60)
-    print("🤖 Bot Run Results")
-    print("="*60)
-    print(f"   Outcome: {outcome_str}")
-    print(f"   Floors Explored: {run_metrics.floors_visited}")
-    print(f"   Deepest Floor: {run_metrics.deepest_floor}")
-    print(f"   Enemies Killed: {run_metrics.monsters_killed}")
-    print(f"   Turn Count: {run_metrics.steps_taken}")
-    print(f"   Tiles Explored: {run_metrics.tiles_explored}")
+    # Build summary text
+    summary_lines = [
+        "",
+        "="*60,
+        "🤖 Bot Run Results",
+        "="*60,
+        f"   Outcome: {outcome_str}",
+        f"   Floors Explored: {run_metrics.floors_visited}",
+        f"   Deepest Floor: {run_metrics.deepest_floor}",
+        f"   Enemies Killed: {run_metrics.monsters_killed}",
+        f"   Turn Count: {run_metrics.steps_taken}",
+        f"   Tiles Explored: {run_metrics.tiles_explored}",
+    ]
     if run_metrics.duration_seconds:
-        print(f"   Duration: {run_metrics.duration_seconds:.1f}s")
-    print("="*60)
+        summary_lines.append(f"   Duration: {run_metrics.duration_seconds:.1f}s")
+    summary_lines.append("="*60)
+    summary_text = "\n".join(summary_lines)
+    
+    # Write to bot_results.log file
+    import os
+    log_file_path = os.path.join(os.path.dirname(__file__), "bot_results.log")
+    try:
+        with open(log_file_path, "a", encoding="utf-8") as f:
+            f.write(summary_text + "\n\n")
+        logger.info(f"Bot results summary written to {log_file_path}")
+    except Exception as e:
+        logger.error(f"Failed to write bot results summary: {e}")
+        # Fallback to console if file write fails
+        print(summary_text)
 
 
 from engine.systems import (
@@ -458,6 +471,20 @@ def play_game_with_engine(
         action: ActionDict = {k: v for k, v in combined_action.items() if k not in mouse_action_keys}
         mouse_action: ActionDict = {k: v for k, v in combined_action.items() if k in mouse_action_keys}
         
+        # Phase 1.5.5: Auto-exit on death in bot mode
+        # In bot mode, when player dies, automatically exit after a short delay
+        # This allows run_metrics to be finalized and summary to be printed
+        if input_mode == "bot" and engine.state_manager.state.current_state == GameStates.PLAYER_DEAD:
+            # Check if we've been in death state for a few frames (allow metrics to finalize)
+            death_frame_counter = getattr(engine.state_manager.state, 'death_frame_counter', 0)
+            engine.state_manager.state.death_frame_counter = death_frame_counter + 1
+            
+            # After 5 frames in death state, auto-exit in bot mode
+            if death_frame_counter >= 5:
+                logger.info("Bot mode: Auto-exiting after player death")
+                # Trigger exit action - this will go through normal exit flow
+                action = {"exit": True}
+        
         # Check for restart action (from death screen)
         if action.get("restart"):
             # Player wants to restart - return to main loop for new game
@@ -496,8 +523,8 @@ def play_game_with_engine(
                     engine.state_manager.state.run_metrics = run_metrics
                     logger.info(f"Run metrics finalized on quit: {run_metrics.run_id}")
                     
-                    # Print bot results summary if bot mode is enabled
-                    _print_bot_results_summary(run_metrics, constants)
+                    # Log bot results summary if bot mode is enabled
+                    _log_bot_results_summary(run_metrics, constants)
             
             # Save game before exiting (unless player is dead)
             if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
@@ -540,8 +567,8 @@ def play_game_with_engine(
                 engine.state_manager.state.run_metrics = run_metrics
                 logger.info(f"Run metrics finalized on bot abort: {run_metrics.run_id}")
                 
-                # Print bot results summary
-                _print_bot_results_summary(run_metrics, constants)
+                # Log bot results summary
+                _log_bot_results_summary(run_metrics, constants)
             
             # Clean up and return with bot_completed outcome
             engine.stop()
@@ -759,8 +786,8 @@ def play_game_with_engine(
                     engine.state_manager.state.run_metrics = run_metrics
                     logger.info(f"Run metrics finalized on victory: {run_metrics.run_id}")
                     
-                    # Print bot results summary if bot mode is enabled
-                    _print_bot_results_summary(run_metrics, constants)
+                    # Log bot results summary if bot mode is enabled
+                    _log_bot_results_summary(run_metrics, constants)
                 
                 # Clear the flag
                 engine.state_manager.set_extra_data("show_ending", None)
@@ -826,8 +853,19 @@ def play_game_with_engine(
     # Print bot results summary AFTER game loop exits (so it's visible)
     # Check if run_metrics exist and bot mode was enabled
     run_metrics = getattr(engine.state_manager.state, 'run_metrics', None)
-    if run_metrics and constants.get("input_config", {}).get("bot_enabled", False):
-        _print_bot_results_summary(run_metrics, constants)
+    bot_enabled = constants.get("input_config", {}).get("bot_enabled", False)
+    
+    # Diagnostic logging
+    logger.info(f"Game loop exited: run_metrics exists={run_metrics is not None}, bot_enabled={bot_enabled}")
+    if run_metrics:
+        logger.info(f"Run metrics: outcome={run_metrics.outcome}, floors={run_metrics.floors_visited}, kills={run_metrics.monsters_killed}")
+    
+    if run_metrics and bot_enabled:
+        _log_bot_results_summary(run_metrics, constants)
+    elif run_metrics and not bot_enabled:
+        logger.debug("Bot results summary skipped: bot mode not enabled")
+    elif not run_metrics and bot_enabled:
+        logger.warning("Bot results summary skipped: run_metrics not found on game state")
     
     # Return to main menu (no restart)
     return {"restart": False}

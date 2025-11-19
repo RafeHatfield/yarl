@@ -756,11 +756,11 @@ class ActionProcessor:
                 self.state_manager.state.run_metrics = run_metrics
                 logger.info(f"Run metrics finalized on death: {run_metrics.run_id}")
                 
-                # Print bot results summary if bot mode is enabled
+                # Log bot results summary if bot mode is enabled
                 if self.constants.get("input_config", {}).get("bot_enabled", False):
                     # Import here to avoid circular import
                     import engine_integration
-                    engine_integration._print_bot_results_summary(run_metrics, self.constants)
+                    engine_integration._log_bot_results_summary(run_metrics, self.constants)
         else:
             # Monster died - always transform to corpse first
             from death_functions import kill_monster
