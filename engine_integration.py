@@ -46,6 +46,49 @@ from io_layer.bot_input import BotInputSource
 logger = logging.getLogger(__name__)
 
 
+def _print_bot_results_summary(run_metrics, constants: dict) -> None:
+    """Print lightweight bot run results summary.
+    
+    This function prints a summary after each bot run when running with --bot or --bot-soak.
+    It includes floors explored, enemies killed, death cause (or success), turn count,
+    and optionally final inventory.
+    
+    Args:
+        run_metrics: RunMetrics instance with run statistics
+        constants: Game constants dict (to check if bot mode is enabled)
+    """
+    # Only print if bot mode is enabled
+    if not constants.get("input_config", {}).get("bot_enabled", False):
+        return
+    
+    # Determine death cause or success
+    outcome_str = run_metrics.outcome
+    if outcome_str == "death":
+        outcome_str = "Death"
+    elif outcome_str == "bot_completed":
+        outcome_str = "Completed (all explored)"
+    elif outcome_str == "victory":
+        outcome_str = "Victory!"
+    elif outcome_str == "quit":
+        outcome_str = "Quit"
+    else:
+        outcome_str = outcome_str.capitalize()
+    
+    # Print summary
+    print("\n" + "="*60)
+    print("🤖 Bot Run Results")
+    print("="*60)
+    print(f"   Outcome: {outcome_str}")
+    print(f"   Floors Explored: {run_metrics.floors_visited}")
+    print(f"   Deepest Floor: {run_metrics.deepest_floor}")
+    print(f"   Enemies Killed: {run_metrics.monsters_killed}")
+    print(f"   Turn Count: {run_metrics.steps_taken}")
+    print(f"   Tiles Explored: {run_metrics.tiles_explored}")
+    if run_metrics.duration_seconds:
+        print(f"   Duration: {run_metrics.duration_seconds:.1f}s")
+    print("="*60)
+
+
 from engine.systems import (
     RenderSystem,
     InputSystem,
@@ -434,6 +477,9 @@ def play_game_with_engine(
                 if run_metrics:
                     engine.state_manager.state.run_metrics = run_metrics
                     logger.info(f"Run metrics finalized on quit: {run_metrics.run_id}")
+                    
+                    # Print bot results summary if bot mode is enabled
+                    _print_bot_results_summary(run_metrics, constants)
             
             # Save game before exiting (unless player is dead)
             if engine.state_manager.state.current_state != GameStates.PLAYER_DEAD:
@@ -475,6 +521,9 @@ def play_game_with_engine(
             if run_metrics:
                 engine.state_manager.state.run_metrics = run_metrics
                 logger.info(f"Run metrics finalized on bot abort: {run_metrics.run_id}")
+                
+                # Print bot results summary
+                _print_bot_results_summary(run_metrics, constants)
             
             # Clean up and return with bot_completed outcome
             engine.stop()
@@ -691,6 +740,9 @@ def play_game_with_engine(
                 if run_metrics:
                     engine.state_manager.state.run_metrics = run_metrics
                     logger.info(f"Run metrics finalized on victory: {run_metrics.run_id}")
+                    
+                    # Print bot results summary if bot mode is enabled
+                    _print_bot_results_summary(run_metrics, constants)
                 
                 # Clear the flag
                 engine.state_manager.set_extra_data("show_ending", None)

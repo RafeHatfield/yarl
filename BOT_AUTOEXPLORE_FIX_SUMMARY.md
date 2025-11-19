@@ -253,6 +253,115 @@ Fixes reported issue in PR #20 discussion.
 
 ---
 
+## New Lifecycle Flowchart
+
+After the fix, the BotBrain → AutoExplore lifecycle follows this pattern:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ BotBrain.EXPLORE State                                      │
+└─────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │ AutoExplore.is_active()│
+        └───────────────────────┘
+                    │
+        ┌──────────┴──────────┐
+        │                      │
+       NO                     YES
+        │                      │
+        ▼                      ▼
+┌───────────────┐    ┌──────────────────┐
+│ Return        │    │ Return {}        │
+│ {"start_auto_ │    │ (no-op, let      │
+│  explore":    │    │  AutoExplore     │
+│  True}        │    │  handle movement)│
+└───────────────┘    └──────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────┐
+│ ActionProcessor._handle_start_auto_explore│
+└─────────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────┐
+│ AutoExplore.start(game_map, entities)   │
+└─────────────────────────────────────────┘
+        │
+        ▼
+┌─────────────────────────────────────────┐
+│ Check: Are there unexplored tiles?      │
+└─────────────────────────────────────────┘
+        │
+    ┌───┴───┐
+    │       │
+   NO      YES
+    │       │
+    ▼       ▼
+┌──────────────┐  ┌──────────────────────┐
+│ active=False │  │ active=True           │
+│ stop_reason= │  │ Begin exploration     │
+│ "All areas   │  │ (pathfinding, etc.)  │
+│ explored"    │  │                       │
+│ return       │  │                       │
+│ "Nothing     │  │                       │
+│ left to      │  │                       │
+│ explore"     │  │                       │
+└──────────────┘  └──────────────────────┘
+    │                      │
+    │                      ▼
+    │              ┌──────────────────────┐
+    │              │ Each turn:           │
+    │              │ get_next_action()    │
+    │              │ returns {'dx', 'dy'} │
+    │              │ or None when done   │
+    │              └──────────────────────┘
+    │                      │
+    │                      ▼
+    │              ┌──────────────────────┐
+    │              │ Exploration complete  │
+    │              │ active=False         │
+    │              │ stop_reason="All      │
+    │              │ areas explored"      │
+    │              └──────────────────────┘
+    │                      │
+    └──────────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │ BotBrain sees          │
+        │ AutoExplore inactive   │
+        │ Checks stop_reason     │
+        └───────────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────┐
+        │ If "All areas explored"│
+        │ → Return {} (no-ops)  │
+        │ → No restart attempt   │
+        └───────────────────────┘
+```
+
+**Key Points:**
+1. BotBrain.EXPLORE delegates entirely to AutoExplore
+2. AutoExplore.start() checks for unexplored tiles BEFORE activating
+3. If no unexplored tiles exist, AutoExplore refuses to activate
+4. BotBrain receives {} (no-ops) when AutoExplore is inactive after completion
+5. No restart loop occurs because AutoExplore never activates when done
+
+## Why the Fix Belongs in AutoExplore, Not BotBrain
+
+The fix was implemented in `AutoExplore.start()` rather than `BotBrain._handle_explore()` for several reasons:
+
+1. **Single Responsibility**: AutoExplore owns exploration logic, so it should own the "is there anything to explore?" check
+2. **Reusability**: Manual autoexplore (player presses 'o') benefits from the same check
+3. **Contract Clarity**: AutoExplore's contract is now "I will not activate if there's nothing to explore"
+4. **Testability**: The check is easier to test in isolation within AutoExplore
+5. **Future-Proofing**: If other systems want to start AutoExplore, they get the same protection
+
+If the fix were in BotBrain, we'd need to duplicate the logic everywhere AutoExplore.start() is called, and manual players wouldn't benefit.
+
 ## Summary
 
 The "pacing" bug was actually a restart loop caused by missing termination logic when AutoExplore completed. The fix is minimal, safe, and benefits both bot and manual play. All tests pass with no regressions.

@@ -18,6 +18,13 @@ from components.faction import are_factions_hostile
 
 logger = logging.getLogger(__name__)
 
+
+class LogLevel(Enum):
+    """Logging tier levels for BotBrain."""
+    SUMMARY = "summary"  # Default: state transitions, lifecycle events
+    DEBUG = "debug"       # Verbose: turn-by-turn details
+    ERROR = "error"       # Only contract violations or impossible states
+
 # Stuck detection threshold: number of consecutive combat decisions without progress
 STUCK_THRESHOLD = 8
 
@@ -45,11 +52,12 @@ class BotBrain:
         debug: Enable debug logging
     """
     
-    def __init__(self, debug: bool = False) -> None:
+    def __init__(self, debug: bool = False, log_level: LogLevel = LogLevel.SUMMARY) -> None:
         """Initialize BotBrain with default EXPLORE state.
         
         Args:
-            debug: Enable debug logging for troubleshooting
+            debug: Enable debug logging for troubleshooting (deprecated, use log_level)
+            log_level: Logging tier level (SUMMARY, DEBUG, or ERROR)
         """
         self.state = BotState.EXPLORE
         self.current_target = None
@@ -59,7 +67,8 @@ class BotBrain:
         self._recent_positions = deque(maxlen=6)  # Track last 6 positions for oscillation detection
         self._just_dropped_due_to_stuck = False  # Flag to prevent immediate re-entry
         self._stuck_dropped_target = None  # Target we dropped due to being stuck
-        self.debug = debug
+        self.debug = debug  # Deprecated, kept for backward compatibility
+        self.log_level = LogLevel.DEBUG if debug else log_level  # Use debug flag to set DEBUG level if True
         # COMBAT no-op fail-safe: track consecutive no-op actions in COMBAT
         self._combat_noop_counter = 0
         self._combat_noop_threshold = 10  # Drop to EXPLORE after 10 consecutive no-op actions
@@ -67,6 +76,7 @@ class BotBrain:
         self._noop_dropped_target = None  # Target we dropped due to no-op fail-safe
         # Track autoexplore lifecycle for logging
         self._last_autoexplore_active = False
+        self._last_state = BotState.EXPLORE  # Track state transitions for summary logging
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -155,6 +165,7 @@ class BotBrain:
                                 # Reset stuck state when switching targets
                                 if self.current_target != nearest_enemy:
                                     self._reset_stuck_state()
+                            self._log_state_transition(BotState.COMBAT)
                             self.state = BotState.COMBAT
                             self.current_target = nearest_enemy
                             # Clear flags when successfully entering COMBAT with a different target
@@ -165,18 +176,21 @@ class BotBrain:
                     else:
                         if self.state == BotState.COMBAT:
                             self._debug(f"Enemy too far (distance {manhattan_dist}), leaving COMBAT")
+                        self._log_state_transition(BotState.EXPLORE)
                         self.current_target = None
                         self.state = BotState.EXPLORE
                         self._reset_stuck_state()
                 else:
                     if self.state == BotState.COMBAT:
                         self._debug("No nearest enemy found, leaving COMBAT")
+                    self._log_state_transition(BotState.EXPLORE)
                     self.current_target = None
                     self.state = BotState.EXPLORE
                     self._reset_stuck_state()
             elif standing_on_loot:
                 if self.state != BotState.LOOT:
                     self._debug("Entering LOOT state")
+                    self._log_state_transition(BotState.LOOT)
                 self.state = BotState.LOOT
                 # Clear combat target when looting
                 if self.current_target:
@@ -187,6 +201,7 @@ class BotBrain:
                     self._debug("No enemies visible, leaving COMBAT")
                     # Only reset stuck state when transitioning FROM COMBAT to EXPLORE
                     self._reset_stuck_state()
+                self._log_state_transition(BotState.EXPLORE)
                 self.current_target = None
                 self.state = BotState.EXPLORE
             
@@ -493,18 +508,30 @@ class BotBrain:
         was_active = self._last_autoexplore_active
         self._last_autoexplore_active = is_active
         
+        # Get AutoExplore component for stop_reason checking
+        auto_explore = None
+        if hasattr(player, 'get_component_optional'):
+            auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+        
         if not is_active:
             # Autoexplore is not active - start it once
             if not was_active:
                 # Transition: inactive -> starting (first time)
-                logger.debug("BotBrain: EXPLORE starting autoexplore at %s", player_pos)
+                self._log_summary(f"EXPLORE: Starting AutoExplore at {player_pos}")
+                self._debug(f"BotBrain: EXPLORE starting autoexplore at {player_pos}")
             return {"start_auto_explore": True}
         else:
             # Autoexplore is active - let it handle movement, don't interfere
             if not was_active:
                 # Transition: inactive -> active (just started)
-                logger.debug("BotBrain: EXPLORE autoexplore started at %s", player_pos)
-            logger.debug("BotBrain: EXPLORE letting autoexplore run at %s", player_pos)
+                self._log_summary(f"EXPLORE: AutoExplore started at {player_pos}")
+                self._debug(f"BotBrain: EXPLORE autoexplore started at {player_pos}")
+            
+            # Check if AutoExplore stopped (for summary logging)
+            if auto_explore and not auto_explore.is_active() and auto_explore.stop_reason:
+                self._log_summary(f"EXPLORE: AutoExplore stopped - {auto_explore.stop_reason}")
+            
+            self._debug(f"BotBrain: EXPLORE letting autoexplore run at {player_pos}")
             return {}
     
     def _handle_combat(self, player: Any, enemies: List[Any], game_state: Any) -> Dict[str, Any]:
@@ -825,15 +852,42 @@ class BotBrain:
         # Note: _just_dropped_due_to_stuck and _stuck_dropped_target are NOT reset here
         # They are reset when we successfully enter COMBAT or when we skip re-entry
     
+    def _log_state_transition(self, new_state: BotState) -> None:
+        """Log state transition at summary level.
+        
+        Args:
+            new_state: New bot state
+        """
+        if self._last_state != new_state:
+            self._log_summary(f"State transition: {self._last_state.name if self._last_state else 'INIT'} → {new_state.name}")
+            self._last_state = new_state
+    
+    def _log_summary(self, msg: str) -> None:
+        """Log summary-level message (state transitions, lifecycle events).
+        
+        Args:
+            msg: Message to log
+        """
+        if self.log_level in (LogLevel.SUMMARY, LogLevel.DEBUG):
+            logger.info(f"BotBrain: {msg}")
+    
+    def _log_error(self, msg: str) -> None:
+        """Log error-level message (contract violations, impossible states).
+        
+        Args:
+            msg: Message to log
+        """
+        logger.error(f"BotBrain ERROR: {msg}")
+    
     def _debug(self, msg: str) -> None:
         """Log debug message if debug mode is enabled.
         
         Args:
             msg: Message to log
         """
-        if self.debug:
+        if self.log_level == LogLevel.DEBUG:
             # Print directly to console for immediate visibility during debugging
             # Also log to file for later analysis
             print(f"BotBrain: {msg}")
-            logger.info(f"BotBrain: {msg}")
+            logger.debug(f"BotBrain: {msg}")
 
