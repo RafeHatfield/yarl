@@ -506,12 +506,6 @@ class BotBrain:
         
         # Track lifecycle transitions for logging
         was_active = self._last_autoexplore_active
-        self._last_autoexplore_active = is_active
-        
-        # Get AutoExplore component for stop_reason checking
-        auto_explore = None
-        if hasattr(player, 'get_component_optional'):
-            auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
         
         if not is_active:
             # Autoexplore is not active - start it once
@@ -519,6 +513,16 @@ class BotBrain:
                 # Transition: inactive -> starting (first time)
                 self._log_summary(f"EXPLORE: Starting AutoExplore at {player_pos}")
                 self._debug(f"BotBrain: EXPLORE starting autoexplore at {player_pos}")
+            else:
+                # Transition: active -> inactive (AutoExplore stopped)
+                # Get AutoExplore component to check stop_reason
+                auto_explore = None
+                if hasattr(player, 'get_component_optional'):
+                    auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                if auto_explore and auto_explore.stop_reason:
+                    self._log_summary(f"EXPLORE: AutoExplore stopped - {auto_explore.stop_reason}")
+            
+            self._last_autoexplore_active = False
             return {"start_auto_explore": True}
         else:
             # Autoexplore is active - let it handle movement, don't interfere
@@ -527,10 +531,7 @@ class BotBrain:
                 self._log_summary(f"EXPLORE: AutoExplore started at {player_pos}")
                 self._debug(f"BotBrain: EXPLORE autoexplore started at {player_pos}")
             
-            # Check if AutoExplore stopped (for summary logging)
-            if auto_explore and not auto_explore.is_active() and auto_explore.stop_reason:
-                self._log_summary(f"EXPLORE: AutoExplore stopped - {auto_explore.stop_reason}")
-            
+            self._last_autoexplore_active = True
             self._debug(f"BotBrain: EXPLORE letting autoexplore run at {player_pos}")
             return {}
     

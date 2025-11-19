@@ -57,8 +57,26 @@ def _print_bot_results_summary(run_metrics, constants: dict) -> None:
         run_metrics: RunMetrics instance with run statistics
         constants: Game constants dict (to check if bot mode is enabled)
     """
+    # Debug: Log constants structure to diagnose why summary might not print
+    logger.debug(f"_print_bot_results_summary called: run_metrics={run_metrics is not None}, constants keys={list(constants.keys()) if constants else 'None'}")
+    
+    # Check bot mode - try multiple ways to detect it
+    bot_enabled = False
+    if constants:
+        # Method 1: Check input_config.bot_enabled
+        input_config = constants.get("input_config", {})
+        if isinstance(input_config, dict):
+            bot_enabled = input_config.get("bot_enabled", False)
+        
+        # Method 2: Check bot_soak_mode flag (soak mode always implies bot mode)
+        if not bot_enabled:
+            bot_enabled = constants.get("bot_soak_mode", False)
+        
+        logger.debug(f"Bot mode check: input_config.bot_enabled={input_config.get('bot_enabled') if isinstance(input_config, dict) else 'N/A'}, bot_soak_mode={constants.get('bot_soak_mode')}, final bot_enabled={bot_enabled}")
+    
     # Only print if bot mode is enabled
-    if not constants.get("input_config", {}).get("bot_enabled", False):
+    if not bot_enabled:
+        logger.debug("Bot results summary skipped: bot mode not enabled")
         return
     
     # Determine death cause or success
