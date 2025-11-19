@@ -491,8 +491,12 @@ class BotBrain:
         
         This method respects the manual autoexplore contract:
         - If autoexplore is not active: start it once
-        - If autoexplore is active: return empty dict to let it handle movement
+        - If autoexplore is active: return empty dict (ActionProcessor handles movement automatically)
         - No interference with autoexplore while it's running
+        
+        CRITICAL: ActionProcessor automatically calls _process_auto_explore_turn() every turn
+        when AutoExplore is active. BotBrain should trust its cached state and only check
+        is_active() when cached state indicates it might be inactive.
         
         Args:
             player: Player entity
@@ -501,38 +505,51 @@ class BotBrain:
         Returns:
             ActionDict with start_auto_explore or empty dict
         """
-        player_pos = (player.x, player.y)
-        is_active = self._is_autoexplore_active(game_state)
+        # Optimization: Trust cached state when AutoExplore is active
+        # Only check is_active() when we think it might be inactive (to detect stops)
+        if self._last_autoexplore_active:
+            # We believe AutoExplore is active - trust it and return empty dict
+            # ActionProcessor will automatically call _process_auto_explore_turn()
+            return {}
         
-        # Track lifecycle transitions for logging
-        was_active = self._last_autoexplore_active
+        # Cached state says inactive - verify and start if needed
+        is_active = self._is_autoexplore_active(game_state)
         
         if not is_active:
             # Autoexplore is not active - start it once
+            was_active = self._last_autoexplore_active
+            
             if not was_active:
                 # Transition: inactive -> starting (first time)
+                player_pos = (player.x, player.y)
                 self._log_summary(f"EXPLORE: Starting AutoExplore at {player_pos}")
                 self._debug(f"BotBrain: EXPLORE starting autoexplore at {player_pos}")
+                # Optimistically update cache - AutoExplore.start() will activate it
+                self._last_autoexplore_active = True
             else:
                 # Transition: active -> inactive (AutoExplore stopped)
-                # Get AutoExplore component to check stop_reason
+                # Get AutoExplore component to check stop_reason for logging
                 auto_explore = None
                 if hasattr(player, 'get_component_optional'):
                     auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
                 if auto_explore and auto_explore.stop_reason:
                     self._log_summary(f"EXPLORE: AutoExplore stopped - {auto_explore.stop_reason}")
+                # Cache says inactive (will be verified next turn if restart fails)
+                self._last_autoexplore_active = False
             
-            self._last_autoexplore_active = False
             return {"start_auto_explore": True}
         else:
-            # Autoexplore is active - let it handle movement, don't interfere
+            # Check revealed AutoExplore is actually active (cached state was wrong)
+            # This should be rare - update cache and return empty dict
+            was_active = self._last_autoexplore_active
             if not was_active:
                 # Transition: inactive -> active (just started)
+                player_pos = (player.x, player.y)
                 self._log_summary(f"EXPLORE: AutoExplore started at {player_pos}")
                 self._debug(f"BotBrain: EXPLORE autoexplore started at {player_pos}")
             
             self._last_autoexplore_active = True
-            self._debug(f"BotBrain: EXPLORE letting autoexplore run at {player_pos}")
+            # Return empty dict - ActionProcessor will automatically call _process_auto_explore_turn()
             return {}
     
     def _handle_combat(self, player: Any, enemies: List[Any], game_state: Any) -> Dict[str, Any]:

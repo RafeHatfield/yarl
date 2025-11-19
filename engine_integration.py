@@ -823,6 +823,12 @@ def play_game_with_engine(
     # Clean up
     engine.stop()
     
+    # Print bot results summary AFTER game loop exits (so it's visible)
+    # Check if run_metrics exist and bot mode was enabled
+    run_metrics = getattr(engine.state_manager.state, 'run_metrics', None)
+    if run_metrics and constants.get("input_config", {}).get("bot_enabled", False):
+        _print_bot_results_summary(run_metrics, constants)
+    
     # Return to main menu (no restart)
     return {"restart": False}
 
