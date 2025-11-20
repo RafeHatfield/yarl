@@ -216,7 +216,6 @@ This would allow the bot to recognize completion and transition to another behav
 
 ## Related Documentation
 
-- [BOT_AUTOEXPLORE_FIX_SUMMARY.md](../BOT_AUTOEXPLORE_FIX_SUMMARY.md): Detailed fix documentation with lifecycle flowchart
 - [BOT_SOAK_HARNESS.md](BOT_SOAK_HARNESS.md): Bot soak testing harness documentation
 - [AutoExplore Component](../components/auto_explore.py): AutoExplore component implementation
 

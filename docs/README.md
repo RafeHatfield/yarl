@@ -9,15 +9,17 @@ Welcome to the Yarl documentation system. This folder contains detailed technica
 Start with these files in the root directory:
 - **[README.md](../README.md)** ← Main overview (START HERE)
 - **[STORY_LORE_CANONICAL.md](../STORY_LORE_CANONICAL.md)** - Complete narrative and themes
-- **[VICTORY_CONDITION_PHASES.md](../VICTORY_CONDITION_PHASES.md)** - How victory works
-- **[DESIGN_PRINCIPLES.md](../DESIGN_PRINCIPLES.md)** - Architectural philosophy
+- **[DESIGN_PRINCIPLES.md](DESIGN_PRINCIPLES.md)** - Architectural philosophy
 - **[PLAYER_PAIN_POINTS.md](../PLAYER_PAIN_POINTS.md)** - Design challenges & solutions
 - **[TRADITIONAL_ROGUELIKE_FEATURES.md](../TRADITIONAL_ROGUELIKE_FEATURES.md)** - Feature roadmap
+- **[ROADMAP.md](../ROADMAP.md)** - Development roadmap
+- **[PROJECT_STATS.md](../PROJECT_STATS.md)** - Project statistics
 
 ### For Developers
 
 - **[architecture/](architecture/)** - System design and specifications
   - Portal System specification
+  - Renderer & Input abstraction
   - Session handoff template
   
 - **[development/](development/)** - Feature development history
@@ -25,6 +27,20 @@ Start with these files in the root directory:
   - Phase 5: Victory Condition (complete)
   - Portal System: Phase A & B (complete)
   - Session handoff notes
+
+- **[planning/](planning/)** - Game design planning documents
+  - Victory condition phases
+  - Balance notes
+  - Dungeon levels plan
+  - Vault system plan
+
+- **[testing/](testing/)** - Testing documentation
+  - Golden path integration tests
+  - Testing strategy
+
+- **[guides/](guides/)** - User and developer guides
+  - Playtesting guide
+  - Contributing guidelines (AI/automated agents)
 
 ## 📁 Folder Structure
 
