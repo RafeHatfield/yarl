@@ -225,6 +225,13 @@ class BotBrain:
             
             # Check for oscillation pattern (A ↔ B ↔ A ↔ B) - COMBAT only
             if self._is_oscillating():
+                oscillating_positions = list(self._recent_positions)[-4:] if len(self._recent_positions) >= 4 else list(self._recent_positions)
+                logger.warning(
+                    f"🔍 DIAGNOSTIC: Oscillation detected! state={self.state.name}, "
+                    f"positions={oscillating_positions}, "
+                    f"autoexplore_active={self._is_autoexplore_active(game_state)}, "
+                    f"cached_autoexplore_active={self._last_autoexplore_active}"
+                )
                 if self.state == BotState.COMBAT:
                     # COMBAT oscillation: drop to EXPLORE
                     self._debug(f"Oscillation detected, resetting to EXPLORE")
@@ -238,6 +245,14 @@ class BotBrain:
                     self._stuck_dropped_target = old_target
                     # Return explore action instead of combat action
                     return self._handle_explore(player, game_state)
+                elif self.state == BotState.EXPLORE:
+                    # EXPLORE oscillation detected but not handled - this is the bug!
+                    logger.warning(
+                        f"🔍 DIAGNOSTIC: EXPLORE oscillation NOT handled! "
+                        f"positions={oscillating_positions}, "
+                        f"autoexplore_active={self._is_autoexplore_active(game_state)}, "
+                        f"cached_autoexplore_active={self._last_autoexplore_active}"
+                    )
             
             # If in COMBAT, update stuck detection with action
             if self.state == BotState.COMBAT and self.current_target:
@@ -510,7 +525,17 @@ class BotBrain:
         if self._last_autoexplore_active:
             # We believe AutoExplore is active - trust it and return empty dict
             # ActionProcessor will automatically call _process_auto_explore_turn()
-            return {}
+            # DIAGNOSTIC: Verify AutoExplore is actually still active
+            actual_active = self._is_autoexplore_active(game_state)
+            if not actual_active:
+                logger.warning(
+                    f"🔍 DIAGNOSTIC: BotBrain cache mismatch! "
+                    f"cached_active=True but actual_active=False at ({player.x},{player.y})"
+                )
+                self._last_autoexplore_active = False
+                # Fall through to restart logic
+            else:
+                return {}
         
         # Cached state says inactive - verify and start if needed
         is_active = self._is_autoexplore_active(game_state)
@@ -524,16 +549,26 @@ class BotBrain:
                 player_pos = (player.x, player.y)
                 self._log_summary(f"EXPLORE: Starting AutoExplore at {player_pos}")
                 self._debug(f"BotBrain: EXPLORE starting autoexplore at {player_pos}")
+                logger.info(f"🔍 DIAGNOSTIC: BotBrain._handle_explore: Starting AutoExplore at {player_pos}")
                 # Optimistically update cache - AutoExplore.start() will activate it
                 self._last_autoexplore_active = True
             else:
                 # Transition: active -> inactive (AutoExplore stopped)
                 # Get AutoExplore component to check stop_reason for logging
                 auto_explore = None
+                stop_reason = None
                 if hasattr(player, 'get_component_optional'):
                     auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
-                if auto_explore and auto_explore.stop_reason:
-                    self._log_summary(f"EXPLORE: AutoExplore stopped - {auto_explore.stop_reason}")
+                    if auto_explore:
+                        stop_reason = auto_explore.stop_reason
+                player_pos = (player.x, player.y)
+                logger.warning(
+                    f"🔍 DIAGNOSTIC: BotBrain._handle_explore: AutoExplore stopped! "
+                    f"pos={player_pos}, stop_reason='{stop_reason}', "
+                    f"was_active={was_active}, is_active={is_active}"
+                )
+                if auto_explore and stop_reason:
+                    self._log_summary(f"EXPLORE: AutoExplore stopped - {stop_reason}")
                 # Cache says inactive (will be verified next turn if restart fails)
                 self._last_autoexplore_active = False
             
@@ -547,6 +582,7 @@ class BotBrain:
                 player_pos = (player.x, player.y)
                 self._log_summary(f"EXPLORE: AutoExplore started at {player_pos}")
                 self._debug(f"BotBrain: EXPLORE autoexplore started at {player_pos}")
+                logger.info(f"🔍 DIAGNOSTIC: BotBrain._handle_explore: AutoExplore is active at {player_pos}")
             
             self._last_autoexplore_active = True
             # Return empty dict - ActionProcessor will automatically call _process_auto_explore_turn()

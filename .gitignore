@@ -16,6 +16,7 @@ saves/
 # Centralized logging directory (all logs go here now)
 logs/
 # Legacy log files (kept for reference during transition)
+bot_results.log
 errors.log
 monster_actions.log
 combat_debug.log

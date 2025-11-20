@@ -115,18 +115,27 @@ class AutoExplore:
             logger.error("AutoExplore component has no owner")
             return "Error: No owner"
         
+        player_pos = (self.owner.x, self.owner.y) if self.owner else None
+        was_active = self.active
+        
         # CRITICAL FIX: Check if there are any unexplored tiles BEFORE activating
         # This prevents the bot from getting stuck in a restart loop when the map is fully explored
         # Wrap in try/except to handle mock objects in tests gracefully
         try:
             unexplored_tiles = self._get_all_unexplored_tiles(game_map)
             if not unexplored_tiles:
-                logger.debug(f"AutoExplore.start: No unexplored tiles found, not activating")
+                logger.warning(
+                    f"🔍 DIAGNOSTIC: AutoExplore.start: No unexplored tiles found, NOT activating! "
+                    f"pos={player_pos}, was_active={was_active}"
+                )
                 self.active = False
                 self.stop_reason = "All areas explored"
                 return "Nothing left to explore"
             
-            logger.debug(f"AutoExplore.start: Found {len(unexplored_tiles)} unexplored tiles, activating")
+            logger.info(
+                f"🔍 DIAGNOSTIC: AutoExplore.start: Found {len(unexplored_tiles)} unexplored tiles, "
+                f"activating at pos={player_pos}, was_active={was_active}"
+            )
         except (TypeError, AttributeError):
             # game_map is a mock or doesn't have proper tiles - skip the check
             logger.debug(f"AutoExplore.start: Unable to check unexplored tiles (mock?), activating anyway")
@@ -191,6 +200,14 @@ class AutoExplore:
         Args:
             reason: Human-readable explanation for why exploration stopped
         """
+        player_pos = (self.owner.x, self.owner.y) if self.owner else None
+        was_active = self.active
+        logger.warning(
+            f"🔍 DIAGNOSTIC: AutoExplore.stop: reason='{reason}', "
+            f"pos={player_pos}, was_active={was_active}, "
+            f"path_len={len(self.current_path) if self.current_path else 0}, "
+            f"target={self.target_tile}"
+        )
         self.active = False
         self.stop_reason = reason
         self.current_path = []
@@ -238,7 +255,11 @@ class AutoExplore:
         # Check stop conditions
         stop_reason = self._check_stop_conditions(game_map, entities, fov_map)
         if stop_reason:
-            logger.debug(f"AutoExplore.get_next_action: STOPPING at {player_pos}, reason='{stop_reason}'")
+            logger.warning(
+                f"🔍 DIAGNOSTIC: AutoExplore.get_next_action: STOPPING at {player_pos}, "
+                f"reason='{stop_reason}', path_len={len(self.current_path)}, "
+                f"target={self.target_tile}"
+            )
             self.stop(stop_reason)
             return None
         

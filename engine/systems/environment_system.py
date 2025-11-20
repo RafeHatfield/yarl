@@ -195,26 +195,18 @@ class EnvironmentSystem(System):
         """
         if entity == game_state.player:
             # Player died from hazard
+            # Use shared finalization helper to ensure run_metrics are finalized
+            # and bot summary is logged, regardless of which system detected the death
             if self.engine and hasattr(self.engine, 'state_manager'):
-                from game_states import GameStates
-                self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)
+                # Get constants from game_state (stored there during initialization)
+                constants = getattr(game_state, "constants", {})
                 
-                if game_state.message_log:
-                    death_message = MB.death(
-                        "You died! Press any key to return to the main menu."
-                    )
-                    game_state.message_log.add_message(death_message)
-                
-                # Generate death quote
-                statistics = entity.get_component_optional(ComponentType.STATISTICS)
-                if statistics:
-                    from entity_dialogue import get_entity_quote_for_death
-                    self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
-                        statistics,
-                        statistics.deepest_level
-                    )
-                else:
-                    self.engine.state_manager.state.death_screen_quote = "How... disappointing."
+                import engine_integration
+                engine_integration.finalize_player_death(
+                    self.engine.state_manager,
+                    constants,
+                    cause=f"hazard_{hazard_name}"
+                )
                 
                 logger.info(f"Player killed by {hazard_name}")
         else:
