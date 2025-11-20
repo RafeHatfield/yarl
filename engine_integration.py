@@ -120,6 +120,83 @@ def _log_bot_results_summary(run_metrics, constants: dict) -> None:
         print(summary_text)
 
 
+def finalize_player_death(state_manager, constants: dict, cause: str = "death") -> None:
+    """Finalize player death: metrics, telemetry, and bot summary logging.
+    
+    This is the canonical place to finalize bot run metrics and write the bot
+    results summary when the player dies, regardless of which system detected
+    the death (ActionProcessor, AISystem, EnvironmentSystem, etc.).
+    
+    This function:
+    - Sets PLAYER_DEAD game state
+    - Adds death message to message log
+    - Generates death quote for death screen
+    - Ends telemetry for current floor
+    - Finalizes run_metrics and stores on game_state
+    - Logs bot results summary if bot mode is enabled
+    
+    Args:
+        state_manager: StateManager instance with access to game_state
+        constants: Game constants dict (for bot mode detection)
+        cause: Optional cause string (e.g., "enemy_attack", "player_action_combat", "hazard")
+                Defaults to "death". Used for logging context.
+    """
+    game_state = state_manager.state
+    player = game_state.player
+    
+    # Set PLAYER_DEAD state
+    state_manager.set_game_state(GameStates.PLAYER_DEAD)
+    
+    # Add death message
+    from message_builder import MessageBuilder as MB
+    death_message = MB.death(
+        "You died! Press any key to return to the main menu."
+    )
+    game_state.message_log.add_message(death_message)
+    
+    # Add a frame counter to prevent immediate exit from death screen
+    if not hasattr(game_state, 'death_frame_counter'):
+        game_state.death_frame_counter = 0
+    
+    # Generate Entity death quote ONCE (don't regenerate every frame!)
+    from components.component_registry import ComponentType
+    statistics = player.get_component_optional(ComponentType.STATISTICS)
+    if statistics:
+        from entity_dialogue import get_entity_quote_for_death
+        game_state.death_screen_quote = get_entity_quote_for_death(
+            statistics, 
+            statistics.deepest_level
+        )
+    else:
+        game_state.death_screen_quote = "How... disappointing."
+    
+    # Phase 1.5b: End telemetry for current floor on death
+    from services.telemetry_service import get_telemetry_service
+    telemetry_service = get_telemetry_service()
+    if telemetry_service.enabled:
+        telemetry_service.end_floor()
+        logger.info(f"Telemetry ended for floor on death")
+    
+    # Finalize run metrics on player death (Phase 1.5: Run Metrics)
+    from instrumentation.run_metrics import finalize_run_metrics
+    game_map = game_state.game_map
+    run_metrics = finalize_run_metrics("death", player, game_map)
+    if run_metrics:
+        # Store metrics on game state for death screen display and telemetry
+        game_state.run_metrics = run_metrics
+        logger.info(f"Run metrics finalized on death (cause={cause}): {run_metrics.run_id}")
+        
+        # Log bot results summary if bot mode is enabled
+        bot_enabled = constants.get("input_config", {}).get("bot_enabled", False)
+        if not bot_enabled:
+            bot_enabled = constants.get("bot_soak_mode", False)
+        
+        if bot_enabled:
+            _log_bot_results_summary(run_metrics, constants)
+    else:
+        logger.warning(f"Failed to finalize run_metrics on player death (cause={cause})")
+
+
 from engine.systems import (
     RenderSystem,
     InputSystem,
@@ -852,8 +929,13 @@ def play_game_with_engine(
     
     # Print bot results summary AFTER game loop exits (so it's visible)
     # Check if run_metrics exist and bot mode was enabled
+    # NOTE: We do NOT create or finalize run_metrics here - that should have been
+    # done by finalize_player_death() when the player died, or by quit handling.
+    # This code only consumes whatever was produced earlier.
     run_metrics = getattr(engine.state_manager.state, 'run_metrics', None)
     bot_enabled = constants.get("input_config", {}).get("bot_enabled", False)
+    if not bot_enabled:
+        bot_enabled = constants.get("bot_soak_mode", False)
     
     # Diagnostic logging
     logger.info(f"Game loop exited: run_metrics exists={run_metrics is not None}, bot_enabled={bot_enabled}")
@@ -861,11 +943,20 @@ def play_game_with_engine(
         logger.info(f"Run metrics: outcome={run_metrics.outcome}, floors={run_metrics.floors_visited}, kills={run_metrics.monsters_killed}")
     
     if run_metrics and bot_enabled:
-        _log_bot_results_summary(run_metrics, constants)
+        # Bot summary should already have been logged by finalize_player_death() for deaths.
+        # Only log here if it's NOT a death (e.g., bot completed successfully, quit, or victory).
+        # This prevents double logging when player dies.
+        current_state = engine.state_manager.state.current_state
+        if current_state != GameStates.PLAYER_DEAD:
+            # Not a death - log the summary (quit, victory, bot_completed, etc.)
+            _log_bot_results_summary(run_metrics, constants)
+        else:
+            # Death case - summary already logged by finalize_player_death(), skip to avoid double logging
+            logger.debug("Bot results summary skipped: already logged by finalize_player_death()")
     elif run_metrics and not bot_enabled:
         logger.debug("Bot results summary skipped: bot mode not enabled")
     elif not run_metrics and bot_enabled:
-        logger.warning("Bot results summary skipped: run_metrics not found on game state")
+        logger.warning("Bot results summary skipped: run_metrics not found on game state (player may have died without finalization)")
     
     # Return to main menu (no restart)
     return {"restart": False}

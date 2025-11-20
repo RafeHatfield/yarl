@@ -430,26 +430,18 @@ class AISystem(System):
             if dead_entity:
                 if dead_entity == game_state.player:
                     # CRITICAL: Player died during AI turn
+                    # Use shared finalization helper to ensure run_metrics are finalized
+                    # and bot summary is logged, regardless of which system detected the death
                     if self.engine and hasattr(self.engine, "state_manager"):
-                        self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)
+                        # Get constants from game_state (stored there during initialization)
+                        constants = getattr(game_state, "constants", {})
                         
-                        # Add death message
-                        death_message = MB.death(
-                            "You died! Press any key to return to the main menu."
+                        import engine_integration
+                        engine_integration.finalize_player_death(
+                            self.engine.state_manager,
+                            constants,
+                            cause="enemy_attack"
                         )
-                        game_state.message_log.add_message(death_message)
-                        
-                        # Generate Entity death quote ONCE (don't regenerate every frame!)
-                        player = game_state.player
-                        statistics = player.get_component_optional(ComponentType.STATISTICS)
-                        if statistics:
-                            from entity_dialogue import get_entity_quote_for_death
-                            self.engine.state_manager.state.death_screen_quote = get_entity_quote_for_death(
-                                statistics, 
-                                statistics.deepest_level
-                            )
-                        else:
-                            self.engine.state_manager.state.death_screen_quote = "How... disappointing."
                         
                         logger.info(f"Player killed by {self.current_turn_entity.name if self.current_turn_entity else 'unknown'}")
                 else:

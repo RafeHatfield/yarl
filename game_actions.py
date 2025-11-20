@@ -155,17 +155,45 @@ class ActionProcessor:
             
             # Check for auto-explore first (higher priority)
             auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
-            if auto_explore and auto_explore.is_active():
+            auto_explore_active = auto_explore and auto_explore.is_active() if auto_explore else False
+            player_pos = (player.x, player.y)
+            
+            # DIAGNOSTIC: Log AutoExplore state check
+            if action or mouse_action:
+                logger.info(
+                    f"🔍 DIAGNOSTIC: ActionProcessor.process_actions: "
+                    f"pos={player_pos}, action={action}, mouse_action={mouse_action}, "
+                    f"auto_explore_exists={auto_explore is not None}, "
+                    f"auto_explore_active={auto_explore_active}"
+                )
+            
+            if auto_explore_active:
                 # Process auto-explore movement automatically
+                logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Processing AutoExplore turn at {player_pos}")
                 self._process_auto_explore_turn()
                 # Check if any key was pressed to cancel
-                if action or mouse_action:
-                    # Any input cancels auto-explore
+                # CRITICAL: Exclude 'start_auto_explore' from cancellation - it's not "cancelling input"
+                # BotBrain may return start_auto_explore due to cache mismatch, but we should ignore it
+                # when AutoExplore is already active, not cancel AutoExplore.
+                cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
+                if cancel_actions or mouse_action:
+                    # Actual user input cancels auto-explore
+                    logger.warning(
+                        f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to input! "
+                        f"action={cancel_actions}, mouse_action={mouse_action}"
+                    )
                     auto_explore.stop("Cancelled")
                     self.state_manager.state.message_log.add_message(
                         MB.info("Auto-explore cancelled")
                     )
                 return  # Don't process other input this turn
+            elif auto_explore and not auto_explore_active:
+                # AutoExplore exists but is not active - log why
+                stop_reason = getattr(auto_explore, 'stop_reason', None)
+                logger.warning(
+                    f"🔍 DIAGNOSTIC: ActionProcessor: AutoExplore exists but NOT active! "
+                    f"pos={player_pos}, stop_reason='{stop_reason}', action={action}"
+                )
             
             # Fall back to pathfinding if no auto-explore
             pathfinding = player.get_component_optional(ComponentType.PATHFINDING) if player else None
@@ -266,8 +294,15 @@ class ActionProcessor:
         
         Initializes the auto-explore component on the player and starts exploring.
         Displays a pithy adventure quote and system message.
+        
+        Note: If AutoExplore is already active, calling start() will reset/restart it.
+        This is intentional - allows players to restart exploration by pressing 'o' again.
         """
         player = self.state_manager.state.player
+        player_pos = (player.x, player.y) if player else None
+        logger.info(
+            f"🔍 DIAGNOSTIC: ActionProcessor._handle_start_auto_explore called at pos={player_pos}"
+        )
         if not player:
             logger.error("No player found for auto-explore")
             return
@@ -281,20 +316,33 @@ class ActionProcessor:
             player.auto_explore = auto_explore
             player.components.add(ComponentType.AUTO_EXPLORE, auto_explore)
         
-        # Start exploring
+        # Check if already active (for diagnostic logging)
+        was_already_active = auto_explore.is_active() if auto_explore else False
+        
+        # Start exploring (will reset if already active - this is intentional)
         quote = auto_explore.start(
             self.state_manager.state.game_map,
             self.state_manager.state.entities,
             self.state_manager.state.fov_map
         )
         
-        # Add messages
-        self.state_manager.state.message_log.add_message(MB.info(quote))
-        self.state_manager.state.message_log.add_message(
-            MB.system("You begin exploring the dungeon")
+        # DIAGNOSTIC: Log whether AutoExplore actually started or refused
+        is_active_after_start = auto_explore.is_active()
+        stop_reason_after_start = getattr(auto_explore, 'stop_reason', None)
+        logger.warning(
+            f"🔍 DIAGNOSTIC: ActionProcessor._handle_start_auto_explore: "
+            f"quote='{quote}', is_active={is_active_after_start}, "
+            f"stop_reason='{stop_reason_after_start}', pos={player_pos}"
         )
         
-        logger.info("Auto-explore started")
+        # Add messages
+        self.state_manager.state.message_log.add_message(MB.info(quote))
+        if is_active_after_start:
+            self.state_manager.state.message_log.add_message(
+                MB.system("You begin exploring the dungeon")
+            )
+        
+        logger.info(f"Auto-explore start attempt: quote='{quote}', active={is_active_after_start}")
     
     def _handle_bot_abort_run(self, _) -> None:
         """Handle bot run abort signal (Phase 1.6: Bot Soak Harness).

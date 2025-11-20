@@ -153,6 +153,24 @@ This summary appears:
 
 It is only printed when bot mode is enabled (`constants["input_config"]["bot_enabled"] = True`).
 
+### Death Handling and Run Metrics Finalization
+
+Player death finalization is centralized via `finalize_player_death()` in `engine_integration.py`. This ensures that run_metrics are properly finalized and the bot results summary is written regardless of which system detected the death:
+
+- **ActionProcessor path**: When player dies during a player-initiated action (e.g., combat retaliation)
+- **AISystem path**: When player dies during an enemy turn (e.g., killed by an Orc)
+- **EnvironmentSystem path**: When player dies from environmental hazards (e.g., fire, traps)
+
+All three paths call the shared `finalize_player_death()` helper, which:
+1. Sets PLAYER_DEAD game state
+2. Adds death message to message log
+3. Generates death quote for death screen
+4. Ends telemetry for current floor
+5. Finalizes run_metrics and stores on game_state
+6. Logs bot results summary if bot mode is enabled
+
+This centralized approach ensures that bot runs always produce complete metrics and summaries, even when death occurs during enemy turns.
+
 ## Testing
 
 ### Gold Regression Tests
