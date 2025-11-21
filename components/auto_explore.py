@@ -54,6 +54,11 @@ ADVENTURE_QUOTES = [
     "Charting new territory!",
 ]
 
+# Bot-only configuration: Opportunistic loot picking
+# When in bot mode, AutoExplore will make small detours to pick up nearby valuable items
+# This improves soak-test survivability without destabilizing core exploration logic
+BOT_LOOT_RADIUS = 5  # Maximum Manhattan distance for opportunistic loot detours
+
 
 class AutoExplore:
     """Component for automated dungeon exploration.
@@ -96,6 +101,10 @@ class AutoExplore:
         self.known_monsters: Set[int] = set()  # IDs of monsters visible when exploration started
         self.explored_tiles_at_start: Set[Tuple[int, int]] = set()  # Tiles explored before auto-explore started
         self.known_stairs: Set[Tuple[int, int]] = set()  # Positions of stairs we've already discovered
+        self.disable_opportunistic_loot: bool = False  # Disable loot targeting after oscillation
+        # Movement failure detection: stop if player position doesn't change
+        self._last_position: Optional[Tuple[int, int]] = None
+        self._stuck_movement_counter: int = 0
     
     def start(self, game_map: 'GameMap', entities: List['Entity'], fov_map=None) -> str:
         """Begin auto-exploring the dungeon.
@@ -150,6 +159,9 @@ class AutoExplore:
         self.known_monsters = set()  # Reset known monsters
         self.explored_tiles_at_start = set()  # Reset explored tiles snapshot
         self.known_stairs = set()  # Reset known stairs
+        # Reset movement failure detection
+        self._last_position = None
+        self._stuck_movement_counter = 0
         
         # Store initial HP for damage detection
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
@@ -252,6 +264,21 @@ class AutoExplore:
         player_pos = (self.owner.x, self.owner.y)
         logger.debug(f"AutoExplore.get_next_action: player_pos={player_pos}, active={self.active}, target={self.target_tile}, path_len={len(self.current_path)}")
         
+        # MOVEMENT FAILURE DETECTION: Check if player position hasn't changed
+        # If we're stuck trying the same movement that keeps failing, stop AutoExplore
+        if self._last_position is not None and self._last_position == player_pos:
+            self._stuck_movement_counter += 1
+            if self._stuck_movement_counter >= 3:
+                logger.warning(f"AutoExplore: Movement stuck at {player_pos} for {self._stuck_movement_counter} attempts, stopping")
+                self.stop("Movement blocked")
+                return None
+        else:
+            # Position changed or first check - reset counter
+            self._stuck_movement_counter = 0
+        
+        # Update last position for next check
+        self._last_position = player_pos
+        
         # Check stop conditions
         stop_reason = self._check_stop_conditions(game_map, entities, fov_map)
         if stop_reason:
@@ -271,8 +298,23 @@ class AutoExplore:
             logger.debug(f"AutoExplore.get_next_action: following path from {player_pos} to {next_pos}, delta=({dx},{dy}), remaining_path_len={len(self.current_path)}")
             return {'dx': dx, 'dy': dy}
         
-        # Need to find a new target
-        next_target = self._find_next_unexplored_tile(game_map)
+        # BOT OPPORTUNISTIC LOOT: Check for nearby valuable items before continuing exploration
+        # This only runs in bot mode and makes small, safe detours to improve survivability
+        # Only triggers when:
+        # - No enemies visible (already checked by stop conditions above)
+        # - Valuable items (potions, weapons, armor) within BOT_LOOT_RADIUS
+        # - Safe path exists to the item
+        # - Opportunistic loot is not disabled (can be disabled after oscillation)
+        loot_target = None
+        if not self.disable_opportunistic_loot:
+            loot_target = self._find_opportunistic_loot_target(game_map, entities, fov_map)
+        
+        if loot_target and loot_target != player_pos:  # Defensive: don't target own position
+            logger.debug(f"AutoExplore: Opportunistic loot target found at {loot_target}")
+            next_target = loot_target
+        else:
+            # Need to find a new exploration target
+            next_target = self._find_next_unexplored_tile(game_map)
         
         if next_target is None:
             # No more unexplored tiles reachable
@@ -994,6 +1036,106 @@ class AutoExplore:
         # No reachable target found
         logger.debug(f"AutoExplore._find_closest_tile: NO reachable targets found from {start} among {len(tiles)} candidates")
         return None
+    
+    def _find_opportunistic_loot_target(
+        self,
+        game_map: 'GameMap',
+        entities: List['Entity'],
+        fov_map
+    ) -> Optional[Tuple[int, int]]:
+        """Find nearby valuable loot for opportunistic pickup (bot mode only).
+        
+        This method enables the bot to make small, safe detours to pick up valuable
+        items (potions, weapons, armor) while exploring. This improves soak-test
+        survivability without destabilizing core exploration logic.
+        
+        Strategy:
+        1. Only runs in bot mode (checks if running via bot control)
+        2. Scans FOV for valuable items (potions, weapons, armor)
+        3. Filters to items within BOT_LOOT_RADIUS Manhattan distance
+        4. Returns closest valuable item, preferring potions
+        
+        Constraints:
+        - Only considers items within BOT_LOOT_RADIUS (small detours only)
+        - Already assumes no enemies visible (checked by stop conditions)
+        - Uses same pathfinding logic as normal exploration
+        
+        Args:
+            game_map: Game map for pathfinding
+            entities: All entities on the map
+            fov_map: Field-of-view map for visibility checks
+            
+        Returns:
+            (x, y): Position of valuable loot item to target, or None if none found
+        """
+        if not self.owner or not fov_map:
+            return None
+        
+        from fov_functions import map_is_in_fov
+        from components.component_registry import ComponentType
+        
+        player_pos = (self.owner.x, self.owner.y)
+        candidate_items = []
+        
+        # Scan FOV for valuable items
+        for entity in entities:
+            # Skip items at player's position (handled by LOOT state)
+            if (entity.x, entity.y) == player_pos:
+                continue
+            
+            # Skip if not in FOV
+            if not map_is_in_fov(fov_map, entity.x, entity.y):
+                continue
+            
+            # Check if this is a valuable item
+            is_valuable = False
+            item_priority = 0  # Lower = higher priority (for sorting)
+            
+            # Potions (highest priority - survivability)
+            # CRITICAL: Must exclude wands which also have use_function and may have char '!'
+            if entity.components.has(ComponentType.ITEM) and not entity.components.has(ComponentType.WAND):
+                item_comp = entity.get_component_optional(ComponentType.ITEM)
+                if item_comp and item_comp.use_function and entity.char == '!':
+                    is_valuable = True
+                    item_priority = 1  # Potions are highest priority
+            
+            # Weapons (medium priority)
+            if entity.components.has(ComponentType.EQUIPPABLE):
+                equippable = entity.get_component_optional(ComponentType.EQUIPPABLE)
+                if equippable:
+                    # Check if weapon (has damage)
+                    if equippable.damage_min > 0 or equippable.damage_max > 0:
+                        is_valuable = True
+                        item_priority = 2  # Weapons second priority
+                    # Check if armor (has AC or defense)
+                    elif equippable.armor_class_bonus > 0 or equippable.defense_bonus > 0:
+                        is_valuable = True
+                        item_priority = 3  # Armor third priority
+            
+            if not is_valuable:
+                continue
+            
+            # Check Manhattan distance (fast pre-filter before pathfinding)
+            item_pos = (entity.x, entity.y)
+            manhattan_dist = abs(entity.x - player_pos[0]) + abs(entity.y - player_pos[1])
+            
+            if manhattan_dist > BOT_LOOT_RADIUS:
+                continue  # Too far for opportunistic pickup
+            
+            # Add to candidates with priority
+            candidate_items.append((item_priority, manhattan_dist, item_pos, entity))
+        
+        if not candidate_items:
+            return None  # No valuable loot nearby
+        
+        # Sort by priority (potions first), then by distance
+        candidate_items.sort(key=lambda x: (x[0], x[1]))
+        
+        # Return the best candidate's position
+        _, _, loot_pos, loot_entity = candidate_items[0]
+        logger.info(f"AutoExplore: Opportunistic loot target: {loot_entity.name} at {loot_pos} (priority {candidate_items[0][0]}, distance {candidate_items[0][1]})")
+        
+        return loot_pos
     
     def _calculate_path_to(
         self,

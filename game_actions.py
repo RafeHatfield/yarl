@@ -168,25 +168,32 @@ class ActionProcessor:
                 )
             
             if auto_explore_active:
-                # Process auto-explore movement automatically
-                logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Processing AutoExplore turn at {player_pos}")
-                self._process_auto_explore_turn()
-                # Check if any key was pressed to cancel
-                # CRITICAL: Exclude 'start_auto_explore' from cancellation - it's not "cancelling input"
-                # BotBrain may return start_auto_explore due to cache mismatch, but we should ignore it
-                # when AutoExplore is already active, not cancel AutoExplore.
-                cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
-                if cancel_actions or mouse_action:
-                    # Actual user input cancels auto-explore
-                    logger.warning(
-                        f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to input! "
-                        f"action={cancel_actions}, mouse_action={mouse_action}"
-                    )
+                # CRITICAL: Pickup actions take priority over AutoExplore movement
+                # If bot is trying to pick up an item, process that FIRST, don't let AutoExplore override it
+                if action.get('pickup'):
+                    logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Pickup action takes priority, cancelling AutoExplore")
                     auto_explore.stop("Cancelled")
-                    self.state_manager.state.message_log.add_message(
-                        MB.info("Auto-explore cancelled")
-                    )
-                return  # Don't process other input this turn
+                    # Fall through to process pickup action below
+                else:
+                    # Process auto-explore movement automatically
+                    logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Processing AutoExplore turn at {player_pos}")
+                    self._process_auto_explore_turn()
+                    # Check if any key was pressed to cancel
+                    # CRITICAL: Exclude 'start_auto_explore' from cancellation - it's not "cancelling input"
+                    # BotBrain may return start_auto_explore due to cache mismatch, but we should ignore it
+                    # when AutoExplore is already active, not cancel AutoExplore.
+                    cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
+                    if cancel_actions or mouse_action:
+                        # Actual user input cancels auto-explore
+                        logger.warning(
+                            f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to input! "
+                            f"action={cancel_actions}, mouse_action={mouse_action}"
+                        )
+                        auto_explore.stop("Cancelled")
+                        self.state_manager.state.message_log.add_message(
+                            MB.info("Auto-explore cancelled")
+                        )
+                    return  # Don't process other input this turn
             elif auto_explore and not auto_explore_active:
                 # AutoExplore exists but is not active - log why
                 stop_reason = getattr(auto_explore, 'stop_reason', None)
@@ -950,6 +957,12 @@ class ActionProcessor:
         
         # If pickup successful, consume turn
         if result.success:
+            # BOT AUTO-EQUIP: If in bot mode, automatically equip better items
+            # This only runs for bot-controlled players, not manual (human) play
+            if self.is_bot_mode:
+                from io_layer.bot_equipment import auto_equip_better_items
+                auto_equip_better_items(player, is_bot_mode=True)
+            
             # TURN ECONOMY: Picking up an item takes 1 turn
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)

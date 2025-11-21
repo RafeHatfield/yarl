@@ -93,9 +93,23 @@ class TestBotBrainExplore:
         player.components = Mock()
         player.components.has = Mock(return_value=False)
         
+        # Mock healthy fighter component (so bot doesn't try to drink potions)
+        mock_fighter = Mock()
+        mock_fighter.hp = 100
+        mock_fighter.max_hp = 100
+        
         mock_auto_explore = Mock()
         mock_auto_explore.is_active = Mock(return_value=True)
-        player.get_component_optional = Mock(return_value=mock_auto_explore)
+        
+        # Return appropriate component based on type
+        def get_component(comp_type):
+            if comp_type == ComponentType.FIGHTER:
+                return mock_fighter
+            elif comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
         
         game_state.player = player
         
@@ -115,6 +129,11 @@ class TestBotBrainExplore:
         game_state.entities = []
         game_state.fov_map = Mock()
         
+        # Mock healthy fighter component (so bot doesn't try to drink potions)
+        mock_fighter = Mock()
+        mock_fighter.hp = 100
+        mock_fighter.max_hp = 100
+        
         # Mock player without auto-explore initially
         player = Mock()
         player.x = 10
@@ -122,7 +141,14 @@ class TestBotBrainExplore:
         player.faction = Mock()
         player.components = Mock()
         player.components.has = Mock(return_value=False)
-        player.get_component_optional = Mock(return_value=None)
+        
+        # Return fighter but no auto-explore initially
+        def get_component_initial(comp_type):
+            if comp_type == ComponentType.FIGHTER:
+                return mock_fighter
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component_initial)
         
         game_state.player = player
         
@@ -133,7 +159,16 @@ class TestBotBrainExplore:
         # Simulate autoexplore becoming active
         mock_auto_explore = Mock()
         mock_auto_explore.is_active = Mock(return_value=True)
-        player.get_component_optional = Mock(return_value=mock_auto_explore)
+        
+        # Return both fighter and active auto-explore
+        def get_component_active(comp_type):
+            if comp_type == ComponentType.FIGHTER:
+                return mock_fighter
+            elif comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component_active)
         
         # Second call: should let autoexplore run (empty action)
         action2 = brain.decide_action(game_state)

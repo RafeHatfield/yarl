@@ -77,6 +77,16 @@ class BotBrain:
         # Track autoexplore lifecycle for logging
         self._last_autoexplore_active = False
         self._last_state = BotState.EXPLORE  # Track state transitions for summary logging
+        # Equipment re-evaluation: periodically check for better gear
+        self._turns_since_last_reequip_check = 0
+        self._reequip_check_interval = 10  # Re-evaluate equipment every 10 turns
+        # Stuck flag auto-clear: prevent infinite loops when stuck flag blocks combat
+        self._stuck_skip_counter = 0
+        # Loot oscillation prevention: skip LOOT state temporarily after oscillation
+        self._skip_loot_until_turn = 0  # Turn number when we can re-enter LOOT
+        self._turn_counter = 0  # Track turn count for loot skip timing
+        # Disable opportunistic loot after LOOT oscillation to prevent ping-pong between items
+        self._disable_opportunistic_loot = False
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -96,6 +106,9 @@ class BotBrain:
             return {}
         
         try:
+            # Track turn count for loot skip timing
+            self._turn_counter += 1
+            
             # Get player entity
             player = self._get_player(game_state)
             if not player:
@@ -103,6 +116,29 @@ class BotBrain:
             
             # Get visible enemies
             visible_enemies = self._get_visible_enemies(game_state, player)
+            
+            # POTION-DRINKING LOGIC: Check if bot should drink a potion (soak testing survivability)
+            # This takes priority over other actions when conditions are met:
+            # - Low HP (≤40%)
+            # - No visible enemies (safe to drink)
+            # - Has potions in inventory
+            if self._should_drink_potion(player, visible_enemies):
+                potion_index = self._choose_potion_to_drink(player)
+                if potion_index is not None:
+                    self._debug(f"Drinking potion at inventory index {potion_index}")
+                    return {"inventory_index": potion_index}
+            
+            # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
+            # This runs every N turns when in EXPLORE state and safe (no enemies)
+            # Ensures the bot equips the best available gear even if it picked up items earlier
+            self._turns_since_last_reequip_check += 1
+            if (self._turns_since_last_reequip_check >= self._reequip_check_interval and
+                not visible_enemies):
+                # Safe to re-evaluate equipment
+                self._turns_since_last_reequip_check = 0
+                self._debug(f"Periodic equipment re-evaluation")
+                from io_layer.bot_equipment import auto_equip_better_items
+                auto_equip_better_items(player, is_bot_mode=True)
             
             # CRITICAL INVARIANT: Adjacent enemies always override "don't re-target" protections
             # If any hostile enemy is adjacent (Manhattan distance 1), we MUST attack it,
@@ -158,6 +194,15 @@ class BotBrain:
                                 self._debug(f"Skipping re-entry to COMBAT with same target after no-op fail-safe")
                                 # Keep flag set to prevent immediate re-entry
                             # Stay in EXPLORE, don't re-enter COMBAT
+                            # Increment skip counter - after several skips, clear flags to allow re-engagement
+                            self._stuck_skip_counter += 1
+                            if self._stuck_skip_counter >= 5:
+                                self._debug("Clearing stuck flags after 5 skip cycles")
+                                self._just_dropped_due_to_stuck = False
+                                self._just_dropped_due_to_noop = False
+                                self._stuck_dropped_target = None
+                                self._noop_dropped_target = None
+                                self._stuck_skip_counter = 0
                         else:
                             # Different target or flags not set - can enter COMBAT
                             if self.state != BotState.COMBAT or self.current_target != nearest_enemy:
@@ -173,6 +218,7 @@ class BotBrain:
                             self._just_dropped_due_to_noop = False
                             self._stuck_dropped_target = None
                             self._noop_dropped_target = None
+                            self._stuck_skip_counter = 0  # Reset counter when entering combat
                     else:
                         if self.state == BotState.COMBAT:
                             self._debug(f"Enemy too far (distance {manhattan_dist}), leaving COMBAT")
@@ -188,14 +234,30 @@ class BotBrain:
                     self.state = BotState.EXPLORE
                     self._reset_stuck_state()
             elif standing_on_loot:
-                if self.state != BotState.LOOT:
-                    self._debug("Entering LOOT state")
-                    self._log_state_transition(BotState.LOOT)
-                self.state = BotState.LOOT
-                # Clear combat target when looting
-                if self.current_target:
-                    self.current_target = None
-                    self._reset_stuck_state()
+                # Check if we should skip LOOT state (oscillation prevention)
+                if self._turn_counter < self._skip_loot_until_turn:
+                    # Skip LOOT for now - stay in EXPLORE to break oscillation
+                    self._debug(f"Skipping LOOT state until turn {self._skip_loot_until_turn} (oscillation prevention)")
+                    # Re-enable opportunistic loot after cooldown expires
+                    auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                    if auto_explore and auto_explore.disable_opportunistic_loot and self._turn_counter >= self._skip_loot_until_turn - 1:
+                        auto_explore.disable_opportunistic_loot = False
+                        self._debug("Re-enabled opportunistic loot (cooldown ending)")
+                else:
+                    if self.state != BotState.LOOT:
+                        self._debug("Entering LOOT state")
+                        self._log_state_transition(BotState.LOOT)
+                    self.state = BotState.LOOT
+                    # Clear combat target when looting
+                    if self.current_target:
+                        self.current_target = None
+                        self._reset_stuck_state()
+                    # Re-enable opportunistic loot when successfully entering LOOT
+                    # (oscillation has been avoided)
+                    auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                    if auto_explore and auto_explore.disable_opportunistic_loot:
+                        auto_explore.disable_opportunistic_loot = False
+                        self._debug("Re-enabled opportunistic loot")
             else:
                 if self.state == BotState.COMBAT:
                     self._debug("No enemies visible, leaving COMBAT")
@@ -208,8 +270,22 @@ class BotBrain:
             # Actions based on state
             action = {}
             if self.state == BotState.EXPLORE:
+                # FAIL-SAFE: If in EXPLORE with visible enemies but stuck flags prevent combat,
+                # and we keep getting stuck in AutoExplore restart loops, just wait
+                # This prevents infinite loops when bot can't engage enemy and can't explore
+                if visible_enemies and (self._just_dropped_due_to_stuck or self._just_dropped_due_to_noop):
+                    # Check if we're in a restart loop (AutoExplore keeps failing immediately)
+                    auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                    if auto_explore and not auto_explore.is_active() and auto_explore.stop_reason:
+                        # AutoExplore is stopped - if it's "Cannot reach", we're likely stuck
+                        if "Cannot reach" in auto_explore.stop_reason:
+                            self._debug("FAIL-SAFE: Stuck in EXPLORE with enemy visible and AutoExplore failing, waiting")
+                            action = {"wait": True}
+                            # This will be handled below, don't return yet
+                
                 # Normal EXPLORE path - start autoexplore once, then let it run
-                action = self._handle_explore(player, game_state)
+                if not action:  # Only if we didn't set wait action above
+                    action = self._handle_explore(player, game_state)
             elif self.state == BotState.COMBAT:
                 action = self._handle_combat(player, visible_enemies, game_state)
             elif self.state == BotState.LOOT:
@@ -245,14 +321,26 @@ class BotBrain:
                     self._stuck_dropped_target = old_target
                     # Return explore action instead of combat action
                     return self._handle_explore(player, game_state)
-                elif self.state == BotState.EXPLORE:
-                    # EXPLORE oscillation detected but not handled - this is the bug!
-                    logger.warning(
-                        f"🔍 DIAGNOSTIC: EXPLORE oscillation NOT handled! "
-                        f"positions={oscillating_positions}, "
-                        f"autoexplore_active={self._is_autoexplore_active(game_state)}, "
-                        f"cached_autoexplore_active={self._last_autoexplore_active}"
-                    )
+                elif self.state == BotState.EXPLORE or self.state == BotState.LOOT:
+                    # EXPLORE/LOOT oscillation: Break out of the loop
+                    self._debug(f"Oscillation detected in {self.state.name}, forcing EXPLORE and skipping LOOT for 5 turns")
+                    self._recent_positions.clear()
+                    # Reset stuck skip counter to give combat another chance if enemy appears
+                    self._stuck_skip_counter = 0
+                    # Force EXPLORE state to break out of problematic LOOT loops
+                    if self.state == BotState.LOOT:
+                        self.state = BotState.EXPLORE
+                        self._log_state_transition(BotState.EXPLORE)
+                    # Skip LOOT state for 5 turns to break oscillation
+                    self._skip_loot_until_turn = self._turn_counter + 5
+                    # CRITICAL: Disable opportunistic loot to prevent AutoExplore from targeting nearby items
+                    # Set flag on AutoExplore component if it exists
+                    auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                    if auto_explore:
+                        auto_explore.disable_opportunistic_loot = True
+                        self._debug("Disabled opportunistic loot on AutoExplore to prevent item ping-pong")
+                    # Return explore action immediately to break the cycle
+                    return self._handle_explore(player, game_state)
             
             # If in COMBAT, update stuck detection with action
             if self.state == BotState.COMBAT and self.current_target:
@@ -944,4 +1032,156 @@ class BotBrain:
             # Also log to file for later analysis
             print(f"BotBrain: {msg}")
             logger.debug(f"BotBrain: {msg}")
+    
+    # ========================================================================
+    # POTION-DRINKING LOGIC (for soak testing survivability)
+    # ========================================================================
+    
+    def _get_player_hp_fraction(self, player: Any) -> float:
+        """Calculate player's current HP as a fraction of max HP.
+        
+        Args:
+            player: Player entity
+            
+        Returns:
+            float: HP fraction (0.0 to 1.0), or 1.0 if no fighter component
+        """
+        fighter = player.get_component_optional(ComponentType.FIGHTER)
+        if not fighter or fighter.max_hp <= 0:
+            return 1.0
+        
+        return fighter.hp / fighter.max_hp
+    
+    def _get_healing_potions_in_inventory(self, player: Any) -> List[tuple]:
+        """Get all known healing potions from player's inventory.
+        
+        CRITICAL: Returns indices into SORTED inventory (alphabetically by display name)
+        to match the inventory action handler's expectations.
+        
+        Args:
+            player: Player entity
+            
+        Returns:
+            List of (index, item_entity) tuples for healing potions
+        """
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        if not inventory or not hasattr(inventory, 'items'):
+            return []
+        
+        # CRITICAL: Sort inventory alphabetically to match action handler
+        sorted_items = sorted(inventory.items, key=lambda item: item.get_display_name().lower())
+        
+        healing_potions = []
+        for idx, item in enumerate(sorted_items):
+            item_comp = item.get_component_optional(ComponentType.ITEM)
+            if not item_comp:
+                continue
+            
+            # Check if this is a healing potion
+            # Healing potions have name "healing_potion" and use_function "heal"
+            item_name = item.name.lower().replace(' ', '_')
+            
+            # Must be identified as a healing potion
+            if item_comp.identified and item_name == "healing_potion":
+                healing_potions.append((idx, item))
+        
+        return healing_potions
+    
+    def _get_any_potions_in_inventory(self, player: Any) -> List[tuple]:
+        """Get all potions (identified or unidentified) from player's inventory.
+        
+        CRITICAL: Returns indices into SORTED inventory (alphabetically by display name)
+        to match the inventory action handler's expectations.
+        
+        Args:
+            player: Player entity
+            
+        Returns:
+            List of (index, item_entity) tuples for all potions
+        """
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        if not inventory or not hasattr(inventory, 'items'):
+            return []
+        
+        # CRITICAL: Sort inventory alphabetically to match action handler
+        sorted_items = sorted(inventory.items, key=lambda item: item.get_display_name().lower())
+        
+        potions = []
+        for idx, item in enumerate(sorted_items):
+            item_comp = item.get_component_optional(ComponentType.ITEM)
+            if not item_comp:
+                continue
+            
+            # Check if this is a potion (has use_function and char '!' BUT not a wand)
+            # Potions have char '!' but we must exclude wands which also have use_function
+            # CRITICAL: Check for wand component to exclude wands
+            if item.components.has(ComponentType.WAND):
+                continue  # Skip wands
+            
+            if item_comp.use_function and item.char == '!':
+                potions.append((idx, item))
+        
+        return potions
+    
+    def _should_drink_potion(self, player: Any, visible_enemies: List[Any]) -> bool:
+        """Check if bot should drink a potion.
+        
+        Conditions:
+        - HP <= 40% (low health threshold)
+        - No visible enemies (safe to drink)
+        
+        Args:
+            player: Player entity
+            visible_enemies: List of visible hostile enemies
+            
+        Returns:
+            bool: True if bot should try to drink a potion
+        """
+        # Must be low on HP
+        hp_fraction = self._get_player_hp_fraction(player)
+        if hp_fraction > 0.4:  # 40% threshold
+            return False
+        
+        # Must have no visible enemies (safe)
+        if visible_enemies:
+            return False
+        
+        return True
+    
+    def _choose_potion_to_drink(self, player: Any) -> Optional[int]:
+        """Choose which potion to drink and return its inventory index.
+        
+        Strategy:
+        1. Prefer known healing potions (safe, effective)
+        2. Fall back to any potion if no healing potions available
+        
+        Args:
+            player: Player entity
+            
+        Returns:
+            int: Inventory index of potion to drink, or None if no potions
+        """
+        # First, try to find a known healing potion
+        healing_potions = self._get_healing_potions_in_inventory(player)
+        if healing_potions:
+            # Use the first healing potion
+            idx, item = healing_potions[0]
+            self._log_summary(
+                f"POTION: Drinking known healing potion at HP {self._get_player_hp_fraction(player):.1%}"
+            )
+            return idx
+        
+        # No known healing potions - try any potion
+        any_potions = self._get_any_potions_in_inventory(player)
+        if any_potions:
+            # Use the first available potion
+            idx, item = any_potions[0]
+            display_name = item.get_display_name() if hasattr(item, 'get_display_name') else item.name
+            self._log_summary(
+                f"POTION: Drinking unidentified potion ({display_name}) at HP {self._get_player_hp_fraction(player):.1%}"
+            )
+            return idx
+        
+        # No potions available
+        return None
 
