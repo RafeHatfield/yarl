@@ -117,6 +117,9 @@ class BotBrain:
             if not player:
                 return {}
             
+            # Get entities list (needed for multiple checks)
+            entities = getattr(game_state, 'entities', [])
+            
             # Get visible enemies
             visible_enemies = self._get_visible_enemies(game_state, player)
             
@@ -198,7 +201,6 @@ class BotBrain:
                 return self._handle_combat(player, visible_enemies, game_state)
             
             # Check if standing on loot
-            entities = getattr(game_state, 'entities', [])
             standing_on_loot = self._standing_on_loot(player, entities)
             
             # If in COMBAT, validate current target first

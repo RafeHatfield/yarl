@@ -251,8 +251,21 @@ def get_game_variables(constants):
     # Detect bot mode from constants (set by engine.py CLI parsing)
     bot_enabled = constants.get("input_config", {}).get("bot_enabled", False)
     run_mode = "bot" if bot_enabled else "human"
-    initialize_run_metrics_recorder(mode=run_mode, seed=None)
-    logger.info(f"Run metrics recorder initialized: mode={run_mode}")
+    
+    # Get soak config if available (bot-soak mode with limits)
+    soak_config = constants.get("soak_config", {})
+    start_floor = soak_config.get("start_floor", 1)
+    max_turns = soak_config.get("max_turns")
+    max_floors = soak_config.get("max_floors")
+    
+    initialize_run_metrics_recorder(
+        mode=run_mode, 
+        seed=None,
+        start_floor=start_floor,
+        max_turns=max_turns,
+        max_floors=max_floors
+    )
+    logger.info(f"Run metrics recorder initialized: mode={run_mode}, start_floor={start_floor}")
     
     # Phase 1.5b: Wire telemetry floor tracking for initial floor
     from services.telemetry_service import get_telemetry_service
