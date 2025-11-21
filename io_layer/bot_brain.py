@@ -28,6 +28,9 @@ class LogLevel(Enum):
 # Stuck detection threshold: number of consecutive combat decisions without progress
 STUCK_THRESHOLD = 8
 
+# Bot stairs-seeking configuration: maximum distance to walk to stairs after floor complete
+BOT_STAIRS_RADIUS = 10  # Bot will walk up to 10 tiles to reach stairs when floor is explored
+
 
 class BotState(Enum):
     """Bot decision-making states."""
@@ -127,6 +130,35 @@ class BotBrain:
                 if potion_index is not None:
                     self._debug(f"Drinking potion at inventory index {potion_index}")
                     return {"inventory_index": potion_index}
+            
+            # STAIRS DESCENT: If floor is fully explored, seek and use stairs (multi-floor soak testing)
+            # Only triggers when:
+            # - Floor is complete (AutoExplore stopped with "All areas explored" or "Cannot reach")
+            # - No enemies visible (safe to descend)
+            # Priority: Check if standing on stairs first, then seek nearby stairs
+            if not visible_enemies and self._is_floor_complete(player):
+                # Check if standing on stairs
+                if self._is_standing_on_stairs(player, entities):
+                    self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
+                    return {"take_stairs": True}
+                
+                # Look for stairs within radius
+                stairs_pos = self._find_nearest_stairs(player, entities)
+                if stairs_pos:
+                    stairs_dist = abs(stairs_pos[0] - player.x) + abs(stairs_pos[1] - player.y)
+                    self._debug(f"STAIRS: Walking to stairs at {stairs_pos} (distance {stairs_dist})")
+                    # Calculate move toward stairs
+                    dx = 0
+                    dy = 0
+                    if stairs_pos[0] > player.x:
+                        dx = 1
+                    elif stairs_pos[0] < player.x:
+                        dx = -1
+                    if stairs_pos[1] > player.y:
+                        dy = 1
+                    elif stairs_pos[1] < player.y:
+                        dy = -1
+                    return self._build_move_action(dx, dy)
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
@@ -1032,6 +1064,77 @@ class BotBrain:
             # Also log to file for later analysis
             print(f"BotBrain: {msg}")
             logger.debug(f"BotBrain: {msg}")
+    
+    # ========================================================================
+    # STAIRS DESCENT LOGIC (for multi-floor soak testing)
+    # ========================================================================
+    
+    def _is_floor_complete(self, player: Any) -> bool:
+        """Check if current floor is fully explored (for stairs descent).
+        
+        A floor is considered complete when AutoExplore has stopped with reasons:
+        - "All areas explored"
+        - "Cannot reach unexplored areas"
+        
+        Args:
+            player: Player entity
+            
+        Returns:
+            bool: True if floor is fully explored
+        """
+        auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+        if not auto_explore:
+            return False
+        
+        # Floor is complete if AutoExplore stopped due to completion
+        if not auto_explore.is_active() and auto_explore.stop_reason:
+            completion_reasons = ["All areas explored", "Cannot reach unexplored areas"]
+            return any(reason in auto_explore.stop_reason for reason in completion_reasons)
+        
+        return False
+    
+    def _is_standing_on_stairs(self, player: Any, entities: List[Any]) -> bool:
+        """Check if player is currently standing on stairs.
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            
+        Returns:
+            bool: True if standing on stairs
+        """
+        for entity in entities:
+            if hasattr(entity, 'components') and entity.components.has(ComponentType.STAIRS):
+                if entity.x == player.x and entity.y == player.y:
+                    return True
+        return False
+    
+    def _find_nearest_stairs(self, player: Any, entities: List[Any]) -> Optional[tuple]:
+        """Find nearest stairs within BOT_STAIRS_RADIUS.
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            
+        Returns:
+            (x, y) position of nearest stairs, or None if none within radius
+        """
+        stairs_positions = []
+        
+        for entity in entities:
+            if hasattr(entity, 'components') and entity.components.has(ComponentType.STAIRS):
+                # Calculate Manhattan distance
+                dist = abs(entity.x - player.x) + abs(entity.y - player.y)
+                if dist <= BOT_STAIRS_RADIUS:
+                    stairs_positions.append((dist, (entity.x, entity.y)))
+        
+        if not stairs_positions:
+            return None
+        
+        # Return closest stairs
+        stairs_positions.sort(key=lambda x: x[0])
+        _, pos = stairs_positions[0]
+        return pos
     
     # ========================================================================
     # POTION-DRINKING LOGIC (for soak testing survivability)

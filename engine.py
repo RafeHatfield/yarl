@@ -181,6 +181,35 @@ Examples:
         help='Number of bot runs to execute when --bot-soak is active (default: 10)'
     )
     
+    parser.add_argument(
+        '--max-turns',
+        type=int,
+        metavar='N',
+        help='Maximum turns per run (bot-soak only, ends run with "max_turns" outcome)'
+    )
+    
+    parser.add_argument(
+        '--max-floors',
+        type=int,
+        metavar='N',
+        help='Maximum floor depth per run (bot-soak only, ends run at this floor)'
+    )
+    
+    parser.add_argument(
+        '--start-floor',
+        type=int,
+        metavar='N',
+        default=1,
+        help='Starting floor for bot runs (bot-soak only, default: 1)'
+    )
+    
+    parser.add_argument(
+        '--metrics-log',
+        type=str,
+        metavar='PATH',
+        help='Output file for per-run metrics in JSONL format (bot-soak only)'
+    )
+    
     return parser.parse_args()
 
 
@@ -218,6 +247,10 @@ def main():
             telemetry_enabled=True,
             telemetry_output_path=telemetry_path,
             constants=constants,
+            max_turns=args.max_turns,
+            max_floors=args.max_floors,
+            start_floor=args.start_floor,
+            metrics_log_path=args.metrics_log,
         )
         
         # Print session summary

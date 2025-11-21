@@ -225,6 +225,10 @@ def run_bot_soak(
     telemetry_enabled: bool,
     telemetry_output_path: Optional[str] = None,
     constants: Optional[Dict[str, Any]] = None,
+    max_turns: Optional[int] = None,
+    max_floors: Optional[int] = None,
+    start_floor: int = 1,
+    metrics_log_path: Optional[str] = None,
 ) -> SoakSessionResult:
     """Run multiple bot games back-to-back for soak testing.
     
@@ -258,6 +262,10 @@ def run_bot_soak(
         telemetry_enabled: Whether to collect telemetry
         telemetry_output_path: Base path for telemetry JSONL output
         constants: Game constants (if None, will call get_constants())
+        max_turns: Optional maximum turns per run (ends with "max_turns" outcome)
+        max_floors: Optional maximum floor depth per run (ends with "max_floors" outcome)
+        start_floor: Starting floor for runs (default: 1)
+        metrics_log_path: Optional path for per-run JSONL metrics output
         
     Returns:
         SoakSessionResult with aggregate statistics
@@ -273,7 +281,8 @@ def run_bot_soak(
     from game_states import GameStates
     from config.ui_layout import get_ui_layout
     
-    logger.info(f"Starting bot soak session: {runs} runs, telemetry={telemetry_enabled}")
+    logger.info(f"Starting bot soak session: {runs} runs, telemetry={telemetry_enabled}, "
+                f"max_turns={max_turns}, max_floors={max_floors}, start_floor={start_floor}")
     
     session_start = time.time()
     session_result = SoakSessionResult(total_runs=runs)
@@ -288,6 +297,20 @@ def run_bot_soak(
     
     # Mark this as bot soak mode for engine_integration to disable enemy AI
     constants["bot_soak_mode"] = True
+    
+    # Store soak harness config in constants for per-run access
+    constants["soak_config"] = {
+        "max_turns": max_turns,
+        "max_floors": max_floors,
+        "start_floor": start_floor,
+    }
+    
+    # Prepare metrics JSONL output if requested
+    metrics_jsonl_path = None
+    if metrics_log_path:
+        metrics_jsonl_path = Path(metrics_log_path)
+        metrics_jsonl_path.parent.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Metrics JSONL output: {metrics_jsonl_path}")
     
     # CRITICAL: Initialize libtcod root console ONCE for the entire session
     # Without this, ConsoleRenderer.render() will crash on console_flush()

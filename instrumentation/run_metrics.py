@@ -42,6 +42,7 @@ class RunMetrics:
         
         deepest_floor: Deepest dungeon level reached
         floors_visited: Total unique floors visited
+        start_floor: Starting floor for this run (default: 1)
         
         steps_taken: Total player movement steps (from turns_taken)
         tiles_explored: Total map tiles explored
@@ -50,7 +51,9 @@ class RunMetrics:
         items_picked_up: Total items picked up from ground
         portals_used: Total portals created/used (wand of portals)
         
-        outcome: Final outcome - "death", "victory", "quit", "bot_abort", "in_progress"
+        outcome: Final outcome - "death", "victory", "quit", "bot_abort", "max_turns", "max_floors", "in_progress"
+        max_turns_limit: Optional maximum turns limit for this run
+        max_floors_limit: Optional maximum floors limit for this run
     """
     run_id: str
     mode: Literal["human", "bot"]
@@ -62,6 +65,7 @@ class RunMetrics:
     
     deepest_floor: int = 1
     floors_visited: int = 1
+    start_floor: int = 1
     
     steps_taken: int = 0
     tiles_explored: int = 0
@@ -70,7 +74,9 @@ class RunMetrics:
     items_picked_up: int = 0
     portals_used: int = 0
     
-    outcome: Literal["death", "victory", "quit", "bot_abort", "in_progress"] = "in_progress"
+    outcome: Literal["death", "victory", "quit", "bot_abort", "max_turns", "max_floors", "in_progress"] = "in_progress"
+    max_turns_limit: Optional[int] = None
+    max_floors_limit: Optional[int] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary for JSON export.
@@ -150,21 +156,28 @@ class RunMetricsRecorder:
         telemetry.add_run_metrics(metrics.to_dict())
     """
     
-    def __init__(self, mode: Literal["human", "bot"], seed: Optional[int] = None):
+    def __init__(self, mode: Literal["human", "bot"], seed: Optional[int] = None, 
+                 start_floor: int = 1, max_turns: Optional[int] = None, max_floors: Optional[int] = None):
         """Initialize recorder for a new run.
         
         Args:
             mode: "human" for keyboard input, "bot" for automated play
             seed: Optional RNG seed (for future deterministic replay)
+            start_floor: Starting floor for this run (default: 1)
+            max_turns: Optional maximum turns limit
+            max_floors: Optional maximum floors limit
         """
         self.run_id = uuid.uuid4().hex
         self.mode = mode
         self.seed = seed
+        self.start_floor = start_floor
+        self.max_turns_limit = max_turns
+        self.max_floors_limit = max_floors
         self.start_time: Optional[datetime] = None
         self.end_time: Optional[datetime] = None
         self._metrics: Optional[RunMetrics] = None
         
-        logger.info(f"RunMetricsRecorder initialized: run_id={self.run_id}, mode={mode}")
+        logger.info(f"RunMetricsRecorder initialized: run_id={self.run_id}, mode={mode}, start_floor={start_floor}")
     
     def start(self) -> None:
         """Mark the run as started with current timestamp."""
@@ -173,7 +186,7 @@ class RunMetricsRecorder:
     
     def finalize(
         self,
-        outcome: Literal["death", "victory", "quit", "bot_abort"],
+        outcome: Literal["death", "victory", "quit", "bot_abort", "max_turns", "max_floors"],
         statistics,  # components.statistics.Statistics
         game_map,    # map_objects.game_map.GameMap
     ) -> None:
@@ -205,12 +218,15 @@ class RunMetricsRecorder:
             duration_seconds=duration_seconds,
             deepest_floor=statistics.deepest_level,
             floors_visited=statistics.deepest_level,  # Simplified: assume linear descent
+            start_floor=self.start_floor,
             steps_taken=statistics.turns_taken,
             tiles_explored=tiles_explored,
             monsters_killed=statistics.total_kills,
             items_picked_up=statistics.items_picked_up,
             portals_used=statistics.portals_used,
             outcome=outcome,
+            max_turns_limit=self.max_turns_limit,
+            max_floors_limit=self.max_floors_limit,
         )
         
         logger.info(
@@ -265,7 +281,10 @@ _run_metrics_recorder: Optional[RunMetricsRecorder] = None
 
 def initialize_run_metrics_recorder(
     mode: Literal["human", "bot"],
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
+    start_floor: int = 1,
+    max_turns: Optional[int] = None,
+    max_floors: Optional[int] = None
 ) -> RunMetricsRecorder:
     """Initialize the global run metrics recorder for a new game.
     
@@ -274,12 +293,21 @@ def initialize_run_metrics_recorder(
     Args:
         mode: "human" for keyboard input, "bot" for automated play
         seed: Optional RNG seed (for future deterministic replay)
+        start_floor: Starting floor for this run (default: 1)
+        max_turns: Optional maximum turns limit
+        max_floors: Optional maximum floors limit
         
     Returns:
         Initialized RunMetricsRecorder singleton
     """
     global _run_metrics_recorder
-    _run_metrics_recorder = RunMetricsRecorder(mode=mode, seed=seed)
+    _run_metrics_recorder = RunMetricsRecorder(
+        mode=mode, 
+        seed=seed,
+        start_floor=start_floor,
+        max_turns=max_turns,
+        max_floors=max_floors
+    )
     _run_metrics_recorder.start()
     return _run_metrics_recorder
 
@@ -300,7 +328,7 @@ def reset_run_metrics_recorder() -> None:
 
 
 def finalize_run_metrics(
-    outcome: Literal["death", "victory", "quit", "bot_abort"],
+    outcome: Literal["death", "victory", "quit", "bot_abort", "max_turns", "max_floors"],
     player,
     game_map,
 ) -> Optional[RunMetrics]:
