@@ -134,61 +134,33 @@ class BotInputSource:
                 # Player is a mock or incomplete - will use fallback below
                 auto_explore_active = False
         
-        # SOAK MODE CHECK: In soak mode, use simplified auto-explore-only behavior
-        # Non-soak mode delegates to BotBrain for combat-enabled behavior
-        if self._is_soak_mode(game_state):
-            # Soak mode: Simplified deterministic algorithm
-            # a. If auto-explore is active, let it run
-            if auto_explore_active:
-                self._last_auto_explore_active = True
-                self._fully_explored_detected = False
-                self._failed_explore_attempts = 0
-                return {}
-            
-            # b. If auto-explore exists but is inactive, check stop_reason
-            if auto_explore is not None:
-                stop_reason = getattr(auto_explore, "stop_reason", None)
-                
-                # If floor fully explored → immediately end run
-                if stop_reason == "All areas explored":
-                    logger.info("Bot soak: Floor fully explored - ending run immediately")
-                    return {"bot_abort_run": True}
-                
-                # Otherwise, auto-explore stopped for some other reason - restart it
-                self._auto_explore_started = True
-                self._last_auto_explore_active = auto_explore_active
-                return {"start_auto_explore": True}
-            
-            # c. If auto-explore is None, initialize it
+        # USE BOTBRAIN FOR ALL BOT MODES (regular --bot and --bot-soak)
+        # BotBrain provides: combat, loot, potion-drinking, equipment, stairs descent
+        # The only difference in soak mode is enemy AI being disabled (handled in engine_integration)
+        # This ensures --bot and --bot-soak have identical bot behavior
+        action = None
+        try:
+            action = self.bot_brain.decide_action(game_state)
+        except Exception as e:
+            # BotBrain raised an exception - will use fallback
+            logger.debug(f"BotBrain.decide_action raised exception: {e}, falling back to Phase 1")
+            action = None
+        
+        # If BotBrain returned a valid action dict, use it
+        if isinstance(action, dict) and action:
+            # BotBrain returned a non-empty action (Phase 2 behavior)
+            self._auto_explore_started = True
+            self._last_auto_explore_active = auto_explore_active
+            return action
+        
+        # Fallback: Start auto-explore if available
+        if auto_explore is not None or hasattr(player, 'get_component_optional'):
             self._auto_explore_started = True
             self._last_auto_explore_active = auto_explore_active
             return {"start_auto_explore": True}
         else:
-            # Non-soak bot mode: Use BotBrain for combat-enabled behavior (Phase 2)
-            # Do not emit bot_abort_run in non-soak mode
-            action = None
-            try:
-                action = self.bot_brain.decide_action(game_state)
-            except Exception as e:
-                # BotBrain raised an exception - will use fallback
-                logger.debug(f"BotBrain.decide_action raised exception: {e}, falling back to Phase 1")
-                action = None
-            
-            # If BotBrain returned a valid action dict, use it
-            if isinstance(action, dict) and action:
-                # BotBrain returned a non-empty action (Phase 2 behavior)
-                self._auto_explore_started = True
-                self._last_auto_explore_active = auto_explore_active
-                return action
-            
-            # Fallback: Start auto-explore if available
-            if auto_explore is not None or hasattr(player, 'get_component_optional'):
-                self._auto_explore_started = True
-                self._last_auto_explore_active = auto_explore_active
-                return {"start_auto_explore": True}
-            else:
-                self._last_auto_explore_active = auto_explore_active
-                return {}
+            self._last_auto_explore_active = auto_explore_active
+            return {}
     
     def reset_bot_run_state(self) -> None:
         """Reset bot run state for a new run.

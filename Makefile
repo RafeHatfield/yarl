@@ -1,4 +1,4 @@
-.PHONY: clean test run quick-test bot-smoke soak help
+.PHONY: clean test run quick-test bot bot-smoke soak help
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -13,8 +13,9 @@ help:
 	@echo "  make clean-run   - Clear cache + start game"
 	@echo "  make run-test    - Start test game with fresh code"
 	@echo ""
-	@echo "Bot Soak Testing:"
-	@echo "  make bot-smoke   - Quick bot smoke test (10 runs, 500 turns, 3 floors)"
+	@echo "Bot Testing:"
+	@echo "  make bot         - Single bot run (watch the bot play)"
+	@echo "  make bot-smoke   - Quick smoke test (10 runs, 500 turns, 3 floors)"
 	@echo "  make soak        - Extended soak test (200 runs, 5000 turns, 10 floors)"
 	@echo ""
 	@echo "IMPORTANT: Always run 'make clean' if game behaves unexpectedly!"
@@ -57,6 +58,10 @@ run-test: clean
 
 # With custom telemetry path
 # python3 engine.py --bot-soak --runs 20 --telemetry-json telemetry/my_soak.json
+
+bot: clean
+	@echo "🤖 Single Bot Run (watch the bot play)"
+	@$(PYTHON) engine.py --bot
 
 bot-smoke: clean
 	@echo "🤖 Bot Smoke Test: 10 runs, 500 turns max, 3 floors max"
