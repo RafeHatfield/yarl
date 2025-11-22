@@ -505,10 +505,12 @@ def play_game_with_engine(
     if input_mode == "bot":
         engine.bot_mode = True
         engine.bot_soak_mode = constants.get("bot_soak_mode", False)
-        engine.disable_enemy_ai_for_bot = engine.bot_soak_mode
+        # UNIFIED: Enemy AI enabled in both --bot and --bot-soak modes
+        # BotBrain combat is now reliable enough for full end-to-end soak testing
+        engine.disable_enemy_ai_for_bot = False
         
         if engine.bot_soak_mode:
-            logger.info("BOT SOAK MODE: Enemy AI disabled for stability testing")
+            logger.info("BOT SOAK MODE: Enemy AI ENABLED - full combat testing")
         else:
             logger.info("BOT MODE: Enemy AI enabled, bot will fight monsters")
 
