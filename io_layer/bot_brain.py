@@ -90,6 +90,8 @@ class BotBrain:
         self._turn_counter = 0  # Track turn count for loot skip timing
         # Disable opportunistic loot after LOOT oscillation to prevent ping-pong between items
         self._disable_opportunistic_loot = False
+        # Movement blocked failure counter: abort run if AutoExplore repeatedly fails with "Movement blocked"
+        self._movement_blocked_count = 0
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -133,6 +135,19 @@ class BotBrain:
                 if potion_index is not None:
                     self._debug(f"Drinking potion at inventory index {potion_index}")
                     return {"inventory_index": potion_index}
+            
+            # MOVEMENT BLOCKED DETECTION: If AutoExplore keeps failing with "Movement blocked", abort run
+            # This prevents infinite loops where AutoExplore recalculates the same blocked path
+            auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+            if auto_explore and not auto_explore.is_active() and auto_explore.stop_reason:
+                if "Movement blocked" in auto_explore.stop_reason:
+                    self._movement_blocked_count += 1
+                    if self._movement_blocked_count >= 3:
+                        self._log_summary(f"STUCK: Movement blocked {self._movement_blocked_count} times, aborting run")
+                        return {"bot_abort_run": True}
+                else:
+                    # AutoExplore stopped for different reason - reset counter
+                    self._movement_blocked_count = 0
             
             # STAIRS DESCENT: If floor is fully explored, seek and use stairs (multi-floor soak testing)
             # Only triggers when:
