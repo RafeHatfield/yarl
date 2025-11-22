@@ -376,5 +376,53 @@ class TestBotStairsDescent:
         # Assert: Should move toward nearer stairs (east)
         assert action == {'move': (1, 0)}, \
             f"Expected bot to move toward nearer stairs (east), got {action}"
+    
+    def test_bot_aborts_run_when_floor_complete_and_no_stairs_reachable(self):
+        """Bot should abort run when floor is complete but no stairs within radius."""
+        brain = BotBrain()
+        
+        # Setup: Player at (10, 10), floor complete, no stairs within radius
+        game_state = Mock()
+        game_state.current_state = GameStates.PLAYERS_TURN
+        game_state.fov_map = Mock()
+        
+        # Mock player
+        player = Mock()
+        player.x = 10
+        player.y = 10
+        player.faction = Mock()
+        player.components = Mock()
+        player.components.has = Mock(return_value=False)
+        
+        # Mock healthy fighter
+        mock_fighter = Mock()
+        mock_fighter.hp = 100
+        mock_fighter.max_hp = 100
+        
+        # Mock AutoExplore - floor complete
+        mock_auto_explore = Mock()
+        mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "All areas explored"
+        
+        # No stairs in entities list
+        game_state.entities = [player]
+        
+        # Setup player get_component_optional
+        def get_component(comp_type):
+            if comp_type == ComponentType.FIGHTER:
+                return mock_fighter
+            elif comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
+        game_state.player = player
+        
+        # Act
+        action = brain.decide_action(game_state)
+        
+        # Assert: Should abort run (floor complete, no stairs)
+        assert action == {'bot_abort_run': True}, \
+            f"Expected bot to abort run when floor complete with no stairs, got {action}"
 
 

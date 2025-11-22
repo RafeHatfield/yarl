@@ -138,7 +138,7 @@ class BotBrain:
             # Only triggers when:
             # - Floor is complete (AutoExplore stopped with "All areas explored" or "Cannot reach")
             # - No enemies visible (safe to descend)
-            # Priority: Check if standing on stairs first, then seek nearby stairs
+            # Priority: Check if standing on stairs first, then seek nearby stairs, then end run
             if not visible_enemies and self._is_floor_complete(player):
                 # Check if standing on stairs
                 if self._is_standing_on_stairs(player, entities):
@@ -162,6 +162,10 @@ class BotBrain:
                     elif stairs_pos[1] < player.y:
                         dy = -1
                     return self._build_move_action(dx, dy)
+                else:
+                    # Floor complete but no reachable stairs - end run
+                    self._log_summary(f"STAIRS: Floor complete, no stairs within {BOT_STAIRS_RADIUS} tiles - ending run")
+                    return {"bot_abort_run": True}
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
