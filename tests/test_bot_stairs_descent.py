@@ -1,20 +1,21 @@
 """Unit tests for bot stairs descent behavior.
 
-This test suite validates that the bot automatically descends stairs
-when floor exploration is complete, enabling multi-floor soak testing.
+This test suite validates that the bot descends stairs when standing on them
+and floor exploration is complete. The bot does NOT walk to stairs - it only
+descends if it naturally ends up on stairs during AutoExplore.
 
 Test cases:
 - Bot descends when standing on stairs and floor complete
-- Bot walks to nearby stairs when floor complete
 - Bot doesn't descend when floor not complete
-- Bot doesn't seek stairs beyond radius
+- Bot doesn't descend when not on stairs (ends run instead)
 - Bot doesn't descend when enemies visible
+- Bot doesn't descend on pathfinding failures (Movement blocked)
 """
 
 import pytest
 from unittest.mock import Mock
 
-from io_layer.bot_brain import BotBrain, BotState, BOT_STAIRS_RADIUS
+from io_layer.bot_brain import BotBrain, BotState
 from game_states import GameStates
 from components.component_registry import ComponentType
 
@@ -76,11 +77,11 @@ class TestBotStairsDescent:
         assert action == {'take_stairs': True}, \
             f"Expected bot to descend stairs, got {action}"
     
-    def test_bot_walks_to_stairs_when_floor_complete_and_stairs_nearby(self):
-        """Bot should walk to nearby stairs when floor complete."""
+    def test_bot_aborts_when_floor_complete_but_not_on_stairs(self):
+        """Bot should abort run when floor complete but not standing on stairs."""
         brain = BotBrain()
         
-        # Setup: Player at (10, 10), stairs at (12, 10) - 2 tiles away
+        # Setup: Player at (10, 10), stairs at (12, 10) - NOT on stairs
         game_state = Mock()
         game_state.current_state = GameStates.PLAYERS_TURN
         game_state.fov_map = Mock()
@@ -103,7 +104,7 @@ class TestBotStairsDescent:
         mock_auto_explore.is_active = Mock(return_value=False)
         mock_auto_explore.stop_reason = "Cannot reach unexplored areas"
         
-        # Mock stairs at (12, 10) - 2 tiles east
+        # Mock stairs at (12, 10) - 2 tiles away (NOT on stairs)
         stairs = Mock()
         stairs.x = 12
         stairs.y = 10
@@ -126,9 +127,9 @@ class TestBotStairsDescent:
         # Act
         action = brain.decide_action(game_state)
         
-        # Assert: Should move toward stairs (east)
-        assert action == {'move': (1, 0)}, \
-            f"Expected bot to move toward stairs, got {action}"
+        # Assert: Should abort run (not on stairs, no movement)
+        assert action == {'bot_abort_run': True}, \
+            f"Expected bot to abort run when not on stairs, got {action}"
     
     def test_bot_does_not_descend_when_floor_not_complete(self):
         """Bot should NOT descend stairs when floor is not fully explored."""
@@ -186,11 +187,11 @@ class TestBotStairsDescent:
         assert action == {}, \
             f"Expected empty action (AutoExplore active), got {action}"
     
-    def test_bot_ignores_stairs_beyond_radius(self):
-        """Bot should ignore stairs beyond BOT_STAIRS_RADIUS."""
+    def test_bot_does_not_descend_on_movement_blocked(self):
+        """Bot should NOT descend when AutoExplore stopped with 'Movement blocked'."""
         brain = BotBrain()
         
-        # Setup: Player at (10, 10), stairs beyond radius
+        # Setup: Player standing on stairs, but AutoExplore stopped due to movement failure
         game_state = Mock()
         game_state.current_state = GameStates.PLAYERS_TURN
         game_state.fov_map = Mock()
@@ -208,14 +209,14 @@ class TestBotStairsDescent:
         mock_fighter.hp = 100
         mock_fighter.max_hp = 100
         
-        # Mock AutoExplore - floor complete
+        # Mock AutoExplore - stopped with "Movement blocked" (NOT floor complete)
         mock_auto_explore = Mock()
         mock_auto_explore.is_active = Mock(return_value=False)
-        mock_auto_explore.stop_reason = "All areas explored"
+        mock_auto_explore.stop_reason = "Movement blocked"
         
-        # Mock stairs far away (beyond radius)
+        # Mock stairs at player position
         stairs = Mock()
-        stairs.x = 10 + BOT_STAIRS_RADIUS + 5  # Well beyond radius
+        stairs.x = 10
         stairs.y = 10
         stairs.components = Mock()
         stairs.components.has = Mock(side_effect=lambda ct: ct == ComponentType.STAIRS)
@@ -236,10 +237,10 @@ class TestBotStairsDescent:
         # Act
         action = brain.decide_action(game_state)
         
-        # Assert: Should NOT seek stairs (too far), should try to restart AutoExplore
-        assert action != {'move': (1, 0)}, \
-            f"Bot should NOT seek stairs beyond radius, got {action}"
-        # Will try to start AutoExplore (which will fail, but that's OK)
+        # Assert: Should NOT descend (Movement blocked is not floor complete)
+        # Movement blocked counter should eventually trigger abort
+        assert action != {'take_stairs': True}, \
+            f"Bot should NOT descend on Movement blocked, got {action}"
     
     def test_bot_does_not_descend_when_enemies_visible(self):
         """Bot should NOT descend stairs when enemies are visible (unsafe)."""
@@ -316,11 +317,11 @@ class TestBotStairsDescent:
             f"Bot should NOT descend when enemy visible, got {action}"
         assert brain.state == BotState.COMBAT
     
-    def test_bot_prefers_closer_stairs_when_multiple_available(self):
-        """Bot should prefer nearest stairs when multiple are available."""
+    def test_bot_aborts_run_when_floor_complete_but_not_on_stairs(self):
+        """Bot should abort run when floor is complete but not standing on stairs."""
         brain = BotBrain()
         
-        # Setup: Player at (10, 10), two stairs at different distances
+        # Setup: Player at (10, 10), floor complete, not on stairs
         game_state = Mock()
         game_state.current_state = GameStates.PLAYERS_TURN
         game_state.fov_map = Mock()
@@ -343,21 +344,14 @@ class TestBotStairsDescent:
         mock_auto_explore.is_active = Mock(return_value=False)
         mock_auto_explore.stop_reason = "All areas explored"
         
-        # Mock near stairs at (12, 10) - 2 tiles east
-        near_stairs = Mock()
-        near_stairs.x = 12
-        near_stairs.y = 10
-        near_stairs.components = Mock()
-        near_stairs.components.has = Mock(side_effect=lambda ct: ct == ComponentType.STAIRS)
+        # Mock stairs at different position (not on stairs)
+        stairs = Mock()
+        stairs.x = 12
+        stairs.y = 10
+        stairs.components = Mock()
+        stairs.components.has = Mock(side_effect=lambda ct: ct == ComponentType.STAIRS)
         
-        # Mock far stairs at (10, 15) - 5 tiles south
-        far_stairs = Mock()
-        far_stairs.x = 10
-        far_stairs.y = 15
-        far_stairs.components = Mock()
-        far_stairs.components.has = Mock(side_effect=lambda ct: ct == ComponentType.STAIRS)
-        
-        game_state.entities = [player, near_stairs, far_stairs]
+        game_state.entities = [player, stairs]
         
         # Setup player get_component_optional
         def get_component(comp_type):
@@ -373,56 +367,8 @@ class TestBotStairsDescent:
         # Act
         action = brain.decide_action(game_state)
         
-        # Assert: Should move toward nearer stairs (east)
-        assert action == {'move': (1, 0)}, \
-            f"Expected bot to move toward nearer stairs (east), got {action}"
-    
-    def test_bot_aborts_run_when_floor_complete_and_no_stairs_reachable(self):
-        """Bot should abort run when floor is complete but no stairs within radius."""
-        brain = BotBrain()
-        
-        # Setup: Player at (10, 10), floor complete, no stairs within radius
-        game_state = Mock()
-        game_state.current_state = GameStates.PLAYERS_TURN
-        game_state.fov_map = Mock()
-        
-        # Mock player
-        player = Mock()
-        player.x = 10
-        player.y = 10
-        player.faction = Mock()
-        player.components = Mock()
-        player.components.has = Mock(return_value=False)
-        
-        # Mock healthy fighter
-        mock_fighter = Mock()
-        mock_fighter.hp = 100
-        mock_fighter.max_hp = 100
-        
-        # Mock AutoExplore - floor complete
-        mock_auto_explore = Mock()
-        mock_auto_explore.is_active = Mock(return_value=False)
-        mock_auto_explore.stop_reason = "All areas explored"
-        
-        # No stairs in entities list
-        game_state.entities = [player]
-        
-        # Setup player get_component_optional
-        def get_component(comp_type):
-            if comp_type == ComponentType.FIGHTER:
-                return mock_fighter
-            elif comp_type == ComponentType.AUTO_EXPLORE:
-                return mock_auto_explore
-            return None
-        
-        player.get_component_optional = Mock(side_effect=get_component)
-        game_state.player = player
-        
-        # Act
-        action = brain.decide_action(game_state)
-        
-        # Assert: Should abort run (floor complete, no stairs)
+        # Assert: Should abort run (floor complete but not on stairs, no movement)
         assert action == {'bot_abort_run': True}, \
-            f"Expected bot to abort run when floor complete with no stairs, got {action}"
+            f"Expected bot to abort run when not on stairs, got {action}"
 
 
