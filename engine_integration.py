@@ -668,7 +668,9 @@ def play_game_with_engine(
         # Decide whether the world should tick this frame
         should_update_systems = True
         
-        if input_mode != "bot":  # Manual / keyboard-driven play
+        # MANUAL MODE OPTIMIZATION: Prevent enemy AI spam when player is idle
+        # Only applies during PLAYERS_TURN (not menus, death screens, etc.)
+        if input_mode != "bot" and engine.state_manager.state.current_state == GameStates.PLAYERS_TURN:
             no_player_input = not action and not mouse_action
             
             if no_player_input:
@@ -677,12 +679,13 @@ def play_game_with_engine(
                 auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
                 auto_explore_active = bool(auto_explore and auto_explore.is_active())
                 
-                # In manual mode, the world should only advance when:
+                # In manual mode during PLAYERS_TURN, the world should only advance when:
                 #   - The player performed an action, OR
                 #   - AutoExplore is active (AutoExplore is effectively "taking turns")
                 #
                 # If neither is true, we render the frame and wait for input without
-                # advancing enemy AI or game systems.
+                # advancing enemy AI or game systems. This prevents the busy-loop when
+                # AutoExplore stops and player hasn't pressed a key yet.
                 if not auto_explore_active:
                     should_update_systems = False
         
