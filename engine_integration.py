@@ -672,6 +672,7 @@ def play_game_with_engine(
             no_player_input = not action and not mouse_action
             
             if no_player_input:
+                from components.component_registry import ComponentType
                 player = engine.state_manager.state.player
                 auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
                 auto_explore_active = bool(auto_explore and auto_explore.is_active())
