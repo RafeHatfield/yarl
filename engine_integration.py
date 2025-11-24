@@ -665,6 +665,26 @@ def play_game_with_engine(
         # Use the new action processor for clean, modular action handling
         action_processor.process_actions(action, mouse_action)
         
+        # Decide whether the world should tick this frame
+        should_update_systems = True
+        
+        if input_mode != "bot":  # Manual / keyboard-driven play
+            no_player_input = not action and not mouse_action
+            
+            if no_player_input:
+                player = engine.state_manager.state.player
+                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
+                auto_explore_active = bool(auto_explore and auto_explore.is_active())
+                
+                # In manual mode, the world should only advance when:
+                #   - The player performed an action, OR
+                #   - AutoExplore is active (AutoExplore is effectively "taking turns")
+                #
+                # If neither is true, we render the frame and wait for input without
+                # advancing enemy AI or game systems.
+                if not auto_explore_active:
+                    should_update_systems = False
+        
         # Phase 1.6: Check for bot run abort signal (floor fully explored in soak mode)
         # This is a bot-only terminal condition that should exit the current run
         if engine.state_manager.get_extra_data("bot_abort_run"):
@@ -954,7 +974,9 @@ def play_game_with_engine(
         # =====================================================================
         
         # Update all game systems (AI, FOV, camera, state)
-        engine.update()
+        # Only update if the world should tick this frame (see should_update_systems above)
+        if should_update_systems:
+            engine.update()
         
         # ConsoleRenderer is not yet fully integrated, causing FOV issues
         # TODO: Fix FOV propagation to ConsoleRenderer for Phase 2 abstraction
