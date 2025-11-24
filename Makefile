@@ -72,7 +72,7 @@ bot-smoke: clean
 soak: clean
 	@echo "🧪 Bot Soak Test: 200 runs, 5000 turns max, 10 floors max"
 	@mkdir -p logs
-	@$(PYTHON) engine.py --bot-soak --runs 200 --max-turns 200 --max-floors 10 \
+	@$(PYTHON) engine.py --bot-soak --runs 200 --max-turns 1000 --max-floors 10 \
 		--metrics-log logs/bot_soak.jsonl --telemetry-json logs/bot_soak_telemetry.json
 
 .DEFAULT_GOAL := help
