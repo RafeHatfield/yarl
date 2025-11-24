@@ -199,12 +199,17 @@ class ActionProcessor:
                             )
                         return  # Don't process other input this turn
                 elif auto_explore and not auto_explore_active:
-                    # AutoExplore exists but is not active - log why
+                    # AutoExplore exists but is not active - log why (but only once per stop)
                     stop_reason = getattr(auto_explore, 'stop_reason', None)
-                    logger.warning(
-                        f"🔍 DIAGNOSTIC: ActionProcessor: AutoExplore exists but NOT active! "
-                        f"pos={player_pos}, stop_reason='{stop_reason}', action={action}"
-                    )
+                    
+                    # Throttle diagnostic: Only log once when stop_reason changes
+                    last_logged_stop = getattr(self, '_last_logged_autoexplore_stop', None)
+                    if stop_reason != last_logged_stop:
+                        logger.warning(
+                            f"🔍 DIAGNOSTIC: ActionProcessor: AutoExplore exists but NOT active! "
+                            f"pos={player_pos}, stop_reason='{stop_reason}', action={action}"
+                        )
+                        self._last_logged_autoexplore_stop = stop_reason
                 
                 # Fall back to pathfinding if no auto-explore
                 pathfinding = player.get_component_optional(ComponentType.PATHFINDING) if player else None
