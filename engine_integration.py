@@ -531,6 +531,42 @@ def play_game_with_engine(
         # =====================================================================
         combined_action: ActionDict = input_source.next_action(engine.state_manager.state)
         
+        # BOT LIMITS CHECK: Enforce --max-turns and --max-floors if configured
+        # This prevents infinite loops and provides deterministic run termination
+        if input_mode == "bot" and engine.turn_manager:
+            soak_config = constants.get("soak_config", {})
+            max_turns = soak_config.get("max_turns")
+            max_floors = soak_config.get("max_floors")
+            
+            player = engine.state_manager.state.player
+            game_map = engine.state_manager.state.game_map
+            
+            # Check turn limit
+            if max_turns and engine.turn_manager.turn_number >= max_turns:
+                logger.info(f"Turn limit reached ({engine.turn_manager.turn_number} >= {max_turns}), ending run")
+                
+                # Finalize metrics with "max_turns" outcome
+                from instrumentation.run_metrics import finalize_run_metrics
+                if player and game_map:
+                    run_metrics = finalize_run_metrics("max_turns", player, game_map)
+                    engine.state_manager.state.run_metrics = run_metrics
+                
+                engine.stop()
+                return {"ended": "max_turns"}
+            
+            # Check floor limit
+            if max_floors and game_map and game_map.dungeon_level >= max_floors:
+                logger.info(f"Floor limit reached (floor {game_map.dungeon_level} >= {max_floors}), ending run")
+                
+                # Finalize metrics with "max_floors" outcome
+                from instrumentation.run_metrics import finalize_run_metrics
+                if player and game_map:
+                    run_metrics = finalize_run_metrics("max_floors", player, game_map)
+                    engine.state_manager.state.run_metrics = run_metrics
+                
+                engine.stop()
+                return {"ended": "max_floors"}
+        
         # BOT MODE DIAGNOSTIC: Log frame state for debugging tight loops
         if input_mode == "bot" and combined_action:
             current_state = engine.state_manager.state.current_state
