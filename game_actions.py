@@ -153,61 +153,65 @@ class ActionProcessor:
         if StateManager.allows_movement(current_state):
             player = self.state_manager.state.player
             
-            # Check for auto-explore first (higher priority)
-            auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
-            auto_explore_active = auto_explore and auto_explore.is_active() if auto_explore else False
-            player_pos = (player.x, player.y)
-            
-            # DIAGNOSTIC: Log AutoExplore state check
-            if action or mouse_action:
-                logger.info(
-                    f"🔍 DIAGNOSTIC: ActionProcessor.process_actions: "
-                    f"pos={player_pos}, action={action}, mouse_action={mouse_action}, "
-                    f"auto_explore_exists={auto_explore is not None}, "
-                    f"auto_explore_active={auto_explore_active}"
-                )
-            
-            if auto_explore_active:
-                # CRITICAL: Pickup actions take priority over AutoExplore movement
-                # If bot is trying to pick up an item, process that FIRST, don't let AutoExplore override it
-                if action.get('pickup'):
-                    logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Pickup action takes priority, cancelling AutoExplore")
-                    auto_explore.stop("Cancelled")
-                    # Fall through to process pickup action below
-                else:
-                    # Process auto-explore movement automatically
-                    logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Processing AutoExplore turn at {player_pos}")
-                    self._process_auto_explore_turn()
-                    # Check if any key was pressed to cancel
-                    # CRITICAL: Exclude 'start_auto_explore' from cancellation - it's not "cancelling input"
-                    # BotBrain may return start_auto_explore due to cache mismatch, but we should ignore it
-                    # when AutoExplore is already active, not cancel AutoExplore.
-                    cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
-                    if cancel_actions or mouse_action:
-                        # Actual user input cancels auto-explore
-                        logger.warning(
-                            f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to input! "
-                            f"action={cancel_actions}, mouse_action={mouse_action}"
-                        )
+            # Defensive: Skip if player doesn't exist (e.g., in minimal tests)
+            if not player:
+                pass  # Fall through to normal action processing
+            else:
+                # Check for auto-explore first (higher priority)
+                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
+                auto_explore_active = auto_explore and auto_explore.is_active() if auto_explore else False
+                player_pos = (player.x, player.y)
+                
+                # DIAGNOSTIC: Log AutoExplore state check
+                if action or mouse_action:
+                    logger.info(
+                        f"🔍 DIAGNOSTIC: ActionProcessor.process_actions: "
+                        f"pos={player_pos}, action={action}, mouse_action={mouse_action}, "
+                        f"auto_explore_exists={auto_explore is not None}, "
+                        f"auto_explore_active={auto_explore_active}"
+                    )
+                
+                if auto_explore_active:
+                    # CRITICAL: Pickup actions take priority over AutoExplore movement
+                    # If bot is trying to pick up an item, process that FIRST, don't let AutoExplore override it
+                    if action.get('pickup'):
+                        logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Pickup action takes priority, cancelling AutoExplore")
                         auto_explore.stop("Cancelled")
-                        self.state_manager.state.message_log.add_message(
-                            MB.info("Auto-explore cancelled")
-                        )
+                        # Fall through to process pickup action below
+                    else:
+                        # Process auto-explore movement automatically
+                        logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Processing AutoExplore turn at {player_pos}")
+                        self._process_auto_explore_turn()
+                        # Check if any key was pressed to cancel
+                        # CRITICAL: Exclude 'start_auto_explore' from cancellation - it's not "cancelling input"
+                        # BotBrain may return start_auto_explore due to cache mismatch, but we should ignore it
+                        # when AutoExplore is already active, not cancel AutoExplore.
+                        cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
+                        if cancel_actions or mouse_action:
+                            # Actual user input cancels auto-explore
+                            logger.warning(
+                                f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to input! "
+                                f"action={cancel_actions}, mouse_action={mouse_action}"
+                            )
+                            auto_explore.stop("Cancelled")
+                            self.state_manager.state.message_log.add_message(
+                                MB.info("Auto-explore cancelled")
+                            )
+                        return  # Don't process other input this turn
+                elif auto_explore and not auto_explore_active:
+                    # AutoExplore exists but is not active - log why
+                    stop_reason = getattr(auto_explore, 'stop_reason', None)
+                    logger.warning(
+                        f"🔍 DIAGNOSTIC: ActionProcessor: AutoExplore exists but NOT active! "
+                        f"pos={player_pos}, stop_reason='{stop_reason}', action={action}"
+                    )
+                
+                # Fall back to pathfinding if no auto-explore
+                pathfinding = player.get_component_optional(ComponentType.PATHFINDING) if player else None
+                if pathfinding and pathfinding.is_path_active():
+                    # Process pathfinding movement automatically
+                    self._process_pathfinding_movement_action(None)
                     return  # Don't process other input this turn
-            elif auto_explore and not auto_explore_active:
-                # AutoExplore exists but is not active - log why
-                stop_reason = getattr(auto_explore, 'stop_reason', None)
-                logger.warning(
-                    f"🔍 DIAGNOSTIC: ActionProcessor: AutoExplore exists but NOT active! "
-                    f"pos={player_pos}, stop_reason='{stop_reason}', action={action}"
-                )
-            
-            # Fall back to pathfinding if no auto-explore
-            pathfinding = player.get_component_optional(ComponentType.PATHFINDING) if player else None
-            if pathfinding and pathfinding.is_path_active():
-                # Process pathfinding movement automatically
-                self._process_pathfinding_movement_action(None)
-                return  # Don't process other input this turn
         
         # Process keyboard actions
         if action:

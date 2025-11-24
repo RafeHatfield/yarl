@@ -538,11 +538,15 @@ def play_game_with_engine(
             max_turns = soak_config.get("max_turns")
             max_floors = soak_config.get("max_floors")
             
+            # Defensive: Only check limits if player and game_map exist
             player = engine.state_manager.state.player
             game_map = engine.state_manager.state.game_map
             
+            if not player or not game_map:
+                # Skip limit checks if core objects missing (e.g., in tests)
+                pass
             # Check turn limit
-            if max_turns and engine.turn_manager.turn_number >= max_turns:
+            elif max_turns and engine.turn_manager.turn_number >= max_turns:
                 logger.info(f"Turn limit reached ({engine.turn_manager.turn_number} >= {max_turns}), ending run")
                 
                 # Finalize metrics with "max_turns" outcome
