@@ -668,28 +668,10 @@ def play_game_with_engine(
         # Decide whether the world should tick this frame
         should_update_systems = True
         
-        # MANUAL MODE OPTIMIZATION: Prevent enemy AI spam when player is idle
-        # Only applies during PLAYERS_TURN (not menus, death screens, etc.)
-        current_state = engine.state_manager.state.current_state
-        if input_mode != "bot" and current_state == GameStates.PLAYERS_TURN:
-            no_player_input = not action and not mouse_action
-            player = engine.state_manager.state.player
-            
-            # Defensive: Only apply optimization if player exists
-            if no_player_input and player:
-                from components.component_registry import ComponentType
-                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
-                auto_explore_active = bool(auto_explore and auto_explore.is_active())
-                
-                # In manual mode during PLAYERS_TURN, the world should only advance when:
-                #   - The player performed an action, OR
-                #   - AutoExplore is active (AutoExplore is effectively "taking turns")
-                #
-                # If neither is true, we render the frame and wait for input without
-                # advancing enemy AI or game systems. This prevents the busy-loop when
-                # AutoExplore stops and player hasn't pressed a key yet.
-                if not auto_explore_active:
-                    should_update_systems = False
+        # TODO: Manual mode optimization to prevent enemy AI spam when player is idle
+        # Disabled for now - needs more investigation to avoid breaking menu/state transitions
+        # Original issue: After AutoExplore stops in manual mode, empty actions cause
+        # repeated enemy AI turns. Turn limit will catch hangs in bot mode for now.
         
         # Phase 1.6: Check for bot run abort signal (floor fully explored in soak mode)
         # This is a bot-only terminal condition that should exit the current run
