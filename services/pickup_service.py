@@ -85,22 +85,12 @@ class PickupService:
         message_log = self.state_manager.state.message_log
         
         logger.debug(f"Pickup attempt at ({player.x}, {player.y}) via {source}")
-        print(f">>> PickupService: Pickup at ({player.x}, {player.y}) via {source}")
-        print(f">>> PickupService: Total entities: {len(entities)}")
         
         # Find items at player's location
         items_at_location = [
             entity for entity in entities
             if entity.x == player.x and entity.y == player.y and hasattr(entity, 'item') and entity.item
         ]
-        
-        # Debug: Show what we're filtering
-        entities_at_location = [e for e in entities if e.x == player.x and e.y == player.y]
-        print(f">>> PickupService: Entities at ({player.x}, {player.y}): {len(entities_at_location)}")
-        for e in entities_at_location:
-            has_item_attr = hasattr(e, 'item')
-            item_value = getattr(e, 'item', None)
-            print(f">>>   - {e.name}: has_item={has_item_attr}, item={item_value}")
         
         if not items_at_location:
             result.no_items = True
@@ -113,7 +103,6 @@ class PickupService:
         result.item_name = item.name
         
         logger.info(f"Attempting to pick up: {item.name} via {source}")
-        print(f">>> PickupService: Attempting pickup: {item.name}")
         
         # Check if player has inventory
         inventory = player.get_component_optional(ComponentType.INVENTORY)
@@ -136,7 +125,6 @@ class PickupService:
                 result.success = True
                 entities.remove(item)
                 logger.info(f"Successfully picked up: {item.name}")
-                print(f">>> PickupService: Pickup successful: {item.name}")
                 
                 # ===================================================================
                 # POST-PICKUP CHECKS (Phase 5: Victory Trigger, Quest Items, etc.)
@@ -144,7 +132,6 @@ class PickupService:
                 
                 # Check if this item triggers victory (Ruby Heart in Phase 5)
                 if hasattr(item, 'triggers_victory') and item.triggers_victory:
-                    print(f">>> PickupService: VICTORY TRIGGER detected for {item.name}!")
                     logger.info(f"=== PICKUP_SERVICE: Victory trigger for {item.name}")
                     
                     result.victory_triggered = True
@@ -155,13 +142,11 @@ class PickupService:
                     
                     if victory_mgr.handle_ruby_heart_pickup(player, entities, game_map, message_log):
                         logger.info("=== PICKUP_SERVICE: Victory sequence initiated, portal spawned")
-                        print(f">>> PickupService: Portal spawned successfully!")
                         
                         # Transition to RUBY_HEART_OBTAINED state
                         self.state_manager.set_game_state(GameStates.RUBY_HEART_OBTAINED)
                     else:
                         logger.error("=== PICKUP_SERVICE: Victory sequence FAILED")
-                        print(f">>> PickupService: ERROR - Portal spawn failed!")
                 
                 break  # Only pick up one item
             

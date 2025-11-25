@@ -216,7 +216,13 @@ class SpawnFactory(FactoryBase):
         """Create Wand of Portals legendary item.
         
         The wand allows creation of two-portal pairs for tactical teleportation.
-        Infinite uses with a simple cycle: create entrance, create exit, repeat.
+        Starts with finite charges. Using wand while portals are active cancels
+        them and refunds the charge.
+        
+        Flow:
+        - Use wand: place entrance portal (costs 1 charge)
+        - Use wand: place exit portal (pair now active)
+        - Use wand while active: cancel portals, refund 1 charge
         
         Args:
             x: X coordinate for wand
@@ -250,21 +256,22 @@ class SpawnFactory(FactoryBase):
             item_component.owner = wand_entity
             wand_entity.item = item_component
             
-            # Attach Wand component for charge tracking (infinite charges for portal wand)
-            wand_component = Wand(spell_type="portal", charges=-1)  # -1 means infinite
-            wand_component.owner = wand_entity
-            wand_entity.wand = wand_component
-            
-            # Attach portal placer component (manages active portals)
+            # Attach PortalPlacer component (which extends Wand)
+            # This handles both charge tracking AND portal lifecycle management
+            # PortalPlacer.__init__ sets charges=3 by default
             # Note: Setting attributes triggers __setattr__ which auto-registers in components
             portal_placer = PortalPlacer()
             portal_placer.owner = wand_entity
             wand_entity.portal_placer = portal_placer
             
+            # Also set as 'wand' attribute for compatibility with code that checks entity.wand
+            # PortalPlacer extends Wand so this works
+            wand_entity.wand = portal_placer
+            
             # Set render order
             wand_entity.render_order = RenderOrder.ITEM
             
-            logger.debug(f"Created Wand of Portals at ({x}, {y})")
+            logger.debug(f"Created Wand of Portals at ({x}, {y}) with {portal_placer.charges} charges")
             return wand_entity
         
         except Exception as e:

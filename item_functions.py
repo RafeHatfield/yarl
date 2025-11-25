@@ -1289,17 +1289,20 @@ def unlock_crimson_ritual(*args, **kwargs):
 
 
 def use_wand_of_portals(*args, **kwargs):
-    """Use the Wand of Portals to create a portal pair.
+    """Use the Wand of Portals to create a portal pair or cancel active portals.
     
-    The wand enters targeting mode where the player places an entrance portal,
-    then an exit portal. The portals link together for teleportation.
+    The wand always has 1 charge (never more, never less).
+    It operates as a binary state machine:
+    - State A: No portals → enters targeting to place portal pair
+    - State B: Portals active → cancels them and returns to State A
     
     This function is called when the player selects the wand from inventory.
-    The actual targeting logic is handled by the game engine.
     
     Args:
         *args: First argument should be the entity using the wand (player)
-        **kwargs: Optional parameters from the game engine
+        **kwargs: Optional parameters from the game engine, including:
+            - wand_entity: The wand item entity
+            - entities: Game entities list (required for cancellation)
     
     Returns:
         list: List of result dictionaries with status messages
@@ -1317,19 +1320,37 @@ def use_wand_of_portals(*args, **kwargs):
     
     portal_placer = wand.portal_placer
     
-    # Check if portals are already active
+    # Ensure charge is always 1 (invariant enforcement)
+    portal_placer.charges = 1
+    
+    # Check if portals are already active - if so, cancel them (don't place new ones)
     if portal_placer.has_active_portals():
-        results.append({
-            "message": MB.info(
-                "Portal pair already active. Use the wand again to recycle and place new portals."
-            )
-        })
-    else:
-        results.append({
-            "message": MB.success(
-                "Portal wand ready. Click to place the entrance portal."
-            )
-        })
+        entities = kwargs.get("entities")
+        if not entities:
+            return [{"consumed": False, "message": MB.failure("Cannot cancel portals (no entities list)!")}]
+        
+        # Cancel active portals and reset wand
+        cancel_result = portal_placer.cancel_active_portals(entities)
+        
+        if cancel_result.get('success'):
+            # Portals canceled, wand reset to ready state
+            results.append({
+                "consumed": False,
+                "message": MB.success(cancel_result.get('message', 'Portals canceled. Wand ready.'))
+            })
+            results.append({"portal_canceled": True})
+        else:
+            results.append({
+                "consumed": False,
+                "message": MB.warning(cancel_result.get('message', 'Failed to cancel portals'))
+            })
+        
+        return results
+    
+    # No active portals - enter targeting mode to place new pair
+    results.append({
+        "message": MB.success("Portal wand ready. Click to place entrance portal.")
+    })
     
     # Signal to game engine that targeting mode should start
     results.append({"targeting_mode": True})

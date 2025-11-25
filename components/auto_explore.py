@@ -102,11 +102,14 @@ class AutoExplore:
         self.explored_tiles_at_start: Set[Tuple[int, int]] = set()  # Tiles explored before auto-explore started
         self.known_stairs: Set[Tuple[int, int]] = set()  # Positions of stairs we've already discovered
         self.disable_opportunistic_loot: bool = False  # Disable loot targeting after oscillation
+        self.bot_mode: bool = False  # Whether running in bot mode (enables opportunistic loot)
         # Movement failure detection: stop if player position doesn't change
         self._last_position: Optional[Tuple[int, int]] = None
         self._stuck_movement_counter: int = 0
+        # Oscillation detection: track recent positions to detect A-B-A-B loops
+        self._position_history: deque = deque(maxlen=6)  # Last 6 positions
     
-    def start(self, game_map: 'GameMap', entities: List['Entity'], fov_map=None) -> str:
+    def start(self, game_map: 'GameMap', entities: List['Entity'], fov_map=None, bot_mode: bool = False) -> str:
         """Begin auto-exploring the dungeon.
         
         Initializes exploration state and returns a random adventure quote
@@ -116,6 +119,7 @@ class AutoExplore:
             game_map: Current dungeon level
             entities: All entities on the map
             fov_map: Field-of-view map (optional, for tracking visible items)
+            bot_mode: If True, enables opportunistic loot collection (bot mode only)
             
         Returns:
             str: Random pithy adventure quote
@@ -159,9 +163,12 @@ class AutoExplore:
         self.known_monsters = set()  # Reset known monsters
         self.explored_tiles_at_start = set()  # Reset explored tiles snapshot
         self.known_stairs = set()  # Reset known stairs
+        self.bot_mode = bot_mode  # Store bot mode flag for opportunistic loot
         # Reset movement failure detection
         self._last_position = None
         self._stuck_movement_counter = 0
+        # Reset oscillation detection
+        self._position_history = deque(maxlen=6)
         
         # Store initial HP for damage detection
         if hasattr(self.owner, 'fighter') and self.owner.fighter:
@@ -264,6 +271,24 @@ class AutoExplore:
         player_pos = (self.owner.x, self.owner.y)
         logger.debug(f"AutoExplore.get_next_action: player_pos={player_pos}, active={self.active}, target={self.target_tile}, path_len={len(self.current_path)}")
         
+        # OSCILLATION DETECTION: Detect and stop when bouncing between tiles (e.g. A ↔ B)
+        # This prevents infinite loops in both manual auto-explore and bot/soak runs.
+        # Track position history and check for repeating two-tile patterns.
+        self._position_history.append(player_pos)
+        
+        if len(self._position_history) >= 6:
+            # Check for A-B-A-B-A-B pattern (three complete cycles)
+            positions = list(self._position_history)
+            if (positions[0] == positions[2] == positions[4] and
+                positions[1] == positions[3] == positions[5] and
+                positions[0] != positions[1]):
+                logger.warning(
+                    f"AutoExplore: Oscillation detected between {positions[0]} and {positions[1]}, stopping. "
+                    f"History: {positions}"
+                )
+                self.stop("Movement blocked: oscillation detected")
+                return None
+        
         # MOVEMENT FAILURE DETECTION: Check if player position hasn't changed
         # If we're stuck trying the same movement that keeps failing, stop AutoExplore
         if self._last_position is not None and self._last_position == player_pos:
@@ -299,14 +324,15 @@ class AutoExplore:
             return {'dx': dx, 'dy': dy}
         
         # BOT OPPORTUNISTIC LOOT: Check for nearby valuable items before continuing exploration
-        # This only runs in bot mode and makes small, safe detours to improve survivability
+        # This ONLY runs in bot mode (not manual play) and makes small, safe detours to improve survivability
         # Only triggers when:
+        # - Bot mode is enabled (self.bot_mode=True)
         # - No enemies visible (already checked by stop conditions above)
         # - Valuable items (potions, weapons, armor) within BOT_LOOT_RADIUS
         # - Safe path exists to the item
         # - Opportunistic loot is not disabled (can be disabled after oscillation)
         loot_target = None
-        if not self.disable_opportunistic_loot:
+        if self.bot_mode and not self.disable_opportunistic_loot:
             loot_target = self._find_opportunistic_loot_target(game_map, entities, fov_map)
         
         if loot_target and loot_target != player_pos:  # Defensive: don't target own position
@@ -398,7 +424,12 @@ class AutoExplore:
         if signpost:
             return f"Found {signpost.name}"
         
-        # 5. Check for valuable items in FOV (only in unexplored areas)
+        # 5. Check for murals in FOV (only in unexplored areas)
+        mural = self._mural_in_fov(entities, fov_map, game_map)
+        if mural:
+            return "Found Mural"
+        
+        # 6. Check for valuable items in FOV (only in unexplored areas)
         item = self._valuable_item_in_fov(entities, fov_map, game_map)
         if item:
             return f"Found {item.name}"
@@ -726,6 +757,57 @@ class AutoExplore:
                     # Found a new unread signpost! Mark it as known and return it
                     self.known_items.add(entity_id)
                     logger.debug(f"New unread signpost found: {entity.name}")
+                    return entity
+        
+        return None
+    
+    def _mural_in_fov(
+        self, entities: List['Entity'], fov_map, game_map: 'GameMap'
+    ) -> Optional['Entity']:
+        """Check if any unread mural is visible IN UNEXPLORED AREAS.
+        
+        Only returns murals in tiles that were NOT explored when auto-explore started.
+        
+        Args:
+            entities: All entities on the map
+            fov_map: Field-of-view map
+            game_map: Game map for tile exploration state
+            
+        Returns:
+            Entity: First unread mural in unexplored area, or None
+        """
+        if not self.owner or not fov_map or not game_map:
+            return None
+        
+        from fov_functions import map_is_in_fov
+        from components.component_registry import ComponentType
+        
+        for entity in entities:
+            # Must have mural component
+            if not entity.components.has(ComponentType.MURAL):
+                continue
+            
+            # Check if in FOV
+            if map_is_in_fov(fov_map, entity.x, entity.y):
+                entity_id = id(entity)
+                mural = entity.mural
+                
+                # Skip murals in tiles that were already explored when auto-explore started
+                if (entity.x, entity.y) in self.explored_tiles_at_start:
+                    self.known_items.add(entity_id)
+                    continue
+                
+                # Skip murals we already knew about
+                if entity_id in self.known_items:
+                    continue
+                
+                # Only stop for unread murals (skip already read ones)
+                # Check if mural has been read - attribute may be 'read' or 'has_been_read'
+                is_read = getattr(mural, 'has_been_read', getattr(mural, 'read', False))
+                if mural and not is_read:
+                    # Found a new unread mural! Mark it as known and return it
+                    self.known_items.add(entity_id)
+                    logger.debug(f"New unread mural found: {entity.name}")
                     return entity
         
         return None

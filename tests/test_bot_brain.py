@@ -119,6 +119,166 @@ class TestBotBrainExplore:
         # Assert: Should return empty (let auto-explore handle movement)
         assert action == {}
     
+    def test_bot_brain_respects_cancelled_autoexplore(self):
+        """BotBrain should NOT restart autoexplore when it was cancelled."""
+        brain = BotBrain()
+        
+        # Setup: game_state in PLAYERS_TURN, no enemies
+        game_state = Mock()
+        game_state.current_state = GameStates.PLAYERS_TURN
+        game_state.entities = []
+        game_state.fov_map = Mock()
+        
+        # Mock player with cancelled auto-explore
+        player = Mock()
+        player.x = 10
+        player.y = 10
+        player.faction = Mock()
+        player.components = Mock()
+        player.components.has = Mock(return_value=False)
+        
+        # Mock healthy fighter component
+        mock_fighter = Mock()
+        mock_fighter.hp = 100
+        mock_fighter.max_hp = 100
+        
+        # Mock auto-explore that was cancelled
+        mock_auto_explore = Mock()
+        mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "Cancelled"  # Key: it was cancelled
+        
+        # Return appropriate component based on type
+        def get_component(comp_type):
+            if comp_type == ComponentType.FIGHTER:
+                return mock_fighter
+            elif comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
+        
+        game_state.player = player
+        
+        # Act: BotBrain checks and sees autoexplore is inactive with stop_reason="Cancelled"
+        action = brain.decide_action(game_state)
+        
+        # Assert: Should return empty dict, NOT restart autoexplore
+        assert action == {}
+    
+    def test_bot_brain_respects_monster_spotted_stop(self):
+        """BotBrain._handle_explore should NOT restart when stop_reason is 'Monster spotted'."""
+        brain = BotBrain()
+        
+        # Setup: Mock player with autoexplore that stopped due to monster
+        player = Mock()
+        player.x = 10
+        player.y = 10
+        
+        # Mock auto-explore that stopped due to monster spotted
+        mock_auto_explore = Mock()
+        mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "Monster spotted: Orc"
+        
+        def get_component(comp_type):
+            if comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
+        
+        # Mock game_state
+        game_state = Mock()
+        game_state.player = player
+        
+        # Act: Call _handle_explore directly
+        action = brain._handle_explore(player, game_state)
+        
+        # Assert: Should return empty dict, NOT restart autoexplore
+        assert action == {}, f"Expected empty dict, got: {action}"
+    
+    def test_bot_brain_never_returns_conflicting_actions(self):
+        """BotBrain should never return both start_auto_explore and move in same dict."""
+        brain = BotBrain()
+        
+        # This tests the safety guard at the end of decide_action
+        # We'll run multiple scenarios and verify no conflicts
+        
+        scenarios = [
+            # Scenario 1: EXPLORE state, autoexplore inactive
+            {
+                'has_enemies': False,
+                'autoexplore_active': False,
+                'stop_reason': None,
+            },
+            # Scenario 2: EXPLORE state, monster spotted
+            {
+                'has_enemies': True,
+                'autoexplore_active': False,
+                'stop_reason': 'Monster spotted: Orc',
+            },
+            # Scenario 3: COMBAT state
+            {
+                'has_enemies': True,
+                'autoexplore_active': False,
+                'stop_reason': None,
+            },
+        ]
+        
+        for scenario in scenarios:
+            # Setup game state
+            game_state = Mock()
+            game_state.current_state = GameStates.PLAYERS_TURN
+            game_state.fov_map = Mock()
+            
+            # Setup enemy if needed
+            if scenario['has_enemies']:
+                enemy = Mock()
+                enemy.x = 15
+                enemy.y = 10
+                enemy.name = "Orc"
+                enemy.fighter = Mock()
+                enemy.fighter.hp = 10
+                game_state.entities = [enemy]
+            else:
+                game_state.entities = []
+            
+            # Setup player
+            player = Mock()
+            player.x = 10
+            player.y = 10
+            player.faction = Mock()
+            player.components = Mock()
+            player.components.has = Mock(return_value=False)
+            
+            mock_fighter = Mock()
+            mock_fighter.hp = 100
+            mock_fighter.max_hp = 100
+            
+            mock_auto_explore = Mock()
+            mock_auto_explore.is_active = Mock(return_value=scenario['autoexplore_active'])
+            mock_auto_explore.stop_reason = scenario['stop_reason']
+            
+            def get_component(comp_type):
+                if comp_type == ComponentType.FIGHTER:
+                    return mock_fighter
+                elif comp_type == ComponentType.AUTO_EXPLORE:
+                    return mock_auto_explore
+                return None
+            
+            player.get_component_optional = Mock(side_effect=get_component)
+            game_state.player = player
+            
+            # Act
+            action = brain.decide_action(game_state)
+            
+            # Assert: NEVER both start_auto_explore and move
+            if isinstance(action, dict):
+                has_autoexplore = 'start_auto_explore' in action
+                has_movement = 'move' in action
+                
+                assert not (has_autoexplore and has_movement), \
+                    f"Conflict detected in scenario: {scenario}, action: {action}"
+    
     def test_bot_brain_explore_starts_autoexplore_once_then_lets_it_run(self):
         """BotBrain should start autoexplore once when not active, then let it run."""
         brain = BotBrain()
@@ -181,6 +341,14 @@ class TestBotBrainExplore:
         # Verify we never restart autoexplore while it's active
         assert action2 != {"start_auto_explore": True}, "Should not restart autoexplore while active"
         assert action3 != {"start_auto_explore": True}, "Should not restart autoexplore while active"
+    
+    def test_bot_brain_no_cache_always_queries_component(self):
+        """BotBrain should not have autoexplore cache, always query component."""
+        brain = BotBrain()
+        
+        # Verify the cache field no longer exists
+        assert not hasattr(brain, '_last_autoexplore_active'), \
+            "BotBrain should not have _last_autoexplore_active cache"
 
 
 class TestBotBrainCombat:

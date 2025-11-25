@@ -70,9 +70,15 @@ bot-smoke: clean
 		--metrics-log logs/bot_smoke.jsonl --telemetry-json logs/bot_smoke_telemetry.json
 
 soak: clean
-	@echo "🧪 Bot Soak Test: 200 runs, 5000 turns max, 10 floors max"
+	@echo "🧪 Bot Soak Test: 200 runs, 5000 turns max, 10 floors max (with window)"
 	@mkdir -p logs
 	@$(PYTHON) engine.py --bot-soak --runs 200 --max-turns 1000 --max-floors 10 \
+		--metrics-log logs/bot_soak.jsonl --telemetry-json logs/bot_soak_telemetry.json
+
+soak-headless: clean
+	@echo "🧪 Bot Soak Test: 200 runs, 5000 turns max, 10 floors max (headless - no window)"
+	@mkdir -p logs
+	@$(PYTHON) engine.py --bot-soak --headless --runs 200 --max-turns 1000 --max-floors 10 \
 		--metrics-log logs/bot_soak.jsonl --telemetry-json logs/bot_soak_telemetry.json
 
 .DEFAULT_GOAL := help

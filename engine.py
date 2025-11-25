@@ -33,12 +33,27 @@ The key fix: bot-soak now initializes the root console via _initialize_libtcod_f
 before running any games, preventing "Console must not be NULL" crashes.
 """
 
+# =============================================================================
+# CRITICAL: Early headless detection - MUST happen before tcod import!
+# SDL_VIDEODRIVER must be set BEFORE SDL is initialized (which happens on
+# tcod import). Once SDL starts, changing this env var has no effect.
+# =============================================================================
+import sys
+import os
+
+if '--headless' in sys.argv:
+    os.environ['SDL_VIDEODRIVER'] = 'dummy'
+# =============================================================================
+
 import argparse
 import logging
-import os
 
 import tcod.libtcodpy as libtcod
 import warnings
+
+logger = logging.getLogger(__name__)
+
+logger = logging.getLogger(__name__)
 
 from game_states import GameStates
 from input_handlers import handle_main_menu
@@ -182,6 +197,12 @@ Examples:
     )
     
     parser.add_argument(
+        '--headless',
+        action='store_true',
+        help='Run in headless mode (no window, for CI/automated testing)'
+    )
+    
+    parser.add_argument(
         '--max-turns',
         type=int,
         metavar='N',
@@ -231,6 +252,12 @@ def main():
         # Bot soak runs headless-ish (no main menu, direct to harness)
         # Force bot mode and enable telemetry
         from engine.soak_harness import run_bot_soak
+        
+        # Headless mode: SDL_VIDEODRIVER was already set at top of file (before tcod import)
+        if args.headless:
+            print("🔇 Headless mode enabled (no window)")
+        else:
+            print("🖥️  Window mode enabled (game visible)")
         
         # Enable telemetry (required for soak data collection)
         telemetry_path = args.telemetry_json or "telemetry/soak_output.json"

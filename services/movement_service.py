@@ -100,7 +100,6 @@ class MovementService:
         dest_y = player.y + dy
         
         logger.debug(f"Movement attempt: ({player.x}, {player.y}) -> ({dest_x}, {dest_y}) via {source}")
-        print(f">>> MovementService: ({player.x}, {player.y}) -> ({dest_x}, {dest_y}) via {source}, state={current_state}")
 
         # Check for immobilized status effect
         from components.component_registry import ComponentType
@@ -147,11 +146,11 @@ class MovementService:
         old_pos = (player.x, player.y)
         player.move(dx, dy)
         result.success = True
+        logger.debug(f"[PLAYER_MOVE] SUCCESS: moved from {old_pos} to ({player.x}, {player.y}) via {source}")
         result.new_position = (player.x, player.y)
         result.fov_recompute = True
         
         logger.info(f"Player moved: {old_pos} -> {result.new_position} via {source}")
-        print(f">>> MovementService: Player moved to {result.new_position}")
         
         # Update camera to follow player
         camera = self.state_manager.state.camera
@@ -189,8 +188,7 @@ class MovementService:
         # Victory portal only spawns after picking up Ruby Heart, so we can assume it always triggers confrontation
         portal_entity = portal_manager.check_victory_portal_collision(player, entities)
         if portal_entity:
-            print(f">>> MovementService: VICTORY PORTAL ENTRY DETECTED at {result.new_position}!")
-            logger.info(f"=== MOVEMENT_SERVICE: VICTORY PORTAL ENTRY DETECTED!")
+            logger.info(f"=== MOVEMENT_SERVICE: VICTORY PORTAL ENTRY DETECTED at {result.new_position}!")
 
             # Check if an ending has already been achieved (prevent re-entering after choice made)
             ending_already_achieved = (hasattr(player, 'victory') and

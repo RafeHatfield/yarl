@@ -34,16 +34,17 @@ class KeyboardInputSource:
         self.current_key = libtcod.Key()
         self.current_mouse = libtcod.Mouse()
         self.death_frame_counter = None
-        self._events_pumped_externally = False
 
     def record_external_event_pump(self) -> None:
-        """Flag that events were pumped outside of next_action.
-
-        When the main loop pumps window events to keep the OS happy, this
-        marker prevents next_action from immediately overwriting the
-        Key/Mouse objects with a second call to sys_check_for_event.
+        """DEPRECATED: No longer used.
+        
+        Previously, this flagged that events were pumped externally to prevent
+        double-polling. Now we only poll events in next_action(), so this is
+        no longer needed.
+        
+        Kept for API compatibility but does nothing.
         """
-        self._events_pumped_externally = True
+        pass  # No-op
 
     def next_action(self, game_state: Any) -> ActionDict:
         """Get the next player action from keyboard/mouse input.
@@ -61,15 +62,20 @@ class KeyboardInputSource:
             An ActionDict containing the next player action, or an empty dict if no
             input is available.
         """
-        # Check for input events (non-blocking). If the main loop already
-        # pumped events for window responsiveness, reuse those values instead
-        # of clearing them here.
-        if self._events_pumped_externally:
-            self._events_pumped_externally = False
-        else:
-            libtcod.sys_check_for_event(
-                libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, self.current_key, self.current_mouse
-            )
+        # DEBUG: Log key state BEFORE processing
+        import logging
+        logger = logging.getLogger(__name__)
+        before_vk = self.current_key.vk
+        before_c = self.current_key.c
+        logger.debug(f"[NEXT_ACTION START] key=({before_vk}, {before_c})")
+        
+        # CRITICAL: Poll events here (and ONLY here) to avoid double-polling
+        # We use EVENT_KEY_PRESS (not EVENT_ANY) to only get key press events,
+        # not key releases or other events that might confuse the input handling.
+        libtcod.sys_check_for_event(
+            libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, self.current_key, self.current_mouse
+        )
+        logger.debug(f"[NEXT_ACTION] Polled events, key now=({self.current_key.vk}, {self.current_key.c})")
 
         # Extract game state enum
         current_game_state = getattr(game_state, "game_state", GameStates.PLAYERS_TURN)
@@ -79,6 +85,8 @@ class KeyboardInputSource:
 
         # Handle keyboard input
         if self.current_key.vk != libtcod.KEY_NONE or self.current_key.c != 0:
+            logger.debug(f"[NEXT_ACTION] Processing key: vk={self.current_key.vk}, c={self.current_key.c}")
+            
             # Special case: PLAYER_DEAD needs death frame counter
             if current_game_state == GameStates.PLAYER_DEAD:
                 self.death_frame_counter = getattr(game_state, "death_frame_counter", 0)
@@ -89,6 +97,16 @@ class KeyboardInputSource:
                 key_actions = handle_keys(self.current_key, current_game_state)
 
             actions.update(key_actions)
+            logger.debug(f"[NEXT_ACTION] Key produced actions: {actions}")
+            
+            # CRITICAL FIX: Clear the key after processing to prevent double-processing
+            # Without this, the same key persists across frames and causes double moves.
+            # This ensures: one keypress → one processed action → one world tick.
+            self.current_key.vk = libtcod.KEY_NONE
+            self.current_key.c = 0
+            logger.debug(f"[NEXT_ACTION] Cleared key after processing")
+        else:
+            logger.debug(f"[NEXT_ACTION] No key to process")
 
         # Handle mouse input
         if (
@@ -103,5 +121,6 @@ class KeyboardInputSource:
             )
             actions.update(mouse_actions)
 
+        logger.debug(f"[NEXT_ACTION END] returning actions={actions}")
         return actions
 

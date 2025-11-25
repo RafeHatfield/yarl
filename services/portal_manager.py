@@ -305,6 +305,78 @@ class PortalManager:
         if exit_portal:
             exit_portal.is_deployed = False
             exit_portal.owner = None
+    
+    @staticmethod
+    def deactivate_portal_pair(
+        entrance_entity: Optional[Entity],
+        exit_entity: Optional[Entity],
+        entities_list: List[Entity]
+    ) -> Dict[str, Any]:
+        """Deactivate and remove a portal pair from the game world.
+        
+        This cleanly tears down active portals:
+        - Removes portal entities from the entities list
+        - Clears bidirectional portal links
+        - Returns success status
+        
+        Used when:
+        - Player uses wand again while portals are active (cancel + refund)
+        - Portals need to be destroyed by other game mechanics
+        
+        Args:
+            entrance_entity: Entity with entrance portal component
+            exit_entity: Entity with exit portal component
+            entities_list: The game's entities list to remove from
+            
+        Returns:
+            Dict with 'success' bool and 'message' str
+        """
+        try:
+            removed_count = 0
+            
+            # Remove entrance portal entity
+            if entrance_entity and entrance_entity in entities_list:
+                entities_list.remove(entrance_entity)
+                removed_count += 1
+                logger.debug(f"Removed entrance portal entity at ({entrance_entity.x}, {entrance_entity.y})")
+            
+            # Remove exit portal entity
+            if exit_entity and exit_entity in entities_list:
+                entities_list.remove(exit_entity)
+                removed_count += 1
+                logger.debug(f"Removed exit portal entity at ({exit_entity.x}, {exit_entity.y})")
+            
+            # Clear portal component links to prevent stale references
+            if entrance_entity and hasattr(entrance_entity, 'portal'):
+                entrance_entity.portal.linked_portal = None
+                entrance_entity.portal.is_deployed = False
+                entrance_entity.portal.owner = None
+            
+            if exit_entity and hasattr(exit_entity, 'portal'):
+                exit_entity.portal.linked_portal = None
+                exit_entity.portal.is_deployed = False
+                exit_entity.portal.owner = None
+            
+            # Invalidate entity sorting cache
+            from entity_sorting_cache import invalidate_entity_cache
+            invalidate_entity_cache("portal_deactivation")
+            
+            logger.info(f"Deactivated portal pair, removed {removed_count} entities")
+            
+            return {
+                'success': True,
+                'removed_count': removed_count,
+                'message': 'Portals collapse as the wand\'s magic is withdrawn.'
+            }
+        
+        except Exception as e:
+            logger.error(f"Error deactivating portal pair: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return {
+                'success': False,
+                'message': f'Failed to deactivate portals: {e}'
+            }
 
 
 # Global portal manager instance

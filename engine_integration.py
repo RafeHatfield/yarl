@@ -42,6 +42,7 @@ from io_layer.interfaces import Renderer, InputSource, ActionDict
 from io_layer.console_renderer import ConsoleRenderer
 from io_layer.keyboard_input import KeyboardInputSource
 from io_layer.bot_input import BotInputSource
+from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -297,22 +298,25 @@ def create_renderer_and_input_source(
 def pump_events_and_sleep(input_source: InputSource, frame_delay: float = 0.016) -> None:
     """Pump OS/window events and throttle frame rate.
 
-    This keeps the libtcod window responsive even when input sources do not
-    block (e.g., bot mode) and provides consistent pacing for the main loop.
-    If the input source exposes current_key/current_mouse, they are passed to
-    libtcod so any polled events are preserved for consumption in next_action.
+    CRITICAL FIX (see KEYBOARD_DOUBLE_MOVE_REAL_FIX.md):
+    - For BOT mode: We must pump SDL events for the window to appear/update,
+      because BotInputSource.next_action() doesn't call sys_check_for_event.
+    - For KEYBOARD mode: Do NOT pump here! KeyboardInputSource.next_action()
+      already calls sys_check_for_event, and double-pumping causes edge-triggered
+      mouse flags (lbutton_pressed, rbutton_pressed) to be consumed by dummy
+      objects, requiring multiple clicks for actions to register.
+    
+    The principle: Poll input in ONE place only.
     """
-
-    key = getattr(input_source, "current_key", None)
-    mouse = getattr(input_source, "current_mouse", None)
-    libtcod.sys_check_for_event(libtcod.EVENT_ANY, key, mouse)
-
-    # Inform input sources that events were pumped externally so they don't
-    # immediately clear the values when next_action runs.
-    record_hook = getattr(input_source, "record_external_event_pump", None)
-    if callable(record_hook):
-        record_hook()
-
+    from io_layer.bot_input import BotInputSource
+    
+    # Only pump events for bot mode - KeyboardInputSource already pumps in next_action()
+    if isinstance(input_source, BotInputSource):
+        dummy_key = libtcod.Key()
+        dummy_mouse = libtcod.Mouse()
+        libtcod.sys_check_for_event(0, dummy_key, dummy_mouse)  # 0 = EVENT_NONE
+    
+    # Sleep to throttle frame rate
     time.sleep(frame_delay)
 
 
@@ -514,6 +518,11 @@ def play_game_with_engine(
         else:
             logger.info("BOT MODE: Enemy AI enabled, bot will fight monsters")
 
+    # Track first frame to ensure initial render
+    # Without this, the first frame would skip engine.update() (no action yet)
+    # and the screen would stay black/stuck on menu
+    first_frame_needs_render = True
+    
     # Main game loop
     # PHASE 1 (INPUT): ✅ COMPLETE - input_source.next_action() is the primary input path
     # PHASE 2 (RENDERING): ✅ COMPLETE - renderer.render() is called each frame
@@ -530,6 +539,11 @@ def play_game_with_engine(
         # Mouse and keyboard actions are mixed in the dict from KeyboardInputSource
         # =====================================================================
         combined_action: ActionDict = input_source.next_action(engine.state_manager.state)
+        
+        # KEYBOARD DEBUG: Log keyboard input for debugging double-move issue
+        if combined_action and input_mode != "bot":
+            turn_num = engine.turn_manager.turn_number if engine.turn_manager else 0
+            logger.debug(f"[KEYBOARD INPUT] turn={turn_num}, action={combined_action}")
         
         # BOT LIMITS CHECK: Enforce --max-turns and --max-floors if configured
         # This prevents infinite loops and provides deterministic run termination
@@ -663,15 +677,71 @@ def play_game_with_engine(
             break
 
         # Use the new action processor for clean, modular action handling
+        # KEYBOARD DEBUG: Log before processing
+        if (action or mouse_action) and input_mode != "bot":
+            turn_num = engine.turn_manager.turn_number if engine.turn_manager else 0
+            logger.debug(f"[PROCESSING ACTION] turn={turn_num}, action={action}, mouse={mouse_action}")
+        
         action_processor.process_actions(action, mouse_action)
         
-        # Decide whether the world should tick this frame
-        should_update_systems = True
+        # ═════════════════════════════════════════════════════════════════════════
+        # MAIN LOOP INVARIANT ENFORCEMENT (Manual vs Bot Update Rules)
+        # ═════════════════════════════════════════════════════════════════════════
+        # 
+        # SCOPE: This gating applies ONLY to in-dungeon gameplay (PLAYERS_TURN state),
+        #        NOT to menus, dialogs, or other UI states.
+        #
+        # MANUAL MODE (input_mode != "bot") during PLAYERS_TURN:
+        #   The world should ONLY tick when:
+        #     a) First frame (needs initial render/FOV), OR
+        #     b) The player performed an action (action or mouse_action not empty), OR
+        #     c) AutoExplore is actively running
+        #   Otherwise, we just render and wait for input.
+        #   This enforces the invariant: "one player input → one world tick"
+        #
+        # BOT MODE (input_mode == "bot"):
+        #   Always update - the bot continuously generates actions.
+        #   BotInputSource already handles throttling and state-aware action generation.
+        #
+        # OTHER STATES (menus, dialogs, level-up, etc.):
+        #   Always update - these states may need continuous rendering or state updates
+        #   independent of player actions.
+        # ═════════════════════════════════════════════════════════════════════════
         
-        # TODO: Manual mode optimization to prevent enemy AI spam when player is idle
-        # Disabled for now - needs more investigation to avoid breaking menu/state transitions
-        # Original issue: After AutoExplore stops in manual mode, empty actions cause
-        # repeated enemy AI turns. Turn limit will catch hangs in bot mode for now.
+        should_update_systems = True  # Default: update for bot mode and non-PLAYERS_TURN states
+        
+        # Get current game state to determine if gating should apply
+        current_state = engine.state_manager.state.current_state
+        
+        if input_mode != "bot" and current_state == GameStates.PLAYERS_TURN:
+            # MANUAL MODE IN-DUNGEON: Only update if there's an action OR auto-explore is active
+            # This gating ONLY applies during active dungeon play, not menus/dialogs/etc.
+            
+            # EXCEPTION: First frame always needs to update for initial render
+            if first_frame_needs_render:
+                should_update_systems = True
+                first_frame_needs_render = False
+                logger.debug("MANUAL MODE: First frame - updating for initial render")
+            else:
+                has_action = bool(action or mouse_action)
+                
+                # Check if AutoExplore is active
+                player = engine.state_manager.state.player
+                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
+                auto_explore_active = bool(auto_explore and auto_explore.is_active())
+                
+                # Diagnostic logging (temporary - can be removed after verification)
+                logger.debug(
+                    f"MANUAL FRAME: state={current_state}, has_action={has_action}, "
+                    f"auto_explore_active={auto_explore_active}, should_update={has_action or auto_explore_active}"
+                )
+                
+                # CRITICAL INVARIANT: Only update if player acted or auto-explore is running
+                # This prevents the "empty action spam" bug where engine.update() is called
+                # every frame even when the player is idle, causing repeated AI cycles
+                if not has_action and not auto_explore_active:
+                    should_update_systems = False
+                    logger.debug("MANUAL MODE: No action and auto-explore inactive - skipping engine.update()")
         
         # Phase 1.6: Check for bot run abort signal (floor fully explored in soak mode)
         # This is a bot-only terminal condition that should exit the current run
@@ -958,18 +1028,56 @@ def play_game_with_engine(
         # =====================================================================
         # RENDERING & GAME STATE UPDATES
         #
-        # For now: Use RenderSystem for rendering (it works reliably)
+        # CRITICAL SEPARATION: World updates vs Rendering
+        # =====================================================================
+        # 
+        # WORLD UPDATES (AI, Environment, etc.):
+        #   Only tick when should_update_systems is True (player acted, auto-explore, bot mode)
+        #   This prevents AI spam and maintains manual-loop invariants
+        # 
+        # RENDERING (screen refresh, visual effects, tooltips):
+        #   Must run EVERY frame to:
+        #     - Clear hit-flash effects from the visual effect queue
+        #     - Update tooltips based on current mouse position
+        #     - Refresh transient UI state
+        # 
+        # Implementation: Update non-render systems conditionally, then always render
         # =====================================================================
         
-        # Update all game systems (AI, FOV, camera, state)
-        # Only update if the world should tick this frame (see should_update_systems above)
-        if should_update_systems:
-            engine.update()
+        # Update delta_time for this frame (needed for all systems)
+        current_time = time.time()
+        engine.delta_time = current_time - engine._last_time
+        engine._last_time = current_time
         
-        # ConsoleRenderer is not yet fully integrated, causing FOV issues
-        # TODO: Fix FOV propagation to ConsoleRenderer for Phase 2 abstraction
-        # For now, RenderSystem handles rendering directly
-        # renderer.render(engine.state_manager.state)
+        # Update world systems (AI, Environment) only when the world should tick
+        if should_update_systems:
+            # KEYBOARD DEBUG: Log engine update
+            if input_mode != "bot":
+                turn_num_before = engine.turn_manager.turn_number if engine.turn_manager else 0
+                logger.debug(f"[ENGINE UPDATE START] turn={turn_num_before}, updating systems")
+            
+            # Update all systems EXCEPT render system
+            # Render system will be updated separately below to ensure it runs every frame
+            for system in engine.systems.values():
+                # Skip render system here - it will be called explicitly below
+                if system.name == "render" or not system.enabled:
+                    continue
+                system.update(engine.delta_time)
+            
+            # KEYBOARD DEBUG: Log turn counter after update
+            if input_mode != "bot":
+                turn_num_after = engine.turn_manager.turn_number if engine.turn_manager else 0
+                if turn_num_after != turn_num_before:
+                    logger.debug(f"[ENGINE UPDATE END] turn changed: {turn_num_before} -> {turn_num_after}")
+        
+        # ALWAYS update render system, regardless of world tick
+        # This ensures:
+        # 1. Visual effects queue is played and cleared each frame
+        # 2. Tooltips are recomputed based on current mouse position
+        # 3. Transient UI state (hit flashes, hover) updates properly
+        render_system = engine.get_system("render")
+        if render_system and render_system.enabled:
+            render_system.update(engine.delta_time)
 
         # IMPORTANT: Reset FOV flag AFTER rendering is complete
         # This ensures the flag stays active for the entire frame

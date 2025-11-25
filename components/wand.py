@@ -82,12 +82,16 @@ class Wand:
         """
         # Visual charge indicator based on charge level
         if self.charges == -1:
-            # Special case: infinite charges (e.g., Wand of Portals)
+            # Special case: infinite charges (for non-portal wands that might use this)
             indicator = "∞"  # Infinity symbol
             display_charges = "∞"
         elif self.charges == 0:
             indicator = "○"  # Empty circle - no charges
             display_charges = "0"
+        elif self.charges == 1:
+            # Single charge wands (like Wand of Portals) show as ready/full
+            indicator = "●"  # Full circle - ready to use
+            display_charges = "1"
         elif self.charges <= 2:
             indicator = "◐"  # Half-filled - low charges
             display_charges = str(self.charges)

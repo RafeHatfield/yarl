@@ -651,7 +651,6 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             # Check if item is at player's location
             if target_item in entities and target_item.x == player.x and target_item.y == player.y:
                 # Use PickupService for pickup (single source of truth)
-                print(f">>> PATHFINDING: Attempting to pick up item: {target_item.name}")
                 
                 from services.pickup_service import get_pickup_service
                 pickup_service = get_pickup_service(state_manager)

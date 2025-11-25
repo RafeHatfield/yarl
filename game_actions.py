@@ -173,43 +173,50 @@ class ActionProcessor:
                 
                 if auto_explore_active:
                     # CRITICAL: Pickup actions take priority over AutoExplore movement
-                    # If bot is trying to pick up an item, process that FIRST, don't let AutoExplore override it
+                    # If bot/player is trying to pick up an item, process that FIRST
                     if action.get('pickup'):
-                        logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Pickup action takes priority, cancelling AutoExplore")
+                        if not self.is_bot_mode:
+                            logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Pickup action takes priority, cancelling AutoExplore")
                         auto_explore.stop("Cancelled")
                         # Fall through to process pickup action below
                     else:
                         # Process auto-explore movement automatically
                         logger.debug(f"🔍 DIAGNOSTIC: ActionProcessor: Processing AutoExplore turn at {player_pos}")
                         self._process_auto_explore_turn()
+                        
                         # Check if any key was pressed to cancel
-                        # CRITICAL: Exclude 'start_auto_explore' from cancellation - it's not "cancelling input"
-                        # BotBrain may return start_auto_explore due to cache mismatch, but we should ignore it
-                        # when AutoExplore is already active, not cancel AutoExplore.
-                        cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
-                        if cancel_actions or mouse_action:
-                            # Actual user input cancels auto-explore
-                            logger.warning(
-                                f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to input! "
-                                f"action={cancel_actions}, mouse_action={mouse_action}"
-                            )
-                            auto_explore.stop("Cancelled")
-                            self.state_manager.state.message_log.add_message(
-                                MB.info("Auto-explore cancelled")
-                            )
+                        # CRITICAL: In bot mode, bot movements should NOT cancel AutoExplore
+                        # Only MANUAL input (keyboard/mouse) should cancel
+                        if not self.is_bot_mode:
+                            # Manual mode: any input cancels auto-explore
+                            cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
+                            if cancel_actions or mouse_action:
+                                logger.warning(
+                                    f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to manual input! "
+                                    f"action={cancel_actions}, mouse_action={mouse_action}"
+                                )
+                                auto_explore.stop("Cancelled")
+                                self.state_manager.state.message_log.add_message(
+                                    MB.info("Auto-explore cancelled")
+                                )
+                        # In bot mode, do NOT cancel AutoExplore on bot movements
+                        # BotBrain manages AutoExplore lifecycle explicitly
                         return  # Don't process other input this turn
                 elif auto_explore and not auto_explore_active:
-                    # AutoExplore exists but is not active - log why (but only once per stop)
-                    stop_reason = getattr(auto_explore, 'stop_reason', None)
-                    
-                    # Throttle diagnostic: Only log once when stop_reason changes
-                    last_logged_stop = getattr(self, '_last_logged_autoexplore_stop', None)
-                    if stop_reason != last_logged_stop:
-                        logger.warning(
-                            f"🔍 DIAGNOSTIC: ActionProcessor: AutoExplore exists but NOT active! "
-                            f"pos={player_pos}, stop_reason='{stop_reason}', action={action}"
-                        )
-                        self._last_logged_autoexplore_stop = stop_reason
+                    # AutoExplore exists but is not active
+                    # In bot mode, this is normal - BotBrain manages AutoExplore lifecycle
+                    # Only log in manual mode to avoid spam
+                    if not self.is_bot_mode:
+                        stop_reason = getattr(auto_explore, 'stop_reason', None)
+                        
+                        # Throttle diagnostic: Only log once when stop_reason changes
+                        last_logged_stop = getattr(self, '_last_logged_autoexplore_stop', None)
+                        if stop_reason != last_logged_stop:
+                            logger.warning(
+                                f"🔍 DIAGNOSTIC: ActionProcessor: AutoExplore exists but NOT active! "
+                                f"pos={player_pos}, stop_reason='{stop_reason}', action={action}"
+                            )
+                            self._last_logged_autoexplore_stop = stop_reason
                 
                 # Fall back to pathfinding if no auto-explore
                 pathfinding = player.get_component_optional(ComponentType.PATHFINDING) if player else None
@@ -336,10 +343,12 @@ class ActionProcessor:
         was_already_active = auto_explore.is_active() if auto_explore else False
         
         # Start exploring (will reset if already active - this is intentional)
+        # Pass bot_mode flag to enable opportunistic loot ONLY in bot mode (not manual play)
         quote = auto_explore.start(
             self.state_manager.state.game_map,
             self.state_manager.state.entities,
-            self.state_manager.state.fov_map
+            self.state_manager.state.fov_map,
+            bot_mode=self.is_bot_mode
         )
         
         # DIAGNOSTIC: Log whether AutoExplore actually started or refused
@@ -1793,6 +1802,8 @@ class ActionProcessor:
         
         from ui.sidebar_interaction import handle_sidebar_click
         from config.ui_layout import get_ui_layout
+        from game_states import GameStates
+        from components.component_registry import ComponentType
         
         screen_x, screen_y = click_pos
         player = self.state_manager.state.player
@@ -1812,7 +1823,37 @@ class ActionProcessor:
             if 'inventory_index' in action:
                 # User clicked on an inventory item - use it!
                 logger.warning(f"SIDEBAR INVENTORY ITEM CLICKED: index {action['inventory_index']}")
-                self._handle_inventory_action(action['inventory_index'])
+                
+                # IMPORTANT: During PLAYERS_TURN, sidebar clicks should directly use items
+                # _handle_inventory_action is designed for full-screen inventory menu states
+                current_state = self.state_manager.state.current_state
+                
+                if current_state == GameStates.PLAYERS_TURN:
+                    # Direct item usage during normal gameplay
+                    inventory_index = action['inventory_index']
+                    
+                    # Safety checks
+                    if not player or not player.get_component_optional(ComponentType.INVENTORY):
+                        logger.warning("No player or inventory!")
+                        return
+                    
+                    inventory = player.require_component(ComponentType.INVENTORY)
+                    
+                    # Get sorted inventory (same logic as handle_sidebar_click)
+                    sorted_items = sorted(inventory.items, key=lambda item: item.get_display_name().lower())
+                    
+                    # Validate index
+                    if inventory_index < 0 or inventory_index >= len(sorted_items):
+                        logger.warning(f"Invalid inventory index: {inventory_index} (size: {len(sorted_items)})")
+                        return
+                    
+                    # Get the item and use it directly
+                    item = sorted_items[inventory_index]
+                    logger.warning(f"Using item from sidebar: {item.name}")
+                    self._use_inventory_item(item)
+                else:
+                    # In other states (menus), use the normal inventory action handler
+                    self._handle_inventory_action(action['inventory_index'])
             elif 'equipment_slot' in action:
                 # User left-clicked on equipment - unequip it!
                 logger.warning(f"SIDEBAR EQUIPMENT CLICKED: slot {action['equipment_slot']}")
@@ -2101,11 +2142,17 @@ class ActionProcessor:
                         
                         entrance_entity = portal_manager.create_portal_entity('entrance', target_x, target_y)
                         if entrance_entity:
-                            # Store reference in placer for later linking
+                            # Store both component and entity references in placer
                             portal_placer.active_entrance = entrance_entity.portal
+                            portal_placer.active_entrance_entity = entrance_entity
+                            
+                            # Ensure charge stays at 1 (invariant)
+                            portal_placer.charges = 1
                             
                             entities.append(entrance_entity)
-                            message_log.add_message(MB.success("Entrance portal placed. Click to place exit portal."))
+                            message_log.add_message(MB.success(
+                                "Entrance portal placed. Click to place exit portal."
+                            ))
                         else:
                             message_log.add_message(MB.warning("Failed to create entrance portal"))
                     else:
@@ -2125,12 +2172,19 @@ class ActionProcessor:
                         # Create exit entity with link to entrance
                         exit_entity = portal_manager.create_portal_entity('exit', target_x, target_y, linked_portal=entrance_portal_component)
                         if exit_entity:
-                            # Store reference and link both portals
+                            # Store both component and entity references
                             portal_placer.active_exit = exit_entity.portal
+                            portal_placer.active_exit_entity = exit_entity
                             entrance_portal_component.linked_portal = exit_entity.portal
                             
+                            # Ensure charge stays at 1 (invariant)
+                            portal_placer.charges = 1
+                            
                             entities.append(exit_entity)
-                            message_log.add_message(MB.success("Exit portal placed! Portals are now active."))
+                            message_log.add_message(MB.success(
+                                "Exit portal placed! Portals are now active. "
+                                "Use wand again to cancel and reset."
+                            ))
                             
                             # Exit targeting mode - portals placed
                             self.state_manager.set_extra_data("portal_wand", None)
@@ -2238,6 +2292,13 @@ class ActionProcessor:
             
             # Process the result
             if result.action_taken:
+                # Stop AutoExplore if interaction requires it (chest, signpost, mural)
+                if result.auto_explore_stop_reason:
+                    auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                    if auto_explore and auto_explore.is_active():
+                        auto_explore.stop(result.auto_explore_stop_reason)
+                        logger.info(f"AutoExplore stopped due to interaction: {result.auto_explore_stop_reason}")
+                
                 # Show message
                 if result.message:
                     message_log.add_message(result.message)

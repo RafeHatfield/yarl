@@ -27,26 +27,37 @@ class PortalPlacer(Wand):
     """Manages portal creation and lifecycle for Wand of Portals.
     
     The wand operates on a simple cycle:
-    - Create entrance portal
-    - Create exit portal
+    - Create entrance portal (consumes 1 charge)
+    - Create exit portal (pair now active)
     - Both active until wand is used again
-    - Using wand again: old portals disappear, ready for new pair
+    - Using wand again: old portals disappear, charge refunded
     
     Attributes:
-        active_entrance: Current entrance portal (if deployed)
-        active_exit: Current exit portal (if deployed)
+        active_entrance: Current entrance portal component (if deployed)
+        active_exit: Current exit portal component (if deployed)
+        active_entrance_entity: Entity owning entrance portal
+        active_exit_entity: Entity owning exit portal
         targeting_stage: 0=idle, 1=placing_entrance, 2=placing_exit
     """
     
     def __init__(self):
-        """Initialize portal wand (infinite uses)."""
+        """Initialize portal wand with exactly 1 charge (always).
+        
+        The wand operates as a binary state machine:
+        - State A: No portals active → wand is "ready" (1 charge)
+        - State B: Portal pair active → wand is "occupied" (still 1 charge)
+        
+        The charge never changes. It's always 1.
+        """
         super().__init__(
             spell_type="portal",
-            charges=0  # Infinite (always "charged")
+            charges=1  # ALWAYS 1 - never more, never less
         )
         
         self.active_entrance: Optional['Portal'] = None
         self.active_exit: Optional['Portal'] = None
+        self.active_entrance_entity: Optional['Entity'] = None
+        self.active_exit_entity: Optional['Entity'] = None
         self.targeting_stage = 0  # 0=idle, 1=placing_entrance, 2=placing_exit
     
     def start_targeting(self) -> Dict[str, Any]:
@@ -177,9 +188,10 @@ class PortalPlacer(Wand):
     def recycle_portals(self) -> Dict[str, Any]:
         """Remove current portals and reset for new cycle.
         
-        Called when:
-        - Player uses wand again while portals active
-        - Player carrying portal and uses wand (portals destroyed)
+        DEPRECATED: Use cancel_active_portals() instead for proper entity cleanup.
+        
+        This method only marks components as not deployed without removing entities.
+        Kept for backward compatibility with tests.
         
         Returns:
             Result dict with recycle status
@@ -194,9 +206,11 @@ class PortalPlacer(Wand):
             self.active_exit.owner = None
             self.active_exit = None
         
+        self.active_entrance_entity = None
+        self.active_exit_entity = None
         self.targeting_stage = 0
         
-        logger.debug("Portals recycled, wand ready for new placement")
+        logger.debug("Portals recycled (deprecated), wand ready for new placement")
         
         return {
             'recycled': True,
@@ -207,14 +221,67 @@ class PortalPlacer(Wand):
         """Check if wand has active portals deployed.
         
         Returns:
-            True if both entrance and exit exist and are deployed
+            True if both entrance and exit entities exist and are deployed
         """
         return (
+            self.active_entrance_entity is not None and
             self.active_entrance is not None and
             self.active_entrance.is_deployed and
+            self.active_exit_entity is not None and
             self.active_exit is not None and
             self.active_exit.is_deployed
         )
+    
+    def cancel_active_portals(self, entities_list: list) -> Dict[str, Any]:
+        """Cancel active portals and reset wand to ready state.
+        
+        This method:
+        - Removes portal entities from the game world
+        - Resets internal tracking
+        - Charge stays at 1 (always)
+        
+        Args:
+            entities_list: The game's entities list
+            
+        Returns:
+            Dict with 'success' bool and 'message' str
+        """
+        if not self.has_active_portals():
+            return {
+                'success': False,
+                'message': 'No active portals to cancel'
+            }
+        
+        from services.portal_manager import get_portal_manager
+        
+        portal_manager = get_portal_manager()
+        result = portal_manager.deactivate_portal_pair(
+            self.active_entrance_entity,
+            self.active_exit_entity,
+            entities_list
+        )
+        
+        if result.get('success'):
+            # Clear internal tracking
+            self.active_entrance = None
+            self.active_exit = None
+            self.active_entrance_entity = None
+            self.active_exit_entity = None
+            self.targeting_stage = 0
+            
+            # Ensure charge stays at 1 (invariant)
+            self.charges = 1
+            logger.info("Portal wand reset to ready state (charge = 1)")
+            
+            return {
+                'success': True,
+                'message': result.get('message', 'Portals canceled. Wand ready.')
+            }
+        else:
+            return {
+                'success': False,
+                'message': result.get('message', 'Failed to cancel portals')
+            }
     
     def _is_valid_placement(
         self,
