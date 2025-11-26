@@ -39,6 +39,8 @@ player:
   constitution: 14  # Survivable (+2 HP modifier = +2 max HP)
 
 # Monster definitions
+# Each monster has an etp_base value for encounter budgeting (see balance/etp.py)
+# ETP = (DPS × 6) × Durability × Behavior × Synergy (B1 baseline values)
 monsters:
   # Basic orc enemy
   orc:
@@ -58,6 +60,8 @@ monsters:
     ai_type: "basic"
     render_order: "actor"
     blocks: true
+    # ETP: DPS=5 × 6 × durability=1.0 × behavior=0.9 = 27
+    etp_base: 27
     # Item-seeking behavior configuration
     can_seek_items: true      # Whether monster actively seeks items on the ground
     inventory_size: 5         # Maximum items monster can carry (0 = no inventory)
@@ -92,6 +96,8 @@ monsters:
     seek_distance: 7          # Override: better awareness and leadership
     # Inherits: damage_min: 4, damage_max: 6, defense: 0, ai_type: "basic", etc.
     # Total damage: 2 power + 4-6 natural = 6-8 (stronger than basic orc's 4-6)
+    # ETP: DPS=7 × 6 × durability=1.33 × behavior=1.1 = 57 (leader buff)
+    etp_base: 57
 
   # Veteran orc variant - experienced fighter
   orc_veteran:
@@ -105,6 +111,8 @@ monsters:
     inventory_size: 6         # Override: slightly larger inventory
     # Inherits: damage_min: 4, damage_max: 6, defense: 0, etc.
     # Total damage: 1 power + 4-6 natural = 5-7 (between basic orc and chieftain)
+    # ETP: DPS=6 × 6 × durability=1.17 × behavior=1.05 = 41 (experienced)
+    etp_base: 41
 
   # Weaker orc variant - scout/skirmisher
   orc_scout:
@@ -119,6 +127,8 @@ monsters:
     seek_distance: 8          # Override: better awareness (scout training)
     # Inherits: power: 0, damage_min: 4, damage_max: 6, ai_type: "basic", etc.
     # Total damage: 0 power + 4-6 natural = 4-6 (same as basic orc, but less HP)
+    # ETP: DPS=5 × 6 × durability=0.77 × behavior=0.9 = 21 (fragile)
+    etp_base: 21
 
   # Stronger troll enemy  
   troll:
@@ -142,6 +152,8 @@ monsters:
     can_seek_items: true      # Trolls actively seek items
     inventory_size: 8         # Larger inventory than orcs (smarter)
     seek_distance: 7          # Longer detection range than orcs
+    # ETP: DPS=10 × 6 × durability=1.33 × behavior=1.05 = 50 (brute)
+    etp_base: 50
 
   # Elite troll variant - ancient and powerful
   troll_ancient:
@@ -157,6 +169,8 @@ monsters:
     seek_distance: 10         # Override: ancient senses
     # Inherits: damage_min: 8, damage_max: 12, ai_type: "basic", etc.
     # Total damage: 3 power + 8-12 natural = 11-15 (very powerful!)
+    # ETP: DPS=13 × 6 × durability=2.22 × behavior=1.1 = 95 (elite brute)
+    etp_base: 95
 
   # Slime monsters - hostile to all factions
   slime:
@@ -181,6 +195,9 @@ monsters:
     can_seek_items: false
     inventory_size: 0
     special_abilities: ["corrosion"]  # Can corrode equipment on successful hits
+    # ETP: DPS=2 × 6 × durability=0.77 × behavior=1.1 = 10 (zone/attrition)
+    # Note: Higher effective threat in groups due to corrosion + slow tiles
+    etp_base: 10
 
   # Large slime - can split into smaller slimes when defeated
   large_slime:
@@ -200,6 +217,9 @@ monsters:
     color: [0, 200, 0]        # Override: darker green (more mature)
     special_abilities: ["corrosion", "splitting"]  # Override: can split + corrode
     # Inherits: ai_type: "slime", faction: "hostile_all", can_seek_items: false, etc.
+    # ETP: DPS=3.5 × 6 × durability=2.05 × behavior=1.15 = 50 (splits into 2 small)
+    # Effective ETP higher due to splitting mechanic
+    etp_base: 35
 
   # ═══════════════════════════════════════════════════════════
   # BOSS MONSTERS - Unique powerful encounters
@@ -237,6 +257,8 @@ monsters:
     special_abilities: ["fire_breath", "wing_buffet", "summon_minions"]
     # No equipment spawning - bosses have natural power
     equipment: null
+    # ETP: DPS=17.5 × 6 × durability=5.13 × behavior=1.3 = 700 (boss tier)
+    etp_base: 700
 
   # Demon King - Cursed monarch of the underworld
   demon_king:
@@ -270,6 +292,8 @@ monsters:
     special_abilities: ["curse", "life_drain", "teleport"]
     # No equipment spawning - demonic power is innate
     equipment: null
+    # ETP: DPS=18 × 6 × durability=4.1 × behavior=1.3 = 575 (boss tier)
+    etp_base: 575
 
   # =========================================================================
   # PHASE 5: ZHYRAXION BOSS VARIANTS
@@ -304,6 +328,8 @@ monsters:
     boss_name: "Zhyraxion, the Bound"
     can_seek_items: false
     inventory_size: 0
+    # ETP: DPS=21 × 6 × durability=3.59 × behavior=1.3 = 590 (story boss)
+    etp_base: 590
     boss:
       boss_type: "dragon_human"
       enrage_threshold: 0.5    # Enrages at 50% HP
@@ -346,6 +372,8 @@ monsters:
     boss_name: "Zhyraxion the Unbound"
     can_seek_items: false
     inventory_size: 0
+    # ETP: DPS=44.5 × 6 × durability=10.26 × behavior=1.3 = 3560 (EXTREME boss)
+    etp_base: 3500
     boss:
       boss_type: "full_dragon"
       enrage_threshold: 0.7    # Enrages early at 70%
@@ -386,6 +414,8 @@ monsters:
     boss_name: "Grief-Mad Zhyraxion"
     can_seek_items: false
     inventory_size: 0
+    # ETP: DPS=28 × 6 × durability=5.13 × behavior=1.3 = 1120 (hard boss)
+    etp_base: 1100
     boss:
       boss_type: "grief_dragon"
       enrage_threshold: 0.3    # Enrages late at 30% (already mad)
@@ -424,6 +454,8 @@ monsters:
     blocks: true
     name: "Corrupted Ritualist"
     description: "A mad remnant of the Crimson Order, corrupted by Aurelyn's absorbed power. Flesh rotting, eyes glowing crimson, mumbling about 'the completion'."
+    # ETP: DPS=22 × 6 × durability=3.08 × behavior=1.1 = 448 (elite guardian)
+    etp_base: 450
 
 # Weapon definitions
 #

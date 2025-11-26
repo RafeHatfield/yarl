@@ -26,7 +26,23 @@ from stairs import Stairs
 from config.testing_config import get_testing_config
 from logger_config import get_logger
 
+# ETP (Effective Threat Points) budgeting system
+from balance.etp import (
+    get_monster_etp,
+    get_room_etp_budget,
+    get_band_for_depth,
+    check_room_budget,
+    log_room_etp_summary,
+    initialize_encounter_budget_engine,
+)
+
 logger = get_logger(__name__)
+
+# Initialize ETP values on module load
+try:
+    initialize_encounter_budget_engine()
+except Exception as e:
+    logger.warning(f"Failed to initialize ETP engine: {e}")
 
 
 class GameMap:
@@ -880,18 +896,23 @@ class GameMap:
                     entities.append(trap_entity)
                     logger.debug(f"Placed {trap_type} at ({x}, {y})")
 
-    def place_entities(self, room, entities, exclude_coords=None):
+    def place_entities(self, room, entities, exclude_coords=None, encounter_budget=None):
         """Place monsters and items in a room based on dungeon level.
 
         Uses probability tables that scale with dungeon level to determine
         what entities to spawn and where to place them. Spawn rates can be
         modified by testing configuration or level template overrides (Tier 2).
+        
+        ETP Budgeting: If encounter_budget is specified (or from level template),
+        monster spawning will respect the ETP budget, stopping when max is reached.
 
         Args:
             room (Rect): Room to place entities in
             entities (list): List to add new entities to
             exclude_coords (tuple or list of tuples, optional): Coordinates (x, y) to avoid 
                 when placing entities. Used to prevent items spawning on stairs.
+            encounter_budget (EncounterBudget, optional): ETP budget for this room.
+                If None, uses default band budget from ETP config.
         """
         # Normalize exclude_coords to a list of tuples
         if exclude_coords is None:
@@ -918,6 +939,20 @@ class GameMap:
                 max_monsters_per_room = params.max_monsters_per_room
             if params.max_items_per_room is not None:
                 max_items_per_room = params.max_items_per_room
+        
+        # Get ETP budget for this room
+        # Priority: explicit encounter_budget param > level override > default band budget
+        etp_min, etp_max = get_room_etp_budget(self.dungeon_level)
+        allow_spike = False
+        
+        if encounter_budget is not None:
+            etp_min = encounter_budget.etp_min
+            etp_max = encounter_budget.etp_max
+            allow_spike = encounter_budget.allow_spike
+        elif level_override and level_override.encounter_budget is not None:
+            etp_min = level_override.encounter_budget.etp_min
+            etp_max = level_override.encounter_budget.etp_max
+            allow_spike = level_override.encounter_budget.allow_spike
         
         # Get a random number of monsters and items
         number_of_monsters = randint(0, max_monsters_per_room)
@@ -963,7 +998,20 @@ class GameMap:
                 # Dungeon level-based progression
                 item_chances[item_name] = from_dungeon_level(chance_config, self.dungeon_level)
 
+        # ETP budgeting: Track total ETP as we spawn monsters
+        room_total_etp = 0.0
+        spawned_monsters = []  # Track (type, etp) for logging
+        room_id = f"room_{room.x1}_{room.y1}"
+        
         for i in range(number_of_monsters):
+            # Check if we've hit ETP budget
+            if room_total_etp >= etp_max:
+                logger.debug(
+                    f"Room {room_id}: ETP budget reached ({room_total_etp:.1f}/{etp_max}), "
+                    f"stopping monster spawns ({i}/{number_of_monsters} placed)"
+                )
+                break
+            
             # Choose a random location in the room
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
@@ -972,6 +1020,18 @@ class GameMap:
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
                 monster_choice = random_choice_from_dict(monster_chances)
+                
+                # Check if this monster would exceed budget (unless allow_spike)
+                monster_etp = get_monster_etp(monster_choice, self.dungeon_level)
+                
+                if not allow_spike and (room_total_etp + monster_etp) > etp_max:
+                    # Skip this monster - would exceed budget
+                    logger.debug(
+                        f"Room {room_id}: Skipping {monster_choice} "
+                        f"(ETP {monster_etp:.1f} would exceed budget "
+                        f"{room_total_etp:.1f}+{monster_etp:.1f} > {etp_max})"
+                    )
+                    continue
                 
                 # Create monster using EntityFactory
                 entity_factory = get_entity_factory()
@@ -985,6 +1045,20 @@ class GameMap:
                     entities.append(monster)
                     # Invalidate entity sorting cache when new entities are added
                     invalidate_entity_cache("entity_added_monster")
+                    
+                    # Track ETP
+                    room_total_etp += monster_etp
+                    spawned_monsters.append((monster_choice, monster_etp))
+        
+        # Log room ETP summary
+        log_room_etp_summary(
+            room_id=room_id,
+            depth=self.dungeon_level,
+            monster_list=spawned_monsters,
+            total_etp=room_total_etp,
+            budget_min=etp_min,
+            budget_max=etp_max
+        )
 
         for i in range(number_of_items):
             x = randint(room.x1 + 1, room.x2 - 1)
