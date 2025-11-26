@@ -12,6 +12,8 @@ ring types and their effects.
 from enum import Enum, auto
 from typing import Optional, List, Dict, Any
 
+from components.component_registry import ComponentType
+
 
 class RingEffect(Enum):
     """Types of ring effects.

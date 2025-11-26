@@ -1,5 +1,7 @@
 from typing import Optional, Callable, Any, Dict
 
+from components.component_registry import ComponentType
+
 
 class Item:
     """Component that makes an entity usable as an item.

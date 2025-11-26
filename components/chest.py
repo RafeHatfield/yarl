@@ -13,6 +13,8 @@ Example:
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Optional, Dict, Any, List
 
+from components.component_registry import ComponentType
+
 from components.map_feature import MapFeature, MapFeatureType
 
 if TYPE_CHECKING:

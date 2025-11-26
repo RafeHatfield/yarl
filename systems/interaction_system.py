@@ -38,6 +38,7 @@ class InteractionResult:
         start_pathfinding: Whether pathfinding was initiated
         victory_triggered: Whether picking up a victory item (Ruby Heart)
         loot_items: Items dropped by interaction (e.g., from chest)
+        auto_explore_stop_reason: If set, stop AutoExplore with this reason
     """
     
     def __init__(
@@ -49,7 +50,8 @@ class InteractionResult:
         consume_turn: bool = False,
         start_pathfinding: bool = False,
         victory_triggered: bool = False,
-        loot_items: Optional[List['Entity']] = None
+        loot_items: Optional[List['Entity']] = None,
+        auto_explore_stop_reason: Optional[str] = None
     ):
         self.action_taken = action_taken
         self.state_change = state_change
@@ -59,6 +61,7 @@ class InteractionResult:
         self.start_pathfinding = start_pathfinding
         self.victory_triggered = victory_triggered
         self.loot_items = loot_items or []
+        self.auto_explore_stop_reason = auto_explore_stop_reason
 
 
 class InteractionStrategy(ABC):
@@ -399,7 +402,8 @@ class ChestInteractionStrategy(InteractionStrategy):
             action_taken=True,
             message=final_message,
             consume_turn=True,
-            loot_items=loot_items  # Return loot so caller can add to entities
+            loot_items=loot_items,  # Return loot so caller can add to entities
+            auto_explore_stop_reason="Found Chest"  # Stop AutoExplore when opening chest
         )
 
 
@@ -439,7 +443,8 @@ class SignpostInteractionStrategy(InteractionStrategy):
             return InteractionResult(
                 action_taken=True,
                 message=MB.custom(signpost.message, (200, 200, 200)),  # Light gray for signpost text
-                consume_turn=False  # Reading doesn't consume turn
+                consume_turn=False,  # Reading doesn't consume turn
+                auto_explore_stop_reason=f"Found {entity.name}"  # Stop AutoExplore when reading signpost
             )
         else:
             # Too far - pathfind to adjacent tile
@@ -451,7 +456,7 @@ class SignpostInteractionStrategy(InteractionStrategy):
                 )
             
             # Find a walkable adjacent tile to the signpost (since signposts block movement)
-            adjacent_tile = self._find_adjacent_walkable_tile(
+            adjacent_tile = PathfindingHelper._find_adjacent_walkable_tile(
                 entity.x, entity.y, game_map, entities
             )
             
@@ -518,7 +523,8 @@ class MuralInteractionStrategy(InteractionStrategy):
             return InteractionResult(
                 action_taken=True,
                 message=MB.custom(mural.text, (220, 20, 60)),  # Crimson red for mural text
-                consume_turn=False  # Reading doesn't consume turn
+                consume_turn=False,  # Reading doesn't consume turn
+                auto_explore_stop_reason="Found Mural"  # Stop AutoExplore when reading mural
             )
         else:
             # Too far - pathfind to adjacent tile
