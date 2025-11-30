@@ -148,3 +148,5 @@ pytest tests/ -k "identification" -v
 The runtime error when clicking unidentified scrolls has been eliminated. All three files now properly import `ComponentType` from `components.component_registry`.
 
 
+
+

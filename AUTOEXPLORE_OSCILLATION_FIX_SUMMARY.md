@@ -184,3 +184,5 @@ python3 engine.py --bot-soak --runs 3 --max-turns 200 --max-floors 2
 The AutoExplore system has been stabilized with proper bot mode gating and oscillation detection. Manual play and bot mode both work reliably without infinite loops.
 
 
+
+

@@ -106,6 +106,10 @@ def get_game_variables(constants):
     # Reset the identification manager (tracks which item types are identified)
     reset_identification_manager()
     
+    # Reset the pity system (ensures healing drops don't go too long without appearing)
+    from balance.pity import reset_pity_state
+    reset_pity_state()
+    
     # Register all item types that need identification
     appearance_gen.initialize({
         'scroll': [

@@ -35,6 +35,9 @@ level_overrides:
         count: 1
         placement: "largest"  # Boss gets the biggest room!
         min_room_size: 12
+        metadata:
+          role: "miniboss"
+          allow_spike: true
         guaranteed_spawns:
           monsters:
             - type: "troll"

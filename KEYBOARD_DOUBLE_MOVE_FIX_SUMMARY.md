@@ -213,3 +213,5 @@ Check `debug.log` for these entries to verify single processing per keypress.
 **Status**: Ready for manual verification and cleanup of temporary logging.
 
 
+
+

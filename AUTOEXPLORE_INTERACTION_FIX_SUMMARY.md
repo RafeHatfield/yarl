@@ -219,3 +219,5 @@ pytest tests/ -k "auto_explore" -v
 AutoExplore now provides consistent, predictable stopping behavior for all major interactable features. The stop reasons are clear, inspectable, and properly logged for both manual play and bot/soak runs.
 
 
+
+
