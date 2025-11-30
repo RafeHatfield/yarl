@@ -651,6 +651,81 @@ def print_summary(band_summaries: Dict[int, BandSummary], category_filter: Optio
     print("\n# ═══════════════════════════════════════════════════════════════════════")
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI WARNING THRESHOLDS
+# ═══════════════════════════════════════════════════════════════════════════════
+# These thresholds define when to emit WARNING lines for CI to surface.
+# WARNING lines do NOT fail CI; they are informational annotations.
+
+# Loot density thresholds (items per room)
+LOOT_DENSITY_MIN = 0.5   # Below this = loot starvation
+LOOT_DENSITY_MAX = 2.0   # Above this = loot flood
+
+# Pity trigger rate thresholds (as percentages)
+PITY_TOO_HIGH_THRESHOLD = 25.0   # >= 25% trigger rate is too high
+PITY_NOT_FIRING_THRESHOLD = 0.0  # == 0% means pity never fires
+
+# Pity categories to check
+PITY_CATEGORIES = ["healing", "panic", "weapon", "armor"]
+
+
+def emit_ci_warnings(band_summaries: Dict[int, BandSummary]) -> None:
+    """Emit CI-parseable WARNING lines when metrics exceed thresholds.
+    
+    WARNING lines start with exactly "WARNING:" so CI can grep for them.
+    These do NOT cause script failures - they are informational.
+    
+    Args:
+        band_summaries: Dictionary of band number to BandSummary
+    """
+    print("\n# ───────────────────────────────────────────────────────────────────────")
+    print("# CI Threshold Checks")
+    print("# ───────────────────────────────────────────────────────────────────────")
+    
+    warning_count = 0
+    
+    for band in sorted(band_summaries.keys()):
+        summary = band_summaries[band]
+        
+        # Skip bands with no data
+        if summary.total_rooms == 0:
+            continue
+        
+        # ─────────────────────────────────────────────────────────────────────
+        # Loot density checks
+        # ─────────────────────────────────────────────────────────────────────
+        ipr = summary.items_per_room
+        
+        if ipr < LOOT_DENSITY_MIN:
+            print(f"WARNING: Band {band} items/room={ipr:.2f} < {LOOT_DENSITY_MIN} (loot starvation)")
+            warning_count += 1
+        
+        if ipr > LOOT_DENSITY_MAX:
+            print(f"WARNING: Band {band} items/room={ipr:.2f} > {LOOT_DENSITY_MAX} (loot flood)")
+            warning_count += 1
+        
+        # ─────────────────────────────────────────────────────────────────────
+        # Pity trigger rate checks
+        # ─────────────────────────────────────────────────────────────────────
+        if summary.pity_normal_rooms > 0:
+            for category in PITY_CATEGORIES:
+                rate = summary.pity_trigger_rate(category)  # Returns 0.0-1.0
+                percent = rate * 100.0
+                
+                if percent >= PITY_TOO_HIGH_THRESHOLD:
+                    print(f"WARNING: Band {band} pity[{category}]={percent:.1f}% >= {PITY_TOO_HIGH_THRESHOLD:.0f}% (pity too high)")
+                    warning_count += 1
+                
+                if percent == PITY_NOT_FIRING_THRESHOLD:
+                    print(f"WARNING: Band {band} pity[{category}]=0% (pity not firing)")
+                    warning_count += 1
+    
+    if warning_count == 0:
+        print("# ✓ All metrics within CI thresholds")
+    else:
+        print(f"\n# {warning_count} CI warning(s) emitted (informational only, does not fail CI)")
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -732,6 +807,9 @@ def main():
     
     # Print summary
     print_summary(band_summaries, args.category)
+    
+    # Emit CI-parseable warnings for threshold violations
+    emit_ci_warnings(band_summaries)
     
     sys.exit(0)
 
