@@ -209,7 +209,8 @@ class TestWandIntegration:
         # Use charges - 2 charges = ◐ (half-filled)
         assert wand.get_display_name() == "Wand of Fireball ◐ 2"
         wand.use_charge()
-        assert wand.get_display_name() == "Wand of Fireball ◐ 1"
+        # 1 charge = ● (full circle, "ready to use" indicator for single-charge)
+        assert wand.get_display_name() == "Wand of Fireball ● 1"
         
         # Deplete
         wand.use_charge()
@@ -221,10 +222,10 @@ class TestWandIntegration:
         assert wand.use_charge() is False
         assert wand.charges == 0
         
-        # Recharge by picking up scroll - 1 charge = ◐ (half-filled)
+        # Recharge by picking up scroll - 1 charge = ● (full, ready to use)
         wand.add_charge()
         assert not wand.is_empty()
-        assert wand.get_display_name() == "Wand of Fireball ◐ 1"
+        assert wand.get_display_name() == "Wand of Fireball ● 1"
         
         # Continue using
         assert wand.use_charge() is True

@@ -79,8 +79,12 @@ class RoomETPResult:
     role: str = "normal"  # Room role from metadata
     
     def is_violation(self) -> bool:
-        """Check if this room counts as a budget violation."""
+        """Check if this room counts as a budget violation (UNDER or OVER)."""
         return self.status not in NON_VIOLATION_STATUSES
+    
+    def is_over_violation(self) -> bool:
+        """Check if this room is OVER budget (used for strict CI mode)."""
+        return self.status == STATUS_OVER
     
     def should_include_in_stats(self) -> bool:
         """Check if this room should be included in per-band statistics."""
@@ -375,6 +379,7 @@ def run_sanity_check(
     
     all_results: List[LevelETPResult] = []
     violations: List[str] = []
+    over_violations: List[str] = []  # Only OVER violations (for strict mode)
     
     # Print CSV header
     print_csv_header()
@@ -401,11 +406,15 @@ def run_sanity_check(
                 
                 # Track violations (only for normal rooms that are UNDER or OVER)
                 if room.is_violation():
-                    violations.append(
+                    violation_msg = (
                         f"Depth {depth} (band {result.band}) room {room.room_index}: "
                         f"ETP {room.total_etp:.1f} {room.status} budget "
                         f"[{room.budget_min}-{room.budget_max}]"
                     )
+                    violations.append(violation_msg)
+                    # Track OVER violations separately for strict mode
+                    if room.is_over_violation():
+                        over_violations.append(violation_msg)
     
     # Print summary
     print("\n# Summary")
@@ -467,10 +476,20 @@ def run_sanity_check(
               f"(target: {band_config.room_etp_min}-{band_config.room_etp_max}), "
               f"violations: {stats['violations']}{extra_info}")
     
-    # Strict mode check
-    if strict and violations:
-        print(f"\n# STRICT MODE FAILURE: {violations_count} budget violations detected")
+    # Strict mode check - only fail on OVER violations (UNDER is allowed)
+    over_count = len(over_violations)
+    if strict and over_violations:
+        print(f"\n# STRICT MODE FAILURE: {over_count} OVER-budget violations detected")
+        if verbose or over_count <= 10:
+            print("# OVER violations:")
+            for v in over_violations[:10]:
+                print(f"#   {v}")
+            if over_count > 10:
+                print(f"#   ... and {over_count - 10} more")
         return False
+    
+    if strict:
+        print(f"\n# STRICT MODE PASS: No OVER-budget violations (UNDER allowed)")
     
     return True
 

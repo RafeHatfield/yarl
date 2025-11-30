@@ -78,6 +78,23 @@ def reset_level_template_registry():
 
 
 @pytest.fixture(autouse=True)
+def reset_pity_state_between_tests():
+    """Reset pity state between tests.
+    
+    This prevents test pollution where pity counters from one test
+    affect subsequent tests. The pity system tracks state globally
+    (rooms without healing/panic items, etc.), which can cause tests
+    to fail when run in sequence but pass in isolation.
+    """
+    from balance.pity import reset_pity_state, reset_pity_trigger_stats
+    reset_pity_state()
+    reset_pity_trigger_stats()
+    yield
+    reset_pity_state()
+    reset_pity_trigger_stats()
+
+
+@pytest.fixture(autouse=True)
 def mock_libtcod(mocker):
     """Mock the libtcod library for headless testing.
     

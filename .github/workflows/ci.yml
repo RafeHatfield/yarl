@@ -1,0 +1,107 @@
+name: CI - Balance Harness
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      SDL_VIDEODRIVER: dummy
+      PYTHONUNBUFFERED: "1"
+      CI: "true"
+
+    steps:
+      # ─────────────────────────────────────────────────────────────────────
+      # Setup
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Tests
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Run unit tests
+        run: |
+          if [ -d tests ]; then
+            pytest -q
+          else
+            echo "No tests/ directory found, skipping unit tests"
+          fi
+
+      # ─────────────────────────────────────────────────────────────────────
+      # ETP Sanity (hard gate - must pass)
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Run ETP sanity check (strict)
+        run: |
+          if [ -x scripts/ci_run_etp.sh ]; then
+            ./scripts/ci_run_etp.sh
+          else
+            python3 etp_sanity.py --strict | tee etp_sanity.log
+          fi
+
+      - name: Upload ETP artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: etp-sanity-results
+          path: |
+            etp_sanity.log
+            etp_sanity.csv
+          if-no-files-found: ignore
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Loot Sanity (soft gate - warnings only, never fails)
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Run loot sanity check
+        continue-on-error: true
+        run: |
+          if [ -x scripts/ci_run_loot.sh ]; then
+            ./scripts/ci_run_loot.sh
+          else
+            python3 loot_sanity.py --bands --runs 5 --normal | tee loot_sanity.log
+          fi
+
+      - name: Upload loot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loot-sanity-results
+          path: |
+            loot_sanity.log
+            loot_sanity.csv
+          if-no-files-found: ignore
+
+      - name: Surface loot warnings
+        if: always()
+        run: |
+          if [ -f loot_sanity.log ]; then
+            # Use "WARNING: " (with space) to distinguish CI warnings from Python logging
+            grep "^WARNING: " loot_sanity.log | while read -r line; do
+              echo "::warning title=Loot/pity balance warning::$line"
+            done || true
+          fi
+

@@ -4,11 +4,13 @@ This test verifies the fix for the runtime error:
     ERROR: Error processing mouse action sidebar_click: name 'ComponentType' is not defined
     File components/item.py, line 126:
         if hasattr(entity, 'item') and entity.get_component_optional(ComponentType.ITEM) ...
+
+NOTE: These tests previously used importlib.reload() which caused issues with enum identity.
+Now they simply verify that ComponentType is present in each module's namespace without reloading,
+which is sufficient to verify the imports are correct.
 """
 
 import pytest
-import importlib
-import sys
 
 
 class TestComponentTypeImports:
@@ -16,90 +18,67 @@ class TestComponentTypeImports:
     
     def test_item_py_imports_componenttype(self):
         """Test that item.py imports ComponentType and can reference it."""
-        # Import the module fresh
-        if 'components.item' in sys.modules:
-            importlib.reload(sys.modules['components.item'])
-        else:
-            import components.item
+        # Import the module and verify ComponentType is in its namespace
+        import components.item as item_module
         
-        # Try to access ComponentType from the item module's namespace
-        # This will raise NameError if ComponentType wasn't imported
-        try:
-            from components.item import Item
-            # Check that the module has ComponentType in its namespace
-            import components.item as item_module
-            # ComponentType should be accessible in the module
-            assert hasattr(item_module, 'ComponentType'), \
-                "ComponentType not found in item.py module namespace"
-        except NameError as e:
-            if "ComponentType" in str(e):
-                pytest.fail(f"ComponentType not properly imported in item.py: {e}")
-            raise
+        # ComponentType should be accessible in the module's namespace
+        assert hasattr(item_module, 'ComponentType'), \
+            "ComponentType not found in item.py module namespace"
+        
+        # Verify the import works by checking it's the correct type
+        from components.component_registry import ComponentType as ExpectedType
+        assert item_module.ComponentType is ExpectedType, \
+            "ComponentType in item.py is not the expected ComponentType enum"
     
     def test_chest_py_imports_componenttype(self):
         """Test that chest.py imports ComponentType and can reference it."""
-        # Import the module fresh
-        if 'components.chest' in sys.modules:
-            importlib.reload(sys.modules['components.chest'])
-        else:
-            import components.chest
+        import components.chest as chest_module
         
-        try:
-            from components.chest import Chest
-            # Check that the module has ComponentType in its namespace
-            import components.chest as chest_module
-            assert hasattr(chest_module, 'ComponentType'), \
-                "ComponentType not found in chest.py module namespace"
-        except NameError as e:
-            if "ComponentType" in str(e):
-                pytest.fail(f"ComponentType not properly imported in chest.py: {e}")
-            raise
+        assert hasattr(chest_module, 'ComponentType'), \
+            "ComponentType not found in chest.py module namespace"
+        
+        from components.component_registry import ComponentType as ExpectedType
+        assert chest_module.ComponentType is ExpectedType, \
+            "ComponentType in chest.py is not the expected ComponentType enum"
     
     def test_ring_py_imports_componenttype(self):
         """Test that ring.py imports ComponentType and can reference it."""
-        # Import the module fresh
-        if 'components.ring' in sys.modules:
-            importlib.reload(sys.modules['components.ring'])
-        else:
-            import components.ring
+        import components.ring as ring_module
         
-        try:
-            from components.ring import Ring
-            # Check that the module has ComponentType in its namespace
-            import components.ring as ring_module
-            assert hasattr(ring_module, 'ComponentType'), \
-                "ComponentType not found in ring.py module namespace"
-        except NameError as e:
-            if "ComponentType" in str(e):
-                pytest.fail(f"ComponentType not properly imported in ring.py: {e}")
-            raise
+        assert hasattr(ring_module, 'ComponentType'), \
+            "ComponentType not found in ring.py module namespace"
+        
+        from components.component_registry import ComponentType as ExpectedType
+        assert ring_module.ComponentType is ExpectedType, \
+            "ComponentType in ring.py is not the expected ComponentType enum"
     
-    def test_all_three_modules_load_without_nameerror(self):
-        """Integration test: All three fixed modules should load without NameError."""
+    def test_all_three_modules_have_componenttype(self):
+        """Integration test: All three fixed modules should have ComponentType."""
+        from components.component_registry import ComponentType as ExpectedType
+        
         errors = []
         
-        # Try importing all three modules that were fixed
-        try:
-            import components.item
-        except NameError as e:
-            if "ComponentType" in str(e):
-                errors.append(f"item.py: {e}")
+        import components.item as item_mod
+        if not hasattr(item_mod, 'ComponentType'):
+            errors.append("item.py: ComponentType not in namespace")
+        elif item_mod.ComponentType is not ExpectedType:
+            errors.append("item.py: ComponentType is wrong type")
         
-        try:
-            import components.chest
-        except NameError as e:
-            if "ComponentType" in str(e):
-                errors.append(f"chest.py: {e}")
+        import components.chest as chest_mod
+        if not hasattr(chest_mod, 'ComponentType'):
+            errors.append("chest.py: ComponentType not in namespace")
+        elif chest_mod.ComponentType is not ExpectedType:
+            errors.append("chest.py: ComponentType is wrong type")
         
-        try:
-            import components.ring
-        except NameError as e:
-            if "ComponentType" in str(e):
-                errors.append(f"ring.py: {e}")
+        import components.ring as ring_mod
+        if not hasattr(ring_mod, 'ComponentType'):
+            errors.append("ring.py: ComponentType not in namespace")
+        elif ring_mod.ComponentType is not ExpectedType:
+            errors.append("ring.py: ComponentType is wrong type")
         
         if errors:
             pytest.fail(
-                f"ComponentType NameErrors found in modules:\n" + "\n".join(errors)
+                f"ComponentType issues found in modules:\n" + "\n".join(errors)
             )
 
 
