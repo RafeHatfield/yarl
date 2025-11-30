@@ -270,6 +270,136 @@ def calculate_durability(hp: int, target_ttk_hits: int = 3) -> float:
     return hits_to_kill / 3.0
 
 
+# Elite multiplier applied to monsters with "(Elite)" suffix in vault rooms
+ELITE_ETP_MULTIPLIER = 1.5
+
+# Lists of boss and miniboss monster types (used for spawn control and ETP exemption)
+BOSS_MONSTER_TYPES = frozenset([
+    "zhyraxion_human",
+    "zhyraxion_full_dragon", 
+    "zhyraxion_grief_dragon",
+])
+
+MINIBOSS_MONSTER_TYPES = frozenset([
+    "dragon_lord",
+    "demon_king",
+    "corrupted_ritualist",
+])
+
+
+def is_boss_monster(monster_type: str) -> bool:
+    """Check if a monster type is a boss (final encounter tier).
+    
+    Args:
+        monster_type: Monster type identifier
+        
+    Returns:
+        True if this is a boss monster
+    """
+    base_type = _get_base_monster_type(monster_type)
+    return base_type in BOSS_MONSTER_TYPES
+
+
+def is_miniboss_monster(monster_type: str) -> bool:
+    """Check if a monster type is a miniboss.
+    
+    Args:
+        monster_type: Monster type identifier
+        
+    Returns:
+        True if this is a miniboss monster
+    """
+    base_type = _get_base_monster_type(monster_type)
+    return base_type in MINIBOSS_MONSTER_TYPES
+
+
+def can_spawn_monster_in_room(monster_type: str, room_role: str) -> bool:
+    """Check if a monster type can spawn in a room based on its role.
+    
+    Spawn rules:
+    - Zhyraxion variants: Only in end_boss rooms
+    - Minibosses (dragon_lord, demon_king): Only in miniboss, boss, or end_boss rooms
+    - Normal monsters: Any room
+    
+    Args:
+        monster_type: Monster type identifier
+        room_role: Room role (normal, miniboss, boss, end_boss, treasure, optional)
+        
+    Returns:
+        True if the monster can spawn in this room
+    """
+    base_type = _get_base_monster_type(monster_type)
+    
+    # Zhyraxion variants: end_boss only
+    if base_type in BOSS_MONSTER_TYPES:
+        return room_role == "end_boss"
+    
+    # Minibosses: miniboss, boss, or end_boss rooms
+    if base_type in MINIBOSS_MONSTER_TYPES:
+        return room_role in ("miniboss", "boss", "end_boss")
+    
+    # Normal monsters can spawn anywhere
+    return True
+
+
+def get_spawn_restriction_reason(monster_type: str, room_role: str) -> Optional[str]:
+    """Get the reason why a monster can't spawn in a room, if any.
+    
+    Args:
+        monster_type: Monster type identifier
+        room_role: Room role
+        
+    Returns:
+        Reason string if spawn is blocked, None if allowed
+    """
+    base_type = _get_base_monster_type(monster_type)
+    
+    if base_type in BOSS_MONSTER_TYPES:
+        if room_role != "end_boss":
+            return f"Boss '{base_type}' requires end_boss room (got: {room_role})"
+        return None
+    
+    if base_type in MINIBOSS_MONSTER_TYPES:
+        if room_role not in ("miniboss", "boss", "end_boss"):
+            return f"Miniboss '{base_type}' requires miniboss/boss/end_boss room (got: {room_role})"
+        return None
+    
+    return None
+
+
+def _get_base_monster_type(monster_type: str) -> str:
+    """Extract base monster type from display name.
+    
+    Handles cases like "Orc (Elite)" -> "orc", "Troll (Elite)" -> "troll"
+    
+    Args:
+        monster_type: Monster type or display name
+        
+    Returns:
+        Base monster type identifier
+    """
+    # Handle "(Elite)" suffix from vault monsters
+    if " (Elite)" in monster_type or " (elite)" in monster_type:
+        base_name = monster_type.replace(" (Elite)", "").replace(" (elite)", "")
+        # Convert display name to type identifier (e.g., "Orc" -> "orc")
+        return base_name.lower().replace(" ", "_")
+    
+    # Already a type identifier
+    return monster_type.lower().replace(" ", "_")
+
+
+def _is_elite_variant(monster_type: str) -> bool:
+    """Check if a monster is an elite variant.
+    
+    Args:
+        monster_type: Monster type or display name
+        
+    Returns:
+        True if this is an elite variant
+    """
+    return "(elite)" in monster_type.lower()
+
+
 def get_monster_etp(
     monster_type: str,
     depth: int,
@@ -281,9 +411,10 @@ def get_monster_etp(
     ETP = (DPS × 6) × Durability × Behavior × Synergy
     
     This applies band multipliers to the monster's base stats before calculation.
+    Elite variants (with "(Elite)" suffix) get an additional multiplier.
     
     Args:
-        monster_type: Type identifier for the monster (e.g., "orc", "troll")
+        monster_type: Type identifier for the monster (e.g., "orc", "troll", "Orc (Elite)")
         depth: Current dungeon depth (1-25)
         monster_data: Optional monster stats dict. If None, loads from entities.yaml
         synergy_bonus: Additional synergy from group composition (0.0-0.3 typical)
@@ -291,16 +422,25 @@ def get_monster_etp(
     Returns:
         Effective Threat Points value
     """
+    # Check if this is an elite variant and extract base type
+    is_elite = _is_elite_variant(monster_type)
+    base_type = _get_base_monster_type(monster_type)
+    
     # Get band configuration for this depth
     band_config = get_band_config(depth)
     
-    # Load monster data if not provided
+    # Load monster data if not provided - use base type for lookup
     if monster_data is None:
+        monster_data = _load_monster_data(base_type)
+    
+    if monster_data is None:
+        # Try original monster_type as fallback
         monster_data = _load_monster_data(monster_type)
     
     if monster_data is None:
-        logger.warning(f"No data found for monster type '{monster_type}', using default ETP")
-        return 1.0
+        logger.debug(f"No data found for monster type '{monster_type}' (base: {base_type}), using default ETP")
+        # Return a reasonable default based on whether it's elite
+        return 20.0 * ELITE_ETP_MULTIPLIER if is_elite else 20.0
     
     # Check for explicit etp_base value
     etp_base = monster_data.get("etp_base")
@@ -312,14 +452,18 @@ def get_monster_etp(
             (band_config.hp_multiplier + band_config.damage_multiplier) / 2.0
         )
         synergy = 1.0 + synergy_bonus
-        final_etp = etp_base * band_multiplier * synergy
+        
+        # Apply elite multiplier if this is an elite variant
+        elite_mult = ELITE_ETP_MULTIPLIER if is_elite else 1.0
+        
+        final_etp = etp_base * band_multiplier * synergy * elite_mult
         
         config = get_etp_config()
         if config.debug_log_monster:
             logger.debug(
                 f"ETP for {monster_type} at depth {depth}: "
                 f"base={etp_base:.1f}, band_mult={band_multiplier:.2f}, "
-                f"synergy={synergy:.2f}, final={final_etp:.1f}"
+                f"elite_mult={elite_mult:.2f}, synergy={synergy:.2f}, final={final_etp:.1f}"
             )
         
         return final_etp
@@ -347,12 +491,17 @@ def get_monster_etp(
     # ETP = (DPS × 6) × Durability × Behavior × Synergy
     etp = (dps * 6) * durability * behavior * synergy
     
+    # Apply elite multiplier if this is an elite variant
+    if is_elite:
+        etp *= ELITE_ETP_MULTIPLIER
+    
     config = get_etp_config()
     if config.debug_log_monster:
         logger.debug(
             f"ETP for {monster_type} at depth {depth}: "
             f"DPS={dps:.1f}, durability={durability:.2f}, "
-            f"behavior={behavior:.2f}, synergy={synergy:.2f}, ETP={etp:.1f}"
+            f"behavior={behavior:.2f}, synergy={synergy:.2f}, "
+            f"elite={'yes' if is_elite else 'no'}, ETP={etp:.1f}"
         )
     
     return etp

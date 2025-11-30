@@ -34,6 +34,26 @@ from balance.etp import (
     check_room_budget,
     log_room_etp_summary,
     initialize_encounter_budget_engine,
+    can_spawn_monster_in_room,
+    get_spawn_restriction_reason,
+    is_boss_monster,
+    is_miniboss_monster,
+)
+
+# Loot pity system (prevents long stretches without healing, panic items, and upgrades)
+from balance.pity import (
+    check_and_apply_pity,
+    reset_pity_state,
+    get_pity_state,
+    PityResult,
+)
+from balance.loot_tags import (
+    get_loot_tags,
+    get_band_density_multiplier,
+    get_healing_multiplier,
+    get_rare_multiplier,
+    get_items_by_category,
+    get_items_for_band,
 )
 
 logger = get_logger(__name__)
@@ -83,6 +103,10 @@ class GameMap:
         
         # Track corridor connections for door placement
         self.corridor_connections = []  # List of (room_a, room_b, tunnel_type, start, end)
+        
+        # Track generated rooms for ETP analysis and debugging
+        # Each room is a dict with 'rect' (Rect object) and 'metadata' (RoomMetadata or None)
+        self.rooms = []  # List of room dicts: {'rect': Rect, 'metadata': RoomMetadata}
 
     def initialize_tiles(self):
         """Initialize the map with blocked wall tiles.
@@ -181,7 +205,8 @@ class GameMap:
             new_room = Rect(x, y, w, h)
 
             # run through the other rooms and see if they intersect with this one
-            for other_room in rooms:
+            for room_entry in rooms:
+                other_room = room_entry['rect']
                 if new_room.intersect(other_room):
                     break
             else:
@@ -223,7 +248,8 @@ class GameMap:
                     # connect it to the previous room with a tunnel
 
                     # center coordinates of previous room
-                    (prev_x, prev_y) = rooms[num_rooms - 1].center()
+                    prev_room = rooms[num_rooms - 1]['rect']
+                    (prev_x, prev_y) = prev_room.center()
 
                     # flip a coin (random number that is either 0 or 1)
                     if randint(0, 1) == 1:
@@ -232,7 +258,7 @@ class GameMap:
                         self.create_v_tunnel(prev_y, new_y, new_x)
                         # Track this connection for door placement
                         self.corridor_connections.append({
-                            'room_a': rooms[num_rooms - 1],
+                            'room_a': prev_room,
                             'room_b': new_room,
                             'h_corridor': (min(prev_x, new_x), max(prev_x, new_x), prev_y),
                             'v_corridor': (prev_y, new_y, new_x)
@@ -243,7 +269,7 @@ class GameMap:
                         self.create_h_tunnel(prev_x, new_x, new_y)
                         # Track this connection for door placement
                         self.corridor_connections.append({
-                            'room_a': rooms[num_rooms - 1],
+                            'room_a': prev_room,
                             'room_b': new_room,
                             'v_corridor': (min(prev_y, new_y), max(prev_y, new_y), prev_x),
                             'h_corridor': (prev_x, new_x, new_y)
@@ -257,15 +283,25 @@ class GameMap:
                     exclude_coords = (new_x, new_y)
                     logger.debug(f"Last room detected - excluding stairs location ({new_x}, {new_y}) from entity spawns")
                 
-                self.place_entities(new_room, entities, exclude_coords=exclude_coords)
+                # Create room metadata first for pity system integration
+                from config.level_template_registry import RoomMetadata
+                room_metadata = RoomMetadata()  # Default: normal room
+                
+                self.place_entities(new_room, entities, exclude_coords=exclude_coords, room_metadata=room_metadata)
                 
                 # Place exploration features (chests, signposts)
                 self.place_exploration_features(new_room, entities)
 
-                # finally, append the new room to the list
-                rooms.append(new_room)
+                # Append the new room to the list with its metadata
+                rooms.append({
+                    'rect': new_room,
+                    'metadata': room_metadata
+                })
                 num_rooms += 1
 
+        # Store rooms list for ETP analysis and debugging
+        self.rooms = rooms
+        
         stairs_component = Stairs(self.dungeon_level + 1)
         down_stairs = Entity(
             center_of_last_room_x,
@@ -845,7 +881,8 @@ class GameMap:
         factory = get_entity_factory()
         
         # Place traps in each room
-        for room in rooms:
+        for room_entry in rooms:
+            room = room_entry['rect']
             self._place_traps_in_room(room, trap_rules, entities, factory, level_override)
     
     def _place_traps_in_room(self, room, trap_rules, entities, factory, level_override):
@@ -896,7 +933,7 @@ class GameMap:
                     entities.append(trap_entity)
                     logger.debug(f"Placed {trap_type} at ({x}, {y})")
 
-    def place_entities(self, room, entities, exclude_coords=None, encounter_budget=None):
+    def place_entities(self, room, entities, exclude_coords=None, encounter_budget=None, room_metadata=None):
         """Place monsters and items in a room based on dungeon level.
 
         Uses probability tables that scale with dungeon level to determine
@@ -905,6 +942,10 @@ class GameMap:
         
         ETP Budgeting: If encounter_budget is specified (or from level template),
         monster spawning will respect the ETP budget, stopping when max is reached.
+        
+        Pity System: After items are spawned, checks pity counters and may spawn
+        additional healing, panic, weapon, or armor items to prevent bad luck streaks.
+        Only triggers in normal rooms (not boss/treasure/etc.).
 
         Args:
             room (Rect): Room to place entities in
@@ -913,6 +954,8 @@ class GameMap:
                 when placing entities. Used to prevent items spawning on stairs.
             encounter_budget (EncounterBudget, optional): ETP budget for this room.
                 If None, uses default band budget from ETP config.
+            room_metadata (RoomMetadata, optional): Room role and flags for pity system.
+                If None, assumes a normal room.
         """
         # Normalize exclude_coords to a list of tuples
         if exclude_coords is None:
@@ -940,6 +983,18 @@ class GameMap:
             if params.max_items_per_room is not None:
                 max_items_per_room = params.max_items_per_room
         
+        # ─────────────────────────────────────────────────────────────────────
+        # BAND-BASED DENSITY SCALING: Reduce loot flood in B1-B2
+        # ─────────────────────────────────────────────────────────────────────
+        # ETP's get_band_for_depth returns strings like "B1", extract the number
+        band_str = get_band_for_depth(self.dungeon_level)
+        band_num = int(band_str[1:]) if band_str.startswith("B") else 1
+        density_multiplier = get_band_density_multiplier(band_num)
+        
+        # Scale max_items_per_room by band density multiplier
+        # Ensure at least 1 item can spawn (for pity system compatibility)
+        max_items_per_room = max(1, int(max_items_per_room * density_multiplier))
+        
         # Get ETP budget for this room
         # Priority: explicit encounter_budget param > level override > default band budget
         etp_min, etp_max = get_room_etp_budget(self.dungeon_level)
@@ -962,12 +1017,23 @@ class GameMap:
         if config.no_monsters:
             number_of_monsters = 0
 
+        # Note: band_str already computed above for density scaling
+        band_id = band_str  # Use for legacy B1 constraint checks
+        
         monster_chances = {
             "orc": 80,
             "troll": from_dungeon_level(
                 [[15, 3], [30, 5], [60, 7]], self.dungeon_level
             ),
         }
+        
+        # B1 SPAWN CONSTRAINTS: Limit troll presence in early game
+        # Trolls in B1 should be rare and never appear with multiple other monsters
+        if band_id == "B1":
+            # Reduce troll spawn chance in B1 to prevent "troll + friends" death rooms
+            monster_chances["troll"] = from_dungeon_level(
+                [[5, 3], [10, 4], [15, 5]], self.dungeon_level  # Much lower than normal
+            )
         
         # Add slimes for testing or higher levels
         from config.testing_config import is_testing_mode
@@ -990,18 +1056,40 @@ class GameMap:
         item_spawn_config = config.get_item_spawn_chances(self.dungeon_level)
         item_chances = {}
         
+        # Get band-based multipliers for category scaling
+        healing_mult = get_healing_multiplier(band_num)
+        rare_mult = get_rare_multiplier(band_num)
+        
         for item_name, chance_config in item_spawn_config.items():
             if isinstance(chance_config, int):
                 # Simple percentage chance
-                item_chances[item_name] = chance_config
+                base_chance = chance_config
             else:
                 # Dungeon level-based progression
-                item_chances[item_name] = from_dungeon_level(chance_config, self.dungeon_level)
+                base_chance = from_dungeon_level(chance_config, self.dungeon_level)
+            
+            # Apply category-based band multipliers
+            # Check item's loot tags to determine if it's healing or rare
+            item_tags = get_loot_tags(item_name)
+            if item_tags:
+                if item_tags.has_category("healing"):
+                    base_chance = int(base_chance * healing_mult)
+                if item_tags.has_category("rare"):
+                    base_chance = int(base_chance * rare_mult)
+            
+            # Only add to chances if > 0
+            if base_chance > 0:
+                item_chances[item_name] = base_chance
 
         # ETP budgeting: Track total ETP as we spawn monsters
         room_total_etp = 0.0
         spawned_monsters = []  # Track (type, etp) for logging
         room_id = f"room_{room.x1}_{room.y1}"
+        
+        # B1 constraint: Track if we've spawned a high-ETP monster (troll)
+        # to prevent "troll + friends" scenarios
+        spawned_heavy_monster = False
+        HEAVY_MONSTER_TYPES = {"troll", "large_slime"}  # ETP 50+ monsters
         
         for i in range(number_of_monsters):
             # Check if we've hit ETP budget
@@ -1020,6 +1108,26 @@ class GameMap:
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
                 monster_choice = random_choice_from_dict(monster_chances)
+                
+                # B1 CONSTRAINT: If we've already spawned a heavy monster, 
+                # don't add more monsters at all in this room
+                if band_id == "B1" and spawned_heavy_monster:
+                    logger.debug(
+                        f"Room {room_id}: B1 constraint - already has heavy monster, "
+                        f"skipping additional spawn"
+                    )
+                    break
+                
+                # B1 CONSTRAINT: If trying to spawn a troll and room already has monsters,
+                # skip the troll to prevent "troll + friends" scenarios
+                if (band_id == "B1" and 
+                    monster_choice in HEAVY_MONSTER_TYPES and 
+                    len(spawned_monsters) > 0):
+                    logger.debug(
+                        f"Room {room_id}: B1 constraint - skipping {monster_choice} "
+                        f"(room already has monsters)"
+                    )
+                    continue
                 
                 # Check if this monster would exceed budget (unless allow_spike)
                 monster_etp = get_monster_etp(monster_choice, self.dungeon_level)
@@ -1049,8 +1157,32 @@ class GameMap:
                     # Track ETP
                     room_total_etp += monster_etp
                     spawned_monsters.append((monster_choice, monster_etp))
+                    
+                    # Track heavy monsters for B1 constraint
+                    if monster_choice in HEAVY_MONSTER_TYPES:
+                        spawned_heavy_monster = True
         
-        # Log room ETP summary
+        # Debug log in the requested format: [DEBUG] Room X @ depth Y (band Z): ETP=N, monsters=[type:count, ...]
+        
+        # Count monsters by type for clean logging
+        from collections import Counter
+        monster_type_counts = Counter(m_type for m_type, _ in spawned_monsters)
+        monster_summary = ", ".join(f"{t}:{c}" for t, c in sorted(monster_type_counts.items()))
+        
+        # Determine ETP status
+        etp_status = "OK"
+        if room_total_etp < etp_min:
+            etp_status = "UNDER"
+        elif room_total_etp > etp_max:
+            etp_status = "OVER"
+        
+        logger.debug(
+            f"[ETP] Room {room_id} @ depth {self.dungeon_level} (band {band_id}): "
+            f"ETP={room_total_etp:.1f} [{etp_status}], budget=[{etp_min}-{etp_max}], "
+            f"monsters=[{monster_summary if monster_summary else 'empty'}]"
+        )
+        
+        # Log room ETP summary (existing detailed format)
         log_room_etp_summary(
             room_id=room_id,
             depth=self.dungeon_level,
@@ -1060,6 +1192,9 @@ class GameMap:
             budget_max=etp_max
         )
 
+        # Track items spawned in this room for pity system
+        spawned_item_ids = []
+        
         for i in range(number_of_items):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
@@ -1141,6 +1276,129 @@ class GameMap:
                 entities.append(item)
                 # Invalidate entity sorting cache when new entities are added
                 invalidate_entity_cache("entity_added_item")
+                
+                # Track item for pity system
+                spawned_item_ids.append(item_choice)
+        
+        # ─────────────────────────────────────────────────────────────────────
+        # PITY SYSTEM: Ensure critical items don't go too long without dropping
+        # Supports healing, panic, weapon upgrades, and armor upgrades.
+        # Only triggers in normal rooms; at most one pity item per room.
+        # ─────────────────────────────────────────────────────────────────────
+        
+        # Get room metadata for pity decisions
+        from config.level_template_registry import RoomMetadata
+        if room_metadata is None:
+            room_metadata = RoomMetadata()  # Default: normal room
+        
+        # Build spawn helper functions for each pity category
+        def spawn_pity_item_in_room(item_id: str, pity_type: str) -> bool:
+            """Helper to spawn a pity item in a valid position in the room.
+            
+            Args:
+                item_id: Item ID to spawn
+                pity_type: Type of pity for logging
+                
+            Returns:
+                True if item was successfully spawned
+            """
+            entity_factory = get_entity_factory()
+            
+            for _ in range(10):  # Try up to 10 times
+                x = randint(room.x1 + 1, room.x2 - 1)
+                y = randint(room.y1 + 1, room.y2 - 1)
+                
+                if (not self.is_blocked(x, y) and
+                    not any([e for e in entities if e.x == x and e.y == y]) and
+                    (x, y) not in exclude_coords):
+                    
+                    # Try different creation methods based on item type
+                    pity_item = entity_factory.create_spell_item(item_id, x, y)
+                    if not pity_item:
+                        pity_item = entity_factory.create_weapon(item_id, x, y)
+                    if not pity_item:
+                        pity_item = entity_factory.create_armor(item_id, x, y)
+                    if not pity_item:
+                        pity_item = entity_factory.create_ring(item_id, x, y)
+                    
+                    if pity_item:
+                        entities.append(pity_item)
+                        invalidate_entity_cache(f"entity_added_pity_{pity_type}")
+                        spawned_item_ids.append(item_id)
+                        logger.debug(
+                            f"[PITY] Spawned {item_id} at ({x}, {y}) in room {room_id} ({pity_type} pity)"
+                        )
+                        return True
+            
+            logger.warning(
+                f"[PITY] Failed to spawn pity {pity_type} item in room {room_id} - no valid position"
+            )
+            return False
+        
+        def get_valid_pity_item_for_category(category: str) -> str:
+            """Get a valid item ID for pity spawning from a category.
+            
+            Selects items that are available in the current band.
+            
+            Args:
+                category: Item category (e.g., "healing", "panic")
+                
+            Returns:
+                Item ID to spawn, or fallback if none available
+            """
+            from random import choice
+            
+            # Get all items in this category
+            category_items = get_items_by_category(category)
+            
+            # Filter to items available in this band
+            band_items = get_items_for_band(band_num)
+            valid_items = [item for item in category_items if item in band_items]
+            
+            if valid_items:
+                return choice(valid_items)
+            elif category_items:
+                # Fall back to any item in category if band filtering is too strict
+                return choice(category_items)
+            else:
+                # Ultimate fallbacks by category
+                fallbacks = {
+                    "healing": "healing_potion",
+                    "panic": "teleport_scroll",
+                    "upgrade_weapon": "enhance_weapon_scroll",
+                    "upgrade_armor": "enhance_armor_scroll",
+                }
+                return fallbacks.get(category, "healing_potion")
+        
+        def spawn_healing_item() -> bool:
+            item_id = get_valid_pity_item_for_category("healing")
+            return spawn_pity_item_in_room(item_id, "healing")
+        
+        def spawn_panic_item() -> bool:
+            item_id = get_valid_pity_item_for_category("panic")
+            return spawn_pity_item_in_room(item_id, "panic")
+        
+        def spawn_weapon_upgrade() -> bool:
+            item_id = get_valid_pity_item_for_category("upgrade_weapon")
+            return spawn_pity_item_in_room(item_id, "weapon_upgrade")
+        
+        def spawn_armor_upgrade() -> bool:
+            item_id = get_valid_pity_item_for_category("upgrade_armor")
+            return spawn_pity_item_in_room(item_id, "armor_upgrade")
+        
+        # Call unified pity check
+        pity_result = check_and_apply_pity(
+            depth=self.dungeon_level,
+            band=band_num,
+            room_role=room_metadata.role,
+            room_etp_exempt=room_metadata.etp_exempt,
+            spawned_item_ids=spawned_item_ids,
+            spawn_healing_item_fn=spawn_healing_item,
+            spawn_panic_item_fn=spawn_panic_item,
+            spawn_upgrade_weapon_fn=spawn_weapon_upgrade,
+            spawn_upgrade_armor_fn=spawn_armor_upgrade,
+            room_id=room_id,
+        )
 
     def place_exploration_features(self, room, entities):
         """Place exploration features (chests, signposts, murals, secret doors) in a room.
@@ -1228,8 +1486,12 @@ class GameMap:
         for _ in range(num_doors):
             
             # Pick two adjacent rooms to connect
-            room_a = choice(rooms)
-            room_b = choice([r for r in rooms if r != room_a])
+            room_entry_a = choice(rooms)
+            room_entry_b = choice([r for r in rooms if r != room_entry_a])
+            
+            # Extract rects from room entries
+            room_a = room_entry_a['rect'] if isinstance(room_entry_a, dict) else room_entry_a
+            room_b = room_entry_b['rect'] if isinstance(room_entry_b, dict) else room_entry_b
             
             # Find a wall position between them
             # Check if rooms are adjacent and have valid overlap
@@ -1286,8 +1548,10 @@ class GameMap:
             parameters:
               vault_count: 2  # Force exactly 2 vaults on this level
         
+        Vault rooms are marked with role="treasure" and allow_spike=True in metadata.
+        
         Args:
-            rooms (list): List of Rect objects representing rooms
+            rooms (list): List of room dicts with 'rect' and 'metadata' keys
             entities (list): List of entities on the map
         """
         if len(rooms) < 3:
@@ -1354,15 +1618,26 @@ class GameMap:
         
         # Randomly select vault rooms
         from random import sample
-        vault_rooms = sample(eligible_rooms, num_vaults)
+        vault_room_entries = sample(eligible_rooms, num_vaults)
         
         # Load vault theme registry
         from config.vault_theme_registry import get_vault_theme_registry
         theme_registry = get_vault_theme_registry()
         
+        # Import RoomMetadata for vault designation
+        from config.level_template_registry import RoomMetadata
+        
         # Create each vault with a theme
-        for vault_room in vault_rooms:
+        for room_entry in vault_room_entries:
+            vault_room = room_entry['rect']
             vault_room.is_vault = True
+            
+            # Update room metadata to mark as treasure/spike room
+            room_entry['metadata'] = RoomMetadata(
+                role="treasure",
+                allow_spike=True,  # Vaults can exceed normal ETP budgets
+                etp_exempt=False   # But still track their ETP
+            )
             
             # Select a theme for this vault based on depth and spawn chances
             vault_theme = self._select_vault_theme(theme_registry, self.dungeon_level)
@@ -1934,29 +2209,89 @@ class GameMap:
             if skip_monsters:
                 logger.debug(f"Skipping guaranteed monster spawn: {spawn.entity_type} (no_monsters flag)")
                 continue
-            spawn_count = spawn.get_random_count()
-            for i in range(spawn_count):
-                x, y = self._find_random_unoccupied_position(rooms, entities)
-                if x is None:
+            
+            # Check if this is a boss/miniboss that requires a special room
+            is_restricted = is_boss_monster(spawn.entity_type) or is_miniboss_monster(spawn.entity_type)
+            
+            if is_restricted:
+                # Find a room with appropriate role for this monster
+                target_room = self._find_room_for_restricted_monster(
+                    spawn.entity_type, rooms
+                )
+                if target_room is None:
+                    # No suitable room found - skip spawn with warning
+                    restriction_reason = get_spawn_restriction_reason(spawn.entity_type, "normal")
                     logger.warning(
-                        f"Could not find unoccupied position for {spawn.entity_type}, "
-                        f"spawned {i}/{spawn_count}"
+                        f"Skipping guaranteed spawn of {spawn.entity_type}: {restriction_reason}. "
+                        f"Add a special room with appropriate role to spawn this monster."
                     )
                     failed_count += 1
-                    break
+                    continue
+                
+                # Spawn in the target room
+                spawn_count = spawn.get_random_count()
+                for i in range(spawn_count):
+                    room_rect = target_room['rect'] if isinstance(target_room, dict) else target_room
+                    x, y = self._find_random_position_in_room(room_rect, entities)
+                    if x is None:
+                        logger.warning(
+                            f"Could not find position in boss room for {spawn.entity_type}, "
+                            f"spawned {i}/{spawn_count}"
+                        )
+                        failed_count += 1
+                        break
                     
-                monster = entity_factory.create_monster(spawn.entity_type, x, y)
-                if monster:
-                    # Try to spawn equipment on the monster
-                    from components.monster_equipment import spawn_equipment_on_monster
-                    spawn_equipment_on_monster(monster, self.dungeon_level)
+                    monster = entity_factory.create_monster(spawn.entity_type, x, y)
+                    if monster:
+                        from components.monster_equipment import spawn_equipment_on_monster
+                        spawn_equipment_on_monster(monster, self.dungeon_level)
+                        entities.append(monster)
+                        invalidate_entity_cache("guaranteed_spawn_monster")
+                        spawned_count += 1
+                        logger.info(f"Spawned {spawn.entity_type} in boss/miniboss room")
+                    else:
+                        logger.warning(f"Failed to create monster: {spawn.entity_type}")
+                        failed_count += 1
+            else:
+                # Normal monster - spawn with ETP budget awareness
+                spawn_count = spawn.get_random_count()
+                for i in range(spawn_count):
+                    # Use ETP-aware room selection for normal monsters
+                    room_entry, x, y = self._find_room_with_etp_budget(
+                        rooms, entities, spawn.entity_type
+                    )
                     
-                    entities.append(monster)
-                    invalidate_entity_cache("guaranteed_spawn_monster")
-                    spawned_count += 1
-                else:
-                    logger.warning(f"Failed to create monster: {spawn.entity_type}")
-                    failed_count += 1
+                    if x is None:
+                        # No room with budget available - log and skip
+                        monster_etp = get_monster_etp(spawn.entity_type, self.dungeon_level)
+                        etp_min, etp_max = get_room_etp_budget(self.dungeon_level)
+                        logger.debug(
+                            f"Skipping guaranteed spawn of {spawn.entity_type} "
+                            f"(ETP {monster_etp:.1f}): no room with available budget "
+                            f"[0-{etp_max}] found, spawned {i}/{spawn_count}"
+                        )
+                        failed_count += 1
+                        break
+                        
+                    monster = entity_factory.create_monster(spawn.entity_type, x, y)
+                    if monster:
+                        # Try to spawn equipment on the monster
+                        from components.monster_equipment import spawn_equipment_on_monster
+                        spawn_equipment_on_monster(monster, self.dungeon_level)
+                        
+                        entities.append(monster)
+                        invalidate_entity_cache("guaranteed_spawn_monster")
+                        spawned_count += 1
+                        
+                        # Log the ETP-aware placement
+                        monster_etp = get_monster_etp(spawn.entity_type, self.dungeon_level)
+                        logger.debug(
+                            f"Guaranteed spawn: {spawn.entity_type} (ETP {monster_etp:.1f}) "
+                            f"placed in room with budget"
+                        )
+                    else:
+                        logger.warning(f"Failed to create monster: {spawn.entity_type}")
+                        failed_count += 1
                     
         # Place guaranteed items (spells/potions)
         for spawn in level_override.guaranteed_items:
@@ -2064,8 +2399,11 @@ class GameMap:
             tuple: (x, y) coordinates, or (None, None) if no position found
         """
         for attempt in range(max_attempts):
-            # Pick a random room
-            room = rooms[randint(0, len(rooms) - 1)]
+            # Pick a random room entry
+            room_entry = rooms[randint(0, len(rooms) - 1)]
+            
+            # Extract rect from room entry (handle both old and new format)
+            room = room_entry['rect'] if isinstance(room_entry, dict) else room_entry
             
             # Pick a random position in that room
             x = randint(room.x1 + 1, room.x2 - 1)
@@ -2076,6 +2414,144 @@ class GameMap:
                 return (x, y)
                 
         # Could not find a position after max_attempts
+        return (None, None)
+    
+    def _get_room_current_etp(self, room, entities):
+        """Calculate the current ETP of monsters in a room.
+        
+        Args:
+            room: Rect object for the room
+            entities: List of all entities on the map
+            
+        Returns:
+            float: Total ETP of monsters currently in the room
+        """
+        total_etp = 0.0
+        for entity in entities:
+            # Skip non-monsters
+            if not hasattr(entity, 'ai') or entity.ai is None:
+                continue
+            if getattr(entity, 'name', '').lower() == 'player':
+                continue
+            
+            # Check if entity is in this room
+            if room.x1 <= entity.x <= room.x2 and room.y1 <= entity.y <= room.y2:
+                # Get monster type from name (handle Elite variants)
+                monster_name = getattr(entity, 'name', 'unknown')
+                monster_type = monster_name.lower().replace(' (elite)', '')
+                total_etp += get_monster_etp(monster_type, self.dungeon_level)
+        
+        return total_etp
+    
+    def _find_room_with_etp_budget(self, rooms, entities, monster_type, max_attempts=20):
+        """Find a room where a monster can be placed without exceeding ETP budget.
+        
+        Only considers normal rooms (not special, spike, or exempt).
+        For special/spike/exempt rooms, returns None to indicate the monster
+        should be placed elsewhere.
+        
+        Args:
+            rooms: List of room entries (dicts with 'rect' and 'metadata')
+            entities: List of all entities on the map
+            monster_type: Monster type to place
+            max_attempts: Maximum number of rooms to try
+            
+        Returns:
+            tuple: (room_entry, x, y) if found, (None, None, None) otherwise
+        """
+        from config.level_template_registry import RoomMetadata
+        
+        monster_etp = get_monster_etp(monster_type, self.dungeon_level)
+        etp_min, etp_max = get_room_etp_budget(self.dungeon_level)
+        
+        # Get level override for custom budget if exists
+        template_registry = get_level_template_registry()
+        level_override = template_registry.get_level_override(self.dungeon_level)
+        if level_override and level_override.encounter_budget:
+            etp_max = level_override.encounter_budget.etp_max
+        
+        # Shuffle room order for randomness
+        from random import shuffle
+        room_indices = list(range(len(rooms)))
+        shuffle(room_indices)
+        
+        for attempt, room_idx in enumerate(room_indices):
+            if attempt >= max_attempts:
+                break
+            
+            room_entry = rooms[room_idx]
+            room = room_entry['rect'] if isinstance(room_entry, dict) else room_entry
+            metadata = room_entry.get('metadata', RoomMetadata()) if isinstance(room_entry, dict) else RoomMetadata()
+            
+            # Check if this is a normal room that should respect ETP budget
+            is_special = metadata.is_special() if hasattr(metadata, 'is_special') else False
+            allow_spike = getattr(metadata, 'allow_spike', False)
+            etp_exempt = getattr(metadata, 'etp_exempt', False)
+            
+            # For special/spike/exempt rooms, allow placement without budget check
+            if is_special or allow_spike or etp_exempt:
+                # Find a position in this room
+                x, y = self._find_random_position_in_room(room, entities)
+                if x is not None:
+                    return (room_entry, x, y)
+                continue
+            
+            # For normal rooms, check ETP budget
+            current_etp = self._get_room_current_etp(room, entities)
+            if current_etp + monster_etp <= etp_max:
+                # This room can accommodate the monster
+                x, y = self._find_random_position_in_room(room, entities)
+                if x is not None:
+                    return (room_entry, x, y)
+        
+        return (None, None, None)
+    
+    def _find_room_for_restricted_monster(self, monster_type, rooms):
+        """Find a room with appropriate role for boss/miniboss monster.
+        
+        Args:
+            monster_type: Monster type identifier
+            rooms: List of room entries (dicts with 'rect' and 'metadata')
+            
+        Returns:
+            Room entry (dict) with appropriate role, or None if not found
+        """
+        from config.level_template_registry import RoomMetadata
+        
+        for room_entry in rooms:
+            if isinstance(room_entry, dict) and 'metadata' in room_entry:
+                metadata = room_entry.get('metadata')
+                if metadata:
+                    role = metadata.role if hasattr(metadata, 'role') else 'normal'
+                else:
+                    role = 'normal'
+            else:
+                role = 'normal'
+            
+            if can_spawn_monster_in_room(monster_type, role):
+                return room_entry
+        
+        return None
+    
+    def _find_random_position_in_room(self, room, entities, max_attempts=20):
+        """Find a random unoccupied position within a specific room.
+        
+        Args:
+            room: Rect object for the room
+            entities: List of existing entities to avoid
+            max_attempts: Maximum number of random placement attempts
+            
+        Returns:
+            tuple: (x, y) coordinates, or (None, None) if no position found
+        """
+        for attempt in range(max_attempts):
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+            
+            # Check if position is unoccupied
+            if not any(entity.x == x and entity.y == y for entity in entities):
+                return (x, y)
+        
         return (None, None)
     
     def place_special_rooms(self, rooms, entities):
@@ -2134,12 +2610,12 @@ class GameMap:
         """Select rooms for a special room type based on placement strategy.
         
         Args:
-            rooms (list): All available rooms
+            rooms (list): All available room dicts (with 'rect' and 'metadata' keys)
             special_room (SpecialRoom): Special room configuration
-            used_rooms (set): Set of room IDs already used
+            used_rooms (set): Set of room entry IDs already used
             
         Returns:
-            list: Selected rooms (may be empty)
+            list: Selected room entries (may be empty)
         """
         # Filter out already-used rooms
         available_rooms = [r for r in rooms if id(r) not in used_rooms]
@@ -2151,7 +2627,7 @@ class GameMap:
         if special_room.min_room_size is not None:
             available_rooms = [
                 r for r in available_rooms 
-                if self._get_room_size(r) >= special_room.min_room_size
+                if self._get_room_size(r['rect']) >= special_room.min_room_size
             ]
             
         if not available_rooms:
@@ -2164,10 +2640,10 @@ class GameMap:
         # Apply placement strategy
         if special_room.placement == "largest":
             # Sort by size descending and take the count largest
-            available_rooms.sort(key=self._get_room_size, reverse=True)
+            available_rooms.sort(key=lambda r: self._get_room_size(r['rect']), reverse=True)
         elif special_room.placement == "smallest":
             # Sort by size ascending and take the count smallest
-            available_rooms.sort(key=self._get_room_size)
+            available_rooms.sort(key=lambda r: self._get_room_size(r['rect']))
         elif special_room.placement == "random":
             # Shuffle for random selection
             from random import shuffle
@@ -2187,7 +2663,7 @@ class GameMap:
         """Get the size (area) of a room.
         
         Args:
-            room (Rect): Room to measure
+            room (Rect): Room rect to measure
             
         Returns:
             int: Area of the room (width * height)
@@ -2196,16 +2672,28 @@ class GameMap:
         height = room.y2 - room.y1
         return width * height
     
-    def _populate_special_room(self, room, special_room, entities):
+    def _populate_special_room(self, room_entry, special_room, entities):
         """Populate a special room with guaranteed spawns.
         
         Args:
-            room (Rect): Room to populate
+            room_entry (dict): Room entry with 'rect' and 'metadata' keys
             special_room (SpecialRoom): Special room configuration
             entities (list): List to add new entities to
         """
+        room = room_entry['rect']
+        
+        # Update room metadata from special room config
+        if special_room.metadata:
+            room_entry['metadata'] = special_room.metadata
+        
+        # Get room role for spawn filtering
+        room_role = "normal"
+        metadata = room_entry.get('metadata')
+        if metadata and hasattr(metadata, 'role'):
+            room_role = metadata.role
+        
         logger.info(
-            f"Populating '{special_room.room_type}' at "
+            f"Populating '{special_room.room_type}' (role: {room_role}) at "
             f"({room.center()[0]}, {room.center()[1]})"
         )
         
@@ -2215,6 +2703,15 @@ class GameMap:
         
         # Place guaranteed monsters
         for spawn in special_room.guaranteed_monsters:
+            # Check if this monster can spawn in this room based on role
+            if not can_spawn_monster_in_room(spawn.entity_type, room_role):
+                restriction_reason = get_spawn_restriction_reason(spawn.entity_type, room_role)
+                logger.warning(
+                    f"Skipping spawn of {spawn.entity_type} in special room: {restriction_reason}"
+                )
+                failed_count += 1
+                continue
+            
             spawn_count = spawn.get_random_count()
             for i in range(spawn_count):
                 # Find position within THIS specific room
@@ -2339,9 +2836,12 @@ class GameMap:
         # Pick a room that's not the last room (where Ruby Heart/stairs are)
         # Prefer a room further from the start
         if len(rooms) > 3:
-            secret_room = rooms[randint(len(rooms) // 2, len(rooms) - 2)]
+            secret_room_entry = rooms[randint(len(rooms) // 2, len(rooms) - 2)]
         else:
-            secret_room = rooms[0]
+            secret_room_entry = rooms[0]
+        
+        # Extract rect from room entry
+        secret_room = secret_room_entry['rect'] if isinstance(secret_room_entry, dict) else secret_room_entry
         
         # Create a small hidden room attached to this room
         # Try to place it off to the side
@@ -2447,9 +2947,12 @@ class GameMap:
             # No camp room exists, create one by converting a random room
             # Pick a room that's not the first (player spawn) or last (stairs)
             if len(rooms) > 2:
-                camp_room = rooms[randint(1, len(rooms) - 2)]
+                camp_room_entry = rooms[randint(1, len(rooms) - 2)]
             else:
-                camp_room = rooms[0]  # Fallback to first room
+                camp_room_entry = rooms[0]  # Fallback to first room
+            
+            # Extract rect from room entry
+            camp_room = camp_room_entry['rect'] if isinstance(camp_room_entry, dict) else camp_room_entry
             
             logger.info(f"Converting room at ({camp_room.x1}, {camp_room.y1}) to camp for Guide")
             

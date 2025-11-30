@@ -121,6 +121,56 @@ class HostilityRule:
 
 
 @dataclass
+class RoomMetadata:
+    """Metadata for room roles and ETP handling.
+    
+    Controls how rooms are treated by the ETP budgeting and sanity harness.
+    """
+    role: str = "normal"  # "normal", "miniboss", "boss", "end_boss", "treasure", "optional"
+    allow_spike: bool = False  # If True, room can exceed ETP budget without being a violation
+    etp_exempt: bool = False  # If True, room is completely exempt from ETP budget checks
+    
+    def is_special(self) -> bool:
+        """Check if this is a special room (not normal).
+        
+        Returns:
+            True if room has a special role or flags set
+        """
+        return (self.role != "normal" or 
+                self.allow_spike or 
+                self.etp_exempt)
+    
+    def get_etp_status_override(self) -> Optional[str]:
+        """Get ETP status override for special rooms.
+        
+        Returns:
+            Status string for special rooms, None for normal rooms
+        """
+        if self.etp_exempt:
+            return "EXEMPT"
+        if self.role == "end_boss":
+            return "ENDBOSS"
+        if self.role == "boss":
+            return "BOSS"
+        if self.role == "miniboss":
+            return "MINIBOSS"
+        if self.role in ("treasure", "optional"):
+            return "SPIKE"
+        if self.allow_spike:
+            return "SPIKE"
+        return None
+    
+    def should_count_as_violation(self) -> bool:
+        """Check if an over-budget result should count as a violation.
+        
+        Returns:
+            True if this room should be counted in violation statistics
+        """
+        # Special rooms don't count as violations
+        return not self.is_special()
+
+
+@dataclass
 class EncounterBudget:
     """Configuration for encounter difficulty budgeting using ETP (Encounter Threat Points)."""
     etp_min: int  # Minimum total ETP for a room/level
@@ -483,6 +533,7 @@ class SpecialRoom:
     trap_rules: Optional['TrapRules'] = None  # Optional trap configuration for this room type
     faction: Optional['FactionRoomConfig'] = None  # Optional faction-aware behavior for this room
     encounter_budget: Optional['EncounterBudget'] = None  # Optional ETP budget for this room
+    metadata: Optional['RoomMetadata'] = None  # Room role and ETP exemption settings
     
     @property
     def all_guaranteed_spawns(self) -> List[GuaranteedSpawn]:
@@ -725,6 +776,11 @@ class LevelTemplateRegistry:
         connectivity_config = None
         if 'connectivity' in data:
             connectivity_config = self._parse_connectivity(data['connectivity'])
+        
+        # Parse Tier 2: encounter_budget (ETP budgeting)
+        encounter_budget_config = None
+        if 'encounter_budget' in data:
+            encounter_budget_config = self._parse_encounter_budget(data['encounter_budget'])
             
         return LevelOverride(
             level_number=level_num,
@@ -739,7 +795,8 @@ class LevelTemplateRegistry:
             secret_rooms=secret_rooms,
             trap_rules=trap_rules,
             stairs=stairs_config,
-            connectivity=connectivity_config
+            connectivity=connectivity_config,
+            encounter_budget=encounter_budget_config
         )
     
     def _parse_special_room(self, data: Dict[str, Any]) -> SpecialRoom:
@@ -810,6 +867,16 @@ class LevelTemplateRegistry:
         if 'faction' in data:
             faction_config = self._parse_faction_config(data['faction'])
         
+        # Parse encounter_budget for this special room (optional ETP budget)
+        encounter_budget_config = None
+        if 'encounter_budget' in data:
+            encounter_budget_config = self._parse_encounter_budget(data['encounter_budget'])
+        
+        # Parse room metadata (role, allow_spike, etp_exempt)
+        # Metadata is nested under 'metadata' key in special rooms
+        metadata_data = data.get('metadata', {})
+        room_metadata = self._parse_room_metadata(metadata_data)
+        
         return SpecialRoom(
             room_type=room_type,
             count=count,
@@ -820,7 +887,9 @@ class LevelTemplateRegistry:
             guaranteed_equipment=equipment,
             door_rules=door_rules,
             trap_rules=trap_rules,
-            faction=faction_config
+            faction=faction_config,
+            encounter_budget=encounter_budget_config,
+            metadata=room_metadata
         )
     
     def _parse_door_rules(self, data: Dict[str, Any]) -> DoorRules:
@@ -1195,6 +1264,121 @@ class LevelTemplateRegistry:
             restrict_return_levels=restrict_return_levels,
             spawn_rules=spawn_rules
         )
+    
+    def _parse_encounter_budget(self, data: Dict[str, Any]) -> EncounterBudget:
+        """
+        Parse encounter budget configuration from YAML data.
+        
+        Args:
+            data: The YAML data for encounter_budget
+            
+        Returns:
+            EncounterBudget object
+        """
+        etp_min = data.get('etp_min', 0)
+        etp_max = data.get('etp_max', 100)
+        allow_spike = data.get('allow_spike', False)
+        
+        # Validate etp_min
+        if not isinstance(etp_min, (int, float)) or etp_min < 0:
+            logger.warning(
+                f"Invalid etp_min '{etp_min}', must be non-negative number, "
+                f"defaulting to 0"
+            )
+            etp_min = 0
+        
+        # Validate etp_max
+        if not isinstance(etp_max, (int, float)) or etp_max < 0:
+            logger.warning(
+                f"Invalid etp_max '{etp_max}', must be non-negative number, "
+                f"defaulting to 100"
+            )
+            etp_max = 100
+        
+        # Validate allow_spike
+        if not isinstance(allow_spike, bool):
+            logger.warning(
+                f"Invalid allow_spike '{allow_spike}', must be boolean, "
+                f"defaulting to False"
+            )
+            allow_spike = False
+        
+        # Validate that min <= max
+        if etp_min > etp_max:
+            logger.warning(
+                f"etp_min ({etp_min}) > etp_max ({etp_max}), swapping values"
+            )
+            etp_min, etp_max = etp_max, etp_min
+        
+        budget = EncounterBudget(
+            etp_min=int(etp_min),
+            etp_max=int(etp_max),
+            allow_spike=allow_spike
+        )
+        
+        logger.debug(f"Parsed encounter budget: ETP {etp_min}-{etp_max}, allow_spike={allow_spike}")
+        
+        return budget
+    
+    def _parse_room_metadata(self, data: Dict[str, Any]) -> RoomMetadata:
+        """
+        Parse room metadata from YAML data.
+        
+        Handles room roles, ETP spike allowance, and exemptions.
+        
+        Args:
+            data: The YAML data for the room
+            
+        Returns:
+            RoomMetadata object
+        """
+        # Valid room roles
+        valid_roles = {"normal", "miniboss", "boss", "end_boss", "treasure", "optional"}
+        
+        role = data.get('role', 'normal')
+        allow_spike = data.get('allow_spike', False)
+        etp_exempt = data.get('etp_exempt', False)
+        
+        # Validate role
+        if role not in valid_roles:
+            logger.warning(
+                f"Invalid room role '{role}', must be one of {valid_roles}, "
+                f"defaulting to 'normal'"
+            )
+            role = 'normal'
+        
+        # Validate allow_spike
+        if not isinstance(allow_spike, bool):
+            logger.warning(
+                f"Invalid allow_spike '{allow_spike}', must be boolean, "
+                f"defaulting to False"
+            )
+            allow_spike = False
+        
+        # Validate etp_exempt
+        if not isinstance(etp_exempt, bool):
+            logger.warning(
+                f"Invalid etp_exempt '{etp_exempt}', must be boolean, "
+                f"defaulting to False"
+            )
+            etp_exempt = False
+        
+        # Auto-set allow_spike for certain roles if not explicitly set
+        if role in ('boss', 'miniboss', 'end_boss', 'treasure', 'optional') and not allow_spike:
+            # Boss and treasure rooms should generally allow spikes
+            allow_spike = True
+            logger.debug(f"Auto-enabled allow_spike for room role '{role}'")
+        
+        metadata = RoomMetadata(
+            role=role,
+            allow_spike=allow_spike,
+            etp_exempt=etp_exempt
+        )
+        
+        if metadata.is_special():
+            logger.debug(f"Parsed room metadata: role={role}, allow_spike={allow_spike}, etp_exempt={etp_exempt}")
+        
+        return metadata
         
     def get_level_override(self, level_number: int) -> Optional[LevelOverride]:
         """
