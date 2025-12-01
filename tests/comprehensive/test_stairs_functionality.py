@@ -1,6 +1,14 @@
-"""Comprehensive tests for stairs and level progression functionality."""
+"""Comprehensive tests for stairs and level progression functionality.
 
+NOTE: This entire module is marked slow because it uses full map generation
+and level progression testing.
+"""
+
+import pytest
 import unittest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 from unittest.mock import Mock, patch
 import sys
 import os

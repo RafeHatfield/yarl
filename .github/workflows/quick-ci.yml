@@ -1,14 +1,13 @@
-name: YARL Balance CI
+name: YARL Quick CI
 
-# Heavy balance validation workflow - runs nightly and on-demand
-# For quick CI on push/PR, see quick-ci.yml
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 9 * * *"  # Daily at 09:00 UTC
+  push:
+    branches: [ main, feature/*, bugfix/* ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  balance-test:
+  quick-test:
     runs-on: ubuntu-latest
 
     env:
@@ -43,27 +42,15 @@ jobs:
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt || true; fi
 
       # ─────────────────────────────────────────────────────────────────────
-      # Full Tests with Coverage (includes slow tests)
+      # Fast Tests (excludes slow tests)
       # ─────────────────────────────────────────────────────────────────────
-      - name: Run full test suite with coverage
+      - name: Run fast unit tests
         run: |
           if [ -d tests ]; then
-            pytest -q \
-              --cov=. \
-              --cov-report=term-missing \
-              --cov-report=html:htmlcov \
-              --cov-fail-under=80
+            pytest -q -m "not slow"
           else
             echo "No tests/ directory found, skipping unit tests"
           fi
-
-      - name: Upload HTML coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-html
-          path: htmlcov
-          if-no-files-found: ignore
 
       # ─────────────────────────────────────────────────────────────────────
       # ETP Sanity (hard gate - must pass)
@@ -80,29 +67,25 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: etp-sanity-results
+          name: quick-etp-sanity-results
           path: |
             etp_sanity.log
             etp_sanity.csv
           if-no-files-found: ignore
 
       # ─────────────────────────────────────────────────────────────────────
-      # Full Loot Sanity (soft gate - warnings only, never fails)
+      # Quick Loot Sanity (soft gate - warnings only, never fails)
       # ─────────────────────────────────────────────────────────────────────
-      - name: Run full loot sanity check
+      - name: Run quick loot sanity check
         continue-on-error: true
         run: |
-          if [ -x scripts/ci_run_loot.sh ]; then
-            ./scripts/ci_run_loot.sh
-          else
-            python3 loot_sanity.py --bands --runs 5 --normal | tee loot_sanity.log
-          fi
+          python3 loot_sanity.py --bands --runs 1 --normal | tee loot_sanity.log
 
       - name: Upload loot artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: loot-sanity-results
+          name: quick-loot-sanity-results
           path: |
             loot_sanity.log
             loot_sanity.csv
@@ -125,3 +108,4 @@ jobs:
           else
             echo "No loot_sanity.log found."
           fi
+

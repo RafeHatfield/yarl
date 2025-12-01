@@ -6,6 +6,9 @@ start without crashing.
 """
 
 import pytest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 from unittest.mock import patch, Mock
 from config.testing_config import TestingConfig, get_testing_config
 from loader_functions.initialize_new_game import get_game_variables, get_constants

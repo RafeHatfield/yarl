@@ -5,9 +5,15 @@ to catch the actual runtime bug where ai.take_turn() was called repeatedly.
 
 The previous unit tests in test_bot_mode_infinite_loop_fix.py only tested
 BotInputSource in isolation, which didn't catch the AI system loop bug.
+
+NOTE: This entire module is marked slow because it runs 100+ iterations
+of the game loop for integration testing.
 """
 
 import pytest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 from unittest.mock import Mock, MagicMock
 from engine.game_engine import GameEngine
 from engine.systems.ai_system import AISystem

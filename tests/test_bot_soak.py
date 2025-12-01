@@ -2,9 +2,15 @@
 
 These tests verify that the soak harness can orchestrate multiple bot runs,
 capture metrics correctly, and aggregate session statistics.
+
+NOTE: This entire module is marked slow because bot soak tests involve
+extensive mocking and multi-run orchestration.
 """
 
 import pytest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 

@@ -2,9 +2,15 @@
 
 This module tests all components of the performance profiling system including
 core profiling, monitoring, analysis, alerts, and integration.
+
+NOTE: This entire module is marked slow because performance tests use
+time.sleep() calls and real timing measurements.
 """
 
 import pytest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 import time
 import tempfile
 import threading

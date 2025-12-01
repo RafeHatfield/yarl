@@ -1,17 +1,25 @@
-.PHONY: clean test run quick-test bot bot-smoke soak help
+.PHONY: clean test run quick-test bot bot-smoke soak help test-fast test-full ci-quick balance-ci-local
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
 
 help:
-	@echo "Phase 5 Development Commands:"
+	@echo "Development Commands:"
 	@echo ""
 	@echo "  make clean       - Clear Python cache (fixes 'old code' issues)"
-	@echo "  make test        - Run Phase 5 critical tests"
-	@echo "  make quick-test  - Quick validation (no full game needed)"
 	@echo "  make run         - Start game with fresh code"
 	@echo "  make clean-run   - Clear cache + start game"
 	@echo "  make run-test    - Start test game with fresh code"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test-fast   - Fast pytest (excludes slow tests)"
+	@echo "  make test-full   - Full pytest (all tests, including slow)"
+	@echo "  make test        - Run Phase 5 critical tests"
+	@echo "  make quick-test  - Quick validation (no full game needed)"
+	@echo ""
+	@echo "CI / Balance:"
+	@echo "  make ci-quick         - Run quick CI checks (fast tests + ETP + loot)"
+	@echo "  make balance-ci-local - Run full Balance CI locally (with coverage)"
 	@echo ""
 	@echo "Bot Testing:"
 	@echo "  make bot         - Single bot run (watch the bot play)"
@@ -35,6 +43,40 @@ test:
 quick-test: clean
 	@echo "⚡ Running quick validation..."
 	@$(PYTHON) test_phase5_quick.py
+
+# ─────────────────────────────────────────────────────────────────────
+# Testing shortcuts
+# ─────────────────────────────────────────────────────────────────────
+
+test-fast:
+	@echo "🧪 Running fast pytest (excludes slow tests)..."
+	@$(PYTHON) -m pytest -q -m "not slow"
+
+test-full:
+	@echo "🧪 Running full pytest (all tests, including slow)..."
+	@$(PYTHON) -m pytest -q
+
+ci-quick:
+	@echo "⚡ Running quick CI checks..."
+	@./scripts/ci_quick.sh
+
+balance-ci-local:
+	@echo "🔬 Running full Balance CI locally (with coverage)..."
+	@echo ""
+	@echo "Step 1: Full pytest with coverage"
+	@$(PYTHON) -m pytest -q \
+		--cov=. \
+		--cov-report=term-missing \
+		--cov-report=html:htmlcov \
+		--cov-fail-under=80
+	@echo ""
+	@echo "Step 2: Strict ETP sanity check"
+	@./scripts/ci_run_etp.sh
+	@echo ""
+	@echo "Step 3: Full loot sanity check (5 runs per band)"
+	@./scripts/ci_run_loot.sh
+	@echo ""
+	@echo "✅ Balance CI complete. Coverage report: htmlcov/index.html"
 
 run: clean
 	@echo "🎮 Starting game with fresh code..."

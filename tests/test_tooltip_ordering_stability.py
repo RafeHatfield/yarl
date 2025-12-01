@@ -3,9 +3,15 @@
 Verifies that get_all_entities_at_position returns entities in a stable,
 deterministic order across multiple calls, even when called repeatedly.
 This ensures tooltips don't flicker due to ordering changes.
+
+NOTE: This entire module is marked slow because it runs 50-100 iterations
+per test to verify ordering stability.
 """
 
 import pytest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 from config.factories import EntityFactory
 from config.entity_registry import load_entity_config
 from ui.tooltip import get_all_entities_at_position

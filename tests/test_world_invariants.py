@@ -9,9 +9,15 @@ Tests verify:
 - World generation completes without crashing
 - No orphaned or invalid entities
 - Map dimensions are sane
+
+NOTE: This entire module is marked slow because it generates full game maps
+for multiple floors, which is computationally expensive.
 """
 
 import pytest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 from config.testing_config import get_testing_config, set_testing_mode
 from loader_functions.initialize_new_game import get_game_variables, get_constants
 

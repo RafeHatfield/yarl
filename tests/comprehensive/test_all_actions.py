@@ -2,9 +2,16 @@
 
 This module systematically tests every action handler and game logic path
 to ensure nothing is missing or broken.
+
+NOTE: This entire module is marked slow because it comprehensively tests
+all game actions and logic flows.
 """
 
+import pytest
 import unittest
+
+# Mark entire module as slow
+pytestmark = pytest.mark.slow
 from unittest.mock import Mock, patch, MagicMock
 import sys
 import os

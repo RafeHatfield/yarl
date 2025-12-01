@@ -101,23 +101,74 @@ python engine.py --testing --start-level 5 --telemetry-json output/session.json
 
 ### Running Tests
 
+**Fast mode** (excludes slow tests, use for normal development):
+
 ```bash
-# Run all tests
-pytest tests/
-
-# Run specific test suite
-pytest tests/test_portal_system_phase_b.py -v
-
-# Run critical quality-assurance tests (fast feedback)
-pytest tests/test_golden_path_floor1.py \
-        tests/test_public_imports_smoke.py \
-        tests/test_component_contracts.py \
-        tests/test_world_invariants.py -v
-
-# Use convenience runners
-python3 run_golden_path_tests.py      # Golden-path tests (~0.4s)
-python3 run_critical_tests.py         # Critical tests (~1.78s)
+pytest -q -m "not slow"
 ```
+
+**Full mode** (includes all tests, including slow integration tests):
+
+```bash
+pytest -q
+```
+
+**Fast dev balance check** (same checks as quick CI):
+
+```bash
+./scripts/ci_quick.sh
+```
+
+**Individual balance scripts:**
+
+```bash
+./scripts/ci_run_etp.sh       # ETP budget validation (strict)
+./scripts/ci_run_loot.sh      # Loot/pity sanity check (5 runs)
+```
+
+**Specific test suites:**
+
+```bash
+pytest tests/test_portal_system_phase_b.py -v       # Specific suite
+python3 run_golden_path_tests.py                    # Golden-path (~0.4s)
+python3 run_critical_tests.py                       # Critical tests (~1.78s)
+```
+
+### Slow Tests
+
+Some tests are marked with `@pytest.mark.slow` because they:
+- Run soak-like loops (bot mode, AI integration)
+- Generate multiple full game maps
+- Perform long-running integration tests
+- Use real timing measurements
+
+These are excluded from fast mode (`-m "not slow"`) and included only in full runs.
+
+### Testing & CI
+
+| Workflow | Trigger | Pytest Mode | Coverage | Loot Runs | Purpose |
+|----------|---------|-------------|----------|-----------|---------|
+| **YARL Quick CI** | push/PR | Fast (`-m "not slow"`) | No | 1 | Block merges on failures |
+| **YARL Balance CI** | Nightly/manual | Full (all tests) | Yes (≥80%) | 5 | Deep balance validation |
+
+**Quick CI** runs on every push and PR. It:
+- Runs fast pytest (excludes slow tests)
+- Runs strict ETP check (fails on OVER-budget violations)
+- Runs quick loot sanity (1 run per band)
+- Blocks merges on test or ETP failures
+- Does NOT block on loot/pity warnings (surfaced as annotations)
+
+**Balance CI** runs nightly (09:00 UTC) and via manual dispatch. It:
+- Runs full pytest with coverage (including slow tests)
+- Enforces minimum 80% coverage threshold
+- Runs strict ETP check
+- Runs full loot sanity (5 runs per band)
+- Uploads logs/CSVs and HTML coverage report as artifacts
+
+**Interpreting CI results:**
+- ❌ Test failure → Fix the failing test
+- ❌ ETP OVER-budget → Room has too many monsters for its band
+- ⚠️ Loot/pity warning → Balance tuning needed (not blocking)
 
 ---
 
@@ -258,6 +309,15 @@ See [DESIGN_PRINCIPLES.md](docs/DESIGN_PRINCIPLES.md) for full architectural phi
 - **Integration Tests:** 800+ tests
 - **Total:** 2500+ tests with 100% pass rate on critical paths
 
+### Test Modes
+
+| Mode | Command | Runtime | Use Case |
+|------|---------|---------|----------|
+| **Fast** | `pytest -q -m "not slow"` | ~30-60s | Normal development |
+| **Full** | `pytest -q` | ~6-10min | Pre-release, nightly CI |
+
+Tests marked `@pytest.mark.slow` (bot soak, world generation, performance profiling) are excluded in fast mode.
+
 ### Test Suites
 
 | Suite | Purpose | Runtime |
@@ -267,7 +327,11 @@ See [DESIGN_PRINCIPLES.md](docs/DESIGN_PRINCIPLES.md) for full architectural phi
 | **Component Contracts** | ECS consistency | ~0.2s |
 | **World Invariants** | Map generation properties | ~1.0s |
 | **All Critical Tests** | Pre-merge gate | ~1.78s |
-| **Full Suite** | 2500+ comprehensive tests | ~60s |
+| **Full Suite** | 2500+ comprehensive tests | ~6-10min |
+
+### CI Workflows
+
+See [Running Tests](#running-tests) for commands and CI workflow documentation.
 
 ---
 
