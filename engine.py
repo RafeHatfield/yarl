@@ -239,6 +239,20 @@ Examples:
         help='Output file for per-run metrics in JSONL format (bot-soak only)'
     )
     
+    parser.add_argument(
+        '--seed',
+        type=int,
+        metavar='N',
+        help='RNG seed for deterministic runs (bot-soak only). If not provided, a random seed is generated and logged.'
+    )
+    
+    parser.add_argument(
+        '--replay-log',
+        type=str,
+        metavar='PATH',
+        help='Path for action replay log output (bot-soak only). When provided, actions are logged for replay.'
+    )
+    
     return parser.parse_args()
 
 
@@ -284,6 +298,12 @@ def main():
             constants["bot_config"]["persona"] = args.bot_persona
             print(f"🤖 BOT PERSONA: {args.bot_persona}")
         
+        # Handle seed
+        if args.seed:
+            print(f"🎲 RNG SEED: {args.seed} (explicit)")
+        else:
+            print(f"🎲 RNG SEED: Auto-generated per run (logged in CSV)")
+        
         # Run soak harness
         session_result = run_bot_soak(
             runs=args.runs,
@@ -294,6 +314,8 @@ def main():
             max_floors=args.max_floors,
             start_floor=args.start_floor,
             metrics_log_path=args.metrics_log,
+            base_seed=args.seed,
+            replay_log_path=args.replay_log,
         )
         
         # Print session summary

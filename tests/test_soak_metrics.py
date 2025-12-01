@@ -36,6 +36,8 @@ class TestSoakRunResult:
             seed=42,
             persona="aggressive",
             outcome="death",
+            failure_type="death",
+            failure_detail="",
             duration_seconds=60.5,
             deepest_floor=3,
             floors_visited=3,
@@ -58,6 +60,8 @@ class TestSoakRunResult:
         assert d['seed'] == 42
         assert d['persona'] == "aggressive"
         assert d['outcome'] == "death"
+        assert d['failure_type'] == "death"
+        assert d['failure_detail'] == ""
         assert d['duration_seconds'] == 60.5
         assert d['deepest_floor'] == 3
         assert d['monsters_killed'] == 15
@@ -224,6 +228,7 @@ class TestCSVOutput:
             
             expected_headers = [
                 'run_number', 'run_id', 'seed', 'persona', 'outcome',
+                'failure_type', 'failure_detail',
                 'duration_seconds', 'deepest_floor', 'floors_visited',
                 'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
                 'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
@@ -245,4 +250,112 @@ class TestPersonaIntegration:
         """SoakSessionResult should track the session persona."""
         session = SoakSessionResult(total_runs=10, persona="aggressive")
         assert session.persona == "aggressive"
+
+
+class TestFailureClassification:
+    """Tests for failure classification in SoakRunResult."""
+    
+    def test_classify_death(self):
+        """Death outcome should classify as death."""
+        failure_type, detail = SoakRunResult.classify_failure("death")
+        assert failure_type == "death"
+        assert detail == ""
+    
+    def test_classify_victory(self):
+        """Victory outcome should classify as none (success)."""
+        failure_type, detail = SoakRunResult.classify_failure("victory")
+        assert failure_type == "none"
+    
+    def test_classify_max_floors(self):
+        """max_floors outcome should classify as none (success)."""
+        failure_type, detail = SoakRunResult.classify_failure("max_floors")
+        assert failure_type == "none"
+    
+    def test_classify_max_turns(self):
+        """max_turns outcome should classify as turn_limit."""
+        failure_type, detail = SoakRunResult.classify_failure("max_turns")
+        assert failure_type == "turn_limit"
+        assert "turn limit" in detail.lower()
+    
+    def test_classify_bot_abort_stuck(self):
+        """bot_abort with stuck reason should classify as stuck."""
+        failure_type, detail = SoakRunResult.classify_failure(
+            "bot_abort", bot_abort_reason="Stuck at position (5,10)"
+        )
+        assert failure_type == "stuck"
+        assert "5,10" in detail
+    
+    def test_classify_bot_abort_movement_blocked(self):
+        """bot_abort with movement blocked should classify as stuck."""
+        failure_type, detail = SoakRunResult.classify_failure(
+            "bot_abort", bot_abort_reason="Movement blocked 3 times"
+        )
+        assert failure_type == "stuck"
+    
+    def test_classify_bot_abort_stairs(self):
+        """bot_abort with stairs reason should classify as no_stairs."""
+        failure_type, detail = SoakRunResult.classify_failure(
+            "bot_abort", bot_abort_reason="Floor complete but not on stairs"
+        )
+        assert failure_type == "no_stairs"
+    
+    def test_classify_crash(self):
+        """crash outcome should classify as error."""
+        failure_type, detail = SoakRunResult.classify_failure(
+            "crash", exception="KeyError: 'x'"
+        )
+        assert failure_type == "error"
+        assert "KeyError" in detail
+    
+    def test_classify_error_from_exception(self):
+        """Presence of exception should classify as error."""
+        failure_type, detail = SoakRunResult.classify_failure(
+            "unknown", exception="Something went wrong"
+        )
+        assert failure_type == "error"
+        assert "Something went wrong" in detail
+    
+    def test_failure_fields_in_to_dict(self):
+        """failure_type and failure_detail should appear in to_dict()."""
+        result = SoakRunResult(
+            run_number=1,
+            outcome="bot_abort",
+            failure_type="stuck",
+            failure_detail="Movement blocked at (3,4)",
+        )
+        d = result.to_dict()
+        assert d['failure_type'] == "stuck"
+        assert d['failure_detail'] == "Movement blocked at (3,4)"
+    
+    def test_failure_fields_in_csv(self):
+        """failure_type and failure_detail should appear in CSV output."""
+        runs = [
+            SoakRunResult(
+                run_number=1,
+                outcome="death",
+                failure_type="death",
+                failure_detail="",
+            ),
+            SoakRunResult(
+                run_number=2,
+                outcome="bot_abort",
+                failure_type="stuck",
+                failure_detail="Oscillation detected",
+            ),
+        ]
+        
+        session = SoakSessionResult(total_runs=2, runs=runs)
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "metrics.csv"
+            session.write_csv(csv_path)
+            
+            with open(csv_path, 'r') as f:
+                reader = csv.DictReader(f)
+                rows = list(reader)
+            
+            assert rows[0]['failure_type'] == 'death'
+            assert rows[0]['failure_detail'] == ''
+            assert rows[1]['failure_type'] == 'stuck'
+            assert rows[1]['failure_detail'] == 'Oscillation detected'
 
