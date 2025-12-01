@@ -3,11 +3,12 @@
 This module provides a minimal decision-making "BotBrain" used by bot input.
 Phase 2.0 scope: EXPLORE + simple COMBAT + simple LOOT behavior.
 
-No retreat or healing logic yet.
+Supports bot personas for different playstyles (balanced, cautious, aggressive, greedy, speedrunner).
 """
 
 import logging
 from collections import deque
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -25,8 +26,118 @@ class LogLevel(Enum):
     DEBUG = "debug"       # Verbose: turn-by-turn details
     ERROR = "error"       # Only contract violations or impossible states
 
+
 # Stuck detection threshold: number of consecutive combat decisions without progress
 STUCK_THRESHOLD = 8
+
+
+# =============================================================================
+# BOT PERSONAS — Configurable behavior profiles
+# =============================================================================
+
+@dataclass(frozen=True)
+class BotPersonaConfig:
+    """Configuration parameters for a bot persona.
+    
+    Each persona defines thresholds and weights that influence BotBrain decisions:
+    - Combat behavior: engagement distance, retreat threshold
+    - Loot behavior: pickup priority, deviation willingness
+    - Exploration: stairs priority vs full exploration
+    - Survival: potion use threshold
+    
+    Attributes:
+        name: Human-readable persona name
+        retreat_hp_threshold: HP fraction below which bot considers retreating (0.0-1.0)
+        potion_hp_threshold: HP fraction below which bot drinks potions (0.0-1.0)
+        combat_engagement_distance: Max Manhattan distance to engage enemies
+        loot_priority: Weight for loot vs exploration (0=ignore loot, 1=normal, 2=greedy)
+        prefer_stairs: If True, prioritize stairs over full exploration when safe
+        avoid_combat: If True, avoid non-adjacent enemies when possible
+    """
+    name: str
+    retreat_hp_threshold: float = 0.25  # Retreat when HP below this
+    potion_hp_threshold: float = 0.40   # Drink potion when HP below this
+    combat_engagement_distance: int = 8  # Max distance to chase enemies
+    loot_priority: int = 1               # 0=skip, 1=normal, 2=greedy
+    prefer_stairs: bool = False          # True = prioritize stairs over exploration
+    avoid_combat: bool = False           # True = avoid non-adjacent enemies
+
+
+# Pre-defined personas
+PERSONAS: Dict[str, BotPersonaConfig] = {
+    "balanced": BotPersonaConfig(
+        name="balanced",
+        retreat_hp_threshold=0.25,
+        potion_hp_threshold=0.40,
+        combat_engagement_distance=8,
+        loot_priority=1,
+        prefer_stairs=False,
+        avoid_combat=False,
+    ),
+    "cautious": BotPersonaConfig(
+        name="cautious",
+        retreat_hp_threshold=0.40,   # Retreat earlier
+        potion_hp_threshold=0.50,    # Drink potions earlier
+        combat_engagement_distance=5, # Don't chase far
+        loot_priority=1,
+        prefer_stairs=False,
+        avoid_combat=True,           # Avoid non-adjacent enemies
+    ),
+    "aggressive": BotPersonaConfig(
+        name="aggressive",
+        retreat_hp_threshold=0.10,   # Fight to the death
+        potion_hp_threshold=0.25,    # Only drink when critical
+        combat_engagement_distance=12, # Chase enemies further
+        loot_priority=0,             # Ignore loot during combat
+        prefer_stairs=False,
+        avoid_combat=False,
+    ),
+    "greedy": BotPersonaConfig(
+        name="greedy",
+        retreat_hp_threshold=0.25,
+        potion_hp_threshold=0.40,
+        combat_engagement_distance=6,
+        loot_priority=2,             # Prioritize loot heavily
+        prefer_stairs=False,
+        avoid_combat=False,
+    ),
+    "speedrunner": BotPersonaConfig(
+        name="speedrunner",
+        retreat_hp_threshold=0.30,
+        potion_hp_threshold=0.40,
+        combat_engagement_distance=4, # Minimal engagement
+        loot_priority=0,              # Skip loot
+        prefer_stairs=True,           # Rush to stairs
+        avoid_combat=True,            # Avoid fights
+    ),
+}
+
+
+def get_persona(name: str) -> BotPersonaConfig:
+    """Get a persona config by name.
+    
+    Args:
+        name: Persona name (balanced, cautious, aggressive, greedy, speedrunner)
+        
+    Returns:
+        BotPersonaConfig for the requested persona
+        
+    Raises:
+        ValueError: If persona name is not recognized
+    """
+    if name not in PERSONAS:
+        valid = ", ".join(PERSONAS.keys())
+        raise ValueError(f"Unknown persona '{name}'. Valid options: {valid}")
+    return PERSONAS[name]
+
+
+def list_personas() -> List[str]:
+    """List available persona names.
+    
+    Returns:
+        List of valid persona name strings
+    """
+    return list(PERSONAS.keys())
 
 
 
@@ -43,9 +154,12 @@ class BotBrain:
     Implements a state machine with EXPLORE, COMBAT, and LOOT states.
     Makes decisions based on game state without knowing about soak mode.
     
+    Supports configurable personas that modify decision thresholds.
+    
     Attributes:
         state: Current bot decision state
         current_target: Currently targeted enemy entity (if in COMBAT)
+        persona: BotPersonaConfig defining behavior parameters
         _stuck_counter: Counter for detecting stuck behavior
         _last_player_pos: Last known player position (x, y)
         _last_target_pos: Last known target position (x, y)
@@ -53,12 +167,19 @@ class BotBrain:
         debug: Enable debug logging
     """
     
-    def __init__(self, debug: bool = False, log_level: LogLevel = LogLevel.SUMMARY) -> None:
+    def __init__(
+        self, 
+        debug: bool = False, 
+        log_level: LogLevel = LogLevel.SUMMARY,
+        persona: Optional[str] = None
+    ) -> None:
         """Initialize BotBrain with default EXPLORE state.
         
         Args:
             debug: Enable debug logging for troubleshooting (deprecated, use log_level)
             log_level: Logging tier level (SUMMARY, DEBUG, or ERROR)
+            persona: Persona name string (balanced, cautious, aggressive, greedy, speedrunner).
+                     Defaults to "balanced" if not specified.
         """
         self.state = BotState.EXPLORE
         self.current_target = None
@@ -70,6 +191,12 @@ class BotBrain:
         self._stuck_dropped_target = None  # Target we dropped due to being stuck
         self.debug = debug  # Deprecated, kept for backward compatibility
         self.log_level = LogLevel.DEBUG if debug else log_level  # Use debug flag to set DEBUG level if True
+        
+        # Load persona config (default: balanced)
+        persona_name = persona or "balanced"
+        self.persona = get_persona(persona_name)
+        self._log_summary(f"Initialized with persona: {self.persona.name}")
+        
         # COMBAT no-op fail-safe: track consecutive no-op actions in COMBAT
         self._combat_noop_counter = 0
         self._combat_noop_threshold = 10  # Drop to EXPLORE after 10 consecutive no-op actions
@@ -218,11 +345,17 @@ class BotBrain:
             
             # State transitions (for non-adjacent enemies)
             if visible_enemies:
-                # Check if any enemy is within Manhattan distance <= 8
+                # Check if any enemy is within combat engagement distance (persona-configurable)
                 nearest_enemy = self._find_nearest_enemy(player, visible_enemies)
                 if nearest_enemy:
                     manhattan_dist = abs(player.x - nearest_enemy.x) + abs(player.y - nearest_enemy.y)
-                    if manhattan_dist <= 8:
+                    
+                    # Persona: avoid_combat skips non-adjacent enemies entirely
+                    if self.persona.avoid_combat and manhattan_dist > 1:
+                        self._debug(f"Persona '{self.persona.name}' avoiding combat with enemy at distance {manhattan_dist}")
+                        # Fall through to EXPLORE handling below
+                        nearest_enemy = None
+                    elif manhattan_dist <= self.persona.combat_engagement_distance:
                         # Don't re-enter COMBAT with same target if we just dropped due to stuck or no-op fail-safe
                         if (self._just_dropped_due_to_stuck and self._stuck_dropped_target == nearest_enemy) or \
                            (self._just_dropped_due_to_noop and self._noop_dropped_target == nearest_enemy):
@@ -273,8 +406,15 @@ class BotBrain:
                     self.state = BotState.EXPLORE
                     self._reset_stuck_state()
             elif standing_on_loot:
+                # Persona: loot_priority=0 skips loot entirely
+                if self.persona.loot_priority == 0:
+                    self._debug(f"Persona '{self.persona.name}' skipping loot (loot_priority=0)")
+                    # Stay in EXPLORE, don't pick up loot
+                    self._log_state_transition(BotState.EXPLORE)
+                    self.current_target = None
+                    self.state = BotState.EXPLORE
                 # Check if we should skip LOOT state (oscillation prevention)
-                if self._turn_counter < self._skip_loot_until_turn:
+                elif self._turn_counter < self._skip_loot_until_turn:
                     # Skip LOOT for now - stay in EXPLORE to break oscillation
                     self._debug(f"Skipping LOOT state until turn {self._skip_loot_until_turn} (oscillation prevention)")
                     # Re-enable opportunistic loot after cooldown expires
@@ -1201,7 +1341,7 @@ class BotBrain:
         """Check if bot should drink a potion.
         
         Conditions:
-        - HP <= 40% (low health threshold)
+        - HP <= persona.potion_hp_threshold (configurable per persona)
         - No visible enemies (safe to drink)
         
         Args:
@@ -1211,9 +1351,9 @@ class BotBrain:
         Returns:
             bool: True if bot should try to drink a potion
         """
-        # Must be low on HP
+        # Must be low on HP (threshold from persona)
         hp_fraction = self._get_player_hp_fraction(player)
-        if hp_fraction > 0.4:  # 40% threshold
+        if hp_fraction > self.persona.potion_hp_threshold:
             return False
         
         # Must have no visible enemies (safe)

@@ -181,6 +181,14 @@ Examples:
         help='Enable verbose BotBrain debug logging in bot mode'
     )
     
+    parser.add_argument(
+        '--bot-persona',
+        type=str,
+        default='balanced',
+        choices=['balanced', 'cautious', 'aggressive', 'greedy', 'speedrunner'],
+        help='Bot behavior persona (default: balanced). Options: balanced, cautious, aggressive, greedy, speedrunner'
+    )
+    
     # Bot soak testing (Phase 1.6)
     parser.add_argument(
         '--bot-soak',
@@ -268,6 +276,14 @@ def main():
         # Get constants (needed for game initialization)
         constants = get_constants()
         
+        # Set up bot config (persona, debug) for soak mode
+        constants.setdefault("bot_config", {})
+        if args.bot_debug:
+            constants["bot_config"]["debug"] = True
+        if args.bot_persona:
+            constants["bot_config"]["persona"] = args.bot_persona
+            print(f"🤖 BOT PERSONA: {args.bot_persona}")
+        
         # Run soak harness
         session_result = run_bot_soak(
             runs=args.runs,
@@ -346,12 +362,18 @@ def main():
     if args.bot:
         print("🤖 BOT MODE ENABLED: Using autoplay input source (behavior minimal for now)")
     
-    # Propagate bot debug flag
+    # Propagate bot config
+    constants.setdefault("bot_config", {})
     if args.bot_debug:
-        constants.setdefault("bot_config", {})
         constants["bot_config"]["debug"] = True
         if args.bot:
             print("🐛 BOT DEBUG LOGGING ENABLED: Verbose BotBrain decision logging")
+    
+    # Propagate bot persona
+    if args.bot_persona:
+        constants["bot_config"]["persona"] = args.bot_persona
+        if args.bot or args.bot_soak:
+            print(f"🤖 BOT PERSONA: {args.bot_persona}")
     
     # Get UI layout configuration for split-screen design
     ui_layout = get_ui_layout()

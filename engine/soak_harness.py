@@ -50,29 +50,64 @@ class SoakRunResult:
     Attributes:
         run_number: Sequential run number (1-based)
         run_id: Unique run ID from RunMetrics
-        outcome: Final outcome (death, victory, quit, bot_abort)
+        seed: RNG seed used for this run (if deterministic)
+        persona: Bot persona name used for this run
+        outcome: Final outcome (death, victory, quit, bot_abort, max_turns, max_floors)
         duration_seconds: Run duration
         deepest_floor: Deepest floor reached
         floors_visited: Total floors visited
         monsters_killed: Total monsters defeated
+        items_picked_up: Total items picked up from ground
+        potions_used: Total potions consumed
+        portals_used: Total portals created/used
         tiles_explored: Total tiles explored
         steps_taken: Total steps taken
         floor_count: Number of floors in telemetry
         avg_etp_per_floor: Average ETP per floor
         exception: Optional exception message if run crashed
+        timestamp: ISO timestamp when run completed
     """
     run_number: int
     run_id: str = ""
+    seed: Optional[int] = None
+    persona: str = "balanced"
     outcome: str = "unknown"
     duration_seconds: float = 0.0
     deepest_floor: int = 1
     floors_visited: int = 1
     monsters_killed: int = 0
+    items_picked_up: int = 0
+    potions_used: int = 0
+    portals_used: int = 0
     tiles_explored: int = 0
     steps_taken: int = 0
     floor_count: int = 0
     avg_etp_per_floor: float = 0.0
     exception: Optional[str] = None
+    timestamp: str = ""
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            'run_number': self.run_number,
+            'run_id': self.run_id,
+            'seed': self.seed,
+            'persona': self.persona,
+            'outcome': self.outcome,
+            'duration_seconds': round(self.duration_seconds, 2),
+            'deepest_floor': self.deepest_floor,
+            'floors_visited': self.floors_visited,
+            'monsters_killed': self.monsters_killed,
+            'items_picked_up': self.items_picked_up,
+            'potions_used': self.potions_used,
+            'portals_used': self.portals_used,
+            'tiles_explored': self.tiles_explored,
+            'steps_taken': self.steps_taken,
+            'floor_count': self.floor_count,
+            'avg_etp_per_floor': round(self.avg_etp_per_floor, 2),
+            'exception': self.exception,
+            'timestamp': self.timestamp,
+        }
     
     @classmethod
     def from_run_metrics_and_telemetry(
@@ -80,7 +115,8 @@ class SoakRunResult:
         run_number: int,
         run_metrics,  # RunMetrics or None
         telemetry_stats: Dict[str, Any],
-        exception: Optional[str] = None
+        exception: Optional[str] = None,
+        persona: str = "balanced",
     ) -> "SoakRunResult":
         """Create from run metrics and telemetry.
         
@@ -89,33 +125,44 @@ class SoakRunResult:
             run_metrics: RunMetrics instance or None
             telemetry_stats: Telemetry stats dict from get_stats()
             exception: Optional exception message
+            persona: Bot persona name used for this run
             
         Returns:
             SoakRunResult instance
         """
+        timestamp = datetime.now().isoformat()
+        
         if run_metrics:
             return cls(
                 run_number=run_number,
                 run_id=run_metrics.run_id,
+                seed=run_metrics.seed,
+                persona=persona,
                 outcome=run_metrics.outcome,
                 duration_seconds=run_metrics.duration_seconds or 0.0,
                 deepest_floor=run_metrics.deepest_floor,
                 floors_visited=run_metrics.floors_visited,
                 monsters_killed=run_metrics.monsters_killed,
+                items_picked_up=run_metrics.items_picked_up,
+                potions_used=telemetry_stats.get('potions_used', 0),
+                portals_used=run_metrics.portals_used,
                 tiles_explored=run_metrics.tiles_explored,
                 steps_taken=run_metrics.steps_taken,
                 floor_count=telemetry_stats.get('floors', 0),
                 avg_etp_per_floor=telemetry_stats.get('avg_etp_per_floor', 0.0),
                 exception=exception,
+                timestamp=timestamp,
             )
         else:
             # Fallback for missing run_metrics
             return cls(
                 run_number=run_number,
+                persona=persona,
                 outcome="error",
                 floor_count=telemetry_stats.get('floors', 0),
                 avg_etp_per_floor=telemetry_stats.get('avg_etp_per_floor', 0.0),
                 exception=exception,
+                timestamp=timestamp,
             )
 
 
@@ -133,6 +180,9 @@ class SoakSessionResult:
         avg_deepest_floor: Average deepest floor reached
         avg_floors_per_run: Average floors visited per run
         total_monsters_killed: Total monsters killed across all runs
+        total_items_picked_up: Total items picked up across all runs
+        persona: Bot persona used for this session
+        session_timestamp: ISO timestamp when session started
     """
     total_runs: int
     completed_runs: int = 0
@@ -143,6 +193,9 @@ class SoakSessionResult:
     avg_deepest_floor: float = 0.0
     avg_floors_per_run: float = 0.0
     total_monsters_killed: int = 0
+    total_items_picked_up: int = 0
+    persona: str = "balanced"
+    session_timestamp: str = ""
     
     def compute_aggregates(self) -> None:
         """Compute aggregate statistics from run results."""
@@ -156,13 +209,17 @@ class SoakSessionResult:
             self.avg_duration = sum(r.duration_seconds for r in valid_runs) / len(valid_runs)
             self.avg_deepest_floor = sum(r.deepest_floor for r in valid_runs) / len(valid_runs)
             self.avg_floors_per_run = sum(r.floors_visited for r in valid_runs) / len(valid_runs)
-            self.total_monsters_killed = sum(r.monsters_killed for r in self.runs)
+        
+        # Totals include all runs
+        self.total_monsters_killed = sum(r.monsters_killed for r in self.runs)
+        self.total_items_picked_up = sum(r.items_picked_up for r in self.runs)
     
     def print_summary(self) -> None:
         """Print human-readable session summary to stdout."""
         print("\n" + "="*60)
         print("🧪 Bot Soak Session Summary")
         print("="*60)
+        print(f"   Persona: {self.persona}")
         print(f"   Runs: {self.total_runs}")
         print(f"   Completed: {self.completed_runs}")
         print(f"   Crashes: {self.bot_crashes}")
@@ -172,18 +229,50 @@ class SoakSessionResult:
         print(f"   Avg Deepest Floor: {self.avg_deepest_floor:.1f}")
         print(f"   Avg Floors per Run: {self.avg_floors_per_run:.1f}")
         print(f"   Total Monsters Killed: {self.total_monsters_killed}")
+        print(f"   Total Items Picked Up: {self.total_items_picked_up}")
         print("="*60)
         
         # Per-run breakdown (compact)
         if self.runs:
             print("\n📋 Per-Run Breakdown:")
-            print(f"{'Run':<5} {'Outcome':<12} {'Duration':<10} {'Floor':<7} {'Kills':<7} {'Exception'}")
-            print("-" * 70)
+            print(f"{'Run':<5} {'Outcome':<12} {'Duration':<10} {'Floor':<7} {'Kills':<7} {'Items':<7} {'Exception'}")
+            print("-" * 80)
             for run in self.runs:
                 duration_str = f"{run.duration_seconds:.1f}s"
-                exception_str = run.exception[:30] if run.exception else ""
+                exception_str = run.exception[:25] if run.exception else ""
                 print(f"{run.run_number:<5} {run.outcome:<12} {duration_str:<10} "
-                      f"{run.deepest_floor:<7} {run.monsters_killed:<7} {exception_str}")
+                      f"{run.deepest_floor:<7} {run.monsters_killed:<7} {run.items_picked_up:<7} {exception_str}")
+    
+    def write_csv(self, output_path: Path) -> None:
+        """Write per-run metrics to CSV file.
+        
+        Creates a CSV file with one row per run, suitable for analysis.
+        The output directory is created if it doesn't exist.
+        
+        Args:
+            output_path: Path to the CSV file to write
+        """
+        import csv
+        
+        # Ensure parent directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Define CSV columns (matches SoakRunResult.to_dict() keys)
+        fieldnames = [
+            'run_number', 'run_id', 'seed', 'persona', 'outcome',
+            'duration_seconds', 'deepest_floor', 'floors_visited',
+            'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
+            'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
+            'exception', 'timestamp'
+        ]
+        
+        with open(output_path, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for run in self.runs:
+                writer.writerow(run.to_dict())
+        
+        logger.info(f"Wrote {len(self.runs)} run metrics to {output_path}")
 
 
 def _initialize_libtcod_for_soak(constants: Dict[str, Any]) -> None:
@@ -285,11 +374,21 @@ def run_bot_soak(
                 f"max_turns={max_turns}, max_floors={max_floors}, start_floor={start_floor}")
     
     session_start = time.time()
-    session_result = SoakSessionResult(total_runs=runs)
+    session_timestamp = datetime.now().isoformat()
     
     # Get constants once (reuse across runs)
     if constants is None:
         constants = get_constants()
+    
+    # Extract persona from bot_config (default: balanced)
+    bot_config = constants.get("bot_config", {})
+    persona = bot_config.get("persona", "balanced")
+    
+    session_result = SoakSessionResult(
+        total_runs=runs,
+        persona=persona,
+        session_timestamp=session_timestamp,
+    )
     
     # Enable bot mode in constants
     constants.setdefault("input_config", {})
@@ -421,6 +520,7 @@ def run_bot_soak(
                 run_metrics=run_metrics,
                 telemetry_stats=telemetry_stats,
                 exception=None,
+                persona=persona,
             )
             
             session_result.completed_runs += 1
@@ -440,8 +540,10 @@ def run_bot_soak(
             # Create error result
             run_result = SoakRunResult(
                 run_number=run_num,
+                persona=persona,
                 outcome="crash",
                 exception=exception_msg,
+                timestamp=datetime.now().isoformat(),
             )
             
             session_result.bot_crashes += 1
@@ -454,6 +556,15 @@ def run_bot_soak(
     session_end = time.time()
     session_result.session_duration_seconds = session_end - session_start
     session_result.compute_aggregates()
+    
+    # Write CSV output if metrics log path was provided
+    if metrics_log_path:
+        # Create timestamped output directory
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_dir = Path(metrics_log_path).parent / f"soak_{timestamp_str}"
+        csv_path = csv_dir / "metrics.csv"
+        session_result.write_csv(csv_path)
+        print(f"📊 CSV metrics written to: {csv_path}")
     
     logger.info(f"Bot soak session complete: {session_result.completed_runs}/{runs} completed, "
                f"{session_result.bot_crashes} crashes")

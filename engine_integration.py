@@ -282,13 +282,17 @@ def create_renderer_and_input_source(
     )
 
     if input_mode == "bot":
-        # Extract bot debug flag from constants
+        # Extract bot config from constants
         bot_debug = False
+        bot_persona = None  # Will default to "balanced" in BotInputSource
         if constants:
             bot_config = constants.get("bot_config")
             if isinstance(bot_config, dict):
                 bot_debug = bool(bot_config.get("debug", False))
-        input_source: InputSource = BotInputSource(action_interval=1, debug=bot_debug)
+                bot_persona = bot_config.get("persona")
+        input_source: InputSource = BotInputSource(
+            action_interval=1, debug=bot_debug, persona=bot_persona
+        )
     else:
         input_source: InputSource = KeyboardInputSource()
 
