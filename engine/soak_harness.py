@@ -50,29 +50,155 @@ class SoakRunResult:
     Attributes:
         run_number: Sequential run number (1-based)
         run_id: Unique run ID from RunMetrics
-        outcome: Final outcome (death, victory, quit, bot_abort)
+        seed: RNG seed used for this run (if deterministic)
+        persona: Bot persona name used for this run
+        outcome: Final outcome (death, victory, quit, bot_abort, max_turns, max_floors)
+        failure_type: Structured failure classification:
+            - "none": Run completed successfully (victory, max_floors reached)
+            - "death": Player died
+            - "turn_limit": Hit max_turns limit
+            - "stuck": Bot detected stuck/oscillation
+            - "no_stairs": Bot couldn't reach stairs
+            - "error": Crash or unhandled exception
+        failure_detail: Human-readable detail about the failure (e.g., monster name, position)
         duration_seconds: Run duration
         deepest_floor: Deepest floor reached
         floors_visited: Total floors visited
         monsters_killed: Total monsters defeated
+        items_picked_up: Total items picked up from ground
+        potions_used: Total potions consumed
+        portals_used: Total portals created/used
         tiles_explored: Total tiles explored
         steps_taken: Total steps taken
         floor_count: Number of floors in telemetry
         avg_etp_per_floor: Average ETP per floor
         exception: Optional exception message if run crashed
+        timestamp: ISO timestamp when run completed
     """
     run_number: int
     run_id: str = ""
+    seed: Optional[int] = None
+    persona: str = "balanced"
     outcome: str = "unknown"
+    failure_type: str = "none"
+    failure_detail: str = ""
+    auto_explore_terminal_reason: str = ""  # Final AutoExplore stop reason (normalized)
     duration_seconds: float = 0.0
     deepest_floor: int = 1
     floors_visited: int = 1
     monsters_killed: int = 0
+    items_picked_up: int = 0
+    potions_used: int = 0
+    portals_used: int = 0
     tiles_explored: int = 0
     steps_taken: int = 0
     floor_count: int = 0
     avg_etp_per_floor: float = 0.0
     exception: Optional[str] = None
+    timestamp: str = ""
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            'run_number': self.run_number,
+            'run_id': self.run_id,
+            'seed': self.seed,
+            'persona': self.persona,
+            'outcome': self.outcome,
+            'failure_type': self.failure_type,
+            'failure_detail': self.failure_detail,
+            'auto_explore_terminal_reason': self.auto_explore_terminal_reason,
+            'duration_seconds': round(self.duration_seconds, 2),
+            'deepest_floor': self.deepest_floor,
+            'floors_visited': self.floors_visited,
+            'monsters_killed': self.monsters_killed,
+            'items_picked_up': self.items_picked_up,
+            'potions_used': self.potions_used,
+            'portals_used': self.portals_used,
+            'tiles_explored': self.tiles_explored,
+            'steps_taken': self.steps_taken,
+            'floor_count': self.floor_count,
+            'avg_etp_per_floor': round(self.avg_etp_per_floor, 2),
+            'exception': self.exception,
+            'timestamp': self.timestamp,
+        }
+    
+    @staticmethod
+    def normalize_auto_explore_reason(raw_reason: Optional[str]) -> str:
+        """Normalize AutoExplore stop_reason to a machine-friendly string.
+        
+        Args:
+            raw_reason: Raw stop_reason from AutoExplore component (e.g., "All areas explored")
+            
+        Returns:
+            Normalized string for CSV/analysis:
+            - "all_areas_explored" - Floor fully explored
+            - "cannot_reach_unexplored" - Unreachable unexplored areas
+            - "movement_blocked" - Movement repeatedly blocked
+            - "monster_spotted" - Stopped due to visible enemy
+            - "cancelled" - Manually cancelled
+            - "none" - No reason set or AutoExplore never ran
+            - "other" - Any other stop reason
+        """
+        if not raw_reason:
+            return "none"
+        
+        # Exact matches for known terminal reasons
+        if raw_reason == "All areas explored":
+            return "all_areas_explored"
+        elif raw_reason == "Cannot reach unexplored areas":
+            return "cannot_reach_unexplored"
+        elif raw_reason == "Movement blocked":
+            return "movement_blocked"
+        elif raw_reason == "Cancelled":
+            return "cancelled"
+        elif "Monster spotted" in raw_reason:
+            return "monster_spotted"
+        else:
+            return "other"
+    
+    @staticmethod
+    def classify_failure(outcome: str, exception: Optional[str] = None, 
+                         bot_abort_reason: Optional[str] = None) -> tuple:
+        """Classify failure type based on outcome and context.
+        
+        Args:
+            outcome: Run outcome string (death, victory, max_turns, bot_abort, etc.)
+            exception: Optional exception message
+            bot_abort_reason: Optional reason for bot_abort (from BotBrain or harness)
+            
+        Returns:
+            Tuple of (failure_type, failure_detail)
+        """
+        # Success cases
+        if outcome in ("victory", "max_floors"):
+            return ("none", "")
+        
+        # Death
+        if outcome == "death":
+            return ("death", "")
+        
+        # Turn limit
+        if outcome == "max_turns":
+            return ("turn_limit", "Hit maximum turn limit")
+        
+        # Bot abort - check reason for more specific classification
+        if outcome == "bot_abort":
+            if bot_abort_reason:
+                reason_lower = bot_abort_reason.lower()
+                if "stuck" in reason_lower or "movement blocked" in reason_lower:
+                    return ("stuck", bot_abort_reason)
+                elif "stairs" in reason_lower:
+                    return ("no_stairs", bot_abort_reason)
+            # Default bot_abort without specific reason
+            return ("stuck", bot_abort_reason or "Bot aborted run")
+        
+        # Crash/error
+        if outcome in ("crash", "error") or exception:
+            return ("error", exception or "Unknown error")
+        
+        # Unknown/other
+        return ("none", "")
     
     @classmethod
     def from_run_metrics_and_telemetry(
@@ -80,7 +206,10 @@ class SoakRunResult:
         run_number: int,
         run_metrics,  # RunMetrics or None
         telemetry_stats: Dict[str, Any],
-        exception: Optional[str] = None
+        exception: Optional[str] = None,
+        persona: str = "balanced",
+        bot_abort_reason: Optional[str] = None,
+        auto_explore_terminal_reason: str = "",
     ) -> "SoakRunResult":
         """Create from run metrics and telemetry.
         
@@ -89,33 +218,59 @@ class SoakRunResult:
             run_metrics: RunMetrics instance or None
             telemetry_stats: Telemetry stats dict from get_stats()
             exception: Optional exception message
+            persona: Bot persona name used for this run
+            bot_abort_reason: Optional reason string for bot_abort outcomes
+            auto_explore_terminal_reason: Normalized AutoExplore stop reason at run end
             
         Returns:
             SoakRunResult instance
         """
+        timestamp = datetime.now().isoformat()
+        
         if run_metrics:
+            # Classify failure
+            failure_type, failure_detail = cls.classify_failure(
+                run_metrics.outcome, exception, bot_abort_reason
+            )
+            
             return cls(
                 run_number=run_number,
                 run_id=run_metrics.run_id,
+                seed=run_metrics.seed,
+                persona=persona,
                 outcome=run_metrics.outcome,
+                failure_type=failure_type,
+                failure_detail=failure_detail,
+                auto_explore_terminal_reason=auto_explore_terminal_reason,
                 duration_seconds=run_metrics.duration_seconds or 0.0,
                 deepest_floor=run_metrics.deepest_floor,
                 floors_visited=run_metrics.floors_visited,
                 monsters_killed=run_metrics.monsters_killed,
+                items_picked_up=run_metrics.items_picked_up,
+                potions_used=telemetry_stats.get('potions_used', 0),
+                portals_used=run_metrics.portals_used,
                 tiles_explored=run_metrics.tiles_explored,
                 steps_taken=run_metrics.steps_taken,
                 floor_count=telemetry_stats.get('floors', 0),
                 avg_etp_per_floor=telemetry_stats.get('avg_etp_per_floor', 0.0),
                 exception=exception,
+                timestamp=timestamp,
             )
         else:
-            # Fallback for missing run_metrics
+            # Fallback for missing run_metrics - classify as error
+            failure_type, failure_detail = cls.classify_failure("error", exception)
+            
             return cls(
                 run_number=run_number,
+                persona=persona,
                 outcome="error",
+                failure_type=failure_type,
+                failure_detail=failure_detail,
+                auto_explore_terminal_reason=auto_explore_terminal_reason,
                 floor_count=telemetry_stats.get('floors', 0),
                 avg_etp_per_floor=telemetry_stats.get('avg_etp_per_floor', 0.0),
                 exception=exception,
+                timestamp=timestamp,
             )
 
 
@@ -133,6 +288,9 @@ class SoakSessionResult:
         avg_deepest_floor: Average deepest floor reached
         avg_floors_per_run: Average floors visited per run
         total_monsters_killed: Total monsters killed across all runs
+        total_items_picked_up: Total items picked up across all runs
+        persona: Bot persona used for this session
+        session_timestamp: ISO timestamp when session started
     """
     total_runs: int
     completed_runs: int = 0
@@ -143,6 +301,9 @@ class SoakSessionResult:
     avg_deepest_floor: float = 0.0
     avg_floors_per_run: float = 0.0
     total_monsters_killed: int = 0
+    total_items_picked_up: int = 0
+    persona: str = "balanced"
+    session_timestamp: str = ""
     
     def compute_aggregates(self) -> None:
         """Compute aggregate statistics from run results."""
@@ -156,13 +317,17 @@ class SoakSessionResult:
             self.avg_duration = sum(r.duration_seconds for r in valid_runs) / len(valid_runs)
             self.avg_deepest_floor = sum(r.deepest_floor for r in valid_runs) / len(valid_runs)
             self.avg_floors_per_run = sum(r.floors_visited for r in valid_runs) / len(valid_runs)
-            self.total_monsters_killed = sum(r.monsters_killed for r in self.runs)
+        
+        # Totals include all runs
+        self.total_monsters_killed = sum(r.monsters_killed for r in self.runs)
+        self.total_items_picked_up = sum(r.items_picked_up for r in self.runs)
     
     def print_summary(self) -> None:
         """Print human-readable session summary to stdout."""
         print("\n" + "="*60)
         print("🧪 Bot Soak Session Summary")
         print("="*60)
+        print(f"   Persona: {self.persona}")
         print(f"   Runs: {self.total_runs}")
         print(f"   Completed: {self.completed_runs}")
         print(f"   Crashes: {self.bot_crashes}")
@@ -172,18 +337,51 @@ class SoakSessionResult:
         print(f"   Avg Deepest Floor: {self.avg_deepest_floor:.1f}")
         print(f"   Avg Floors per Run: {self.avg_floors_per_run:.1f}")
         print(f"   Total Monsters Killed: {self.total_monsters_killed}")
+        print(f"   Total Items Picked Up: {self.total_items_picked_up}")
         print("="*60)
         
         # Per-run breakdown (compact)
         if self.runs:
             print("\n📋 Per-Run Breakdown:")
-            print(f"{'Run':<5} {'Outcome':<12} {'Duration':<10} {'Floor':<7} {'Kills':<7} {'Exception'}")
-            print("-" * 70)
+            print(f"{'Run':<5} {'Outcome':<12} {'Duration':<10} {'Floor':<7} {'Kills':<7} {'Items':<7} {'Exception'}")
+            print("-" * 80)
             for run in self.runs:
                 duration_str = f"{run.duration_seconds:.1f}s"
-                exception_str = run.exception[:30] if run.exception else ""
+                exception_str = run.exception[:25] if run.exception else ""
                 print(f"{run.run_number:<5} {run.outcome:<12} {duration_str:<10} "
-                      f"{run.deepest_floor:<7} {run.monsters_killed:<7} {exception_str}")
+                      f"{run.deepest_floor:<7} {run.monsters_killed:<7} {run.items_picked_up:<7} {exception_str}")
+    
+    def write_csv(self, output_path: Path) -> None:
+        """Write per-run metrics to CSV file.
+        
+        Creates a CSV file with one row per run, suitable for analysis.
+        The output directory is created if it doesn't exist.
+        
+        Args:
+            output_path: Path to the CSV file to write
+        """
+        import csv
+        
+        # Ensure parent directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Define CSV columns (matches SoakRunResult.to_dict() keys)
+        fieldnames = [
+            'run_number', 'run_id', 'seed', 'persona', 'outcome',
+            'failure_type', 'failure_detail', 'auto_explore_terminal_reason',
+            'duration_seconds', 'deepest_floor', 'floors_visited',
+            'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
+            'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
+            'exception', 'timestamp'
+        ]
+        
+        with open(output_path, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for run in self.runs:
+                writer.writerow(run.to_dict())
+        
+        logger.info(f"Wrote {len(self.runs)} run metrics to {output_path}")
 
 
 def _initialize_libtcod_for_soak(constants: Dict[str, Any]) -> None:
@@ -229,6 +427,8 @@ def run_bot_soak(
     max_floors: Optional[int] = None,
     start_floor: int = 1,
     metrics_log_path: Optional[str] = None,
+    base_seed: Optional[int] = None,
+    replay_log_path: Optional[str] = None,
 ) -> SoakSessionResult:
     """Run multiple bot games back-to-back for soak testing.
     
@@ -266,6 +466,9 @@ def run_bot_soak(
         max_floors: Optional maximum floor depth per run (ends with "max_floors" outcome)
         start_floor: Starting floor for runs (default: 1)
         metrics_log_path: Optional path for per-run JSONL metrics output
+        base_seed: Optional base RNG seed. If provided, run N uses seed = base_seed + N.
+                   If None, each run generates a random seed (logged in output).
+        replay_log_path: Optional base path for action replay logs.
         
     Returns:
         SoakSessionResult with aggregate statistics
@@ -285,11 +488,21 @@ def run_bot_soak(
                 f"max_turns={max_turns}, max_floors={max_floors}, start_floor={start_floor}")
     
     session_start = time.time()
-    session_result = SoakSessionResult(total_runs=runs)
+    session_timestamp = datetime.now().isoformat()
     
     # Get constants once (reuse across runs)
     if constants is None:
         constants = get_constants()
+    
+    # Extract persona from bot_config (default: balanced)
+    bot_config = constants.get("bot_config", {})
+    persona = bot_config.get("persona", "balanced")
+    
+    session_result = SoakSessionResult(
+        total_runs=runs,
+        persona=persona,
+        session_timestamp=session_timestamp,
+    )
     
     # Enable bot mode in constants
     constants.setdefault("input_config", {})
@@ -299,10 +512,12 @@ def run_bot_soak(
     constants["bot_soak_mode"] = True
     
     # Store soak harness config in constants for per-run access
+    # Note: seed is set per-run in the loop below
     constants["soak_config"] = {
         "max_turns": max_turns,
         "max_floors": max_floors,
         "start_floor": start_floor,
+        "seed": None,  # Will be set per-run
     }
     
     # Prepare metrics JSONL output if requested
@@ -329,10 +544,26 @@ def run_bot_soak(
         jsonl_path.parent.mkdir(parents=True, exist_ok=True)
         logger.info(f"Telemetry JSONL output: {jsonl_path}")
     
+    # Import RNG config
+    from engine.rng_config import set_global_seed, generate_seed
+    
     # Run N bot games
     for run_num in range(1, runs + 1):
         logger.info(f"=== Starting run {run_num}/{runs} ===")
         print(f"\n🤖 Bot Run {run_num}/{runs}...")
+        
+        # Determine seed for this run
+        if base_seed is not None:
+            run_seed = base_seed + (run_num - 1)  # Deterministic: base_seed, base_seed+1, ...
+        else:
+            run_seed = generate_seed()  # Random seed
+        
+        # Set the global RNG seed for this run
+        set_global_seed(run_seed)
+        logger.info(f"Run {run_num} seed: {run_seed}")
+        
+        # Update soak_config with current run's seed for run_metrics
+        constants["soak_config"]["seed"] = run_seed
         
         run_result = None
         exception_msg = None
@@ -415,12 +646,23 @@ def run_bot_soak(
             
             telemetry_stats = telemetry_service.get_stats() if telemetry_service else {}
             
+            # Capture final AutoExplore stop_reason for this run
+            from components.component_registry import ComponentType
+            auto_explore_reason = ""
+            if player and hasattr(player, 'get_component_optional'):
+                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                if auto_explore:
+                    raw_reason = getattr(auto_explore, 'stop_reason', None)
+                    auto_explore_reason = SoakRunResult.normalize_auto_explore_reason(raw_reason)
+            
             # Create run result
             run_result = SoakRunResult.from_run_metrics_and_telemetry(
                 run_number=run_num,
                 run_metrics=run_metrics,
                 telemetry_stats=telemetry_stats,
                 exception=None,
+                persona=persona,
+                auto_explore_terminal_reason=auto_explore_reason,
             )
             
             session_result.completed_runs += 1
@@ -437,11 +679,20 @@ def run_bot_soak(
             exception_msg = str(e)
             logger.error(f"Run {run_num} crashed: {exception_msg}", exc_info=True)
             
+            # Classify the error
+            failure_type, failure_detail = SoakRunResult.classify_failure(
+                "crash", exception_msg
+            )
+            
             # Create error result
             run_result = SoakRunResult(
                 run_number=run_num,
+                persona=persona,
                 outcome="crash",
+                failure_type=failure_type,
+                failure_detail=failure_detail,
                 exception=exception_msg,
+                timestamp=datetime.now().isoformat(),
             )
             
             session_result.bot_crashes += 1
@@ -454,6 +705,13 @@ def run_bot_soak(
     session_end = time.time()
     session_result.session_duration_seconds = session_end - session_start
     session_result.compute_aggregates()
+    
+    # Write CSV output if metrics log path was provided
+    if metrics_log_path:
+        # Use the exact path provided by the user
+        csv_path = Path(metrics_log_path)
+        session_result.write_csv(csv_path)
+        print(f"📊 CSV metrics written to: {csv_path}")
     
     logger.info(f"Bot soak session complete: {session_result.completed_runs}/{runs} completed, "
                f"{session_result.bot_crashes} crashes")

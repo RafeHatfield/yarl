@@ -24,15 +24,23 @@ class BotInputSource:
     
     Phase 0 behavior (enemies don't act) is preserved - this is controlled by
     the AISystem's bot-mode flag, not by this input source.
+    
+    Supports configurable bot personas for different playstyles.
 
     Attributes:
         _initialized: Marker flag indicating the bot is ready
         _frame_counter: Counter for throttling actions
         _action_interval: Number of frames between actions
         _auto_explore_started: Tracks if we've attempted to start auto-explore this session
+        bot_brain: BotBrain instance with persona configuration
     """
 
-    def __init__(self, action_interval: int = 1, debug: bool = False) -> None:
+    def __init__(
+        self, 
+        action_interval: int = 1, 
+        debug: bool = False,
+        persona: str = None
+    ) -> None:
         """Initialize the BotInputSource.
 
         Args:
@@ -40,6 +48,8 @@ class BotInputSource:
                              will emit an action every Nth call when the game
                              is in PLAYERS_TURN.
             debug: Enable debug logging in BotBrain
+            persona: Bot persona name (balanced, cautious, aggressive, greedy, speedrunner).
+                     Defaults to "balanced" if not specified.
         """
         self._initialized = True
         self._frame_counter = 0
@@ -48,7 +58,7 @@ class BotInputSource:
         self._failed_explore_attempts = 0  # Track consecutive failed explore start attempts on "fully explored"
         self._last_auto_explore_active = False  # Track if autoexplore was active last call
         self._fully_explored_detected = False  # Track if we've detected "All areas explored" condition
-        self.bot_brain = BotBrain(debug=debug)
+        self.bot_brain = BotBrain(debug=debug, persona=persona)
     
     def _is_soak_mode(self, game_state: Any) -> bool:
         """Check if we are in bot soak mode.

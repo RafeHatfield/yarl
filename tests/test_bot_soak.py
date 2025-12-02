@@ -29,11 +29,14 @@ class TestSoakRunResult:
         # Mock RunMetrics
         mock_run_metrics = Mock()
         mock_run_metrics.run_id = "test-run-123"
+        mock_run_metrics.seed = None
         mock_run_metrics.outcome = "death"
         mock_run_metrics.duration_seconds = 42.5
         mock_run_metrics.deepest_floor = 3
         mock_run_metrics.floors_visited = 3
         mock_run_metrics.monsters_killed = 7
+        mock_run_metrics.items_picked_up = 5
+        mock_run_metrics.portals_used = 1
         mock_run_metrics.tiles_explored = 150
         mock_run_metrics.steps_taken = 200
         
@@ -259,11 +262,14 @@ class TestRunBotSoakIntegration:
         mock_recorder = Mock()
         mock_run_metrics = Mock()
         mock_run_metrics.run_id = "test-run"
+        mock_run_metrics.seed = None
         mock_run_metrics.outcome = "death"
         mock_run_metrics.duration_seconds = 30.0
         mock_run_metrics.deepest_floor = 2
         mock_run_metrics.floors_visited = 2
         mock_run_metrics.monsters_killed = 5
+        mock_run_metrics.items_picked_up = 3
+        mock_run_metrics.portals_used = 0
         mock_run_metrics.tiles_explored = 100
         mock_run_metrics.steps_taken = 150
         mock_run_metrics.to_dict.return_value = {}
@@ -276,6 +282,7 @@ class TestRunBotSoakIntegration:
         mock_telemetry.get_stats.return_value = {
             'floors': 2,
             'avg_etp_per_floor': 20.0,
+            'potions_used': 0,
         }
         mock_get_telemetry.return_value = mock_telemetry
         
@@ -354,11 +361,14 @@ class TestRunBotSoakIntegration:
         mock_recorder = Mock()
         mock_run_metrics = Mock()
         mock_run_metrics.run_id = "test-run"
+        mock_run_metrics.seed = None
         mock_run_metrics.outcome = "death"
         mock_run_metrics.duration_seconds = 30.0
         mock_run_metrics.deepest_floor = 2
         mock_run_metrics.floors_visited = 2
         mock_run_metrics.monsters_killed = 5
+        mock_run_metrics.items_picked_up = 2
+        mock_run_metrics.portals_used = 0
         mock_run_metrics.tiles_explored = 100
         mock_run_metrics.steps_taken = 150
         mock_run_metrics.to_dict.return_value = {}
@@ -375,6 +385,7 @@ class TestRunBotSoakIntegration:
             'total_secrets': 0,
             'total_doors': 2,
             'total_keys': 1,
+            'potions_used': 0,
         }
         mock_get_telemetry.return_value = mock_telemetry
         
@@ -445,11 +456,14 @@ class TestRunBotSoakIntegration:
         mock_recorder = Mock()
         mock_run_metrics = Mock()
         mock_run_metrics.run_id = "test-run"
+        mock_run_metrics.seed = None
         mock_run_metrics.outcome = "death"
         mock_run_metrics.duration_seconds = 30.0
         mock_run_metrics.deepest_floor = 2
         mock_run_metrics.floors_visited = 2
         mock_run_metrics.monsters_killed = 5
+        mock_run_metrics.items_picked_up = 2
+        mock_run_metrics.portals_used = 0
         mock_run_metrics.tiles_explored = 100
         mock_run_metrics.steps_taken = 150
         mock_run_metrics.to_dict.return_value = {}
@@ -458,7 +472,7 @@ class TestRunBotSoakIntegration:
         mock_get_recorder.return_value = mock_recorder
         
         mock_telemetry = Mock()
-        mock_telemetry.get_stats.return_value = {'floors': 2, 'avg_etp_per_floor': 20.0}
+        mock_telemetry.get_stats.return_value = {'floors': 2, 'avg_etp_per_floor': 20.0, 'potions_used': 0}
         mock_get_telemetry.return_value = mock_telemetry
         
         mock_console_new.return_value = Mock()
@@ -541,11 +555,14 @@ class TestRunBotSoakIntegration:
         mock_recorder = Mock()
         mock_run_metrics = Mock()
         mock_run_metrics.run_id = "test-run"
+        mock_run_metrics.seed = None
         mock_run_metrics.outcome = "bot_completed"
         mock_run_metrics.duration_seconds = 30.0
         mock_run_metrics.deepest_floor = 1
         mock_run_metrics.floors_visited = 1
         mock_run_metrics.monsters_killed = 0
+        mock_run_metrics.items_picked_up = 0
+        mock_run_metrics.portals_used = 0
         mock_run_metrics.tiles_explored = 100
         mock_run_metrics.steps_taken = 150
         mock_run_metrics.to_dict.return_value = {}
@@ -559,6 +576,7 @@ class TestRunBotSoakIntegration:
         mock_telemetry.get_stats.return_value = {
             'floors': 1,
             'avg_etp_per_floor': 15.0,
+            'potions_used': 0,
         }
         mock_get_telemetry.return_value = mock_telemetry
         

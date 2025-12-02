@@ -15,7 +15,7 @@ Test cases:
 import pytest
 from unittest.mock import Mock
 
-from io_layer.bot_brain import BotBrain, BotState
+from io_layer.bot_brain import BotBrain, BotState, TERMINAL_EXPLORE_REASONS
 from game_states import GameStates
 from components.component_registry import ComponentType
 
@@ -242,8 +242,16 @@ class TestBotStairsDescent:
         assert action != {'take_stairs': True}, \
             f"Bot should NOT descend on Movement blocked, got {action}"
     
-    def test_bot_does_not_descend_when_enemies_visible(self):
-        """Bot should NOT descend stairs when enemies are visible (unsafe)."""
+    def test_bot_aborts_when_floor_complete_with_enemies_visible(self):
+        """Bot should abort run when floor complete but enemies are visible.
+        
+        When exploration is terminal-complete (all areas explored or unreachable),
+        the bot ends the run even if enemies are still visible. This prevents the
+        bot from getting stuck when it can't explore more but can't/won't engage
+        remaining enemies (e.g., due to persona settings or pathing issues).
+        
+        In soak mode, this produces a "floor_complete" outcome rather than hanging.
+        """
         brain = BotBrain()
         
         # Setup: Player on stairs, floor complete, but enemy visible
@@ -264,7 +272,7 @@ class TestBotStairsDescent:
         mock_fighter.hp = 100
         mock_fighter.max_hp = 100
         
-        # Mock AutoExplore - floor complete
+        # Mock AutoExplore - floor complete (terminal reason)
         mock_auto_explore = Mock()
         mock_auto_explore.is_active = Mock(return_value=False)
         mock_auto_explore.stop_reason = "All areas explored"
@@ -276,7 +284,7 @@ class TestBotStairsDescent:
         stairs.components = Mock()
         stairs.components.has = Mock(side_effect=lambda ct: ct == ComponentType.STAIRS)
         
-        # Mock enemy (visible)
+        # Mock enemy (visible but far - not adjacent)
         enemy = Mock()
         enemy.x = 15
         enemy.y = 10
@@ -312,10 +320,10 @@ class TestBotStairsDescent:
             # Act
             action = brain.decide_action(game_state)
         
-        # Assert: Should NOT descend (enemy visible), should enter COMBAT
-        assert action != {'take_stairs': True}, \
-            f"Bot should NOT descend when enemy visible, got {action}"
-        assert brain.state == BotState.COMBAT
+        # Assert: Should abort run (floor complete takes priority over enemy engagement)
+        # This prevents the bot from getting stuck when it can't explore more
+        assert action == {'bot_abort_run': True}, \
+            f"Expected bot to abort run when floor complete (even with enemy visible), got {action}"
     
     def test_bot_aborts_run_when_floor_complete_but_not_on_stairs(self):
         """Bot should abort run when floor is complete but not standing on stairs."""
@@ -370,5 +378,66 @@ class TestBotStairsDescent:
         # Assert: Should abort run (floor complete but not on stairs, no movement)
         assert action == {'bot_abort_run': True}, \
             f"Expected bot to abort run when not on stairs, got {action}"
+
+
+class TestTerminalExploreReasons:
+    """Tests for TERMINAL_EXPLORE_REASONS constant and floor completion logic."""
+    
+    def test_terminal_explore_reasons_contains_expected_strings(self):
+        """TERMINAL_EXPLORE_REASONS should contain the expected floor completion reasons."""
+        assert "All areas explored" in TERMINAL_EXPLORE_REASONS
+        assert "Cannot reach unexplored areas" in TERMINAL_EXPLORE_REASONS
+        # Verify it's a frozenset (immutable)
+        assert isinstance(TERMINAL_EXPLORE_REASONS, frozenset)
+    
+    def test_movement_blocked_is_not_terminal(self):
+        """'Movement blocked' should NOT be a terminal exploration reason."""
+        # Movement blocked is a temporary failure, not floor completion
+        assert "Movement blocked" not in TERMINAL_EXPLORE_REASONS
+    
+    def test_floor_complete_with_cannot_reach_unexplored(self):
+        """Bot should abort run when stop_reason is 'Cannot reach unexplored areas'."""
+        brain = BotBrain()
+        
+        # Setup minimal game state
+        game_state = Mock()
+        game_state.current_state = GameStates.PLAYERS_TURN
+        game_state.fov_map = Mock()
+        
+        player = Mock()
+        player.x = 25
+        player.y = 66
+        player.faction = Mock()
+        player.components = Mock()
+        player.components.has = Mock(return_value=False)
+        
+        # Mock healthy fighter
+        mock_fighter = Mock()
+        mock_fighter.hp = 100
+        mock_fighter.max_hp = 100
+        
+        # Mock AutoExplore stopped with terminal reason
+        mock_auto_explore = Mock()
+        mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "Cannot reach unexplored areas"
+        
+        game_state.entities = [player]
+        
+        def get_component(comp_type):
+            if comp_type == ComponentType.FIGHTER:
+                return mock_fighter
+            elif comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
+        game_state.player = player
+        
+        # Act
+        action = brain.decide_action(game_state)
+        
+        # Assert: Should abort run (terminal exploration state)
+        assert action == {'bot_abort_run': True}, \
+            f"Expected bot_abort_run for 'Cannot reach unexplored areas', got {action}"
 
 
