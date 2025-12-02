@@ -297,12 +297,26 @@ class BotBrain:
                 # Floor is terminal-complete OR we're already walking to stairs
                 game_map = getattr(game_state, 'game_map', None)
                 
-                floor_action = self._handle_floor_complete(player, entities, game_map, visible_enemies)
+                try:
+                    floor_action = self._handle_floor_complete(player, entities, game_map, visible_enemies)
+                except Exception as e:
+                    # Catch any unexpected errors in floor complete handling
+                    self._log_error(f"Exception in _handle_floor_complete: {e}")
+                    floor_action = {"bot_abort_run": True}
                 
                 # If _handle_floor_complete returned an action, use it
-                # If it returned empty dict, enemies appeared - fall through to combat handling
                 if floor_action:
                     return floor_action
+                
+                # If returned empty dict, it means enemies appeared during stair walking
+                # Fall through to combat handling ONLY if there are visible enemies
+                # Otherwise, something went wrong - abort to avoid infinite loop
+                if not visible_enemies:
+                    self._log_error(
+                        f"Floor complete but _handle_floor_complete returned empty with no enemies! "
+                        f"Aborting to prevent loop. stairs_path={self._stairs_path}"
+                    )
+                    return {"bot_abort_run": True}
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
@@ -850,7 +864,9 @@ class BotBrain:
         
         # Terminal floor completion reasons - floor is as explored as it's going to get
         # Don't restart autoexplore; let the bot wait, descend stairs, or abort
-        if stop_reason in TERMINAL_EXPLORE_REASONS:
+        # Use str() to handle any numpy string types
+        stop_reason_str = str(stop_reason) if stop_reason else None
+        if stop_reason_str in TERMINAL_EXPLORE_REASONS:
             self._debug(f"BotBrain: Floor exploration complete ('{stop_reason}'), not restarting AutoExplore")
             return {}
         
@@ -858,6 +874,15 @@ class BotBrain:
         if self._stairs_path:
             self._debug(f"BotBrain: Walking to stairs, not restarting AutoExplore")
             return {}
+        
+        # SAFETY: Double-check floor complete status before restarting
+        # This catches cases where the earlier floor complete check was bypassed
+        if self._is_floor_complete(player):
+            self._log_error(
+                f"BotBrain: Floor complete but reached start_auto_explore code! "
+                f"stop_reason='{stop_reason}', type={type(stop_reason)}. Aborting instead."
+            )
+            return {"bot_abort_run": True}
         
         # For other stop reasons (or first time), start autoexplore
         player_pos = (player.x, player.y)
