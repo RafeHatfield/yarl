@@ -10,7 +10,7 @@ import logging
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from game_states import GameStates
 from components.component_registry import ComponentType
@@ -225,6 +225,8 @@ class BotBrain:
         self._disable_opportunistic_loot = False
         # Movement blocked failure counter: abort run if AutoExplore repeatedly fails with "Movement blocked"
         self._movement_blocked_count = 0
+        # Stairs descent state: tracks path to stairs when floor is complete
+        self._stairs_path: Optional[List[Tuple[int, int]]] = None
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -285,31 +287,22 @@ class BotBrain:
             # FLOOR COMPLETION / STAIRS DESCENT: Check for terminal exploration states
             # 
             # When exploration is terminal-complete (floor fully explored or unreachable areas):
-            # - If safe (no enemies) and on stairs → descend
-            # - Otherwise → end the run (bot_abort_run)
+            # - If safe (no enemies): walk to stairs and descend
+            # - If enemies visible: clear stairs path, fall back to combat handling
             #
-            # NOTE: We end the run even if enemies are visible when exploration is terminal.
-            # This prevents the bot from getting stuck when it can't explore more and can't/won't
-            # engage remaining enemies (e.g., due to persona settings or pathing issues).
-            # In soak mode, this produces a "floor_complete" outcome rather than hanging forever.
-            #
-            # TODO (future):
-            # Multi-floor bot support should use a dedicated DESCEND state where BotBrain
-            # temporarily owns movement and AutoExplore is disabled.
-            # Current version intentionally avoids walking to stairs to preserve stability.
-            # We only descend if bot naturally ends up on stairs during exploration.
-            if self._is_floor_complete(player):
-                # Floor is terminal-complete - decide how to end
-                if not visible_enemies and self._is_standing_on_stairs(player, entities):
-                    # Safe and on stairs - descend to next floor
-                    self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
-                    return {"take_stairs": True}
-                else:
-                    # Not on stairs or enemies present - end run
-                    # Bot does not walk to stairs to avoid movement conflicts with AutoExplore
-                    reason = "with enemies still visible" if visible_enemies else "not on stairs"
-                    self._debug(f"FLOOR COMPLETE: Ending run ({reason})")
-                    return {"bot_abort_run": True}
+            # This implements safe stair descent behavior where BotBrain temporarily
+            # owns movement (like a mini-state) while walking to stairs. AutoExplore
+            # is NOT restarted during this phase.
+            if self._is_floor_complete(player) or self._stairs_path:
+                # Floor is terminal-complete OR we're already walking to stairs
+                game_map = getattr(game_state, 'game_map', None)
+                
+                floor_action = self._handle_floor_complete(player, entities, game_map, visible_enemies)
+                
+                # If _handle_floor_complete returned an action, use it
+                # If it returned empty dict, enemies appeared - fall through to combat handling
+                if floor_action:
+                    return floor_action
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
@@ -861,6 +854,11 @@ class BotBrain:
             self._debug(f"BotBrain: Floor exploration complete ('{stop_reason}'), not restarting AutoExplore")
             return {}
         
+        # Don't restart AutoExplore if we're walking to stairs
+        if self._stairs_path:
+            self._debug(f"BotBrain: Walking to stairs, not restarting AutoExplore")
+            return {}
+        
         # For other stop reasons (or first time), start autoexplore
         player_pos = (player.x, player.y)
         self._debug(f"BotBrain: Starting AutoExplore at {player_pos}, stop_reason='{stop_reason}'")
@@ -1269,6 +1267,189 @@ class BotBrain:
                 if entity.x == player.x and entity.y == player.y:
                     return True
         return False
+    
+    def _find_nearest_stairs(self, player: Any, entities: List[Any]) -> Optional[Tuple[int, int]]:
+        """Find the nearest stairs entity position.
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            
+        Returns:
+            (x, y) position of nearest stairs, or None if no stairs found
+        """
+        nearest_pos = None
+        min_distance = float('inf')
+        
+        for entity in entities:
+            if hasattr(entity, 'components') and entity.components.has(ComponentType.STAIRS):
+                # Manhattan distance
+                distance = abs(player.x - entity.x) + abs(player.y - entity.y)
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest_pos = (entity.x, entity.y)
+        
+        return nearest_pos
+    
+    def _calculate_path_to_stairs(
+        self, 
+        player: Any, 
+        target: Tuple[int, int], 
+        game_map: Any,
+        entities: List[Any]
+    ) -> List[Tuple[int, int]]:
+        """Calculate A* path to target stairs position.
+        
+        Uses tcod pathfinding like AutoExplore does.
+        
+        Args:
+            player: Player entity
+            target: (x, y) destination
+            game_map: Game map for pathfinding
+            entities: All entities (for collision detection)
+            
+        Returns:
+            List of (x, y) positions to visit (excluding start position),
+            or empty list if no path found
+        """
+        import tcod
+        import numpy as np
+        
+        try:
+            # Create cost map using numpy (indexed as [y, x])
+            cost = np.zeros((game_map.height, game_map.width), dtype=np.int8)
+            
+            for y in range(game_map.height):
+                for x in range(game_map.width):
+                    # Blocked tiles are impassable
+                    if game_map.tiles[x][y].blocked:
+                        cost[y, x] = 0
+                    # Hazards are treated as impassable (if hazard_manager exists)
+                    elif hasattr(game_map, 'hazard_manager') and game_map.hazard_manager.has_hazard_at(x, y):
+                        cost[y, x] = 0
+                    else:
+                        cost[y, x] = 1
+            
+            # Entities block movement (except target tile)
+            for entity in entities:
+                if hasattr(entity, 'blocks') and entity.blocks and entity != player:
+                    ex, ey = entity.x, entity.y
+                    if 0 <= ex < game_map.width and 0 <= ey < game_map.height:
+                        if (ex, ey) != target:  # Allow moving to target even if entity there
+                            cost[ey, ex] = 0
+            
+            # Transpose cost array from [y, x] to [x, y] for tcod
+            cost_array = cost.T
+            
+            # Validate player position is within map bounds
+            start_x, start_y = player.x, player.y
+            if start_x < 0 or start_x >= game_map.width or start_y < 0 or start_y >= game_map.height:
+                self._debug(f"Player position ({start_x}, {start_y}) out of map bounds")
+                return []
+            
+            # Create graph and pathfinder (modern tcod API)
+            graph = tcod.path.SimpleGraph(cost=cost_array, cardinal=2, diagonal=3)
+            pathfinder = tcod.path.Pathfinder(graph)
+            pathfinder.add_root((start_x, start_y))
+            
+            # Find path
+            path = pathfinder.path_to((target[0], target[1]))
+            
+            # Convert to list of tuples (excluding start position)
+            return [(x, y) for x, y in path[1:]]
+            
+        except (AttributeError, TypeError, IndexError) as e:
+            # Handle mock objects or missing attributes gracefully
+            self._debug(f"Pathfinding error: {e}")
+            return []
+    
+    def _handle_floor_complete(
+        self, 
+        player: Any, 
+        entities: List[Any], 
+        game_map: Any,
+        visible_enemies: List[Any]
+    ) -> Dict[str, Any]:
+        """Handle floor complete state - walk to stairs and descend.
+        
+        This is called when AutoExplore has finished with a terminal reason.
+        BotBrain takes over movement to walk to stairs.
+        
+        Behavior:
+        - If enemies visible: clear stairs path, return empty (fall back to COMBAT)
+        - If on stairs: descend
+        - If stairs path exists: follow it
+        - If no stairs path: find stairs and compute path
+        - If no reachable stairs: abort run
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            game_map: Game map for pathfinding
+            visible_enemies: List of visible hostile enemies
+            
+        Returns:
+            ActionDict with take_stairs, move, or bot_abort_run
+        """
+        # Safety: If enemies appear while walking to stairs, abort stair descent
+        # and fall back to normal combat handling
+        if visible_enemies:
+            if self._stairs_path:
+                self._debug("Enemies visible while walking to stairs, clearing path")
+                self._stairs_path = None
+            # Return empty to let combat handling take over
+            return {}
+        
+        # If standing on stairs, descend
+        if self._is_standing_on_stairs(player, entities):
+            self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
+            self._stairs_path = None  # Clear path
+            return {"take_stairs": True}
+        
+        # If we have a stairs path, follow it
+        if self._stairs_path:
+            # Get next step
+            next_pos = self._stairs_path.pop(0)
+            dx = next_pos[0] - player.x
+            dy = next_pos[1] - player.y
+            
+            self._debug(f"Walking to stairs: moving from ({player.x}, {player.y}) to {next_pos}, "
+                       f"{len(self._stairs_path)} steps remaining")
+            
+            return self._build_move_action(dx, dy)
+        
+        # No path yet - find stairs and compute path
+        stairs_pos = self._find_nearest_stairs(player, entities)
+        
+        if stairs_pos is None:
+            # No stairs found
+            # TODO: Mark as "no_stairs" in failure_type for soak harness integration
+            self._debug("FLOOR COMPLETE: No stairs found, aborting run")
+            return {"bot_abort_run": True}
+        
+        # Already on stairs? (shouldn't happen due to check above, but safety)
+        if stairs_pos == (player.x, player.y):
+            self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
+            return {"take_stairs": True}
+        
+        # Compute path to stairs
+        self._stairs_path = self._calculate_path_to_stairs(player, stairs_pos, game_map, entities)
+        
+        if not self._stairs_path:
+            # No path to stairs
+            # TODO: Mark as "no_stairs" in failure_type for soak harness integration
+            self._debug(f"FLOOR COMPLETE: No path to stairs at {stairs_pos}, aborting run")
+            return {"bot_abort_run": True}
+        
+        self._log_summary(f"STAIRS: Floor complete, walking to stairs at {stairs_pos} "
+                         f"({len(self._stairs_path)} steps)")
+        
+        # Take first step
+        next_pos = self._stairs_path.pop(0)
+        dx = next_pos[0] - player.x
+        dy = next_pos[1] - player.y
+        
+        return self._build_move_action(dx, dy)
     
     # ========================================================================
     # POTION-DRINKING LOGIC (for soak testing survivability)
