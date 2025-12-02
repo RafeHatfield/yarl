@@ -82,6 +82,7 @@ class SoakRunResult:
     outcome: str = "unknown"
     failure_type: str = "none"
     failure_detail: str = ""
+    auto_explore_terminal_reason: str = ""  # Final AutoExplore stop reason (normalized)
     duration_seconds: float = 0.0
     deepest_floor: int = 1
     floors_visited: int = 1
@@ -106,6 +107,7 @@ class SoakRunResult:
             'outcome': self.outcome,
             'failure_type': self.failure_type,
             'failure_detail': self.failure_detail,
+            'auto_explore_terminal_reason': self.auto_explore_terminal_reason,
             'duration_seconds': round(self.duration_seconds, 2),
             'deepest_floor': self.deepest_floor,
             'floors_visited': self.floors_visited,
@@ -120,6 +122,40 @@ class SoakRunResult:
             'exception': self.exception,
             'timestamp': self.timestamp,
         }
+    
+    @staticmethod
+    def normalize_auto_explore_reason(raw_reason: Optional[str]) -> str:
+        """Normalize AutoExplore stop_reason to a machine-friendly string.
+        
+        Args:
+            raw_reason: Raw stop_reason from AutoExplore component (e.g., "All areas explored")
+            
+        Returns:
+            Normalized string for CSV/analysis:
+            - "all_areas_explored" - Floor fully explored
+            - "cannot_reach_unexplored" - Unreachable unexplored areas
+            - "movement_blocked" - Movement repeatedly blocked
+            - "monster_spotted" - Stopped due to visible enemy
+            - "cancelled" - Manually cancelled
+            - "none" - No reason set or AutoExplore never ran
+            - "other" - Any other stop reason
+        """
+        if not raw_reason:
+            return "none"
+        
+        # Exact matches for known terminal reasons
+        if raw_reason == "All areas explored":
+            return "all_areas_explored"
+        elif raw_reason == "Cannot reach unexplored areas":
+            return "cannot_reach_unexplored"
+        elif raw_reason == "Movement blocked":
+            return "movement_blocked"
+        elif raw_reason == "Cancelled":
+            return "cancelled"
+        elif "Monster spotted" in raw_reason:
+            return "monster_spotted"
+        else:
+            return "other"
     
     @staticmethod
     def classify_failure(outcome: str, exception: Optional[str] = None, 
@@ -173,6 +209,7 @@ class SoakRunResult:
         exception: Optional[str] = None,
         persona: str = "balanced",
         bot_abort_reason: Optional[str] = None,
+        auto_explore_terminal_reason: str = "",
     ) -> "SoakRunResult":
         """Create from run metrics and telemetry.
         
@@ -183,6 +220,7 @@ class SoakRunResult:
             exception: Optional exception message
             persona: Bot persona name used for this run
             bot_abort_reason: Optional reason string for bot_abort outcomes
+            auto_explore_terminal_reason: Normalized AutoExplore stop reason at run end
             
         Returns:
             SoakRunResult instance
@@ -203,6 +241,7 @@ class SoakRunResult:
                 outcome=run_metrics.outcome,
                 failure_type=failure_type,
                 failure_detail=failure_detail,
+                auto_explore_terminal_reason=auto_explore_terminal_reason,
                 duration_seconds=run_metrics.duration_seconds or 0.0,
                 deepest_floor=run_metrics.deepest_floor,
                 floors_visited=run_metrics.floors_visited,
@@ -227,6 +266,7 @@ class SoakRunResult:
                 outcome="error",
                 failure_type=failure_type,
                 failure_detail=failure_detail,
+                auto_explore_terminal_reason=auto_explore_terminal_reason,
                 floor_count=telemetry_stats.get('floors', 0),
                 avg_etp_per_floor=telemetry_stats.get('avg_etp_per_floor', 0.0),
                 exception=exception,
@@ -328,7 +368,7 @@ class SoakSessionResult:
         # Define CSV columns (matches SoakRunResult.to_dict() keys)
         fieldnames = [
             'run_number', 'run_id', 'seed', 'persona', 'outcome',
-            'failure_type', 'failure_detail',
+            'failure_type', 'failure_detail', 'auto_explore_terminal_reason',
             'duration_seconds', 'deepest_floor', 'floors_visited',
             'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
             'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
@@ -606,6 +646,15 @@ def run_bot_soak(
             
             telemetry_stats = telemetry_service.get_stats() if telemetry_service else {}
             
+            # Capture final AutoExplore stop_reason for this run
+            from components.component_registry import ComponentType
+            auto_explore_reason = ""
+            if player and hasattr(player, 'get_component_optional'):
+                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
+                if auto_explore:
+                    raw_reason = getattr(auto_explore, 'stop_reason', None)
+                    auto_explore_reason = SoakRunResult.normalize_auto_explore_reason(raw_reason)
+            
             # Create run result
             run_result = SoakRunResult.from_run_metrics_and_telemetry(
                 run_number=run_num,
@@ -613,6 +662,7 @@ def run_bot_soak(
                 telemetry_stats=telemetry_stats,
                 exception=None,
                 persona=persona,
+                auto_explore_terminal_reason=auto_explore_reason,
             )
             
             session_result.completed_runs += 1
@@ -658,10 +708,8 @@ def run_bot_soak(
     
     # Write CSV output if metrics log path was provided
     if metrics_log_path:
-        # Create timestamped output directory
-        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_dir = Path(metrics_log_path).parent / f"soak_{timestamp_str}"
-        csv_path = csv_dir / "metrics.csv"
+        # Use the exact path provided by the user
+        csv_path = Path(metrics_log_path)
         session_result.write_csv(csv_path)
         print(f"📊 CSV metrics written to: {csv_path}")
     

@@ -30,6 +30,15 @@ class LogLevel(Enum):
 # Stuck detection threshold: number of consecutive combat decisions without progress
 STUCK_THRESHOLD = 8
 
+# Terminal exploration reasons - these stop reasons indicate the floor is as explored
+# as it's going to get. When AutoExplore stops with one of these, the bot should not
+# attempt to restart exploration. Used in _handle_explore(), _is_floor_complete(), 
+# and for soak run termination.
+TERMINAL_EXPLORE_REASONS = frozenset({
+    "All areas explored",
+    "Cannot reach unexplored areas",
+})
+
 
 # =============================================================================
 # BOT PERSONAS — Configurable behavior profiles
@@ -273,26 +282,33 @@ class BotBrain:
                     # AutoExplore stopped for different reason - reset counter
                     self._movement_blocked_count = 0
             
-            # STAIRS DESCENT: Simple rule for multi-floor bot support
-            # ONLY descend if:
-            # - Standing EXACTLY on stairs tile (no movement/seeking)
-            # - Floor is TRULY complete (not just movement-blocked)
-            # - Safe (no enemies)
+            # FLOOR COMPLETION / STAIRS DESCENT: Check for terminal exploration states
+            # 
+            # When exploration is terminal-complete (floor fully explored or unreachable areas):
+            # - If safe (no enemies) and on stairs → descend
+            # - Otherwise → end the run (bot_abort_run)
+            #
+            # NOTE: We end the run even if enemies are visible when exploration is terminal.
+            # This prevents the bot from getting stuck when it can't explore more and can't/won't
+            # engage remaining enemies (e.g., due to persona settings or pathing issues).
+            # In soak mode, this produces a "floor_complete" outcome rather than hanging forever.
             #
             # TODO (future):
             # Multi-floor bot support should use a dedicated DESCEND state where BotBrain
             # temporarily owns movement and AutoExplore is disabled.
             # Current version intentionally avoids walking to stairs to preserve stability.
             # We only descend if bot naturally ends up on stairs during exploration.
-            if not visible_enemies and self._is_floor_complete(player):
-                # Only descend if already standing on stairs (no movement commands!)
-                if self._is_standing_on_stairs(player, entities):
+            if self._is_floor_complete(player):
+                # Floor is terminal-complete - decide how to end
+                if not visible_enemies and self._is_standing_on_stairs(player, entities):
+                    # Safe and on stairs - descend to next floor
                     self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
                     return {"take_stairs": True}
                 else:
-                    # Floor complete but not on stairs - end run
+                    # Not on stairs or enemies present - end run
                     # Bot does not walk to stairs to avoid movement conflicts with AutoExplore
-                    self._debug(f"STAIRS: Floor complete, not on stairs - ending run")
+                    reason = "with enemies still visible" if visible_enemies else "not on stairs"
+                    self._debug(f"FLOOR COMPLETE: Ending run ({reason})")
                     return {"bot_abort_run": True}
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
@@ -827,6 +843,7 @@ class BotBrain:
         # Do NOT restart if:
         # 1. "Cancelled" - someone explicitly stopped it, respect that
         # 2. "Monster spotted" - should have transitioned to COMBAT, not here
+        # 3. Terminal floor completion reasons - floor is done, don't loop forever
         if stop_reason == "Cancelled":
             self._debug(f"BotBrain: AutoExplore cancelled, not restarting")
             return {}
@@ -836,6 +853,12 @@ class BotBrain:
                 f"⚠️ BotBrain: AutoExplore stopped with 'Monster spotted' but still in EXPLORE state! "
                 f"This suggests state transition to COMBAT didn't happen. Returning empty."
             )
+            return {}
+        
+        # Terminal floor completion reasons - floor is as explored as it's going to get
+        # Don't restart autoexplore; let the bot wait, descend stairs, or abort
+        if stop_reason in TERMINAL_EXPLORE_REASONS:
+            self._debug(f"BotBrain: Floor exploration complete ('{stop_reason}'), not restarting AutoExplore")
             return {}
         
         # For other stop reasons (or first time), start autoexplore
@@ -1227,7 +1250,7 @@ class BotBrain:
         # Floor is complete ONLY if AutoExplore stopped with exact completion reasons
         # Use exact match, not substring match, to avoid false positives
         if not auto_explore.is_active() and auto_explore.stop_reason:
-            return auto_explore.stop_reason in ["All areas explored", "Cannot reach unexplored areas"]
+            return auto_explore.stop_reason in TERMINAL_EXPLORE_REASONS
         
         return False
     

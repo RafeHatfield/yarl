@@ -228,7 +228,7 @@ class TestCSVOutput:
             
             expected_headers = [
                 'run_number', 'run_id', 'seed', 'persona', 'outcome',
-                'failure_type', 'failure_detail',
+                'failure_type', 'failure_detail', 'auto_explore_terminal_reason',
                 'duration_seconds', 'deepest_floor', 'floors_visited',
                 'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
                 'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
@@ -250,6 +250,154 @@ class TestPersonaIntegration:
         """SoakSessionResult should track the session persona."""
         session = SoakSessionResult(total_runs=10, persona="aggressive")
         assert session.persona == "aggressive"
+
+
+class TestAutoExploreTerminalReason:
+    """Tests for auto_explore_terminal_reason metric field."""
+    
+    def test_normalize_all_areas_explored(self):
+        """'All areas explored' should normalize to 'all_areas_explored'."""
+        result = SoakRunResult.normalize_auto_explore_reason("All areas explored")
+        assert result == "all_areas_explored"
+    
+    def test_normalize_cannot_reach_unexplored(self):
+        """'Cannot reach unexplored areas' should normalize to 'cannot_reach_unexplored'."""
+        result = SoakRunResult.normalize_auto_explore_reason("Cannot reach unexplored areas")
+        assert result == "cannot_reach_unexplored"
+    
+    def test_normalize_movement_blocked(self):
+        """'Movement blocked' should normalize to 'movement_blocked'."""
+        result = SoakRunResult.normalize_auto_explore_reason("Movement blocked")
+        assert result == "movement_blocked"
+    
+    def test_normalize_monster_spotted(self):
+        """'Monster spotted: X' should normalize to 'monster_spotted'."""
+        result = SoakRunResult.normalize_auto_explore_reason("Monster spotted: Orc")
+        assert result == "monster_spotted"
+        result = SoakRunResult.normalize_auto_explore_reason("Monster spotted: Goblin")
+        assert result == "monster_spotted"
+    
+    def test_normalize_cancelled(self):
+        """'Cancelled' should normalize to 'cancelled'."""
+        result = SoakRunResult.normalize_auto_explore_reason("Cancelled")
+        assert result == "cancelled"
+    
+    def test_normalize_none(self):
+        """None should normalize to 'none'."""
+        result = SoakRunResult.normalize_auto_explore_reason(None)
+        assert result == "none"
+    
+    def test_normalize_unknown_reason(self):
+        """Unknown reasons should normalize to 'other'."""
+        result = SoakRunResult.normalize_auto_explore_reason("Some unknown reason")
+        assert result == "other"
+    
+    def test_field_in_to_dict(self):
+        """auto_explore_terminal_reason should appear in to_dict()."""
+        run = SoakRunResult(
+            run_number=1,
+            auto_explore_terminal_reason="all_areas_explored"
+        )
+        d = run.to_dict()
+        assert 'auto_explore_terminal_reason' in d
+        assert d['auto_explore_terminal_reason'] == "all_areas_explored"
+    
+    def test_field_in_csv_output(self):
+        """auto_explore_terminal_reason should appear in CSV output."""
+        runs = [
+            SoakRunResult(run_number=1, auto_explore_terminal_reason="all_areas_explored"),
+            SoakRunResult(run_number=2, auto_explore_terminal_reason="cannot_reach_unexplored"),
+        ]
+        session = SoakSessionResult(total_runs=2, runs=runs)
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "metrics.csv"
+            session.write_csv(csv_path)
+            
+            with open(csv_path, 'r') as f:
+                reader = csv.DictReader(f)
+                rows = list(reader)
+            
+            assert len(rows) == 2
+            assert rows[0]['auto_explore_terminal_reason'] == 'all_areas_explored'
+            assert rows[1]['auto_explore_terminal_reason'] == 'cannot_reach_unexplored'
+    
+    def test_from_run_metrics_preserves_reason(self):
+        """from_run_metrics_and_telemetry should preserve auto_explore_terminal_reason."""
+        # Create mock run metrics
+        class MockRunMetrics:
+            run_id = "test-run-123"
+            seed = 42
+            outcome = "death"
+            duration_seconds = 45.0
+            deepest_floor = 2
+            floors_visited = 2
+            monsters_killed = 10
+            items_picked_up = 5
+            portals_used = 0
+            tiles_explored = 300
+            steps_taken = 200
+        
+        result = SoakRunResult.from_run_metrics_and_telemetry(
+            run_number=1,
+            run_metrics=MockRunMetrics(),
+            telemetry_stats={},
+            auto_explore_terminal_reason="cannot_reach_unexplored",
+        )
+        
+        assert result.auto_explore_terminal_reason == "cannot_reach_unexplored"
+
+
+class TestMetricsLogPathHonored:
+    """Tests that --metrics-log path is honored exactly.
+    
+    Regression test for bug where --metrics-log logs/balanced.csv was being
+    transformed to logs/soak_<timestamp>/metrics.csv instead of being used directly.
+    """
+    
+    def test_exact_path_is_honored(self):
+        """When metrics_log_path is provided, write_csv uses that exact path."""
+        runs = [
+            SoakRunResult(run_number=1, run_id="test-run", persona="balanced",
+                         outcome="death", duration_seconds=10.0, monsters_killed=3),
+        ]
+        session = SoakSessionResult(total_runs=1, runs=runs, persona="balanced")
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate the exact path user would pass via --metrics-log
+            exact_path = Path(tmpdir) / "my_custom_name.csv"
+            
+            # The fix ensures we use the exact path, not a transformed one
+            session.write_csv(exact_path)
+            
+            # Verify the file exists at EXACTLY the specified path
+            assert exact_path.exists(), f"Expected file at {exact_path}"
+            
+            # Verify no timestamped subdirectory was created (the old bug behavior)
+            subdirs = [d for d in Path(tmpdir).iterdir() if d.is_dir()]
+            assert len(subdirs) == 0, f"Unexpected subdirectories created: {subdirs}"
+            
+            # Verify the CSV has content
+            with open(exact_path, 'r') as f:
+                content = f.read()
+            assert 'run_number' in content  # Header present
+            assert 'test-run' in content  # Run data present
+    
+    def test_path_with_subdirectory_is_honored(self):
+        """Path like logs/subdir/metrics.csv should create subdir and write there."""
+        runs = [SoakRunResult(run_number=1)]
+        session = SoakSessionResult(total_runs=1, runs=runs)
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Path with subdirectory that doesn't exist yet
+            exact_path = Path(tmpdir) / "custom_subdir" / "my_metrics.csv"
+            
+            session.write_csv(exact_path)
+            
+            # File should exist at exact path
+            assert exact_path.exists()
+            # Parent should be the custom_subdir we specified
+            assert exact_path.parent.name == "custom_subdir"
 
 
 class TestFailureClassification:

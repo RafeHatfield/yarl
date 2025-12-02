@@ -125,3 +125,53 @@ soak-headless: clean
 
 .DEFAULT_GOAL := help
 
+# Default knobs (override on the command line if you like)
+RUNS       ?= 50
+MAX_TURNS  ?= 2000
+MAX_FLOORS ?= 3
+
+LOG_DIR    ?= logs
+PYTHON     ?= python3
+
+# Generic persona soak:
+# Usage:
+#   make bot-soak PERSONA=balanced
+#   make bot-soak PERSONA=cautious RUNS=100 MAX_TURNS=5000
+PERSONA ?= balanced
+
+bot-soak:
+	mkdir -p $(LOG_DIR)
+	$(PYTHON) engine.py \
+	  --bot-soak \
+	  --bot-persona $(PERSONA) \
+	  --runs $(RUNS) \
+	  --max-turns $(MAX_TURNS) \
+	  --max-floors $(MAX_FLOORS) \
+	  --metrics-log $(LOG_DIR)/soak_$(PERSONA).csv
+
+# Convenience shortcuts for common personas
+bot-soak-balanced:
+	$(MAKE) bot-soak PERSONA=balanced
+
+bot-soak-cautious:
+	$(MAKE) bot-soak PERSONA=cautious
+
+bot-soak-aggressive:
+	$(MAKE) bot-soak PERSONA=aggressive
+
+bot-soak-greedy:
+	$(MAKE) bot-soak PERSONA=greedy
+
+bot-soak-speedrunner:
+	$(MAKE) bot-soak PERSONA=speedrunner
+
+# A tiny "smoke" run for quick sanity checks
+bot-smoke:
+	mkdir -p $(LOG_DIR)
+	$(PYTHON) engine.py \
+	  --bot-soak \
+	  --bot-persona balanced \
+	  --runs 10 \
+	  --max-turns 500 \
+	  --max-floors 2 \
+	  --metrics-log $(LOG_DIR)/bot_smoke.csv

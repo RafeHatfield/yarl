@@ -196,6 +196,75 @@ class TestBotBrainExplore:
         # Assert: Should return empty dict, NOT restart autoexplore
         assert action == {}, f"Expected empty dict, got: {action}"
     
+    def test_bot_brain_respects_cannot_reach_unexplored_stop(self):
+        """BotBrain._handle_explore should NOT restart when stop_reason is 'Cannot reach unexplored areas'.
+        
+        This is a terminal floor completion state - restarting would cause infinite loop.
+        Regression test for autoexplore restart loop bug.
+        """
+        brain = BotBrain()
+        
+        # Setup: Mock player with autoexplore that stopped with unreachable areas
+        player = Mock()
+        player.x = 25
+        player.y = 66
+        
+        # Mock auto-explore that stopped due to unreachable unexplored areas
+        mock_auto_explore = Mock()
+        mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "Cannot reach unexplored areas"
+        
+        def get_component(comp_type):
+            if comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
+        
+        # Mock game_state
+        game_state = Mock()
+        game_state.player = player
+        
+        # Act: Call _handle_explore directly
+        action = brain._handle_explore(player, game_state)
+        
+        # Assert: Should return empty dict, NOT restart autoexplore
+        assert action == {}, f"Expected empty dict for terminal stop reason, got: {action}"
+    
+    def test_bot_brain_respects_all_areas_explored_stop(self):
+        """BotBrain._handle_explore should NOT restart when stop_reason is 'All areas explored'.
+        
+        This is a terminal floor completion state - restarting would cause infinite loop.
+        """
+        brain = BotBrain()
+        
+        # Setup: Mock player with autoexplore that stopped because floor is fully explored
+        player = Mock()
+        player.x = 30
+        player.y = 40
+        
+        # Mock auto-explore that stopped due to floor fully explored
+        mock_auto_explore = Mock()
+        mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "All areas explored"
+        
+        def get_component(comp_type):
+            if comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
+        
+        # Mock game_state
+        game_state = Mock()
+        game_state.player = player
+        
+        # Act: Call _handle_explore directly
+        action = brain._handle_explore(player, game_state)
+        
+        # Assert: Should return empty dict, NOT restart autoexplore
+        assert action == {}, f"Expected empty dict for terminal stop reason, got: {action}"
+    
     def test_bot_brain_never_returns_conflicting_actions(self):
         """BotBrain should never return both start_auto_explore and move in same dict."""
         brain = BotBrain()
