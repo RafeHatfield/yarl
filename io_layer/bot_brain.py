@@ -374,13 +374,14 @@ class BotBrain:
                             # Mark enemy as dropped to prevent immediate re-engagement
                             self._just_dropped_due_to_stuck = True
                             self._stuck_dropped_target = nearest_enemy
-                            # Clear stairs path to force recalculation next tick
+                            # Clear stairs path to force recalculation
                             self._stairs_path = None
-                            # Resume exploration (will trigger stair descent since floor is complete)
-                            self._debug(f"BotBrain: Combat chase stuck, giving up and resuming exploration")
+                            # Proceed directly to stair descent (skip enemy handling)
+                            self._debug(f"BotBrain: Combat chase stuck, proceeding to stairs")
                             self.state = BotState.EXPLORE
                             self.current_target = None
-                            return self._handle_explore(player, game_state)
+                            # Call floor complete with empty enemy list to force stair descent
+                            return self._handle_floor_complete(player, entities, game_map, [])
                     else:
                         # Position changed - reset counter
                         self._floor_complete_engage_attempts = 1
@@ -422,19 +423,20 @@ class BotBrain:
                         self._stuck_dropped_target = nearest_enemy
                         # Clear stairs path to recalculate without trying to fight this enemy
                         self._stairs_path = None
-                        # Resume exploration which will trigger stair descent
-                        self._debug(f"BotBrain: Enemy too far, skipping and resuming exploration")
+                        # Proceed directly to stair descent (skip this enemy)
+                        self._debug(f"BotBrain: Enemy too far, proceeding to stairs")
                         self.state = BotState.EXPLORE
                         self.current_target = None
-                        return self._handle_explore(player, game_state)
+                        # Call floor complete with empty enemy list to force stair descent
+                        return self._handle_floor_complete(player, entities, game_map, [])
                 
                 # FALLBACK: No nearest enemy found despite visible_enemies > 0
                 # This can happen legitimately if all visible enemies were dropped due to being stuck
                 if len(engageable_enemies) == 0 and len(visible_enemies) > 0:
-                    # All enemies were filtered out - continue with stair descent
-                    self._debug(f"All {len(visible_enemies)} visible enemies were dropped, continuing to stairs")
-                    # Let floor complete handling continue on next tick
-                    return self._handle_explore(player, game_state)
+                    # All enemies were filtered out - proceed directly to stair descent
+                    self._debug(f"All {len(visible_enemies)} visible enemies were dropped, proceeding to stairs")
+                    # Call floor complete with empty enemy list to force stair descent
+                    return self._handle_floor_complete(player, entities, game_map, [])
                 else:
                     # True error: enemies visible but can't find nearest (shouldn't happen)
                     logger.warning(
