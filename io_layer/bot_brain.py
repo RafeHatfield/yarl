@@ -298,7 +298,7 @@ class BotBrain:
                 # Floor is terminal-complete OR we're already walking to stairs
                 game_map = getattr(game_state, 'game_map', None)
                 
-                logger.info(
+                logger.warning(
                     f"BotBrain: Entering floor complete handling - "
                     f"is_floor_complete={is_floor_complete}, "
                     f"stairs_path={'exists' if self._stairs_path else 'None'}, "
@@ -308,7 +308,7 @@ class BotBrain:
                 
                 try:
                     floor_action = self._handle_floor_complete(player, entities, game_map, visible_enemies)
-                    logger.info(f"BotBrain: floor_action result = {floor_action}")
+                    logger.warning(f"BotBrain: floor_action result = {floor_action}")
                 except Exception as e:
                     # Catch any unexpected errors in floor complete handling
                     self._log_error(f"Exception in _handle_floor_complete: {e}")
@@ -619,11 +619,26 @@ class BotBrain:
             
             return action
         except (AttributeError, TypeError) as e:
-            # Gracefully handle missing or mock attributes
-            logger.debug(f"BotBrain decide_action caught exception: {e}")
+            # Log at WARNING level so we can see what's happening
+            import traceback
+            logger.warning(
+                f"⚠️ BotBrain decide_action caught exception: {e}\n"
+                f"Traceback: {traceback.format_exc()}"
+            )
             
-            # If game state is in PLAYERS_TURN, return safe fallback to explore
+            # If game state is in PLAYERS_TURN, check if floor is complete
+            # If floor is complete, abort instead of restarting explore (prevents infinite loop)
             if game_state.current_state == GameStates.PLAYERS_TURN:
+                # Try to check floor complete status
+                try:
+                    player = getattr(game_state, 'player', None)
+                    if player and self._is_floor_complete(player):
+                        logger.warning("BotBrain: Exception during floor complete - aborting run")
+                        return {"bot_abort_run": True}
+                except Exception:
+                    pass  # If we can't check, fall through to default
+                
+                # Default: restart explore (but this should rarely happen now)
                 self.state = BotState.EXPLORE
                 return {"start_auto_explore": True}
             
@@ -1286,7 +1301,7 @@ class BotBrain:
             stop_reason_str = str(auto_explore.stop_reason)
             is_terminal = stop_reason_str in TERMINAL_EXPLORE_REASONS
             if is_terminal:
-                logger.info(f"BotBrain: Floor IS complete (stop_reason='{stop_reason_str}')")
+                logger.warning(f"BotBrain: Floor IS complete (stop_reason='{stop_reason_str}')")
             return is_terminal
         
         return False
@@ -1460,8 +1475,8 @@ class BotBrain:
         # No path yet - find stairs and compute path
         stairs_pos = self._find_nearest_stairs(player, entities)
         
-        # Log at INFO level (always visible) for floor complete diagnostics
-        logger.info(
+        # Log at WARNING level for floor complete diagnostics
+        logger.warning(
             f"BotBrain FLOOR_COMPLETE: player=({player.x}, {player.y}), "
             f"stairs_pos={stairs_pos}, game_map={'exists' if game_map else 'None'}, "
             f"entities_count={len(entities) if entities else 0}"
@@ -1484,7 +1499,7 @@ class BotBrain:
         # Compute path to stairs
         self._stairs_path = self._calculate_path_to_stairs(player, stairs_pos, game_map, entities)
         
-        logger.info(
+        logger.warning(
             f"BotBrain FLOOR_COMPLETE: Pathfinding result - path_len={len(self._stairs_path) if self._stairs_path else 0}"
         )
         
