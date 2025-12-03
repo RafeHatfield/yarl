@@ -231,6 +231,10 @@ class BotBrain:
         self._floor_complete_engage_attempts = 0
         self._floor_complete_last_pos = None
         self._floor_complete_stuck_threshold = 5  # Abort after 5 failed attempts to engage
+        # Stair walking stuck detection
+        self._stair_walk_attempts = 0
+        self._stair_walk_last_pos = None
+        self._stair_walk_stuck_threshold = 5  # Abort after 5 failed attempts to walk to stairs
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -1566,13 +1570,33 @@ class BotBrain:
         stairs_pos_int = (int(stairs_pos[0]), int(stairs_pos[1]))
         if player_pos == stairs_pos_int:
             self._log_summary(f"STAIRS: Floor complete, descending from {player_pos}")
+            # Reset stuck tracking
+            self._stair_walk_attempts = 0
+            self._stair_walk_last_pos = None
             return {"take_stairs": True}
+        
+        # Stuck detection for stair walking - if we keep trying from the same position, abort
+        if self._stair_walk_last_pos == player_pos:
+            self._stair_walk_attempts += 1
+            if self._stair_walk_attempts >= self._stair_walk_stuck_threshold:
+                logger.warning(
+                    f"BotBrain FLOOR_COMPLETE: Stuck trying to reach stairs at {stairs_pos_int} from {player_pos} "
+                    f"({self._stair_walk_attempts} attempts). Path likely blocked by entity. Aborting."
+                )
+                self._stair_walk_attempts = 0
+                self._stair_walk_last_pos = None
+                return {"bot_abort_run": True}
+        else:
+            # Position changed - reset counter
+            self._stair_walk_attempts = 1
+            self._stair_walk_last_pos = player_pos
         
         # Compute path to stairs
         self._stairs_path = self._calculate_path_to_stairs(player, stairs_pos, game_map, entities)
         
         logger.warning(
-            f"BotBrain FLOOR_COMPLETE: Pathfinding result - path_len={len(self._stairs_path) if self._stairs_path else 0}"
+            f"BotBrain FLOOR_COMPLETE: Pathfinding result - path_len={len(self._stairs_path) if self._stairs_path else 0}, "
+            f"stair_walk_attempts={self._stair_walk_attempts}"
         )
         
         if not self._stairs_path:
