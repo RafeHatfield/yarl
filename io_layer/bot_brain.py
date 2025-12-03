@@ -293,12 +293,22 @@ class BotBrain:
             # This implements safe stair descent behavior where BotBrain temporarily
             # owns movement (like a mini-state) while walking to stairs. AutoExplore
             # is NOT restarted during this phase.
-            if self._is_floor_complete(player) or self._stairs_path:
+            is_floor_complete = self._is_floor_complete(player)
+            if is_floor_complete or self._stairs_path:
                 # Floor is terminal-complete OR we're already walking to stairs
                 game_map = getattr(game_state, 'game_map', None)
                 
+                logger.info(
+                    f"BotBrain: Entering floor complete handling - "
+                    f"is_floor_complete={is_floor_complete}, "
+                    f"stairs_path={'exists' if self._stairs_path else 'None'}, "
+                    f"visible_enemies={len(visible_enemies)}, "
+                    f"game_map={'exists' if game_map else 'None'}"
+                )
+                
                 try:
                     floor_action = self._handle_floor_complete(player, entities, game_map, visible_enemies)
+                    logger.info(f"BotBrain: floor_action result = {floor_action}")
                 except Exception as e:
                     # Catch any unexpected errors in floor complete handling
                     self._log_error(f"Exception in _handle_floor_complete: {e}")
@@ -1271,9 +1281,13 @@ class BotBrain:
             return False
         
         # Floor is complete ONLY if AutoExplore stopped with exact completion reasons
-        # Use exact match, not substring match, to avoid false positives
+        # Use str() to handle any numpy string types
         if not auto_explore.is_active() and auto_explore.stop_reason:
-            return auto_explore.stop_reason in TERMINAL_EXPLORE_REASONS
+            stop_reason_str = str(auto_explore.stop_reason)
+            is_terminal = stop_reason_str in TERMINAL_EXPLORE_REASONS
+            if is_terminal:
+                logger.info(f"BotBrain: Floor IS complete (stop_reason='{stop_reason_str}')")
+            return is_terminal
         
         return False
     
@@ -1446,24 +1460,38 @@ class BotBrain:
         # No path yet - find stairs and compute path
         stairs_pos = self._find_nearest_stairs(player, entities)
         
+        # Log at INFO level (always visible) for floor complete diagnostics
+        logger.info(
+            f"BotBrain FLOOR_COMPLETE: player=({player.x}, {player.y}), "
+            f"stairs_pos={stairs_pos}, game_map={'exists' if game_map else 'None'}, "
+            f"entities_count={len(entities) if entities else 0}"
+        )
+        
         if stairs_pos is None:
             # No stairs found
             # TODO: Mark as "no_stairs" in failure_type for soak harness integration
-            self._debug("FLOOR COMPLETE: No stairs found, aborting run")
+            logger.warning("BotBrain FLOOR_COMPLETE: No stairs found, aborting run")
             return {"bot_abort_run": True}
         
         # Already on stairs? (shouldn't happen due to check above, but safety)
-        if stairs_pos == (player.x, player.y):
-            self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
+        # Use int() conversion to handle numpy types
+        player_pos = (int(player.x), int(player.y))
+        stairs_pos_int = (int(stairs_pos[0]), int(stairs_pos[1]))
+        if player_pos == stairs_pos_int:
+            self._log_summary(f"STAIRS: Floor complete, descending from {player_pos}")
             return {"take_stairs": True}
         
         # Compute path to stairs
         self._stairs_path = self._calculate_path_to_stairs(player, stairs_pos, game_map, entities)
         
+        logger.info(
+            f"BotBrain FLOOR_COMPLETE: Pathfinding result - path_len={len(self._stairs_path) if self._stairs_path else 0}"
+        )
+        
         if not self._stairs_path:
             # No path to stairs
             # TODO: Mark as "no_stairs" in failure_type for soak harness integration
-            self._debug(f"FLOOR COMPLETE: No path to stairs at {stairs_pos}, aborting run")
+            logger.warning(f"BotBrain FLOOR_COMPLETE: No path to stairs at {stairs_pos}, aborting run")
             return {"bot_abort_run": True}
         
         self._log_summary(f"STAIRS: Floor complete, walking to stairs at {stairs_pos} "
