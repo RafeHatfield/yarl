@@ -750,7 +750,9 @@ def play_game_with_engine(
         # Phase 1.6: Check for bot run abort signal (floor fully explored in soak mode)
         # This is a bot-only terminal condition that should exit the current run
         if engine.state_manager.get_extra_data("bot_abort_run"):
-            logger.info("Bot abort run detected - finalizing run with bot_completed outcome")
+            # Capture the abort reason for soak harness classification
+            bot_abort_reason = engine.state_manager.get_extra_data("bot_abort_reason") or "unspecified"
+            logger.info(f"Bot abort run detected - reason: {bot_abort_reason}, finalizing run with bot_completed outcome")
             
             # End telemetry for current floor
             from services.telemetry_service import get_telemetry_service
@@ -771,9 +773,9 @@ def play_game_with_engine(
                 # Log bot results summary
                 _log_bot_results_summary(run_metrics, constants)
             
-            # Clean up and return with bot_completed outcome
+            # Clean up and return with bot_completed outcome and abort reason
             engine.stop()
-            return {"bot_completed": True}
+            return {"bot_completed": True, "bot_abort_reason": bot_abort_reason}
         
         # Handle victory condition states
         current_state = engine.state_manager.state.current_state

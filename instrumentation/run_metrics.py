@@ -73,6 +73,7 @@ class RunMetrics:
     monsters_killed: int = 0
     items_picked_up: int = 0
     portals_used: int = 0
+    potions_used: int = 0
     
     outcome: Literal["death", "victory", "quit", "bot_abort", "max_turns", "max_floors", "in_progress"] = "in_progress"
     max_turns_limit: Optional[int] = None
@@ -224,6 +225,7 @@ class RunMetricsRecorder:
             monsters_killed=statistics.total_kills,
             items_picked_up=statistics.items_picked_up,
             portals_used=statistics.portals_used,
+            potions_used=getattr(statistics, 'potions_used', 0),  # METRICS: Track potion usage
             outcome=outcome,
             max_turns_limit=self.max_turns_limit,
             max_floors_limit=self.max_floors_limit,

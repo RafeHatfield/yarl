@@ -369,29 +369,39 @@ class ActionProcessor:
         
         logger.info(f"Auto-explore start attempt: quote='{quote}', active={is_active_after_start}")
     
-    def _handle_bot_abort_run(self, _) -> None:
+    def _handle_bot_abort_run(self, abort_reason) -> None:
         """Handle bot run abort signal (Phase 1.6: Bot Soak Harness).
         
         When the bot reaches a terminal condition (floor fully explored with no way
         to continue in soak mode), this handler signals the end of the run by:
         1. Logging the completion reason
         2. Setting a special marker in engine state so play_game_with_engine can detect it
-        3. Allowing the game loop to exit gracefully
+        3. Storing the abort_reason for soak harness classification
+        4. Allowing the game loop to exit gracefully
         
         This is a bot-only action that never occurs in normal human gameplay.
         In normal --bot mode (single run), this will just quietly exit.
-        In --bot-soak mode, the soak harness will record this as a "bot_completed" outcome.
+        In --bot-soak mode, the soak harness will record this with appropriate outcome.
+        
+        Args:
+            abort_reason: String describing why the abort happened (e.g., "stuck_combat:enemy_at_(5,10)")
+                         or True for legacy backwards compatibility
         """
-        logger.info("Bot abort run signal received - floor fully explored, ending run")
+        # Handle both string reasons and legacy True value
+        reason_str = abort_reason if isinstance(abort_reason, str) else "unspecified"
+        logger.info(f"Bot abort run signal received - reason: {reason_str}")
         
         # Set marker so play_game_with_engine knows to exit with bot_completed outcome
         self.state_manager.set_extra_data("bot_abort_run", True)
+        
+        # Store abort reason for soak harness classification
+        self.state_manager.set_extra_data("bot_abort_reason", reason_str)
         
         # Add message to log if in normal --bot mode (for visibility)
         message_log = self.state_manager.state.message_log
         if message_log:
             message_log.add_message(
-                MB.system("🤖 Floor fully explored. Bot run complete.")
+                MB.system(f"🤖 Bot run ended. Reason: {reason_str}")
             )
     
     def _handle_exit(self, _) -> None:
@@ -1536,6 +1546,11 @@ class ActionProcessor:
                 new_entities = game_map.next_floor(player, message_log, self.constants)
                 self.state_manager.update_state(entities=new_entities)
                 logger.info(f"Floor generated: {len(new_entities)} entities")
+                
+                # METRICS: Record floor reached for soak stats
+                if hasattr(player, 'statistics') and player.statistics:
+                    player.statistics.record_level_reached(target_level)
+                    logger.debug(f"Recorded floor {target_level} reached (deepest: {player.statistics.deepest_level})")
                 
                 # Initialize new FOV map for the new level
                 from fov_functions import initialize_fov

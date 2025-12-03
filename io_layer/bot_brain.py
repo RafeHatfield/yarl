@@ -10,7 +10,7 @@ import logging
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from game_states import GameStates
 from components.component_registry import ComponentType
@@ -52,7 +52,7 @@ class BotPersonaConfig:
     - Combat behavior: engagement distance, retreat threshold
     - Loot behavior: pickup priority, deviation willingness
     - Exploration: stairs priority vs full exploration
-    - Survival: potion use threshold
+    - Survival: potion use threshold, in-combat potion use
     
     Attributes:
         name: Human-readable persona name
@@ -62,6 +62,7 @@ class BotPersonaConfig:
         loot_priority: Weight for loot vs exploration (0=ignore loot, 1=normal, 2=greedy)
         prefer_stairs: If True, prioritize stairs over full exploration when safe
         avoid_combat: If True, avoid non-adjacent enemies when possible
+        drink_potion_in_combat: If True, allow drinking potions while enemies are visible
     """
     name: str
     retreat_hp_threshold: float = 0.25  # Retreat when HP below this
@@ -70,6 +71,7 @@ class BotPersonaConfig:
     loot_priority: int = 1               # 0=skip, 1=normal, 2=greedy
     prefer_stairs: bool = False          # True = prioritize stairs over exploration
     avoid_combat: bool = False           # True = avoid non-adjacent enemies
+    drink_potion_in_combat: bool = False # True = allow potions while enemies visible
 
 
 # Pre-defined personas
@@ -91,6 +93,7 @@ PERSONAS: Dict[str, BotPersonaConfig] = {
         loot_priority=1,
         prefer_stairs=False,
         avoid_combat=True,           # Avoid non-adjacent enemies
+        drink_potion_in_combat=True, # Allow potions while in combat (survival priority)
     ),
     "aggressive": BotPersonaConfig(
         name="aggressive",
@@ -225,6 +228,16 @@ class BotBrain:
         self._disable_opportunistic_loot = False
         # Movement blocked failure counter: abort run if AutoExplore repeatedly fails with "Movement blocked"
         self._movement_blocked_count = 0
+        # Stairs descent state: tracks path to stairs when floor is complete
+        self._stairs_path: Optional[List[Tuple[int, int]]] = None
+        # Floor-complete enemy engagement stuck detection
+        self._floor_complete_engage_attempts = 0
+        self._floor_complete_last_pos = None
+        self._floor_complete_stuck_threshold = 5  # Abort after 5 failed attempts to engage
+        # Stair walking stuck detection
+        self._stair_walk_attempts = 0
+        self._stair_walk_last_pos = None
+        self._stair_walk_stuck_threshold = 5  # Abort after 5 failed attempts to walk to stairs
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -277,7 +290,7 @@ class BotBrain:
                     self._movement_blocked_count += 1
                     if self._movement_blocked_count >= 3:
                         self._log_summary(f"STUCK: Movement blocked {self._movement_blocked_count} times, aborting run")
-                        return {"bot_abort_run": True}
+                        return {"bot_abort_run": "stuck_movement_blocked"}
                 else:
                     # AutoExplore stopped for different reason - reset counter
                     self._movement_blocked_count = 0
@@ -285,31 +298,114 @@ class BotBrain:
             # FLOOR COMPLETION / STAIRS DESCENT: Check for terminal exploration states
             # 
             # When exploration is terminal-complete (floor fully explored or unreachable areas):
-            # - If safe (no enemies) and on stairs → descend
-            # - Otherwise → end the run (bot_abort_run)
+            # - If safe (no enemies): walk to stairs and descend
+            # - If enemies visible: clear stairs path, fall back to combat handling
             #
-            # NOTE: We end the run even if enemies are visible when exploration is terminal.
-            # This prevents the bot from getting stuck when it can't explore more and can't/won't
-            # engage remaining enemies (e.g., due to persona settings or pathing issues).
-            # In soak mode, this produces a "floor_complete" outcome rather than hanging forever.
-            #
-            # TODO (future):
-            # Multi-floor bot support should use a dedicated DESCEND state where BotBrain
-            # temporarily owns movement and AutoExplore is disabled.
-            # Current version intentionally avoids walking to stairs to preserve stability.
-            # We only descend if bot naturally ends up on stairs during exploration.
-            if self._is_floor_complete(player):
-                # Floor is terminal-complete - decide how to end
-                if not visible_enemies and self._is_standing_on_stairs(player, entities):
-                    # Safe and on stairs - descend to next floor
-                    self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
-                    return {"take_stairs": True}
-                else:
-                    # Not on stairs or enemies present - end run
-                    # Bot does not walk to stairs to avoid movement conflicts with AutoExplore
-                    reason = "with enemies still visible" if visible_enemies else "not on stairs"
-                    self._debug(f"FLOOR COMPLETE: Ending run ({reason})")
-                    return {"bot_abort_run": True}
+            # This implements safe stair descent behavior where BotBrain temporarily
+            # owns movement (like a mini-state) while walking to stairs. AutoExplore
+            # is NOT restarted during this phase.
+            is_floor_complete = self._is_floor_complete(player)
+            if is_floor_complete or self._stairs_path:
+                # Floor is terminal-complete OR we're already walking to stairs
+                game_map = getattr(game_state, 'game_map', None)
+                
+                logger.warning(
+                    f"BotBrain: Entering floor complete handling - "
+                    f"is_floor_complete={is_floor_complete}, "
+                    f"stairs_path={'exists' if self._stairs_path else 'None'}, "
+                    f"visible_enemies={len(visible_enemies)}, "
+                    f"game_map={'exists' if game_map else 'None'}"
+                )
+                
+                try:
+                    floor_action = self._handle_floor_complete(player, entities, game_map, visible_enemies)
+                    logger.warning(f"BotBrain: floor_action result = {floor_action}")
+                except Exception as e:
+                    # Catch any unexpected errors in floor complete handling
+                    self._log_error(f"Exception in _handle_floor_complete: {e}")
+                    floor_action = {"bot_abort_run": f"exception:{e}"}
+                
+                # If _handle_floor_complete returned an action, use it
+                if floor_action:
+                    return floor_action
+                
+                # If returned empty dict, it means enemies appeared during stair walking
+                # Fall through to combat handling ONLY if there are visible enemies
+                # Otherwise, something went wrong - abort to avoid infinite loop
+                if not visible_enemies:
+                    self._log_error(
+                        f"Floor complete but _handle_floor_complete returned empty with no enemies! "
+                        f"Aborting to prevent loop. stairs_path={self._stairs_path}"
+                    )
+                    return {"bot_abort_run": "stuck_floor_complete_loop"}
+                
+                # Enemies are visible during floor complete - we need to handle them
+                # Find if any enemy is adjacent (must attack) or within engagement range
+                adjacent_enemy = None
+                nearest_enemy = self._find_nearest_enemy(player, visible_enemies)
+                
+                # Debug: log enemy details to understand failures
+                if nearest_enemy:
+                    enemy_pos = (nearest_enemy.x, nearest_enemy.y) if hasattr(nearest_enemy, 'x') else 'no_coords'
+                    manhattan_dist = abs(player.x - nearest_enemy.x) + abs(player.y - nearest_enemy.y) if hasattr(nearest_enemy, 'x') else -1
+                    is_adj = self._is_adjacent(player, nearest_enemy)
+                    
+                    # Stuck detection for floor-complete enemy engagement
+                    current_pos = (player.x, player.y)
+                    if self._floor_complete_last_pos == current_pos:
+                        self._floor_complete_engage_attempts += 1
+                        if self._floor_complete_engage_attempts >= self._floor_complete_stuck_threshold:
+                            logger.warning(
+                                f"BotBrain: Stuck trying to engage enemy at {enemy_pos} from {current_pos} "
+                                f"({self._floor_complete_engage_attempts} attempts). Path likely blocked. Aborting."
+                            )
+                            self._floor_complete_engage_attempts = 0
+                            self._floor_complete_last_pos = None
+                            return {"bot_abort_run": f"stuck_combat:enemy_at_{enemy_pos}"}
+                    else:
+                        # Position changed - reset counter
+                        self._floor_complete_engage_attempts = 1
+                        self._floor_complete_last_pos = current_pos
+                    
+                    logger.warning(
+                        f"BotBrain: Floor complete enemy check - "
+                        f"player={current_pos}, "
+                        f"enemy={enemy_pos}, "
+                        f"distance={manhattan_dist}, "
+                        f"is_adjacent={is_adj}, "
+                        f"engagement_dist={self.persona.combat_engagement_distance}, "
+                        f"engage_attempts={self._floor_complete_engage_attempts}"
+                    )
+                    
+                    if is_adj:
+                        # Adjacent - attack immediately
+                        logger.warning("BotBrain: Enemy is adjacent, attacking")
+                        self.state = BotState.COMBAT
+                        self.current_target = nearest_enemy
+                        # Reset stuck tracking on successful engagement
+                        self._floor_complete_engage_attempts = 0
+                        self._floor_complete_last_pos = None
+                        return self._handle_combat(player, visible_enemies, game_state)
+                    elif manhattan_dist <= self.persona.combat_engagement_distance:
+                        # Within engagement range - move toward enemy
+                        logger.warning(f"BotBrain: Enemy within range ({manhattan_dist}), engaging")
+                        self.state = BotState.COMBAT
+                        self.current_target = nearest_enemy
+                        return self._handle_combat(player, visible_enemies, game_state)
+                    else:
+                        # Enemy too far to engage during floor complete - abort
+                        logger.warning(
+                            f"BotBrain: Floor complete, enemy at distance {manhattan_dist} "
+                            f"(beyond engagement distance {self.persona.combat_engagement_distance}), aborting run"
+                        )
+                        return {"bot_abort_run": f"stuck_enemy_too_far:dist_{manhattan_dist}"}
+                
+                # FALLBACK: No nearest enemy found despite visible_enemies > 0
+                logger.warning(
+                    f"BotBrain: Floor complete with {len(visible_enemies)} visible enemies but "
+                    f"nearest_enemy is None, aborting run"
+                )
+                return {"bot_abort_run": "stuck_no_nearest_enemy"}
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
@@ -602,11 +698,26 @@ class BotBrain:
             
             return action
         except (AttributeError, TypeError) as e:
-            # Gracefully handle missing or mock attributes
-            logger.debug(f"BotBrain decide_action caught exception: {e}")
+            # Log at WARNING level so we can see what's happening
+            import traceback
+            logger.warning(
+                f"⚠️ BotBrain decide_action caught exception: {e}\n"
+                f"Traceback: {traceback.format_exc()}"
+            )
             
-            # If game state is in PLAYERS_TURN, return safe fallback to explore
+            # If game state is in PLAYERS_TURN, check if floor is complete
+            # If floor is complete, abort instead of restarting explore (prevents infinite loop)
             if game_state.current_state == GameStates.PLAYERS_TURN:
+                # Try to check floor complete status
+                try:
+                    player = getattr(game_state, 'player', None)
+                    if player and self._is_floor_complete(player):
+                        logger.warning("BotBrain: Exception during floor complete - aborting run")
+                        return {"bot_abort_run": "exception_floor_complete"}
+                except Exception:
+                    pass  # If we can't check, fall through to default
+                
+                # Default: restart explore (but this should rarely happen now)
                 self.state = BotState.EXPLORE
                 return {"start_auto_explore": True}
             
@@ -857,9 +968,25 @@ class BotBrain:
         
         # Terminal floor completion reasons - floor is as explored as it's going to get
         # Don't restart autoexplore; let the bot wait, descend stairs, or abort
-        if stop_reason in TERMINAL_EXPLORE_REASONS:
+        # Use str() to handle any numpy string types
+        stop_reason_str = str(stop_reason) if stop_reason else None
+        if stop_reason_str in TERMINAL_EXPLORE_REASONS:
             self._debug(f"BotBrain: Floor exploration complete ('{stop_reason}'), not restarting AutoExplore")
             return {}
+        
+        # Don't restart AutoExplore if we're walking to stairs
+        if self._stairs_path:
+            self._debug(f"BotBrain: Walking to stairs, not restarting AutoExplore")
+            return {}
+        
+        # SAFETY: Double-check floor complete status before restarting
+        # This catches cases where the earlier floor complete check was bypassed
+        if self._is_floor_complete(player):
+            self._log_error(
+                f"BotBrain: Floor complete but reached start_auto_explore code! "
+                f"stop_reason='{stop_reason}', type={type(stop_reason)}. Aborting instead."
+            )
+            return {"bot_abort_run": "stuck_explore_after_complete"}
         
         # For other stop reasons (or first time), start autoexplore
         player_pos = (player.x, player.y)
@@ -1248,9 +1375,13 @@ class BotBrain:
             return False
         
         # Floor is complete ONLY if AutoExplore stopped with exact completion reasons
-        # Use exact match, not substring match, to avoid false positives
+        # Use str() to handle any numpy string types
         if not auto_explore.is_active() and auto_explore.stop_reason:
-            return auto_explore.stop_reason in TERMINAL_EXPLORE_REASONS
+            stop_reason_str = str(auto_explore.stop_reason)
+            is_terminal = stop_reason_str in TERMINAL_EXPLORE_REASONS
+            if is_terminal:
+                logger.warning(f"BotBrain: Floor IS complete (stop_reason='{stop_reason_str}')")
+            return is_terminal
         
         return False
     
@@ -1269,6 +1400,221 @@ class BotBrain:
                 if entity.x == player.x and entity.y == player.y:
                     return True
         return False
+    
+    def _find_nearest_stairs(self, player: Any, entities: List[Any]) -> Optional[Tuple[int, int]]:
+        """Find the nearest stairs entity position.
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            
+        Returns:
+            (x, y) position of nearest stairs, or None if no stairs found
+        """
+        nearest_pos = None
+        min_distance = float('inf')
+        
+        for entity in entities:
+            if hasattr(entity, 'components') and entity.components.has(ComponentType.STAIRS):
+                # Manhattan distance
+                distance = abs(player.x - entity.x) + abs(player.y - entity.y)
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest_pos = (entity.x, entity.y)
+        
+        return nearest_pos
+    
+    def _calculate_path_to_stairs(
+        self, 
+        player: Any, 
+        target: Tuple[int, int], 
+        game_map: Any,
+        entities: List[Any]
+    ) -> List[Tuple[int, int]]:
+        """Calculate A* path to target stairs position.
+        
+        Uses tcod pathfinding like AutoExplore does.
+        
+        Args:
+            player: Player entity
+            target: (x, y) destination
+            game_map: Game map for pathfinding
+            entities: All entities (for collision detection)
+            
+        Returns:
+            List of (x, y) positions to visit (excluding start position),
+            or empty list if no path found
+        """
+        import tcod
+        import numpy as np
+        
+        try:
+            # Create cost map using numpy (indexed as [y, x])
+            cost = np.zeros((game_map.height, game_map.width), dtype=np.int8)
+            
+            for y in range(game_map.height):
+                for x in range(game_map.width):
+                    # Blocked tiles are impassable
+                    if game_map.tiles[x][y].blocked:
+                        cost[y, x] = 0
+                    # Hazards are treated as impassable (if hazard_manager exists)
+                    elif hasattr(game_map, 'hazard_manager') and game_map.hazard_manager.has_hazard_at(x, y):
+                        cost[y, x] = 0
+                    else:
+                        cost[y, x] = 1
+            
+            # Entities block movement (except target tile)
+            for entity in entities:
+                if hasattr(entity, 'blocks') and entity.blocks and entity != player:
+                    ex, ey = entity.x, entity.y
+                    if 0 <= ex < game_map.width and 0 <= ey < game_map.height:
+                        if (ex, ey) != target:  # Allow moving to target even if entity there
+                            cost[ey, ex] = 0
+            
+            # Transpose cost array from [y, x] to [x, y] for tcod
+            cost_array = cost.T
+            
+            # Validate player position is within map bounds
+            start_x, start_y = player.x, player.y
+            if start_x < 0 or start_x >= game_map.width or start_y < 0 or start_y >= game_map.height:
+                self._debug(f"Player position ({start_x}, {start_y}) out of map bounds")
+                return []
+            
+            # Create graph and pathfinder (modern tcod API)
+            graph = tcod.path.SimpleGraph(cost=cost_array, cardinal=2, diagonal=3)
+            pathfinder = tcod.path.Pathfinder(graph)
+            pathfinder.add_root((start_x, start_y))
+            
+            # Find path
+            path = pathfinder.path_to((target[0], target[1]))
+            
+            # Convert to list of tuples (excluding start position)
+            return [(x, y) for x, y in path[1:]]
+            
+        except (AttributeError, TypeError, IndexError) as e:
+            # Handle mock objects or missing attributes gracefully
+            self._debug(f"Pathfinding error: {e}")
+            return []
+    
+    def _handle_floor_complete(
+        self, 
+        player: Any, 
+        entities: List[Any], 
+        game_map: Any,
+        visible_enemies: List[Any]
+    ) -> Dict[str, Any]:
+        """Handle floor complete state - walk to stairs and descend.
+        
+        This is called when AutoExplore has finished with a terminal reason.
+        BotBrain takes over movement to walk to stairs.
+        
+        Behavior:
+        - If enemies visible: clear stairs path, return empty (fall back to COMBAT)
+        - If on stairs: descend
+        - If stairs path exists: follow it
+        - If no stairs path: find stairs and compute path
+        - If no reachable stairs: abort run
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            game_map: Game map for pathfinding
+            visible_enemies: List of visible hostile enemies
+            
+        Returns:
+            ActionDict with take_stairs, move, or bot_abort_run
+        """
+        # Safety: If enemies appear while walking to stairs, abort stair descent
+        # and fall back to normal combat handling
+        if visible_enemies:
+            if self._stairs_path:
+                self._debug("Enemies visible while walking to stairs, clearing path")
+                self._stairs_path = None
+            # Return empty to let combat handling take over
+            return {}
+        
+        # If standing on stairs, descend
+        if self._is_standing_on_stairs(player, entities):
+            self._log_summary(f"STAIRS: Floor complete, descending from ({player.x}, {player.y})")
+            self._stairs_path = None  # Clear path
+            return {"take_stairs": True}
+        
+        # If we have a stairs path, follow it
+        if self._stairs_path:
+            # Get next step
+            next_pos = self._stairs_path.pop(0)
+            dx = next_pos[0] - player.x
+            dy = next_pos[1] - player.y
+            
+            self._debug(f"Walking to stairs: moving from ({player.x}, {player.y}) to {next_pos}, "
+                       f"{len(self._stairs_path)} steps remaining")
+            
+            return self._build_move_action(dx, dy)
+        
+        # No path yet - find stairs and compute path
+        stairs_pos = self._find_nearest_stairs(player, entities)
+        
+        # Log at WARNING level for floor complete diagnostics
+        logger.warning(
+            f"BotBrain FLOOR_COMPLETE: player=({player.x}, {player.y}), "
+            f"stairs_pos={stairs_pos}, game_map={'exists' if game_map else 'None'}, "
+            f"entities_count={len(entities) if entities else 0}"
+        )
+        
+        if stairs_pos is None:
+            # No stairs found - classified as "no_stairs" by soak harness
+            logger.warning("BotBrain FLOOR_COMPLETE: No stairs found, aborting run")
+            return {"bot_abort_run": "no_stairs"}
+        
+        # Already on stairs? (shouldn't happen due to check above, but safety)
+        # Use int() conversion to handle numpy types
+        player_pos = (int(player.x), int(player.y))
+        stairs_pos_int = (int(stairs_pos[0]), int(stairs_pos[1]))
+        if player_pos == stairs_pos_int:
+            self._log_summary(f"STAIRS: Floor complete, descending from {player_pos}")
+            # Reset stuck tracking
+            self._stair_walk_attempts = 0
+            self._stair_walk_last_pos = None
+            return {"take_stairs": True}
+        
+        # Stuck detection for stair walking - if we keep trying from the same position, abort
+        if self._stair_walk_last_pos == player_pos:
+            self._stair_walk_attempts += 1
+            if self._stair_walk_attempts >= self._stair_walk_stuck_threshold:
+                logger.warning(
+                    f"BotBrain FLOOR_COMPLETE: Stuck trying to reach stairs at {stairs_pos_int} from {player_pos} "
+                    f"({self._stair_walk_attempts} attempts). Path likely blocked by entity. Aborting."
+                )
+                self._stair_walk_attempts = 0
+                self._stair_walk_last_pos = None
+                return {"bot_abort_run": f"stuck_stairs_blocked:at_{player_pos}"}
+        else:
+            # Position changed - reset counter
+            self._stair_walk_attempts = 1
+            self._stair_walk_last_pos = player_pos
+        
+        # Compute path to stairs
+        self._stairs_path = self._calculate_path_to_stairs(player, stairs_pos, game_map, entities)
+        
+        logger.warning(
+            f"BotBrain FLOOR_COMPLETE: Pathfinding result - path_len={len(self._stairs_path) if self._stairs_path else 0}, "
+            f"stair_walk_attempts={self._stair_walk_attempts}"
+        )
+        
+        if not self._stairs_path:
+            # No path to stairs - classified as "no_stairs" by soak harness
+            logger.warning(f"BotBrain FLOOR_COMPLETE: No path to stairs at {stairs_pos}, aborting run")
+            return {"bot_abort_run": f"no_stairs:unreachable_at_{stairs_pos}"}
+        
+        self._log_summary(f"STAIRS: Floor complete, walking to stairs at {stairs_pos} "
+                         f"({len(self._stairs_path)} steps)")
+        
+        # Take first step
+        next_pos = self._stairs_path.pop(0)
+        dx = next_pos[0] - player.x
+        dy = next_pos[1] - player.y
+        
+        return self._build_move_action(dx, dy)
     
     # ========================================================================
     # POTION-DRINKING LOGIC (for soak testing survivability)
@@ -1365,7 +1711,8 @@ class BotBrain:
         
         Conditions:
         - HP <= persona.potion_hp_threshold (configurable per persona)
-        - No visible enemies (safe to drink)
+        - Either no visible enemies (safe to drink), OR
+          persona.drink_potion_in_combat is True (allow in-combat potion use)
         
         Args:
             player: Player entity
@@ -1379,9 +1726,13 @@ class BotBrain:
         if hp_fraction > self.persona.potion_hp_threshold:
             return False
         
-        # Must have no visible enemies (safe)
+        # Check visibility of enemies
         if visible_enemies:
-            return False
+            # Enemies are present - only allow potion if persona permits it
+            if not self.persona.drink_potion_in_combat:
+                return False
+            # Log that we're drinking in combat (useful for debugging)
+            self._log_summary(f"POTION: Drinking in combat (persona allows it)")
         
         return True
     

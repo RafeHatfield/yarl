@@ -52,14 +52,24 @@ class SoakRunResult:
         run_id: Unique run ID from RunMetrics
         seed: RNG seed used for this run (if deterministic)
         persona: Bot persona name used for this run
-        outcome: Final outcome (death, victory, quit, bot_abort, max_turns, max_floors)
-        failure_type: Structured failure classification:
-            - "none": Run completed successfully (victory, max_floors reached)
+        outcome: Final outcome - one of:
             - "death": Player died
-            - "turn_limit": Hit max_turns limit
-            - "stuck": Bot detected stuck/oscillation
-            - "no_stairs": Bot couldn't reach stairs
-            - "error": Crash or unhandled exception
+            - "victory": Victory achieved
+            - "floor_complete": Floor fully explored, bot completed
+            - "run_complete": Clean run completion (max_floors reached)
+            - "max_turns": Turn limit exceeded
+            - "bot_abort": Bot signaled abort (generic)
+            - "stuck": Bot detected stuck/movement blocked
+            - "no_stairs": Stairs unreachable
+            - "exception": Unhandled exception/crash
+        failure_type: Structured failure classification:
+            - "none": Run completed successfully (victory, floor_complete, run_complete)
+            - "death": Player died (failure_detail may contain killer name)
+            - "max_turns": Hit max_turns limit (failure_detail has turn number)
+            - "stuck_autoexplore": Movement blocked / stuck loop detected
+            - "bot_abort": Bot signaled run abort (generic)
+            - "no_stairs": Stairs couldn't be reached
+            - "exception": Crash or unhandled exception (failure_detail has message)
         failure_detail: Human-readable detail about the failure (e.g., monster name, position)
         duration_seconds: Run duration
         deepest_floor: Deepest floor reached
@@ -158,47 +168,102 @@ class SoakRunResult:
             return "other"
     
     @staticmethod
-    def classify_failure(outcome: str, exception: Optional[str] = None, 
-                         bot_abort_reason: Optional[str] = None) -> tuple:
+    def classify_failure(
+        outcome: str, 
+        exception: Optional[str] = None, 
+        bot_abort_reason: Optional[str] = None,
+        auto_explore_reason: str = "",
+        max_turns_limit: Optional[int] = None,
+    ) -> tuple:
         """Classify failure type based on outcome and context.
         
+        Rich failure classification for soak run analysis. Returns both
+        a refined outcome and a failure_type for CSV/analysis.
+        
         Args:
-            outcome: Run outcome string (death, victory, max_turns, bot_abort, etc.)
+            outcome: Run outcome string (death, victory, max_turns, bot_abort, bot_completed, etc.)
             exception: Optional exception message
             bot_abort_reason: Optional reason for bot_abort (from BotBrain or harness)
+            auto_explore_reason: Normalized AutoExplore stop reason (e.g., "movement_blocked")
+            max_turns_limit: Optional max turns limit for detail message
             
         Returns:
-            Tuple of (failure_type, failure_detail)
+            Tuple of (refined_outcome, failure_type, failure_detail)
         """
-        # Success cases
-        if outcome in ("victory", "max_floors"):
-            return ("none", "")
+        # ===== SUCCESS CASES =====
         
-        # Death
+        # Victory is always clean success
+        if outcome == "victory":
+            return ("victory", "none", "")
+        
+        # Max floors reached = clean run completion
+        if outcome == "max_floors":
+            return ("run_complete", "none", "Reached maximum floor limit")
+        
+        # Bot completed - refine based on context
+        # Priority: bot_abort_reason (more specific) > auto_explore_reason
+        if outcome == "bot_completed":
+            # First check bot_abort_reason for specific abort classification
+            if bot_abort_reason:
+                reason_lower = bot_abort_reason.lower()
+                # Combat stuck: "stuck_combat:enemy_at_(5,10)", "stuck_enemy_too_far:dist_8", etc.
+                if "stuck_combat" in reason_lower or "stuck_enemy" in reason_lower:
+                    return ("stuck", "stuck_combat", bot_abort_reason)
+                # Movement blocked during exploration
+                elif "stuck_movement" in reason_lower:
+                    return ("stuck", "stuck_autoexplore", bot_abort_reason)
+                # Floor complete loop / other stuck cases
+                elif "stuck" in reason_lower:
+                    return ("stuck", "stuck_autoexplore", bot_abort_reason)
+                # No stairs found or unreachable
+                elif "no_stairs" in reason_lower:
+                    return ("no_stairs", "no_stairs", bot_abort_reason)
+                # Exception during bot operation
+                elif "exception" in reason_lower:
+                    return ("exception", "exception", bot_abort_reason)
+            
+            # Fall back to auto_explore_reason
+            if auto_explore_reason == "movement_blocked":
+                return ("stuck", "stuck_autoexplore", "Movement blocked loop detected")
+            elif auto_explore_reason in ("all_areas_explored", "cannot_reach_unexplored"):
+                # Floor fully explored - this is success
+                return ("floor_complete", "none", f"Floor explored ({auto_explore_reason})")
+            else:
+                # Generic bot completion
+                return ("floor_complete", "none", auto_explore_reason or "Bot completed exploration")
+        
+        # ===== FAILURE CASES =====
+        
+        # Death - explicit failure
         if outcome == "death":
-            return ("death", "")
+            return ("death", "death", "")  # failure_detail can be set by caller with monster name
         
-        # Turn limit
+        # Turn limit exceeded
         if outcome == "max_turns":
-            return ("turn_limit", "Hit maximum turn limit")
+            detail = f"Hit turn limit ({max_turns_limit})" if max_turns_limit else "Hit maximum turn limit"
+            return ("max_turns", "max_turns", detail)
         
-        # Bot abort - check reason for more specific classification
+        # Bot abort - check reason for specific classification
         if outcome == "bot_abort":
             if bot_abort_reason:
                 reason_lower = bot_abort_reason.lower()
                 if "stuck" in reason_lower or "movement blocked" in reason_lower:
-                    return ("stuck", bot_abort_reason)
-                elif "stairs" in reason_lower:
-                    return ("no_stairs", bot_abort_reason)
+                    return ("stuck", "stuck_autoexplore", bot_abort_reason)
+                elif "stairs" in reason_lower or "unreachable" in reason_lower:
+                    return ("no_stairs", "no_stairs", bot_abort_reason)
             # Default bot_abort without specific reason
-            return ("stuck", bot_abort_reason or "Bot aborted run")
+            return ("bot_abort", "bot_abort", bot_abort_reason or "Bot aborted run")
         
-        # Crash/error
+        # Crash/error/exception
         if outcome in ("crash", "error") or exception:
-            return ("error", exception or "Unknown error")
+            return ("exception", "exception", exception or "Unknown error")
         
-        # Unknown/other
-        return ("none", "")
+        # Unknown/quit - treat as clean but unknown
+        if outcome == "quit":
+            return ("quit", "none", "User quit")
+        
+        # Fallback for any unrecognized outcome
+        return (outcome, "none", "")
     
     @classmethod
     def from_run_metrics_and_telemetry(
@@ -228,9 +293,13 @@ class SoakRunResult:
         timestamp = datetime.now().isoformat()
         
         if run_metrics:
-            # Classify failure
-            failure_type, failure_detail = cls.classify_failure(
-                run_metrics.outcome, exception, bot_abort_reason
+            # Rich failure classification - returns (refined_outcome, failure_type, failure_detail)
+            refined_outcome, failure_type, failure_detail = cls.classify_failure(
+                outcome=run_metrics.outcome, 
+                exception=exception, 
+                bot_abort_reason=bot_abort_reason,
+                auto_explore_reason=auto_explore_terminal_reason,
+                max_turns_limit=getattr(run_metrics, 'max_turns_limit', None),
             )
             
             return cls(
@@ -238,7 +307,7 @@ class SoakRunResult:
                 run_id=run_metrics.run_id,
                 seed=run_metrics.seed,
                 persona=persona,
-                outcome=run_metrics.outcome,
+                outcome=refined_outcome,  # Use refined outcome from classify_failure
                 failure_type=failure_type,
                 failure_detail=failure_detail,
                 auto_explore_terminal_reason=auto_explore_terminal_reason,
@@ -247,7 +316,7 @@ class SoakRunResult:
                 floors_visited=run_metrics.floors_visited,
                 monsters_killed=run_metrics.monsters_killed,
                 items_picked_up=run_metrics.items_picked_up,
-                potions_used=telemetry_stats.get('potions_used', 0),
+                potions_used=getattr(run_metrics, 'potions_used', 0),  # METRICS: Now from Statistics
                 portals_used=run_metrics.portals_used,
                 tiles_explored=run_metrics.tiles_explored,
                 steps_taken=run_metrics.steps_taken,
@@ -257,13 +326,16 @@ class SoakRunResult:
                 timestamp=timestamp,
             )
         else:
-            # Fallback for missing run_metrics - classify as error
-            failure_type, failure_detail = cls.classify_failure("error", exception)
+            # Fallback for missing run_metrics - classify as exception
+            refined_outcome, failure_type, failure_detail = cls.classify_failure(
+                outcome="error", 
+                exception=exception,
+            )
             
             return cls(
                 run_number=run_number,
                 persona=persona,
-                outcome="error",
+                outcome=refined_outcome,  # Should be "exception"
                 failure_type=failure_type,
                 failure_detail=failure_detail,
                 auto_explore_terminal_reason=auto_explore_terminal_reason,
@@ -637,12 +709,12 @@ def run_bot_soak(
             run_metrics_recorder = get_run_metrics_recorder()
             run_metrics = run_metrics_recorder.get_metrics() if run_metrics_recorder else None
             
-            # Phase 1.6: If play_game_with_engine returned bot_completed, ensure run_metrics reflects it
-            # The finalize_run_metrics("bot_completed", ...) should have been called in engine_integration
-            # but verify it's set correctly
-            if result and result.get("bot_completed") and run_metrics:
-                logger.info(f"Run {run_num}: bot_completed outcome confirmed from play_game_with_engine result")
-                # run_metrics should already have outcome="bot_completed" from finalize_run_metrics call
+            # Capture bot_abort_reason from result dict (if present)
+            # This provides detailed classification for abort cases (stuck_combat, no_stairs, etc.)
+            bot_abort_reason = None
+            if result and result.get("bot_completed"):
+                bot_abort_reason = result.get("bot_abort_reason")
+                logger.info(f"Run {run_num}: bot_completed with abort_reason={bot_abort_reason}")
             
             telemetry_stats = telemetry_service.get_stats() if telemetry_service else {}
             
@@ -655,13 +727,14 @@ def run_bot_soak(
                     raw_reason = getattr(auto_explore, 'stop_reason', None)
                     auto_explore_reason = SoakRunResult.normalize_auto_explore_reason(raw_reason)
             
-            # Create run result
+            # Create run result with abort_reason for proper classification
             run_result = SoakRunResult.from_run_metrics_and_telemetry(
                 run_number=run_num,
                 run_metrics=run_metrics,
                 telemetry_stats=telemetry_stats,
                 exception=None,
                 persona=persona,
+                bot_abort_reason=bot_abort_reason,  # Pass abort reason for classification
                 auto_explore_terminal_reason=auto_explore_reason,
             )
             
@@ -679,16 +752,17 @@ def run_bot_soak(
             exception_msg = str(e)
             logger.error(f"Run {run_num} crashed: {exception_msg}", exc_info=True)
             
-            # Classify the error
-            failure_type, failure_detail = SoakRunResult.classify_failure(
-                "crash", exception_msg
+            # Classify the error - returns (refined_outcome, failure_type, failure_detail)
+            refined_outcome, failure_type, failure_detail = SoakRunResult.classify_failure(
+                outcome="crash", 
+                exception=exception_msg,
             )
             
             # Create error result
             run_result = SoakRunResult(
                 run_number=run_num,
                 persona=persona,
-                outcome="crash",
+                outcome=refined_outcome,  # Should be "exception"
                 failure_type=failure_type,
                 failure_detail=failure_detail,
                 exception=exception_msg,

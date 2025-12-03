@@ -87,12 +87,12 @@ class TestSoakRunResult:
             portals_used = 0
             tiles_explored = 300
             steps_taken = 200
+            potions_used = 1  # Added: now pulled from run_metrics, not telemetry
         
         mock_metrics = MockRunMetrics()
         telemetry_stats = {
             'floors': 2,
             'avg_etp_per_floor': 1.2,
-            'potions_used': 1,
         }
         
         result = SoakRunResult.from_run_metrics_and_telemetry(
@@ -122,7 +122,7 @@ class TestSoakRunResult:
         
         assert result.run_number == 5
         assert result.persona == "greedy"
-        assert result.outcome == "error"
+        assert result.outcome == "exception"  # Now uses refined outcome
         assert result.exception == "Test crash"
 
 
@@ -401,66 +401,78 @@ class TestMetricsLogPathHonored:
 
 
 class TestFailureClassification:
-    """Tests for failure classification in SoakRunResult."""
+    """Tests for failure classification in SoakRunResult.
+    
+    Note: classify_failure now returns a 3-tuple: (refined_outcome, failure_type, failure_detail)
+    """
     
     def test_classify_death(self):
         """Death outcome should classify as death."""
-        failure_type, detail = SoakRunResult.classify_failure("death")
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure("death")
+        assert refined_outcome == "death"
         assert failure_type == "death"
         assert detail == ""
     
     def test_classify_victory(self):
         """Victory outcome should classify as none (success)."""
-        failure_type, detail = SoakRunResult.classify_failure("victory")
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure("victory")
+        assert refined_outcome == "victory"
         assert failure_type == "none"
     
     def test_classify_max_floors(self):
-        """max_floors outcome should classify as none (success)."""
-        failure_type, detail = SoakRunResult.classify_failure("max_floors")
+        """max_floors outcome should classify as run_complete (success)."""
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure("max_floors")
+        assert refined_outcome == "run_complete"
         assert failure_type == "none"
     
     def test_classify_max_turns(self):
-        """max_turns outcome should classify as turn_limit."""
-        failure_type, detail = SoakRunResult.classify_failure("max_turns")
-        assert failure_type == "turn_limit"
+        """max_turns outcome should classify as max_turns."""
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure("max_turns")
+        assert refined_outcome == "max_turns"
+        assert failure_type == "max_turns"
         assert "turn limit" in detail.lower()
     
     def test_classify_bot_abort_stuck(self):
-        """bot_abort with stuck reason should classify as stuck."""
-        failure_type, detail = SoakRunResult.classify_failure(
+        """bot_abort with stuck reason should classify as stuck_autoexplore."""
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure(
             "bot_abort", bot_abort_reason="Stuck at position (5,10)"
         )
-        assert failure_type == "stuck"
+        assert refined_outcome == "stuck"
+        assert failure_type == "stuck_autoexplore"
         assert "5,10" in detail
     
     def test_classify_bot_abort_movement_blocked(self):
-        """bot_abort with movement blocked should classify as stuck."""
-        failure_type, detail = SoakRunResult.classify_failure(
+        """bot_abort with movement blocked should classify as stuck_autoexplore."""
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure(
             "bot_abort", bot_abort_reason="Movement blocked 3 times"
         )
-        assert failure_type == "stuck"
+        assert refined_outcome == "stuck"
+        assert failure_type == "stuck_autoexplore"
     
     def test_classify_bot_abort_stairs(self):
         """bot_abort with stairs reason should classify as no_stairs."""
-        failure_type, detail = SoakRunResult.classify_failure(
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure(
             "bot_abort", bot_abort_reason="Floor complete but not on stairs"
         )
+        assert refined_outcome == "no_stairs"
         assert failure_type == "no_stairs"
     
     def test_classify_crash(self):
-        """crash outcome should classify as error."""
-        failure_type, detail = SoakRunResult.classify_failure(
+        """crash outcome should classify as exception."""
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure(
             "crash", exception="KeyError: 'x'"
         )
-        assert failure_type == "error"
+        assert refined_outcome == "exception"
+        assert failure_type == "exception"
         assert "KeyError" in detail
     
     def test_classify_error_from_exception(self):
-        """Presence of exception should classify as error."""
-        failure_type, detail = SoakRunResult.classify_failure(
+        """Presence of exception should classify as exception."""
+        refined_outcome, failure_type, detail = SoakRunResult.classify_failure(
             "unknown", exception="Something went wrong"
         )
-        assert failure_type == "error"
+        assert refined_outcome == "exception"
+        assert failure_type == "exception"
         assert "Something went wrong" in detail
     
     def test_failure_fields_in_to_dict(self):

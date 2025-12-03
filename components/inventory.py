@@ -352,6 +352,12 @@ class Inventory:
 
                 for item_use_result in item_use_results:
                     if item_use_result.get("consumed"):
+                        # METRICS: Track potion usage for soak stats
+                        # Potions have char '!' (distinguish from scrolls which have '#')
+                        if hasattr(item_entity, 'char') and item_entity.char == '!':
+                            if self.owner and hasattr(self.owner, 'statistics') and self.owner.statistics:
+                                self.owner.statistics.record_potion_used()
+                        
                         # Handle stacked items: decrement quantity instead of removing
                         if item_component.stackable and item_component.quantity > 1:
                             item_component.quantity -= 1
