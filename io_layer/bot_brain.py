@@ -327,6 +327,41 @@ class BotBrain:
                         f"Aborting to prevent loop. stairs_path={self._stairs_path}"
                     )
                     return {"bot_abort_run": True}
+                
+                # Enemies are visible during floor complete - we need to handle them
+                # Find if any enemy is adjacent (must attack) or within engagement range
+                adjacent_enemy = None
+                nearest_enemy = self._find_nearest_enemy(player, visible_enemies)
+                
+                if nearest_enemy:
+                    if self._is_adjacent(player, nearest_enemy):
+                        adjacent_enemy = nearest_enemy
+                    else:
+                        # Enemy visible but not adjacent - check engagement distance
+                        manhattan_dist = abs(player.x - nearest_enemy.x) + abs(player.y - nearest_enemy.y)
+                        
+                        # During floor complete, be more aggressive - engage enemies further away
+                        # or abort if they're too far (prevents infinite loop)
+                        if manhattan_dist <= self.persona.combat_engagement_distance:
+                            # Can engage - move toward enemy
+                            self._log_summary(f"Floor complete with enemy at distance {manhattan_dist}, engaging")
+                            self.state = BotState.COMBAT
+                            self.current_target = nearest_enemy
+                            return self._handle_combat(player, visible_enemies, game_state)
+                        else:
+                            # Enemy too far to engage during floor complete
+                            # Abort to prevent infinite loop where we can't explore and can't engage
+                            logger.warning(
+                                f"BotBrain: Floor complete, enemy at distance {manhattan_dist} "
+                                f"(beyond engagement distance {self.persona.combat_engagement_distance}), aborting run"
+                            )
+                            return {"bot_abort_run": True}
+                
+                if adjacent_enemy:
+                    # Must attack adjacent enemy
+                    self.state = BotState.COMBAT
+                    self.current_target = adjacent_enemy
+                    return self._handle_combat(player, visible_enemies, game_state)
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
