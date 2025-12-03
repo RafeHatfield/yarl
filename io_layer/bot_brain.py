@@ -334,47 +334,43 @@ class BotBrain:
                 nearest_enemy = self._find_nearest_enemy(player, visible_enemies)
                 
                 # Debug: log enemy details to understand failures
-                logger.warning(
-                    f"BotBrain: Floor complete enemy check - "
-                    f"visible_enemies_count={len(visible_enemies)}, "
-                    f"nearest_enemy={'found' if nearest_enemy else 'None'}"
-                )
-                
                 if nearest_enemy:
-                    if self._is_adjacent(player, nearest_enemy):
-                        adjacent_enemy = nearest_enemy
+                    enemy_pos = (nearest_enemy.x, nearest_enemy.y) if hasattr(nearest_enemy, 'x') else 'no_coords'
+                    manhattan_dist = abs(player.x - nearest_enemy.x) + abs(player.y - nearest_enemy.y) if hasattr(nearest_enemy, 'x') else -1
+                    is_adj = self._is_adjacent(player, nearest_enemy)
+                    logger.warning(
+                        f"BotBrain: Floor complete enemy check - "
+                        f"player=({player.x},{player.y}), "
+                        f"enemy={enemy_pos}, "
+                        f"distance={manhattan_dist}, "
+                        f"is_adjacent={is_adj}, "
+                        f"engagement_dist={self.persona.combat_engagement_distance}"
+                    )
+                    
+                    if is_adj:
+                        # Adjacent - attack immediately
+                        logger.warning("BotBrain: Enemy is adjacent, attacking")
+                        self.state = BotState.COMBAT
+                        self.current_target = nearest_enemy
+                        return self._handle_combat(player, visible_enemies, game_state)
+                    elif manhattan_dist <= self.persona.combat_engagement_distance:
+                        # Within engagement range - move toward enemy
+                        logger.warning(f"BotBrain: Enemy within range ({manhattan_dist}), engaging")
+                        self.state = BotState.COMBAT
+                        self.current_target = nearest_enemy
+                        return self._handle_combat(player, visible_enemies, game_state)
                     else:
-                        # Enemy visible but not adjacent - check engagement distance
-                        manhattan_dist = abs(player.x - nearest_enemy.x) + abs(player.y - nearest_enemy.y)
-                        
-                        # During floor complete, be more aggressive - engage enemies further away
-                        # or abort if they're too far (prevents infinite loop)
-                        if manhattan_dist <= self.persona.combat_engagement_distance:
-                            # Can engage - move toward enemy
-                            self._log_summary(f"Floor complete with enemy at distance {manhattan_dist}, engaging")
-                            self.state = BotState.COMBAT
-                            self.current_target = nearest_enemy
-                            return self._handle_combat(player, visible_enemies, game_state)
-                        else:
-                            # Enemy too far to engage during floor complete
-                            # Abort to prevent infinite loop where we can't explore and can't engage
-                            logger.warning(
-                                f"BotBrain: Floor complete, enemy at distance {manhattan_dist} "
-                                f"(beyond engagement distance {self.persona.combat_engagement_distance}), aborting run"
-                            )
-                            return {"bot_abort_run": True}
+                        # Enemy too far to engage during floor complete - abort
+                        logger.warning(
+                            f"BotBrain: Floor complete, enemy at distance {manhattan_dist} "
+                            f"(beyond engagement distance {self.persona.combat_engagement_distance}), aborting run"
+                        )
+                        return {"bot_abort_run": True}
                 
-                if adjacent_enemy:
-                    # Must attack adjacent enemy
-                    self.state = BotState.COMBAT
-                    self.current_target = adjacent_enemy
-                    return self._handle_combat(player, visible_enemies, game_state)
-                
-                # FALLBACK: If we got here, floor is complete with visible enemies but we couldn't
-                # find/engage them. This shouldn't happen, but abort to prevent infinite loop.
+                # FALLBACK: No nearest enemy found despite visible_enemies > 0
                 logger.warning(
                     f"BotBrain: Floor complete with {len(visible_enemies)} visible enemies but "
-                    f"couldn't find/engage any. nearest_enemy={nearest_enemy}, aborting run"
+                    f"nearest_enemy is None, aborting run"
                 )
                 return {"bot_abort_run": True}
             
