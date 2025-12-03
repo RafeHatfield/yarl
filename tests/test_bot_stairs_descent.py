@@ -471,8 +471,11 @@ class TestBotStairsDescent:
         action = brain.decide_action(game_state)
         
         # Assert: Should abort run (no stairs found)
-        assert action == {'bot_abort_run': True}, \
+        # The value is now a reason string like "no_stairs" instead of True
+        assert action.get('bot_abort_run'), \
             f"Expected bot to abort run when no stairs found, got {action}"
+        assert 'no_stairs' in str(action.get('bot_abort_run')).lower(), \
+            f"Expected abort reason to mention 'no_stairs', got {action}"
     
     def test_bot_does_not_restart_auto_explore_after_floor_complete(self):
         """Bot should NOT restart AutoExplore after floor exploration is complete."""

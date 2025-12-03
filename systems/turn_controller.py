@@ -88,6 +88,11 @@ class TurnController:
         if not turn_consumed:
             return
         
+        # METRICS: Record turn taken for steps_taken stat in soak runs
+        player = self.state_manager.state.player
+        if player and hasattr(player, 'statistics') and player.statistics:
+            player.statistics.record_turn()
+        
         current_state = self.state_manager.state.current_state
         
         # Check if this state should transition to enemy turn

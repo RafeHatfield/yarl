@@ -78,7 +78,9 @@ class TestSoakRunResult:
         
         assert result.run_number == 2
         assert result.run_id == ""
-        assert result.outcome == "error"
+        # With failure classification, "error" is refined to "exception"
+        assert result.outcome == "exception"
+        assert result.failure_type == "exception"
         assert result.floor_count == 2
         assert result.exception == "Test exception"
 

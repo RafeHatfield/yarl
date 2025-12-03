@@ -126,6 +126,11 @@ class PickupService:
                 entities.remove(item)
                 logger.info(f"Successfully picked up: {item.name}")
                 
+                # METRICS: Record item pickup for soak stats
+                if hasattr(player, 'statistics') and player.statistics:
+                    player.statistics.record_item_pickup()
+                    logger.debug(f"Recorded item pickup (total: {player.statistics.items_picked_up})")
+                
                 # ===================================================================
                 # POST-PICKUP CHECKS (Phase 5: Victory Trigger, Quest Items, etc.)
                 # ===================================================================

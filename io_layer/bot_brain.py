@@ -52,7 +52,7 @@ class BotPersonaConfig:
     - Combat behavior: engagement distance, retreat threshold
     - Loot behavior: pickup priority, deviation willingness
     - Exploration: stairs priority vs full exploration
-    - Survival: potion use threshold
+    - Survival: potion use threshold, in-combat potion use
     
     Attributes:
         name: Human-readable persona name
@@ -62,6 +62,7 @@ class BotPersonaConfig:
         loot_priority: Weight for loot vs exploration (0=ignore loot, 1=normal, 2=greedy)
         prefer_stairs: If True, prioritize stairs over full exploration when safe
         avoid_combat: If True, avoid non-adjacent enemies when possible
+        drink_potion_in_combat: If True, allow drinking potions while enemies are visible
     """
     name: str
     retreat_hp_threshold: float = 0.25  # Retreat when HP below this
@@ -70,6 +71,7 @@ class BotPersonaConfig:
     loot_priority: int = 1               # 0=skip, 1=normal, 2=greedy
     prefer_stairs: bool = False          # True = prioritize stairs over exploration
     avoid_combat: bool = False           # True = avoid non-adjacent enemies
+    drink_potion_in_combat: bool = False # True = allow potions while enemies visible
 
 
 # Pre-defined personas
@@ -91,6 +93,7 @@ PERSONAS: Dict[str, BotPersonaConfig] = {
         loot_priority=1,
         prefer_stairs=False,
         avoid_combat=True,           # Avoid non-adjacent enemies
+        drink_potion_in_combat=True, # Allow potions while in combat (survival priority)
     ),
     "aggressive": BotPersonaConfig(
         name="aggressive",
@@ -287,7 +290,7 @@ class BotBrain:
                     self._movement_blocked_count += 1
                     if self._movement_blocked_count >= 3:
                         self._log_summary(f"STUCK: Movement blocked {self._movement_blocked_count} times, aborting run")
-                        return {"bot_abort_run": True}
+                        return {"bot_abort_run": "stuck_movement_blocked"}
                 else:
                     # AutoExplore stopped for different reason - reset counter
                     self._movement_blocked_count = 0
@@ -320,7 +323,7 @@ class BotBrain:
                 except Exception as e:
                     # Catch any unexpected errors in floor complete handling
                     self._log_error(f"Exception in _handle_floor_complete: {e}")
-                    floor_action = {"bot_abort_run": True}
+                    floor_action = {"bot_abort_run": f"exception:{e}"}
                 
                 # If _handle_floor_complete returned an action, use it
                 if floor_action:
@@ -334,7 +337,7 @@ class BotBrain:
                         f"Floor complete but _handle_floor_complete returned empty with no enemies! "
                         f"Aborting to prevent loop. stairs_path={self._stairs_path}"
                     )
-                    return {"bot_abort_run": True}
+                    return {"bot_abort_run": "stuck_floor_complete_loop"}
                 
                 # Enemies are visible during floor complete - we need to handle them
                 # Find if any enemy is adjacent (must attack) or within engagement range
@@ -358,7 +361,7 @@ class BotBrain:
                             )
                             self._floor_complete_engage_attempts = 0
                             self._floor_complete_last_pos = None
-                            return {"bot_abort_run": True}
+                            return {"bot_abort_run": f"stuck_combat:enemy_at_{enemy_pos}"}
                     else:
                         # Position changed - reset counter
                         self._floor_complete_engage_attempts = 1
@@ -395,14 +398,14 @@ class BotBrain:
                             f"BotBrain: Floor complete, enemy at distance {manhattan_dist} "
                             f"(beyond engagement distance {self.persona.combat_engagement_distance}), aborting run"
                         )
-                        return {"bot_abort_run": True}
+                        return {"bot_abort_run": f"stuck_enemy_too_far:dist_{manhattan_dist}"}
                 
                 # FALLBACK: No nearest enemy found despite visible_enemies > 0
                 logger.warning(
                     f"BotBrain: Floor complete with {len(visible_enemies)} visible enemies but "
                     f"nearest_enemy is None, aborting run"
                 )
-                return {"bot_abort_run": True}
+                return {"bot_abort_run": "stuck_no_nearest_enemy"}
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
@@ -710,7 +713,7 @@ class BotBrain:
                     player = getattr(game_state, 'player', None)
                     if player and self._is_floor_complete(player):
                         logger.warning("BotBrain: Exception during floor complete - aborting run")
-                        return {"bot_abort_run": True}
+                        return {"bot_abort_run": "exception_floor_complete"}
                 except Exception:
                     pass  # If we can't check, fall through to default
                 
@@ -983,7 +986,7 @@ class BotBrain:
                 f"BotBrain: Floor complete but reached start_auto_explore code! "
                 f"stop_reason='{stop_reason}', type={type(stop_reason)}. Aborting instead."
             )
-            return {"bot_abort_run": True}
+            return {"bot_abort_run": "stuck_explore_after_complete"}
         
         # For other stop reasons (or first time), start autoexplore
         player_pos = (player.x, player.y)
@@ -1559,10 +1562,9 @@ class BotBrain:
         )
         
         if stairs_pos is None:
-            # No stairs found
-            # TODO: Mark as "no_stairs" in failure_type for soak harness integration
+            # No stairs found - classified as "no_stairs" by soak harness
             logger.warning("BotBrain FLOOR_COMPLETE: No stairs found, aborting run")
-            return {"bot_abort_run": True}
+            return {"bot_abort_run": "no_stairs"}
         
         # Already on stairs? (shouldn't happen due to check above, but safety)
         # Use int() conversion to handle numpy types
@@ -1585,7 +1587,7 @@ class BotBrain:
                 )
                 self._stair_walk_attempts = 0
                 self._stair_walk_last_pos = None
-                return {"bot_abort_run": True}
+                return {"bot_abort_run": f"stuck_stairs_blocked:at_{player_pos}"}
         else:
             # Position changed - reset counter
             self._stair_walk_attempts = 1
@@ -1600,10 +1602,9 @@ class BotBrain:
         )
         
         if not self._stairs_path:
-            # No path to stairs
-            # TODO: Mark as "no_stairs" in failure_type for soak harness integration
+            # No path to stairs - classified as "no_stairs" by soak harness
             logger.warning(f"BotBrain FLOOR_COMPLETE: No path to stairs at {stairs_pos}, aborting run")
-            return {"bot_abort_run": True}
+            return {"bot_abort_run": f"no_stairs:unreachable_at_{stairs_pos}"}
         
         self._log_summary(f"STAIRS: Floor complete, walking to stairs at {stairs_pos} "
                          f"({len(self._stairs_path)} steps)")
@@ -1710,7 +1711,8 @@ class BotBrain:
         
         Conditions:
         - HP <= persona.potion_hp_threshold (configurable per persona)
-        - No visible enemies (safe to drink)
+        - Either no visible enemies (safe to drink), OR
+          persona.drink_potion_in_combat is True (allow in-combat potion use)
         
         Args:
             player: Player entity
@@ -1724,9 +1726,13 @@ class BotBrain:
         if hp_fraction > self.persona.potion_hp_threshold:
             return False
         
-        # Must have no visible enemies (safe)
+        # Check visibility of enemies
         if visible_enemies:
-            return False
+            # Enemies are present - only allow potion if persona permits it
+            if not self.persona.drink_potion_in_combat:
+                return False
+            # Log that we're drinking in combat (useful for debugging)
+            self._log_summary(f"POTION: Drinking in combat (persona allows it)")
         
         return True
     

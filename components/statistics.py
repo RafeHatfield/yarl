@@ -68,6 +68,9 @@ class Statistics:
         
         # Portal/wand statistics
         self.portals_used: int = 0  # Total portals created and used
+        
+        # Consumable usage statistics
+        self.potions_used: int = 0  # Total potions consumed (for soak metrics)
     
     def record_kill(self, monster_name: str) -> None:
         """Record a monster kill.
@@ -177,6 +180,10 @@ class Statistics:
         """Record using a portal (wand of portals)."""
         self.portals_used += 1
     
+    def record_potion_used(self) -> None:
+        """Record drinking a potion for soak stats."""
+        self.potions_used += 1
+    
     def get_accuracy(self) -> float:
         """Calculate hit accuracy percentage.
         
@@ -270,6 +277,7 @@ class Statistics:
             'equipment_found': dict(self.equipment_found),
             'items_picked_up': self.items_picked_up,
             'portals_used': self.portals_used,
+            'potions_used': self.potions_used,
         }
     
     @staticmethod
@@ -303,5 +311,6 @@ class Statistics:
         stats.equipment_found = defaultdict(int, data.get('equipment_found', {}))
         stats.items_picked_up = data.get('items_picked_up', 0)
         stats.portals_used = data.get('portals_used', 0)
+        stats.potions_used = data.get('potions_used', 0)
         return stats
 
