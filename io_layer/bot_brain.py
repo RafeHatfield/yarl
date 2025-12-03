@@ -333,6 +333,13 @@ class BotBrain:
                 adjacent_enemy = None
                 nearest_enemy = self._find_nearest_enemy(player, visible_enemies)
                 
+                # Debug: log enemy details to understand failures
+                logger.warning(
+                    f"BotBrain: Floor complete enemy check - "
+                    f"visible_enemies_count={len(visible_enemies)}, "
+                    f"nearest_enemy={'found' if nearest_enemy else 'None'}"
+                )
+                
                 if nearest_enemy:
                     if self._is_adjacent(player, nearest_enemy):
                         adjacent_enemy = nearest_enemy
@@ -362,6 +369,14 @@ class BotBrain:
                     self.state = BotState.COMBAT
                     self.current_target = adjacent_enemy
                     return self._handle_combat(player, visible_enemies, game_state)
+                
+                # FALLBACK: If we got here, floor is complete with visible enemies but we couldn't
+                # find/engage them. This shouldn't happen, but abort to prevent infinite loop.
+                logger.warning(
+                    f"BotBrain: Floor complete with {len(visible_enemies)} visible enemies but "
+                    f"couldn't find/engage any. nearest_enemy={nearest_enemy}, aborting run"
+                )
+                return {"bot_abort_run": True}
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
