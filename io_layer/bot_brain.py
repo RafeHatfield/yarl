@@ -227,6 +227,10 @@ class BotBrain:
         self._movement_blocked_count = 0
         # Stairs descent state: tracks path to stairs when floor is complete
         self._stairs_path: Optional[List[Tuple[int, int]]] = None
+        # Floor-complete enemy engagement stuck detection
+        self._floor_complete_engage_attempts = 0
+        self._floor_complete_last_pos = None
+        self._floor_complete_stuck_threshold = 5  # Abort after 5 failed attempts to engage
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -338,13 +342,32 @@ class BotBrain:
                     enemy_pos = (nearest_enemy.x, nearest_enemy.y) if hasattr(nearest_enemy, 'x') else 'no_coords'
                     manhattan_dist = abs(player.x - nearest_enemy.x) + abs(player.y - nearest_enemy.y) if hasattr(nearest_enemy, 'x') else -1
                     is_adj = self._is_adjacent(player, nearest_enemy)
+                    
+                    # Stuck detection for floor-complete enemy engagement
+                    current_pos = (player.x, player.y)
+                    if self._floor_complete_last_pos == current_pos:
+                        self._floor_complete_engage_attempts += 1
+                        if self._floor_complete_engage_attempts >= self._floor_complete_stuck_threshold:
+                            logger.warning(
+                                f"BotBrain: Stuck trying to engage enemy at {enemy_pos} from {current_pos} "
+                                f"({self._floor_complete_engage_attempts} attempts). Path likely blocked. Aborting."
+                            )
+                            self._floor_complete_engage_attempts = 0
+                            self._floor_complete_last_pos = None
+                            return {"bot_abort_run": True}
+                    else:
+                        # Position changed - reset counter
+                        self._floor_complete_engage_attempts = 1
+                        self._floor_complete_last_pos = current_pos
+                    
                     logger.warning(
                         f"BotBrain: Floor complete enemy check - "
-                        f"player=({player.x},{player.y}), "
+                        f"player={current_pos}, "
                         f"enemy={enemy_pos}, "
                         f"distance={manhattan_dist}, "
                         f"is_adjacent={is_adj}, "
-                        f"engagement_dist={self.persona.combat_engagement_distance}"
+                        f"engagement_dist={self.persona.combat_engagement_distance}, "
+                        f"engage_attempts={self._floor_complete_engage_attempts}"
                     )
                     
                     if is_adj:
@@ -352,6 +375,9 @@ class BotBrain:
                         logger.warning("BotBrain: Enemy is adjacent, attacking")
                         self.state = BotState.COMBAT
                         self.current_target = nearest_enemy
+                        # Reset stuck tracking on successful engagement
+                        self._floor_complete_engage_attempts = 0
+                        self._floor_complete_last_pos = None
                         return self._handle_combat(player, visible_enemies, game_state)
                     elif manhattan_dist <= self.persona.combat_engagement_distance:
                         # Within engagement range - move toward enemy
