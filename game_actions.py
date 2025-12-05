@@ -639,6 +639,11 @@ class ActionProcessor:
 
         # Handle successful movement
         if result.success:
+            # Reset speed bonus tracker - movement breaks combat momentum
+            speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+            if speed_tracker:
+                speed_tracker.reset()
+            
             # Display any messages
             message_log = self.state_manager.state.message_log
             for msg_dict in result.messages:
@@ -757,12 +762,14 @@ class ActionProcessor:
     # SECTION 6: HELPERS - Combat, Death, Equipment, Secrets (304 lines, 7 methods)
     # ═════════════════════════════════════════════════════════════════════════════
 
-    def _handle_combat(self, attacker, target) -> None:
+    def _handle_combat(self, attacker, target, is_bonus_attack: bool = False) -> None:
         """Handle combat between attacker and target.
         
         Args:
             attacker: The attacking entity
             target: The target entity
+            is_bonus_attack: If True, this is a bonus attack from the speed system
+                            (prevents recursive bonus attack rolls)
         """
         attacker_fighter = attacker.get_component_optional(ComponentType.FIGHTER)
         target_fighter = target.get_component_optional(ComponentType.FIGHTER)
@@ -773,8 +780,17 @@ class ActionProcessor:
         if hasattr(attacker, 'invisible') and attacker.invisible:
             self._break_invisibility(attacker)
         
+        # Log bonus attack distinctly
+        if is_bonus_attack:
+            bonus_msg = MB.custom("⚡ [BONUS ATTACK] Speed bonus triggers an extra attack!", (255, 215, 0))
+            self.state_manager.state.message_log.add_message(bonus_msg)
+            logger.info("[BONUS ATTACK] Player speed bonus triggered extra attack")
+        
         # Use new d20-based attack system
         attack_results = attacker_fighter.attack_d20(target)
+        
+        # Track if target died (for bonus attack eligibility)
+        target_died = False
         
         for result in attack_results:
             message = result.get("message")
@@ -785,9 +801,20 @@ class ActionProcessor:
             if dead_entity:
                 # Combat deaths should transform to corpses (keep in entities list)
                 self._handle_entity_death(dead_entity, remove_from_entities=False)
+                if dead_entity == target:
+                    target_died = True
 
         # Player attacks should consume the turn (even if target survived)
-        if attacker == self.state_manager.state.player:
+        player = self.state_manager.state.player
+        if attacker == player:
+            # Check for speed bonus attack (only for main attacks, not bonus attacks)
+            # Also skip if target died (can't bonus attack a corpse)
+            if not is_bonus_attack and not target_died:
+                speed_tracker = attacker.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                if speed_tracker and speed_tracker.roll_for_bonus_attack():
+                    # Bonus attack! Execute immediately (same target, no recursion)
+                    self._handle_combat(attacker, target, is_bonus_attack=True)
+            
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)
     
@@ -924,6 +951,13 @@ class ActionProcessor:
         """Handle wait action (player skips turn)."""
         current_state = self.state_manager.state.current_state
         if current_state == GameStates.PLAYERS_TURN:
+            # Reset speed bonus tracker - waiting breaks combat momentum
+            player = self.state_manager.state.player
+            if player:
+                speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                if speed_tracker:
+                    speed_tracker.reset()
+            
             # Process status effects at end of player turn
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)
@@ -985,6 +1019,11 @@ class ActionProcessor:
         
         # If pickup successful, consume turn
         if result.success:
+            # Reset speed bonus tracker - picking up items breaks combat momentum
+            speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+            if speed_tracker:
+                speed_tracker.reset()
+            
             # BOT AUTO-EQUIP: If in bot mode, automatically equip better items
             # This only runs for bot-controlled players, not manual (human) play
             if self.is_bot_mode:
@@ -1269,6 +1308,11 @@ class ActionProcessor:
         player = self.state_manager.state.player
         message_log = self.state_manager.state.message_log
 
+        # Reset speed bonus tracker - using items breaks combat momentum
+        speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            speed_tracker.reset()
+
         # Check if this is equipment (weapon, armor, ring) - EQUIP instead of USE
         from components.component_registry import ComponentType
         if item.components.has(ComponentType.EQUIPPABLE):
@@ -1457,6 +1501,11 @@ class ActionProcessor:
         if not all([player, entities is not None, game_map, message_log]):
             logger.warning("_handle_stairs: Missing required components!")
             return
+        
+        # Reset speed bonus tracker - changing floors breaks combat momentum
+        speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            speed_tracker.reset()
         
         logger.info(f"_handle_stairs: Player at ({player.x}, {player.y}), checking for stairs")
         

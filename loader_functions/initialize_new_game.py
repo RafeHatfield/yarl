@@ -14,6 +14,7 @@ from components.inventory import Inventory
 from components.item import Item
 from components.level import Level
 from components.player_pathfinding import PlayerPathfinding
+from components.speed_bonus_tracker import SpeedBonusTracker
 from components.statistics import Statistics
 from config.game_constants import get_constants as get_new_constants, get_combat_config, get_inventory_config
 from config.entity_registry import load_entity_config
@@ -197,6 +198,14 @@ def get_game_variables(constants):
     player.statistics = statistics_component
     statistics_component.owner = player
     player.components.add(ComponentType.STATISTICS, statistics_component)
+    
+    # Add SpeedBonusTracker for combat speed system (Phase 1)
+    # Default: 25% speed bonus = bonus attack after 4 consecutive attacks
+    speed_bonus_component = SpeedBonusTracker(speed_bonus_ratio=0.25)
+    player.speed_bonus_tracker = speed_bonus_component
+    speed_bonus_component.owner = player
+    player.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_bonus_component)
+    
     entities = [player]
 
     # Create starting equipment using EntityFactory
