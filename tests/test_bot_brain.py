@@ -2725,3 +2725,259 @@ class TestBotBrainExploreBackoffMode:
             assert (self.player.x + dx, self.player.y + dy) == (23, 72), \
                 "Should move forward along corridor"
 
+
+class TestBotCombatStuckRecovery:
+    """Test that stuck_combat scenarios are recoverable instead of run-ending."""
+    
+    def _create_basic_game_state(self):
+        """Create a basic game state with player and stairs for testing."""
+        game_state = Mock()
+        game_state.current_state = GameStates.PLAYERS_TURN
+        game_state.fov_map = Mock()
+        game_state.game_map = Mock()
+        game_state.game_map.width = 80
+        game_state.game_map.height = 50
+        
+        # Create player with required components
+        player = Mock()
+        player.x = 10
+        player.y = 10
+        player.faction = Mock()
+        player.blocks = True
+        player.components = Mock()
+        player.components.has = Mock(return_value=False)
+        
+        # Create mock fighter component (healthy)
+        mock_fighter = Mock()
+        mock_fighter.hp = 100
+        mock_fighter.max_hp = 100
+        
+        # Create mock auto_explore component that indicates floor is complete
+        mock_auto_explore = Mock()
+        mock_auto_explore.is_active = Mock(return_value=False)
+        mock_auto_explore.stop_reason = "All areas explored"  # Floor complete
+        
+        def get_component(comp_type):
+            if comp_type == ComponentType.FIGHTER:
+                return mock_fighter
+            elif comp_type == ComponentType.AUTO_EXPLORE:
+                return mock_auto_explore
+            return None
+        
+        player.get_component_optional = Mock(side_effect=get_component)
+        
+        # Create stairs entity (needed for floor complete handling)
+        stairs = Mock()
+        stairs.x = 5
+        stairs.y = 5
+        stairs.blocks = False
+        stairs.components = Mock()
+        stairs.components.has = Mock(side_effect=lambda ct: ct == ComponentType.STAIRS)
+        
+        game_state.player = player
+        game_state.entities = [player, stairs]
+        
+        return game_state, player
+    
+    def _create_enemy(self, x, y):
+        """Create a mock enemy entity at given position."""
+        enemy = Mock()
+        enemy.x = x
+        enemy.y = y
+        enemy.faction = Mock()
+        enemy.blocks = True
+        enemy.components = Mock()
+        enemy.components.has = Mock(side_effect=lambda ct: ct == ComponentType.AI)
+        
+        mock_fighter = Mock()
+        mock_fighter.hp = 50
+        mock_fighter.max_hp = 50
+        enemy.get_component_optional = Mock(return_value=mock_fighter)
+        
+        return enemy
+    
+    def _create_stairs(self, x, y):
+        """Create a mock stairs entity at given position."""
+        stairs = Mock()
+        stairs.x = x
+        stairs.y = y
+        stairs.blocks = False
+        stairs.components = Mock()
+        stairs.components.has = Mock(side_effect=lambda ct: ct == ComponentType.STAIRS)
+        return stairs
+    
+    def test_bot_combat_stuck_recovers_to_explore(self):
+        """BotBrain should recover to EXPLORE state when stuck in combat during floor complete.
+        
+        Simulates the scenario where bot is stuck trying to engage an enemy during floor
+        complete handling, and verifies recovery instead of abort.
+        """
+        from io_layer.bot_brain import BotBrain, BotState
+        
+        game_state, player = self._create_basic_game_state()
+        
+        # Create an enemy within engagement range but not adjacent
+        enemy = self._create_enemy(14, 10)
+        stairs = self._create_stairs(5, 5)
+        game_state.entities = [player, enemy, stairs]
+        
+        brain = BotBrain()
+        
+        # Simulate stuck scenario: same position for multiple attempts
+        brain._floor_complete_last_pos = (player.x, player.y)
+        brain._floor_complete_engage_attempts = brain._floor_complete_stuck_threshold - 1
+        
+        # Mock pathfinding to return a valid path to stairs
+        mock_path = [(9, 9), (8, 8), (7, 7), (6, 6), (5, 5)]
+        
+        with patch('io_layer.bot_brain.map_is_in_fov', return_value=True), \
+             patch('io_layer.bot_brain.are_factions_hostile', return_value=True), \
+             patch.object(BotBrain, '_calculate_path_to_stairs', return_value=mock_path):
+            # First call should try to engage
+            action1 = brain.decide_action(game_state)
+            
+            # Simulate no movement (stuck) - set position same as before
+            brain._floor_complete_last_pos = (player.x, player.y)
+            
+            # This call should trigger the stuck threshold and recover
+            action2 = brain.decide_action(game_state)
+        
+        # Should NOT be a stuck_combat abort (no_stairs is acceptable as a separate issue)
+        assert "stuck_combat" not in str(action2.get("bot_abort_run", ""))
+        # Should have recovered to EXPLORE state
+        assert brain.state == BotState.EXPLORE
+        # Enemy should be marked as dropped
+        assert brain._just_dropped_due_to_stuck is True
+        assert brain._stuck_dropped_target == enemy
+    
+    def test_stuck_combat_does_not_abort_run(self):
+        """BotBrain should never return bot_abort_run with stuck_combat prefix.
+        
+        This test ensures that the stuck_combat abort has been replaced with
+        recoverable behavior across all code paths.
+        """
+        from io_layer.bot_brain import BotBrain, BotState
+        
+        game_state, player = self._create_basic_game_state()
+        
+        # Create an enemy within engagement range
+        enemy = self._create_enemy(13, 10)
+        stairs = self._create_stairs(5, 5)
+        game_state.entities = [player, enemy, stairs]
+        
+        brain = BotBrain()
+        
+        # Force the stuck condition to trigger
+        brain._floor_complete_last_pos = (player.x, player.y)
+        brain._floor_complete_engage_attempts = brain._floor_complete_stuck_threshold
+        
+        with patch('io_layer.bot_brain.map_is_in_fov', return_value=True), \
+             patch('io_layer.bot_brain.are_factions_hostile', return_value=True):
+            action = brain.decide_action(game_state)
+        
+        # Should NOT contain stuck_combat abort
+        if "bot_abort_run" in action:
+            assert "stuck_combat" not in action["bot_abort_run"], \
+                f"Found stuck_combat abort: {action['bot_abort_run']}"
+    
+    def test_enemy_too_far_recovers_instead_of_abort(self):
+        """BotBrain should recover when enemy is too far during floor complete.
+        
+        Previously this would abort with stuck_enemy_too_far. Now it should
+        skip the enemy and continue with exploration/stair descent.
+        """
+        from io_layer.bot_brain import BotBrain, BotState
+        
+        game_state, player = self._create_basic_game_state()
+        
+        # Create an enemy beyond engagement distance (default is 8)
+        enemy = self._create_enemy(25, 10)  # Distance 15, beyond default 8
+        stairs = self._create_stairs(5, 5)
+        game_state.entities = [player, enemy, stairs]
+        
+        brain = BotBrain()
+        
+        with patch('io_layer.bot_brain.map_is_in_fov', return_value=True), \
+             patch('io_layer.bot_brain.are_factions_hostile', return_value=True):
+            action = brain.decide_action(game_state)
+        
+        # Should NOT be an abort action
+        assert "bot_abort_run" not in action or "stuck_enemy" not in action.get("bot_abort_run", "")
+        # Enemy should be marked as dropped
+        assert brain._just_dropped_due_to_stuck is True
+        assert brain._stuck_dropped_target == enemy
+        # Should be in EXPLORE state
+        assert brain.state == BotState.EXPLORE
+    
+    def test_dropped_enemy_is_skipped_on_next_tick(self):
+        """BotBrain should skip dropped enemies during subsequent floor complete handling.
+        
+        After an enemy is dropped due to being stuck, it should not be re-engaged
+        on subsequent ticks.
+        """
+        from io_layer.bot_brain import BotBrain, BotState
+        
+        game_state, player = self._create_basic_game_state()
+        
+        # Create an enemy
+        enemy = self._create_enemy(14, 10)
+        stairs = self._create_stairs(5, 5)
+        game_state.entities = [player, enemy, stairs]
+        
+        brain = BotBrain()
+        
+        # Pre-set the dropped enemy state
+        brain._just_dropped_due_to_stuck = True
+        brain._stuck_dropped_target = enemy
+        
+        # Mock pathfinding to return a valid path to stairs
+        mock_path = [(9, 9), (8, 8), (7, 7), (6, 6), (5, 5)]
+        
+        with patch('io_layer.bot_brain.map_is_in_fov', return_value=True), \
+             patch('io_layer.bot_brain.are_factions_hostile', return_value=True), \
+             patch.object(BotBrain, '_calculate_path_to_stairs', return_value=mock_path):
+            action = brain.decide_action(game_state)
+        
+        # Should NOT return stuck_combat abort
+        # Should proceed to stair descent (move action toward stairs)
+        assert "stuck_combat" not in str(action.get("bot_abort_run", ""))
+        # The bot should not have entered COMBAT with this enemy
+        assert brain.current_target != enemy
+        # Should have a move action (toward stairs)
+        assert "move" in action or "take_stairs" in action
+    
+    def test_combat_recovery_clears_stairs_path(self):
+        """When recovering from stuck combat, stairs path should be cleared for recalculation."""
+        from io_layer.bot_brain import BotBrain, BotState
+        
+        game_state, player = self._create_basic_game_state()
+        
+        # Create an enemy within engagement range
+        enemy = self._create_enemy(14, 10)
+        stairs = self._create_stairs(5, 5)
+        game_state.entities = [player, enemy, stairs]
+        
+        brain = BotBrain()
+        
+        # Simulate having a stairs path (old path that should be cleared)
+        original_path = [(15, 10), (16, 10), (17, 10)]
+        brain._stairs_path = original_path.copy()
+        
+        # Force the stuck condition
+        brain._floor_complete_last_pos = (player.x, player.y)
+        brain._floor_complete_engage_attempts = brain._floor_complete_stuck_threshold
+        
+        # Mock pathfinding to return a new path to stairs
+        new_mock_path = [(9, 9), (8, 8), (7, 7), (6, 6), (5, 5)]
+        
+        with patch('io_layer.bot_brain.map_is_in_fov', return_value=True), \
+             patch('io_layer.bot_brain.are_factions_hostile', return_value=True), \
+             patch.object(BotBrain, '_calculate_path_to_stairs', return_value=new_mock_path.copy()):
+            action = brain.decide_action(game_state)
+        
+        # Original stairs path should have been cleared and replaced with new path
+        # (the first step is popped, so path should be one shorter)
+        assert brain._stairs_path != original_path
+        # Should have a move action
+        assert "move" in action
+

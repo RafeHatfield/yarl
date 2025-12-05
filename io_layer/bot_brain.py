@@ -341,8 +341,17 @@ class BotBrain:
                 
                 # Enemies are visible during floor complete - we need to handle them
                 # Find if any enemy is adjacent (must attack) or within engagement range
+                # BUT skip any enemy we recently dropped due to being stuck
                 adjacent_enemy = None
-                nearest_enemy = self._find_nearest_enemy(player, visible_enemies)
+                
+                # Filter out dropped enemies to prevent re-engagement loops
+                engageable_enemies = visible_enemies
+                if self._just_dropped_due_to_stuck and self._stuck_dropped_target:
+                    engageable_enemies = [e for e in visible_enemies if e != self._stuck_dropped_target]
+                    if len(engageable_enemies) < len(visible_enemies):
+                        self._debug(f"Skipping dropped enemy during floor complete enemy check")
+                
+                nearest_enemy = self._find_nearest_enemy(player, engageable_enemies)
                 
                 # Debug: log enemy details to understand failures
                 if nearest_enemy:
@@ -355,13 +364,24 @@ class BotBrain:
                     if self._floor_complete_last_pos == current_pos:
                         self._floor_complete_engage_attempts += 1
                         if self._floor_complete_engage_attempts >= self._floor_complete_stuck_threshold:
+                            # RECOVERABLE: Instead of aborting, give up on this enemy and resume exploration
                             logger.warning(
                                 f"BotBrain: Stuck trying to engage enemy at {enemy_pos} from {current_pos} "
-                                f"({self._floor_complete_engage_attempts} attempts). Path likely blocked. Aborting."
+                                f"({self._floor_complete_engage_attempts} attempts). Giving up and resuming exploration."
                             )
                             self._floor_complete_engage_attempts = 0
                             self._floor_complete_last_pos = None
-                            return {"bot_abort_run": f"stuck_combat:enemy_at_{enemy_pos}"}
+                            # Mark enemy as dropped to prevent immediate re-engagement
+                            self._just_dropped_due_to_stuck = True
+                            self._stuck_dropped_target = nearest_enemy
+                            # Clear stairs path to force recalculation
+                            self._stairs_path = None
+                            # Proceed directly to stair descent (skip enemy handling)
+                            self._debug(f"BotBrain: Combat chase stuck, proceeding to stairs")
+                            self.state = BotState.EXPLORE
+                            self.current_target = None
+                            # Call floor complete with empty enemy list to force stair descent
+                            return self._handle_floor_complete(player, entities, game_map, [])
                     else:
                         # Position changed - reset counter
                         self._floor_complete_engage_attempts = 1
@@ -393,19 +413,37 @@ class BotBrain:
                         self.current_target = nearest_enemy
                         return self._handle_combat(player, visible_enemies, game_state)
                     else:
-                        # Enemy too far to engage during floor complete - abort
+                        # Enemy too far to engage during floor complete - RECOVERABLE: skip and continue to stairs
                         logger.warning(
                             f"BotBrain: Floor complete, enemy at distance {manhattan_dist} "
-                            f"(beyond engagement distance {self.persona.combat_engagement_distance}), aborting run"
+                            f"(beyond engagement distance {self.persona.combat_engagement_distance}), skipping enemy"
                         )
-                        return {"bot_abort_run": f"stuck_enemy_too_far:dist_{manhattan_dist}"}
+                        # Mark enemy as dropped so we don't try to engage it again
+                        self._just_dropped_due_to_stuck = True
+                        self._stuck_dropped_target = nearest_enemy
+                        # Clear stairs path to recalculate without trying to fight this enemy
+                        self._stairs_path = None
+                        # Proceed directly to stair descent (skip this enemy)
+                        self._debug(f"BotBrain: Enemy too far, proceeding to stairs")
+                        self.state = BotState.EXPLORE
+                        self.current_target = None
+                        # Call floor complete with empty enemy list to force stair descent
+                        return self._handle_floor_complete(player, entities, game_map, [])
                 
                 # FALLBACK: No nearest enemy found despite visible_enemies > 0
-                logger.warning(
-                    f"BotBrain: Floor complete with {len(visible_enemies)} visible enemies but "
-                    f"nearest_enemy is None, aborting run"
-                )
-                return {"bot_abort_run": "stuck_no_nearest_enemy"}
+                # This can happen legitimately if all visible enemies were dropped due to being stuck
+                if len(engageable_enemies) == 0 and len(visible_enemies) > 0:
+                    # All enemies were filtered out - proceed directly to stair descent
+                    self._debug(f"All {len(visible_enemies)} visible enemies were dropped, proceeding to stairs")
+                    # Call floor complete with empty enemy list to force stair descent
+                    return self._handle_floor_complete(player, entities, game_map, [])
+                else:
+                    # True error: enemies visible but can't find nearest (shouldn't happen)
+                    logger.warning(
+                        f"BotBrain: Floor complete with {len(visible_enemies)} visible enemies but "
+                        f"nearest_enemy is None, aborting run"
+                    )
+                    return {"bot_abort_run": "stuck_no_nearest_enemy"}
             
             # EQUIPMENT RE-EVALUATION: Periodically check for better gear (bot survivability)
             # This runs every N turns when in EXPLORE state and safe (no enemies)
