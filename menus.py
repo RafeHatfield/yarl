@@ -382,6 +382,15 @@ def character_screen(
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
         f"                                Hit: {to_hit_str} (DEX)"
     )
+    y += 1
+    
+    # Speed bonus / momentum display
+    speed_text = _get_speed_bonus_display(player)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"                                {speed_text}"
+    )
     y += 2
     
     # ═══════════════════════════════════════════════════════════
@@ -674,6 +683,38 @@ def _get_damage_display(player):
     if str_mod != 0:
         return f"+{str_mod}" if str_mod > 0 else str(str_mod)
     return "0"
+
+
+def _get_speed_bonus_display(player):
+    """Get speed bonus display for character screen.
+    
+    Shows the player's attack speed bonus and current momentum.
+    
+    Args:
+        player: Player entity
+        
+    Returns:
+        str: Speed bonus display (e.g., "Spd: +25% (3/4)")
+    """
+    speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+    if not speed_tracker:
+        return "Spd: +0%"
+    
+    # Format speed bonus as percentage
+    speed_pct = int(speed_tracker.speed_bonus_ratio * 100)
+    
+    # Calculate attacks until guaranteed bonus
+    if speed_tracker.speed_bonus_ratio > 0:
+        attacks_for_guaranteed = int(1.0 / speed_tracker.speed_bonus_ratio)
+        current_counter = speed_tracker.attack_counter
+        
+        if current_counter > 0:
+            # Show momentum progress: e.g., "Spd: +25% (3/4)"
+            return f"Spd: +{speed_pct}% ({current_counter}/{attacks_for_guaranteed})"
+        else:
+            return f"Spd: +{speed_pct}%"
+    else:
+        return "Spd: +0%"
 
 
 def _get_attack_display_text(player):

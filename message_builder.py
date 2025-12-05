@@ -143,6 +143,40 @@ class MessageBuilder:
         """
         return Message(text, MessageBuilder.LIGHT_GRAY)
     
+    @staticmethod
+    def combat_momentum(text: str) -> Message:
+        """Combat momentum/speed bonus message (cyan).
+        
+        Used for showing speed bonus buildup during combat.
+        
+        Args:
+            text: Message text
+            
+        Returns:
+            Message object
+            
+        Example:
+            MB.combat_momentum("🔥 Momentum building: 75% bonus attack chance!")
+        """
+        return Message(text, MessageBuilder.CYAN)
+    
+    @staticmethod
+    def combat_bonus_attack(text: str) -> Message:
+        """Bonus attack trigger message (gold).
+        
+        Used when speed bonus triggers an extra attack.
+        
+        Args:
+            text: Message text
+            
+        Returns:
+            Message object
+            
+        Example:
+            MB.combat_bonus_attack("⚡ [BONUS ATTACK] Speed bonus triggers an extra attack!")
+        """
+        return Message(text, MessageBuilder.GOLD)
+    
     # === Healing & HP Messages ===
     
     @staticmethod

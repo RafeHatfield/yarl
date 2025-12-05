@@ -780,11 +780,15 @@ class ActionProcessor:
         if hasattr(attacker, 'invisible') and attacker.invisible:
             self._break_invisibility(attacker)
         
-        # Log bonus attack distinctly
+        # Log bonus attack distinctly with VFX
         if is_bonus_attack:
-            bonus_msg = MB.custom("⚡ [BONUS ATTACK] Speed bonus triggers an extra attack!", (255, 215, 0))
+            bonus_msg = MB.combat_bonus_attack("⚡ [BONUS ATTACK] Speed bonus triggers an extra attack!")
             self.state_manager.state.message_log.add_message(bonus_msg)
             logger.info("[BONUS ATTACK] Player speed bonus triggered extra attack")
+            
+            # Queue VFX flash for bonus attack (lightning-like effect on attacker)
+            from visual_effects import show_hit
+            show_hit(attacker.x, attacker.y, entity=attacker, is_critical=True)
         
         # Use new d20-based attack system
         attack_results = attacker_fighter.attack_d20(target)
@@ -809,14 +813,41 @@ class ActionProcessor:
         if attacker == player:
             # Check for speed bonus attack (only for main attacks, not bonus attacks)
             # Also skip if target died (can't bonus attack a corpse)
-            if not is_bonus_attack and not target_died:
-                speed_tracker = attacker.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
-                if speed_tracker and speed_tracker.roll_for_bonus_attack():
+            speed_tracker = attacker.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+            
+            if not is_bonus_attack and not target_died and speed_tracker:
+                # Roll for bonus attack
+                if speed_tracker.roll_for_bonus_attack():
                     # Bonus attack! Execute immediately (same target, no recursion)
                     self._handle_combat(attacker, target, is_bonus_attack=True)
+                else:
+                    # No bonus - show momentum building message if counter > 0
+                    self._show_momentum_status(speed_tracker)
             
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)
+    
+    def _show_momentum_status(self, speed_tracker) -> None:
+        """Show momentum building status in combat log.
+        
+        Only shows message when player has momentum building (counter > 0).
+        
+        Args:
+            speed_tracker: SpeedBonusTracker component
+        """
+        if not speed_tracker or speed_tracker.attack_counter == 0:
+            return
+        
+        # Calculate current chance as percentage
+        chance_pct = int(speed_tracker.current_chance * 100)
+        
+        # Don't show if chance is at 100%+ (guaranteed next, will show bonus message)
+        if chance_pct >= 100:
+            return
+        
+        # Show momentum building message
+        momentum_msg = MB.combat_momentum(f"🔥 Momentum building: {chance_pct}% bonus attack chance!")
+        self.state_manager.state.message_log.add_message(momentum_msg)
     
     def _handle_entity_death(self, dead_entity, remove_from_entities=False) -> None:
         """Handle entity death.
