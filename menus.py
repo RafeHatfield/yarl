@@ -11,6 +11,7 @@ from entity_dialogue import EntityDialogue
 from config.ui_layout import get_ui_layout
 from typing import Optional
 from components.component_registry import ComponentType
+from components.fighter import ResistanceType
 
 
 def get_menu_click_index(mouse_x: int, mouse_y: int, header: str, options: list, 
