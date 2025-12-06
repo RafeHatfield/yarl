@@ -1340,12 +1340,12 @@ class ActionProcessor:
         message_log = self.state_manager.state.message_log
 
         # Reset speed bonus tracker - using items breaks combat momentum
+        # Note: ComponentType is already imported at module level (line 16)
         speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
         if speed_tracker:
             speed_tracker.reset()
 
         # Check if this is equipment (weapon, armor, ring) - EQUIP instead of USE
-        from components.component_registry import ComponentType
         if item.components.has(ComponentType.EQUIPPABLE):
             # This is equipment - toggle equip/unequip
             if player.equipment:
@@ -2074,15 +2074,24 @@ class ActionProcessor:
         click_result = handle_mouse_click(click_x, click_y, player, entities, game_map, fov_map)
         
         # Process results
+        attack_target = None  # Track attack target for speed bonus
+        target_died = False
+        
         for result in click_result.get("results", []):
             message = result.get("message")
             if message:
                 message_log.add_message(message)
             
+            # Track attack target for speed bonus system
+            if result.get("attack_target"):
+                attack_target = result["attack_target"]
+            
             # Handle combat results
             dead_entity = result.get("dead")
             if dead_entity:
                 self._handle_entity_death(dead_entity, remove_from_entities=False)
+                if attack_target and dead_entity == attack_target:
+                    target_died = True
             
             # Handle pathfinding start
             if result.get("start_pathfinding"):
@@ -2101,6 +2110,17 @@ class ActionProcessor:
             
             # Handle immediate enemy turn (for attacks)
             if result.get("enemy_turn"):
+                # Process speed bonus for mouse click attacks (same logic as _handle_combat)
+                if attack_target and not target_died:
+                    speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                    if speed_tracker:
+                        if speed_tracker.roll_for_bonus_attack():
+                            # Bonus attack! Use _handle_combat for the bonus
+                            self._handle_combat(player, attack_target, is_bonus_attack=True)
+                        else:
+                            # No bonus - show momentum building message
+                            self._show_momentum_status(speed_tracker)
+                
                 self.turn_controller.end_player_action(turn_consumed=True)
     
     def process_pathfinding_turn(self) -> None:
