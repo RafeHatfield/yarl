@@ -321,6 +321,14 @@ class BasicMonster:
                 attack_results = monster.fighter.attack_d20(target)
                 results.extend(attack_results)
                 actions_taken.append("combat")
+                
+                # Check for speed bonus attack (Phase 4)
+                # Only if target is still alive and monster has speed tracker
+                if target.fighter.hp > 0:
+                    bonus_results = self._try_bonus_attack(monster, target, fov_map)
+                    if bonus_results:
+                        results.extend(bonus_results)
+                        actions_taken.append("bonus_attack")
 
         # Process status effects at turn end (decrement durations, remove expired effects)
         status_effects = monster.get_component_optional(ComponentType.STATUS_EFFECTS)
@@ -486,6 +494,57 @@ class BasicMonster:
         
         return results
     
+    def _try_bonus_attack(self, monster, target, fov_map) -> list:
+        """Try to execute a bonus attack based on speed bonus.
+        
+        Phase 4: Monster speed bonus system integration.
+        
+        Args:
+            monster: The monster entity
+            target: The target entity (player or other)
+            fov_map: FOV map for visibility checks
+            
+        Returns:
+            list: List of result dictionaries (attack results if bonus triggered)
+        """
+        results = []
+        
+        # Check if monster has speed bonus tracker
+        speed_tracker = monster.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if not speed_tracker:
+            return results
+        
+        # Roll for bonus attack
+        if speed_tracker.roll_for_bonus_attack():
+            # Bonus attack triggered!
+            # Check if target is still valid
+            if not target or not target.fighter or target.fighter.hp <= 0:
+                return results
+            
+            # Show message only if monster is visible to player
+            if map_is_in_fov(fov_map, monster.x, monster.y):
+                bonus_msg = MB.combat_monster_bonus_attack(
+                    f"⚡ The {monster.name} lashes out with a bonus strike!"
+                )
+                results.append({'message': bonus_msg})
+            
+            # Debug logging for balance testing
+            logger.debug(f"[MONSTER BONUS ATTACK] {monster.name} triggered bonus attack "
+                        f"(speed: +{int(speed_tracker.speed_bonus_ratio * 100)}%)")
+            
+            # Execute the bonus attack
+            MonsterActionLogger.log_action_attempt(monster, "bonus_combat", 
+                f"bonus attack on {target.name}")
+            bonus_attack_results = monster.fighter.attack_d20(target)
+            results.extend(bonus_attack_results)
+        else:
+            # Debug logging for balance testing (optional - shows momentum building)
+            if speed_tracker.attack_counter > 0:
+                logger.debug(f"[MONSTER MOMENTUM] {monster.name} building momentum: "
+                            f"{int(speed_tracker.current_chance * 100)}% bonus chance")
+        
+        return results
+
     def _flee_from_target(self, target, game_map, entities):
         """Move away from target when afraid.
         

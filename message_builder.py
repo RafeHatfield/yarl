@@ -176,6 +176,24 @@ class MessageBuilder:
             MB.combat_bonus_attack("⚡ [BONUS ATTACK] Speed bonus triggers an extra attack!")
         """
         return Message(text, MessageBuilder.GOLD)
+
+    @staticmethod
+    def combat_monster_bonus_attack(text: str) -> Message:
+        """Monster bonus attack message (muted yellow/orange).
+        
+        Used when a monster's speed bonus triggers an extra attack.
+        Less flashy than player bonus attacks.
+        
+        Args:
+            text: Message text
+            
+        Returns:
+            Message object
+            
+        Example:
+            MB.combat_monster_bonus_attack("⚡ The Orc Chieftain lashes out with a bonus strike!")
+        """
+        return Message(text, MessageBuilder.ORANGE)
     
     # === Healing & HP Messages ===
     

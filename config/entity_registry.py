@@ -92,6 +92,8 @@ class MonsterDefinition:
     # Boss system
     is_boss: bool = False
     boss_name: Optional[str] = None
+    # Combat speed bonus (Phase 4) - monsters with this can get bonus attacks
+    speed_bonus: float = 0.0  # e.g., 0.25 = +25% chance per attack
 
 
 @dataclass  
@@ -452,7 +454,9 @@ class EntityRegistry:
                     equipment=monster_data.get('equipment', None),
                     # Boss system
                     is_boss=monster_data.get('is_boss', False),
-                    boss_name=monster_data.get('boss_name', None)
+                    boss_name=monster_data.get('boss_name', None),
+                    # Combat speed bonus (Phase 4)
+                    speed_bonus=monster_data.get('speed_bonus', 0.0)
                 )
                 
                 self.monsters[monster_id] = monster_def

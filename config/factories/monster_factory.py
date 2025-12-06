@@ -5,6 +5,7 @@ Handles creation of all monster entities including:
 - Equipment spawning on monsters
 - Boss creation
 - Fallback monsters
+- Speed bonus tracking (Phase 4)
 """
 
 import logging
@@ -17,6 +18,7 @@ from components.ai import BasicMonster, SlimeAI, BossAI
 from components.inventory import Inventory
 from components.equipment import Equipment
 from components.faction import Faction, get_faction_from_string
+from components.speed_bonus_tracker import SpeedBonusTracker
 from render_functions import RenderOrder
 from config.factories._factory_base import FactoryBase
 
@@ -130,6 +132,14 @@ class MonsterFactory(FactoryBase):
                     monster.boss = boss_component
                     monster.is_boss = True  # Set attribute for death handler check (Phase 5)
                     logger.info(f"Created BOSS: {boss_component.boss_name}")
+
+            # Create speed bonus tracker if monster has speed bonus (Phase 4)
+            if hasattr(monster_def, 'speed_bonus') and monster_def.speed_bonus > 0:
+                speed_tracker = SpeedBonusTracker(speed_bonus_ratio=monster_def.speed_bonus)
+                monster.speed_bonus_tracker = speed_tracker
+                speed_tracker.owner = monster
+                monster.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_tracker)
+                logger.debug(f"Added speed bonus tracker to {monster_def.name}: +{int(monster_def.speed_bonus * 100)}%")
 
             logger.debug(f"Created monster: {monster_def.name} at ({x}, {y})")
             return monster

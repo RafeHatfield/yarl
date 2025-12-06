@@ -94,6 +94,7 @@ monsters:
     color: [127, 63, 63]      # Override: reddish color (leadership/authority)
     inventory_size: 8         # Override: larger inventory (smarter, more organized)
     seek_distance: 7          # Override: better awareness and leadership
+    speed_bonus: 0.25         # Phase 4: +25% bonus attack chance (trained warrior)
     # Inherits: damage_min: 4, damage_max: 6, defense: 0, ai_type: "basic", etc.
     # Total damage: 2 power + 4-6 natural = 6-8 (stronger than basic orc's 4-6)
     # ETP: DPS=7 × 6 × durability=1.33 × behavior=1.1 = 57 (leader buff)
@@ -109,6 +110,7 @@ monsters:
     char: "v"                 # Override: different character
     color: [100, 150, 100]    # Override: slightly different green (experienced)
     inventory_size: 6         # Override: slightly larger inventory
+    speed_bonus: 0.15         # Phase 4: +15% bonus attack chance (experienced fighter)
     # Inherits: damage_min: 4, damage_max: 6, defense: 0, etc.
     # Total damage: 1 power + 4-6 natural = 5-7 (between basic orc and chieftain)
     # ETP: DPS=6 × 6 × durability=1.17 × behavior=1.05 = 41 (experienced)
@@ -167,6 +169,7 @@ monsters:
     color: [0, 200, 0]        # Override: brighter green (ancient power)
     inventory_size: 12        # Override: even larger inventory (ancient hoard)
     seek_distance: 10         # Override: ancient senses
+    speed_bonus: 0.15         # Phase 4: +15% bonus attack chance (ancient reflexes)
     # Inherits: damage_min: 8, damage_max: 12, ai_type: "basic", etc.
     # Total damage: 3 power + 8-12 natural = 11-15 (very powerful!)
     # ETP: DPS=13 × 6 × durability=2.22 × behavior=1.1 = 95 (elite brute)
