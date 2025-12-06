@@ -367,6 +367,54 @@ class SpeedEffect(StatusEffect):
         return results
 
 
+class LightningReflexesEffect(StatusEffect):
+    """Temporarily boosts combat speed bonus (Phase 5).
+    
+    Grants +50% bonus attack chance for the duration, overriding any
+    equipment-based speed bonuses. Reverts to normal when effect ends.
+    """
+    def __init__(self, duration: int, owner: 'Entity', speed_bonus: float = 0.50):
+        super().__init__("lightning_reflexes", duration, owner)
+        self.speed_bonus = speed_bonus
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        
+        # Get or create speed bonus tracker
+        from components.component_registry import ComponentType
+        speed_tracker = self.owner.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        
+        if not speed_tracker:
+            # Create new tracker for this entity
+            from components.speed_bonus_tracker import SpeedBonusTracker
+            speed_tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+            self.owner.speed_bonus_tracker = speed_tracker
+            speed_tracker.owner = self.owner
+            self.owner.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_tracker)
+        
+        # Set temporary bonus (overrides equipment bonus during effect)
+        speed_tracker.set_temporary_bonus(self.speed_bonus)
+        
+        results.append({'message': MB.status_effect(
+            f"{self.owner.name} feels lightning-fast reflexes! (+{int(self.speed_bonus * 100)}% speed)"
+        )})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        
+        # Clear temporary bonus
+        from components.component_registry import ComponentType
+        speed_tracker = self.owner.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            speed_tracker.clear_temporary_bonus()
+        
+        results.append({'message': MB.status_effect(
+            f"{self.owner.name}'s lightning reflexes fade."
+        )})
+        return results
+
+
 class RegenerationEffect(StatusEffect):
     """Heals the owner over time."""
     def __init__(self, duration: int, owner: 'Entity', heal_per_turn: int = 1):

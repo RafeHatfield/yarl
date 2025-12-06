@@ -278,4 +278,85 @@ class Equipment:
             
             results.append({"equipped": equippable_entity})
 
+        # Phase 5: Handle speed bonus changes on equip/unequip
+        self._update_speed_bonus_from_equipment(results)
+        
         return results
+    
+    def _update_speed_bonus_from_equipment(self, results: List[Dict[str, Any]]) -> None:
+        """Recalculate speed bonus from all equipped items.
+        
+        Phase 5: Called after equip/unequip to update the owner's SpeedBonusTracker.
+        
+        Args:
+            results: Results list to add messages to
+        """
+        if not self.owner:
+            return
+        
+        # Get or create speed bonus tracker
+        speed_tracker = self.owner.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if not speed_tracker:
+            # Check if any equipped item has speed_bonus
+            total_speed_bonus = self._calculate_total_speed_bonus()
+            if total_speed_bonus > 0:
+                # Create new tracker with equipment bonus
+                from components.speed_bonus_tracker import SpeedBonusTracker
+                speed_tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)  # Base 0, equipment will be added
+                self.owner.speed_bonus_tracker = speed_tracker
+                speed_tracker.owner = self.owner
+                self.owner.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_tracker)
+                logger.debug(f"Created SpeedBonusTracker for {self.owner.name}")
+        
+        if speed_tracker:
+            # Reset equipment bonus and recalculate
+            old_ratio = speed_tracker.speed_bonus_ratio
+            speed_tracker._equipment_ratio = 0.0
+            speed_tracker._equipment_sources.clear()
+            
+            # Add bonuses from all equipped items
+            for item in self._get_all_equipped_items():
+                if hasattr(item, 'equippable') and item.equippable:
+                    item_speed = getattr(item.equippable, 'speed_bonus', 0.0)
+                    if item_speed > 0:
+                        speed_tracker.add_equipment_bonus(item_speed, item.name)
+            
+            new_ratio = speed_tracker.speed_bonus_ratio
+            
+            # Log change message if significant
+            if old_ratio != new_ratio and self.owner.name.lower() == "player":
+                from message_builder import MessageBuilder as MB
+                if new_ratio > old_ratio:
+                    results.append({
+                        "message": MB.success(f"You feel faster! (+{int((new_ratio - old_ratio) * 100)}% speed)")
+                    })
+                elif new_ratio < old_ratio:
+                    results.append({
+                        "message": MB.warning(f"You feel slower. (-{int((old_ratio - new_ratio) * 100)}% speed)")
+                    })
+    
+    def _calculate_total_speed_bonus(self) -> float:
+        """Calculate total speed bonus from all equipped items.
+        
+        Returns:
+            float: Total speed bonus ratio from equipment
+        """
+        total = 0.0
+        for item in self._get_all_equipped_items():
+            if hasattr(item, 'equippable') and item.equippable:
+                item_speed = getattr(item.equippable, 'speed_bonus', 0.0)
+                total += item_speed
+        return total
+    
+    def _get_all_equipped_items(self) -> list:
+        """Get list of all currently equipped items.
+        
+        Returns:
+            list: All equipped item entities
+        """
+        items = []
+        for slot_attr in ['main_hand', 'off_hand', 'head', 'chest', 'feet', 'left_ring', 'right_ring']:
+            item = getattr(self, slot_attr, None)
+            if item:
+                items.append(item)
+        return items

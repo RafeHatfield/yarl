@@ -485,6 +485,15 @@ weapons:
     char: "-"
     color: [139, 69, 19]    # Brown
 
+  # Phase 5: Speed-boosting weapon
+  quickfang_dagger:
+    damage_dice: "1d4"      # 1-4 damage (same as regular dagger)
+    to_hit_bonus: 2         # +2 to-hit (magical finesse)
+    slot: "main_hand"
+    char: "-"
+    color: [255, 215, 0]    # Gold (magical weapon)
+    speed_bonus: 0.25       # +25% bonus attack chance (Phase 5)
+
   # ═══════════════════════════════════════════════════════════
   # ONE-HANDED WEAPONS (1d6) - Balanced
   # ═══════════════════════════════════════════════════════════
@@ -684,6 +693,15 @@ armor:
     char: "]"
     color: [101, 67, 33]  # Dark brown
 
+  # Phase 5: Speed-boosting boots
+  boots_of_swiftness:
+    armor_class_bonus: 1  # +1 AC (same as leather)
+    armor_type: "light"
+    slot: "feet"
+    char: "]"
+    color: [100, 200, 255]  # Light blue (magical)
+    speed_bonus: 0.25       # +25% bonus attack chance (Phase 5)
+
   # ═══════════════════════════════════════════════════════════
   # MEDIUM ARMOR (DEX Cap +2)
   # ═══════════════════════════════════════════════════════════
@@ -850,6 +868,13 @@ spells:
     char: "!"
     color: [255, 200, 0]  # Golden yellow
     effect_function: "drink_speed_potion"
+  
+  # Phase 5: Combat speed boost potion
+  lightning_reflexes_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 255, 0]  # Bright yellow (lightning)
+    effect_function: "drink_lightning_reflexes_potion"
   
   regeneration_potion:
     spell_type: "potion"
@@ -1246,6 +1271,14 @@ rings:
     color: [255, 150, 0]  # Orange
     ring_effect: "might"
     effect_strength: 4  # +1d4 damage
+  
+  # Phase 5: Speed-boosting ring
+  ring_of_hummingbird:
+    char: "="
+    color: [0, 255, 150]  # Cyan-green (rapid movement)
+    ring_effect: "speed"
+    effect_strength: 25  # +25% bonus attack chance
+    speed_bonus: 0.25    # Used by equipment system (Phase 5)
   
   # ──────────────────────────────────────────────────────────
   # UTILITY RINGS - Special abilities

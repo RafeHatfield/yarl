@@ -20,10 +20,15 @@ Example with 25% speed bonus:
 If an early RNG roll succeeds (e.g., at attack 2), the player gets a bonus
 attack but the counter does NOT reset, so they still build toward the
 guaranteed bonus at attack 4.
+
+Phase 5 additions:
+- Equipment-based speed bonuses (dagger, boots, ring)
+- Temporary speed boosts from potions (override base during effect)
+- Dynamic ratio updates via set_bonus_ratio() and set_temporary_bonus()
 """
 
 import random
-from typing import Optional, Callable
+from typing import Optional, Callable, List
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -38,9 +43,13 @@ class SpeedBonusTracker:
     guaranteed bonus is triggered.
     
     Attributes:
-        speed_bonus_ratio (float): Speed bonus as a ratio (e.g., 0.25 = +25% speed)
+        speed_bonus_ratio (float): Effective speed bonus (base + equipment or temporary override)
         attack_counter (int): Current number of attacks in the ratchet cycle
         owner: The entity that owns this component (set by Entity when registered)
+        _base_ratio (float): Base speed ratio (from character/monster stats)
+        _equipment_ratio (float): Speed bonus from equipped items
+        _temporary_ratio (float): Temporary override from potions (0.0 = not active)
+        _temporary_sources (list): Names of sources providing temporary bonus
     
     Example:
         >>> tracker = SpeedBonusTracker(speed_bonus_ratio=0.25)
@@ -79,10 +88,116 @@ class SpeedBonusTracker:
                 f"speed_bonus_ratio must be >= 0.0, got {speed_bonus_ratio}"
             )
         
-        self.speed_bonus_ratio = speed_bonus_ratio
+        # Track separate sources of speed bonus (Phase 5)
+        self._base_ratio = speed_bonus_ratio  # From character/monster base stats
+        self._equipment_ratio = 0.0  # From equipped items (additive)
+        self._temporary_ratio = 0.0  # From potions (overrides when active)
+        self._equipment_sources: List[str] = []  # Names of items providing speed bonus
+        
         self.attack_counter = 0
         self._rng = rng if rng is not None else random.random
         self.owner = None  # Will be set by Entity when component is registered
+    
+    @property
+    def speed_bonus_ratio(self) -> float:
+        """Get the effective speed bonus ratio.
+        
+        If a temporary bonus (potion) is active, it OVERRIDES the base+equipment.
+        Otherwise, returns base + equipment bonuses.
+        
+        Returns:
+            float: Effective speed bonus ratio
+        """
+        if self._temporary_ratio > 0.0:
+            return self._temporary_ratio
+        return self._base_ratio + self._equipment_ratio
+    
+    @speed_bonus_ratio.setter
+    def speed_bonus_ratio(self, value: float) -> None:
+        """Set the base speed bonus ratio directly.
+        
+        This sets the base ratio only. Use add_equipment_bonus() for equipment
+        and set_temporary_bonus() for potion effects.
+        
+        Args:
+            value: New base speed bonus ratio
+        """
+        if value < 0.0:
+            raise ValueError(f"speed_bonus_ratio must be >= 0.0, got {value}")
+        self._base_ratio = value
+    
+    def add_equipment_bonus(self, bonus: float, source_name: str = "item") -> None:
+        """Add a speed bonus from equipped item.
+        
+        Phase 5: Called when equipping an item with speed_bonus attribute.
+        
+        Args:
+            bonus: Speed bonus to add (e.g., 0.25 for +25%)
+            source_name: Name of the item providing the bonus
+        """
+        self._equipment_ratio += bonus
+        self._equipment_sources.append(source_name)
+        logger.debug(f"SpeedBonusTracker: Added {bonus:.0%} from {source_name}, "
+                    f"total equipment bonus: {self._equipment_ratio:.0%}")
+    
+    def remove_equipment_bonus(self, bonus: float, source_name: str = "item") -> None:
+        """Remove a speed bonus from unequipped item.
+        
+        Phase 5: Called when unequipping an item with speed_bonus attribute.
+        
+        Args:
+            bonus: Speed bonus to remove (e.g., 0.25 for +25%)
+            source_name: Name of the item that was providing the bonus
+        """
+        self._equipment_ratio = max(0.0, self._equipment_ratio - bonus)
+        if source_name in self._equipment_sources:
+            self._equipment_sources.remove(source_name)
+        logger.debug(f"SpeedBonusTracker: Removed {bonus:.0%} from {source_name}, "
+                    f"total equipment bonus: {self._equipment_ratio:.0%}")
+    
+    def set_temporary_bonus(self, bonus: float) -> None:
+        """Set a temporary speed bonus (from potion).
+        
+        Phase 5: Temporary bonuses OVERRIDE base+equipment while active.
+        Call clear_temporary_bonus() when the effect expires.
+        
+        Args:
+            bonus: Temporary speed bonus (e.g., 0.50 for +50%)
+        """
+        self._temporary_ratio = bonus
+        logger.debug(f"SpeedBonusTracker: Set temporary bonus to {bonus:.0%}")
+    
+    def clear_temporary_bonus(self) -> None:
+        """Clear the temporary speed bonus.
+        
+        Phase 5: Called when a potion effect expires. Reverts to base+equipment.
+        """
+        logger.debug(f"SpeedBonusTracker: Cleared temporary bonus (was {self._temporary_ratio:.0%})")
+        self._temporary_ratio = 0.0
+    
+    def has_temporary_bonus(self) -> bool:
+        """Check if a temporary bonus is active.
+        
+        Returns:
+            bool: True if temporary bonus (potion) is active
+        """
+        return self._temporary_ratio > 0.0
+    
+    def get_bonus_sources(self) -> str:
+        """Get a human-readable description of speed bonus sources.
+        
+        Phase 5: Used for character sheet display.
+        
+        Returns:
+            str: Description like "Boots + Ring" or "Potion active"
+        """
+        if self._temporary_ratio > 0.0:
+            return "Potion active"
+        if self._equipment_sources:
+            return " + ".join(self._equipment_sources)
+        if self._base_ratio > 0.0:
+            return "Base"
+        return ""
     
     @property
     def current_chance(self) -> float:

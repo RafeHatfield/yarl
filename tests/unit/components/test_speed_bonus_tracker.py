@@ -431,3 +431,102 @@ class TestRelativeSpeedGating:
         
         can_build = attacker_speed > defender_speed
         assert can_build is True
+
+
+class TestEquipmentBonus:
+    """Tests for Phase 5 equipment-based speed bonuses."""
+    
+    def test_add_equipment_bonus(self):
+        """Test adding equipment speed bonus."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        
+        tracker.add_equipment_bonus(0.25, "Quickfang Dagger")
+        
+        assert tracker.speed_bonus_ratio == 0.25
+        assert "Quickfang Dagger" in tracker._equipment_sources
+    
+    def test_stacked_equipment_bonuses(self):
+        """Test that multiple equipment bonuses stack additively."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        
+        tracker.add_equipment_bonus(0.25, "Quickfang Dagger")
+        tracker.add_equipment_bonus(0.25, "Boots of Swiftness")
+        tracker.add_equipment_bonus(0.25, "Ring of Hummingbird")
+        
+        assert tracker.speed_bonus_ratio == 0.75
+        assert len(tracker._equipment_sources) == 3
+    
+    def test_remove_equipment_bonus(self):
+        """Test removing equipment speed bonus."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        tracker.add_equipment_bonus(0.25, "Dagger")
+        tracker.add_equipment_bonus(0.25, "Boots")
+        
+        tracker.remove_equipment_bonus(0.25, "Dagger")
+        
+        assert tracker.speed_bonus_ratio == 0.25
+        assert "Dagger" not in tracker._equipment_sources
+        assert "Boots" in tracker._equipment_sources
+    
+    def test_equipment_bonus_with_base(self):
+        """Test that equipment bonus adds to base ratio."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.10)  # 10% base
+        
+        tracker.add_equipment_bonus(0.25, "Boots")
+        
+        # Base 10% + Equipment 25% = 35%
+        assert tracker.speed_bonus_ratio == 0.35
+
+
+class TestTemporaryBonus:
+    """Tests for Phase 5 temporary (potion) speed bonuses."""
+    
+    def test_set_temporary_bonus(self):
+        """Test setting temporary bonus."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        
+        tracker.set_temporary_bonus(0.50)
+        
+        assert tracker.speed_bonus_ratio == 0.50
+        assert tracker.has_temporary_bonus() is True
+    
+    def test_temporary_bonus_overrides_equipment(self):
+        """Test that temporary bonus overrides equipment bonus."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        tracker.add_equipment_bonus(0.25, "Dagger")
+        tracker.add_equipment_bonus(0.25, "Boots")
+        
+        # Equipment gives 50%, but potion gives 50% override
+        tracker.set_temporary_bonus(0.50)
+        
+        # Should show potion's 50%, not equipment's 50%
+        assert tracker.speed_bonus_ratio == 0.50
+        assert tracker.has_temporary_bonus() is True
+    
+    def test_clear_temporary_bonus(self):
+        """Test clearing temporary bonus reverts to equipment."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        tracker.add_equipment_bonus(0.25, "Dagger")
+        tracker.set_temporary_bonus(0.50)
+        
+        tracker.clear_temporary_bonus()
+        
+        # Should revert to equipment's 25%
+        assert tracker.speed_bonus_ratio == 0.25
+        assert tracker.has_temporary_bonus() is False
+    
+    def test_get_bonus_sources_with_potion(self):
+        """Test that sources show 'Potion active' when temporary."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        tracker.add_equipment_bonus(0.25, "Dagger")
+        tracker.set_temporary_bonus(0.50)
+        
+        assert tracker.get_bonus_sources() == "Potion active"
+    
+    def test_get_bonus_sources_without_potion(self):
+        """Test that sources show equipment names when no potion."""
+        tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+        tracker.add_equipment_bonus(0.25, "Dagger")
+        tracker.add_equipment_bonus(0.25, "Boots")
+        
+        assert tracker.get_bonus_sources() == "Dagger + Boots"

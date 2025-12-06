@@ -29,6 +29,7 @@ class Equippable:
         two_handed (bool): Requires both hands, prevents shield use
         reach (int): Attack range in tiles (1 = adjacent, 2 = spear reach)
         resistances (dict): Dict mapping ResistanceType to percentage (0-100)
+        speed_bonus (float): Combat speed bonus ratio (Phase 5, e.g., 0.25 = +25%)
         owner (Entity): The entity that owns this component
     """
 
@@ -36,7 +37,8 @@ class Equippable:
                  armor_class_bonus: int = 0, to_hit_bonus: int = 0,
                  damage_min: int = 0, damage_max: int = 0, defense_min: int = 0, defense_max: int = 0,
                  armor_type: Optional[str] = None, dex_cap: Optional[int] = None, damage_dice: Optional[str] = None,
-                 two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None) -> None:
+                 two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None,
+                 speed_bonus: float = 0.0) -> None:
         """Initialize an Equippable component.
 
         Args:
@@ -56,6 +58,7 @@ class Equippable:
             two_handed (bool, optional): Requires both hands, prevents shield use. Defaults to False.
             reach (int, optional): Attack range in tiles (1 = adjacent, 2 = spear). Defaults to 1.
             resistances (Optional[dict], optional): Dict mapping ResistanceType to percentage (0-100). Defaults to None.
+            speed_bonus (float, optional): Combat speed bonus ratio (Phase 5). Defaults to 0.0.
         """
         self.slot: Any = slot
         self.power_bonus: int = power_bonus
@@ -73,6 +76,7 @@ class Equippable:
         self.two_handed: bool = two_handed  # Requires both hands, prevents shield use
         self.reach: int = reach  # Attack range in tiles (1 = adjacent, 2 = spear reach)
         self.resistances: dict = resistances if resistances is not None else {}  # Resistance bonuses (ResistanceType: percentage)
+        self.speed_bonus: float = speed_bonus  # Combat speed bonus ratio (Phase 5)
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
     
     def get_damage_range_text(self) -> str:

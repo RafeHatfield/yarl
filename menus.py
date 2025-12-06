@@ -689,13 +689,14 @@ def _get_damage_display(player):
 def _get_speed_bonus_display(player):
     """Get speed bonus display for character screen.
     
-    Shows the player's attack speed bonus and current momentum.
+    Shows the player's attack speed bonus, source, and current momentum.
+    Phase 5: Now shows sources (equipment/potion) and momentum counter.
     
     Args:
         player: Player entity
         
     Returns:
-        str: Speed bonus display (e.g., "Spd: +25% (3/4)")
+        str: Speed bonus display (e.g., "Spd: +50% (Boots + Ring) (2/4)")
     """
     speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
     if not speed_tracker:
@@ -704,18 +705,29 @@ def _get_speed_bonus_display(player):
     # Format speed bonus as percentage
     speed_pct = int(speed_tracker.speed_bonus_ratio * 100)
     
+    if speed_pct == 0:
+        return "Spd: +0%"
+    
+    # Get bonus sources (Phase 5)
+    sources = speed_tracker.get_bonus_sources()
+    
     # Calculate attacks until guaranteed bonus
-    if speed_tracker.speed_bonus_ratio > 0:
-        attacks_for_guaranteed = int(1.0 / speed_tracker.speed_bonus_ratio)
-        current_counter = speed_tracker.attack_counter
-        
+    attacks_for_guaranteed = max(1, int(1.0 / speed_tracker.speed_bonus_ratio)) if speed_tracker.speed_bonus_ratio > 0 else 0
+    current_counter = speed_tracker.attack_counter
+    
+    # Build display string
+    if sources:
         if current_counter > 0:
-            # Show momentum progress: e.g., "Spd: +25% (3/4)"
+            # Show sources + momentum: "Spd: +50% (Boots + Ring) (2/4)"
+            return f"Spd: +{speed_pct}% ({sources}) ({current_counter}/{attacks_for_guaranteed})"
+        else:
+            # Just sources: "Spd: +50% (Boots + Ring)"
+            return f"Spd: +{speed_pct}% ({sources})"
+    else:
+        if current_counter > 0:
             return f"Spd: +{speed_pct}% ({current_counter}/{attacks_for_guaranteed})"
         else:
             return f"Spd: +{speed_pct}%"
-    else:
-        return "Spd: +0%"
 
 
 def _get_attack_display_text(player):

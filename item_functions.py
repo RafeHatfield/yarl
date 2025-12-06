@@ -877,6 +877,40 @@ def drink_speed_potion(*args, **kwargs):
     return results
 
 
+def drink_lightning_reflexes_potion(*args, **kwargs):
+    """Drink a potion of lightning reflexes - grants +50% combat speed bonus for 15 turns.
+    
+    Phase 5: This potion temporarily overrides equipment-based speed bonuses,
+    granting a flat +50% bonus attack chance for the duration.
+    
+    Args:
+        *args: First argument should be the entity drinking the potion
+        **kwargs: Optional parameters
+    
+    Returns:
+        list: List of result dictionaries with consumption and status effect info
+    """
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity to apply lightning reflexes to!")}]
+    
+    results = []
+    
+    # Get or create status effect manager
+    if not hasattr(entity, 'status_effects'):
+        from components.status_effects import StatusEffectManager
+        entity.status_effects = StatusEffectManager(entity)
+    
+    # Add lightning reflexes effect for 15 turns (short but powerful)
+    from components.status_effects import LightningReflexesEffect
+    reflexes_effect = LightningReflexesEffect(duration=15, owner=entity, speed_bonus=0.50)
+    effect_results = entity.status_effects.add_effect(reflexes_effect)
+    results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    return results
+
+
 def drink_regeneration_potion(*args, **kwargs):
     """Drink a potion of regeneration - heals 1 HP per turn for 50 turns (50 HP total).
     
