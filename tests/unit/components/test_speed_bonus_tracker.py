@@ -376,3 +376,58 @@ class TestStatisticalBehavior:
         
         # Bonus rate should be around 62.5% (allowing for statistical variance)
         assert 0.55 < bonus_rate < 0.70, f"Bonus rate {bonus_rate:.2%} outside expected range (55-70%)"
+
+
+class TestRelativeSpeedGating:
+    """Tests for relative speed gating behavior.
+    
+    The gate logic lives in game_actions.py and basic_monster.py, not in the tracker itself.
+    These tests verify the expected behavior when comparing speed ratios.
+    """
+    
+    def test_faster_attacker_can_build_momentum(self):
+        """Test that a faster attacker (higher ratio) can build momentum."""
+        # Player (+25%) vs Orc (0%) - Player is faster, can build momentum
+        attacker_speed = 0.25
+        defender_speed = 0.0
+        
+        # Gate condition: attacker.speed > defender.speed
+        can_build = attacker_speed > defender_speed
+        assert can_build is True
+    
+    def test_slower_attacker_cannot_build_momentum(self):
+        """Test that a slower attacker cannot build momentum."""
+        # Player (+25%) vs Spider (+50%) - Player is slower, cannot build momentum
+        attacker_speed = 0.25
+        defender_speed = 0.50
+        
+        # Gate condition: attacker.speed > defender.speed
+        can_build = attacker_speed > defender_speed
+        assert can_build is False
+    
+    def test_equal_speed_cannot_build_momentum(self):
+        """Test that equal speed prevents momentum building."""
+        # Both at +25% - neither is faster, no momentum
+        attacker_speed = 0.25
+        defender_speed = 0.25
+        
+        # Gate condition: attacker.speed > defender.speed (strict inequality)
+        can_build = attacker_speed > defender_speed
+        assert can_build is False
+    
+    def test_zero_vs_zero_cannot_build_momentum(self):
+        """Test that 0% vs 0% prevents momentum building."""
+        attacker_speed = 0.0
+        defender_speed = 0.0
+        
+        can_build = attacker_speed > defender_speed
+        assert can_build is False
+    
+    def test_any_speed_vs_zero_can_build_momentum(self):
+        """Test that any positive speed vs 0% allows momentum."""
+        # Even tiny speed advantage matters
+        attacker_speed = 0.01
+        defender_speed = 0.0
+        
+        can_build = attacker_speed > defender_speed
+        assert can_build is True

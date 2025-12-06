@@ -816,13 +816,16 @@ class ActionProcessor:
             speed_tracker = attacker.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
             
             if not is_bonus_attack and not target_died and speed_tracker:
-                # Roll for bonus attack
-                if speed_tracker.roll_for_bonus_attack():
-                    # Bonus attack! Execute immediately (same target, no recursion)
-                    self._handle_combat(attacker, target, is_bonus_attack=True)
-                else:
-                    # No bonus - show momentum building message if counter > 0
-                    self._show_momentum_status(speed_tracker)
+                # Gate: Only roll if attacker is faster than defender
+                # Slower entities cannot build momentum against faster ones
+                if self._can_build_momentum(attacker, target):
+                    # Roll for bonus attack
+                    if speed_tracker.roll_for_bonus_attack():
+                        # Bonus attack! Execute immediately (same target, no recursion)
+                        self._handle_combat(attacker, target, is_bonus_attack=True)
+                    else:
+                        # No bonus - show momentum building message if counter > 0
+                        self._show_momentum_status(speed_tracker)
             
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)
@@ -847,6 +850,41 @@ class ActionProcessor:
         
         # Show momentum building message
         momentum_msg = MB.combat_momentum(f"🔥 Momentum building: {chance_pct}% bonus attack chance!")
+
+    def _get_speed_bonus_ratio(self, entity) -> float:
+        """Get the speed bonus ratio for an entity.
+        
+        Used for relative speed gating - only the faster entity can build momentum.
+        
+        Args:
+            entity: The entity to check
+            
+        Returns:
+            float: Speed bonus ratio (0.0 if entity has no SpeedBonusTracker)
+        """
+        if not entity:
+            return 0.0
+        speed_tracker = entity.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            return speed_tracker.speed_bonus_ratio
+        return 0.0
+
+    def _can_build_momentum(self, attacker, defender) -> bool:
+        """Check if attacker can build momentum against defender.
+        
+        Only the faster entity (relative to target) can build momentum.
+        This prevents slower entities from gaining bonus attacks against faster ones.
+        
+        Args:
+            attacker: The attacking entity
+            defender: The defending entity
+            
+        Returns:
+            bool: True if attacker is faster than defender
+        """
+        attacker_speed = self._get_speed_bonus_ratio(attacker)
+        defender_speed = self._get_speed_bonus_ratio(defender)
+        return attacker_speed > defender_speed
         self.state_manager.state.message_log.add_message(momentum_msg)
     
     def _handle_entity_death(self, dead_entity, remove_from_entities=False) -> None:
@@ -2114,12 +2152,14 @@ class ActionProcessor:
                 if attack_target and not target_died:
                     speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
                     if speed_tracker:
-                        if speed_tracker.roll_for_bonus_attack():
-                            # Bonus attack! Use _handle_combat for the bonus
-                            self._handle_combat(player, attack_target, is_bonus_attack=True)
-                        else:
-                            # No bonus - show momentum building message
-                            self._show_momentum_status(speed_tracker)
+                        # Gate: Only roll if player is faster than target
+                        if self._can_build_momentum(player, attack_target):
+                            if speed_tracker.roll_for_bonus_attack():
+                                # Bonus attack! Use _handle_combat for the bonus
+                                self._handle_combat(player, attack_target, is_bonus_attack=True)
+                            else:
+                                # No bonus - show momentum building message
+                                self._show_momentum_status(speed_tracker)
                 
                 self.turn_controller.end_player_action(turn_consumed=True)
     

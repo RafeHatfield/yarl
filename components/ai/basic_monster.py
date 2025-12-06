@@ -431,6 +431,24 @@ class BasicMonster:
             
         return results
     
+    def _get_speed_bonus_ratio(self, entity) -> float:
+        """Get the speed bonus ratio for an entity.
+        
+        Used for relative speed gating - only the faster entity can build momentum.
+        
+        Args:
+            entity: The entity to check
+            
+        Returns:
+            float: Speed bonus ratio (0.0 if entity has no SpeedBonusTracker)
+        """
+        if not entity:
+            return 0.0
+        speed_tracker = entity.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            return speed_tracker.speed_bonus_ratio
+        return 0.0
+
     def _pickup_item(self, item, entities):
         """Handle picking up an item.
         
@@ -512,6 +530,13 @@ class BasicMonster:
         # Check if monster has speed bonus tracker
         speed_tracker = monster.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
         if not speed_tracker:
+            return results
+        
+        # Gate: Only roll if monster is faster than target
+        # Slower entities cannot build momentum against faster ones
+        target_speed = self._get_speed_bonus_ratio(target)
+        if speed_tracker.speed_bonus_ratio <= target_speed:
+            # Monster is not faster than target - no momentum building
             return results
         
         # Roll for bonus attack
