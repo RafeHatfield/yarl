@@ -83,6 +83,7 @@ class ComponentType(Enum):
     LOCKED_DOOR = auto()
     DOOR = auto()
     TRAP = auto()
+    SPEED_BONUS_TRACKER = auto()  # Combat speed bonus system (Phase 1)
 
 
 class ComponentRegistry:

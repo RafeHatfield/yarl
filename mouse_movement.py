@@ -141,7 +141,8 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
             attack_results = player.fighter.attack_d20(target)
             results.extend(attack_results)
             results.append({
-                "enemy_turn": True  # Trigger enemy turn after attack
+                "enemy_turn": True,  # Trigger enemy turn after attack
+                "attack_target": target  # Signal for speed bonus processing
             })
         else:
             results.append({

@@ -92,6 +92,8 @@ class MonsterDefinition:
     # Boss system
     is_boss: bool = False
     boss_name: Optional[str] = None
+    # Combat speed bonus (Phase 4) - monsters with this can get bonus attacks
+    speed_bonus: float = 0.0  # e.g., 0.25 = +25% chance per attack
 
 
 @dataclass  
@@ -105,6 +107,7 @@ class WeaponDefinition:
     - two_handed: Requires both hands, prevents shield use
     - reach: Attack range in tiles (default 1, spears have 2)
     - resistances: Dict mapping resistance type string to percentage (e.g., {"fire": 30})
+    - speed_bonus: Combat speed bonus ratio (Phase 5, e.g., 0.25 = +25%)
     """
     name: str
     power_bonus: int = 0
@@ -115,6 +118,7 @@ class WeaponDefinition:
     two_handed: bool = False  # Requires both hands, prevents shield use
     reach: int = 1  # Attack range in tiles (1 = adjacent, 2 = spear reach)
     resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 30})
+    speed_bonus: float = 0.0  # Combat speed bonus ratio (Phase 5)
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -146,6 +150,9 @@ class ArmorDefinition:
     
     Resistances:
     - resistances: Dict mapping resistance type string to percentage (e.g., {"fire": 30})
+    
+    Speed Bonus (Phase 5):
+    - speed_bonus: Combat speed bonus ratio (e.g., 0.25 = +25%)
     """
     name: str
     defense_bonus: int = 0
@@ -155,6 +162,7 @@ class ArmorDefinition:
     armor_type: Optional[str] = None  # light, medium, heavy, shield
     dex_cap: Optional[int] = None  # Max DEX modifier for AC (None = no cap)
     resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 30})
+    speed_bonus: float = 0.0  # Combat speed bonus ratio (Phase 5)
     slot: str = "off_hand"
     char: str = "["
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -208,12 +216,13 @@ class RingDefinition:
     
     Rings provide continuous bonuses while equipped in left or right ring slots.
     Effects can include AC bonuses, stat bonuses, damage bonuses, immunities,
-    regeneration, triggered effects, and resistance bonuses.
+    regeneration, triggered effects, resistance bonuses, and speed bonuses.
     """
     name: str
     ring_effect: str  # Type of effect (e.g., "protection", "strength", "regeneration")
     effect_strength: int  # Magnitude of the effect (e.g., +2 AC, +2 STR, heal every N turns)
     resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 10})
+    speed_bonus: float = 0.0  # Combat speed bonus ratio (Phase 5)
     char: str = "="
     color: Tuple[int, int, int] = (200, 200, 200)
     extends: Optional[str] = None  # For inheritance
@@ -452,7 +461,9 @@ class EntityRegistry:
                     equipment=monster_data.get('equipment', None),
                     # Boss system
                     is_boss=monster_data.get('is_boss', False),
-                    boss_name=monster_data.get('boss_name', None)
+                    boss_name=monster_data.get('boss_name', None),
+                    # Combat speed bonus (Phase 4)
+                    speed_bonus=monster_data.get('speed_bonus', 0.0)
                 )
                 
                 self.monsters[monster_id] = monster_def
@@ -486,6 +497,7 @@ class EntityRegistry:
                     to_hit_bonus=weapon_data.get('to_hit_bonus', 0),
                     two_handed=weapon_data.get('two_handed', False),  # NEW!
                     reach=weapon_data.get('reach', 1),  # NEW!
+                    speed_bonus=weapon_data.get('speed_bonus', 0.0),  # Phase 5
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),
@@ -512,6 +524,7 @@ class EntityRegistry:
                     armor_class_bonus=armor_data.get('armor_class_bonus', 0),
                     armor_type=armor_data.get('armor_type'),  # light, medium, heavy, shield
                     dex_cap=armor_data.get('dex_cap'),  # Max DEX modifier for AC
+                    speed_bonus=armor_data.get('speed_bonus', 0.0),  # Phase 5
                     slot=armor_data.get('slot', 'off_hand'),
                     char=armor_data.get('char', '['),
                     color=tuple(armor_data.get('color', [139, 69, 19])),
@@ -588,6 +601,8 @@ class EntityRegistry:
                     name=ring_id.replace('_', ' ').title(),
                     ring_effect=ring_data.get('ring_effect', 'unknown'),
                     effect_strength=ring_data.get('effect_strength', 0),
+                    resistances=ring_data.get('resistances'),  # Added for resistance rings
+                    speed_bonus=ring_data.get('speed_bonus', 0.0),  # Phase 5
                     char=ring_data.get('char', '='),
                     color=tuple(ring_data.get('color', [200, 200, 200])),
                     extends=None  # Clear extends after resolution

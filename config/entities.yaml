@@ -94,6 +94,7 @@ monsters:
     color: [127, 63, 63]      # Override: reddish color (leadership/authority)
     inventory_size: 8         # Override: larger inventory (smarter, more organized)
     seek_distance: 7          # Override: better awareness and leadership
+    speed_bonus: 0.25         # Phase 4: +25% bonus attack chance (trained warrior)
     # Inherits: damage_min: 4, damage_max: 6, defense: 0, ai_type: "basic", etc.
     # Total damage: 2 power + 4-6 natural = 6-8 (stronger than basic orc's 4-6)
     # ETP: DPS=7 × 6 × durability=1.33 × behavior=1.1 = 57 (leader buff)
@@ -109,6 +110,7 @@ monsters:
     char: "v"                 # Override: different character
     color: [100, 150, 100]    # Override: slightly different green (experienced)
     inventory_size: 6         # Override: slightly larger inventory
+    speed_bonus: 0.15         # Phase 4: +15% bonus attack chance (experienced fighter)
     # Inherits: damage_min: 4, damage_max: 6, defense: 0, etc.
     # Total damage: 1 power + 4-6 natural = 5-7 (between basic orc and chieftain)
     # ETP: DPS=6 × 6 × durability=1.17 × behavior=1.05 = 41 (experienced)
@@ -167,6 +169,7 @@ monsters:
     color: [0, 200, 0]        # Override: brighter green (ancient power)
     inventory_size: 12        # Override: even larger inventory (ancient hoard)
     seek_distance: 10         # Override: ancient senses
+    speed_bonus: 0.15         # Phase 4: +15% bonus attack chance (ancient reflexes)
     # Inherits: damage_min: 8, damage_max: 12, ai_type: "basic", etc.
     # Total damage: 3 power + 8-12 natural = 11-15 (very powerful!)
     # ETP: DPS=13 × 6 × durability=2.22 × behavior=1.1 = 95 (elite brute)
@@ -220,6 +223,133 @@ monsters:
     # ETP: DPS=3.5 × 6 × durability=2.05 × behavior=1.15 = 50 (splits into 2 small)
     # Effective ETP higher due to splitting mechanic
     etp_base: 35
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 6: SPEED-AWARE MONSTERS
+  # Monsters with varying speed ratios for bonus attack mechanics
+  # ═══════════════════════════════════════════════════════════
+
+  # Orc Brute - Slow, heavy hitter from the orc faction
+  # Lower speed ratio means player can build momentum against it
+  orc_brute:
+    extends: orc              # Inherit orc properties
+    stats:
+      hp: 40                  # Very tanky
+      power: 2                # Hits hard
+      defense: 2              # Some natural armor
+      xp: 60                  # Good XP for the threat
+      damage_min: 6           # Strong melee: 6-10
+      damage_max: 10
+      strength: 16            # Very strong (+3 modifier)
+      dexterity: 8            # Slow (-1 to-hit)
+      constitution: 16        # Very tough (+3 HP)
+    char: "B"                 # B for Brute
+    color: [80, 160, 80]      # Darker green (hulking)
+    faction: "orc"            # Orc faction
+    speed_bonus: 0.75         # Phase 6: Below average - player can counter
+    # ETP: DPS=10 × 6 × durability=2.05 × behavior=0.9 × speed=1.0 = 111
+    etp_base: 55              # Base before speed multiplier
+
+  # Zombie - Slow undead creature
+  zombie:
+    stats:
+      hp: 25
+      power: 0
+      defense: 0
+      xp: 30
+      damage_min: 3           # Weak but persistent: 3-6
+      damage_max: 6
+      strength: 12            # Moderate (+1 modifier)
+      dexterity: 6            # Very slow (-2 to-hit)
+      constitution: 14        # Undead resilience (+2 HP)
+    char: "z"
+    color: [128, 128, 96]     # Sickly gray-green
+    ai_type: "basic"
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    can_seek_items: false     # Mindless - doesn't seek items
+    inventory_size: 0
+    speed_bonus: 0.5          # Phase 6: Slow - player has advantage
+    # ETP: DPS=4.5 × 6 × durability=1.28 × behavior=0.9 × speed=1.0 = 31
+    etp_base: 31
+
+  # Wraith - Fast ethereal undead
+  wraith:
+    stats:
+      hp: 20
+      power: 3                # Draining touch
+      defense: 4              # Partially incorporeal
+      xp: 100
+      damage_min: 5           # Cold touch: 5-9
+      damage_max: 9
+      strength: 10            # Average
+      dexterity: 18           # Extremely fast (+4 to-hit, +4 AC)
+      constitution: 10        # Average
+      resistances:
+        cold: 100             # Immune to cold
+        poison: 100           # Immune to poison (undead)
+    char: "W"
+    color: [180, 180, 220]    # Ghostly pale blue
+    ai_type: "basic"
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    can_seek_items: false     # Incorporeal - can't interact with items
+    inventory_size: 0
+    speed_bonus: 2.0          # Phase 6: VERY fast - bonus attack every hit!
+    # ETP: DPS=10 × 6 × durability=1.03 × behavior=1.05 × speed=2.0 = 130
+    etp_base: 65              # Base before speed multiplier (65 × 2.0 = 130)
+
+  # Giant Spider - Fast predatory creature
+  giant_spider:
+    stats:
+      hp: 18
+      power: 0
+      defense: 1
+      xp: 45
+      damage_min: 4           # Venomous bite: 4-8
+      damage_max: 8
+      strength: 12            # Moderate (+1 modifier)
+      dexterity: 16           # Fast (+3 to-hit, +3 AC)
+      constitution: 10        # Average
+    char: "S"
+    color: [60, 60, 60]       # Dark gray
+    ai_type: "basic"
+    faction: "independent"    # Independent - hostile to all
+    render_order: "actor"
+    blocks: true
+    can_seek_items: false     # Animal intelligence
+    inventory_size: 0
+    speed_bonus: 1.5          # Phase 6: Fast - multiple strike capability
+    special_abilities: ["web"]  # Can create web traps
+    # ETP: DPS=6 × 6 × durability=0.92 × behavior=1.0 × speed=1.5 = 50
+    etp_base: 33              # Base before speed multiplier (33 × 1.5 = 50)
+
+  # Cultist Blademaster - Skilled fighter from the cultist faction
+  cultist_blademaster:
+    stats:
+      hp: 30
+      power: 1
+      defense: 2
+      xp: 80
+      damage_min: 6           # Twin blades: 6-10
+      damage_max: 10
+      strength: 14            # Strong (+2 modifier)
+      dexterity: 16           # Very agile (+3 to-hit, +3 AC)
+      constitution: 12        # Tough (+1 HP)
+    char: "c"
+    color: [180, 50, 50]      # Dark red (cultist robes)
+    ai_type: "basic"
+    faction: "cultist"        # Cultist faction
+    render_order: "actor"
+    blocks: true
+    can_seek_items: true      # Intelligent - seeks items
+    inventory_size: 4
+    seek_distance: 5
+    speed_bonus: 1.25         # Phase 6: Trained fighter - moderate bonus
+    # ETP: DPS=9 × 6 × durability=1.54 × behavior=1.0 × speed=1.25 = 104
+    etp_base: 83              # Base before speed multiplier (83 × 1.25 = 104)
 
   # ═══════════════════════════════════════════════════════════
   # BOSS MONSTERS - Unique powerful encounters
@@ -482,6 +612,15 @@ weapons:
     char: "-"
     color: [139, 69, 19]    # Brown
 
+  # Phase 5: Speed-boosting weapon
+  quickfang_dagger:
+    damage_dice: "1d4"      # 1-4 damage (same as regular dagger)
+    to_hit_bonus: 2         # +2 to-hit (magical finesse)
+    slot: "main_hand"
+    char: "-"
+    color: [255, 215, 0]    # Gold (magical weapon)
+    speed_bonus: 0.25       # +25% bonus attack chance (Phase 5)
+
   # ═══════════════════════════════════════════════════════════
   # ONE-HANDED WEAPONS (1d6) - Balanced
   # ═══════════════════════════════════════════════════════════
@@ -681,6 +820,15 @@ armor:
     char: "]"
     color: [101, 67, 33]  # Dark brown
 
+  # Phase 5: Speed-boosting boots
+  boots_of_swiftness:
+    armor_class_bonus: 1  # +1 AC (same as leather)
+    armor_type: "light"
+    slot: "feet"
+    char: "]"
+    color: [100, 200, 255]  # Light blue (magical)
+    speed_bonus: 0.25       # +25% bonus attack chance (Phase 5)
+
   # ═══════════════════════════════════════════════════════════
   # MEDIUM ARMOR (DEX Cap +2)
   # ═══════════════════════════════════════════════════════════
@@ -847,6 +995,13 @@ spells:
     char: "!"
     color: [255, 200, 0]  # Golden yellow
     effect_function: "drink_speed_potion"
+  
+  # Phase 5: Combat speed boost potion
+  lightning_reflexes_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 255, 0]  # Bright yellow (lightning)
+    effect_function: "drink_lightning_reflexes_potion"
   
   regeneration_potion:
     spell_type: "potion"
@@ -1243,6 +1398,14 @@ rings:
     color: [255, 150, 0]  # Orange
     ring_effect: "might"
     effect_strength: 4  # +1d4 damage
+  
+  # Phase 5: Speed-boosting ring
+  ring_of_hummingbird:
+    char: "="
+    color: [0, 255, 150]  # Cyan-green (rapid movement)
+    ring_effect: "speed"
+    effect_strength: 25  # +25% bonus attack chance
+    speed_bonus: 0.25    # Used by equipment system (Phase 5)
   
   # ──────────────────────────────────────────────────────────
   # UTILITY RINGS - Special abilities

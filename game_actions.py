@@ -639,6 +639,11 @@ class ActionProcessor:
 
         # Handle successful movement
         if result.success:
+            # Reset speed bonus tracker - movement breaks combat momentum
+            speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+            if speed_tracker:
+                speed_tracker.reset()
+            
             # Display any messages
             message_log = self.state_manager.state.message_log
             for msg_dict in result.messages:
@@ -757,12 +762,14 @@ class ActionProcessor:
     # SECTION 6: HELPERS - Combat, Death, Equipment, Secrets (304 lines, 7 methods)
     # ═════════════════════════════════════════════════════════════════════════════
 
-    def _handle_combat(self, attacker, target) -> None:
+    def _handle_combat(self, attacker, target, is_bonus_attack: bool = False) -> None:
         """Handle combat between attacker and target.
         
         Args:
             attacker: The attacking entity
             target: The target entity
+            is_bonus_attack: If True, this is a bonus attack from the speed system
+                            (prevents recursive bonus attack rolls)
         """
         attacker_fighter = attacker.get_component_optional(ComponentType.FIGHTER)
         target_fighter = target.get_component_optional(ComponentType.FIGHTER)
@@ -773,8 +780,21 @@ class ActionProcessor:
         if hasattr(attacker, 'invisible') and attacker.invisible:
             self._break_invisibility(attacker)
         
+        # Log bonus attack distinctly with VFX
+        if is_bonus_attack:
+            bonus_msg = MB.combat_bonus_attack("⚡ [BONUS ATTACK] Speed bonus triggers an extra attack!")
+            self.state_manager.state.message_log.add_message(bonus_msg)
+            logger.info("[BONUS ATTACK] Player speed bonus triggered extra attack")
+            
+            # Queue VFX flash for bonus attack (lightning-like effect on attacker)
+            from visual_effects import show_hit
+            show_hit(attacker.x, attacker.y, entity=attacker, is_critical=True)
+        
         # Use new d20-based attack system
         attack_results = attacker_fighter.attack_d20(target)
+        
+        # Track if target died (for bonus attack eligibility)
+        target_died = False
         
         for result in attack_results:
             message = result.get("message")
@@ -785,11 +805,87 @@ class ActionProcessor:
             if dead_entity:
                 # Combat deaths should transform to corpses (keep in entities list)
                 self._handle_entity_death(dead_entity, remove_from_entities=False)
+                if dead_entity == target:
+                    target_died = True
 
         # Player attacks should consume the turn (even if target survived)
-        if attacker == self.state_manager.state.player:
+        player = self.state_manager.state.player
+        if attacker == player:
+            # Check for speed bonus attack (only for main attacks, not bonus attacks)
+            # Also skip if target died (can't bonus attack a corpse)
+            speed_tracker = attacker.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+            
+            if not is_bonus_attack and not target_died and speed_tracker:
+                # Gate: Only roll if attacker is faster than defender
+                # Slower entities cannot build momentum against faster ones
+                if self._can_build_momentum(attacker, target):
+                    # Roll for bonus attack
+                    if speed_tracker.roll_for_bonus_attack():
+                        # Bonus attack! Execute immediately (same target, no recursion)
+                        self._handle_combat(attacker, target, is_bonus_attack=True)
+                    else:
+                        # No bonus - show momentum building message if counter > 0
+                        self._show_momentum_status(speed_tracker)
+            
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)
+    
+    def _show_momentum_status(self, speed_tracker) -> None:
+        """Show momentum building status in combat log.
+        
+        Only shows message when player has momentum building (counter > 0).
+        
+        Args:
+            speed_tracker: SpeedBonusTracker component
+        """
+        if not speed_tracker or speed_tracker.attack_counter == 0:
+            return
+        
+        # Calculate current chance as percentage
+        chance_pct = int(speed_tracker.current_chance * 100)
+        
+        # Don't show if chance is at 100%+ (guaranteed next, will show bonus message)
+        if chance_pct >= 100:
+            return
+        
+        # Show momentum building message
+        momentum_msg = MB.combat_momentum(f"🔥 Momentum building: {chance_pct}% bonus attack chance!")
+
+    def _get_speed_bonus_ratio(self, entity) -> float:
+        """Get the speed bonus ratio for an entity.
+        
+        Used for relative speed gating - only the faster entity can build momentum.
+        
+        Args:
+            entity: The entity to check
+            
+        Returns:
+            float: Speed bonus ratio (0.0 if entity has no SpeedBonusTracker)
+        """
+        if not entity:
+            return 0.0
+        speed_tracker = entity.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            return speed_tracker.speed_bonus_ratio
+        return 0.0
+
+    def _can_build_momentum(self, attacker, defender) -> bool:
+        """Check if attacker can build momentum against defender.
+        
+        Only the faster entity (relative to target) can build momentum.
+        This prevents slower entities from gaining bonus attacks against faster ones.
+        
+        Args:
+            attacker: The attacking entity
+            defender: The defending entity
+            
+        Returns:
+            bool: True if attacker is faster than defender
+        """
+        attacker_speed = self._get_speed_bonus_ratio(attacker)
+        defender_speed = self._get_speed_bonus_ratio(defender)
+        return attacker_speed > defender_speed
+        self.state_manager.state.message_log.add_message(momentum_msg)
     
     def _handle_entity_death(self, dead_entity, remove_from_entities=False) -> None:
         """Handle entity death.
@@ -924,6 +1020,13 @@ class ActionProcessor:
         """Handle wait action (player skips turn)."""
         current_state = self.state_manager.state.current_state
         if current_state == GameStates.PLAYERS_TURN:
+            # Reset speed bonus tracker - waiting breaks combat momentum
+            player = self.state_manager.state.player
+            if player:
+                speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                if speed_tracker:
+                    speed_tracker.reset()
+            
             # Process status effects at end of player turn
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)
@@ -985,6 +1088,11 @@ class ActionProcessor:
         
         # If pickup successful, consume turn
         if result.success:
+            # Reset speed bonus tracker - picking up items breaks combat momentum
+            speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+            if speed_tracker:
+                speed_tracker.reset()
+            
             # BOT AUTO-EQUIP: If in bot mode, automatically equip better items
             # This only runs for bot-controlled players, not manual (human) play
             if self.is_bot_mode:
@@ -1269,8 +1377,13 @@ class ActionProcessor:
         player = self.state_manager.state.player
         message_log = self.state_manager.state.message_log
 
+        # Reset speed bonus tracker - using items breaks combat momentum
+        # Note: ComponentType is already imported at module level (line 16)
+        speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            speed_tracker.reset()
+
         # Check if this is equipment (weapon, armor, ring) - EQUIP instead of USE
-        from components.component_registry import ComponentType
         if item.components.has(ComponentType.EQUIPPABLE):
             # This is equipment - toggle equip/unequip
             if player.equipment:
@@ -1457,6 +1570,11 @@ class ActionProcessor:
         if not all([player, entities is not None, game_map, message_log]):
             logger.warning("_handle_stairs: Missing required components!")
             return
+        
+        # Reset speed bonus tracker - changing floors breaks combat momentum
+        speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            speed_tracker.reset()
         
         logger.info(f"_handle_stairs: Player at ({player.x}, {player.y}), checking for stairs")
         
@@ -1994,15 +2112,24 @@ class ActionProcessor:
         click_result = handle_mouse_click(click_x, click_y, player, entities, game_map, fov_map)
         
         # Process results
+        attack_target = None  # Track attack target for speed bonus
+        target_died = False
+        
         for result in click_result.get("results", []):
             message = result.get("message")
             if message:
                 message_log.add_message(message)
             
+            # Track attack target for speed bonus system
+            if result.get("attack_target"):
+                attack_target = result["attack_target"]
+            
             # Handle combat results
             dead_entity = result.get("dead")
             if dead_entity:
                 self._handle_entity_death(dead_entity, remove_from_entities=False)
+                if attack_target and dead_entity == attack_target:
+                    target_died = True
             
             # Handle pathfinding start
             if result.get("start_pathfinding"):
@@ -2021,6 +2148,19 @@ class ActionProcessor:
             
             # Handle immediate enemy turn (for attacks)
             if result.get("enemy_turn"):
+                # Process speed bonus for mouse click attacks (same logic as _handle_combat)
+                if attack_target and not target_died:
+                    speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                    if speed_tracker:
+                        # Gate: Only roll if player is faster than target
+                        if self._can_build_momentum(player, attack_target):
+                            if speed_tracker.roll_for_bonus_attack():
+                                # Bonus attack! Use _handle_combat for the bonus
+                                self._handle_combat(player, attack_target, is_bonus_attack=True)
+                            else:
+                                # No bonus - show momentum building message
+                                self._show_momentum_status(speed_tracker)
+                
                 self.turn_controller.end_player_action(turn_consumed=True)
     
     def process_pathfinding_turn(self) -> None:

@@ -60,7 +60,8 @@ class EquipmentFactory(FactoryBase):
                 to_hit_bonus=weapon_def.to_hit_bonus,
                 two_handed=weapon_def.two_handed,
                 reach=weapon_def.reach,
-                resistances=resistances_dict
+                resistances=resistances_dict,
+                speed_bonus=weapon_def.speed_bonus  # Phase 5
             )
 
             # Create entity
@@ -117,7 +118,8 @@ class EquipmentFactory(FactoryBase):
                 armor_class_bonus=armor_def.armor_class_bonus,
                 armor_type=armor_def.armor_type,
                 dex_cap=armor_def.dex_cap,
-                resistances=resistances_dict
+                resistances=resistances_dict,
+                speed_bonus=armor_def.speed_bonus  # Phase 5
             )
 
             # Create entity
@@ -201,7 +203,8 @@ class EquipmentFactory(FactoryBase):
             from equipment_slots import EquipmentSlots
             equippable_component = Equippable(
                 slot=EquipmentSlots.RING,  # Uses generic RING slot, will be assigned to left or right
-                resistances=resistances_dict
+                resistances=resistances_dict,
+                speed_bonus=ring_def.speed_bonus  # Phase 5
             )
             
             # Create item component

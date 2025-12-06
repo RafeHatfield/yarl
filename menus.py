@@ -11,6 +11,7 @@ from entity_dialogue import EntityDialogue
 from config.ui_layout import get_ui_layout
 from typing import Optional
 from components.component_registry import ComponentType
+from components.fighter import ResistanceType
 
 
 def get_menu_click_index(mouse_x: int, mouse_y: int, header: str, options: list, 
@@ -382,6 +383,15 @@ def character_screen(
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
         f"                                Hit: {to_hit_str} (DEX)"
     )
+    y += 1
+    
+    # Speed bonus / momentum display
+    speed_text = _get_speed_bonus_display(player)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"                                {speed_text}"
+    )
     y += 2
     
     # ═══════════════════════════════════════════════════════════
@@ -674,6 +684,50 @@ def _get_damage_display(player):
     if str_mod != 0:
         return f"+{str_mod}" if str_mod > 0 else str(str_mod)
     return "0"
+
+
+def _get_speed_bonus_display(player):
+    """Get speed bonus display for character screen.
+    
+    Shows the player's attack speed bonus, source, and current momentum.
+    Phase 5: Now shows sources (equipment/potion) and momentum counter.
+    
+    Args:
+        player: Player entity
+        
+    Returns:
+        str: Speed bonus display (e.g., "Spd: +50% (Boots + Ring) (2/4)")
+    """
+    speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+    if not speed_tracker:
+        return "Spd: +0%"
+    
+    # Format speed bonus as percentage
+    speed_pct = int(speed_tracker.speed_bonus_ratio * 100)
+    
+    if speed_pct == 0:
+        return "Spd: +0%"
+    
+    # Get bonus sources (Phase 5)
+    sources = speed_tracker.get_bonus_sources()
+    
+    # Calculate attacks until guaranteed bonus
+    attacks_for_guaranteed = max(1, int(1.0 / speed_tracker.speed_bonus_ratio)) if speed_tracker.speed_bonus_ratio > 0 else 0
+    current_counter = speed_tracker.attack_counter
+    
+    # Build display string
+    if sources:
+        if current_counter > 0:
+            # Show sources + momentum: "Spd: +50% (Boots + Ring) (2/4)"
+            return f"Spd: +{speed_pct}% ({sources}) ({current_counter}/{attacks_for_guaranteed})"
+        else:
+            # Just sources: "Spd: +50% (Boots + Ring)"
+            return f"Spd: +{speed_pct}% ({sources})"
+    else:
+        if current_counter > 0:
+            return f"Spd: +{speed_pct}% ({current_counter}/{attacks_for_guaranteed})"
+        else:
+            return f"Spd: +{speed_pct}%"
 
 
 def _get_attack_display_text(player):
