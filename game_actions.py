@@ -850,6 +850,7 @@ class ActionProcessor:
         
         # Show momentum building message
         momentum_msg = MB.combat_momentum(f"🔥 Momentum building: {chance_pct}% bonus attack chance!")
+        self.state_manager.state.message_log.add_message(momentum_msg)
 
     def _get_speed_bonus_ratio(self, entity) -> float:
         """Get the speed bonus ratio for an entity.
@@ -885,7 +886,6 @@ class ActionProcessor:
         attacker_speed = self._get_speed_bonus_ratio(attacker)
         defender_speed = self._get_speed_bonus_ratio(defender)
         return attacker_speed > defender_speed
-        self.state_manager.state.message_log.add_message(momentum_msg)
     
     def _handle_entity_death(self, dead_entity, remove_from_entities=False) -> None:
         """Handle entity death.
