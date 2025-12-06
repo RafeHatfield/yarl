@@ -194,7 +194,19 @@ class ConsoleRenderer:
         tooltip_model = tooltip.resolve_hover(visuals.hover_probe, frame_context)
         tooltip.render(tooltip_model, self.viewport_console, self.sidebar_console)
 
-        self._blit_to_root()
+        # Skip _blit_to_root() for menu states that blit directly to root console
+        # These menus (character_screen, level_up, inventory) already blitted their
+        # content to root in render_all(), so blitting again would overwrite them.
+        from game_states import GameStates
+        menu_states = {
+            GameStates.CHARACTER_SCREEN,
+            GameStates.LEVEL_UP,
+            GameStates.SHOW_INVENTORY,
+            GameStates.DROP_INVENTORY,
+            GameStates.THROW_SELECT_ITEM,
+        }
+        if frame_context.game_state not in menu_states:
+            self._blit_to_root()
 
         # CRITICAL: Play visual effects BEFORE flushing to screen!
         # This ensures all effects (map, entities, UI, and visual effects) are drawn
