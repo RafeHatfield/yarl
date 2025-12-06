@@ -11,9 +11,12 @@ Architecture:
 3. Screen state matches game state when effects display
 """
 
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Optional, Dict, Any, Union
 from enum import Enum, auto
 import tcod.libtcodpy as libtcodpy
+
+# Forward reference for Entity type
+Entity = Any  # Avoid circular import
 
 
 def _world_to_screen(ui_layout, camera, world_x: int, world_y: int):
@@ -36,6 +39,117 @@ class EffectType(Enum):
     PATH_EFFECT = auto()
     WAND_RECHARGE = auto()  # Sparkle effect when wand gains a charge
     PROJECTILE = auto()  # Animated flying projectile (arrows, thrown items)
+    # Phase 7: Debuff effect types
+    SLOW = auto()  # Sluggish/slow debuff applied
+    POISON = auto()  # Poison damage/application
+    HEAL = auto()  # Healing effect
+    BUFF = auto()  # Generic buff applied
+    DEBUFF = auto()  # Generic debuff applied
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 7: CENTRAL VFX COLOR/CONFIG MAPPING
+# ═══════════════════════════════════════════════════════════════════════════════
+# Central registry for effect type → visual properties.
+# This enables consistent styling and easy expansion for new effects.
+
+EFFECT_VFX_CONFIG: Dict[EffectType, Dict[str, Any]] = {
+    # Combat effects
+    EffectType.HIT: {
+        "color": (255, 50, 50),      # Bright red
+        "char": ord('*'),
+        "duration": 0.12,
+    },
+    EffectType.CRITICAL_HIT: {
+        "color": (255, 255, 0),      # Bright yellow
+        "char": ord('!'),
+        "duration": 0.20,
+    },
+    EffectType.MISS: {
+        "color": (128, 128, 128),    # Grey
+        "char": ord('-'),
+        "duration": 0.10,
+    },
+    
+    # Area/path effects
+    EffectType.FIREBALL: {
+        "color": (255, 100, 0),      # Orange
+        "char": ord('*'),
+        "duration": 0.25,
+    },
+    EffectType.LIGHTNING: {
+        "color": (255, 255, 100),    # Bright yellow
+        "char": ord('~'),
+        "duration": 0.15,
+    },
+    EffectType.DRAGON_FART: {
+        "color": (100, 200, 50),     # Sickly green
+        "char": ord('%'),
+        "duration": 0.25,
+    },
+    
+    # Phase 7: Debuff/buff effects
+    EffectType.SLOW: {
+        "color": (255, 165, 0),      # Orange (tar/molasses)
+        "char": ord('~'),
+        "duration": 0.15,
+    },
+    EffectType.POISON: {
+        "color": (0, 255, 0),        # Bright green
+        "char": ord('*'),
+        "duration": 0.15,
+    },
+    EffectType.HEAL: {
+        "color": (0, 255, 100),      # Green-cyan
+        "char": ord('+'),
+        "duration": 0.15,
+    },
+    EffectType.BUFF: {
+        "color": (100, 200, 255),    # Light blue
+        "char": ord('^'),
+        "duration": 0.15,
+    },
+    EffectType.DEBUFF: {
+        "color": (200, 100, 100),    # Dark red
+        "char": ord('v'),
+        "duration": 0.15,
+    },
+    
+    # Utility effects
+    EffectType.WAND_RECHARGE: {
+        "color": (255, 255, 150),    # Light yellow sparkle
+        "char": ord('✦'),
+        "duration": 0.15,
+    },
+}
+
+
+def get_effect_color(effect_type: EffectType) -> Tuple[int, int, int]:
+    """Get the color for an effect type from the central registry.
+    
+    Phase 7: Centralized color lookup for consistent VFX styling.
+    
+    Args:
+        effect_type: The type of visual effect
+        
+    Returns:
+        RGB color tuple
+    """
+    config = EFFECT_VFX_CONFIG.get(effect_type, {})
+    return config.get("color", (255, 255, 255))  # Default white
+
+
+def get_effect_char(effect_type: EffectType) -> int:
+    """Get the character for an effect type from the central registry.
+    
+    Args:
+        effect_type: The type of visual effect
+        
+    Returns:
+        Character code (ord value)
+    """
+    config = EFFECT_VFX_CONFIG.get(effect_type, {})
+    return config.get("char", ord('*'))  # Default asterisk
 
 
 class QueuedEffect:
@@ -103,6 +217,12 @@ class QueuedEffect:
             ),
             EffectType.WAND_RECHARGE: lambda: self._play_wand_recharge(con),
             EffectType.PROJECTILE: lambda: self._play_projectile(con, camera),
+            # Phase 7: Debuff/buff effect handlers (use central config)
+            EffectType.SLOW: lambda: self._play_effect_from_config(con, EffectType.SLOW),
+            EffectType.POISON: lambda: self._play_effect_from_config(con, EffectType.POISON),
+            EffectType.HEAL: lambda: self._play_effect_from_config(con, EffectType.HEAL),
+            EffectType.BUFF: lambda: self._play_effect_from_config(con, EffectType.BUFF),
+            EffectType.DEBUFF: lambda: self._play_effect_from_config(con, EffectType.DEBUFF),
         }
 
         handler = dispatch.get(self.effect_type)
@@ -210,6 +330,25 @@ class QueuedEffect:
         libtcodpy.console_put_char(
             con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE
         )
+    
+    def _play_effect_from_config(self, con, effect_type: EffectType) -> None:
+        """Play an effect using the central VFX config registry.
+        
+        Phase 7: Unified effect rendering using EFFECT_VFX_CONFIG.
+        
+        Args:
+            con: Console to draw on
+            effect_type: Effect type to look up in config
+        """
+        if self.screen_x is None or self.screen_y is None:
+            return
+        
+        # Get config from central registry, allow param overrides
+        config = EFFECT_VFX_CONFIG.get(effect_type, {})
+        color = self.params.get('color', config.get('color', (255, 255, 255)))
+        char = self.params.get('char', config.get('char', ord('*')))
+        
+        self._single_tile_flash(con, color, char)
 
     def _resolve_char(self, con, fallback: int) -> int:
         if self.entity and hasattr(self.entity, 'char'):
@@ -329,6 +468,66 @@ class VisualEffectQueue:
             EffectType.PROJECTILE, x, y, None,
             path=path, char=char, color=color, **kwargs
         ))
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # PHASE 7: DEBUFF/BUFF EFFECT QUEUING
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    def queue_effect_vfx(
+        self,
+        x: int,
+        y: int,
+        effect_type: EffectType,
+        entity=None,
+        **kwargs
+    ) -> None:
+        """Queue a visual effect by type using the central VFX registry.
+        
+        Phase 7: This is the new unified API for queuing effects.
+        Colors and characters are looked up from EFFECT_VFX_CONFIG.
+        
+        Args:
+            x: X coordinate of effect
+            y: Y coordinate of effect
+            effect_type: The type of effect (from EffectType enum)
+            entity: Optional entity at the location
+            **kwargs: Override params (color, char, duration)
+        """
+        self.effects.append(QueuedEffect(
+            effect_type, x, y, entity, **kwargs
+        ))
+    
+    def queue_slow_effect(self, x: int, y: int, entity=None) -> None:
+        """Queue a slow/sluggish debuff visual effect.
+        
+        Phase 7: Shows orange effect when slow debuff is applied.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            entity: Entity being slowed
+        """
+        self.queue_effect_vfx(x, y, EffectType.SLOW, entity)
+    
+    def queue_poison_effect(self, x: int, y: int, entity=None) -> None:
+        """Queue a poison effect visual.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            entity: Entity being poisoned
+        """
+        self.queue_effect_vfx(x, y, EffectType.POISON, entity)
+    
+    def queue_debuff_effect(self, x: int, y: int, entity=None) -> None:
+        """Queue a generic debuff visual effect.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            entity: Entity being debuffed
+        """
+        self.queue_effect_vfx(x, y, EffectType.DEBUFF, entity)
     
     def play_all(self, con=0, camera=None) -> None:
         """Play all queued effects and clear the queue.

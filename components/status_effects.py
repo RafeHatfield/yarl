@@ -415,6 +415,63 @@ class LightningReflexesEffect(StatusEffect):
         return results
 
 
+class SluggishEffect(StatusEffect):
+    """Applies a negative speed bonus that stacks with equipment bonuses (Phase 7).
+    
+    Unlike SlowedEffect which skips turns, SluggishEffect reduces the
+    speed_bonus_ratio through the SpeedBonusTracker's debuff system.
+    This means affected entities get fewer bonus attacks, not fewer turns.
+    
+    Attributes:
+        speed_penalty (float): Speed penalty as a ratio (e.g., 0.25 for -25% speed)
+    
+    Example:
+        - Entity with +50% speed bonus from equipment
+        - SluggishEffect applies -25% penalty
+        - Net speed bonus = 50% - 25% = 25%
+    """
+    def __init__(self, duration: int, owner: 'Entity', speed_penalty: float = 0.25):
+        super().__init__("sluggish", duration, owner)
+        self.speed_penalty = speed_penalty
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        
+        # Get or create speed bonus tracker
+        from components.component_registry import ComponentType
+        speed_tracker = self.owner.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        
+        if not speed_tracker:
+            # Create new tracker for this entity
+            from components.speed_bonus_tracker import SpeedBonusTracker
+            speed_tracker = SpeedBonusTracker(speed_bonus_ratio=0.0)
+            self.owner.speed_bonus_tracker = speed_tracker
+            speed_tracker.owner = self.owner
+            self.owner.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_tracker)
+        
+        # Apply debuff (stacks additively with equipment bonuses)
+        speed_tracker.add_debuff(self.speed_penalty, "sluggish")
+        
+        results.append({'message': MB.warning(
+            f"{self.owner.name} feels sluggish... (-{int(self.speed_penalty * 100)}% speed)"
+        )})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        
+        # Remove debuff
+        from components.component_registry import ComponentType
+        speed_tracker = self.owner.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+        if speed_tracker:
+            speed_tracker.remove_debuff(self.speed_penalty, "sluggish")
+        
+        results.append({'message': MB.status_effect(
+            f"{self.owner.name} no longer feels sluggish."
+        )})
+        return results
+
+
 class RegenerationEffect(StatusEffect):
     """Heals the owner over time."""
     def __init__(self, duration: int, owner: 'Entity', heal_per_turn: int = 1):

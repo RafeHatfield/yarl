@@ -29,6 +29,7 @@ from components.status_effects import (
     ProtectionEffect,
     RegenerationEffect,
     SlowedEffect,
+    SluggishEffect,  # Phase 7: Speed debuff effect
     SpeedEffect,
     StatusEffectManager,
     WeaknessEffect
@@ -1199,6 +1200,48 @@ def drink_paralysis_potion(*args, **kwargs):
     duration = random.randint(3, 5)
     paralysis_effect = ParalysisEffect(duration=duration, owner=entity)
     effect_results = entity.status_effects.add_effect(paralysis_effect)
+    results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    return results
+
+
+# ============================================================================
+# Phase 7: Tar Potion (Speed Debuff)
+# ============================================================================
+
+def drink_tar_potion(*args, **kwargs):
+    """Drink a potion of tar - applies SluggishEffect (speed debuff) for 10 turns.
+    
+    Phase 7: Unlike SlowedEffect which skips turns, this reduces the
+    speed_bonus_ratio through the SpeedBonusTracker's debuff system.
+    Categorized as a panic-style item (for emergencies/tactical use).
+    
+    Args:
+        *args: First argument should be the entity drinking the potion
+        **kwargs: Optional parameters (duration, speed_penalty from yaml)
+    
+    Returns:
+        list: List of result dictionaries with consumption and status effect info
+    """
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity to apply tar effect to!")}]
+    
+    # Get parameters from kwargs (from yaml config) or use defaults
+    duration = kwargs.get("duration", 10)
+    speed_penalty = kwargs.get("speed_penalty", 0.25)
+    
+    results = []
+    
+    # Get or create status effect manager (handle both missing attr and None)
+    if not hasattr(entity, 'status_effects') or entity.status_effects is None:
+        from components.status_effects import StatusEffectManager
+        entity.status_effects = StatusEffectManager(entity)
+    
+    # Add sluggish effect
+    sluggish_effect = SluggishEffect(duration=duration, owner=entity, speed_penalty=speed_penalty)
+    effect_results = entity.status_effects.add_effect(sluggish_effect)
     results.extend(effect_results)
     
     results.append({"consumed": True})
