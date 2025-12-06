@@ -327,12 +327,12 @@ def character_screen(
     y += 2
     
     # ═══════════════════════════════════════════════════════════
-    # ATTRIBUTES & COMBAT STATS
+    # ATTRIBUTES & STATS
     # ═══════════════════════════════════════════════════════════
     libtcodpy.console_print_rect_ex(
         window, 0, y, character_screen_width, character_screen_height,
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-        "ATTRIBUTES                      COMBAT STATS"
+        "STATS"
     )
     y += 1
     
@@ -353,7 +353,13 @@ def character_screen(
     to_hit = dex_mod
     to_hit_str = f"+{to_hit}" if to_hit >= 0 else str(to_hit)
     
-    # Attributes (left side)
+    # Get damage display
+    damage_text = _get_damage_display(player)
+    
+    # Get speed bonus display
+    speed_text = _get_speed_bonus_display(player)
+    
+    # Row 1: STR and HP
     libtcodpy.console_print_rect_ex(
         window, 0, y, character_screen_width, character_screen_height,
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
@@ -361,6 +367,7 @@ def character_screen(
     )
     y += 1
     
+    # Row 2: DEX and AC
     libtcodpy.console_print_rect_ex(
         window, 0, y, character_screen_width, character_screen_height,
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
@@ -368,8 +375,7 @@ def character_screen(
     )
     y += 1
     
-    # Get damage display
-    damage_text = _get_damage_display(player)
+    # Row 3: CON and Dmg
     libtcodpy.console_print_rect_ex(
         window, 0, y, character_screen_width, character_screen_height,
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
@@ -377,20 +383,19 @@ def character_screen(
     )
     y += 1
     
-    # To-hit
+    # Row 4: Hit (to-hit bonus)
     libtcodpy.console_print_rect_ex(
         window, 0, y, character_screen_width, character_screen_height,
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-        f"                                Hit: {to_hit_str} (DEX)"
+        f"Hit: {to_hit_str} (DEX)"
     )
     y += 1
     
-    # Speed bonus / momentum display
-    speed_text = _get_speed_bonus_display(player)
+    # Row 5: Speed bonus / momentum display
     libtcodpy.console_print_rect_ex(
         window, 0, y, character_screen_width, character_screen_height,
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-        f"                                {speed_text}"
+        speed_text
     )
     y += 2
     
