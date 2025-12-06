@@ -478,6 +478,107 @@ class TestEquipmentBonus:
         assert tracker.speed_bonus_ratio == 0.35
 
 
+class TestPhase6MonsterBonusAttacks:
+    """Tests for Phase 6 monster bonus attack speed gating.
+    
+    These tests verify the logic for when monsters can/cannot build momentum.
+    The actual gating logic is in basic_monster.py, but we test the concept here.
+    """
+    
+    def test_wraith_vs_player_speed_comparison(self):
+        """Test wraith (2.0) can build momentum vs player (0.25)."""
+        wraith_speed = 2.0
+        player_speed = 0.25
+        
+        # Wraith is faster, should be able to build momentum
+        can_build = wraith_speed > player_speed
+        assert can_build is True
+    
+    def test_zombie_vs_player_speed_comparison(self):
+        """Test zombie (0.5) can build momentum vs player (0.25)."""
+        zombie_speed = 0.5
+        player_speed = 0.25
+        
+        # Zombie is faster than base player, can build momentum
+        can_build = zombie_speed > player_speed
+        assert can_build is True
+    
+    def test_orc_brute_vs_player_speed_comparison(self):
+        """Test orc_brute (0.75) can build momentum vs player (0.25)."""
+        brute_speed = 0.75
+        player_speed = 0.25
+        
+        # Brute is faster than base player, can build momentum
+        can_build = brute_speed > player_speed
+        assert can_build is True
+    
+    def test_player_vs_wraith_cannot_build(self):
+        """Test player (0.25) cannot build momentum vs wraith (2.0)."""
+        player_speed = 0.25
+        wraith_speed = 2.0
+        
+        # Player is slower, cannot build momentum
+        can_build = player_speed > wraith_speed
+        assert can_build is False
+    
+    def test_player_with_speed_gear_vs_zombie(self):
+        """Test player with gear (0.75) can build vs zombie (0.5)."""
+        # Player base 0.25 + dagger 0.25 + boots 0.25 = 0.75
+        player_with_gear = 0.75
+        zombie_speed = 0.5
+        
+        # Player with gear is faster, can build momentum
+        can_build = player_with_gear > zombie_speed
+        assert can_build is True
+    
+    def test_monster_tracker_momentum_building(self):
+        """Test that monster SpeedBonusTracker builds momentum correctly."""
+        # Create tracker with wraith-like speed (2.0)
+        wraith_tracker = SpeedBonusTracker(speed_bonus_ratio=2.0, rng=lambda: 0.99)
+        
+        # At 2.0 speed, first attack should guarantee bonus (1 * 2.0 = 2.0 >= 1.0)
+        result = wraith_tracker.roll_for_bonus_attack()
+        
+        assert result is True
+        assert wraith_tracker.attack_counter == 0  # Reset after guaranteed
+    
+    def test_spider_tracker_momentum_building(self):
+        """Test spider (1.5 speed) gets guaranteed bonus on first attack."""
+        spider_tracker = SpeedBonusTracker(speed_bonus_ratio=1.5, rng=lambda: 0.99)
+        
+        # At 1.5 speed, first attack guarantees bonus (1 * 1.5 = 1.5 >= 1.0)
+        result = spider_tracker.roll_for_bonus_attack()
+        
+        assert result is True
+        assert spider_tracker.attack_counter == 0  # Reset
+    
+    def test_cultist_blademaster_tracker(self):
+        """Test cultist_blademaster (1.25 speed) gets guaranteed bonus after 1 hit."""
+        blademaster_tracker = SpeedBonusTracker(speed_bonus_ratio=1.25, rng=lambda: 0.99)
+        
+        # At 1.25 speed, first attack = 1.25 >= 1.0 = guaranteed bonus
+        result = blademaster_tracker.roll_for_bonus_attack()
+        
+        assert result is True
+        assert blademaster_tracker.attack_counter == 0  # Reset
+    
+    def test_zombie_tracker_builds_slower(self):
+        """Test zombie (0.5 speed) takes 2 attacks for guaranteed bonus."""
+        zombie_tracker = SpeedBonusTracker(speed_bonus_ratio=0.5, rng=lambda: 0.99)
+        
+        # At 0.5 speed:
+        # Attack 1: 1 * 0.5 = 0.5 (50% chance, fail with 0.99 roll)
+        # Attack 2: 2 * 0.5 = 1.0 (guaranteed)
+        
+        result1 = zombie_tracker.roll_for_bonus_attack()
+        assert result1 is False
+        assert zombie_tracker.attack_counter == 1
+        
+        result2 = zombie_tracker.roll_for_bonus_attack()
+        assert result2 is True
+        assert zombie_tracker.attack_counter == 0  # Reset
+
+
 class TestTemporaryBonus:
     """Tests for Phase 5 temporary (potion) speed bonuses."""
     

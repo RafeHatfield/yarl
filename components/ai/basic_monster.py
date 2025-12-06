@@ -546,12 +546,16 @@ class BasicMonster:
             if not target or not target.fighter or target.fighter.hp <= 0:
                 return results
             
-            # Show message only if monster is visible to player
+            # Show message and visual effect only if monster is visible to player
             if map_is_in_fov(fov_map, monster.x, monster.y):
                 bonus_msg = MB.combat_monster_bonus_attack(
-                    f"⚡ The {monster.name} lashes out with a bonus strike!"
+                    f"⚠️ [BONUS ATTACK] {monster.name} strikes twice with blinding speed!"
                 )
                 results.append({'message': bonus_msg})
+                
+                # Queue VFX flash for monster bonus attack (same as critical hit effect)
+                from visual_effects import show_hit
+                show_hit(monster.x, monster.y, entity=monster, is_critical=True)
             
             # Debug logging for balance testing
             logger.debug(f"[MONSTER BONUS ATTACK] {monster.name} triggered bonus attack "

@@ -28,6 +28,7 @@ from balance.etp import (
     initialize_encounter_budget_engine,
     get_room_monsters_etp,
     log_room_etp_summary,
+    get_speed_etp_multiplier,
 )
 
 
@@ -414,6 +415,107 @@ class TestLoggingFunctions:
             budget_min=3,
             budget_max=5
         )
+
+
+class TestSpeedETPMultiplier:
+    """Tests for Phase 6 speed-based ETP multiplier."""
+    
+    def test_slow_speed_no_multiplier(self):
+        """Test that speed <= 1.0 gets no multiplier."""
+        assert get_speed_etp_multiplier(0.0) == 1.0
+        assert get_speed_etp_multiplier(0.5) == 1.0
+        assert get_speed_etp_multiplier(0.75) == 1.0
+        assert get_speed_etp_multiplier(1.0) == 1.0
+    
+    def test_moderate_speed_125x_multiplier(self):
+        """Test that speed 1.1-1.4 gets 1.25x multiplier."""
+        assert get_speed_etp_multiplier(1.1) == 1.25
+        assert get_speed_etp_multiplier(1.25) == 1.25
+        assert get_speed_etp_multiplier(1.4) == 1.25
+        assert get_speed_etp_multiplier(1.49) == 1.25
+    
+    def test_fast_speed_15x_multiplier(self):
+        """Test that speed 1.5-1.9 gets 1.5x multiplier."""
+        assert get_speed_etp_multiplier(1.5) == 1.5
+        assert get_speed_etp_multiplier(1.7) == 1.5
+        assert get_speed_etp_multiplier(1.9) == 1.5
+        assert get_speed_etp_multiplier(1.99) == 1.5
+    
+    def test_very_fast_speed_2x_multiplier(self):
+        """Test that speed >= 2.0 gets 2.0x multiplier."""
+        assert get_speed_etp_multiplier(2.0) == 2.0
+        assert get_speed_etp_multiplier(2.5) == 2.0
+        assert get_speed_etp_multiplier(3.0) == 2.0
+    
+    def test_negative_speed_defaults(self):
+        """Test that negative speed defaults to 1.0."""
+        assert get_speed_etp_multiplier(-0.5) == 1.0
+
+
+class TestPhase6SpeedAwareMonsters:
+    """Tests for Phase 6 speed-aware monster ETP calculations."""
+    
+    def test_zombie_etp_slow_monster(self):
+        """Test zombie (0.5 speed) gets base ETP without speed multiplier."""
+        zombie_etp = get_monster_etp("zombie", 1)
+        
+        # Zombie has etp_base: 31, speed: 0.5
+        # At 0.5 speed, multiplier is 1.0
+        assert zombie_etp > 0
+        assert zombie_etp < 50  # Should be around 31 base
+    
+    def test_wraith_etp_fast_monster(self):
+        """Test wraith (2.0 speed) gets 2x ETP multiplier."""
+        wraith_etp = get_monster_etp("wraith", 1)
+        
+        # Wraith has etp_base: 65, speed: 2.0
+        # At 2.0 speed, multiplier is 2.0 -> 65 * 2.0 = 130
+        assert wraith_etp > 100  # Should be around 130
+    
+    def test_giant_spider_etp_fast_monster(self):
+        """Test giant_spider (1.5 speed) gets 1.5x ETP multiplier."""
+        spider_etp = get_monster_etp("giant_spider", 1)
+        
+        # Spider has etp_base: 33, speed: 1.5
+        # At 1.5 speed, multiplier is 1.5 -> 33 * 1.5 = 49.5
+        assert spider_etp > 40
+        assert spider_etp < 80
+    
+    def test_cultist_blademaster_etp(self):
+        """Test cultist_blademaster (1.25 speed) gets 1.25x ETP multiplier."""
+        blademaster_etp = get_monster_etp("cultist_blademaster", 1)
+        
+        # Blademaster has etp_base: 83, speed: 1.25
+        # At 1.25 speed, multiplier is 1.25 -> 83 * 1.25 = 103.75
+        assert blademaster_etp > 80
+        assert blademaster_etp < 150
+    
+    def test_orc_brute_etp_slow_monster(self):
+        """Test orc_brute (0.75 speed) gets no ETP multiplier."""
+        brute_etp = get_monster_etp("orc_brute", 1)
+        
+        # Brute has etp_base: 55, speed: 0.75
+        # At 0.75 speed, multiplier is 1.0
+        assert brute_etp > 40
+        assert brute_etp < 80  # Should be around 55 base
+    
+    def test_fast_monsters_more_threatening_than_slow(self):
+        """Test that fast monsters have higher ETP than slow ones (adjusting for base)."""
+        # Compare wraith (fast, 2.0) vs zombie (slow, 0.5)
+        wraith_etp = get_monster_etp("wraith", 1)
+        zombie_etp = get_monster_etp("zombie", 1)
+        
+        # Wraith should be significantly more threatening
+        assert wraith_etp > zombie_etp * 2
+    
+    def test_speed_multiplier_compounds_with_band(self):
+        """Test that speed multiplier applies on top of band multipliers."""
+        # Compare wraith at B1 vs B3
+        wraith_b1 = get_monster_etp("wraith", 1)
+        wraith_b3 = get_monster_etp("wraith", 11)
+        
+        # B3 should be higher due to band multipliers
+        assert wraith_b3 > wraith_b1
 
 
 # Run tests if executed directly

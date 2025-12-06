@@ -273,6 +273,40 @@ def calculate_durability(hp: int, target_ttk_hits: int = 3) -> float:
 # Elite multiplier applied to monsters with "(Elite)" suffix in vault rooms
 ELITE_ETP_MULTIPLIER = 1.5
 
+# Speed-based ETP multiplier tiers (Phase 6)
+# Fast monsters are more dangerous due to bonus attack potential
+SPEED_ETP_TIERS = [
+    (2.0, 2.0),    # Speed >= 2.0: 2.0x multiplier
+    (1.5, 1.5),    # Speed 1.5-1.9: 1.5x multiplier
+    (1.1, 1.25),   # Speed 1.1-1.4: 1.25x multiplier
+    (0.0, 1.0),    # Speed <= 1.0: 1.0x multiplier (no bonus)
+]
+
+
+def get_speed_etp_multiplier(speed_ratio: float) -> float:
+    """Get ETP multiplier based on monster speed ratio.
+    
+    Phase 6: Fast monsters are more dangerous due to bonus attack mechanics.
+    This applies a tiered multiplier to their ETP based on speed_bonus.
+    
+    Speed Ratio | ETP Multiplier
+    ------------|---------------
+    >= 2.0      | 2.0x
+    1.5-1.9     | 1.5x
+    1.1-1.4     | 1.25x
+    <= 1.0      | 1.0x (no change)
+    
+    Args:
+        speed_ratio: Monster's speed_bonus ratio (0.0 = slow, 2.0 = very fast)
+        
+    Returns:
+        ETP multiplier (1.0-2.0)
+    """
+    for threshold, multiplier in SPEED_ETP_TIERS:
+        if speed_ratio >= threshold:
+            return multiplier
+    return 1.0  # Default fallback
+
 # Lists of boss and miniboss monster types (used for spawn control and ETP exemption)
 BOSS_MONSTER_TYPES = frozenset([
     "zhyraxion_human",
@@ -456,14 +490,19 @@ def get_monster_etp(
         # Apply elite multiplier if this is an elite variant
         elite_mult = ELITE_ETP_MULTIPLIER if is_elite else 1.0
         
-        final_etp = etp_base * band_multiplier * synergy * elite_mult
+        # Phase 6: Apply speed-based ETP multiplier
+        speed_ratio = monster_data.get("speed_bonus", 0.0)
+        speed_mult = get_speed_etp_multiplier(speed_ratio)
+        
+        final_etp = etp_base * band_multiplier * synergy * elite_mult * speed_mult
         
         config = get_etp_config()
         if config.debug_log_monster:
             logger.debug(
                 f"ETP for {monster_type} at depth {depth}: "
                 f"base={etp_base:.1f}, band_mult={band_multiplier:.2f}, "
-                f"elite_mult={elite_mult:.2f}, synergy={synergy:.2f}, final={final_etp:.1f}"
+                f"elite_mult={elite_mult:.2f}, speed_mult={speed_mult:.2f}, "
+                f"synergy={synergy:.2f}, final={final_etp:.1f}"
             )
         
         return final_etp
@@ -495,13 +534,18 @@ def get_monster_etp(
     if is_elite:
         etp *= ELITE_ETP_MULTIPLIER
     
+    # Phase 6: Apply speed-based ETP multiplier
+    speed_ratio = monster_data.get("speed_bonus", 0.0)
+    speed_mult = get_speed_etp_multiplier(speed_ratio)
+    etp *= speed_mult
+    
     config = get_etp_config()
     if config.debug_log_monster:
         logger.debug(
             f"ETP for {monster_type} at depth {depth}: "
             f"DPS={dps:.1f}, durability={durability:.2f}, "
             f"behavior={behavior:.2f}, synergy={synergy:.2f}, "
-            f"elite={'yes' if is_elite else 'no'}, ETP={etp:.1f}"
+            f"elite={'yes' if is_elite else 'no'}, speed_mult={speed_mult:.2f}, ETP={etp:.1f}"
         )
     
     return etp
