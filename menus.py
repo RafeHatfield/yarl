@@ -397,6 +397,15 @@ def character_screen(
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
         speed_text
     )
+    y += 1
+    
+    # Speed bonus / momentum display
+    speed_text = _get_speed_bonus_display(player)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"                                {speed_text}"
+    )
     y += 2
     
     # ═══════════════════════════════════════════════════════════
