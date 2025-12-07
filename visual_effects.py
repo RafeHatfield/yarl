@@ -15,8 +15,14 @@ Phase 4: Special effects (Dragon Fart, etc.)
 """
 
 import tcod.libtcodpy as libtcodpy
-from typing import List, Tuple, Optional
-from visual_effect_queue import get_effect_queue
+from typing import List, Tuple, Optional, Any
+from visual_effect_queue import (
+    get_effect_queue,
+    EffectType,
+    get_effect_color,
+    get_effect_char,
+    EFFECT_VFX_CONFIG,
+)
 
 
 class VisualEffects:
@@ -215,4 +221,80 @@ def show_dragon_fart(tiles: List[Tuple[int, int]]) -> None:
         color=VisualEffects.DRAGON_FART_COLOR,
         duration=VisualEffects.AREA_DURATION
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 7: MODULAR VFX SYSTEM
+# ═══════════════════════════════════════════════════════════════════════════════
+# Central API for showing effects by type. Replaces hardcoded color/char in callers.
+
+def show_effect_vfx(
+    target_x: int,
+    target_y: int,
+    effect_type: EffectType,
+    entity: Any = None,
+    source: Any = None,
+    **kwargs
+) -> None:
+    """Queue a visual effect using the modular VFX system.
+    
+    Phase 7: This is the new unified API for visual effects.
+    Colors and characters are looked up from the central EFFECT_VFX_CONFIG.
+    
+    Usage:
+        # Show a critical hit effect
+        show_effect_vfx(target.x, target.y, EffectType.CRITICAL_HIT, target)
+        
+        # Show a slow debuff effect
+        show_effect_vfx(target.x, target.y, EffectType.SLOW, target)
+        
+        # Override color if needed
+        show_effect_vfx(x, y, EffectType.DEBUFF, color=(255, 0, 255))
+    
+    Args:
+        target_x: X coordinate for effect
+        target_y: Y coordinate for effect
+        effect_type: EffectType enum value (CRITICAL_HIT, SLOW, POISON, etc.)
+        entity: Optional entity at target location (for character preservation)
+        source: Optional source entity (for future animation/sound features)
+        **kwargs: Override params (color, char, duration)
+    """
+    get_effect_queue().queue_effect_vfx(
+        target_x, target_y, effect_type, entity, **kwargs
+    )
+
+
+def show_slow_effect(x: int, y: int, entity: Any = None) -> None:
+    """Queue a slow/sluggish debuff visual effect.
+    
+    Phase 7: Shows orange effect when slow debuff is applied.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: Entity being slowed
+    """
+    get_effect_queue().queue_slow_effect(x, y, entity)
+
+
+def show_poison_effect(x: int, y: int, entity: Any = None) -> None:
+    """Queue a poison effect visual.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: Entity being poisoned
+    """
+    get_effect_queue().queue_poison_effect(x, y, entity)
+
+
+def show_debuff_effect(x: int, y: int, entity: Any = None) -> None:
+    """Queue a generic debuff visual effect.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: Entity being debuffed
+    """
+    get_effect_queue().queue_debuff_effect(x, y, entity)
 

@@ -570,6 +570,14 @@ LOOT_TAGS: Dict[str, LootTags] = {
         band_min=3, band_max=5,
         weight=0.5
     ),
+    
+    # Phase 7: Tar Potion (speed debuff)
+    # Categorized as panic item - can be used tactically or as emergency escape aid
+    "tar_potion": LootTags(
+        categories=["panic", "utility"],
+        band_min=2, band_max=5,
+        weight=2.0
+    ),
 }
 
 

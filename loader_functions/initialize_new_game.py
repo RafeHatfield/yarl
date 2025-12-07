@@ -132,6 +132,8 @@ def get_game_variables(constants):
             # New debuff potions
             'weakness_potion', 'slowness_potion', 'blindness_potion',
             'paralysis_potion',
+            # Phase 7: Tar potion (speed debuff)
+            'tar_potion',
             # Special potion
             'experience_potion'
         ],

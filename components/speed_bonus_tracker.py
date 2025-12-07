@@ -43,12 +43,13 @@ class SpeedBonusTracker:
     guaranteed bonus is triggered.
     
     Attributes:
-        speed_bonus_ratio (float): Effective speed bonus (base + equipment or temporary override)
+        speed_bonus_ratio (float): Effective speed bonus (base + equipment - debuff or temporary override)
         attack_counter (int): Current number of attacks in the ratchet cycle
         owner: The entity that owns this component (set by Entity when registered)
         _base_ratio (float): Base speed ratio (from character/monster stats)
         _equipment_ratio (float): Speed bonus from equipped items
         _temporary_ratio (float): Temporary override from potions (0.0 = not active)
+        _debuff_ratio (float): Speed penalty from debuffs (positive value = penalty)
         _temporary_sources (list): Names of sources providing temporary bonus
     
     Example:
@@ -92,6 +93,7 @@ class SpeedBonusTracker:
         self._base_ratio = speed_bonus_ratio  # From character/monster base stats
         self._equipment_ratio = 0.0  # From equipped items (additive)
         self._temporary_ratio = 0.0  # From potions (overrides when active)
+        self._debuff_ratio = 0.0  # Phase 7: Speed penalty from debuffs (additive penalty)
         self._equipment_sources: List[str] = []  # Names of items providing speed bonus
         
         self.attack_counter = 0
@@ -103,14 +105,19 @@ class SpeedBonusTracker:
         """Get the effective speed bonus ratio.
         
         If a temporary bonus (potion) is active, it OVERRIDES the base+equipment.
-        Otherwise, returns base + equipment bonuses.
+        Otherwise, returns base + equipment bonuses - debuff penalties.
+        
+        Phase 7: Debuffs are applied additively. If equipment gives +25% and
+        debuff applies -25%, the net result is 0%. Can go negative but clamped to 0.
         
         Returns:
-            float: Effective speed bonus ratio
+            float: Effective speed bonus ratio (minimum 0.0)
         """
         if self._temporary_ratio > 0.0:
             return self._temporary_ratio
-        return self._base_ratio + self._equipment_ratio
+        # Phase 7: Apply debuff penalty (clamped to 0 minimum)
+        net_ratio = self._base_ratio + self._equipment_ratio - self._debuff_ratio
+        return max(0.0, net_ratio)
     
     @speed_bonus_ratio.setter
     def speed_bonus_ratio(self, value: float) -> None:
@@ -183,21 +190,76 @@ class SpeedBonusTracker:
         """
         return self._temporary_ratio > 0.0
     
+    # ─────────────────────────────────────────────────────────────────────────
+    # PHASE 7: DEBUFF MANAGEMENT
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    def add_debuff(self, penalty: float, source_name: str = "debuff") -> None:
+        """Add a speed penalty from a debuff effect.
+        
+        Phase 7: Called when a debuff (like Potion of Tar) is applied.
+        Debuffs stack additively with each other and are subtracted from
+        the total bonus.
+        
+        Args:
+            penalty: Speed penalty to add (e.g., 0.25 for -25% speed)
+            source_name: Name of the debuff source for logging
+        """
+        self._debuff_ratio += penalty
+        logger.debug(f"SpeedBonusTracker: Added {penalty:.0%} debuff from {source_name}, "
+                    f"total debuff: {self._debuff_ratio:.0%}")
+    
+    def remove_debuff(self, penalty: float, source_name: str = "debuff") -> None:
+        """Remove a speed penalty when a debuff expires.
+        
+        Phase 7: Called when a debuff effect ends.
+        
+        Args:
+            penalty: Speed penalty to remove (e.g., 0.25 for -25% speed)
+            source_name: Name of the debuff source for logging
+        """
+        self._debuff_ratio = max(0.0, self._debuff_ratio - penalty)
+        logger.debug(f"SpeedBonusTracker: Removed {penalty:.0%} debuff from {source_name}, "
+                    f"total debuff: {self._debuff_ratio:.0%}")
+    
+    def has_debuff(self) -> bool:
+        """Check if any speed debuff is active.
+        
+        Returns:
+            bool: True if any debuff penalty is active
+        """
+        return self._debuff_ratio > 0.0
+    
+    def get_debuff_ratio(self) -> float:
+        """Get the current total debuff penalty.
+        
+        Returns:
+            float: Total debuff penalty (0.0 if no debuffs)
+        """
+        return self._debuff_ratio
+    
     def get_bonus_sources(self) -> str:
         """Get a human-readable description of speed bonus sources.
         
-        Phase 5: Used for character sheet display.
+        Phase 5/7: Used for character sheet display.
         
         Returns:
-            str: Description like "Boots + Ring" or "Potion active"
+            str: Description like "Boots + Ring" or "Potion active" or "Debuffed!"
         """
         if self._temporary_ratio > 0.0:
             return "Potion active"
+        
+        parts = []
         if self._equipment_sources:
-            return " + ".join(self._equipment_sources)
-        if self._base_ratio > 0.0:
-            return "Base"
-        return ""
+            parts.append(" + ".join(self._equipment_sources))
+        elif self._base_ratio > 0.0:
+            parts.append("Base")
+        
+        # Phase 7: Show debuff status
+        if self._debuff_ratio > 0.0:
+            parts.append(f"Debuffed (-{self._debuff_ratio:.0%})")
+        
+        return " | ".join(parts) if parts else ""
     
     @property
     def current_chance(self) -> float:
@@ -287,9 +349,10 @@ class SpeedBonusTracker:
     
     def __repr__(self) -> str:
         """Return string representation for debugging."""
+        debuff_str = f", debuff={self._debuff_ratio}" if self._debuff_ratio > 0 else ""
         return (
             f"SpeedBonusTracker("
             f"ratio={self.speed_bonus_ratio}, "
             f"counter={self.attack_counter}, "
-            f"next_chance={self.current_chance:.2%})"
+            f"next_chance={self.current_chance:.2%}{debuff_str})"
         )
