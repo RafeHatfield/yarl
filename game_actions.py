@@ -120,6 +120,7 @@ class ActionProcessor:
             'throw': self._handle_throw_action,
             'search': self._handle_search,
             'bot_abort_run': self._handle_bot_abort_run,  # Phase 1.6: End bot run in soak mode
+            'faction_index': self._handle_faction_selection,  # Phase 10.1: Aggravation scroll
         }
         
         # Map mouse actions to their handlers
@@ -433,6 +434,12 @@ class ActionProcessor:
             # Clear targeting data
             self.state_manager.set_extra_data("targeting_item", None)
             self.state_manager.set_extra_data("previous_state", None)
+            
+            # Phase 10.1: Clear faction selection data if present
+            self.state_manager.set_extra_data("faction_selection_item", None)
+            self.state_manager.set_extra_data("faction_selection_options", None)
+            self.state_manager.set_extra_data("faction_selection_target", None)
+            self.state_manager.set_extra_data("faction_selection_coords", None)
             
             # Clear throw-specific data if exiting throw targeting
             if current_state == GameStates.THROW_TARGETING:
@@ -1129,6 +1136,12 @@ class ActionProcessor:
                 # Invalidate entity sorting cache when new entities are added
                 invalidate_entity_cache("entity_added_spawned")
             
+            # Phase 10.1: Handle pending plague reanimations
+            # The _pending_reanimation data was set by kill_monster if the entity
+            # had the Plague of Restless Death. We don't process it immediately;
+            # it will be handled by process_pending_reanimations() each turn.
+            # This just ensures the data is preserved on the corpse entity.
+            
             # Then handle removal if requested (for combat deaths)
             if remove_from_entities:
                 if dead_entity in self.state_manager.state.entities:
@@ -1431,7 +1444,85 @@ class ActionProcessor:
             # Update the targeting_item to the newly selected item
             self.state_manager.set_extra_data("targeting_item", item)
             logger.warning(f"Switched targeting to: {item.name}")
-        elif current_state == GameStates.THROW_TARGETING:
+        elif current_state in (GameStates.THROW_TARGETING, GameStates.THROW_SELECT_ITEM, GameStates.PLAYERS_TURN):
+            # Handle throw-related states in separate method
+            self._handle_inventory_selection_throw(item, current_state, player)
+    
+    def _handle_faction_selection(self, faction_index: int) -> None:
+        """Handle faction selection for Scroll of Unreasonable Aggravation.
+        
+        Phase 10.1: When using the aggravation scroll on a target with multiple
+        nearby factions, the player must choose which faction to enrage against.
+        
+        Args:
+            faction_index: Zero-based index of the selected faction (0-8 for keys 1-9)
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state != GameStates.TARGETING:
+            return
+        
+        # Get stored faction selection data
+        faction_options = self.state_manager.get_extra_data("faction_selection_options")
+        target_entity = self.state_manager.get_extra_data("faction_selection_target")
+        targeting_item = self.state_manager.get_extra_data("faction_selection_item")
+        target_coords = self.state_manager.get_extra_data("faction_selection_coords")
+        
+        if not faction_options or not target_entity or not targeting_item:
+            # No faction selection pending - this key press is irrelevant
+            return
+        
+        # Validate selection index
+        if faction_index < 0 or faction_index >= len(faction_options):
+            self.state_manager.state.message_log.add_message(
+                MB.warning(f"Invalid selection. Choose 1-{len(faction_options)}.")
+            )
+            return
+        
+        # Get the selected faction
+        selected_faction_value, selected_faction_name = faction_options[faction_index]
+        
+        player = self.state_manager.state.player
+        if not player:
+            return
+        
+        # Re-call the aggravation scroll with the selected faction
+        target_x, target_y = target_coords if target_coords else (target_entity.x, target_entity.y)
+        
+        item_use_results = player.require_component(ComponentType.INVENTORY).use(
+            targeting_item,
+            entities=self.state_manager.state.entities,
+            fov_map=self.state_manager.state.fov_map,
+            game_map=self.state_manager.state.game_map,
+            target_x=target_x,
+            target_y=target_y,
+            target_faction=selected_faction_value  # Pass the selected faction
+        )
+        
+        # Process results
+        for result in item_use_results:
+            message = result.get("message")
+            if message:
+                self.state_manager.state.message_log.add_message(message)
+        
+        # Clear faction selection and targeting data
+        self.state_manager.set_extra_data("faction_selection_item", None)
+        self.state_manager.set_extra_data("faction_selection_options", None)
+        self.state_manager.set_extra_data("faction_selection_target", None)
+        self.state_manager.set_extra_data("faction_selection_coords", None)
+        self.state_manager.set_extra_data("targeting_item", None)
+        self.state_manager.set_extra_data("previous_state", None)
+        
+        # End player turn
+        self._process_player_status_effects()
+        self.turn_controller.end_player_action(turn_consumed=True)
+    
+    def _handle_inventory_selection_throw(self, item, current_state, player):
+        """Handle throw-related inventory selection states.
+        
+        Split from _handle_inventory_selection to keep method size manageable.
+        Called for THROW_TARGETING and THROW_SELECT_ITEM states.
+        """
+        if current_state == GameStates.THROW_TARGETING:
             # Player pressed a key to switch to a different item while in throw targeting mode
             # This allows: press 't' -> select item -> press 'a' to switch items -> click to throw
             self.state_manager.state.targeting_item = item
@@ -2019,6 +2110,8 @@ class ActionProcessor:
                     print(f"DEBUG: Item use results: {len(item_use_results) if item_use_results else 0} results")
 
                     player_died = False
+                    requires_faction_selection = False
+                    
                     for result in item_use_results:
                         message = result.get("message")
                         if message:
@@ -2030,6 +2123,33 @@ class ActionProcessor:
                             self._handle_entity_death(dead_entity, remove_from_entities=False)
                             if dead_entity == player:
                                 player_died = True
+                        
+                        # Phase 10.1: Handle faction selection for aggravation scroll
+                        if result.get("requires_faction_selection"):
+                            requires_faction_selection = True
+                            faction_options = result.get("faction_options", [])
+                            target_entity = result.get("target_entity")
+                            
+                            # Store faction selection data
+                            self.state_manager.set_extra_data("faction_selection_item", targeting_item)
+                            self.state_manager.set_extra_data("faction_selection_options", faction_options)
+                            self.state_manager.set_extra_data("faction_selection_target", target_entity)
+                            self.state_manager.set_extra_data("faction_selection_coords", (target_x, target_y))
+                            
+                            # Show faction menu
+                            from message_builder import MessageBuilder as MB
+                            self.state_manager.state.message_log.add_message(
+                                MB.info("Choose faction to enrage against:")
+                            )
+                            for i, (faction_value, faction_name) in enumerate(faction_options, 1):
+                                self.state_manager.state.message_log.add_message(
+                                    MB.info(f"  [{i}] {faction_name}")
+                                )
+                            # Don't clear targeting state yet - wait for faction selection
+                    
+                    if requires_faction_selection:
+                        # Don't end turn, keep in targeting-like state for faction selection
+                        return
 
                     # Clear targeting state
                     self.state_manager.set_extra_data("targeting_item", None)

@@ -12,6 +12,7 @@ OWNERSHIP:
   - Death message generation
   - Special death behaviors (slime splitting, boss drops, etc.)
   - Game state transitions on death
+  - Phase 10: Plague reanimation (revenant zombie creation)
 
 KEY CONTRACTS:
   - Use kill_monster() for monster death (not duplicated elsewhere)
@@ -36,7 +37,7 @@ SEE ALSO:
 """
 
 import random
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from game_messages import Message
 from message_builder import MessageBuilder as MB
@@ -118,6 +119,224 @@ def _can_monster_split(monster) -> bool:
     return (hasattr(monster, 'special_abilities') and 
             monster.special_abilities and 
             'splitting' in monster.special_abilities)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 10: PLAGUE OF RESTLESS DEATH - REANIMATION SYSTEM
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _check_plague_reanimation(monster, game_map, entities) -> Optional[Dict[str, Any]]:
+    """Check if a monster should reanimate as a revenant zombie.
+    
+    Phase 10: If the monster died while infected with Plague of Restless Death,
+    schedule reanimation after 1-3 turns.
+    
+    Args:
+        monster: The monster that just died
+        game_map: Game map for position validation
+        entities: List of all entities
+        
+    Returns:
+        Dict with reanimation data if applicable, None otherwise
+    """
+    # Check if monster had plague effect
+    status_effects = monster.get_component_optional(ComponentType.STATUS_EFFECTS)
+    if not status_effects:
+        return None
+    
+    plague_effect = status_effects.get_effect("plague_of_restless_death")
+    if not plague_effect:
+        return None
+    
+    # Get revenant stats from the plague effect
+    revenant_stats = plague_effect.get_revenant_stats()
+    if not revenant_stats:
+        return None
+    
+    # Schedule reanimation in 1-3 turns
+    reanimate_delay = random.randint(1, 3)
+    
+    return {
+        'corpse_x': monster.x,
+        'corpse_y': monster.y,
+        'revenant_stats': revenant_stats,
+        'reanimate_in_turns': reanimate_delay,
+        'original_monster': monster,
+    }
+
+
+def create_revenant_zombie(
+    x: int, 
+    y: int, 
+    revenant_stats: Dict[str, Any],
+    game_map=None,
+    entities=None
+) -> Optional['Entity']:
+    """Create a Revenant Zombie from plague reanimation.
+    
+    Phase 10: Creates a zombie with transformed stats from the original creature.
+    
+    Stats transformation (already calculated in revenant_stats):
+    - new_max_hp = original_max_hp * 2
+    - new_damage = floor(original_damage * 0.75)
+    - new_accuracy = floor(original_accuracy * 0.75)
+    - new_evasion = floor(original_evasion * 0.5)
+    
+    The revenant:
+    - Drops all wielded weapons (uses unarmed/claw damage)
+    - Keeps worn armor (chest, helmet, gloves, boots)
+    - Removes shields/held gear
+    - Faction set to UNDEAD
+    - Uses zombie AI with swarm behavior
+    
+    Args:
+        x: X coordinate for spawn
+        y: Y coordinate for spawn
+        revenant_stats: Dict with transformed stats
+        game_map: Game map for position validation
+        entities: List of all entities to check for occupied tiles
+        
+    Returns:
+        Entity: The new revenant zombie, or None on failure
+    """
+    from entity import Entity
+    from components.fighter import Fighter
+    from components.ai import BasicMonster
+    from components.equipment import Equipment
+    from components.faction import Faction
+    from components.status_effects import StatusEffectManager
+    
+    # Find valid spawn position (original or nearest free tile)
+    spawn_x, spawn_y = x, y
+    if entities and game_map:
+        # Check if original position is blocked
+        blocked = False
+        for entity in entities:
+            if entity.x == x and entity.y == y and entity.blocks:
+                blocked = True
+                break
+        
+        if blocked:
+            # Find nearest free tile
+            positions = _get_valid_spawn_positions(x, y, game_map, 1, entities)
+            if positions:
+                spawn_x, spawn_y = positions[0]
+    
+    # Create fighter component with transformed stats
+    fighter = Fighter(
+        hp=revenant_stats['max_hp'],
+        defense=revenant_stats['defense'],
+        power=revenant_stats['power'],
+        xp=50,  # Fixed XP for revenants
+        damage_min=revenant_stats['damage_min'],
+        damage_max=revenant_stats['damage_max'],
+        strength=12,  # Standard zombie strength
+        dexterity=6,  # Slow
+        constitution=14,  # Undead resilience
+        accuracy=revenant_stats['accuracy'],
+        evasion=revenant_stats['evasion']
+    )
+    
+    # Create AI with swarm behavior (zombie-specific)
+    ai = BasicMonster()
+    ai.is_zombie = True  # Flag for swarm behavior
+    ai.aware_of_player = True  # Revenants are immediately aware
+    
+    # Create equipment component (for keeping armor)
+    equipment = Equipment()
+    
+    # Generate name
+    original_name = revenant_stats.get('original_name', 'creature')
+    revenant_name = f"Revenant {original_name}"
+    
+    # Create the revenant entity
+    revenant = Entity(
+        x=spawn_x,
+        y=spawn_y,
+        char='Z',  # Capital Z for revenant zombie
+        color=(100, 150, 100),  # Sickly gray-green
+        name=revenant_name,
+        blocks=True,
+        render_order=RenderOrder.ACTOR,
+        faction=Faction.UNDEAD,
+        fighter=fighter,
+        ai=ai,
+        equipment=equipment
+    )
+    
+    # Add status effects manager
+    revenant.status_effects = StatusEffectManager(revenant)
+    revenant.components.add(ComponentType.STATUS_EFFECTS, revenant.status_effects)
+    
+    # Mark as revenant for identification
+    revenant.is_revenant = True
+    revenant.special_abilities = ['swarm']  # Enable swarm targeting
+    
+    # Queue VFX
+    try:
+        from visual_effects import show_reanimate_effect
+        show_reanimate_effect(spawn_x, spawn_y, revenant)
+    except ImportError:
+        pass  # VFX optional
+    
+    return revenant
+
+
+def process_pending_reanimations(entities, game_map, turn_number: int = 0) -> List[Dict[str, Any]]:
+    """Process all pending plague reanimations.
+    
+    Phase 10: Called each turn to check for corpses that should reanimate.
+    
+    This function should be called from the game loop to handle deferred
+    reanimation of plague-infected corpses.
+    
+    Args:
+        entities: List of all entities (including corpses)
+        game_map: Game map for position validation
+        turn_number: Current turn number (for timing)
+        
+    Returns:
+        List of result dicts with new revenant zombies and messages
+    """
+    results = []
+    new_revenants = []
+    
+    for entity in list(entities):  # Copy list since we may modify
+        # Check for pending reanimation
+        if not hasattr(entity, '_pending_reanimation'):
+            continue
+        
+        reanimation_data = entity._pending_reanimation
+        
+        # Decrement turns until reanimation
+        reanimation_data['reanimate_in_turns'] -= 1
+        
+        if reanimation_data['reanimate_in_turns'] <= 0:
+            # Time to reanimate!
+            revenant = create_revenant_zombie(
+                reanimation_data['corpse_x'],
+                reanimation_data['corpse_y'],
+                reanimation_data['revenant_stats'],
+                game_map,
+                entities
+            )
+            
+            if revenant:
+                new_revenants.append(revenant)
+                
+                results.append({
+                    'message': MB.custom(
+                        f"☠️ The plague takes hold! {entity.name} rises as {revenant.name}!",
+                        (150, 200, 50)  # Sickly green
+                    ),
+                    'new_entity': revenant
+                })
+            
+            # Clear reanimation data
+            del entity._pending_reanimation
+    
+    return results
 
 
 def _get_valid_spawn_positions(center_x: int, center_y: int, game_map, max_positions: int, entities=None) -> List[tuple]:
@@ -227,6 +446,10 @@ def kill_monster(monster, game_map=None, entities=None):
     
     # Handle slime splitting before transforming to corpse
     spawned_slimes = _handle_slime_splitting(monster, game_map, entities)
+    
+    # Phase 10: Check for Plague of Restless Death - schedule reanimation
+    pending_reanimation = _check_plague_reanimation(monster, game_map, entities)
+    
     if spawned_slimes:
         # Store spawned slimes on the monster for the caller to handle
         monster._spawned_entities = spawned_slimes
@@ -237,6 +460,15 @@ def kill_monster(monster, game_map=None, entities=None):
                 monster.name.capitalize(), len(spawned_slimes)
             ), (0, 255, 0)  # Green for special event
         )
+    elif pending_reanimation:
+        # Plague reanimation pending - special death message
+        death_message = MB.custom(
+            "{0} falls... but the plague stirs within the corpse!".format(
+                monster.name.capitalize()
+            ), (150, 200, 50)  # Sickly green for plague
+        )
+        # Store reanimation data for caller to handle
+        monster._pending_reanimation = pending_reanimation
     elif death_dialogue:
         # Boss death with dialogue
         death_message = MB.custom(

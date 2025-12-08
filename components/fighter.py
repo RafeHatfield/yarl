@@ -916,6 +916,10 @@ class Fighter:
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
             
+            # Phase 10.1: Apply plague spread if attacker has plague_attack ability
+            plague_results = self._apply_plague_spread(target)
+            results.extend(plague_results)
+            
             # IMPORTANT: Set attacker's in_combat flag when attacking the PLAYER
             # This keeps monsters engaged even if they leave FOV
             # But DON'T set it for monster-vs-monster combat (taunt scenarios)
@@ -1150,6 +1154,82 @@ class Fighter:
                 faction = self.owner.get_component_optional(ComponentType.FACTION)
                 if faction and faction == Faction.HOSTILE_ALL:
                     return True
+        
+        return False
+    
+    def _apply_plague_spread(self, target):
+        """Apply plague spread if attacker has plague_attack ability.
+        
+        Phase 10.1: Plague zombies have a chance to spread the Plague of
+        Restless Death on successful melee attacks against corporeal flesh targets.
+        
+        Args:
+            target: The entity that was attacked
+            
+        Returns:
+            list: List of result dictionaries with plague infection messages
+        """
+        results = []
+        
+        # Check if attacker has plague_attack ability
+        if not self._has_plague_attack_ability():
+            return results
+        
+        # Import helper to check if target is eligible (corporeal flesh)
+        from item_functions import _is_corporeal_flesh
+        if not _is_corporeal_flesh(target):
+            return results
+        
+        # Check if target already has the plague
+        target_status = target.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if target_status and target_status.has_effect("plague_of_restless_death"):
+            return results  # Already infected
+        
+        # Plague spread chance: 25%
+        import random
+        PLAGUE_SPREAD_CHANCE = 0.25
+        
+        if random.random() < PLAGUE_SPREAD_CHANCE:
+            # Apply plague effect to target
+            # NOTE: apply_plague_effect expects target as keyword arg, not positional
+            from item_functions import apply_plague_effect
+            plague_results = apply_plague_effect(self.owner, target=target)
+            
+            # Add our own message about the spread
+            from message_builder import MessageBuilder as MB
+            results.append({
+                "message": MB.custom(
+                    f"☠️ {self.owner.name}'s diseased touch spreads the plague to {target.name}!",
+                    (150, 200, 50)  # Sickly green
+                )
+            })
+            
+            # Merge in results from apply_plague_effect
+            results.extend(plague_results)
+        
+        return results
+    
+    def _has_plague_attack_ability(self):
+        """Check if this entity has plague_attack ability.
+        
+        Phase 10.1: Plague zombies can spread plague on melee hits.
+        
+        Returns:
+            bool: True if entity can spread plague on attacks
+        """
+        # Check if entity has special_abilities with plague_attack
+        if (hasattr(self.owner, 'special_abilities') and 
+            self.owner.special_abilities and 
+            isinstance(self.owner.special_abilities, (list, tuple)) and
+            'plague_attack' in self.owner.special_abilities):
+            return True
+        
+        # Also check tags for plague_carrier
+        if (hasattr(self.owner, 'tags') and 
+            self.owner.tags and 
+            isinstance(self.owner.tags, (list, tuple)) and
+            'plague_carrier' in self.owner.tags):
+            return True
         
         return False
     

@@ -78,8 +78,9 @@ class TestMenuExitHandling:
         # Should return to previous state (PLAYERS_TURN)
         mock_state_manager.set_game_state.assert_called_with(GameStates.PLAYERS_TURN)
         
-        # Should clear targeting_item, previous_state, throw_item, and throw_target
-        assert mock_state_manager.set_extra_data.call_count == 4
+        # Should clear targeting_item, previous_state, throw_item, throw_target,
+        # and 4 faction_selection_* keys (Phase 10.1)
+        assert mock_state_manager.set_extra_data.call_count == 8
     
     def test_exit_from_targeting(self, mock_state_manager):
         """ESC should cancel spell targeting and return to previous state."""
@@ -92,8 +93,9 @@ class TestMenuExitHandling:
         # Should return to previous state (PLAYERS_TURN)
         mock_state_manager.set_game_state.assert_called_with(GameStates.PLAYERS_TURN)
         
-        # Should clear targeting_item and previous_state
-        assert mock_state_manager.set_extra_data.call_count == 2
+        # Should clear targeting_item, previous_state,
+        # and 4 faction_selection_* keys (Phase 10.1)
+        assert mock_state_manager.set_extra_data.call_count == 6
     
     def test_exit_from_character_screen(self, mock_state_manager):
         """ESC should close character screen and return to PLAYERS_TURN."""

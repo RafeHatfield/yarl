@@ -311,3 +311,49 @@ def show_surprise_effect(x: int, y: int, entity: Any = None) -> None:
     """
     get_effect_queue().queue_surprise_effect(x, y, entity)
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 10: FACTION MANIPULATION VFX
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def show_anger_effect(x: int, y: int, entity: Any = None) -> None:
+    """Queue an anger/aggravation visual effect.
+    
+    Phase 10: Shows orange-red effect when Scroll of Unreasonable Aggravation
+    is applied to a monster.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: Entity being enraged
+    """
+    get_effect_queue().queue_anger_effect(x, y, entity)
+
+
+def show_plague_effect(x: int, y: int, entity: Any = None) -> None:
+    """Queue a plague visual effect.
+    
+    Phase 10: Shows sickly green effect when Plague of Restless Death
+    is applied or deals damage.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: Entity infected with plague
+    """
+    get_effect_queue().queue_plague_effect(x, y, entity)
+
+
+def show_reanimate_effect(x: int, y: int, entity: Any = None) -> None:
+    """Queue a reanimation visual effect.
+    
+    Phase 10: Shows necromantic green effect when a plague-infected
+    creature rises as a Revenant Zombie.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: The new revenant zombie
+    """
+    get_effect_queue().queue_reanimate_effect(x, y, entity)
+

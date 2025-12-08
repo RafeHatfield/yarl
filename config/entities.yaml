@@ -66,6 +66,9 @@ monsters:
     ai_type: "basic"
     render_order: "actor"
     blocks: true
+    # Phase 10: Faction system - orcs assist each other
+    faction: "orc"
+    tags: ["corporeal_flesh", "humanoid", "living"]
     # ETP: DPS=5 × 6 × durability=1.0 × behavior=0.9 = 27
     etp_base: 27
     # Item-seeking behavior configuration
@@ -156,6 +159,9 @@ monsters:
     ai_type: "basic"
     render_order: "actor"
     blocks: true
+    # Phase 10: Trolls are part of the orc faction (allies with orcs/goblins)
+    faction: "orc"
+    tags: ["corporeal_flesh", "humanoid", "living", "regenerating"]
     # Item-seeking behavior (trolls are smarter and seek further)
     can_seek_items: true      # Trolls actively seek items
     inventory_size: 8         # Larger inventory than orcs (smarter)
@@ -181,7 +187,7 @@ monsters:
     # ETP: DPS=13 × 6 × durability=2.22 × behavior=1.1 = 95 (elite brute)
     etp_base: 95
 
-  # Slime monsters - hostile to all factions
+  # Slime monsters - hostile to all factions (independent predator)
   slime:
     stats:
       hp: 15
@@ -200,6 +206,8 @@ monsters:
     faction: "hostile_all"  # Attacks everyone including other monsters
     render_order: "actor"
     blocks: true
+    # Phase 10: Slimes have no flesh (not affected by plague)
+    tags: ["no_flesh", "amorphous", "acidic"]
     # Slimes don't seek items - they're simple creatures
     can_seek_items: false
     inventory_size: 0
@@ -280,11 +288,30 @@ monsters:
     faction: "undead"         # Undead faction
     render_order: "actor"
     blocks: true
+    # Phase 10: Zombies have rotting flesh but are already undead
+    tags: ["corporeal_flesh", "undead", "mindless", "low_undead"]
+    special_abilities: ["swarm"]  # Phase 10: Zombie swarm behavior
     can_seek_items: false     # Mindless - doesn't seek items
     inventory_size: 0
     speed_bonus: 0.5          # Phase 6: Slow - player has advantage
     # ETP: DPS=4.5 × 6 × durability=1.28 × behavior=0.9 × speed=1.0 = 31
     etp_base: 31
+  
+  # Phase 10: Plague Zombie - spreads Plague of Restless Death
+  plague_zombie:
+    extends: zombie           # Inherit from basic zombie
+    stats:
+      hp: 30                  # Slightly tougher
+      damage_min: 4           # Stronger: 4-7
+      damage_max: 7
+      xp: 45                  # More XP
+    char: "Z"                 # Capital Z for plague zombie
+    color: [100, 180, 80]     # Sickly green (plague-infected)
+    # Plague zombie can spread the plague on melee hit
+    tags: ["corporeal_flesh", "undead", "mindless", "low_undead", "plague_carrier"]
+    special_abilities: ["swarm", "plague_attack"]  # Can spread plague
+    # ETP: DPS=5.5 × 6 × durability=1.54 × behavior=1.1 = 55
+    etp_base: 40
 
   # Wraith - Fast ethereal undead
   wraith:
@@ -310,6 +337,8 @@ monsters:
     faction: "undead"         # Undead faction
     render_order: "actor"
     blocks: true
+    # Phase 10: Wraiths are incorporeal - not affected by plague
+    tags: ["incorporeal", "undead", "high_undead", "no_flesh"]
     can_seek_items: false     # Incorporeal - can't interact with items
     inventory_size: 0
     speed_bonus: 2.0          # Phase 6: VERY fast - bonus attack every hit!
@@ -337,6 +366,8 @@ monsters:
     faction: "independent"    # Independent - hostile to all
     render_order: "actor"
     blocks: true
+    # Phase 10: Beasts are corporeal flesh
+    tags: ["corporeal_flesh", "beast", "venomous", "living"]
     can_seek_items: false     # Animal intelligence
     inventory_size: 0
     speed_bonus: 1.5          # Phase 6: Fast - multiple strike capability
@@ -362,9 +393,11 @@ monsters:
     char: "c"
     color: [180, 50, 50]      # Dark red (cultist robes)
     ai_type: "basic"
-    faction: "cultist"        # Cultist faction
+    faction: "cultist"        # Cultist faction - defensive/territorial
     render_order: "actor"
     blocks: true
+    # Phase 10: Cultists are living humanoids
+    tags: ["corporeal_flesh", "humanoid", "living", "cultist"]
     can_seek_items: true      # Intelligent - seeks items
     inventory_size: 4
     seek_distance: 5
@@ -1256,6 +1289,36 @@ spells:
     char: "~"
     color: [255, 0, 255]  # Magenta (psychic sense)
     duration: 20  # Turns of monster detection
+  
+  # ════════════════════════════════════════════════════════
+  # PHASE 10: FACTION MANIPULATION ITEMS
+  # ════════════════════════════════════════════════════════
+  
+  # Scroll of Unreasonable Aggravation - incites monster to attack a faction
+  aggravation_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 100, 50]  # Orange-red (anger)
+    effect_function: "use_aggravation_scroll"
+    targeting: true  # Requires target selection
+    range: 10  # Maximum targeting range
+  
+  # Scroll of Restless Death - infects target with plague
+  plague_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [150, 200, 50]  # Sickly yellow-green
+    effect_function: "apply_plague_effect"
+    targeting: true
+    range: 8
+    duration: 20  # Plague duration
+  
+  # Antidote Potion - cures Plague of Restless Death
+  antidote_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [50, 255, 150]  # Bright cyan-green (cleansing)
+    effect_function: "drink_antidote_potion"
   
   # ════════════════════════════════════════════════════════
   # KEYS - Unlock vault doors and special chests

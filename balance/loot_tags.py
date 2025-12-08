@@ -578,6 +578,34 @@ LOOT_TAGS: Dict[str, LootTags] = {
         band_min=2, band_max=5,
         weight=2.0
     ),
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # PHASE 10: FACTION MANIPULATION & PLAGUE ITEMS
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    # Scroll of Unreasonable Aggravation - incites monster to attack faction
+    # Powerful tactical item for creating chaos among enemies
+    "aggravation_scroll": LootTags(
+        categories=["utility"],
+        band_min=3, band_max=5,  # Mid-to-late game
+        weight=1.5  # Rare tactical item
+    ),
+    
+    # Scroll of Restless Death - infects target with plague
+    # Risky but powerful - target will reanimate as enemy undead
+    "plague_scroll": LootTags(
+        categories=["utility", "offensive"],
+        band_min=4, band_max=5,  # Late game only
+        weight=0.8  # Rare, dangerous item
+    ),
+    
+    # Antidote Potion - cures Plague of Restless Death
+    # Should appear in bands where plague sources exist
+    "antidote_potion": LootTags(
+        categories=["utility", "healing"],
+        band_min=3, band_max=5,  # Appears where plague zombies appear
+        weight=2.0  # Reasonably common for safety
+    ),
 }
 
 
