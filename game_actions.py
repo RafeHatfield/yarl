@@ -1444,6 +1444,9 @@ class ActionProcessor:
             # Update the targeting_item to the newly selected item
             self.state_manager.set_extra_data("targeting_item", item)
             logger.warning(f"Switched targeting to: {item.name}")
+        elif current_state in (GameStates.THROW_TARGETING, GameStates.THROW_SELECT_ITEM, GameStates.PLAYERS_TURN):
+            # Handle throw-related states in separate method
+            self._handle_inventory_selection_throw(item, current_state, player)
     
     def _handle_faction_selection(self, faction_index: int) -> None:
         """Handle faction selection for Scroll of Unreasonable Aggravation.
@@ -1512,7 +1515,14 @@ class ActionProcessor:
         # End player turn
         self._process_player_status_effects()
         self.turn_controller.end_player_action(turn_consumed=True)
-        elif current_state == GameStates.THROW_TARGETING:
+    
+    def _handle_inventory_selection_throw(self, item, current_state, player):
+        """Handle throw-related inventory selection states.
+        
+        Split from _handle_inventory_selection to keep method size manageable.
+        Called for THROW_TARGETING and THROW_SELECT_ITEM states.
+        """
+        if current_state == GameStates.THROW_TARGETING:
             # Player pressed a key to switch to a different item while in throw targeting mode
             # This allows: press 't' -> select item -> press 'a' to switch items -> click to throw
             self.state_manager.state.targeting_item = item
