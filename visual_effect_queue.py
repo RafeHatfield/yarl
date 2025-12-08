@@ -47,6 +47,10 @@ class EffectType(Enum):
     DEBUFF = auto()  # Generic debuff applied
     # Phase 9: Surprise attack effect
     SURPRISE = auto()  # Surprise attack from shadows
+    # Phase 10: Faction manipulation effects
+    ANGER = auto()  # Unreasonable aggravation applied
+    PLAGUE = auto()  # Plague of Restless Death applied/ticking
+    REANIMATE = auto()  # Revenant zombie rising
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -128,6 +132,22 @@ EFFECT_VFX_CONFIG: Dict[EffectType, Dict[str, Any]] = {
         "color": (200, 100, 255),    # Purple/violet for shadowy strike
         "char": ord('✧'),            # Star burst
         "duration": 0.25,            # Longer duration for dramatic effect
+    },
+    # Phase 10: Faction manipulation effects
+    EffectType.ANGER: {
+        "color": (255, 100, 50),     # Orange-red for rage/anger
+        "char": ord('!'),            # Exclamation for aggravation
+        "duration": 0.20,
+    },
+    EffectType.PLAGUE: {
+        "color": (150, 200, 50),     # Sickly yellow-green for plague
+        "char": ord('☠'),            # Skull for death plague
+        "duration": 0.20,
+    },
+    EffectType.REANIMATE: {
+        "color": (100, 255, 100),    # Necromantic green
+        "char": ord('✝'),            # Cross/resurrection symbol
+        "duration": 0.30,            # Dramatic reanimation
     },
 }
 
@@ -233,6 +253,10 @@ class QueuedEffect:
             EffectType.DEBUFF: lambda: self._play_effect_from_config(con, EffectType.DEBUFF),
             # Phase 9: Surprise attack
             EffectType.SURPRISE: lambda: self._play_effect_from_config(con, EffectType.SURPRISE),
+            # Phase 10: Faction manipulation effects
+            EffectType.ANGER: lambda: self._play_effect_from_config(con, EffectType.ANGER),
+            EffectType.PLAGUE: lambda: self._play_effect_from_config(con, EffectType.PLAGUE),
+            EffectType.REANIMATE: lambda: self._play_effect_from_config(con, EffectType.REANIMATE),
         }
 
         handler = dispatch.get(self.effect_type)
@@ -550,6 +574,49 @@ class VisualEffectQueue:
             entity: Entity being surprise attacked
         """
         self.queue_effect_vfx(x, y, EffectType.SURPRISE, entity)
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # PHASE 10: FACTION MANIPULATION EFFECT QUEUING
+    # ─────────────────────────────────────────────────────────────────────────
+    
+    def queue_anger_effect(self, x: int, y: int, entity=None) -> None:
+        """Queue an anger/aggravation visual effect.
+        
+        Phase 10: Shows orange-red effect when Scroll of Unreasonable Aggravation
+        is applied to a monster.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            entity: Entity being enraged
+        """
+        self.queue_effect_vfx(x, y, EffectType.ANGER, entity)
+    
+    def queue_plague_effect(self, x: int, y: int, entity=None) -> None:
+        """Queue a plague visual effect.
+        
+        Phase 10: Shows sickly green effect when Plague of Restless Death
+        is applied or deals damage.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            entity: Entity infected with plague
+        """
+        self.queue_effect_vfx(x, y, EffectType.PLAGUE, entity)
+    
+    def queue_reanimate_effect(self, x: int, y: int, entity=None) -> None:
+        """Queue a reanimation visual effect.
+        
+        Phase 10: Shows necromantic green effect when a plague-infected
+        creature rises as a Revenant Zombie.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            entity: The new revenant zombie
+        """
+        self.queue_effect_vfx(x, y, EffectType.REANIMATE, entity)
     
     def play_all(self, con=0, camera=None) -> None:
         """Play all queued effects and clear the queue.

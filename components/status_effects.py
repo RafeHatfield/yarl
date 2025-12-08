@@ -760,6 +760,185 @@ class DetectMonsterEffect(StatusEffect):
         return results
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 10: FACTION MANIPULATION STATUS EFFECTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class EnragedAgainstFactionEffect(StatusEffect):
+    """Makes the owner attack a specific faction above all other targets.
+    
+    Phase 10: Used by Scroll of Unreasonable Aggravation.
+    
+    The enraged monster will prioritize attacking members of the target faction
+    over all others (including the player), until death. The effect is permanent
+    (until death) and cannot be removed by time.
+    
+    Attributes:
+        target_faction (Faction): The faction this monster is enraged against
+    """
+    def __init__(self, owner: 'Entity', target_faction: 'Faction'):
+        # Duration of -1 means permanent until death
+        super().__init__("enraged_against_faction", -1, owner)
+        self.target_faction = target_faction
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        from components.faction import get_faction_display_name
+        
+        faction_name = get_faction_display_name(self.target_faction)
+        results.append({
+            'message': MB.custom(
+                f"📜 {self.owner.name} is consumed by unreasonable aggravation toward {faction_name}!",
+                (255, 100, 50)  # Orange-red for anger
+            )
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        # This effect is permanent - only removed on death
+        results = super().remove()
+        return results
+    
+    def process_turn_end(self) -> List[Dict[str, Any]]:
+        # Override to prevent duration decrement (permanent effect)
+        return []
+
+
+class PlagueOfRestlessDeathEffect(StatusEffect):
+    """Plague that causes reanimation as a Revenant Zombie on death.
+    
+    Phase 10: Plague of Restless Death mechanics.
+    
+    This plague:
+    - Only affects "corporeal_flesh" creatures (tagged appropriately)
+    - Deals negligible damage over time (cannot kill; stops at 1 HP)
+    - If victim dies while infected, they reanimate as Revenant Zombie
+    
+    The reanimation creates a zombie with:
+    - new_max_hp = original_max_hp * 2
+    - new_damage = floor(original_damage * 0.75)
+    - new_accuracy = floor(original_accuracy * 0.75)
+    - new_evasion = floor(original_evasion * 0.5)
+    - Weapons dropped, armor kept, faction set to UNDEAD
+    
+    Attributes:
+        damage_per_turn (int): Damage dealt per turn (default 1)
+        original_stats (dict): Stored stats for reanimation calculation
+    """
+    def __init__(self, duration: int, owner: 'Entity', damage_per_turn: int = 1):
+        super().__init__("plague_of_restless_death", duration, owner)
+        self.damage_per_turn = damage_per_turn
+        # Store original stats on application for revenant calculation
+        self.original_stats = None
+        self._stats_captured = False
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        
+        # Capture original stats for revenant zombie calculation
+        self._capture_original_stats()
+        
+        results.append({
+            'message': MB.custom(
+                f"☠️ {self.owner.name} is infected with the Plague of Restless Death!",
+                (150, 200, 50)  # Sickly green
+            )
+        })
+        
+        # Queue VFX
+        try:
+            from visual_effects import show_effect_vfx
+            from visual_effect_queue import EffectType
+            if hasattr(self.owner, 'x') and hasattr(self.owner, 'y'):
+                show_effect_vfx(self.owner.x, self.owner.y, EffectType.PLAGUE, self.owner)
+        except ImportError:
+            pass  # VFX optional
+        
+        return results
+    
+    def _capture_original_stats(self) -> None:
+        """Capture the entity's original stats for revenant calculation."""
+        if self._stats_captured:
+            return
+        
+        fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+        if fighter:
+            self.original_stats = {
+                'max_hp': fighter.max_hp,
+                'damage_min': getattr(fighter, 'damage_min', 0),
+                'damage_max': getattr(fighter, 'damage_max', 0),
+                'accuracy': getattr(fighter, 'accuracy', 2),
+                'evasion': getattr(fighter, 'evasion', 1),
+                'defense': fighter.base_defense,
+                'power': fighter.power,
+                'name': self.owner.name,
+                'char': self.owner.char,
+                'color': self.owner.color,
+            }
+            self._stats_captured = True
+    
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Deal plague damage, but never reduce below 1 HP.
+        
+        Args:
+            entities: List of all game entities
+        
+        Returns:
+            List of result dictionaries
+        """
+        results = super().process_turn_start(entities=entities)
+        
+        fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+        if fighter and fighter.hp > 1:
+            # Deal damage but don't kill
+            actual_damage = min(self.damage_per_turn, fighter.hp - 1)
+            if actual_damage > 0:
+                fighter.hp -= actual_damage
+                results.append({
+                    'message': MB.custom(
+                        f"☠️ The plague ravages {self.owner.name} for {actual_damage} damage!",
+                        (150, 200, 50)  # Sickly green
+                    )
+                })
+        
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({
+            'message': MB.status_effect(
+                f"{self.owner.name} is no longer infected with the plague."
+            )
+        })
+        return results
+    
+    def get_revenant_stats(self) -> Optional[Dict[str, Any]]:
+        """Get the calculated stats for a revenant zombie.
+        
+        Called when the infected entity dies to create the revenant.
+        
+        Returns:
+            Dict with transformed stats, or None if stats weren't captured
+        """
+        if not self.original_stats:
+            return None
+        
+        import math
+        
+        return {
+            'max_hp': self.original_stats['max_hp'] * 2,
+            'hp': self.original_stats['max_hp'] * 2,  # Full HP on reanimate
+            'damage_min': math.floor(self.original_stats['damage_min'] * 0.75),
+            'damage_max': math.floor(self.original_stats['damage_max'] * 0.75),
+            'accuracy': math.floor(self.original_stats['accuracy'] * 0.75),
+            'evasion': math.floor(self.original_stats['evasion'] * 0.5),
+            'defense': self.original_stats['defense'],
+            'power': self.original_stats['power'],
+            'original_name': self.original_stats['name'],
+        }
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):

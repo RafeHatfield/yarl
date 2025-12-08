@@ -1435,3 +1435,382 @@ def use_wand_of_portals(*args, **kwargs):
     
     return results
 
+
+# ============================================================================
+# PHASE 10: FACTION MANIPULATION SCROLLS & ANTIDOTE
+# ============================================================================
+
+
+def use_aggravation_scroll(*args, **kwargs):
+    """Use Scroll of Unreasonable Aggravation on a target monster.
+    
+    Phase 10: Incites a monster to become irrationally enraged against a faction.
+    
+    The enraged monster will prioritize attacking that faction over all others
+    (including the player), until death. Effect is permanent (until death).
+    
+    Susceptibility:
+    - Works best on: ORC_FACTION, INDEPENDENT, UNDEAD (zombies)
+    - Reduced/no effect on: CULTIST, high undead (wraiths)
+    
+    Args:
+        *args: First argument should be the caster (player)
+        **kwargs: Should contain:
+            - target_x, target_y: Coordinates of target monster
+            - entities: List of all entities
+            - fov_map: Field of view map
+            - target_faction: The faction to enrage against (if pre-selected)
+    
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    caster = args[0] if args else None
+    entities = kwargs.get("entities", [])
+    fov_map = kwargs.get("fov_map")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
+    target_faction_str = kwargs.get("target_faction")  # Optional: pre-selected faction
+    
+    results = []
+    
+    # Validate targeting
+    if target_x is None or target_y is None:
+        return [{"consumed": False, "message": MB.warning("You must select a target monster.")}]
+    
+    # Check FOV
+    if fov_map and not map_is_in_fov(fov_map, target_x, target_y):
+        return [{"consumed": False, "message": MB.warning("You cannot target something you cannot see.")}]
+    
+    # Find target entity at coordinates
+    target = None
+    for entity in entities:
+        if entity.x == target_x and entity.y == target_y:
+            # Must have AI (be a monster) and be alive
+            ai = entity.get_component_optional(ComponentType.AI)
+            fighter = entity.get_component_optional(ComponentType.FIGHTER)
+            if ai and fighter and fighter.hp > 0:
+                target = entity
+                break
+    
+    if not target:
+        return [{"consumed": False, "message": MB.warning("There is no valid monster target there.")}]
+    
+    # Import faction module
+    from components.faction import (
+        Faction, get_faction_display_name, are_factions_hostile,
+        get_faction_from_string
+    )
+    
+    # Check resistance based on target's faction
+    target_faction = getattr(target, 'faction', Faction.NEUTRAL)
+    
+    # Resistance check: Cultists and high undead (wraiths) resist
+    resist_chance = 0.0
+    if target_faction == Faction.CULTIST:
+        resist_chance = 0.70  # 70% resist
+    elif target_faction == Faction.UNDEAD:
+        # Check if it's a "high" undead (wraith-like) by name/char
+        target_name_lower = target.name.lower() if hasattr(target, 'name') else ""
+        if any(x in target_name_lower for x in ['wraith', 'lich', 'vampire', 'specter', 'ghost']):
+            resist_chance = 0.80  # 80% resist for high undead
+        else:
+            resist_chance = 0.20  # 20% resist for low undead (zombies, skeletons)
+    
+    # Roll for resistance
+    if resist_chance > 0 and random() < resist_chance:
+        results.append({
+            "consumed": True,  # Scroll is used even on resist
+            "message": MB.spell_fail(
+                f"The magic fizzles; {target.name} is unmoved by the scroll's influence."
+            )
+        })
+        return results
+    
+    # Gather available factions from nearby entities (in FOV or nearby)
+    available_factions = set()
+    for entity in entities:
+        if entity == target or entity == caster:
+            continue
+        
+        entity_faction = getattr(entity, 'faction', None)
+        if entity_faction and entity_faction != Faction.PLAYER:
+            # Check if this entity is alive and could be a target
+            e_fighter = entity.get_component_optional(ComponentType.FIGHTER)
+            if e_fighter and e_fighter.hp > 0:
+                # Don't include same faction as target
+                if entity_faction != target_faction:
+                    available_factions.add(entity_faction)
+    
+    # Always allow enraging against the player
+    available_factions.add(Faction.PLAYER)
+    
+    # Determine which faction to enrage against
+    chosen_faction = None
+    
+    if target_faction_str:
+        # Pre-selected faction (from menu selection)
+        chosen_faction = get_faction_from_string(target_faction_str)
+    elif len(available_factions) == 1:
+        # Only one faction available - auto-select
+        chosen_faction = list(available_factions)[0]
+    else:
+        # Multiple factions - need player to choose
+        # Return a special result to trigger faction selection menu
+        faction_options = [
+            (f.value, get_faction_display_name(f)) 
+            for f in available_factions
+        ]
+        results.append({
+            "consumed": False,
+            "requires_faction_selection": True,
+            "faction_options": faction_options,
+            "target_entity": target,
+            "message": MB.info("Choose which faction to enrage against:")
+        })
+        return results
+    
+    if not chosen_faction:
+        return [{"consumed": False, "message": MB.warning("No valid faction to enrage against.")}]
+    
+    # Apply the EnragedAgainstFactionEffect
+    from components.status_effects import (
+        StatusEffectManager, EnragedAgainstFactionEffect
+    )
+    
+    # Ensure target has status_effects component
+    if not target.components.has(ComponentType.STATUS_EFFECTS):
+        target.status_effects = StatusEffectManager(target)
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+    
+    # Create and apply the effect
+    aggravation_effect = EnragedAgainstFactionEffect(
+        owner=target,
+        target_faction=chosen_faction
+    )
+    effect_results = target.status_effects.add_effect(aggravation_effect)
+    results.extend(effect_results)
+    
+    # Queue VFX
+    try:
+        from visual_effects import show_anger_effect
+        show_anger_effect(target.x, target.y, target)
+    except ImportError:
+        pass  # VFX optional
+    
+    results.append({"consumed": True})
+    
+    return results
+
+
+def drink_antidote_potion(*args, **kwargs):
+    """Drink an antidote potion to cure the Plague of Restless Death.
+    
+    Phase 10: Removes PlagueOfRestlessDeathEffect from the player.
+    
+    Args:
+        *args: First argument should be the entity drinking the potion
+        **kwargs: Optional parameters
+    
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity to cure!")}]
+    
+    results = []
+    
+    # Check if entity has the plague
+    status_effects = entity.get_component_optional(ComponentType.STATUS_EFFECTS)
+    if not status_effects:
+        results.append({
+            "consumed": True,  # Potion is consumed even if no effect
+            "message": MB.info(
+                "You drink the antidote. It tastes bitter but has no effect."
+            )
+        })
+        return results
+    
+    if status_effects.has_effect("plague_of_restless_death"):
+        # Remove the plague
+        removal_results = status_effects.remove_effect("plague_of_restless_death")
+        results.extend(removal_results)
+        
+        results.append({
+            "consumed": True,
+            "message": MB.healing(
+                "You feel the foul corruption leave your body. The plague is cured!"
+            )
+        })
+    else:
+        results.append({
+            "consumed": True,  # Potion is consumed even if no plague
+            "message": MB.info(
+                "You drink the antidote. It tastes bitter but you weren't infected."
+            )
+        })
+    
+    return results
+
+
+def apply_plague_effect(*args, **kwargs):
+    """Apply Plague of Restless Death to a target (from scroll or monster attack).
+    
+    Phase 10: Can only affect "corporeal_flesh" creatures.
+    
+    Args:
+        *args: First argument should be the caster/source
+        **kwargs: Should contain:
+            - target_x, target_y: Coordinates of target (for scroll)
+            - target: Direct target entity (for monster attack)
+            - entities: List of all entities
+            - fov_map: Field of view map
+            - duration: Plague duration (default 20)
+    
+    Returns:
+        list: List of result dictionaries with consumption and message info
+    """
+    caster = args[0] if args else None
+    entities = kwargs.get("entities", [])
+    fov_map = kwargs.get("fov_map")
+    target_x = kwargs.get("target_x")
+    target_y = kwargs.get("target_y")
+    direct_target = kwargs.get("target")  # For monster attack
+    duration = kwargs.get("duration", 20)
+    
+    results = []
+    
+    # Determine target
+    target = direct_target
+    if not target and target_x is not None and target_y is not None:
+        # Find target at coordinates
+        for entity in entities:
+            if entity.x == target_x and entity.y == target_y:
+                fighter = entity.get_component_optional(ComponentType.FIGHTER)
+                if fighter and fighter.hp > 0:
+                    target = entity
+                    break
+    
+    if not target:
+        return [{"consumed": False, "message": MB.warning("There is no valid target there.")}]
+    
+    # Check if target is "corporeal_flesh"
+    is_corporeal_flesh = _is_corporeal_flesh(target)
+    if not is_corporeal_flesh:
+        results.append({
+            "consumed": True,  # Scroll consumed even on invalid target
+            "message": MB.spell_fail(
+                f"The plague has no effect on {target.name} - they have no flesh to corrupt."
+            )
+        })
+        return results
+    
+    # Check FOV for scroll usage (not needed for monster attacks)
+    if direct_target is None and fov_map:
+        if not map_is_in_fov(fov_map, target_x, target_y):
+            return [{"consumed": False, "message": MB.warning("You cannot target something you cannot see.")}]
+    
+    # Apply the PlagueOfRestlessDeathEffect
+    from components.status_effects import (
+        StatusEffectManager, PlagueOfRestlessDeathEffect
+    )
+    
+    # Ensure target has status_effects component
+    if not target.components.has(ComponentType.STATUS_EFFECTS):
+        target.status_effects = StatusEffectManager(target)
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+    
+    # Create and apply the effect
+    plague_effect = PlagueOfRestlessDeathEffect(
+        duration=duration,
+        owner=target,
+        damage_per_turn=1
+    )
+    effect_results = target.status_effects.add_effect(plague_effect)
+    results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    
+    return results
+
+
+def _is_corporeal_flesh(entity) -> bool:
+    """Check if an entity is corporeal flesh (can be infected by plague).
+    
+    Phase 10: Determines plague eligibility.
+    
+    Corporeal flesh includes:
+    - Orcs, goblins, trolls
+    - Cultists
+    - Player
+    - Beasts/animals (some independents)
+    
+    NOT corporeal flesh:
+    - Slimes (no flesh)
+    - Incorporeal undead (wraiths, ghosts)
+    - Golems/elementals
+    
+    Args:
+        entity: The entity to check
+        
+    Returns:
+        True if entity has corporeal flesh
+    """
+    from components.faction import Faction
+    
+    # Check for explicit tag first
+    if hasattr(entity, 'tags') and entity.tags:
+        if 'corporeal_flesh' in entity.tags:
+            return True
+        if 'incorporeal' in entity.tags or 'no_flesh' in entity.tags:
+            return False
+    
+    # Fallback: determine by faction and name
+    faction = getattr(entity, 'faction', None)
+    name_lower = entity.name.lower() if hasattr(entity, 'name') else ""
+    
+    # Player is always corporeal flesh
+    if faction == Faction.PLAYER:
+        return True
+    
+    # Orcs, cultists are corporeal flesh
+    if faction in [Faction.ORC_FACTION, Faction.CULTIST, Faction.NEUTRAL]:
+        return True
+    
+    # Slimes (HOSTILE_ALL) are not flesh
+    if faction == Faction.HOSTILE_ALL:
+        return False
+    
+    # Undead: check if incorporeal
+    if faction == Faction.UNDEAD:
+        # Incorporeal undead
+        incorporeal_names = ['wraith', 'ghost', 'specter', 'shade', 'spirit', 'phantom']
+        if any(x in name_lower for x in incorporeal_names):
+            return False
+        # Corporeal undead (zombies, skeletons) - already undead, can't be reinfected
+        # But for gameplay, we might allow it. For now, treat as corporeal.
+        # Actually, skeletons have no flesh. Zombies do.
+        if 'skeleton' in name_lower or 'bone' in name_lower:
+            return False
+        # Zombies have rotting flesh
+        if 'zombie' in name_lower:
+            return True
+        # Default undead: no
+        return False
+    
+    # Independents: check by name
+    if faction == Faction.INDEPENDENT:
+        # Animals/beasts have flesh
+        beast_names = ['wolf', 'bear', 'spider', 'snake', 'rat', 'bat', 'hound']
+        if any(x in name_lower for x in beast_names):
+            return True
+        # Non-flesh independents
+        non_flesh = ['slime', 'ooze', 'elemental', 'golem', 'construct']
+        if any(x in name_lower for x in non_flesh):
+            return False
+        # Default independent: yes (assume beast)
+        return True
+    
+    # Default: assume corporeal
+    return True
+

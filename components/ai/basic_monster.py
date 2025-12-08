@@ -211,6 +211,15 @@ class BasicMonster:
                 # Another monster is taunted - pursue it!
                 target = taunted_target
                 is_pursuing_taunt = True
+        
+        # Phase 10: Check for EnragedAgainstFaction effect (Scroll of Unreasonable Aggravation)
+        enraged_target = self._check_enraged_against_faction(entities, fov_map)
+        is_enraged = enraged_target is not None
+        if is_enraged:
+            # Enraged monster prioritizes the target faction over everything
+            target = enraged_target
+            is_pursuing_taunt = False  # Aggravation overrides taunt
+            is_taunted_target = False
 
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
@@ -377,11 +386,25 @@ class BasicMonster:
                     MonsterActionLogger.log_turn_summary(monster, ["immobilized"])
                     return results
                 
-                MonsterActionLogger.log_action_attempt(monster, "movement", f"moving towards {target.name}")
-                monster.move_astar(target, entities, game_map)
-                actions_taken.append("movement")
+                # Phase 10: Portal curiosity - check if monster should step into portal
+                portal_result = self._try_portal_step(game_map, entities)
+                if portal_result:
+                    results.extend(portal_result)
+                    actions_taken.append("portal_step")
+                else:
+                    MonsterActionLogger.log_action_attempt(monster, "movement", f"moving towards {target.name}")
+                    monster.move_astar(target, entities, game_map)
+                    actions_taken.append("movement")
             elif target.fighter and target.fighter.hp > 0:
                 # Within attack range - attack!
+                
+                # Phase 10: Zombie swarm behavior - may retarget randomly
+                # among adjacent creatures if there are 2+
+                swarm_target = self._get_zombie_swarm_target(target, entities, fov_map)
+                if swarm_target and swarm_target != target:
+                    target = swarm_target
+                    logger.debug(f"[SWARM] {monster.name} switched target to {target.name}")
+                
                 MonsterActionLogger.log_action_attempt(monster, "combat", f"attacking {target.name}")
                 
                 # Phase 8: Roll for hit before damage
@@ -760,6 +783,216 @@ class BasicMonster:
                     return results
         
         # Can't flee - stay in place
+        return results
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # PHASE 10: FACTION MANIPULATION & ZOMBIE SWARM AI
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    def _check_enraged_against_faction(self, entities, fov_map) -> Optional['Entity']:
+        """Check if this monster is enraged against a faction and find target.
+        
+        Phase 10: Scroll of Unreasonable Aggravation makes monsters attack
+        a specific faction instead of the player.
+        
+        Args:
+            entities: List of all entities
+            fov_map: FOV map for visibility checks
+            
+        Returns:
+            Entity to attack (member of target faction), or None
+        """
+        # Check for EnragedAgainstFaction status effect
+        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if not status_effects:
+            return None
+        
+        effect = status_effects.get_effect("enraged_against_faction")
+        if not effect:
+            return None
+        
+        target_faction = effect.target_faction
+        
+        # Find nearest member of target faction
+        closest_target = None
+        closest_distance = float('inf')
+        
+        for entity in entities:
+            if entity == self.owner:
+                continue
+            
+            # Check if entity is of the target faction
+            entity_faction = getattr(entity, 'faction', None)
+            if entity_faction != target_faction:
+                continue
+            
+            # Check if entity is alive
+            fighter = entity.get_component_optional(ComponentType.FIGHTER)
+            if not fighter or fighter.hp <= 0:
+                continue
+            
+            # Prefer visible targets, but will pursue even if not visible
+            # (consumed by rage, willing to hunt down the faction)
+            distance = self.owner.distance_to(entity)
+            
+            # Prioritize visible targets
+            is_visible = map_is_in_fov(fov_map, entity.x, entity.y)
+            if is_visible:
+                # Visible targets get priority
+                if closest_target is None or not map_is_in_fov(fov_map, closest_target.x, closest_target.y):
+                    closest_target = entity
+                    closest_distance = distance
+                elif distance < closest_distance:
+                    closest_target = entity
+                    closest_distance = distance
+            else:
+                # Only consider non-visible if we have no visible target
+                if closest_target is None and distance < closest_distance:
+                    closest_target = entity
+                    closest_distance = distance
+        
+        return closest_target
+    
+    def _get_zombie_swarm_target(self, current_target, entities, fov_map) -> 'Entity':
+        """Get a target for zombie swarm behavior.
+        
+        Phase 10: Zombies adjacent to 2+ creatures randomly retarget.
+        This creates chaotic "hungry" behavior.
+        
+        Args:
+            current_target: Current target entity
+            entities: List of all entities
+            fov_map: FOV map for visibility
+            
+        Returns:
+            Entity to attack (may be different from current target)
+        """
+        from components.faction import Faction, is_living_faction
+        
+        # Check if this monster has swarm behavior
+        has_swarm = (
+            hasattr(self, 'is_zombie') and self.is_zombie or
+            hasattr(self.owner, 'special_abilities') and 
+            self.owner.special_abilities and 
+            'swarm' in self.owner.special_abilities
+        )
+        
+        # Also check if monster is undead faction
+        monster_faction = getattr(self.owner, 'faction', None)
+        if monster_faction == Faction.UNDEAD:
+            # Check by name if it's a zombie-type
+            name_lower = self.owner.name.lower() if hasattr(self.owner, 'name') else ""
+            if 'zombie' in name_lower or 'revenant' in name_lower:
+                has_swarm = True
+        
+        if not has_swarm:
+            return current_target
+        
+        # Find all adjacent creatures
+        adjacent_creatures = []
+        for entity in entities:
+            if entity == self.owner:
+                continue
+            
+            # Check if adjacent (Chebyshev distance 1)
+            dx = abs(entity.x - self.owner.x)
+            dy = abs(entity.y - self.owner.y)
+            if dx <= 1 and dy <= 1 and (dx > 0 or dy > 0):
+                # Check if alive
+                fighter = entity.get_component_optional(ComponentType.FIGHTER)
+                if fighter and fighter.hp > 0:
+                    # Zombies prefer living/fleshy targets
+                    entity_faction = getattr(entity, 'faction', Faction.NEUTRAL)
+                    adjacent_creatures.append(entity)
+        
+        # Swarm rule: if adjacent to 2+ creatures, randomly retarget
+        if len(adjacent_creatures) >= 2:
+            from random import choice
+            return choice(adjacent_creatures)
+        elif len(adjacent_creatures) == 1:
+            # Only one adjacent - attack it
+            return adjacent_creatures[0]
+        
+        # No adjacent creatures - keep current target
+        return current_target
+    
+    def get_portal_curiosity_chance(self) -> float:
+        """Get the chance this monster will step into a portal.
+        
+        Phase 10: Faction-based portal curiosity.
+        
+        Returns:
+            float: Probability (0.0 to 1.0) of stepping into adjacent portal
+        """
+        from components.faction import Faction
+        
+        monster_faction = getattr(self.owner, 'faction', Faction.NEUTRAL)
+        
+        # Faction-based curiosity levels
+        curiosity_chances = {
+            Faction.INDEPENDENT: 0.40,   # HIGH - curious beasts
+            Faction.ORC_FACTION: 0.20,   # MEDIUM - tactical use
+            Faction.UNDEAD: 0.05,        # LOW - mindless, ignore portals
+            Faction.CULTIST: 0.02,       # VERY LOW - defensive, don't roam
+            Faction.NEUTRAL: 0.15,       # Default
+            Faction.HOSTILE_ALL: 0.10,   # Slimes follow food
+            Faction.PLAYER: 0.0,         # N/A
+        }
+        
+        return curiosity_chances.get(monster_faction, 0.10)
+    
+    def _try_portal_step(self, game_map, entities) -> Optional[list]:
+        """Try to step into an adjacent portal based on curiosity.
+        
+        Phase 10: Faction-based portal curiosity.
+        
+        Args:
+            game_map: Game map to check for portals
+            entities: List of all entities (including portals)
+            
+        Returns:
+            List of result dicts if stepped into portal, None otherwise
+        """
+        from random import random
+        
+        # Get curiosity chance
+        curiosity = self.get_portal_curiosity_chance()
+        if curiosity <= 0 or random() > curiosity:
+            return None
+        
+        # Check for adjacent portals
+        adjacent_portals = []
+        for entity in entities:
+            if not hasattr(entity, 'is_portal') or not entity.is_portal:
+                continue
+            
+            # Check if adjacent (Chebyshev distance 1)
+            dx = abs(entity.x - self.owner.x)
+            dy = abs(entity.y - self.owner.y)
+            if dx <= 1 and dy <= 1 and (dx > 0 or dy > 0):
+                adjacent_portals.append(entity)
+        
+        if not adjacent_portals:
+            return None
+        
+        # Found an adjacent portal - step into it!
+        from random import choice
+        portal = choice(adjacent_portals)
+        
+        # Move to portal position (portal handling happens elsewhere)
+        old_x, old_y = self.owner.x, self.owner.y
+        self.owner.x = portal.x
+        self.owner.y = portal.y
+        
+        results = [{
+            'message': MB.custom(
+                f"{self.owner.name} curiously steps toward the portal...",
+                (0, 255, 255)  # Cyan for portal
+            )
+        }]
+        
+        logger.debug(f"[PORTAL] {self.owner.name} stepped into portal at ({portal.x}, {portal.y})")
+        
         return results
 
 
