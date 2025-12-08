@@ -56,7 +56,10 @@ class MonsterFactory(FactoryBase):
                 strength=getattr(monster_def.stats, 'strength', 10),
                 dexterity=getattr(monster_def.stats, 'dexterity', 10),
                 constitution=getattr(monster_def.stats, 'constitution', 10),
-                resistances=getattr(monster_def.stats, 'resistances', None)
+                resistances=getattr(monster_def.stats, 'resistances', None),
+                # Phase 8: Accuracy and Evasion (defaults if not specified in YAML)
+                accuracy=getattr(monster_def.stats, 'accuracy', None),
+                evasion=getattr(monster_def.stats, 'evasion', None)
             )
 
             # Create AI component based on ai_type

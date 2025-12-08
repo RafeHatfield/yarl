@@ -765,6 +765,8 @@ class ActionProcessor:
     def _handle_combat(self, attacker, target, is_bonus_attack: bool = False) -> None:
         """Handle combat between attacker and target.
         
+        Phase 8: Now includes hit/miss roll before damage application.
+        
         Args:
             attacker: The attacking entity
             target: The target entity
@@ -790,7 +792,47 @@ class ActionProcessor:
             from visual_effects import show_hit
             show_hit(attacker.x, attacker.y, entity=attacker, is_critical=True)
         
-        # Use new d20-based attack system
+        # ═══════════════════════════════════════════════════════════════════════
+        # PHASE 8: Hit/Miss Roll (accuracy vs evasion)
+        # ═══════════════════════════════════════════════════════════════════════
+        # Roll to hit BEFORE damage calculation. On miss:
+        # - No damage applied
+        # - No on-hit effects
+        # - Momentum still builds (SpeedBonusTracker still called)
+        # - Attack still counts as a turn
+        from balance.hit_model import roll_to_hit_entities, get_hit_chance_for_entities
+        
+        attack_hit = roll_to_hit_entities(attacker, target)
+        
+        player = self.state_manager.state.player
+        
+        if not attack_hit:
+            # Attack missed! Show appropriate message based on who's attacking
+            self._handle_attack_miss(attacker, target, player)
+            
+            # IMPORTANT: Momentum still builds on miss (counts as "attack action")
+            # This ensures the speed system isn't penalized by misses
+            if attacker == player:
+                speed_tracker = attacker.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                
+                if not is_bonus_attack and speed_tracker:
+                    # Gate: Only roll if attacker is faster than defender
+                    if self._can_build_momentum(attacker, target):
+                        if speed_tracker.roll_for_bonus_attack():
+                            # Bonus attack! Try again (might hit this time)
+                            self._handle_combat(attacker, target, is_bonus_attack=True)
+                        else:
+                            self._show_momentum_status(speed_tracker)
+                
+                self._process_player_status_effects()
+                self.turn_controller.end_player_action(turn_consumed=True)
+            return
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # Attack hit! Proceed with normal damage calculation
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Use new d20-based attack system (this handles damage, crits, etc.)
         attack_results = attacker_fighter.attack_d20(target)
         
         # Track if target died (for bonus attack eligibility)
@@ -809,7 +851,6 @@ class ActionProcessor:
                     target_died = True
 
         # Player attacks should consume the turn (even if target survived)
-        player = self.state_manager.state.player
         if attacker == player:
             # Check for speed bonus attack (only for main attacks, not bonus attacks)
             # Also skip if target died (can't bonus attack a corpse)
@@ -829,6 +870,35 @@ class ActionProcessor:
             
             self._process_player_status_effects()
             self.turn_controller.end_player_action(turn_consumed=True)
+    
+    def _handle_attack_miss(self, attacker, target, player) -> None:
+        """Handle miss messaging and VFX for Phase 8 accuracy/evasion system.
+        
+        Args:
+            attacker: The attacking entity
+            target: The defending entity  
+            player: The player entity (for determining message perspective)
+        """
+        from visual_effects import show_miss
+        
+        # Show miss VFX on target
+        show_miss(target.x, target.y, entity=target)
+        
+        # Generate appropriate miss message based on perspective
+        if attacker == player:
+            # Player missed - emphasize the miss from player's POV
+            miss_msg = MB.combat_miss(f"Your attack misses {target.name}!")
+        else:
+            # Monster missed player (or monster-vs-monster)
+            if target == player:
+                # Monster attacked player and missed - player dodged
+                miss_msg = MB.combat_dodge(f"{attacker.name.capitalize()} attacks but you dodge nimbly!")
+            else:
+                # Monster-vs-monster miss
+                miss_msg = MB.combat_miss(f"{attacker.name.capitalize()} misses {target.name}!")
+        
+        self.state_manager.state.message_log.add_message(miss_msg)
+        logger.debug(f"Attack miss: {attacker.name} -> {target.name}")
     
     def _show_momentum_status(self, speed_tracker) -> None:
         """Show momentum building status in combat log.

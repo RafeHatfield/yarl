@@ -93,7 +93,8 @@ class Fighter:
     """
 
     def __init__(self, hp, defense, power, xp=0, damage_min=0, damage_max=0, 
-                 strength=10, dexterity=10, constitution=10, resistances=None):
+                 strength=10, dexterity=10, constitution=10, resistances=None,
+                 accuracy=None, evasion=None):
         """Initialize a Fighter component.
 
         Args:
@@ -107,6 +108,8 @@ class Fighter:
             dexterity (int, optional): Dexterity stat (8-18). Defaults to 10.
             constitution (int, optional): Constitution stat (8-18). Defaults to 10.
             resistances (dict, optional): Dict mapping ResistanceType to percentage (0-100). Defaults to None.
+            accuracy (int, optional): Accuracy stat for hit chance. Defaults to 2.
+            evasion (int, optional): Evasion stat for dodge chance. Defaults to 1.
         """
         self.base_max_hp = hp
         self.hp = hp
@@ -120,6 +123,13 @@ class Fighter:
         self.strength = strength
         self.dexterity = dexterity
         self.constitution = constitution
+        
+        # Phase 8: Accuracy and Evasion stats
+        # These control hit/miss probability independent of damage
+        # Defaults from balance/hit_model.py: accuracy=2, evasion=1
+        from balance.hit_model import DEFAULT_ACCURACY, DEFAULT_EVASION
+        self.accuracy = accuracy if accuracy is not None else DEFAULT_ACCURACY
+        self.evasion = evasion if evasion is not None else DEFAULT_EVASION
         
         # Resistance system: Maps ResistanceType enum to percentage (0-100)
         # 0 = no resistance, 50 = half damage, 100 = immune

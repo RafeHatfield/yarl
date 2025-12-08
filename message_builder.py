@@ -129,6 +129,24 @@ class MessageBuilder:
         return Message(text, MessageBuilder.GRAY)
     
     @staticmethod
+    def combat_dodge(text: str) -> Message:
+        """Combat dodge message (light cyan) - Phase 8.
+        
+        Used when an attack is dodged due to high evasion.
+        More positive tone than combat_miss (defender succeeded).
+        
+        Args:
+            text: Message text
+            
+        Returns:
+            Message object
+            
+        Example:
+            MB.combat_dodge("The Wraith attacks but you dodge nimbly!")
+        """
+        return Message(text, (150, 220, 255))  # Light cyan
+    
+    @staticmethod
     def combat_fumble(text: str) -> Message:
         """Combat fumble message (light gray).
         
