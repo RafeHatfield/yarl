@@ -113,6 +113,9 @@ class EnvironmentSystem(System):
         # Process ground hazards
         self._process_hazards(game_state)
         
+        # Phase 10.1: Process pending plague reanimations
+        self._process_reanimations(game_state)
+        
         # Future: Add weather processing
         # self._process_weather(game_state)
         
@@ -229,4 +232,37 @@ class EnvironmentSystem(System):
                 invalidate_entity_cache("entity_added_spawned_hazard")
             
             logger.debug(f"Monster {entity.name} died from {hazard_name}")
+    
+    def _process_reanimations(self, game_state) -> None:
+        """Process pending plague reanimations.
+        
+        Phase 10.1: Check all corpses for pending reanimation data and
+        spawn revenant zombies when their timer expires.
+        
+        Args:
+            game_state: Current game state containing entities and map
+        """
+        from death_functions import process_pending_reanimations
+        from rendering.entity_sorting import invalidate_entity_cache
+        
+        entities = game_state.entities
+        game_map = game_state.game_map
+        
+        # Get current turn number if available
+        turn_number = getattr(game_state, 'turn_number', 0)
+        
+        # Process any pending reanimations
+        results = process_pending_reanimations(entities, game_map, turn_number)
+        
+        for result in results:
+            # Add message to log
+            if 'message' in result and game_state.message_log:
+                game_state.message_log.add_message(result['message'])
+            
+            # Add new revenant zombie to entities list
+            if 'new_entity' in result:
+                new_entity = result['new_entity']
+                entities.append(new_entity)
+                invalidate_entity_cache("entity_added_reanimation")
+                logger.info(f"Plague reanimation: {new_entity.name} spawned at ({new_entity.x}, {new_entity.y})")
 

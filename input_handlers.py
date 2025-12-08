@@ -52,10 +52,19 @@ def handle_targeting_keys(key):
         key: tcod Key object containing key press information
 
     Returns:
-        dict: Dictionary with 'exit' key if targeting should be cancelled
+        dict: Dictionary with 'exit' key if targeting should be cancelled,
+              or 'faction_index' for faction selection (Phase 10.1)
     """
     if key.vk == libtcod.KEY_ESCAPE:
         return {"exit": True}
+    
+    # Phase 10.1: Handle number keys 1-9 for faction selection
+    # This is used by the Scroll of Unreasonable Aggravation
+    if key.c > 0:
+        char = chr(key.c)
+        if char.isdigit() and char != '0':
+            faction_index = int(char) - 1  # Convert 1-9 to index 0-8
+            return {"faction_index": faction_index}
 
     return {}
 

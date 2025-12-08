@@ -1051,6 +1051,32 @@ class GameMap:
             monster_chances["large_slime"] = from_dungeon_level(
                 [[5, 3], [15, 5], [25, 7]], self.dungeon_level
             )
+        
+        # Phase 10: Add undead monsters (zombies, plague zombies, wraiths)
+        # Undead appear in mid-to-late game (B3+, depth 11+)
+        monster_chances["zombie"] = from_dungeon_level(
+            [[20, 10], [40, 13], [60, 16]], self.dungeon_level
+        )
+        
+        # Plague zombies appear later and are rarer - they spread the plague!
+        monster_chances["plague_zombie"] = from_dungeon_level(
+            [[10, 13], [20, 16], [35, 19]], self.dungeon_level
+        )
+        
+        # Wraiths are rare, fast, and dangerous - late game only
+        monster_chances["wraith"] = from_dungeon_level(
+            [[5, 15], [15, 18], [25, 21]], self.dungeon_level
+        )
+        
+        # Giant spiders (independent faction) appear mid-game
+        monster_chances["giant_spider"] = from_dungeon_level(
+            [[15, 8], [30, 11], [45, 14]], self.dungeon_level
+        )
+        
+        # Cultist blademasters appear later (defensive faction)
+        monster_chances["cultist_blademaster"] = from_dungeon_level(
+            [[10, 12], [20, 15], [35, 18]], self.dungeon_level
+        )
 
         # Get item spawn chances from configuration (normal or testing mode)
         item_spawn_config = config.get_item_spawn_chances(self.dungeon_level)
