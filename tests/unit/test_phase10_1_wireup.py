@@ -278,8 +278,8 @@ class TestPlagueSpreadOnAttack:
                 with patch('item_functions.apply_plague_effect', return_value=[]) as mock_apply:
                     results = attacker._apply_plague_spread(target)
                     
-                    # Should have called apply_plague_effect
-                    mock_apply.assert_called_once_with(target)
+                    # Should have called apply_plague_effect with target as keyword arg
+                    mock_apply.assert_called_once_with(attacker_owner, target=target)
                     
                     # Should have a message about plague spread
                     assert len(results) >= 1

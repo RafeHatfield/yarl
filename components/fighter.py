@@ -1191,8 +1191,9 @@ class Fighter:
         
         if random.random() < PLAGUE_SPREAD_CHANCE:
             # Apply plague effect to target
+            # NOTE: apply_plague_effect expects target as keyword arg, not positional
             from item_functions import apply_plague_effect
-            plague_results = apply_plague_effect(target)
+            plague_results = apply_plague_effect(self.owner, target=target)
             
             # Add our own message about the spread
             from message_builder import MessageBuilder as MB
