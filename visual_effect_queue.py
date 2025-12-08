@@ -45,6 +45,8 @@ class EffectType(Enum):
     HEAL = auto()  # Healing effect
     BUFF = auto()  # Generic buff applied
     DEBUFF = auto()  # Generic debuff applied
+    # Phase 9: Surprise attack effect
+    SURPRISE = auto()  # Surprise attack from shadows
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -120,6 +122,12 @@ EFFECT_VFX_CONFIG: Dict[EffectType, Dict[str, Any]] = {
         "color": (255, 255, 150),    # Light yellow sparkle
         "char": ord('✦'),
         "duration": 0.15,
+    },
+    # Phase 9: Surprise attack
+    EffectType.SURPRISE: {
+        "color": (200, 100, 255),    # Purple/violet for shadowy strike
+        "char": ord('✧'),            # Star burst
+        "duration": 0.25,            # Longer duration for dramatic effect
     },
 }
 
@@ -223,6 +231,8 @@ class QueuedEffect:
             EffectType.HEAL: lambda: self._play_effect_from_config(con, EffectType.HEAL),
             EffectType.BUFF: lambda: self._play_effect_from_config(con, EffectType.BUFF),
             EffectType.DEBUFF: lambda: self._play_effect_from_config(con, EffectType.DEBUFF),
+            # Phase 9: Surprise attack
+            EffectType.SURPRISE: lambda: self._play_effect_from_config(con, EffectType.SURPRISE),
         }
 
         handler = dispatch.get(self.effect_type)
@@ -528,6 +538,18 @@ class VisualEffectQueue:
             entity: Entity being debuffed
         """
         self.queue_effect_vfx(x, y, EffectType.DEBUFF, entity)
+    
+    def queue_surprise_effect(self, x: int, y: int, entity=None) -> None:
+        """Queue a surprise attack visual effect.
+        
+        Phase 9: Shows purple/violet effect when player strikes from shadows.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            entity: Entity being surprise attacked
+        """
+        self.queue_effect_vfx(x, y, EffectType.SURPRISE, entity)
     
     def play_all(self, con=0, camera=None) -> None:
         """Play all queued effects and clear the queue.

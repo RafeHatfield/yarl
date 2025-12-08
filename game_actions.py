@@ -766,6 +766,7 @@ class ActionProcessor:
         """Handle combat between attacker and target.
         
         Phase 8: Now includes hit/miss roll before damage application.
+        Phase 9: Now includes surprise attack logic for unaware monsters.
         
         Args:
             attacker: The attacking entity
@@ -793,7 +794,33 @@ class ActionProcessor:
             show_hit(attacker.x, attacker.y, entity=attacker, is_critical=True)
         
         # ═══════════════════════════════════════════════════════════════════════
+        # PHASE 9: SURPRISE ATTACK CHECK
+        # ═══════════════════════════════════════════════════════════════════════
+        # Surprise attacks apply when:
+        # - Attacker is player (only players can surprise attack)
+        # - Target is a monster (has AI component)
+        # - Target is unaware (aware_of_player == False)
+        # - This is NOT a bonus attack (monster becomes aware after first hit)
+        #
+        # Surprise attack effects:
+        # - Auto-hit (skip accuracy roll)
+        # - 2× damage
+        # - Forced critical hit
+        from components.ai.basic_monster import is_monster_aware, set_monster_aware
+        from visual_effects import show_surprise_effect
+        
+        player = self.state_manager.state.player
+        is_surprise_attack = False
+        
+        if attacker == player and not is_bonus_attack:
+            target_ai = target.get_component_optional(ComponentType.AI)
+            if target_ai and not is_monster_aware(target):
+                is_surprise_attack = True
+                logger.info(f"[SURPRISE ATTACK] {attacker.name} strikes {target.name} from the shadows!")
+        
+        # ═══════════════════════════════════════════════════════════════════════
         # PHASE 8: Hit/Miss Roll (accuracy vs evasion)
+        # Phase 9: Skip hit roll for surprise attacks (auto-hit)
         # ═══════════════════════════════════════════════════════════════════════
         # Roll to hit BEFORE damage calculation. On miss:
         # - No damage applied
@@ -802,13 +829,26 @@ class ActionProcessor:
         # - Attack still counts as a turn
         from balance.hit_model import roll_to_hit_entities, get_hit_chance_for_entities
         
-        attack_hit = roll_to_hit_entities(attacker, target)
+        # Surprise attacks auto-hit, normal attacks roll
+        if is_surprise_attack:
+            attack_hit = True
+            logger.debug(f"[SURPRISE] Auto-hit bypassing accuracy roll")
+        else:
+            attack_hit = roll_to_hit_entities(attacker, target)
         
         player = self.state_manager.state.player
         
         if not attack_hit:
             # Attack missed! Show appropriate message based on who's attacking
             self._handle_attack_miss(attacker, target, player)
+            
+            # Phase 9: Even on a miss, the monster now knows the player is attacking
+            # (This shouldn't normally happen since surprise attacks auto-hit, but defense-in-depth)
+            if attacker == player:
+                target_ai = target.get_component_optional(ComponentType.AI)
+                if target_ai and not is_monster_aware(target):
+                    set_monster_aware(target)
+                    logger.debug(f"[AWARENESS] {target.name} became aware (attack missed)")
             
             # IMPORTANT: Momentum still builds on miss (counts as "attack action")
             # This ensures the speed system isn't penalized by misses
@@ -829,11 +869,26 @@ class ActionProcessor:
             return
         
         # ═══════════════════════════════════════════════════════════════════════
-        # Attack hit! Proceed with normal damage calculation
+        # Attack hit! Proceed with damage calculation
+        # Phase 9: Surprise attacks get special handling
         # ═══════════════════════════════════════════════════════════════════════
         
+        # Handle surprise attack VFX and messaging before damage
+        if is_surprise_attack:
+            # Show surprise attack message
+            surprise_msg = MB.combat_critical("🥷 You strike from the shadows! (Surprise attack!)")
+            self.state_manager.state.message_log.add_message(surprise_msg)
+            
+            # Show surprise VFX on target
+            show_surprise_effect(target.x, target.y, entity=target)
+            
+            # Mark monster as aware IMMEDIATELY after surprise (before damage applies)
+            # This ensures any bonus attacks are NOT surprise attacks
+            set_monster_aware(target)
+        
         # Use new d20-based attack system (this handles damage, crits, etc.)
-        attack_results = attacker_fighter.attack_d20(target)
+        # Pass is_surprise flag to force critical hit
+        attack_results = attacker_fighter.attack_d20(target, is_surprise=is_surprise_attack)
         
         # Track if target died (for bonus attack eligibility)
         target_died = False

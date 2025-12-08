@@ -792,7 +792,7 @@ class Fighter:
             frame_duration=0.03  # Fast! 30ms per tile
         )
     
-    def attack_d20(self, target):
+    def attack_d20(self, target, is_surprise: bool = False):
         """Perform a d20-based attack against a target entity.
         
         New combat system:
@@ -802,8 +802,11 @@ class Fighter:
         - Natural 1 = fumble (auto-miss)
         - On hit: Roll weapon damage + STR modifier
         
+        Phase 9: Surprise attacks force critical hit for 2× damage.
+        
         Args:
             target (Entity): The target entity to attack
+            is_surprise (bool): If True, this is a surprise attack (forced crit, already auto-hit)
             
         Returns:
             list: List of result dictionaries with combat messages and effects
@@ -813,7 +816,7 @@ class Fighter:
         
         results = []
         
-        # Roll d20 for attack
+        # Roll d20 for attack (still roll for natural 20 display, but surprise bypasses miss)
         d20_roll = random.randint(1, 20)
         
         # Get attacker's to-hit bonus
@@ -830,12 +833,16 @@ class Fighter:
         target_ac = target.require_component(ComponentType.FIGHTER).armor_class
         
         # Check for critical hit or fumble
-        is_critical = (d20_roll == 20)
-        is_fumble = (d20_roll == 1)
+        # Phase 9: Surprise attacks are always critical hits
+        is_critical = (d20_roll == 20) or is_surprise
+        is_fumble = (d20_roll == 1) and not is_surprise  # Surprise attacks can't fumble
         
         # Determine if attack hits
+        # Phase 9: Surprise attacks always hit (already handled in game_actions, but defense-in-depth)
         hit = False
-        if is_critical:
+        if is_surprise:
+            hit = True  # Surprise attacks always hit
+        elif is_critical:
             hit = True  # Natural 20 always hits
         elif is_fumble:
             hit = False  # Natural 1 always misses
