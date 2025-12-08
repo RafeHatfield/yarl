@@ -169,7 +169,10 @@ def get_game_variables(constants):
         damage_max=getattr(player_stats, 'damage_max', 0),
         strength=getattr(player_stats, 'strength', 14),
         dexterity=getattr(player_stats, 'dexterity', 12),
-        constitution=getattr(player_stats, 'constitution', 14)
+        constitution=getattr(player_stats, 'constitution', 14),
+        # Phase 8: Accuracy and Evasion (hit/dodge system)
+        accuracy=getattr(player_stats, 'accuracy', None),
+        evasion=getattr(player_stats, 'evasion', None)
     )
     inventory_component = Inventory(inventory_config.DEFAULT_INVENTORY_CAPACITY)
     level_component = Level(

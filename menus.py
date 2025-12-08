@@ -391,20 +391,20 @@ def character_screen(
     )
     y += 1
     
-    # Row 5: Speed bonus / momentum display
+    # Row 5: Phase 8 - Accuracy & Evasion (hit/dodge system)
+    accuracy_text, evasion_text = _get_accuracy_evasion_display(player)
+    libtcodpy.console_print_rect_ex(
+        window, 0, y, character_screen_width, character_screen_height,
+        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
+        f"Acc: {accuracy_text}  Eva: {evasion_text}"
+    )
+    y += 1
+    
+    # Row 6: Speed bonus / momentum display
     libtcodpy.console_print_rect_ex(
         window, 0, y, character_screen_width, character_screen_height,
         libtcodpy.BKGND_NONE, libtcodpy.LEFT,
         speed_text
-    )
-    y += 1
-    
-    # Speed bonus / momentum display
-    speed_text = _get_speed_bonus_display(player)
-    libtcodpy.console_print_rect_ex(
-        window, 0, y, character_screen_width, character_screen_height,
-        libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-        f"                                {speed_text}"
     )
     y += 2
     
@@ -742,6 +742,37 @@ def _get_speed_bonus_display(player):
             return f"Spd: +{speed_pct}% ({current_counter}/{attacks_for_guaranteed})"
         else:
             return f"Spd: +{speed_pct}%"
+
+
+def _get_accuracy_evasion_display(player):
+    """Get accuracy and evasion display for character screen (Phase 8).
+    
+    Shows the player's accuracy and evasion stats with their percentage modifiers.
+    
+    Args:
+        player: Player entity
+        
+    Returns:
+        tuple: (accuracy_text, evasion_text) formatted strings
+    """
+    from balance.hit_model import (
+        get_accuracy_bonus_display, 
+        get_evasion_bonus_display,
+        DEFAULT_ACCURACY,
+        DEFAULT_EVASION
+    )
+    
+    fighter = player.get_component_optional(ComponentType.FIGHTER)
+    if not fighter:
+        return f"{DEFAULT_ACCURACY} (+0%)", f"{DEFAULT_EVASION} (+0%)"
+    
+    accuracy = getattr(fighter, 'accuracy', DEFAULT_ACCURACY)
+    evasion = getattr(fighter, 'evasion', DEFAULT_EVASION)
+    
+    accuracy_bonus = get_accuracy_bonus_display(accuracy)
+    evasion_bonus = get_evasion_bonus_display(evasion)
+    
+    return f"{accuracy} ({accuracy_bonus})", f"{evasion} ({evasion_bonus})"
 
 
 def _get_attack_display_text(player):

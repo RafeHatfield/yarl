@@ -37,6 +37,9 @@ player:
   strength: 14      # Good melee (+2 damage modifier)
   dexterity: 12     # Decent (+1 to-hit, +1 AC)
   constitution: 14  # Survivable (+2 HP modifier = +2 max HP)
+  # Phase 8: Accuracy & Evasion (hit/dodge system)
+  accuracy: 2       # Trained combatant
+  evasion: 1        # Some dodge ability
 
 # Monster definitions
 # Each monster has an etp_base value for encounter budgeting (see balance/etp.py)
@@ -55,6 +58,9 @@ monsters:
       strength: 14      # Strong (+2 damage modifier)
       dexterity: 10     # Average (0 to-hit, 0 AC)
       constitution: 12  # Tough (+1 HP modifier)
+      # Phase 8: Accuracy & Evasion
+      accuracy: 2       # Competent fighter
+      evasion: 1        # Some dodge ability
     char: "o"
     color: [63, 127, 63]  # Dark green
     ai_type: "basic"
@@ -243,6 +249,9 @@ monsters:
       strength: 16            # Very strong (+3 modifier)
       dexterity: 8            # Slow (-1 to-hit)
       constitution: 16        # Very tough (+3 HP)
+      # Phase 8: Override - strong but clumsy
+      accuracy: 2             # Strong swings, decent aim
+      evasion: 0              # Too slow to dodge
     char: "B"                 # B for Brute
     color: [80, 160, 80]      # Darker green (hulking)
     faction: "orc"            # Orc faction
@@ -262,6 +271,9 @@ monsters:
       strength: 12            # Moderate (+1 modifier)
       dexterity: 6            # Very slow (-2 to-hit)
       constitution: 14        # Undead resilience (+2 HP)
+      # Phase 8: Shambling corpse - poor accuracy, no dodge
+      accuracy: 1             # Slow, clumsy attacks
+      evasion: 0              # Cannot dodge at all
     char: "z"
     color: [128, 128, 96]     # Sickly gray-green
     ai_type: "basic"
@@ -286,6 +298,9 @@ monsters:
       strength: 10            # Average
       dexterity: 18           # Extremely fast (+4 to-hit, +4 AC)
       constitution: 10        # Average
+      # Phase 8: Ethereal predator - precise and hard to hit
+      accuracy: 3             # Unerring attacks
+      evasion: 4              # Phases through attacks
       resistances:
         cold: 100             # Immune to cold
         poison: 100           # Immune to poison (undead)
@@ -313,6 +328,9 @@ monsters:
       strength: 12            # Moderate (+1 modifier)
       dexterity: 16           # Fast (+3 to-hit, +3 AC)
       constitution: 10        # Average
+      # Phase 8: Fast and agile predator
+      accuracy: 3             # Precise strikes
+      evasion: 3              # Very nimble
     char: "S"
     color: [60, 60, 60]       # Dark gray
     ai_type: "basic"
@@ -338,6 +356,9 @@ monsters:
       strength: 14            # Strong (+2 modifier)
       dexterity: 16           # Very agile (+3 to-hit, +3 AC)
       constitution: 12        # Tough (+1 HP)
+      # Phase 8: Elite trained fighter
+      accuracy: 4             # Master swordsman
+      evasion: 3              # Combat trained dodging
     char: "c"
     color: [180, 50, 50]      # Dark red (cultist robes)
     ai_type: "basic"

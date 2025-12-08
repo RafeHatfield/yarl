@@ -41,6 +41,9 @@ class EntityStats:
     constitution: int = 10
     # Resistance system (v3.12.0)
     resistances: Optional[Dict[str, int]] = None
+    # Phase 8: Accuracy and Evasion (hit/dodge system)
+    accuracy: Optional[int] = None  # None = use default from hit_model
+    evasion: Optional[int] = None   # None = use default from hit_model
 
     def __post_init__(self):
         """Validate stats after creation."""

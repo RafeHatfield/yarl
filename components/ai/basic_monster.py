@@ -318,12 +318,15 @@ class BasicMonster:
             elif target.fighter and target.fighter.hp > 0:
                 # Within attack range - attack!
                 MonsterActionLogger.log_action_attempt(monster, "combat", f"attacking {target.name}")
-                attack_results = monster.fighter.attack_d20(target)
+                
+                # Phase 8: Roll for hit before damage
+                attack_results, attack_hit = self._perform_hit_checked_attack(monster, target, fov_map)
                 results.extend(attack_results)
                 actions_taken.append("combat")
                 
                 # Check for speed bonus attack (Phase 4)
                 # Only if target is still alive and monster has speed tracker
+                # Phase 8: Momentum still builds even on miss
                 if target.fighter.hp > 0:
                     bonus_results = self._try_bonus_attack(monster, target, fov_map)
                     if bonus_results:
@@ -512,10 +515,52 @@ class BasicMonster:
         
         return results
     
+    def _perform_hit_checked_attack(self, monster, target, fov_map) -> tuple:
+        """Perform an attack with Phase 8 hit/miss check.
+        
+        Args:
+            monster: The attacking monster entity
+            target: The target entity
+            fov_map: FOV map for visibility checks
+            
+        Returns:
+            tuple: (list of result dicts, bool indicating if attack hit)
+        """
+        from balance.hit_model import roll_to_hit_entities
+        from visual_effects import show_miss
+        
+        results = []
+        
+        # Roll to hit based on accuracy vs evasion
+        attack_hit = roll_to_hit_entities(monster, target)
+        
+        if not attack_hit:
+            # Attack missed - show miss message if visible
+            if map_is_in_fov(fov_map, monster.x, monster.y):
+                show_miss(target.x, target.y, entity=target)
+                
+                # Generate miss message
+                # If target is player, use "dodge" terminology for player agency feel
+                if hasattr(target, 'name') and target.name == "Player":
+                    miss_msg = MB.combat_dodge(f"{monster.name.capitalize()} attacks but you dodge nimbly!")
+                else:
+                    miss_msg = MB.combat_miss(f"{monster.name.capitalize()} misses {target.name}!")
+                
+                results.append({'message': miss_msg})
+            
+            logger.debug(f"[MONSTER MISS] {monster.name} missed {target.name}")
+            return results, False
+        
+        # Attack hit - proceed with damage
+        attack_results = monster.fighter.attack_d20(target)
+        results.extend(attack_results)
+        return results, True
+    
     def _try_bonus_attack(self, monster, target, fov_map) -> list:
         """Try to execute a bonus attack based on speed bonus.
         
         Phase 4: Monster speed bonus system integration.
+        Phase 8: Now includes hit/miss check on bonus attacks.
         
         Args:
             monster: The monster entity
@@ -561,10 +606,10 @@ class BasicMonster:
             logger.debug(f"[MONSTER BONUS ATTACK] {monster.name} triggered bonus attack "
                         f"(speed: +{int(speed_tracker.speed_bonus_ratio * 100)}%)")
             
-            # Execute the bonus attack
+            # Execute the bonus attack (with Phase 8 hit check)
             MonsterActionLogger.log_action_attempt(monster, "bonus_combat", 
                 f"bonus attack on {target.name}")
-            bonus_attack_results = monster.fighter.attack_d20(target)
+            bonus_attack_results, _ = self._perform_hit_checked_attack(monster, target, fov_map)
             results.extend(bonus_attack_results)
         else:
             # Debug logging for balance testing (optional - shows momentum building)
