@@ -72,6 +72,56 @@ def get_weapon_reach(entity: 'Entity') -> int:
     return 1  # Default reach for unarmed/no weapon
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 9: AWARENESS HELPERS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def is_monster_aware(entity: 'Entity') -> bool:
+    """Check if a monster is aware of the player.
+    
+    Phase 9: Used to determine surprise attack eligibility.
+    
+    Args:
+        entity: The entity to check (should be a monster with AI)
+        
+    Returns:
+        bool: True if monster is aware, False otherwise
+    """
+    if not entity:
+        return True  # Default to aware if entity is invalid
+    
+    ai = entity.get_component_optional(ComponentType.AI)
+    if not ai:
+        # Fallback to direct attribute access for backward compatibility
+        ai = getattr(entity, 'ai', None)
+    
+    if ai and hasattr(ai, 'aware_of_player'):
+        return ai.aware_of_player
+    
+    return True  # Default to aware if no AI or no awareness attribute
+
+
+def set_monster_aware(entity: 'Entity') -> None:
+    """Mark a monster as aware of the player.
+    
+    Phase 9: Called when monster sees player (LOS) or is attacked.
+    Once aware, a monster stays aware until death.
+    
+    Args:
+        entity: The monster entity to mark as aware
+    """
+    if not entity:
+        return
+    
+    ai = entity.get_component_optional(ComponentType.AI)
+    if not ai:
+        # Fallback to direct attribute access for backward compatibility
+        ai = getattr(entity, 'ai', None)
+    
+    if ai and hasattr(ai, 'aware_of_player'):
+        ai.aware_of_player = True
+
+
 class BasicMonster:
     """Basic AI component for hostile monsters.
 
@@ -80,6 +130,9 @@ class BasicMonster:
 
     Attributes:
         owner (Entity): The entity that owns this AI component
+        in_combat (bool): Tracks if monster has been attacked
+        portal_usable (bool): Whether monster can use portals tactically
+        aware_of_player (bool): Phase 9 - Whether monster is aware of player's presence
     """
 
     def __init__(self):
@@ -87,6 +140,9 @@ class BasicMonster:
         self.owner = None  # Will be set by Entity when component is registered
         self.in_combat = False  # Tracks if monster has been attacked
         self.portal_usable = True  # Basic monsters can use portals tactically
+        # Phase 9: Awareness for surprise attack system
+        # Default False - monster is unaware until it sees player or is attacked
+        self.aware_of_player = False
 
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of AI behavior.
@@ -159,9 +215,18 @@ class BasicMonster:
         # print('The ' + self.owner.name + ' wonders when it will get to move.')
         monster = self.owner
         
+        # Phase 9: Check if monster can see the player (symmetric FOV)
+        # If the player can see the monster, the monster can see the player
+        monster_sees_player = map_is_in_fov(fov_map, monster.x, monster.y)
+        
+        # Set awareness when monster has LOS to player
+        if monster_sees_player and not self.aware_of_player:
+            self.aware_of_player = True
+            logger.debug(f"[AWARENESS] {monster.name} spotted the player!")
+        
         # Simple AI decision: Act if pursuing taunt, in combat with player, or in player's FOV
         # When taunt ends, monsters return to normal behavior (only act when in FOV or in combat)
-        if is_pursuing_taunt or self.in_combat or map_is_in_fov(fov_map, monster.x, monster.y):
+        if is_pursuing_taunt or self.in_combat or monster_sees_player:
             # If THIS monster is the taunted target, fight back against nearest attacker!
             if is_taunted_target:
                 from components.faction import are_factions_hostile

@@ -298,3 +298,16 @@ def show_debuff_effect(x: int, y: int, entity: Any = None) -> None:
     """
     get_effect_queue().queue_debuff_effect(x, y, entity)
 
+
+def show_surprise_effect(x: int, y: int, entity: Any = None) -> None:
+    """Queue a surprise attack visual effect.
+    
+    Phase 9: Shows purple/violet effect when player strikes from shadows.
+    
+    Args:
+        x: X coordinate
+        y: Y coordinate
+        entity: Entity being surprise attacked
+    """
+    get_effect_queue().queue_surprise_effect(x, y, entity)
+
