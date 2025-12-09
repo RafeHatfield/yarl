@@ -68,6 +68,9 @@ items:
   - type: "antidote_potion"
     count: 2
     position: "safe_alcove"
+  - type: "lightning_scroll"
+    count: 1
+    position: "plague_arena_main"
 
 # Environmental hazards
 hazards:
@@ -81,6 +84,12 @@ hazards:
 player:
   position: "safe_alcove"
   facing: "south"
+  inventory:
+    - type: "antidote_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"
   
 # Win/lose conditions (Phase 12B)
 victory_conditions:
