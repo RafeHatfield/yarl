@@ -10,6 +10,14 @@ from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger
 from components.faction import Faction, are_factions_hostile, get_target_priority
 from components.component_registry import ComponentType
+
+
+def _get_metrics_collector():
+    try:
+        from services.scenario_metrics import get_active_metrics_collector
+        return get_active_metrics_collector()
+    except Exception:
+        return None
 from logger_config import get_logger
 
 if TYPE_CHECKING:
@@ -159,6 +167,7 @@ class BasicMonster:
         Returns:
             list: List of result dictionaries with AI actions and effects
         """
+        collector = _get_metrics_collector()
         results = []
         actions_taken = []
 
@@ -653,6 +662,10 @@ class BasicMonster:
         # Attack hit - proceed with damage
         attack_results = monster.fighter.attack_d20(target)
         results.extend(attack_results)
+        for result in attack_results:
+            dead_entity = result.get("dead")
+            if dead_entity and collector:
+                collector.record_kill(monster, dead_entity)
         return results, True
     
     def _try_bonus_attack(self, monster, target, fov_map) -> list:
@@ -686,6 +699,9 @@ class BasicMonster:
         # Roll for bonus attack
         if speed_tracker.roll_for_bonus_attack():
             # Bonus attack triggered!
+            collector = _get_metrics_collector()
+            if collector:
+                collector.record_bonus_attack(monster, target)
             # Check if target is still valid
             if not target or not target.fighter or target.fighter.hp <= 0:
                 return results

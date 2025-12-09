@@ -31,6 +31,7 @@ import sys
 import logging
 import warnings
 from services.scenario_invariants import ScenarioInvariantError
+from services.scenario_harness import evaluate_expected_invariants
 
 # Force headless mode before any tcod imports
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -98,6 +99,7 @@ def run_scenario(
     turn_limit: int,
     player_bot: str,
     verbose: bool,
+    fail_on_expected: bool,
 ) -> int:
     """Run a scenario and display results.
     
@@ -179,7 +181,33 @@ def run_scenario(
         print("\nKills by Faction: (none recorded)")
     
     print("=" * 60)
+    
+    # Expected outcomes
+    check_result = evaluate_expected_invariants(scenario, metrics)
+    print("\nExpected Outcomes:")
+    if not scenario.expected:
+        print("  (none specified)")
+    else:
+        failure_keys = {
+            f.split()[0] for f in check_result.failures
+        }
+        for key, label, actual in [
+            ("min_player_kills", "min_player_kills >=", metrics.total_kills_by_source.get("PLAYER", 0)),
+            ("max_player_deaths", "max_player_deaths <=", metrics.player_deaths),
+            ("plague_infections_min", "plague_infections_min >=", metrics.total_plague_infections),
+            ("reanimations_min", "reanimations_min >=", metrics.total_reanimations),
+            ("surprise_attacks_min", "surprise_attacks_min >=", metrics.total_surprise_attacks),
+            ("bonus_attacks_min", "bonus_attacks_min >=", metrics.total_bonus_attacks_triggered),
+        ]:
+            if key in scenario.expected:
+                expected_value = scenario.expected[key]
+                passed = key not in failure_keys
+                status = "PASS" if passed else "FAIL"
+                print(f"  - {label} {expected_value}: {status} (value: {actual})")
     print()
+    
+    if fail_on_expected and not check_result.passed:
+        return 1
     
     return 0
 
@@ -242,6 +270,11 @@ Examples:
         action='store_true',
         help='Enable verbose output'
     )
+    parser.add_argument(
+        '--fail-on-expected',
+        action='store_true',
+        help='Exit non-zero if expected invariants fail'
+    )
     
     args = parser.parse_args()
     
@@ -281,6 +314,7 @@ Examples:
             turn_limit=turn_limit,
             player_bot=player_bot,
             verbose=args.verbose,
+            fail_on_expected=args.fail_on_expected,
         )
     
     # Should not reach here due to mutually exclusive group

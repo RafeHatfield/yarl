@@ -6,6 +6,14 @@ from message_builder import MessageBuilder as MB
 from config.testing_config import is_testing_mode
 from visual_effects import show_hit, show_miss
 from components.component_registry import ComponentType
+
+
+def _get_metrics_collector():
+    try:
+        from services.scenario_metrics import get_active_metrics_collector
+        return get_active_metrics_collector()
+    except Exception:
+        return None
 from logger_config import get_logger
 
 # Module-specific loggers (using centralized system)
@@ -1224,6 +1232,10 @@ class Fighter:
             # NOTE: apply_plague_effect expects target as keyword arg, not positional
             from item_functions import apply_plague_effect
             plague_results = apply_plague_effect(self.owner, target=target)
+            
+            collector = _get_metrics_collector()
+            if collector:
+                collector.record_plague_infection(self.owner, target)
             
             # Add our own message about the spread
             from message_builder import MessageBuilder as MB

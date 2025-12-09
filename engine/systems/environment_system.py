@@ -14,6 +14,14 @@ from typing import Any, Optional
 from ..system import System
 from ..turn_manager import TurnPhase
 from components.component_registry import ComponentType
+
+
+def _get_metrics_collector():
+    try:
+        from services.scenario_metrics import get_active_metrics_collector
+        return get_active_metrics_collector()
+    except Exception:
+        return None
 from message_builder import MessageBuilder as MB
 from entity_sorting_cache import invalidate_entity_cache
 
@@ -252,6 +260,7 @@ class EnvironmentSystem(System):
         
         # Process any pending reanimations
         results = process_pending_reanimations(entities, game_map, turn_number)
+        collector = _get_metrics_collector()
         
         for result in results:
             # Add message to log
@@ -263,5 +272,7 @@ class EnvironmentSystem(System):
                 new_entity = result['new_entity']
                 entities.append(new_entity)
                 invalidate_entity_cache("entity_added_reanimation")
+                if collector:
+                    collector.record_reanimation(new_entity)
                 logger.info(f"Plague reanimation: {new_entity.name} spawned at ({new_entity.x}, {new_entity.y})")
 

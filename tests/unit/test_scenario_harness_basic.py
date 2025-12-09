@@ -67,9 +67,12 @@ from services.scenario_harness import (
     AggregatedMetrics,
     BotPolicy,
     ObserveOnlyPolicy,
+    TacticalFighterPolicy,
     make_bot_policy,
     run_scenario_once,
     run_scenario_many,
+    evaluate_expected_invariants,
+    ExpectedCheckResult,
 )
 from config.level_template_registry import (
     ScenarioDefinition,
@@ -87,6 +90,11 @@ class TestRunMetrics:
         assert metrics.turns_taken == 0
         assert metrics.player_died is False
         assert metrics.kills_by_faction == {}
+        assert metrics.kills_by_source == {}
+        assert metrics.plague_infections == 0
+        assert metrics.reanimations == 0
+        assert metrics.surprise_attacks == 0
+        assert metrics.bonus_attacks_triggered == 0
     
     def test_custom_values(self):
         """Test RunMetrics with custom values."""
@@ -127,6 +135,11 @@ class TestAggregatedMetrics:
         assert metrics.average_turns == 0.0
         assert metrics.player_deaths == 0
         assert metrics.total_kills_by_faction == {}
+        assert metrics.total_kills_by_source == {}
+        assert metrics.total_plague_infections == 0
+        assert metrics.total_reanimations == 0
+        assert metrics.total_surprise_attacks == 0
+        assert metrics.total_bonus_attacks_triggered == 0
     
     def test_custom_values(self):
         """Test AggregatedMetrics with custom values."""
@@ -134,13 +147,23 @@ class TestAggregatedMetrics:
             runs=10,
             average_turns=145.5,
             player_deaths=3,
-            total_kills_by_faction={'PLAYER': 50, 'ENEMY': 20}
+            total_kills_by_faction={'PLAYER': 50, 'ENEMY': 20},
+            total_kills_by_source={'PLAYER': 30},
+            total_plague_infections=4,
+            total_reanimations=2,
+            total_surprise_attacks=5,
+            total_bonus_attacks_triggered=3,
         )
         
         assert metrics.runs == 10
         assert metrics.average_turns == 145.5
         assert metrics.player_deaths == 3
         assert metrics.total_kills_by_faction == {'PLAYER': 50, 'ENEMY': 20}
+        assert metrics.total_kills_by_source == {'PLAYER': 30}
+        assert metrics.total_plague_infections == 4
+        assert metrics.total_reanimations == 2
+        assert metrics.total_surprise_attacks == 5
+        assert metrics.total_bonus_attacks_triggered == 3
     
     def test_to_dict(self):
         """Test AggregatedMetrics.to_dict() serialization."""
@@ -148,7 +171,12 @@ class TestAggregatedMetrics:
             runs=5,
             average_turns=100.333,
             player_deaths=1,
-            total_kills_by_faction={'ZOMBIE': 15}
+            total_kills_by_faction={'ZOMBIE': 15},
+            total_kills_by_source={'PLAYER': 5},
+            total_plague_infections=2,
+            total_reanimations=1,
+            total_surprise_attacks=3,
+            total_bonus_attacks_triggered=2,
         )
         
         result = metrics.to_dict()
@@ -158,6 +186,11 @@ class TestAggregatedMetrics:
         assert result['average_turns'] == 100.33  # Rounded to 2 decimal places
         assert result['player_deaths'] == 1
         assert result['total_kills_by_faction'] == {'ZOMBIE': 15}
+        assert result['total_kills_by_source'] == {'PLAYER': 5}
+        assert result['total_plague_infections'] == 2
+        assert result['total_reanimations'] == 1
+        assert result['total_surprise_attacks'] == 3
+        assert result['total_bonus_attacks_triggered'] == 2
 
 
 class TestBotPolicy:
@@ -198,6 +231,11 @@ class TestBotPolicy:
         policy = make_bot_policy("observe-only")
         
         assert isinstance(policy, ObserveOnlyPolicy)
+    
+    def test_make_bot_policy_tactical(self):
+        """Test make_bot_policy creates TacticalFighterPolicy."""
+        policy = make_bot_policy("tactical_fighter")
+        assert isinstance(policy, TacticalFighterPolicy)
     
     def test_make_bot_policy_unknown_raises_error(self):
         """Test make_bot_policy raises ValueError for unknown policy."""
@@ -375,3 +413,62 @@ class TestMakeBotPolicyInterface:
         assert isinstance(action, dict)
         # ObserveOnly should return wait
         assert 'wait' in action
+
+
+class TestTacticalFighterPolicy:
+    """Tests for TacticalFighterPolicy behavior."""
+    
+    def test_adjacent_enemy_attack(self):
+        class Dummy:
+            def __init__(self, x, y, fighter=True, ai=True):
+                self.x = x
+                self.y = y
+                self.fighter = type("F", (), {"hp": 10})() if fighter else None
+                self.ai = object() if ai else None
+                self.blocks = True
+        player = Dummy(0, 0)
+        enemy = Dummy(1, 0)
+        game_state = type("GS", (), {
+            "player": player,
+            "entities": [player, enemy],
+            "game_map": type("GM", (), {"width": 10, "height": 10, "is_blocked": lambda self,x,y: False})()
+        })()
+        
+        policy = TacticalFighterPolicy()
+        action = policy.choose_action(game_state)
+        
+        assert action.get('attack') is enemy
+
+
+class TestExpectedEvaluation:
+    """Tests for evaluate_expected_invariants."""
+    
+    def test_expected_passes(self):
+        scenario = _scenario_base(expected={"min_player_kills": 2, "max_player_deaths": 0})
+        metrics = AggregatedMetrics(
+            runs=3,
+            average_turns=5,
+            player_deaths=0,
+            total_kills_by_faction={},
+            total_kills_by_source={"PLAYER": 3},
+        )
+        result = evaluate_expected_invariants(scenario, metrics)
+        assert result.passed is True
+        assert result.failures == []
+    
+    def test_expected_failures(self):
+        scenario = _scenario_base(expected={
+            "min_player_kills": 2,
+            "max_player_deaths": 0,
+            "bonus_attacks_min": 1,
+        })
+        metrics = AggregatedMetrics(
+            runs=2,
+            average_turns=4,
+            player_deaths=1,
+            total_kills_by_source={"PLAYER": 1},
+            total_bonus_attacks_triggered=0,
+        )
+        result = evaluate_expected_invariants(scenario, metrics)
+        assert result.passed is False
+        assert len(result.failures) == 3

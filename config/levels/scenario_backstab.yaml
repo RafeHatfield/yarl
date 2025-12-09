@@ -14,7 +14,7 @@ description: "Simple corridors with unaware enemies for testing surprise attacks
 # Defaults for harness runs (Phase 12B)
 defaults:
   turn_limit: 200
-  player_bot: "observe_only"
+  player_bot: "tactical_fighter"
   allow_player_death: false
 
 # Expected invariants for validation (Phase 12B)
