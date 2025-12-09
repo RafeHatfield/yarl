@@ -22,6 +22,9 @@ from config.entity_factory import get_entity_factory
 from config.identification_manager import reset_identification_manager
 from config.item_appearances import reset_appearance_generator
 from config.level_template_registry import get_level_template_registry
+# Phase 12A: Scenario registry imports (structure only, no runtime behavior change)
+# TODO (Phase 12B): Uncomment and integrate when harness is ready
+# from config.level_template_registry import get_scenario_registry, ScenarioDefinition
 from config.testing_config import get_testing_config
 from entity import Entity
 from equipment_slots import EquipmentSlots
@@ -297,6 +300,27 @@ def get_game_variables(constants):
         telemetry_service.start_floor(game_map.dungeon_level)
         _populate_floor_telemetry(telemetry_service, game_map, entities)
         logger.info(f"Telemetry started for floor {game_map.dungeon_level}")
+
+    # ==========================================================================
+    # Phase 12A: Scenario Hooks (Placeholder)
+    # ==========================================================================
+    # TODO (Phase 12B): Implement scenario-based game initialization
+    #
+    # When a scenario is active, the harness will:
+    #   1. Load scenario definition via get_scenario_registry()
+    #   2. Override level generation with scenario rooms/monsters
+    #   3. Apply scenario defaults (turn_limit, player_bot, etc.)
+    #   4. Initialize metrics tracking for expected invariants
+    #   5. Set up victory/defeat condition monitoring
+    #
+    # Example integration point (Phase 12B):
+    #   scenario_id = constants.get("active_scenario")
+    #   if scenario_id:
+    #       scenario = get_scenario_registry().get_scenario_definition(scenario_id)
+    #       if scenario:
+    #           _apply_scenario_overrides(scenario, game_map, entities, player)
+    #           _initialize_scenario_metrics(scenario)
+    # ==========================================================================
 
     return player, entities, game_map, message_log, game_state
 

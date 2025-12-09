@@ -1,0 +1,68 @@
+# Scenario: Backstab Training Grounds
+# Purpose: Test surprise attack mechanics with unaware enemies
+# Phase 12A: Structure only - no harness integration yet
+#
+# TODO (Phase 12B):
+#   - Bot policy integration (observe_only bot)
+#   - Metrics tracking for surprise attacks
+#   - Scenario harness runner
+
+scenario_id: backstab_training
+name: "Backstab Training Grounds"
+description: "Simple corridors with unaware enemies for testing surprise attacks and stealth mechanics."
+
+# Defaults for harness runs (Phase 12B)
+defaults:
+  turn_limit: 200
+  player_bot: "observe_only"
+  allow_player_death: false
+
+# Expected invariants for validation (Phase 12B)
+expected:
+  surprise_attacks_min: 1
+  player_survives: true
+
+# Dungeon depth (affects monster scaling if using standard generation)
+depth: 5
+
+# Room definitions (compatible with existing level_templates format)
+rooms:
+  - id: "training_corridor"
+    type: "corridor"
+    width: 20
+    height: 5
+    description: "Long narrow corridor for approach testing"
+
+  - id: "ambush_room"
+    type: "normal"
+    width: 10
+    height: 10
+    description: "Room with obstructed sightlines"
+
+# Monster placements for scenario
+monsters:
+  # Unaware orc facing away from entrance
+  - type: "orc"
+    count: 1
+    position: [5, 5]
+    facing: "north"
+    state: "unaware"
+    
+  # Second orc patrolling (for multi-target test)
+  - type: "orc"
+    count: 1
+    position: [10, 5]
+    facing: "east"
+    state: "patrolling"
+
+# Items available in scenario
+items:
+  - type: "healing_potion"
+    count: 2
+    position: "random"
+
+# Player spawn configuration
+player:
+  position: [1, 5]
+  facing: "east"
+  stealth_bonus: 5  # Testing stealth mechanics
