@@ -1614,3 +1614,361 @@ def load_level_templates() -> None:
     _level_template_registry = LevelTemplateRegistry()
     _level_template_registry.load_templates()
 
+
+# =============================================================================
+# Phase 12A: Scenario-Aware Level Templates
+# =============================================================================
+#
+# ScenarioDefinition and ScenarioRegistry enable loading of scenario YAML files
+# (scenario_*.yaml) for:
+#   - Harness-based simulation testing (Phase 12B)
+#   - In-game selectable adventures (future)
+#   - Mod-like custom scenarios (future)
+#
+# TODO (Phase 12B):
+#   - Bot policy integration
+#   - Metrics object for scenario runs
+#   - Scenario harness runner
+# =============================================================================
+
+
+@dataclass
+class ScenarioDefinition:
+    """
+    Represents a loaded scenario configuration.
+    
+    Scenarios are structured level definitions used for:
+    - Testing specific game mechanics (backstab, plague, etc.)
+    - Simulation harness runs with bot policies
+    - Custom adventures and mod content
+    
+    Attributes:
+        scenario_id: Unique identifier for the scenario
+        name: Human-readable display name
+        description: Optional description of scenario purpose
+        depth: Optional dungeon depth (affects monster scaling)
+        defaults: Dict of default harness settings (turn_limit, player_bot, etc.)
+        expected: Dict of expected invariants for validation
+        rooms: List of room definitions (compatible with level_templates format)
+        monsters: List of monster spawn configurations
+        items: List of item spawn configurations
+        player: Optional player spawn configuration
+        hazards: Optional list of environmental hazards
+        victory_conditions: Optional list of win conditions
+        defeat_conditions: Optional list of lose conditions
+        source_file: Path to the YAML file this was loaded from
+    """
+    scenario_id: str
+    name: str
+    description: Optional[str] = None
+    depth: Optional[int] = None
+    defaults: Dict[str, Any] = field(default_factory=dict)
+    expected: Dict[str, Any] = field(default_factory=dict)
+    rooms: List[Dict[str, Any]] = field(default_factory=list)
+    monsters: List[Dict[str, Any]] = field(default_factory=list)
+    items: List[Dict[str, Any]] = field(default_factory=list)
+    player: Optional[Dict[str, Any]] = None
+    hazards: List[Dict[str, Any]] = field(default_factory=list)
+    victory_conditions: List[Dict[str, Any]] = field(default_factory=list)
+    defeat_conditions: List[Dict[str, Any]] = field(default_factory=list)
+    source_file: str = ""
+    
+    def get_default(self, key: str, fallback: Any = None) -> Any:
+        """Get a default setting value.
+        
+        Args:
+            key: Setting key (e.g., 'turn_limit', 'player_bot')
+            fallback: Value to return if key not found
+            
+        Returns:
+            The setting value or fallback
+        """
+        return self.defaults.get(key, fallback)
+    
+    def get_expected(self, key: str, fallback: Any = None) -> Any:
+        """Get an expected invariant value.
+        
+        Args:
+            key: Invariant key (e.g., 'surprise_attacks_min')
+            fallback: Value to return if key not found
+            
+        Returns:
+            The expected value or fallback
+        """
+        return self.expected.get(key, fallback)
+    
+    def has_victory_conditions(self) -> bool:
+        """Check if scenario has defined victory conditions."""
+        return len(self.victory_conditions) > 0
+    
+    def has_defeat_conditions(self) -> bool:
+        """Check if scenario has defined defeat conditions."""
+        return len(self.defeat_conditions) > 0
+
+
+class ScenarioLoadError(Exception):
+    """Exception raised when scenario loading fails."""
+    
+    def __init__(self, message: str, file_path: Optional[str] = None):
+        """Initialize scenario load error.
+        
+        Args:
+            message: Human-readable error message
+            file_path: Path to the scenario file that failed to load
+        """
+        self.message = message
+        self.file_path = file_path
+        
+        full_message = message
+        if file_path:
+            full_message = f"{message} (file: {file_path})"
+        
+        super().__init__(full_message)
+
+
+class ScenarioRegistry:
+    """
+    Registry for scenario definitions loaded from YAML files.
+    
+    Auto-discovers and loads all scenario_*.yaml files from the config/levels/
+    directory. Provides access to scenario definitions by ID.
+    
+    Usage:
+        registry = get_scenario_registry()
+        scenarios = registry.list_scenarios()
+        scenario = registry.get_scenario_definition("backstab_training")
+    """
+    
+    def __init__(self):
+        """Initialize the scenario registry."""
+        self._scenarios: Dict[str, ScenarioDefinition] = {}
+        self._loaded = False
+        
+    def load_scenarios(self, config_dir: Optional[str] = None) -> None:
+        """
+        Load all scenario files from the config/levels/ directory.
+        
+        Auto-discovers files matching pattern: scenario_*.yaml
+        
+        Args:
+            config_dir: Directory containing scenario files. If None, uses default.
+        """
+        if config_dir is None:
+            config_dir = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'levels'
+            )
+        
+        # Create directory if it doesn't exist (for fresh installs)
+        if not os.path.exists(config_dir):
+            logger.info(f"Scenario directory does not exist: {config_dir}")
+            self._loaded = True
+            return
+        
+        # Find all scenario_*.yaml files
+        import glob as glob_module
+        pattern = os.path.join(config_dir, 'scenario_*.yaml')
+        scenario_files = glob_module.glob(pattern)
+        
+        if not scenario_files:
+            logger.info(f"No scenario files found in {config_dir}")
+            self._loaded = True
+            return
+        
+        logger.info(f"Found {len(scenario_files)} scenario file(s) in {config_dir}")
+        
+        for filepath in scenario_files:
+            try:
+                self._load_scenario_file(filepath)
+            except ScenarioLoadError as e:
+                logger.error(f"Failed to load scenario: {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error loading scenario {filepath}: {e}")
+        
+        self._loaded = True
+        logger.info(f"Loaded {len(self._scenarios)} scenario(s)")
+    
+    def _load_scenario_file(self, filepath: str) -> None:
+        """
+        Load a single scenario file.
+        
+        Args:
+            filepath: Path to the YAML file
+            
+        Raises:
+            ScenarioLoadError: If file cannot be loaded or parsed
+        """
+        if not os.path.exists(filepath):
+            raise ScenarioLoadError(f"Scenario file not found", filepath)
+        
+        try:
+            with open(filepath, 'r') as f:
+                data = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            raise ScenarioLoadError(f"YAML parse error: {e}", filepath)
+        
+        if not data:
+            raise ScenarioLoadError("Empty scenario file", filepath)
+        
+        # Validate required fields
+        if 'scenario_id' not in data:
+            raise ScenarioLoadError("Missing required field: scenario_id", filepath)
+        
+        if 'name' not in data:
+            raise ScenarioLoadError("Missing required field: name", filepath)
+        
+        scenario_id = data['scenario_id']
+        
+        # Check for duplicate IDs
+        if scenario_id in self._scenarios:
+            logger.warning(
+                f"Duplicate scenario_id '{scenario_id}' in {filepath}, "
+                f"overwriting previous definition from {self._scenarios[scenario_id].source_file}"
+            )
+        
+        # Parse scenario definition
+        scenario = ScenarioDefinition(
+            scenario_id=scenario_id,
+            name=data['name'],
+            description=data.get('description'),
+            depth=data.get('depth'),
+            defaults=data.get('defaults', {}),
+            expected=data.get('expected', {}),
+            rooms=data.get('rooms', []),
+            monsters=data.get('monsters', []),
+            items=data.get('items', []),
+            player=data.get('player'),
+            hazards=data.get('hazards', []),
+            victory_conditions=data.get('victory_conditions', []),
+            defeat_conditions=data.get('defeat_conditions', []),
+            source_file=filepath
+        )
+        
+        # Validate defaults and expected are dicts
+        if not isinstance(scenario.defaults, dict):
+            raise ScenarioLoadError(
+                f"'defaults' must be a dictionary, got {type(scenario.defaults).__name__}",
+                filepath
+            )
+        
+        if not isinstance(scenario.expected, dict):
+            raise ScenarioLoadError(
+                f"'expected' must be a dictionary, got {type(scenario.expected).__name__}",
+                filepath
+            )
+        
+        self._scenarios[scenario_id] = scenario
+        logger.info(f"Loaded scenario '{scenario_id}' ({scenario.name}) from {filepath}")
+    
+    def list_scenarios(self) -> List[str]:
+        """
+        Get a list of all loaded scenario IDs.
+        
+        Returns:
+            List of scenario ID strings, sorted alphabetically
+        """
+        if not self._loaded:
+            self.load_scenarios()
+        return sorted(self._scenarios.keys())
+    
+    def get_scenario_definition(self, scenario_id: str) -> Optional[ScenarioDefinition]:
+        """
+        Get a scenario definition by ID.
+        
+        Args:
+            scenario_id: The unique scenario identifier
+            
+        Returns:
+            ScenarioDefinition if found, None otherwise
+        """
+        if not self._loaded:
+            self.load_scenarios()
+        return self._scenarios.get(scenario_id)
+    
+    def has_scenario(self, scenario_id: str) -> bool:
+        """
+        Check if a scenario exists.
+        
+        Args:
+            scenario_id: The unique scenario identifier
+            
+        Returns:
+            True if scenario exists, False otherwise
+        """
+        if not self._loaded:
+            self.load_scenarios()
+        return scenario_id in self._scenarios
+    
+    def get_all_scenarios(self) -> Dict[str, ScenarioDefinition]:
+        """
+        Get all loaded scenario definitions.
+        
+        Returns:
+            Dictionary mapping scenario_id to ScenarioDefinition
+        """
+        if not self._loaded:
+            self.load_scenarios()
+        return dict(self._scenarios)
+    
+    def clear(self) -> None:
+        """Clear all loaded scenarios (useful for testing)."""
+        self._scenarios.clear()
+        self._loaded = False
+    
+    def reload(self, config_dir: Optional[str] = None) -> None:
+        """
+        Reload all scenarios from disk.
+        
+        Args:
+            config_dir: Directory containing scenario files. If None, uses default.
+        """
+        self.clear()
+        self.load_scenarios(config_dir)
+
+
+# Global scenario registry instance
+_scenario_registry: Optional[ScenarioRegistry] = None
+
+
+def get_scenario_registry() -> ScenarioRegistry:
+    """
+    Get the global scenario registry instance.
+    
+    Lazily initializes and loads scenarios on first access.
+    
+    Returns:
+        The global ScenarioRegistry instance
+    """
+    global _scenario_registry
+    if _scenario_registry is None:
+        _scenario_registry = ScenarioRegistry()
+        _scenario_registry.load_scenarios()
+    return _scenario_registry
+
+
+def list_scenarios() -> List[str]:
+    """
+    List all available scenario IDs.
+    
+    Convenience function that delegates to the global registry.
+    
+    Returns:
+        List of scenario ID strings
+    """
+    return get_scenario_registry().list_scenarios()
+
+
+def get_scenario_definition(scenario_id: str) -> Optional[ScenarioDefinition]:
+    """
+    Get a scenario definition by ID.
+    
+    Convenience function that delegates to the global registry.
+    
+    Args:
+        scenario_id: The unique scenario identifier
+        
+    Returns:
+        ScenarioDefinition if found, None otherwise
+    """
+    return get_scenario_registry().get_scenario_definition(scenario_id)
+
