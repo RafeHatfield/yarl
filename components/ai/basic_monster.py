@@ -232,6 +232,17 @@ class BasicMonster:
         if monster_sees_player and not self.aware_of_player:
             self.aware_of_player = True
             logger.debug(f"[AWARENESS] {monster.name} spotted the player!")
+            
+            # Phase 11: Register this monster as seen by the player
+            # (symmetric FOV - if player sees monster, monster sees player)
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                knowledge = get_monster_knowledge_system()
+                # Get current dungeon depth if available
+                current_depth = getattr(game_map, 'dungeon_level', None)
+                knowledge.register_seen(monster, current_depth)
+            except ImportError:
+                pass  # Knowledge system not available
         
         # Simple AI decision: Act if pursuing taunt, in combat with player, or in player's FOV
         # When taunt ends, monsters return to normal behavior (only act when in FOV or in combat)
@@ -679,6 +690,15 @@ class BasicMonster:
             if not target or not target.fighter or target.fighter.hp <= 0:
                 return results
             
+            # Phase 11: Register fast_attacker trait discovery
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                from balance.knowledge_config import TRAIT_FAST_ATTACKER
+                knowledge = get_monster_knowledge_system()
+                knowledge.register_trait(monster, TRAIT_FAST_ATTACKER)
+            except ImportError:
+                pass  # Knowledge system not available
+            
             # Show message and visual effect only if monster is visible to player
             if map_is_in_fov(fov_map, monster.x, monster.y):
                 bonus_msg = MB.combat_monster_bonus_attack(
@@ -908,6 +928,16 @@ class BasicMonster:
         # Swarm rule: if adjacent to 2+ creatures, randomly retarget
         if len(adjacent_creatures) >= 2:
             from random import choice
+            
+            # Phase 11: Register swarm_ai trait discovery
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                from balance.knowledge_config import TRAIT_SWARM_AI
+                knowledge = get_monster_knowledge_system()
+                knowledge.register_trait(self.owner, TRAIT_SWARM_AI)
+            except ImportError:
+                pass  # Knowledge system not available
+            
             return choice(adjacent_creatures)
         elif len(adjacent_creatures) == 1:
             # Only one adjacent - attack it
@@ -990,6 +1020,15 @@ class BasicMonster:
                 (0, 255, 255)  # Cyan for portal
             )
         }]
+        
+        # Phase 11: Register portal_curious trait discovery
+        try:
+            from services.monster_knowledge import get_monster_knowledge_system
+            from balance.knowledge_config import TRAIT_PORTAL_CURIOUS
+            knowledge = get_monster_knowledge_system()
+            knowledge.register_trait(self.owner, TRAIT_PORTAL_CURIOUS)
+        except ImportError:
+            pass  # Knowledge system not available
         
         logger.debug(f"[PORTAL] {self.owner.name} stepped into portal at ({portal.x}, {portal.y})")
         

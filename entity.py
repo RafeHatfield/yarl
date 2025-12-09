@@ -125,6 +125,10 @@ class Entity:
         # Initialize tags (for entity classification and metadata)
         self.tags: set[str] = set()
         
+        # Phase 11: Species ID for monster knowledge tracking
+        # Set by entity factory when creating from YAML templates
+        self._species_id: Optional[str] = None
+        
         # Initialize component registry (NEW: Type-safe component system)
         self.components = ComponentRegistry()
         
@@ -580,6 +584,32 @@ class Entity:
         dy = abs(other.y - self.y)
         return max(dx, dy)
     
+    @property
+    def species_id(self) -> str:
+        """Get the species ID for this entity.
+        
+        Phase 11: Used by monster knowledge system to track per-species info.
+        
+        Returns the explicit species_id if set (from entity factory),
+        otherwise derives it from the entity name.
+        
+        Returns:
+            str: Species identifier (e.g., "orc", "plague_zombie")
+        """
+        if self._species_id:
+            return self._species_id
+        # Fallback: derive from name
+        return self.name.lower().replace(" ", "_")
+    
+    @species_id.setter
+    def species_id(self, value: str) -> None:
+        """Set the species ID for this entity.
+        
+        Args:
+            value: The species identifier
+        """
+        self._species_id = value
+
     def get_display_name(self, compact: bool = False) -> str:
         """Get the display name with damage/defense ranges if applicable.
         

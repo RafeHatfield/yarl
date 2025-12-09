@@ -551,6 +551,18 @@ class Fighter:
             results.append({"dead": self.owner, "xp": self.xp})
             # Note: HP can go negative for XP calculation purposes, but should be
             # displayed as 0 in UI. The UI layer should handle the display clamping.
+            
+            # Phase 11: Register kill for monster knowledge
+            # Only if this entity is a monster (has AI) and killed by player
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
+                if ai:
+                    # This monster was killed - register it
+                    knowledge = get_monster_knowledge_system()
+                    knowledge.register_killed(self.owner)
+            except ImportError:
+                pass  # Knowledge system not available
 
         return results
 
@@ -815,6 +827,24 @@ class Fighter:
         from game_messages import Message
         
         results = []
+        
+        # Phase 11: Register combat engagement for monster knowledge
+        try:
+            from services.monster_knowledge import get_monster_knowledge_system
+            knowledge = get_monster_knowledge_system()
+            
+            # Check if attacker is player attacking a monster
+            attacker_ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
+            target_ai = target.get_component_optional(ComponentType.AI) if target else None
+            
+            if not attacker_ai and target_ai:
+                # Player attacking monster
+                knowledge.register_engaged(target)
+            elif attacker_ai and not target_ai:
+                # Monster attacking player
+                knowledge.register_engaged(self.owner)
+        except ImportError:
+            pass  # Knowledge system not available
         
         # Roll d20 for attack (still roll for natural 20 display, but surprise bypasses miss)
         d20_roll = random.randint(1, 20)
@@ -1203,6 +1233,15 @@ class Fighter:
                     (150, 200, 50)  # Sickly green
                 )
             })
+            
+            # Phase 11: Register plague_carrier trait discovery
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                from balance.knowledge_config import TRAIT_PLAGUE_CARRIER
+                knowledge = get_monster_knowledge_system()
+                knowledge.register_trait(self.owner, TRAIT_PLAGUE_CARRIER)
+            except ImportError:
+                pass  # Knowledge system not available
             
             # Merge in results from apply_plague_effect
             results.extend(plague_results)

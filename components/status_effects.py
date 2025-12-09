@@ -855,6 +855,10 @@ class PlagueOfRestlessDeathEffect(StatusEffect):
         except ImportError:
             pass  # VFX optional
         
+        # Phase 11: If player was infected by a monster, register plague_carrier trait
+        # The "infector" would be tracked separately, but for now we just note
+        # that the player experienced plague (which unlocks Tier 3 for plague carriers)
+        
         return results
     
     def _capture_original_stats(self) -> None:

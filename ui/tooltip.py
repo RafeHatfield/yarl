@@ -408,33 +408,66 @@ def get_sidebar_item_at_position(screen_x: int, screen_y: int, player, ui_layout
     return None
 
 
-def _build_single_entity_lines(entity: Any) -> List[str]:
-    if not entity:
-        return []
-
-    entity_name = (
-        entity.get_display_name() if hasattr(entity, "get_display_name") else getattr(entity, "name", "")
-    )
-    tooltip_lines: List[str] = [entity_name]
-
-    is_monster = (
-        entity.components.has(ComponentType.FIGHTER)
-        and entity.components.has(ComponentType.AI)
-    )
-    is_chest = entity.components.has(ComponentType.CHEST)
-    is_signpost = entity.components.has(ComponentType.SIGNPOST)
-    is_mural = entity.components.has(ComponentType.MURAL)
-
-    if is_mural or is_signpost:
-        pass  # Name only
-    elif is_chest:
-        chest = entity.get_component_optional(ComponentType.CHEST)
-        if chest:
-            state_str = chest.state.name.lower() if hasattr(chest.state, "name") else str(chest.state)
-            tooltip_lines.append(f"State: {state_str.capitalize()}")
-            if chest.trap_type:
-                tooltip_lines.append("⚠ Trapped!")
-    elif is_monster:
+def _build_monster_tooltip_lines(entity: Any, tooltip_lines: List[str]) -> List[str]:
+    """Build tooltip lines for a monster using the monster knowledge system.
+    
+    Phase 11: Uses MonsterInfoView to display tier-gated information
+    about the monster based on player's accumulated knowledge.
+    
+    Args:
+        entity: The monster entity
+        tooltip_lines: Initial tooltip lines (starting with name)
+        
+    Returns:
+        List[str]: Complete tooltip lines for the monster
+    """
+    try:
+        from services.monster_knowledge import (
+            get_monster_knowledge_system,
+            get_monster_info_view,
+            KnowledgeTier,
+        )
+        
+        knowledge = get_monster_knowledge_system()
+        info = get_monster_info_view(entity, knowledge)
+        
+        # Tier 0: Only name shown (already in tooltip_lines)
+        if info.knowledge_tier == KnowledgeTier.UNKNOWN:
+            tooltip_lines.append("???")
+            return tooltip_lines
+        
+        # Tier 1+: Show faction and role
+        info_parts = []
+        if info.faction_label:
+            info_parts.append(info.faction_label)
+        if info.role_label:
+            info_parts.append(info.role_label)
+        if info_parts:
+            tooltip_lines.append(" · ".join(info_parts))
+        
+        # Tier 1+: Show coarse speed if notable
+        if info.speed_label and info.speed_label != "normal":
+            tooltip_lines.append(f"Speed: {info.speed_label}")
+        
+        # Tier 2+: Show combat stats
+        if info.knowledge_tier >= KnowledgeTier.BATTLED:
+            if info.durability_label:
+                tooltip_lines.append(f"Durability: {info.durability_label}")
+            if info.damage_label:
+                tooltip_lines.append(f"Damage: {info.damage_label}")
+            if info.accuracy_label:
+                tooltip_lines.append(f"Accuracy: {info.accuracy_label}")
+            if info.evasion_label:
+                tooltip_lines.append(f"Evasion: {info.evasion_label}")
+        
+        # Tier 3: Show warnings and advice
+        if info.knowledge_tier >= KnowledgeTier.UNDERSTOOD:
+            for warning in info.special_warnings:
+                tooltip_lines.append(warning)
+            if info.advice_line:
+                tooltip_lines.append(f"💡 {info.advice_line}")
+        
+        # Always show equipment (regardless of tier) - it's visible
         equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
         if equipment:
             if equipment.main_hand:
@@ -473,6 +506,82 @@ def _build_single_entity_lines(entity: Any) -> List[str]:
 
             if armor_pieces:
                 tooltip_lines.append(f"Wearing: {', '.join(armor_pieces)}")
+        
+        return tooltip_lines
+        
+    except ImportError:
+        # Fall back to basic monster info if knowledge system unavailable
+        equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
+        if equipment:
+            if equipment.main_hand:
+                weapon_name = (
+                    equipment.main_hand.get_display_name()
+                    if hasattr(equipment.main_hand, "get_display_name")
+                    else equipment.main_hand.name.replace("_", " ").title()
+                )
+                tooltip_lines.append(f"Wielding: {weapon_name}")
+
+            armor_pieces: List[str] = []
+            for attr in ("off_hand", "chest", "head", "feet"):
+                item = getattr(equipment, attr, None)
+                if item:
+                    name = (
+                        item.get_display_name()
+                        if hasattr(item, "get_display_name")
+                        else item.name.replace("_", " ").title()
+                    )
+                    armor_pieces.append(name)
+
+            if equipment.left_ring:
+                ring_name = (
+                    equipment.left_ring.get_display_name()
+                    if hasattr(equipment.left_ring, "get_display_name")
+                    else equipment.left_ring.name.replace("_", " ").title()
+                )
+                armor_pieces.append(f"L:{ring_name}")
+            if equipment.right_ring:
+                ring_name = (
+                    equipment.right_ring.get_display_name()
+                    if hasattr(equipment.right_ring, "get_display_name")
+                    else equipment.right_ring.name.replace("_", " ").title()
+                )
+                armor_pieces.append(f"R:{ring_name}")
+
+            if armor_pieces:
+                tooltip_lines.append(f"Wearing: {', '.join(armor_pieces)}")
+        
+        return tooltip_lines
+
+
+def _build_single_entity_lines(entity: Any) -> List[str]:
+    if not entity:
+        return []
+
+    entity_name = (
+        entity.get_display_name() if hasattr(entity, "get_display_name") else getattr(entity, "name", "")
+    )
+    tooltip_lines: List[str] = [entity_name]
+
+    is_monster = (
+        entity.components.has(ComponentType.FIGHTER)
+        and entity.components.has(ComponentType.AI)
+    )
+    is_chest = entity.components.has(ComponentType.CHEST)
+    is_signpost = entity.components.has(ComponentType.SIGNPOST)
+    is_mural = entity.components.has(ComponentType.MURAL)
+
+    if is_mural or is_signpost:
+        pass  # Name only
+    elif is_chest:
+        chest = entity.get_component_optional(ComponentType.CHEST)
+        if chest:
+            state_str = chest.state.name.lower() if hasattr(chest.state, "name") else str(chest.state)
+            tooltip_lines.append(f"State: {state_str.capitalize()}")
+            if chest.trap_type:
+                tooltip_lines.append("⚠ Trapped!")
+    elif is_monster:
+        # Phase 11: Use MonsterInfoView for tier-gated monster information
+        tooltip_lines = _build_monster_tooltip_lines(entity, tooltip_lines)
     elif entity.components.has(ComponentType.WAND):
         tooltip_lines.append(f"Wand ({entity.wand.charges} charges)")
     elif entity.components.has(ComponentType.EQUIPPABLE):
@@ -565,6 +674,32 @@ def _build_multi_entity_lines(entities: Sequence[Any]) -> List[str]:
         )
 
         if is_monster:
+            # Phase 11: Use monster knowledge system for tier-gated info
+            try:
+                from services.monster_knowledge import (
+                    get_monster_knowledge_system,
+                    get_monster_info_view,
+                    KnowledgeTier,
+                )
+                
+                knowledge = get_monster_knowledge_system()
+                info = get_monster_info_view(entity, knowledge)
+                
+                # Show faction/role for Tier 1+
+                if info.knowledge_tier >= KnowledgeTier.OBSERVED:
+                    info_parts = []
+                    if info.faction_label:
+                        info_parts.append(info.faction_label)
+                    if info.role_label:
+                        info_parts.append(info.role_label)
+                    if info_parts:
+                        tooltip_lines.append(f"  {' · '.join(info_parts)}")
+                elif info.knowledge_tier == KnowledgeTier.UNKNOWN:
+                    tooltip_lines.append("  ???")
+            except ImportError:
+                pass  # Fall through to equipment display
+            
+            # Always show equipment
             equipment = entity.get_component_optional(ComponentType.EQUIPMENT)
             if equipment:
                 if equipment.main_hand:

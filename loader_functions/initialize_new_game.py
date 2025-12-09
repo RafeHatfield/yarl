@@ -111,6 +111,10 @@ def get_game_variables(constants):
     from balance.pity import reset_pity_state
     reset_pity_state()
     
+    # Phase 11: Reset monster knowledge system for new run
+    from services.monster_knowledge import reset_monster_knowledge_system
+    reset_monster_knowledge_system()
+    
     # Register all item types that need identification
     appearance_gen.initialize({
         'scroll': [
