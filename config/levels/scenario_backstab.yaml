@@ -60,9 +60,17 @@ items:
   - type: "healing_potion"
     count: 2
     position: "random"
+  - type: "invisibility_scroll"
+    count: 1
+    position: "start"
 
 # Player spawn configuration
 player:
   position: [1, 5]
   facing: "east"
   stealth_bonus: 5  # Testing stealth mechanics
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"

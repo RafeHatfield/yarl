@@ -1,3 +1,52 @@
+import pytest
+
+from config.level_template_registry import ScenarioDefinition
+from services.scenario_harness import make_bot_policy, run_scenario_once
+from services.scenario_invariants import ScenarioInvariantError
+
+
+def _scenario_base(**kwargs):
+    defaults = dict(
+        scenario_id="scenario_harness_test",
+        name="Harness Test",
+        description=None,
+        depth=None,
+        defaults={},
+        expected={},
+        rooms=[],
+        monsters=[],
+        items=[],
+        player=None,
+        hazards=[],
+        victory_conditions=[],
+        defeat_conditions=[],
+        source_file="",
+    )
+    defaults.update(kwargs)
+    return ScenarioDefinition(**defaults)
+
+
+def test_run_scenario_once_success():
+    scenario = _scenario_base(
+        monsters=[{"type": "orc", "count": 1, "position": [5, 5]}],
+        items=[{"type": "healing_potion", "count": 1, "position": [3, 3]}],
+        player={"position": [1, 1]},
+    )
+    policy = make_bot_policy("observe_only")
+    metrics = run_scenario_once(scenario, policy, turn_limit=5)
+
+    assert metrics.turns_taken >= 1
+    assert metrics.player_died in (True, False)
+
+
+def test_run_scenario_once_invariant_failure():
+    scenario = _scenario_base(
+        player={"position": [99, 99]},
+    )
+    policy = make_bot_policy("observe_only")
+
+    with pytest.raises(ScenarioInvariantError):
+        run_scenario_once(scenario, policy, turn_limit=3)
 """
 Unit tests for Phase 12B: Scenario Harness & Basic Metrics
 

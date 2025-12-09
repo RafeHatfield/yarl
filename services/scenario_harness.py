@@ -24,10 +24,20 @@ Usage:
 
 import logging
 import os
-import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
+
+from components.component_registry import ComponentType
+from game_states import GameStates
+from loader_functions.initialize_new_game import get_constants
+from game_messages import MessageLog
+from services.scenario_invariants import ScenarioInvariantError, validate_scenario_instance
+from services.scenario_level_loader import (
+    ScenarioBuildError,
+    ScenarioMapResult,
+    build_scenario_map,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -175,51 +185,30 @@ def _initialize_headless_mode() -> None:
     os.environ['SDL_VIDEODRIVER'] = 'dummy'
 
 
-def _create_minimal_game_state(scenario) -> Dict[str, Any]:
-    """Create a minimal game state for scenario execution.
-    
-    This initializes the game using existing infrastructure but bypasses
-    menus and title screen to drop directly into gameplay.
-    
-    Args:
-        scenario: ScenarioDefinition with scenario configuration
-        
-    Returns:
-        Dict containing player, entities, game_map, message_log, game_state
-    """
-    from loader_functions.initialize_new_game import get_constants, get_game_variables
-    from game_states import GameStates
-    
-    # Get game constants
-    constants = get_constants()
-    
-    # Apply scenario depth override if specified
-    if scenario.depth is not None:
-        constants['start_level'] = scenario.depth
-    
-    # Initialize game variables
-    player, entities, game_map, message_log, game_state = get_game_variables(constants)
-    
-    # Force PLAYERS_TURN state to start gameplay immediately
-    game_state = GameStates.PLAYERS_TURN
-    
-    # Create a simple state object that mimics what play_game_with_engine expects
+def _create_game_state_from_map(result: ScenarioMapResult, constants: Dict[str, Any]):
+    """Create a simple game state object from a scenario map result."""
+    message_log = MessageLog(
+        constants["message_x"],
+        constants["message_width"],
+        constants["message_height"],
+    )
+
     class SimpleGameState:
-        def __init__(self, player, entities, game_map, message_log, current_state, constants):
+        def __init__(self, player, entities, game_map, message_log, constants):
             self.player = player
             self.entities = entities
             self.game_map = game_map
             self.message_log = message_log
-            self.current_state = current_state
+            self.current_state = GameStates.PLAYERS_TURN
             self.constants = constants
             self.fov_recompute = True
-    
+            self.fov_map = None
+
     return SimpleGameState(
-        player=player,
-        entities=entities,
-        game_map=game_map,
+        player=result.player,
+        entities=result.entities,
+        game_map=result.game_map,
         message_log=message_log,
-        current_state=game_state,
         constants=constants,
     )
 
@@ -260,9 +249,6 @@ def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
         game_state: Current game state
         metrics: RunMetrics to update (kills_by_faction)
     """
-    from game_states import GameStates
-    from components.component_registry import ComponentType
-    
     # Get all AI entities
     ai_entities = [
         e for e in game_state.entities
@@ -359,53 +345,48 @@ def run_scenario_once(
     )
     
     try:
-        # Create game state
-        game_state = _create_minimal_game_state(scenario)
-        
-        # Import game states
-        from game_states import GameStates
-        
+        constants = get_constants()
+        if scenario.depth is not None:
+            constants["start_level"] = scenario.depth
+
+        map_result = build_scenario_map(scenario)
+        validate_scenario_instance(scenario, map_result.game_map, map_result.player, map_result.entities)
+
+        game_state = _create_game_state_from_map(map_result, constants)
+
         # Main loop
         for turn in range(turn_limit):
-            # Check for termination conditions
             if _check_player_death(game_state):
                 metrics.player_died = True
                 logger.info(f"Scenario ended: player death at turn {turn + 1}")
                 break
-            
-            # Handle current state
+
             if game_state.current_state == GameStates.PLAYERS_TURN:
-                # Get player action from bot policy
                 action = bot_policy.choose_action(game_state)
                 _process_player_action(game_state, action, metrics)
-                
+
             elif game_state.current_state == GameStates.ENEMY_TURN:
-                # Process enemy turns
                 _process_enemy_turn(game_state, metrics)
-                
-                # Increment turn counter after full turn cycle
                 metrics.turns_taken += 1
-                
+
             elif game_state.current_state == GameStates.PLAYER_DEAD:
-                # Player died
                 metrics.player_died = True
                 logger.info(f"Scenario ended: player death at turn {metrics.turns_taken}")
                 break
-            
+
             else:
-                # Other states (menus, etc.) - just advance to player turn
                 game_state.current_state = GameStates.PLAYERS_TURN
-        
-        # Cap turns_taken to turn_limit
+
         if metrics.turns_taken == 0:
             metrics.turns_taken = min(turn_limit, 1)
-        
-        # Update kill counts
+
         _count_dead_entities(game_state, metrics)
-        
+
+    except (ScenarioBuildError, ScenarioInvariantError) as e:
+        logger.error(f"Scenario setup failed: {e}")
+        raise
     except Exception as e:
         logger.error(f"Scenario run error: {e}", exc_info=True)
-        # Return partial metrics on error
         if metrics.turns_taken == 0:
             metrics.turns_taken = 1
     

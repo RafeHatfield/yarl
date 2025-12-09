@@ -30,6 +30,7 @@ import os
 import sys
 import logging
 import warnings
+from services.scenario_invariants import ScenarioInvariantError
 
 # Force headless mode before any tcod imports
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -152,6 +153,9 @@ def run_scenario(
     
     try:
         metrics = run_scenario_many(scenario, policy, runs, turn_limit)
+    except ScenarioInvariantError as e:
+        print(f"Scenario invariant failed: {e}")
+        return 1
     except Exception as e:
         print(f"Error during scenario execution: {e}")
         if verbose:
