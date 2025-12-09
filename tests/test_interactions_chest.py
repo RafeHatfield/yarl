@@ -330,6 +330,55 @@ class TestChestInteractionAlreadyOpen:
         assert result.consume_turn is False
 
 
+class TestChestLootFlow:
+    """Test looting flow after opening a chest."""
+    
+    def test_open_chest_then_pickup_loot(self, player, closed_chest, game_map, fov_map):
+        """Opening a chest should allow picking up its loot before showing empty."""
+        # Position player and chest
+        player.x, player.y = 25, 25
+        closed_chest.x, closed_chest.y = 26, 25
+        
+        # Preload the chest with a known item at the same tile
+        item_entity = Entity(closed_chest.x, closed_chest.y, '!', (255, 0, 0), 'Healing Potion')
+        item_component = Item()
+        item_entity.item = item_component
+        closed_chest.chest.loot = [item_entity]
+        
+        interaction_system = InteractionSystem()
+        entities = [player, closed_chest]
+        
+        # First click opens the chest and drops loot onto the tile
+        open_result = interaction_system.handle_click(
+            closed_chest.x, closed_chest.y,
+            player, entities, game_map, fov_map
+        )
+        assert open_result.action_taken
+        assert closed_chest.chest.state == ChestState.OPEN
+        
+        # Simulate game loop placing loot on the ground
+        entities.extend(open_result.loot_items)
+        
+        # Second click should pick up the loot instead of showing empty
+        pickup_result = interaction_system.handle_click(
+            closed_chest.x, closed_chest.y,
+            player, entities, game_map, fov_map
+        )
+        assert pickup_result.action_taken
+        assert pickup_result.consume_turn
+        assert len(player.inventory.items) == 1
+        assert player.inventory.items[0].name == "Healing Potion"
+        
+        # Third click should now report the chest as empty
+        empty_result = interaction_system.handle_click(
+            closed_chest.x, closed_chest.y,
+            player, entities, game_map, fov_map
+        )
+        assert empty_result.action_taken
+        assert empty_result.consume_turn is False
+        assert "empty" in str(empty_result.message).lower()
+
+
 class TestChestInteractionPriority:
     """Test that chest interactions respect priority ordering."""
     

@@ -243,7 +243,6 @@ class EnvironmentSystem(System):
             game_state: Current game state containing entities and map
         """
         from death_functions import process_pending_reanimations
-        from rendering.entity_sorting import invalidate_entity_cache
         
         entities = game_state.entities
         game_map = game_state.game_map
