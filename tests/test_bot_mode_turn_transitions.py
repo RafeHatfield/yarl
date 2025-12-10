@@ -92,6 +92,11 @@ class MockMessageLog:
 class TestBotModeTurnTransitions:
     """Test that bot mode turn transitions work without hanging."""
     
+    def setup_method(self):
+        """Reset singletons before each test."""
+        from systems.turn_controller import reset_turn_controller
+        reset_turn_controller()
+    
     def test_bot_mode_enemies_dont_act_but_turns_advance(self):
         """Test that in bot mode, enemies don't act but turn phases still advance.
         

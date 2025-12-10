@@ -34,6 +34,8 @@ This document summarizes the current architecture, highlights coupling/tech-debt
   - Responsibilities: Turn sequencing, game-state transitions.
   - Key entry points: `GameStates`, `state_management/state_config.py`, `engine/turn_manager.py` (phased), `systems/turn_controller.py`.
   - Interactions: AISystem and Movement/Action processing consult `GameStates`/`TurnManager`; Render/Input systems obey state for mode-specific behavior.
+  - Preferred API: `engine/turn_state_adapter.py` now fronts turn/phase queries and sync, wrapping `GameStates` + `TurnManager`.
+  - Implementation note: TurnController and AISystem call `TurnManager.advance_turn()` directly (without explicit phase targeting) for sequential phase advancement, ensuring proper turn counting and listener notifications. The adapter's `advance_to_*_phase()` methods are idempotent helpers for specific use cases.
 
 .- **Input**
   - Responsibilities: Acquire player intent, map to `ActionDict`.
