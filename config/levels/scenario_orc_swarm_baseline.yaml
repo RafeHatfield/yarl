@@ -1,0 +1,70 @@
+# Scenario: Orc Swarm - Baseline
+# Purpose: Measure baseline multi-enemy combat and survivability under swarm pressure.
+#
+# This scenario spawns multiple orcs in a small arena to observe how the player
+# handles being outnumbered without speed advantages.
+
+scenario_id: orc_swarm_baseline
+name: "Orc Swarm – Baseline"
+description: "Small arena with multiple orcs to measure baseline multi-enemy combat and survivability."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation (loose to catch obvious breakage only)
+# For 50 runs we expect the player to roughly trade one kill per run while
+# allowing many deaths due to being outnumbered.
+expected:
+  min_player_kills: 50
+  max_player_deaths: 40
+
+# Dungeon depth (matched to dueling pit)
+depth: 5
+
+# Room definitions - small arena with room to maneuver
+rooms:
+  - id: "orc_swarm_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for multi-enemy combat"
+    walls: "enclosed"
+
+# Monster placements - three orc warriors spread to avoid trivial surprise
+monsters:
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 4]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [10, 6]
+    facing: "west"
+    state: "aware"
+
+# Items - small healing support as in dueling pit
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+# Player spawn configuration - baseline equipment (no speed items)
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"
+

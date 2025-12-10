@@ -1,4 +1,4 @@
-.PHONY: clean test run quick-test bot bot-smoke soak help test-fast test-full ci-quick balance-ci-local
+.PHONY: clean test run quick-test bot bot-smoke soak help test-fast test-full ci-quick balance-ci-local eco-swarm-baseline eco-swarm-baseline-json eco-swarm-speed-full eco-swarm-speed-full-json eco-swarm-brutal-baseline eco-swarm-brutal-baseline-json eco-swarm-brutal-speed-full eco-swarm-brutal-speed-full-json eco-swarm-all eco-swarm-report
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -175,3 +175,272 @@ bot-smoke:
 	  --max-turns 500 \
 	  --max-floors 2 \
 	  --metrics-log $(LOG_DIR)/bot_smoke.csv
+
+
+
+# --------------------------------------------------------------------
+# Ecosystem / Scenario Harness Shortcuts
+# --------------------------------------------------------------------
+
+.PHONY: eco-quick eco-all eco-ci eco-report \
+        eco-plague eco-plague-json \
+        eco-backstab eco-backstab-json \
+        eco-duel-baseline eco-duel-baseline-json \
+        eco-duel-speed-light eco-duel-speed-light-json \
+        eco-duel-speed-full eco-duel-speed-full-json \
+        eco-duel-slow-zombie-baseline eco-duel-slow-zombie-baseline-json \
+        eco-duel-slow-zombie-full eco-duel-slow-zombie-full-json
+
+# A fast sampler of the main scenarios we care about (no JSON export)
+eco-quick: eco-plague eco-backstab eco-duel-baseline
+
+# Run *all* the dueling-related scenarios (no JSON export)
+eco-all: eco-plague eco-backstab \
+         eco-duel-baseline eco-duel-speed-light eco-duel-speed-full \
+         eco-duel-slow-zombie-baseline eco-duel-slow-zombie-full
+
+# Mirror what GitHub Actions does for ecosystem sanity on PRs
+eco-ci:
+	# Quick CI-style plague arena sanity
+	python3 ecosystem_sanity.py \
+	  --scenario plague_arena \
+	  --runs 20 \
+	  --turn-limit 500 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+	# Quick CI-style backstab training sanity
+	python3 ecosystem_sanity.py \
+	  --scenario backstab_training \
+	  --runs 50 \
+	  --turn-limit 50 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+# Run all key scenarios with JSON export, for tuning/analysis sessions
+eco-report: \
+	eco-plague-json \
+	eco-backstab-json \
+	eco-duel-baseline-json \
+	eco-duel-speed-light-json \
+	eco-duel-speed-full-json \
+	eco-duel-slow-zombie-baseline-json \
+	eco-duel-slow-zombie-full-json
+
+# --------------------
+# Plague Arena
+# --------------------
+
+eco-plague:
+	python3 ecosystem_sanity.py \
+	  --scenario plague_arena \
+	  --runs 20 \
+	  --turn-limit 500 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-plague-json:
+	python3 ecosystem_sanity.py \
+	  --scenario plague_arena \
+	  --runs 100 \
+	  --turn-limit 500 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json plague_arena_100runs.json
+
+# --------------------
+# Backstab Training
+# --------------------
+
+eco-backstab:
+	python3 ecosystem_sanity.py \
+	  --scenario backstab_training \
+	  --runs 50 \
+	  --turn-limit 50 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-backstab-json:
+	python3 ecosystem_sanity.py \
+	  --scenario backstab_training \
+	  --runs 100 \
+	  --turn-limit 50 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json backstab_training_100runs.json
+
+# --------------------
+# Orc Dueling Pits (baseline / light / full speed)
+# --------------------
+
+eco-duel-baseline:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-duel-baseline-json:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json dueling_pit_50runs.json
+
+eco-duel-speed-light:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_speed_light \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-duel-speed-light-json:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_speed_light \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json dueling_pit_speed_light_50runs.json
+
+eco-duel-speed-full:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-duel-speed-full-json:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json dueling_pit_speed_full_50runs.json
+
+# --------------------
+# Slow Zombie Dueling (momentum lab)
+# --------------------
+
+eco-duel-slow-zombie-baseline:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_slow_zombie_baseline \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-duel-slow-zombie-baseline-json:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_slow_zombie_baseline \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json dueling_pit_slow_zombie_baseline_50runs.json
+
+eco-duel-slow-zombie-full:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_slow_zombie_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-duel-slow-zombie-full-json:
+	python3 ecosystem_sanity.py \
+	  --scenario dueling_pit_slow_zombie_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json dueling_pit_slow_zombie_speed_full_50runs.json
+
+# --------------------
+# Orc Swarm Scenarios
+# --------------------
+
+eco-swarm-baseline:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_baseline \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-swarm-baseline-json:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_baseline \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json orc_swarm_baseline_50runs.json
+
+eco-swarm-speed-full:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-swarm-speed-full-json:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json orc_swarm_speed_full_50runs.json
+
+# --------------------
+# Orc Swarm – Brutal
+# --------------------
+
+eco-swarm-brutal-baseline:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_brutal_baseline \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-swarm-brutal-baseline-json:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_brutal_baseline \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json orc_swarm_brutal_baseline_50runs.json
+
+eco-swarm-brutal-speed-full:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_brutal_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-swarm-brutal-speed-full-json:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_brutal_speed_full \
+	  --runs 50 \
+	  --turn-limit 100 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json orc_swarm_brutal_speed_full_50runs.json
+
+eco-swarm-all: eco-swarm-baseline eco-swarm-speed-full eco-swarm-brutal-baseline eco-swarm-brutal-speed-full
+
+eco-swarm-report: \
+	eco-swarm-baseline-json \
+	eco-swarm-speed-full-json \
+	eco-swarm-brutal-baseline-json \
+	eco-swarm-brutal-speed-full-json

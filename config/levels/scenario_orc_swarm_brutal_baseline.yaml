@@ -1,0 +1,83 @@
+# Scenario: Orc Swarm - Brutal (Baseline)
+# Purpose: Measure baseline survivability when badly outnumbered (5 orcs).
+#
+# This scenario ups the ante from the standard swarm (3 orcs) to create
+# a much harsher multi-enemy encounter. The goal is to observe survival curves
+# and combat metrics under extreme pressure without speed advantages.
+
+scenario_id: orc_swarm_brutal_baseline
+name: "Orc Swarm – Brutal (Baseline)"
+description: "A harsher multi-orc encounter to measure baseline survivability when badly outnumbered."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation (very loose - we want metrics, not hard gates)
+# For 50 runs we allow an average of 1 kill per run while expecting many deaths.
+# This is intentionally brutal; expectations are loose to avoid CI flakiness.
+expected:
+  min_player_kills: 50
+  max_player_deaths: 40
+
+# Dungeon depth (matched to other swarm/duel scenarios)
+depth: 5
+
+# Room definitions - same arena as standard swarm
+rooms:
+  - id: "brutal_swarm_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for brutal multi-enemy combat"
+    walls: "enclosed"
+
+# Monster placements - five orc warriors positioned for immediate threat + flanking
+monsters:
+  # Front-line trio (immediate threat)
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 4]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 8]
+    facing: "north"
+    state: "aware"
+  # Flanking support (slightly further, speed/positioning matters)
+  - type: "orc"
+    count: 1
+    position: [10, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [10, 7]
+    facing: "west"
+    state: "aware"
+
+# Items - minimal healing support as in other swarm scenarios
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+# Player spawn configuration - baseline equipment (no speed items)
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"
+
