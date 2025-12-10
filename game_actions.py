@@ -197,9 +197,20 @@ class ActionProcessor:
                         # CRITICAL: In bot mode, bot movements should NOT cancel AutoExplore
                         # Only MANUAL input (keyboard/mouse) should cancel
                         if not self.is_bot_mode:
-                            # Manual mode: any input cancels auto-explore
+                            # Manual mode: any input cancels auto-explore, except the
+                            # initiating right-click that started it (which can arrive
+                            # across multiple event polls).
                             cancel_actions = {k: v for k, v in action.items() if k != 'start_auto_explore'}
-                            if cancel_actions or mouse_action:
+
+                            # Allow repeated right-click noise without cancelling;
+                            # deliberate cancellation still happens via the right-click handler.
+                            mouse_cancels = bool(mouse_action and not self._is_right_click_only(mouse_action))
+
+                            # Clear the start flag if present so it doesn't persist.
+                            if hasattr(self.state_manager, "set_extra_data"):
+                                self.state_manager.set_extra_data("auto_explore_started_this_frame", False)
+
+                            if cancel_actions or mouse_cancels:
                                 logger.warning(
                                     f"🔍 DIAGNOSTIC: ActionProcessor: Cancelling AutoExplore due to manual input! "
                                     f"action={cancel_actions}, mouse_action={mouse_action}"
@@ -261,7 +272,12 @@ class ActionProcessor:
                 except Exception as e:
                     logger.error(f"Error processing mouse action {mouse_action_type}: {e}", exc_info=True)
     
-    
+    @staticmethod
+    def _is_right_click_only(mouse_action: Dict[str, Any]) -> bool:
+        """Return True when the mouse action payload is only a right_click entry."""
+        if not mouse_action:
+            return False
+        return set(mouse_action.keys()) == {"right_click"}
 
     # ═════════════════════════════════════════════════════════════════════════════
     # SECTION 2: ITEM ACTIONS - Pickup, Drop, Use, Search (458 lines, 8 methods)
@@ -2774,6 +2790,15 @@ class ActionProcessor:
             auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
             
             if auto_explore and auto_explore.is_active():
+                # Guard against duplicate right-click events from the same click
+                suppress_once = False
+                if hasattr(self.state_manager, "get_extra_data"):
+                    suppress_once = bool(self.state_manager.get_extra_data("auto_explore_suppress_cancel_once"))
+                if suppress_once:
+                    if hasattr(self.state_manager, "set_extra_data"):
+                        self.state_manager.set_extra_data("auto_explore_suppress_cancel_once", False)
+                    return
+
                 # Already exploring - cancel it
                 auto_explore.stop("Cancelled")
                 message_log.add_message(MB.info("Auto-explore cancelled"))
@@ -2791,6 +2816,10 @@ class ActionProcessor:
                 # Show adventure quote
                 message_log.add_message(MB.custom(f'"{adventure_quote}"', MB.CYAN))
                 message_log.add_message(MB.info("Auto-exploring... (any key to cancel)"))
+                
+                # Suppress the immediate duplicate right-click event from cancelling
+                if hasattr(self.state_manager, "set_extra_data"):
+                    self.state_manager.set_extra_data("auto_explore_suppress_cancel_once", True)
     
     def _process_player_status_effects(self) -> None:
         """Process status effects at the end of the player's turn."""

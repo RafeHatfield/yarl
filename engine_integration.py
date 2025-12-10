@@ -37,6 +37,7 @@ from typing import Any
 
 import tcod.libtcodpy as libtcod
 from engine import GameEngine
+from engine.game_core import GameCore
 from performance.config import get_performance_config
 from io_layer.interfaces import Renderer, InputSource, ActionDict
 from io_layer.console_renderer import ConsoleRenderer
@@ -488,6 +489,9 @@ def play_game_with_engine(
     # Persist the action processor for systems that need to reuse it between phases
     engine.state_manager.set_extra_data("action_processor", action_processor)
 
+    # Introduce IO-agnostic GameCore façade for turn orchestration
+    game_core = GameCore(engine.state_manager, engine.turn_manager, action_processor)
+
     # =========================================================================
     # ABSTRACTION LAYER: Create Renderer and InputSource instances
     # 
@@ -686,7 +690,7 @@ def play_game_with_engine(
             turn_num = engine.turn_manager.turn_number if engine.turn_manager else 0
             logger.debug(f"[PROCESSING ACTION] turn={turn_num}, action={action}, mouse={mouse_action}")
         
-        action_processor.process_actions(action, mouse_action)
+        game_core.process_input(action, mouse_action)
         
         # ═════════════════════════════════════════════════════════════════════════
         # MAIN LOOP INVARIANT ENFORCEMENT (Manual vs Bot Update Rules)
@@ -712,40 +716,14 @@ def play_game_with_engine(
         #   independent of player actions.
         # ═════════════════════════════════════════════════════════════════════════
         
-        should_update_systems = True  # Default: update for bot mode and non-PLAYERS_TURN states
-        
-        # Get current game state to determine if gating should apply
-        current_state = engine.state_manager.state.current_state
-        
-        if input_mode != "bot" and current_state == GameStates.PLAYERS_TURN:
-            # MANUAL MODE IN-DUNGEON: Only update if there's an action OR auto-explore is active
-            # This gating ONLY applies during active dungeon play, not menus/dialogs/etc.
-            
-            # EXCEPTION: First frame always needs to update for initial render
-            if first_frame_needs_render:
-                should_update_systems = True
-                first_frame_needs_render = False
-                logger.debug("MANUAL MODE: First frame - updating for initial render")
-            else:
-                has_action = bool(action or mouse_action)
-                
-                # Check if AutoExplore is active
-                player = engine.state_manager.state.player
-                auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE) if player else None
-                auto_explore_active = bool(auto_explore and auto_explore.is_active())
-                
-                # Diagnostic logging (temporary - can be removed after verification)
-                logger.debug(
-                    f"MANUAL FRAME: state={current_state}, has_action={has_action}, "
-                    f"auto_explore_active={auto_explore_active}, should_update={has_action or auto_explore_active}"
-                )
-                
-                # CRITICAL INVARIANT: Only update if player acted or auto-explore is running
-                # This prevents the "empty action spam" bug where engine.update() is called
-                # every frame even when the player is idle, causing repeated AI cycles
-                if not has_action and not auto_explore_active:
-                    should_update_systems = False
-                    logger.debug("MANUAL MODE: No action and auto-explore inactive - skipping engine.update()")
+        should_update_systems = game_core.should_tick_world(
+            input_mode=input_mode,
+            action=action,
+            mouse_action=mouse_action,
+            first_frame=first_frame_needs_render,
+        )
+        if first_frame_needs_render:
+            first_frame_needs_render = False
         
         # Phase 1.6: Check for bot run abort signal (floor fully explored in soak mode)
         # This is a bot-only terminal condition that should exit the current run

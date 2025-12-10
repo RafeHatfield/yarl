@@ -36,6 +36,7 @@ This document summarizes the current architecture, highlights coupling/tech-debt
   - Interactions: AISystem and Movement/Action processing consult `GameStates`/`TurnManager`; Render/Input systems obey state for mode-specific behavior.
   - Preferred API: `engine/turn_state_adapter.py` now fronts turn/phase queries and sync, wrapping `GameStates` + `TurnManager`.
   - Implementation note: TurnController and AISystem call `TurnManager.advance_turn()` directly (without explicit phase targeting) for sequential phase advancement, ensuring proper turn counting and listener notifications. The adapter's `advance_to_*_phase()` methods are idempotent helpers for specific use cases.
+  - GameCore boundary: `engine/game_core.py` is the IO-agnostic façade holding `state_manager`, `turn_manager`, and a `TurnStateAdapter`. Entry loops hand it input actions and ask if the world should tick; it keeps `GameStates`/TurnManager phases aligned and surfaces the current frame state for renderers. New or migrated entrypoints should route turn orchestration through this façade instead of duplicating loop logic.
 
 .- **Input**
   - Responsibilities: Acquire player intent, map to `ActionDict`.
