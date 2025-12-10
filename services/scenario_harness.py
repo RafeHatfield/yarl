@@ -57,6 +57,10 @@ class RunMetrics:
     reanimations: int = 0
     surprise_attacks: int = 0
     bonus_attacks_triggered: int = 0
+    player_attacks: int = 0
+    player_hits: int = 0
+    monster_attacks: int = 0
+    monster_hits: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -69,6 +73,10 @@ class RunMetrics:
             'reanimations': self.reanimations,
             'surprise_attacks': self.surprise_attacks,
             'bonus_attacks_triggered': self.bonus_attacks_triggered,
+            'player_attacks': self.player_attacks,
+            'player_hits': self.player_hits,
+            'monster_attacks': self.monster_attacks,
+            'monster_hits': self.monster_hits,
         }
 
 
@@ -88,6 +96,10 @@ class AggregatedMetrics:
     total_reanimations: int = 0
     total_surprise_attacks: int = 0
     total_bonus_attacks_triggered: int = 0
+    total_player_attacks: int = 0
+    total_player_hits: int = 0
+    total_monster_attacks: int = 0
+    total_monster_hits: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -101,6 +113,10 @@ class AggregatedMetrics:
             'total_reanimations': self.total_reanimations,
             'total_surprise_attacks': self.total_surprise_attacks,
             'total_bonus_attacks_triggered': self.total_bonus_attacks_triggered,
+            'total_player_attacks': self.total_player_attacks,
+            'total_player_hits': self.total_player_hits,
+            'total_monster_attacks': self.total_monster_attacks,
+            'total_monster_hits': self.total_monster_hits,
         }
 
 
@@ -607,6 +623,10 @@ def run_scenario_many(
     total_reanimations = 0
     total_surprise_attacks = 0
     total_bonus_attacks = 0
+    total_player_attacks = 0
+    total_player_hits = 0
+    total_monster_attacks = 0
+    total_monster_hits = 0
     
     for run in all_runs:
         for faction, count in run.kills_by_faction.items():
@@ -617,6 +637,10 @@ def run_scenario_many(
         total_reanimations += run.reanimations
         total_surprise_attacks += run.surprise_attacks
         total_bonus_attacks += run.bonus_attacks_triggered
+        total_player_attacks += run.player_attacks
+        total_player_hits += run.player_hits
+        total_monster_attacks += run.monster_attacks
+        total_monster_hits += run.monster_hits
     
     aggregated = AggregatedMetrics(
         runs=runs,
@@ -628,6 +652,10 @@ def run_scenario_many(
         total_reanimations=total_reanimations,
         total_surprise_attacks=total_surprise_attacks,
         total_bonus_attacks_triggered=total_bonus_attacks,
+        total_player_attacks=total_player_attacks,
+        total_player_hits=total_player_hits,
+        total_monster_attacks=total_monster_attacks,
+        total_monster_hits=total_monster_hits,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

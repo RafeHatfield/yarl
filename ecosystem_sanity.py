@@ -182,6 +182,19 @@ def run_scenario(
     print(f"Total Surprise Attacks: {metrics.total_surprise_attacks}")
     print(f"Total Bonus Attacks: {metrics.total_bonus_attacks_triggered}")
     
+    # Phase 13A: Combat feel metrics
+    print(f"\nCombat Metrics:")
+    print(f"  Player Attacks: {metrics.total_player_attacks}")
+    print(f"  Player Hits: {metrics.total_player_hits}")
+    if metrics.total_player_attacks > 0:
+        player_hit_rate = (metrics.total_player_hits / metrics.total_player_attacks) * 100
+        print(f"  Player Hit Rate: {player_hit_rate:.1f}%")
+    print(f"  Monster Attacks: {metrics.total_monster_attacks}")
+    print(f"  Monster Hits: {metrics.total_monster_hits}")
+    if metrics.total_monster_attacks > 0:
+        monster_hit_rate = (metrics.total_monster_hits / metrics.total_monster_attacks) * 100
+        print(f"  Monster Hit Rate: {monster_hit_rate:.1f}%")
+    
     if metrics.total_kills_by_faction:
         print("\nKills by Faction:")
         for faction, count in sorted(metrics.total_kills_by_faction.items()):

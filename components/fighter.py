@@ -887,6 +887,18 @@ class Fighter:
         else:
             hit = (attack_roll >= target_ac)
         
+        # Phase 13A: Record attack metrics (player vs monster)
+        collector = _get_metrics_collector()
+        if collector:
+            # Determine if attacker is player or monster
+            attacker_ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
+            if not attacker_ai:
+                # No AI = player
+                collector.record_player_attack(hit)
+            else:
+                # Has AI = monster
+                collector.record_monster_attack(hit)
+        
         if hit:
             # Visual feedback: Flash target red (or yellow for crits)!
             show_hit(target.x, target.y, entity=target, is_critical=is_critical)

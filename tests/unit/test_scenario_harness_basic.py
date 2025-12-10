@@ -95,6 +95,10 @@ class TestRunMetrics:
         assert metrics.reanimations == 0
         assert metrics.surprise_attacks == 0
         assert metrics.bonus_attacks_triggered == 0
+        assert metrics.player_attacks == 0
+        assert metrics.player_hits == 0
+        assert metrics.monster_attacks == 0
+        assert metrics.monster_hits == 0
     
     def test_custom_values(self):
         """Test RunMetrics with custom values."""
@@ -140,6 +144,10 @@ class TestAggregatedMetrics:
         assert metrics.total_reanimations == 0
         assert metrics.total_surprise_attacks == 0
         assert metrics.total_bonus_attacks_triggered == 0
+        assert metrics.total_player_attacks == 0
+        assert metrics.total_player_hits == 0
+        assert metrics.total_monster_attacks == 0
+        assert metrics.total_monster_hits == 0
     
     def test_custom_values(self):
         """Test AggregatedMetrics with custom values."""
@@ -153,6 +161,10 @@ class TestAggregatedMetrics:
             total_reanimations=2,
             total_surprise_attacks=5,
             total_bonus_attacks_triggered=3,
+            total_player_attacks=100,
+            total_player_hits=60,
+            total_monster_attacks=80,
+            total_monster_hits=40,
         )
         
         assert metrics.runs == 10
@@ -164,6 +176,10 @@ class TestAggregatedMetrics:
         assert metrics.total_reanimations == 2
         assert metrics.total_surprise_attacks == 5
         assert metrics.total_bonus_attacks_triggered == 3
+        assert metrics.total_player_attacks == 100
+        assert metrics.total_player_hits == 60
+        assert metrics.total_monster_attacks == 80
+        assert metrics.total_monster_hits == 40
     
     def test_to_dict(self):
         """Test AggregatedMetrics.to_dict() serialization."""
@@ -177,6 +193,10 @@ class TestAggregatedMetrics:
             total_reanimations=1,
             total_surprise_attacks=3,
             total_bonus_attacks_triggered=2,
+            total_player_attacks=50,
+            total_player_hits=30,
+            total_monster_attacks=40,
+            total_monster_hits=20,
         )
         
         result = metrics.to_dict()
@@ -191,6 +211,10 @@ class TestAggregatedMetrics:
         assert result['total_reanimations'] == 1
         assert result['total_surprise_attacks'] == 3
         assert result['total_bonus_attacks_triggered'] == 2
+        assert result['total_player_attacks'] == 50
+        assert result['total_player_hits'] == 30
+        assert result['total_monster_attacks'] == 40
+        assert result['total_monster_hits'] == 20
 
 
 class TestBotPolicy:

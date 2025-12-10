@@ -31,6 +31,26 @@ class ScenarioMetricsCollector:
     
     def record_bonus_attack(self, attacker: Any, defender: Any) -> None:
         self.metrics.bonus_attacks_triggered += 1
+    
+    def record_player_attack(self, hit: bool) -> None:
+        """Record a player attack attempt and whether it hit.
+        
+        Args:
+            hit: True if the attack hit, False if it missed
+        """
+        self.metrics.player_attacks += 1
+        if hit:
+            self.metrics.player_hits += 1
+    
+    def record_monster_attack(self, hit: bool) -> None:
+        """Record a monster attack attempt and whether it hit.
+        
+        Args:
+            hit: True if the attack hit, False if it missed
+        """
+        self.metrics.monster_attacks += 1
+        if hit:
+            self.metrics.monster_hits += 1
 
 
 _active_scenario_metrics_collector: Optional[ScenarioMetricsCollector] = None
