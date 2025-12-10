@@ -1,0 +1,71 @@
+# Scenario: Dueling Pit - Light Speed Build
+# Purpose: Measure impact of single speed item on combat feel
+# Phase 13B: Speed-focused dueling scenarios
+#
+# This scenario tests a "light" speed build with ONE speed item (25% bonus).
+# We compare this to the baseline dueling_pit to measure:
+#   - Bonus attack frequency
+#   - Hit rate changes with momentum
+#   - Combat pacing with speed advantage
+#
+# Equipment changes from baseline:
+#   - Quickfang Dagger (25% speed bonus) instead of regular dagger
+#   - Same armor (leather_armor)
+#   - No speed rings/boots
+
+scenario_id: dueling_pit_speed_light
+name: "Dueling Pit - Light Speed"
+description: "1v1 duels with single speed item (Quickfang Dagger) to measure light speed build effectiveness."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+# Very conservative thresholds - we expect player to do somewhat better than baseline
+# due to bonus attacks, but not trying to gate tuning tightly yet.
+# Baseline dueling_pit: ~50/50 player wins in 50 runs
+# Light speed: expect player to win ~60-70% due to 25% bonus attack chance
+expected:
+  min_player_kills: 25            # Player should win at least half the duels (conservative)
+  max_player_deaths: 30           # Allow up to 60% loss rate (very loose)
+
+# Dungeon depth (same as baseline)
+depth: 5
+
+# Room definitions - identical to baseline dueling_pit
+rooms:
+  - id: "dueling_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for 1v1 combat"
+    walls: "enclosed"
+
+# Monster placements - identical to baseline
+monsters:
+  # Single orc warrior for baseline dueling
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+
+# Items - minimal healing to keep duels fair
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+# Player spawn configuration - LIGHT SPEED BUILD
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "quickfang_dagger"    # +25% speed bonus (only change from baseline)
+    armor: "leather_armor"

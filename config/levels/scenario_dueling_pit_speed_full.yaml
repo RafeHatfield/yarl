@@ -1,0 +1,75 @@
+# Scenario: Dueling Pit - Full Speed Build
+# Purpose: Measure impact of stacked speed items on combat feel
+# Phase 13B: Speed-focused dueling scenarios
+#
+# This scenario tests a "full" speed build with multiple speed items (75% total bonus).
+# We compare this to the baseline and light speed builds to measure:
+#   - Maximum bonus attack frequency with speed stacking
+#   - Hit rate changes with sustained momentum
+#   - Combat pacing with significant speed advantage
+#
+# Equipment changes from baseline:
+#   - Quickfang Dagger (25% speed bonus)
+#   - Boots of Swiftness (25% speed bonus)
+#   - Ring of Hummingbird (25% speed bonus)
+#   - Total: 75% speed bonus (additive stacking)
+#   - Same armor (leather_armor)
+
+scenario_id: dueling_pit_speed_full
+name: "Dueling Pit - Full Speed"
+description: "1v1 duels with full speed stack (dagger + boots + ring) to measure maximum speed build effectiveness."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+# Very conservative thresholds - we expect player to win most duels with 75% speed bonus
+# due to frequent bonus attacks and sustained momentum.
+# Baseline dueling_pit: ~50/50 player wins in 50 runs
+# Full speed: expect player to win ~80-90% due to 75% bonus attack chance
+expected:
+  min_player_kills: 30            # Player should win at least 60% of duels (conservative)
+  max_player_deaths: 30           # Allow up to 60% loss rate (very loose, but expect fewer)
+
+# Dungeon depth (same as baseline)
+depth: 5
+
+# Room definitions - identical to baseline dueling_pit
+rooms:
+  - id: "dueling_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for 1v1 combat"
+    walls: "enclosed"
+
+# Monster placements - identical to baseline
+monsters:
+  # Single orc warrior for baseline dueling
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+
+# Items - minimal healing to keep duels fair
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+# Player spawn configuration - FULL SPEED BUILD
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "quickfang_dagger"      # +25% speed bonus
+    armor: "leather_armor"
+    feet: "boots_of_swiftness"      # +25% speed bonus
+    left_ring: "ring_of_hummingbird"  # +25% speed bonus

@@ -1,0 +1,1 @@
+{"scenario_id":"backstab_training","runs":100,"turn_limit":50,"player_bot":"tactical_fighter","metrics":{"runs":100,"average_turns":24.96,"player_deaths":1,"total_kills_by_faction":{"Player":197,"Orc":1},"total_kills_by_source":{"PLAYER":197,"MONSTERS":1},"total_plague_infections":0,"total_reanimations":0,"total_surprise_attacks":200,"total_bonus_attacks_triggered":0}}
