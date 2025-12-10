@@ -15,6 +15,7 @@ from game_states import GameStates
 from entity_sorting_cache import invalidate_entity_cache
 from components.component_registry import ComponentType
 from state_management.state_config import StateManager
+from engine.turn_state_adapter import TurnStateAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,9 @@ class AISystem(System):
             "average_turn_time": 0.0,
             "entities_processed": 0,
         }
+
+        # Turn/state coordination
+        self.turn_adapter: TurnStateAdapter | None = None
         
         # ANTI-INFINITE-LOOP GUARDS
         # Track which entities have been processed this update to prevent duplicates
@@ -84,6 +88,9 @@ class AISystem(System):
             engine: Reference to the main GameEngine instance
         """
         super().initialize(engine)
+        self.turn_adapter = TurnStateAdapter(
+            engine.state_manager, getattr(engine, "turn_manager", None)
+        )
         logger.info("AISystem initialized")
 
     def update(self, dt: float) -> None:
@@ -135,28 +142,31 @@ class AISystem(System):
                 self._processed_entities_this_update.clear()
                 return
 
-            # GUARD 4: Only process AI during enemy turn
-            # Phase 2: Use TurnManager instead of GameStates check
-            turn_manager = getattr(self.engine, 'turn_manager', None)
-            if turn_manager:
-                # New system: Check TurnManager
-                from engine.turn_manager import TurnPhase
-                if not turn_manager.is_phase(TurnPhase.ENEMY):
-                    # Only log mismatch if it occurs (critical error)
-                    if current_state == GameStates.ENEMY_TURN and not hasattr(self, '_mismatch_logged'):
-                        logger.error(f"CRITICAL: State mismatch! GameState={current_state}, TurnManager phase={turn_manager.current_phase}")
+            # GUARD 4: Only process AI during enemy turn (via adapter)
+            adapter = self.turn_adapter
+            if adapter:
+                if not adapter.is_enemy_turn():
+                    # Only log mismatch if the state claims enemy turn but TM disagrees
+                    if (
+                        adapter.has_turn_manager
+                        and current_state == GameStates.ENEMY_TURN
+                        and not adapter.is_enemy_phase_consistent()
+                        and not hasattr(self, "_mismatch_logged")
+                    ):
+                        phase = adapter.turn_manager_phase
+                        logger.error(
+                            f"CRITICAL: State mismatch! GameState={current_state}, "
+                            f"TurnManager phase={phase}"
+                        )
                         self._mismatch_logged = True
-                    # Reset processed entities set when not in enemy phase
                     self._processed_entities_this_update.clear()
                     return
                 else:
-                    # Reset mismatch flag when we're back in sync
-                    if hasattr(self, '_mismatch_logged'):
-                        delattr(self, '_mismatch_logged')
+                    if hasattr(self, "_mismatch_logged"):
+                        delattr(self, "_mismatch_logged")
             else:
                 # Backward compatibility: Fall back to GameStates check
                 if current_state != GameStates.ENEMY_TURN:
-                    # Reset processed entities set when not in enemy turn
                     self._processed_entities_this_update.clear()
                     return
 
@@ -196,6 +206,7 @@ class AISystem(System):
             # ─────────────────────────────────────────────────────────────────
             
             # Advance through turn phases if using TurnManager
+            turn_manager = getattr(self.engine, "turn_manager", None)
             if turn_manager:
                 turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
                 

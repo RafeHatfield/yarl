@@ -153,6 +153,10 @@ class SoakRunResult:
         if not raw_reason:
             return "none"
         
+        # Guard against Mock objects or non-strings (for test compatibility)
+        if not isinstance(raw_reason, str):
+            return "none"
+        
         # Exact matches for known terminal reasons
         if raw_reason == "All areas explored":
             return "all_areas_explored"

@@ -497,7 +497,7 @@ class TestRunBotSoakIntegration:
         # Check crashed run
         crashed_run = result.runs[1]  # Run 2 (index 1)
         assert crashed_run.run_number == 2
-        assert crashed_run.outcome == "crash"
+        assert crashed_run.outcome == "exception"  # classify_failure refines "crash" to "exception"
         assert crashed_run.exception == "Test crash in run 2"
     
     @patch('tcod.libtcodpy.console_init_root')
@@ -617,6 +617,7 @@ class TestRunBotSoakIntegration:
         # Verify each run has valid results (not stuck in movement loops)
         for i, run in enumerate(result.runs, start=1):
             assert run.run_number == i
-            assert run.outcome == "bot_completed"  # Bot successfully completed exploration
+            # classify_failure refines "bot_completed" to "floor_complete" when floor is explored
+            assert run.outcome == "floor_complete"  # Bot successfully completed exploration
             assert run.exception is None  # No crashes from stale state
 

@@ -24,6 +24,7 @@ import logging
 
 from game_states import GameStates
 from state_management.state_config import StateManager
+from engine.turn_state_adapter import TurnStateAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +62,23 @@ class TurnController:
             turn_manager: Optional TurnManager for phase-based turns
         """
         self.state_manager = state_manager
-        self.turn_manager = turn_manager
+        self._turn_manager = turn_manager
         self.preserved_state: Optional[GameStates] = None
+        self.turn_adapter = TurnStateAdapter(state_manager, turn_manager)
         
         logger.debug("TurnController initialized")
+    
+    @property
+    def turn_manager(self):
+        """Get the turn manager."""
+        return self._turn_manager
+    
+    @turn_manager.setter
+    def turn_manager(self, value):
+        """Set the turn manager and update the adapter."""
+        self._turn_manager = value
+        if hasattr(self, 'turn_adapter'):
+            self.turn_adapter.turn_manager = value
     
     def end_player_action(self, turn_consumed: bool = True) -> None:
         """Handle end of player action and determine turn transition.
@@ -125,12 +139,11 @@ class TurnController:
             # State automatically restored to RUBY_HEART_OBTAINED if needed!
         """
         # Use TurnManager if available (Phase 3)
+        # Advance sequentially through phases: ENEMY → ENVIRONMENT → PLAYER
         if self.turn_manager:
-            from engine.turn_manager import TurnPhase
             self.turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
             
-            # Process environment phase (status effects, etc.)
-            # This would happen in a separate system
+            # Process environment phase (status effects, etc.) would occur elsewhere
             
             # Advance to player phase
             self.turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
@@ -148,15 +161,14 @@ class TurnController:
         
         Uses TurnManager if available (Phase 3), always keeps GameStates in sync.
         """
-        # Use TurnManager if available (Phase 3)
+        # Set GameStates to ENEMY_TURN
+        self.state_manager.set_game_state(GameStates.ENEMY_TURN)
+        
+        # Advance TurnManager if present (PLAYER → ENEMY)
         if self.turn_manager:
             from engine.turn_manager import TurnPhase
+            # Use explicit target to sync state even if phases are misaligned
             self.turn_manager.advance_turn(TurnPhase.ENEMY)
-        else:
-            logger.warning("TurnManager is None - using backward compatibility mode")
-        
-        # Always keep GameStates in sync (backward compatibility)
-        self.state_manager.set_game_state(GameStates.ENEMY_TURN)
     
     def force_state_transition(self, new_state: GameStates) -> None:
         """Force a state transition without turn logic.
