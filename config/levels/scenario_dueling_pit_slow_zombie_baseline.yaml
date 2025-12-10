@@ -1,0 +1,75 @@
+# Scenario: Dueling Pit - Slow Zombie (Baseline)
+# Purpose: Measure baseline momentum/bonus attacks vs slow opponent
+# Phase 13C: Testing speed gating with slow enemies
+#
+# This scenario tests combat vs a SLOW enemy (zombie, 0.5 speed_bonus).
+# Player has baseline kit with 0.25 speed_bonus.
+# Expected: Player speed (0.25) is NOT > zombie speed (0.5), so NO bonus attacks.
+#
+# This validates the speed gating condition:
+#   if attacker_speed <= defender_speed: no momentum building
+#
+# Equipment:
+#   - Regular dagger (no speed bonus)
+#   - Leather armor
+#   - Player base speed: 0.25 (from initialization)
+#
+# Zombie stats:
+#   - speed_bonus: 0.5 (slow zombie)
+#   - HP: 25
+#   - Low accuracy (1), no evasion (0)
+
+scenario_id: dueling_pit_slow_zombie_baseline
+name: "Dueling Pit - Slow Zombie (Baseline)"
+description: "1v1 duels vs slow zombie to measure baseline combat against slow opponent. Player base speed (0.25) vs zombie (0.5) - no bonus attacks expected."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+# Very conservative - zombie is slow and weak, player should dominate
+# But we're not gating balance tightly yet
+expected:
+  min_player_kills: 25            # Player should win at least half (very conservative)
+  max_player_deaths: 25           # Allow losses for RNG variance
+
+# Dungeon depth (same as baseline dueling_pit)
+depth: 5
+
+# Room definitions - identical to dueling_pit
+rooms:
+  - id: "dueling_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for 1v1 combat"
+    walls: "enclosed"
+
+# Monster placements - slow zombie
+monsters:
+  # Single zombie (speed_bonus: 0.5, slow)
+  - type: "zombie"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+
+# Items - minimal healing
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+# Player spawn configuration - BASELINE (no speed items)
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"              # No speed bonus
+    armor: "leather_armor"

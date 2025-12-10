@@ -1,0 +1,52 @@
+PHASE 13D: BUG FIX RESULTS (50 runs each)
+==========================================
+
+BEFORE FIX:
+-----------
+Baseline (Player 0.25 vs Zombie 0.5):
+  Bonus Attacks: 191 (zombie attacks)
+  
+Full Speed (Player 1.0 vs Zombie 0.5):
+  Bonus Attacks: 0 (BROKEN - player should get bonus attacks)
+
+AFTER FIX:
+----------
+Baseline (Player 0.25 vs Zombie 0.5):
+  Bonus Attacks: 194 (zombie attacks - still working ✓)
+  Player Attacks: 323
+  Monster Attacks: 337
+  
+Full Speed (Player 1.0 vs Zombie 0.5):
+  Bonus Attacks: 132 (PLAYER attacks - NOW WORKING! ✓)
+  Player Attacks: 287
+  Monster Attacks: 79 (much fewer - player dominates with momentum)
+
+COMPARISON:
+-----------
+Baseline → Full Speed impact:
+  - Bonus attacks: 0 → 132 (player momentum working!)
+  - Player attacks: 323 → 287 (slightly fewer needed)
+  - Monster attacks: 337 → 79 (76% reduction!)
+  - Player hit rate: 75.5% → 85.7% (10% improvement)
+  - Monster hit rate: 28.5% → 26.6% (minimal change)
+
+KEY INSIGHT:
+Player with full speed stack (1.0) vs slow zombie (0.5):
+- Gets 132 bonus attacks in 50 duels (~2.6 per duel)
+- Dramatically reduces enemy attack opportunities (337 → 79)
+- Combat ends much faster with sustained momentum
+
+THE BUG:
+--------
+Scenario harness was calling attack_d20() directly without checking
+for bonus attacks. The bonus attack logic only existed in game_actions.py
+which scenarios bypass.
+
+THE FIX:
+--------
+Added bonus attack check to scenario_harness.py:
+- After each player attack, check if player is faster than target
+- If yes, roll for bonus attack using SpeedBonusTracker
+- Execute bonus attack and record metrics
+
+Equipment bonuses were applying correctly all along!

@@ -351,6 +351,7 @@ def _process_player_action(
             
             # Perform attack (with surprise flag if applicable)
             attack_results = player_fighter.attack_d20(target, is_surprise=is_surprise)
+            target_died = False
             for result in attack_results:
                 msg = result.get("message")
                 if msg:
@@ -360,7 +361,36 @@ def _process_player_action(
                     # Record kill attribution
                     if collector:
                         collector.record_kill(player, dead_entity)
+                    if dead_entity == target:
+                        target_died = True
                     _handle_entity_death_simple(game_state, dead_entity, message_log)
+            
+            # Phase 13D: Check for player bonus attack (speed momentum system)
+            # Only roll if target is still alive and player is faster than target
+            if not target_died and target_fighter and target_fighter.hp > 0:
+                speed_tracker = player.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                if speed_tracker:
+                    # Gate: Only roll if player is faster than target
+                    player_speed = speed_tracker.speed_bonus_ratio
+                    target_speed_tracker = target.get_component_optional(ComponentType.SPEED_BONUS_TRACKER)
+                    target_speed = target_speed_tracker.speed_bonus_ratio if target_speed_tracker else 0.0
+                    
+                    if player_speed > target_speed:
+                        # Roll for bonus attack
+                        if speed_tracker.roll_for_bonus_attack():
+                            if collector:
+                                collector.record_bonus_attack(player, target)
+                            # Execute bonus attack immediately
+                            bonus_attack_results = player_fighter.attack_d20(target, is_surprise=False)
+                            for result in bonus_attack_results:
+                                msg = result.get("message")
+                                if msg:
+                                    message_log.add_message(msg)
+                                dead_entity = result.get("dead")
+                                if dead_entity:
+                                    if collector:
+                                        collector.record_kill(player, dead_entity)
+                                    _handle_entity_death_simple(game_state, dead_entity, message_log)
         game_state.current_state = GameStates.ENEMY_TURN
         return
     
