@@ -26,7 +26,7 @@ import logging
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 from components.component_registry import ComponentType
 from game_states import GameStates
@@ -319,7 +319,22 @@ def _process_player_action(
         target_fighter = target.get_component_optional(ComponentType.FIGHTER) if target else None
         
         if player_fighter and target_fighter and target_fighter.hp > 0:
-            attack_results = player_fighter.attack_d20(target)
+            # Check for surprise attack (Phase 9: backstab/stealth mechanics)
+            is_surprise = False
+            try:
+                from components.ai.basic_monster import is_monster_aware, set_monster_aware
+                target_ai = target.get_component_optional(ComponentType.AI)
+                if target_ai and not is_monster_aware(target):
+                    is_surprise = True
+                    if collector:
+                        collector.record_surprise_attack(player, target)
+                    # Mark monster as aware after surprise attack
+                    set_monster_aware(target)
+            except Exception as e:
+                logger.debug(f"Surprise check error: {e}")
+            
+            # Perform attack (with surprise flag if applicable)
+            attack_results = player_fighter.attack_d20(target, is_surprise=is_surprise)
             for result in attack_results:
                 msg = result.get("message")
                 if msg:
@@ -335,6 +350,35 @@ def _process_player_action(
     
     # Fallback: wait
     game_state.current_state = GameStates.ENEMY_TURN
+
+
+def _process_pending_reanimations(game_state: Any, metrics: RunMetrics) -> None:
+    """Process pending plague reanimations.
+    
+    Phase 10: Check for corpses that should reanimate and spawn revenant zombies.
+    
+    Args:
+        game_state: Current game state
+        metrics: RunMetrics to update (reanimations)
+    """
+    from death_functions import process_pending_reanimations
+    
+    collector = get_active_metrics_collector()
+    entities = game_state.entities
+    game_map = game_state.game_map
+    turn_number = getattr(game_state, 'turn_number', 0)
+    
+    # Process reanimations
+    results = process_pending_reanimations(entities, game_map, turn_number)
+    
+    # Add any newly reanimated entities to the entity list and record metrics
+    for result in results:
+        if 'new_entity' in result:
+            new_entity = result['new_entity']
+            entities.append(new_entity)
+            if collector:
+                collector.record_reanimation(new_entity)
+            logger.debug(f"Plague reanimation: {new_entity.name} spawned")
 
 
 def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
@@ -363,10 +407,13 @@ def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
                 game_map = game_state.game_map
                 entities = game_state.entities
                 
-                # Process AI turn
-                entity.ai.take_turn(target, fov_map, game_map, entities, game_state.message_log)
+                # Process AI turn (note: message_log is not used by BasicMonster.take_turn)
+                entity.ai.take_turn(target, fov_map, game_map, entities)
         except Exception as e:
             logger.debug(f"AI turn error for {entity.name}: {e}")
+    
+    # Process pending reanimations (Phase 10: plague zombies)
+    _process_pending_reanimations(game_state, metrics)
     
     # Return to player turn
     game_state.current_state = GameStates.PLAYERS_TURN
@@ -468,6 +515,7 @@ def run_scenario_once(
             validate_scenario_instance(scenario, map_result.game_map, map_result.player, map_result.entities)
 
             game_state = _create_game_state_from_map(map_result, constants)
+            game_state.turn_number = 0  # Track turn number for reanimations
 
             # Main loop
             for turn in range(turn_limit):
@@ -483,6 +531,7 @@ def run_scenario_once(
                 elif game_state.current_state == GameStates.ENEMY_TURN:
                     _process_enemy_turn(game_state, metrics)
                     metrics.turns_taken += 1
+                    game_state.turn_number += 1  # Increment turn for reanimation timing
 
                 elif game_state.current_state == GameStates.PLAYER_DEAD:
                     metrics.player_died = True
@@ -631,9 +680,93 @@ def _reset_global_services() -> None:
 
 
 @dataclass
+class ExpectationResult:
+    """Result for a single expectation check."""
+    key: str
+    expected: Any
+    actual: Any
+    comparator: str
+    passed: bool
+    message: str
+
+
+@dataclass
 class ExpectedCheckResult:
     passed: bool
     failures: List[str]
+
+
+def evaluate_expectations(
+    scenario: Any,
+    metrics: AggregatedMetrics,
+) -> Tuple[List[ExpectationResult], List[str]]:
+    """Evaluate supported expectations and return results plus unsupported keys."""
+    expected = getattr(scenario, "expected", {}) or {}
+    results: List[ExpectationResult] = []
+    unsupported: List[str] = []
+
+    def _record(
+        key: str,
+        expected_value: Any,
+        actual_value: Any,
+        comparator: str,
+        comparison_fn,
+    ) -> None:
+        passed = comparison_fn(actual_value, expected_value)
+        message = f"{key}: expected {comparator} {expected_value}, actual {actual_value}"
+        results.append(
+            ExpectationResult(
+                key=key,
+                expected=expected_value,
+                actual=actual_value,
+                comparator=comparator,
+                passed=passed,
+                message=message,
+            )
+        )
+
+    supported_checks = {
+        "min_player_kills": (
+            ">=",
+            lambda m: m.total_kills_by_source.get("PLAYER", 0),
+            lambda actual, expected_value: actual >= expected_value,
+        ),
+        "max_player_deaths": (
+            "<=",
+            lambda m: m.player_deaths,
+            lambda actual, expected_value: actual <= expected_value,
+        ),
+        "plague_infections_min": (
+            ">=",
+            lambda m: m.total_plague_infections,
+            lambda actual, expected_value: actual >= expected_value,
+        ),
+        "reanimations_min": (
+            ">=",
+            lambda m: m.total_reanimations,
+            lambda actual, expected_value: actual >= expected_value,
+        ),
+        "surprise_attacks_min": (
+            ">=",
+            lambda m: m.total_surprise_attacks,
+            lambda actual, expected_value: actual >= expected_value,
+        ),
+        "bonus_attacks_min": (
+            ">=",
+            lambda m: m.total_bonus_attacks_triggered,
+            lambda actual, expected_value: actual >= expected_value,
+        ),
+    }
+
+    for key, expected_value in expected.items():
+        if key not in supported_checks:
+            unsupported.append(key)
+            continue
+        comparator, actual_getter, compare_fn = supported_checks[key]
+        actual_value = actual_getter(metrics)
+        _record(key, expected_value, actual_value, comparator, compare_fn)
+
+    return results, unsupported
 
 
 def evaluate_expected_invariants(
@@ -641,42 +774,9 @@ def evaluate_expected_invariants(
     metrics: AggregatedMetrics,
 ) -> ExpectedCheckResult:
     """Evaluate scenario.expected constraints against aggregated metrics."""
-    expected = getattr(scenario, "expected", {}) or {}
-    failures: List[str] = []
-    
-    def _check_min(key: str, actual: int, minimum: int) -> None:
-        if actual < minimum:
-            failures.append(f"{key} >= {minimum} (value: {actual})")
-    
-    def _check_max(key: str, actual: int, maximum: int) -> None:
-        if actual > maximum:
-            failures.append(f"{key} <= {maximum} (value: {actual})")
-    
-    key = "min_player_kills"
-    if key in expected:
-        actual = metrics.total_kills_by_source.get("PLAYER", 0)
-        _check_min(key, actual, expected[key])
-    
-    key = "max_player_deaths"
-    if key in expected:
-        _check_max(key, metrics.player_deaths, expected[key])
-    
-    key = "plague_infections_min"
-    if key in expected:
-        _check_min(key, metrics.total_plague_infections, expected[key])
-    
-    key = "reanimations_min"
-    if key in expected:
-        _check_min(key, metrics.total_reanimations, expected[key])
-    
-    key = "surprise_attacks_min"
-    if key in expected:
-        _check_min(key, metrics.total_surprise_attacks, expected[key])
-    
-    key = "bonus_attacks_min"
-    if key in expected:
-        _check_min(key, metrics.total_bonus_attacks_triggered, expected[key])
-    
+    results, unsupported = evaluate_expectations(scenario, metrics)
+    failures = [r.message for r in results if not r.passed]
+    # Unsupported keys are not treated as failures for backwards compatibility.
     return ExpectedCheckResult(passed=len(failures) == 0, failures=failures)
 
 
@@ -691,7 +791,9 @@ __all__ = [
     'ObserveOnlyPolicy',
     'TacticalFighterPolicy',
     'make_bot_policy',
+    'ExpectationResult',
     'ExpectedCheckResult',
+    'evaluate_expectations',
     'evaluate_expected_invariants',
     'run_scenario_once',
     'run_scenario_many',

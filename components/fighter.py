@@ -1278,7 +1278,7 @@ class Fighter:
         # Also check tags for plague_carrier
         if (hasattr(self.owner, 'tags') and 
             self.owner.tags and 
-            isinstance(self.owner.tags, (list, tuple)) and
+            isinstance(self.owner.tags, (list, tuple, set)) and
             'plague_carrier' in self.owner.tags):
             return True
         

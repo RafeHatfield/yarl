@@ -90,6 +90,8 @@ class MonsterDefinition:
     seek_distance: int = 5
     # Special abilities
     special_abilities: Optional[List[str]] = None
+    # Tags for classification (Phase 10: corporeal_flesh, undead, plague_carrier, etc.)
+    tags: Optional[List[str]] = None
     # Equipment system - monsters can spawn with equipment
     equipment: Optional[Dict[str, Any]] = None  # Equipment configuration
     # Boss system
@@ -460,6 +462,8 @@ class EntityRegistry:
                     seek_distance=monster_data.get('seek_distance', 5),
                     # Special abilities
                     special_abilities=monster_data.get('special_abilities', None),
+                    # Tags for classification (Phase 10: corporeal_flesh, plague_carrier, etc.)
+                    tags=monster_data.get('tags', None),
                     # Equipment system
                     equipment=monster_data.get('equipment', None),
                     # Boss system

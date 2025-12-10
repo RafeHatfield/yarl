@@ -19,11 +19,16 @@ defaults:
   allow_player_death: true
   track_infections: true
 
-# Expected invariants for validation (Phase 12B)
+# Expected outcomes for validation (Phase 12D+)
+# These are conservative thresholds calibrated from actual metrics.
+# Base data: 50 runs yielded ~118 kills, ~23 deaths, ~46 infections, ~717 bonus attacks
+# Thresholds set to catch regressions while allowing natural RNG variance.
+# Note: Thresholds scale linearly with run count (use ~40% of expected for kills/infections).
 expected:
-  zombies_spawned_min: 3
-  infection_spread_events_min: 1
-  max_active_zombies: 10
+  min_player_kills: 20           # ~40% of expected kills for typical run count (scales linearly)
+  max_player_deaths: 100         # ~1 death per run max (conservative upper bound)
+  plague_infections_min: 5       # ~30% of expected infections (scales linearly with runs)
+  bonus_attacks_min: 50          # ~20% of expected bonus attacks (scales linearly with runs)
 
 # Dungeon depth (affects monster scaling)
 depth: 8

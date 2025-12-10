@@ -637,6 +637,7 @@ class BasicMonster:
         from balance.hit_model import roll_to_hit_entities
         from visual_effects import show_miss
         
+        collector = _get_metrics_collector()
         results = []
         
         # Roll to hit based on accuracy vs evasion

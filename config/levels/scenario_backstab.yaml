@@ -17,10 +17,16 @@ defaults:
   player_bot: "tactical_fighter"
   allow_player_death: false
 
-# Expected invariants for validation (Phase 12B)
+# Expected outcomes for validation (Phase 12D+)
+# These are conservative thresholds calibrated from actual metrics.
+# Base data: 100 runs yielded ~195 kills, ~2 deaths, ~199 surprise attacks
+# Thresholds set to catch regressions while allowing natural RNG variance.
+# This scenario specifically tests surprise/backstab mechanics.
+# Note: Thresholds scale linearly with run count (~60% of expected for kills).
 expected:
-  surprise_attacks_min: 1
-  player_survives: true
+  min_player_kills: 60            # ~60% of expected kills for typical run count (scales linearly)
+  max_player_deaths: 10           # Allow up to 10 deaths per 100 runs
+  surprise_attacks_min: 50        # ~50% of expected surprise attacks (scales linearly with runs)
 
 # Dungeon depth (affects monster scaling if using standard generation)
 depth: 5

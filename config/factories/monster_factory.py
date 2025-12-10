@@ -100,6 +100,10 @@ class MonsterFactory(FactoryBase):
             if hasattr(monster_def, 'special_abilities') and monster_def.special_abilities:
                 monster.special_abilities = monster_def.special_abilities
             
+            # Set tags if defined (Phase 10: for plague_carrier, corporeal_flesh, etc.)
+            if hasattr(monster_def, 'tags') and monster_def.tags:
+                monster.tags = set(monster_def.tags)
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai

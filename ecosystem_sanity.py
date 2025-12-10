@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Ecosystem Sanity - Scenario Simulation Harness CLI.
 
-Phase 12B: Scenario Harness & Basic Metrics
+Phase 12D/12E: Metrics, Expectations, and JSON Export
 
 This script provides a CLI interface for running scenario simulations:
 - List available scenarios
 - Run scenarios with configurable parameters
-- Collect and display basic metrics
+- Collect and display metrics (including plague/surprise/bonus details)
+- Evaluate scenario `expected:` outcomes (optional fail-on-expected)
+- Export aggregated metrics to JSON via --export-json
 
 Usage:
     python3 ecosystem_sanity.py --list                     # List scenarios
@@ -30,8 +32,10 @@ import os
 import sys
 import logging
 import warnings
+import json
+from typing import Optional
 from services.scenario_invariants import ScenarioInvariantError
-from services.scenario_harness import evaluate_expected_invariants
+from services.scenario_harness import evaluate_expectations
 
 # Force headless mode before any tcod imports
 os.environ['SDL_VIDEODRIVER'] = 'dummy'
@@ -100,6 +104,7 @@ def run_scenario(
     player_bot: str,
     verbose: bool,
     fail_on_expected: bool,
+    export_json: Optional[str],
 ) -> int:
     """Run a scenario and display results.
     
@@ -172,6 +177,10 @@ def run_scenario(
     print(f"Runs: {metrics.runs}")
     print(f"Average Turns: {metrics.average_turns:.1f}")
     print(f"Player Deaths: {metrics.player_deaths}")
+    print(f"Total Plague Infections: {metrics.total_plague_infections}")
+    print(f"Total Reanimations: {metrics.total_reanimations}")
+    print(f"Total Surprise Attacks: {metrics.total_surprise_attacks}")
+    print(f"Total Bonus Attacks: {metrics.total_bonus_attacks_triggered}")
     
     if metrics.total_kills_by_faction:
         print("\nKills by Faction:")
@@ -180,34 +189,55 @@ def run_scenario(
     else:
         print("\nKills by Faction: (none recorded)")
     
+    if metrics.total_kills_by_source:
+        print("\nKills by Source:")
+        for source, count in sorted(metrics.total_kills_by_source.items()):
+            print(f"  {source}: {count}")
+    
     print("=" * 60)
     
     # Expected outcomes
-    check_result = evaluate_expected_invariants(scenario, metrics)
+    expectation_results, unsupported_keys = evaluate_expectations(scenario, metrics)
     print("\nExpected Outcomes:")
     if not scenario.expected:
         print("  (none specified)")
     else:
-        failure_keys = {
-            f.split()[0] for f in check_result.failures
-        }
-        for key, label, actual in [
-            ("min_player_kills", "min_player_kills >=", metrics.total_kills_by_source.get("PLAYER", 0)),
-            ("max_player_deaths", "max_player_deaths <=", metrics.player_deaths),
-            ("plague_infections_min", "plague_infections_min >=", metrics.total_plague_infections),
-            ("reanimations_min", "reanimations_min >=", metrics.total_reanimations),
-            ("surprise_attacks_min", "surprise_attacks_min >=", metrics.total_surprise_attacks),
-            ("bonus_attacks_min", "bonus_attacks_min >=", metrics.total_bonus_attacks_triggered),
-        ]:
-            if key in scenario.expected:
-                expected_value = scenario.expected[key]
-                passed = key not in failure_keys
-                status = "PASS" if passed else "FAIL"
-                print(f"  - {label} {expected_value}: {status} (value: {actual})")
+        if expectation_results:
+            for result in expectation_results:
+                status = "PASS" if result.passed else "FAIL"
+                print(
+                    f"  - {result.key}: expected {result.comparator} {result.expected}, "
+                    f"actual {result.actual}  -> {status}"
+                )
+        if unsupported_keys:
+            for key in unsupported_keys:
+                print(f"  ! Unsupported expectation key: {key}")
     print()
     
-    if fail_on_expected and not check_result.passed:
-        return 1
+    expectations_failed = any(not r.passed for r in expectation_results)
+
+    # JSON export (if requested)
+    if export_json:
+        payload = {
+            "scenario_id": scenario_id,
+            "runs": runs,
+            "turn_limit": turn_limit,
+            "player_bot": player_bot,
+            "metrics": metrics.to_dict(),
+        }
+        try:
+            with open(export_json, "w", encoding="utf-8") as f:
+                json.dump(payload, f, separators=(",", ":"))
+        except OSError as e:
+            print(f"Error: Failed to write JSON export to '{export_json}': {e}")
+            return 1
+    
+    if fail_on_expected:
+        if expectations_failed:
+            print("One or more expectations FAILED.")
+            return 1
+        else:
+            print("All expectations passed.")
     
     return 0
 
@@ -275,6 +305,13 @@ Examples:
         action='store_true',
         help='Exit non-zero if expected invariants fail'
     )
+    parser.add_argument(
+        '--export-json',
+        type=str,
+        default=None,
+        metavar='PATH',
+        help='Write aggregated metrics JSON to PATH'
+    )
     
     args = parser.parse_args()
     
@@ -315,6 +352,7 @@ Examples:
             player_bot=player_bot,
             verbose=args.verbose,
             fail_on_expected=args.fail_on_expected,
+            export_json=args.export_json,
         )
     
     # Should not reach here due to mutually exclusive group

@@ -125,3 +125,28 @@ jobs:
           else
             echo "No loot_sanity.log found."
           fi
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Ecosystem Sanity (hard gate - must pass)
+      # Runs key combat/ecology scenarios to guard against regressions:
+      # - plague_arena: plague infection + momentum/bonus attack mechanics
+      # - backstab_training: surprise/backstab + awareness mechanics
+      # Uses higher run counts for more comprehensive validation
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Run plague_arena scenario (comprehensive)
+        run: |
+          python3 ecosystem_sanity.py \
+            --scenario plague_arena \
+            --runs 50 \
+            --turn-limit 500 \
+            --player-bot tactical_fighter \
+            --fail-on-expected
+
+      - name: Run backstab_training scenario (comprehensive)
+        run: |
+          python3 ecosystem_sanity.py \
+            --scenario backstab_training \
+            --runs 100 \
+            --turn-limit 50 \
+            --player-bot tactical_fighter \
+            --fail-on-expected
