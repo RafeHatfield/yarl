@@ -14,6 +14,14 @@ from config.game_constants import get_constants
 from entity_sorting_cache import invalidate_entity_cache
 from entity_dialogue import EntityDialogue
 from components.component_registry import ComponentType
+
+
+def _get_metrics_collector():
+    try:
+        from services.scenario_metrics import get_active_metrics_collector
+        return get_active_metrics_collector()
+    except Exception:
+        return None
 from logger_config import get_logger
 
 logger = get_logger(__name__)
@@ -781,6 +789,7 @@ class ActionProcessor:
             is_bonus_attack: If True, this is a bonus attack from the speed system
                             (prevents recursive bonus attack rolls)
         """
+        collector = _get_metrics_collector()
         attacker_fighter = attacker.get_component_optional(ComponentType.FIGHTER)
         target_fighter = target.get_component_optional(ComponentType.FIGHTER)
         if not (attacker_fighter and target_fighter):
@@ -824,6 +833,8 @@ class ActionProcessor:
             if target_ai and not is_monster_aware(target):
                 is_surprise_attack = True
                 logger.info(f"[SURPRISE ATTACK] {attacker.name} strikes {target.name} from the shadows!")
+                if collector:
+                    collector.record_surprise_attack(attacker, target)
         
         # ═══════════════════════════════════════════════════════════════════════
         # PHASE 8: Hit/Miss Roll (accuracy vs evasion)
@@ -866,6 +877,8 @@ class ActionProcessor:
                     # Gate: Only roll if attacker is faster than defender
                     if self._can_build_momentum(attacker, target):
                         if speed_tracker.roll_for_bonus_attack():
+                            if collector:
+                                collector.record_bonus_attack(attacker, target)
                             # Bonus attack! Try again (might hit this time)
                             self._handle_combat(attacker, target, is_bonus_attack=True)
                         else:
@@ -909,6 +922,8 @@ class ActionProcessor:
             if dead_entity:
                 # Combat deaths should transform to corpses (keep in entities list)
                 self._handle_entity_death(dead_entity, remove_from_entities=False)
+                if collector:
+                    collector.record_kill(attacker, dead_entity)
                 if dead_entity == target:
                     target_died = True
 
@@ -924,6 +939,8 @@ class ActionProcessor:
                 if self._can_build_momentum(attacker, target):
                     # Roll for bonus attack
                     if speed_tracker.roll_for_bonus_attack():
+                        if collector:
+                            collector.record_bonus_attack(attacker, target)
                         # Bonus attack! Execute immediately (same target, no recursion)
                         self._handle_combat(attacker, target, is_bonus_attack=True)
                     else:

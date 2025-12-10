@@ -25,6 +25,7 @@ from config.factories import get_entity_factory
 from config.game_constants import get_combat_config, get_inventory_config
 from entity import Entity
 from map_objects.game_map import GameMap
+from render_functions import RenderOrder
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,16 @@ def _spawn_monsters(monster_entries, entities: List[Entity], game_map: GameMap, 
         if not monster_type:
             continue
         count = max(1, int(entry.get("count", 1)))
+        
+        # Special-case inert corpses: they are not true monsters and should not
+        # go through the monster factory (avoids "Unknown monster type: corpse").
+        if monster_type == "corpse":
+            for _ in range(count):
+                x, y = _resolve_position(entry, game_map, entities, rng)
+                corpse = _create_corpse_entity(x, y, entry)
+                entities.append(corpse)
+            continue
+        
         for _ in range(count):
             x, y = _resolve_position(entry, game_map, entities, rng)
             monster = factory.create_monster(monster_type, x, y)
@@ -278,6 +289,24 @@ def _resolve_position(entry: Dict[str, Any], game_map: GameMap, entities: List[E
                 return rx, ry
 
     return _random_walkable_position(game_map, entities, rng)
+
+
+def _create_corpse_entity(x: int, y: int, entry: Dict[str, Any]) -> Entity:
+    """Create an inert corpse entity (non-monster)."""
+    name = entry.get("name") or "corpse"
+    corpse = Entity(
+        x=x,
+        y=y,
+        char='%',
+        color=(127, 0, 0),
+        name=name,
+        blocks=False,
+        render_order=RenderOrder.CORPSE,
+    )
+    # Corpses should not have combat or AI components
+    corpse.fighter = None
+    corpse.ai = None
+    return corpse
 
 
 def _position_from_region(region: str, game_map: GameMap, rng: random.Random) -> Tuple[Optional[int], Optional[int]]:
