@@ -389,6 +389,75 @@ class TestAutoExploreIntegration:
             assert len(auto_explore.known_items) == 0
 
 
+def test_auto_explore_not_cancelled_by_initiating_right_click(monkeypatch):
+    """Ensure the initiating right-click that starts auto-explore does not immediately cancel it."""
+    from types import SimpleNamespace
+    from game_states import GameStates
+    from game_actions import ActionProcessor
+
+    class DummyStateManager:
+        def __init__(self, state):
+            self.state = state
+            self._extras = {}
+
+        def set_extra_data(self, key, value):
+            self._extras[key] = value
+
+        def get_extra_data(self, key, default=None):
+            return self._extras.get(key, default)
+
+        def set_game_state(self, new_state):
+            self.state.current_state = new_state
+
+    auto_explore = AutoExplore()
+    auto_explore.active = True
+    auto_explore.stop_reason = None
+    auto_explore.stop = Mock()
+
+    class DummyPlayer:
+        def __init__(self):
+            self.x = 1
+            self.y = 1
+            self.components = Mock()
+            self._components = {ComponentType.AUTO_EXPLORE: auto_explore}
+
+        def get_component_optional(self, component):
+            return self._components.get(component)
+
+    player = DummyPlayer()
+    auto_explore.owner = player
+
+    state = SimpleNamespace(
+        current_state=GameStates.PLAYERS_TURN,
+        player=player,
+        entities=[],
+        game_map=Mock(),
+        message_log=Mock(),
+        fov_map=Mock(),
+    )
+    state_manager = DummyStateManager(state)
+    # Simulate prior run state (no special flag required for guard)
+    state_manager.set_extra_data("auto_explore_suppress_cancel_once", False)
+
+    # Stub out turn controller and auto-explore stepping to avoid side effects
+    monkeypatch.setattr("systems.turn_controller.initialize_turn_controller", lambda *args, **kwargs: Mock())
+
+    action_processor = ActionProcessor(state_manager, is_bot_mode=False)
+    action_processor.turn_controller = Mock()
+    action_processor._process_auto_explore_turn = Mock()
+
+    right_click_action = {"right_click": (5, 5)}
+    duplicate_right_click = {"right_click": (5, 5)}
+
+    action_processor.process_actions({}, right_click_action)
+    # Duplicate event should be suppressed, not cancel
+    action_processor.process_actions({}, duplicate_right_click)
+
+    assert auto_explore.active is True
+    auto_explore.stop.assert_not_called()
+    action_processor._process_auto_explore_turn.assert_called()
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
 
