@@ -6,10 +6,11 @@ the bot to systematically explore the dungeon.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from io_layer.interfaces import ActionDict, InputSource
 from io_layer.bot_brain import BotBrain
+from io_layer.bot_metrics import BotDecisionTelemetry, BotMetricsRecorder
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,8 @@ class BotInputSource:
         self, 
         action_interval: int = 1, 
         debug: bool = False,
-        persona: str = None
+        persona: str = None,
+        metrics_recorder: Optional[BotMetricsRecorder] = None,
     ) -> None:
         """Initialize the BotInputSource.
 
@@ -58,7 +60,12 @@ class BotInputSource:
         self._failed_explore_attempts = 0  # Track consecutive failed explore start attempts on "fully explored"
         self._last_auto_explore_active = False  # Track if autoexplore was active last call
         self._fully_explored_detected = False  # Track if we've detected "All areas explored" condition
-        self.bot_brain = BotBrain(debug=debug, persona=persona)
+        self.bot_brain = BotBrain(
+            debug=debug,
+            persona=persona,
+            metrics_recorder=metrics_recorder,
+        )
+        self._metrics_recorder = metrics_recorder
     
     def _is_soak_mode(self, game_state: Any) -> bool:
         """Check if we are in bot soak mode.
@@ -106,30 +113,30 @@ class BotInputSource:
         
         # Defensive: Check for valid game_state with current_state attribute
         if not game_state or not hasattr(game_state, 'current_state'):
-            return {}
+            return self._return_with_metrics({}, game_state)
         
         # Only generate actions during actual gameplay
         if game_state.current_state != GameStates.PLAYERS_TURN:
             # Return empty action dict for non-playing states
             # This prevents the infinite loop bug where the bot would feed
             # actions even after player death or when in a menu
-            return {}
+            return self._return_with_metrics({}, game_state)
         
         # Throttle action generation to reduce tight-loop pressure
         self._frame_counter += 1
         if self._frame_counter < self._action_interval:
-            return {}
+            return self._return_with_metrics({}, game_state)
         
         self._frame_counter = 0
         
         # Get player entity for auto-explore check and soak-related tracking
         player = getattr(game_state, 'player', None)
         if not player:
-            return {'wait': True}
+            return self._return_with_metrics({'wait': True}, game_state)
         
         # REQUIRED FIX 1: Defensive fallback for missing get_component_optional method
         if not hasattr(player, "get_component_optional"):
-            return {'wait': True}
+            return self._return_with_metrics({'wait': True}, game_state)
         
         # AUTO-EXPLORE SHORT-CIRCUIT (Phase 1 compatibility)
         # Check if auto-explore is already active
@@ -161,16 +168,16 @@ class BotInputSource:
             # BotBrain returned a non-empty action (Phase 2 behavior)
             self._auto_explore_started = True
             self._last_auto_explore_active = auto_explore_active
-            return action
+            return self._return_with_metrics(action, game_state)
         
         # Fallback: Start auto-explore if available
         if auto_explore is not None or hasattr(player, 'get_component_optional'):
             self._auto_explore_started = True
             self._last_auto_explore_active = auto_explore_active
-            return {"start_auto_explore": True}
+            return self._return_with_metrics({"start_auto_explore": True}, game_state)
         else:
             self._last_auto_explore_active = auto_explore_active
-            return {}
+            return self._return_with_metrics({}, game_state)
     
     def reset_bot_run_state(self) -> None:
         """Reset bot run state for a new run.
@@ -181,4 +188,84 @@ class BotInputSource:
         self._last_auto_explore_active = False
         self._auto_explore_started = False
         self._fully_explored_detected = False
+
+    # ------------------------------------------------------------------#
+    # Telemetry helpers
+    # ------------------------------------------------------------------#
+    def _return_with_metrics(self, action: Any, game_state: Any) -> Any:
+        """Record telemetry (if enabled) and return the action unchanged."""
+        self._record_telemetry(action, game_state)
+        return action
+
+    def _record_telemetry(self, action: Any, game_state: Any) -> None:
+        if not self._metrics_recorder or not self._metrics_recorder.enabled:
+            return
+
+        # Capture a read-only snapshot from BotBrain
+        try:
+            snapshot = self.bot_brain.get_state_snapshot(game_state)
+        except Exception:
+            snapshot = {
+                "state": "unknown",
+                "turn_number": 0,
+                "persona": "unknown",
+                "in_combat": False,
+                "in_explore": False,
+                "in_loot": False,
+                "low_hp": False,
+                "floor_complete": False,
+                "auto_explore_active": False,
+                "visible_enemies": 0,
+                "floor": None,
+            }
+
+        action_type, reason = self._classify_action(action, snapshot)
+
+        telemetry = BotDecisionTelemetry(
+            run_id=self._metrics_recorder.run_id,
+            floor=snapshot.get("floor"),
+            turn_number=snapshot.get("turn_number", 0),
+            action_type=action_type,
+            reason=reason,
+            in_combat=bool(snapshot.get("in_combat")),
+            in_explore=bool(snapshot.get("in_explore")),
+            in_loot=bool(snapshot.get("in_loot")),
+            low_hp=bool(snapshot.get("low_hp")),
+            floor_complete=bool(snapshot.get("floor_complete")),
+            auto_explore_active=bool(snapshot.get("auto_explore_active")),
+            visible_enemies=int(snapshot.get("visible_enemies") or 0),
+        )
+        self._metrics_recorder.record_decision(telemetry)
+
+    def _classify_action(
+        self, action: Any, snapshot: dict
+    ) -> Tuple[str, str]:
+        """Return (action_type, reason) classification."""
+        if not isinstance(action, dict) or not action:
+            # Treat wait/no-op consistently
+            return ("noop", "idle")
+
+        if "bot_abort_run" in action:
+            reason = str(action.get("bot_abort_run")) or "abort"
+            return ("abort", reason)
+        if "inventory_index" in action:
+            return ("drink_potion", "heal_low_hp" if snapshot.get("low_hp") else "potion")
+        if "take_stairs" in action:
+            return ("take_stairs", "descend")
+        if "pickup" in action:
+            return ("pickup", "loot")
+        if "start_auto_explore" in action:
+            return ("start_auto_explore", "explore")
+        if "move" in action:
+            return (
+                "move",
+                "combat_engage" if snapshot.get("in_combat") else "navigate",
+            )
+        if "attack" in action or "melee_attack" in action:
+            return ("attack", "combat_engage")
+        if "wait" in action:
+            return ("wait", "stall")
+
+        # Default fallback
+        return ("other", "other")
 
