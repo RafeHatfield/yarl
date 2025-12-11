@@ -17,7 +17,6 @@ This short-label approach ensures stable, non-flickering tooltips and prevents i
 overload during exploration. Full lore/story text is reserved for interaction messages.
 """
 
-import tcod.libtcodpy as libtcod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional, Any, Sequence, Tuple, List
@@ -749,142 +748,22 @@ def _build_multi_entity_lines(entities: Sequence[Any]) -> List[str]:
     return tooltip_lines
 
 
-def _draw_tooltip_box(
-    console,
-    tooltip_lines: Sequence[str],
-    mouse_x: int,
-    mouse_y: int,
-    bounds_width: int,
-    bounds_height: int,
-) -> None:
-    if not tooltip_lines:
-        return
-
-    tooltip_width = max(len(line) for line in tooltip_lines) + 4
-    tooltip_height = len(tooltip_lines) + 2
-
-    from ui.debug_flags import ENABLE_TOOLTIP_DEBUG
-
-    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
-        logger.debug(
-            "TOOLTIP_GEOMETRY_RAW: mouse=(%d,%d) w=%d h=%d",
-            mouse_x,
-            mouse_y,
-            tooltip_width,
-            tooltip_height,
-        )
-
-    tooltip_x = mouse_x + 2
-    tooltip_y = mouse_y + 1
-
-    if tooltip_x + tooltip_width > bounds_width:
-        tooltip_x = bounds_width - tooltip_width - 1
-    if tooltip_y + tooltip_height > bounds_height:
-        tooltip_y = bounds_height - tooltip_height - 1
-
-    tooltip_x = max(1, tooltip_x)
-    tooltip_y = max(1, tooltip_y)
-
-    if ENABLE_TOOLTIP_DEBUG and logger.isEnabledFor(logging.DEBUG):
-        logger.debug(
-            "TOOLTIP_GEOMETRY_CLAMPED: x=%d y=%d w=%d h=%d",
-            tooltip_x,
-            tooltip_y,
-            tooltip_width,
-            tooltip_height,
-        )
-
-    for y in range(tooltip_height):
-        for x in range(tooltip_width):
-            libtcod.console_put_char(console, tooltip_x + x, tooltip_y + y, ord(' '), libtcod.BKGND_SET)
-            libtcod.console_set_char_background(
-                console,
-                tooltip_x + x,
-                tooltip_y + y,
-                libtcod.Color(40, 40, 40),
-                libtcod.BKGND_SET,
-            )
-
-    libtcod.console_set_default_foreground(console, libtcod.Color(200, 200, 200))
-    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
-
-    for x in range(tooltip_width):
-        libtcod.console_put_char(console, tooltip_x + x, tooltip_y, ord('─'), libtcod.BKGND_SET)
-        libtcod.console_put_char(
-            console, tooltip_x + x, tooltip_y + tooltip_height - 1, ord('─'), libtcod.BKGND_SET
-        )
-
-    for y in range(tooltip_height):
-        libtcod.console_put_char(console, tooltip_x, tooltip_y + y, ord('│'), libtcod.BKGND_SET)
-        libtcod.console_put_char(
-            console, tooltip_x + tooltip_width - 1, tooltip_y + y, ord('│'), libtcod.BKGND_SET
-        )
-
-    libtcod.console_put_char(console, tooltip_x, tooltip_y, ord('┌'), libtcod.BKGND_SET)
-    libtcod.console_put_char(console, tooltip_x + tooltip_width - 1, tooltip_y, ord('┐'), libtcod.BKGND_SET)
-    libtcod.console_put_char(
-        console, tooltip_x, tooltip_y + tooltip_height - 1, ord('└'), libtcod.BKGND_SET
-    )
-    libtcod.console_put_char(
-        console,
-        tooltip_x + tooltip_width - 1,
-        tooltip_y + tooltip_height - 1,
-        ord('┘'),
-        libtcod.BKGND_SET,
-    )
-
-    libtcod.console_set_default_foreground(console, libtcod.Color(255, 255, 255))
-    libtcod.console_set_default_background(console, libtcod.Color(40, 40, 40))
-    for idx, line in enumerate(tooltip_lines):
-        libtcod.console_print_ex(
-            console,
-            tooltip_x + 2,
-            tooltip_y + 1 + idx,
-            libtcod.BKGND_SET,
-            libtcod.LEFT,
-            line,
-        )
-
-
 def render_tooltip(console, entity: Any, mouse_x: int, mouse_y: int, ui_layout) -> None:
-    if not entity:
-        return
+    from io_layer import tooltip_renderer
 
-    tooltip_lines = _build_single_entity_lines(entity)
-    screen_pos = (int(mouse_x), int(mouse_y))
-    _render_lines_for_anchor(console, tooltip_lines, screen_pos, TooltipAnchor.VIEWPORT, ui_layout)
+    tooltip_renderer.render_tooltip(console, entity, mouse_x, mouse_y, ui_layout)
 
 
 def render_multi_entity_tooltip(console, entities: list, mouse_x: int, mouse_y: int, ui_layout) -> None:
-    if not entities:
-        return
+    from io_layer import tooltip_renderer
 
-    tooltip_lines = _build_multi_entity_lines(entities)
-    screen_pos = (int(mouse_x), int(mouse_y))
-    _render_lines_for_anchor(console, tooltip_lines, screen_pos, TooltipAnchor.VIEWPORT, ui_layout)
+    tooltip_renderer.render_multi_entity_tooltip(console, entities, mouse_x, mouse_y, ui_layout)
 
 
 def render(model: TooltipModel, viewport_console, sidebar_console) -> None:
-    """Draw the tooltip described by ``model`` onto the supplied console."""
-    if model.kind == TooltipKind.NONE or model.screen_position is None:
-        return
+    from io_layer import tooltip_renderer
 
-    target_console = viewport_console if model.anchor is TooltipAnchor.VIEWPORT else sidebar_console
-    if target_console is None:
-        return
-
-    mouse_x, mouse_y = model.screen_position
-    ui_layout = get_ui_layout()
-
-    if model.lines:
-        tooltip_lines = list(model.lines)
-    elif model.kind == TooltipKind.MULTI:
-        tooltip_lines = _build_multi_entity_lines(model.entities)
-    else:
-        entity = model.entities[0] if model.entities else None
-        tooltip_lines = _build_single_entity_lines(entity)
-
-    _render_lines_for_anchor(target_console, tooltip_lines, (mouse_x, mouse_y), model.anchor, ui_layout)
+    tooltip_renderer.render(model, viewport_console, sidebar_console)
 
 
 

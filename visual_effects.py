@@ -14,7 +14,6 @@ Phase 3: Path effects (Lightning)
 Phase 4: Special effects (Dragon Fart, etc.)
 """
 
-import tcod.libtcodpy as libtcodpy
 from typing import List, Tuple, Optional, Any
 from visual_effect_queue import (
     get_effect_queue,
@@ -148,18 +147,37 @@ class VisualEffects:
         if duration is None:
             duration = VisualEffects.PATH_DURATION
         
-        # Calculate path using Bresenham's line algorithm (TCOD provides this)
-        path_tiles = []
-        libtcodpy.line_init(start[0], start[1], end[0], end[1])
-        x, y = libtcodpy.line_step()
-        while x is not None:
-            path_tiles.append((x, y))
-            x, y = libtcodpy.line_step()
+        path_tiles = _bresenham_line(start, end)
         
         # Queue the effect instead of showing it immediately
         # This ensures it's rendered during the proper render cycle
         get_effect_queue().queue_lightning(path_tiles, char=ord(char) if isinstance(char, str) else char, 
                                           color=color, duration=duration)
+
+
+def _bresenham_line(start: Tuple[int, int], end: Tuple[int, int]) -> List[Tuple[int, int]]:
+    """Return integer coordinates along a Bresenham line from start to end."""
+    x0, y0 = start
+    x1, y1 = end
+    dx = abs(x1 - x0)
+    dy = -abs(y1 - y0)
+    sx = 1 if x0 < x1 else -1
+    sy = 1 if y0 < y1 else -1
+    err = dx + dy
+    line: List[Tuple[int, int]] = []
+
+    while True:
+        line.append((x0, y0))
+        if x0 == x1 and y0 == y1:
+            break
+        e2 = 2 * err
+        if e2 >= dy:
+            err += dy
+            x0 += sx
+        if e2 <= dx:
+            err += dx
+            y0 += sy
+    return line
 
 
 # Convenience functions for common effects

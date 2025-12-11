@@ -10,7 +10,6 @@ from typing import List, Tuple, Optional, TYPE_CHECKING
 import logging
 
 import tcod
-import tcod.libtcodpy as libtcodpy
 
 from config.game_constants import get_pathfinding_config
 from fov_functions import map_is_in_fov
@@ -304,32 +303,14 @@ class PlayerPathfinding:
         logger.debug(f"Computing path to ({target_x}, {target_y}), in_fov={destination_in_fov}, "
                     f"max_length={max_path_length}")
         
-        # Allocate a A* path
-        my_path = libtcodpy.path_new_using_map(fov, pathfinding_config.DIAGONAL_MOVE_COST)
-        
-        try:
-            # Compute the path between player's coordinates and the target coordinates
-            libtcodpy.path_compute(my_path, self.owner.x, self.owner.y, target_x, target_y)
-            
-            # Check if the path exists and is reasonable length
-            if (libtcodpy.path_is_empty(my_path) or 
-                libtcodpy.path_size(my_path) >= max_path_length):
-                return []
-            
-            # Extract the path coordinates
-            path = []
-            while not libtcodpy.path_is_empty(my_path):
-                x, y = libtcodpy.path_walk(my_path, True)
-                if x is not None and y is not None:
-                    path.append((x, y))
-                else:
-                    break
-            
-            return path
-            
-        finally:
-            # Path objects are automatically deleted by libtcod (no manual cleanup needed)
-            pass
+        cost = fov.walkable.astype("int8")
+        astar = tcod.path.AStar(cost, diagonal=pathfinding_config.DIAGONAL_MOVE_COST)
+        path: List[Tuple[int, int]] = astar.get_path(self.owner.x, self.owner.y, target_x, target_y)
+
+        if not path or len(path) >= max_path_length:
+            return []
+
+        return [(int(x), int(y)) for x, y in path]
     
     def _complete_movement(self) -> None:
         """Complete the current movement and clean up state."""

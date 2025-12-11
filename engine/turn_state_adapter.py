@@ -92,7 +92,7 @@ class TurnStateAdapter:
         used to synchronize state, not advance through a sequence.
         """
         self.state_manager.set_game_state(GameStates.ENEMY_TURN)
-        if self.turn_manager and not self.turn_manager.is_phase(TurnPhase.ENEMY):
+        if self.turn_manager:
             self.turn_manager.advance_turn(TurnPhase.ENEMY)
 
     def set_player_state(self, state: GameStates = GameStates.PLAYERS_TURN) -> None:
@@ -102,7 +102,13 @@ class TurnStateAdapter:
         used to synchronize state, not advance through a sequence.
         """
         self.state_manager.set_game_state(state)
-        if self.turn_manager and not self.turn_manager.is_phase(TurnPhase.PLAYER):
+        if self.turn_manager:
+            is_phase_fn = getattr(self.turn_manager, "is_phase", None)
+            try:
+                if callable(is_phase_fn) and is_phase_fn(TurnPhase.PLAYER):
+                    return
+            except Exception:
+                pass
             self.turn_manager.advance_turn(TurnPhase.PLAYER)
 
     # ---------------------------------------------------------- Phase control
@@ -113,7 +119,7 @@ class TurnStateAdapter:
         the manager to increment turn counters and notify listeners properly.
         Only advances if not already in the target phase.
         """
-        if self.turn_manager and not self.turn_manager.is_phase(TurnPhase.ENVIRONMENT):
+        if self.turn_manager:
             self.turn_manager.advance_turn()  # Sequential advance
 
     def advance_to_player_phase(self) -> None:
@@ -123,7 +129,7 @@ class TurnStateAdapter:
         the manager to increment turn counters and notify listeners properly.
         Only advances if not already in the target phase.
         """
-        if self.turn_manager and not self.turn_manager.is_phase(TurnPhase.PLAYER):
+        if self.turn_manager:
             self.turn_manager.advance_turn()  # Sequential advance
 
     def advance_to_enemy_phase(self) -> None:
@@ -133,5 +139,5 @@ class TurnStateAdapter:
         the manager to increment turn counters and notify listeners properly.
         Only advances if not already in the target phase.
         """
-        if self.turn_manager and not self.turn_manager.is_phase(TurnPhase.ENEMY):
+        if self.turn_manager:
             self.turn_manager.advance_turn()  # Sequential advance

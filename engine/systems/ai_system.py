@@ -205,21 +205,18 @@ class AISystem(System):
             # SIMPLIFIED TURN TRANSITION: Always go back to PLAYERS_TURN
             # ─────────────────────────────────────────────────────────────────
             
-            # Advance through turn phases if using TurnManager
-            turn_manager = getattr(self.engine, "turn_manager", None)
-            if turn_manager:
-                turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
-                
-                # GUARD: Check if player died from environmental effects
+            adapter = self.turn_adapter
+            if adapter and adapter.has_turn_manager:
+                adapter.advance_to_environment_phase()  # ENEMY → ENVIRONMENT
+
                 if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                     return
-                
-                turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
-                
+
+                adapter.advance_to_player_phase()  # ENVIRONMENT → PLAYER
+
                 # Process player status effects at start of their turn
                 self._process_player_status_effects(game_state)
-                
-                # GUARD: Check if player died from status effects
+
                 if state_manager.state.current_state == GameStates.PLAYER_DEAD:
                     return
             
