@@ -52,6 +52,11 @@ class ScenarioMetricsCollector:
         if hit:
             self.metrics.monster_hits += 1
 
+    def record_portal_use(self) -> None:
+        """Record a portal teleportation event."""
+        if hasattr(self.metrics, "portals_used"):
+            self.metrics.portals_used += 1
+
 
 _active_scenario_metrics_collector: Optional[ScenarioMetricsCollector] = None
 

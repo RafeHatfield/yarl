@@ -97,3 +97,5 @@ def display_hall_of_fame(con, root_console, screen_width, screen_height) -> None
     tcod.console_flush()
 
     tcod.console_wait_for_keypress(True)
+
+

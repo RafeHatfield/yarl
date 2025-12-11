@@ -20,3 +20,5 @@ def render_effects(draw_calls: Iterable[DrawCall], console=0) -> None:
         libtcod.console_put_char(
             console, call.x, call.y, call.char, libtcod.BKGND_NONE
         )
+
+

@@ -234,6 +234,15 @@ class PortalManager:
                                 entity.name,
                                 intensity='high' if not is_monster else 'medium'
                             )
+
+                            # Record portal usage for scenario metrics (best-effort)
+                            try:
+                                from services.scenario_metrics import get_active_metrics_collector
+                                collector = get_active_metrics_collector()
+                                if collector:
+                                    collector.record_portal_use()
+                            except Exception:
+                                pass
                             
                             return {
                                 'teleported': True,

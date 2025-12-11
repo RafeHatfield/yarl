@@ -1820,7 +1820,17 @@ unique_items:
     description: "A shimmering portal wreathed in temporal distortions. The Entity's voice echoes from within."
     is_portal: true  # Pickupable! (Future: Portal system mechanics, easter eggs, tactical gameplay)
 
-  # Wand of Portals - User-placed portals
+  # Wand of Portals - Legendary item for tactical portal placement
+  wand_of_portals:
+    char: "/"  # Wand symbol
+    color: [100, 255, 200]  # Cyan-green magical aura
+    render_order: "item"
+    blocks: false
+    description: "A legendary wand that allows you to create pairs of teleportation portals. Use it to place an entrance, then an exit. Using it again cancels the active portals."
+    is_quest_item: false
+    cannot_drop: false
+
+  # Portal entities created by Wand of Portals
   portal_entrance:
     char: "["  # Portal entrance symbol
     color: [0, 255, 255]  # Pure bright cyan (max brightness)

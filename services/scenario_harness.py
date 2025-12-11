@@ -61,6 +61,7 @@ class RunMetrics:
     player_hits: int = 0
     monster_attacks: int = 0
     monster_hits: int = 0
+    portals_used: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -77,6 +78,7 @@ class RunMetrics:
             'player_hits': self.player_hits,
             'monster_attacks': self.monster_attacks,
             'monster_hits': self.monster_hits,
+            'portals_used': self.portals_used,
         }
 
 
@@ -100,6 +102,7 @@ class AggregatedMetrics:
     total_player_hits: int = 0
     total_monster_attacks: int = 0
     total_monster_hits: int = 0
+    total_portals_used: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -117,6 +120,7 @@ class AggregatedMetrics:
             'total_player_hits': self.total_player_hits,
             'total_monster_attacks': self.total_monster_attacks,
             'total_monster_hits': self.total_monster_hits,
+            'total_portals_used': self.total_portals_used,
         }
 
 
@@ -657,6 +661,7 @@ def run_scenario_many(
     total_player_hits = 0
     total_monster_attacks = 0
     total_monster_hits = 0
+    total_portals_used = 0
     
     for run in all_runs:
         for faction, count in run.kills_by_faction.items():
@@ -671,6 +676,7 @@ def run_scenario_many(
         total_player_hits += run.player_hits
         total_monster_attacks += run.monster_attacks
         total_monster_hits += run.monster_hits
+        total_portals_used += getattr(run, "portals_used", 0)
     
     aggregated = AggregatedMetrics(
         runs=runs,
@@ -686,6 +692,7 @@ def run_scenario_many(
         total_player_hits=total_player_hits,
         total_monster_attacks=total_monster_attacks,
         total_monster_hits=total_monster_hits,
+        total_portals_used=total_portals_used,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

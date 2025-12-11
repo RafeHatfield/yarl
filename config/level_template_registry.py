@@ -1667,6 +1667,7 @@ class ScenarioDefinition:
     rooms: List[Dict[str, Any]] = field(default_factory=list)
     monsters: List[Dict[str, Any]] = field(default_factory=list)
     items: List[Dict[str, Any]] = field(default_factory=list)
+    portals: List[Dict[str, Any]] = field(default_factory=list)
     player: Optional[Dict[str, Any]] = None
     hazards: List[Dict[str, Any]] = field(default_factory=list)
     victory_conditions: List[Dict[str, Any]] = field(default_factory=list)
@@ -1837,6 +1838,7 @@ class ScenarioRegistry:
             rooms=data.get('rooms', []),
             monsters=data.get('monsters', []),
             items=data.get('items', []),
+            portals=data.get('portals', []),
             player=data.get('player'),
             hazards=data.get('hazards', []),
             victory_conditions=data.get('victory_conditions', []),

@@ -74,6 +74,7 @@ def build_scenario_map(scenario, rng: Optional[random.Random] = None) -> Scenari
 
     _spawn_monsters(scenario.monsters or [], entities, game_map, rng)
     _spawn_items(scenario.items or [], entities, game_map, rng, dungeon_level)
+    _spawn_portals(scenario.portals or [], entities, game_map)
 
     return ScenarioMapResult(game_map=game_map, player=player, entities=entities)
 
@@ -262,16 +263,95 @@ def _spawn_items(
         count = max(1, int(entry.get("count", 1)))
         for _ in range(count):
             x, y = _resolve_position(entry, game_map, entities, rng)
-            item_entity = (
-                factory.create_spell_item(item_type, x, y)
-                or factory.create_wand(item_type, x, y, dungeon_level=dungeon_level)
-                or factory.create_weapon(item_type, x, y)
-                or factory.create_armor(item_type, x, y)
-                or factory.create_ring(item_type, x, y)
-            )
+            
+            # Special case: Wand of Portals (legendary item)
+            if item_type == "wand_of_portals":
+                item_entity = factory.create_wand_of_portals(x, y)
+            else:
+                # Standard item creation fallback chain
+                item_entity = (
+                    factory.create_spell_item(item_type, x, y)
+                    or factory.create_wand(item_type, x, y, dungeon_level=dungeon_level)
+                    or factory.create_weapon(item_type, x, y)
+                    or factory.create_armor(item_type, x, y)
+                    or factory.create_ring(item_type, x, y)
+                )
+            
             if item_entity is None:
                 raise ScenarioBuildError(f"Unknown item type '{item_type}'")
             entities.append(item_entity)
+
+
+def _spawn_portals(
+    portal_entries: List[Dict[str, Any]],
+    entities: List[Entity],
+    game_map: GameMap,
+) -> None:
+    """Spawn portals defined in a scenario.
+
+    Supports explicit positions and bidirectional linking via ids.
+    """
+    if not portal_entries:
+        return
+
+    from services.portal_manager import get_portal_manager
+
+    portal_manager = get_portal_manager()
+    created: Dict[str, Entity] = {}
+    pending_links: List[Tuple[Portal, str]] = []
+
+    for entry in portal_entries:
+        portal_type = entry.get("type")
+        pos = entry.get("position")
+        portal_id = entry.get("id")
+        link_to = entry.get("link_to")
+
+        if portal_type not in ("entrance", "exit", "entity_portal"):
+            raise ScenarioBuildError(f"Unknown portal type '{portal_type}'")
+        if not (isinstance(pos, (list, tuple)) and len(pos) == 2):
+            raise ScenarioBuildError(f"Portal entry missing position: {entry}")
+
+        x, y = int(pos[0]), int(pos[1])
+        if not game_map.is_in_bounds(x, y):
+            raise ScenarioBuildError(f"Portal position out of bounds: ({x}, {y})")
+        if game_map.get_tile(x, y) is None or game_map.get_tile(x, y).blocked:
+            raise ScenarioBuildError(f"Portal position blocked: ({x}, {y})")
+
+        linked_component = None
+        if link_to and link_to in created and hasattr(created[link_to], "portal"):
+            linked_component = created[link_to].portal
+
+        portal_entity = portal_manager.create_portal_entity(
+            portal_type=portal_type,
+            x=x,
+            y=y,
+            linked_portal=linked_component,
+            from_yaml=True,
+        )
+        if portal_entity is None:
+            raise ScenarioBuildError(f"Failed to create portal entity ({portal_type}) at ({x}, {y})")
+
+        # If we already know the counterpart, link back
+        if linked_component and portal_entity.portal.linked_portal is None:
+            portal_entity.portal.linked_portal = linked_component
+            linked_component.linked_portal = portal_entity.portal
+
+        entities.append(portal_entity)
+
+        if portal_id:
+            created[portal_id] = portal_entity
+        if link_to:
+            pending_links.append((portal_entity.portal, link_to))
+
+    # Resolve any links where the destination was defined later
+    for portal_component, link_id in pending_links:
+        if portal_component.linked_portal:
+            continue
+        target_entity = created.get(link_id)
+        if not target_entity or not hasattr(target_entity, "portal"):
+            raise ScenarioBuildError(f"Link target '{link_id}' not found for portal")
+        portal_component.linked_portal = target_entity.portal
+        target_entity.portal.linked_portal = portal_component
 
 
 def _resolve_position(entry: Dict[str, Any], game_map: GameMap, entities: List[Entity], rng: random.Random) -> Tuple[int, int]:

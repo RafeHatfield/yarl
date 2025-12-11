@@ -454,17 +454,18 @@ class ActionProcessor:
             # Exit targeting mode
             previous_state = self.state_manager.get_extra_data("previous_state", GameStates.PLAYERS_TURN)
             self.state_manager.set_game_state(previous_state)
-            
+
             # Clear targeting data
             self.state_manager.set_extra_data("targeting_item", None)
             self.state_manager.set_extra_data("previous_state", None)
-            
+            self.state_manager.set_extra_data("portal_wand", None)  # Clear portal wand targeting
+
             # Phase 10.1: Clear faction selection data if present
             self.state_manager.set_extra_data("faction_selection_item", None)
             self.state_manager.set_extra_data("faction_selection_options", None)
             self.state_manager.set_extra_data("faction_selection_target", None)
             self.state_manager.set_extra_data("faction_selection_coords", None)
-            
+
             # Clear throw-specific data if exiting throw targeting
             if current_state == GameStates.THROW_TARGETING:
                 self.state_manager.set_extra_data("throw_item", None)

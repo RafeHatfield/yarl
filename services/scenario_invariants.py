@@ -6,6 +6,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from config.entity_registry import get_entity_registry
+from services.portal_invariants import validate_portals, PortalInvariantError
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ def validate_scenario_instance(
 
     _validate_monsters(game_map, player, entities)
     _validate_items(game_map, player, entities)
+    _validate_portals(game_map, entities)
 
 
 # ---------------------------------------------------------------------------
@@ -151,3 +153,19 @@ def _validate_items(game_map, player, entities: List[Any]) -> None:
             raise ScenarioInvariantError(
                 f"Item '{getattr(entity, 'name', '?')}' overlaps an occupied tile at {pos}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Portal validation
+# ---------------------------------------------------------------------------
+
+
+def _validate_portals(game_map, entities: List[Any]) -> None:
+    """Run portal-specific invariants if portals are present."""
+    if not any(hasattr(e, "portal") for e in entities):
+        return
+
+    try:
+        validate_portals(game_map, entities)
+    except PortalInvariantError as e:
+        raise ScenarioInvariantError(str(e)) from e

@@ -89,6 +89,23 @@ class GameCore:
         if not self.turn_state.has_turn_manager:
             return
 
+        current_state = self.state_manager.state.current_state
+        
+        # Don't sync if we're in a special player state that should be preserved
+        # (targeting, menus, etc. - these are player states but shouldn't be reset)
+        player_special_states = {
+            GameStates.TARGETING,
+            GameStates.THROW_TARGETING,
+            GameStates.SHOW_INVENTORY,
+            GameStates.DROP_INVENTORY,
+            GameStates.THROW_SELECT_ITEM,
+            GameStates.CHARACTER_SCREEN,
+            GameStates.LEVEL_UP,
+        }
+        
+        if current_state in player_special_states:
+            return  # Preserve the special state, don't sync
+
         if (
             self.turn_state.is_player_turn()
             and not self.turn_state.is_player_phase_consistent()
