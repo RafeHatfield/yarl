@@ -49,6 +49,15 @@
   - `make eco-plague`, `make eco-backstab`
   - `make eco-duel-baseline`, `make eco-duel-speed-light`, `make eco-duel-speed-full`
   - `make eco-duel-slow-zombie-baseline`, `make eco-duel-slow-zombie-full`
+- Balance report tooling: `tools/eco_balance_report.py` reads ecosystem/worldgen/bot soak exports and prints a Markdown/CLI summary. Example:
+  ```bash
+  python3 tools/eco_balance_report.py \
+    --ecosystem-json dueling_pit_50runs.json plague_arena_100runs.json \
+    --worldgen-json worldgen_depth3_20runs.json \
+    --bot-soak-jsonl telemetry/soak_output_soak_*.jsonl \
+    --output-markdown reports/eco_balance_report.md
+  ```
+  Or run `make eco-balance-report` after generating the JSON/JSONL inputs.
 
 ## Bot / Headless / Soak
 - Headless mode and bot personas are supported for automation.

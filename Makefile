@@ -185,7 +185,7 @@ bot-smoke:
 # Ecosystem / Scenario Harness Shortcuts
 # --------------------------------------------------------------------
 
-.PHONY: worldgen-quick worldgen-ci worldgen-report
+.PHONY: worldgen-quick worldgen-ci worldgen-report eco-balance-report
 
 worldgen-quick:
 	python3 worldgen_sanity.py --runs 10 --depth 3
@@ -458,3 +458,15 @@ eco-swarm-report: \
 	eco-swarm-speed-full-json \
 	eco-swarm-brutal-baseline-json \
 	eco-swarm-brutal-speed-full-json
+
+# --------------------------------------------------------------------
+# Ecosystem & bot balance reporting
+# --------------------------------------------------------------------
+
+eco-balance-report:
+	python3 tools/eco_balance_report.py \
+	  --ecosystem-json dueling_pit_50runs.json dueling_pit_speed_light_50runs.json dueling_pit_speed_full_50runs.json \
+	    orc_swarm_baseline_50runs.json orc_swarm_speed_full_50runs.json orc_swarm_brutal_baseline_50runs.json orc_swarm_brutal_speed_full_50runs.json \
+	    plague_arena_100runs.json backstab_training_100runs.json \
+	  --worldgen-json worldgen_depth3_20runs.json \
+	  --output-markdown reports/eco_balance_report.md
