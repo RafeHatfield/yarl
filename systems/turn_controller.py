@@ -140,13 +140,10 @@ class TurnController:
         """
         # Use TurnManager if available (Phase 3)
         # Advance sequentially through phases: ENEMY → ENVIRONMENT → PLAYER
-        if self.turn_manager:
-            self.turn_manager.advance_turn()  # ENEMY → ENVIRONMENT
-            
+        if self.turn_adapter:
+            self.turn_adapter.advance_to_environment_phase()
             # Process environment phase (status effects, etc.) would occur elsewhere
-            
-            # Advance to player phase
-            self.turn_manager.advance_turn()  # ENVIRONMENT → PLAYER
+            self.turn_adapter.advance_to_player_phase()
         
         # Restore preserved state or return to PLAYERS_TURN
         if self.preserved_state:
@@ -161,14 +158,10 @@ class TurnController:
         
         Uses TurnManager if available (Phase 3), always keeps GameStates in sync.
         """
-        # Set GameStates to ENEMY_TURN
-        self.state_manager.set_game_state(GameStates.ENEMY_TURN)
-        
-        # Advance TurnManager if present (PLAYER → ENEMY)
-        if self.turn_manager:
-            from engine.turn_manager import TurnPhase
-            # Use explicit target to sync state even if phases are misaligned
-            self.turn_manager.advance_turn(TurnPhase.ENEMY)
+        if self.turn_adapter:
+            self.turn_adapter.set_enemy_state()
+        else:
+            self.state_manager.set_game_state(GameStates.ENEMY_TURN)
     
     def force_state_transition(self, new_state: GameStates) -> None:
         """Force a state transition without turn logic.
