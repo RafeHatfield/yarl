@@ -38,7 +38,7 @@ bands:
     # B1 rooms should have 0-2 monsters typically
     room_etp:
       min: 0        # Empty rooms are OK
-      max: 60       # ~2 orcs or 1 troll + 1 slime
+      max: 50       # 16A tuning: tightened from 60 to prevent dense early rooms with buffed orcs
       
     # ETP budget targets for entire floor
     # ~5-8 rooms × 30 avg ETP per room
