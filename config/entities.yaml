@@ -35,7 +35,7 @@ player:
   damage_max: 2  # Total unarmed: 1-2 + STR modifier
   # D&D-style stats (standard fighter build)
   strength: 14      # Good melee (+2 damage modifier)
-  dexterity: 12     # Decent (+1 to-hit, +1 AC)
+  dexterity: 14     # Good (+2 to-hit, +2 AC) [Phase 13F: buffed from 12]
   constitution: 14  # Survivable (+2 HP modifier = +2 max HP)
   # Phase 8: Accuracy & Evasion (hit/dodge system)
   accuracy: 2       # Trained combatant
@@ -48,7 +48,7 @@ monsters:
   # Basic orc enemy
   orc:
     stats:
-      hp: 20
+      hp: 24  # Phase 13F: increased from 20 for longer fights
       power: 0  # No base magical power (reserved for enhancements)
       defense: 0
       xp: 35
@@ -270,7 +270,7 @@ monsters:
   # Zombie - Slow undead creature
   zombie:
     stats:
-      hp: 25
+      hp: 28  # Phase 13F: increased from 25 for longer fights
       power: 0
       defense: 0
       xp: 30
@@ -673,7 +673,7 @@ weapons:
     slot: "main_hand"
     char: "-"
     color: [255, 215, 0]    # Gold (magical weapon)
-    speed_bonus: 0.25       # +25% bonus attack chance (Phase 5)
+    speed_bonus: 0.20       # +20% bonus attack chance [Phase 13F: reduced from 0.25]
 
   # ═══════════════════════════════════════════════════════════
   # ONE-HANDED WEAPONS (1d6) - Balanced
@@ -881,7 +881,7 @@ armor:
     slot: "feet"
     char: "]"
     color: [100, 200, 255]  # Light blue (magical)
-    speed_bonus: 0.25       # +25% bonus attack chance (Phase 5)
+    speed_bonus: 0.20       # +20% bonus attack chance [Phase 13F: reduced from 0.25]
 
   # ═══════════════════════════════════════════════════════════
   # MEDIUM ARMOR (DEX Cap +2)
