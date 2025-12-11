@@ -1,4 +1,4 @@
-.PHONY: clean test run quick-test bot bot-smoke soak help test-fast test-full ci-quick balance-ci-local eco-swarm-baseline eco-swarm-baseline-json eco-swarm-speed-full eco-swarm-speed-full-json eco-swarm-brutal-baseline eco-swarm-brutal-baseline-json eco-swarm-brutal-speed-full eco-swarm-brutal-speed-full-json eco-swarm-all eco-swarm-report
+.PHONY: clean test run quick-test bot bot-smoke soak help test-fast test-full ci-quick balance-ci-local eco-swarm-baseline eco-swarm-baseline-json eco-swarm-speed-full eco-swarm-speed-full-json eco-swarm-brutal-baseline eco-swarm-brutal-baseline-json eco-swarm-brutal-speed-full eco-swarm-brutal-speed-full-json eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -16,6 +16,9 @@ help:
 	@echo "  make test-full   - Full pytest (all tests, including slow)"
 	@echo "  make test        - Run Phase 5 critical tests"
 	@echo "  make quick-test  - Quick validation (no full game needed)"
+	@echo "  make worldgen-quick  - Worldgen sanity smoke (depth 3, 10 runs)"
+	@echo "  make worldgen-ci     - Worldgen sanity + JSON export (depth 3, 20 runs)"
+	@echo "  make worldgen-report - Worldgen sanity report (depth 3, 50 runs)"
 	@echo ""
 	@echo "CI / Balance:"
 	@echo "  make ci-quick         - Run quick CI checks (fast tests + ETP + loot)"
@@ -181,6 +184,17 @@ bot-smoke:
 # --------------------------------------------------------------------
 # Ecosystem / Scenario Harness Shortcuts
 # --------------------------------------------------------------------
+
+.PHONY: worldgen-quick worldgen-ci worldgen-report
+
+worldgen-quick:
+	python3 worldgen_sanity.py --runs 10 --depth 3
+
+worldgen-ci:
+	python3 worldgen_sanity.py --runs 20 --depth 3 --export-json worldgen_depth3_20runs.json
+
+worldgen-report:
+	python3 worldgen_sanity.py --runs 50 --depth 3 --export-json worldgen_depth3_50runs.json
 
 .PHONY: eco-quick eco-all eco-ci eco-report \
         eco-plague eco-plague-json \
