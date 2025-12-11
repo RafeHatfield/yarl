@@ -39,6 +39,7 @@
 - ETP sanity: `./scripts/ci_run_etp.sh` or `python etp_sanity.py --help`.
 - Loot/pity sanity: `./scripts/ci_run_loot.sh` or `python loot_sanity.py --help`.
 - Ecosystem sanity (CI mirror): `make eco-ci`.
+- Worldgen sanity: `make worldgen-quick` (smoke) or `make worldgen-ci` (with JSON export); see `docs/WORLDGEN_OVERVIEW.md`.
 
 ## Scenario Harness Shortcuts (Make)
 - `make eco-quick` – plague arena, backstab training, dueling pit baseline.
@@ -61,6 +62,7 @@
 ## Documentation Map
 - High-level docs: `DOCS_CLEANUP_CHECKLIST.md`, `ROADMAP.md`, `docs/README.md`.
 - Architecture reference: `ARCHITECTURE_OVERVIEW.md` (read-only in this branch), `docs/architecture/`.
+- Worldgen overview and harness: `docs/WORLDGEN_OVERVIEW.md`.
 - Combat metrics & scenarios: `docs/COMBAT_METRICS_GUIDE.md` and baseline JSONs.
 - Scenario harness + bots: `docs/BOT_SOAK_HARNESS.md`, `docs/BOT_PERSONAS.md`, `HEADLESS_MODE.md`.
 - YAML/config: `docs/YAML_CONSTANTS_GUIDE.md`, `docs/YAML_ROOM_GENERATION_SYSTEM.md`, `docs/balance/`.

@@ -202,27 +202,56 @@ def _aggregate_by_depth(run_metrics: List[RunMetrics]) -> List[AggregatedDepthMe
 def _print_summary(aggregates: List[AggregatedDepthMetrics], runs: int) -> None:
     """Print a concise CLI summary."""
     print("\nWorldgen Sanity Results")
-    print("=" * 60)
+    print("=" * 64)
+    if not aggregates:
+        print("No results to display.")
+        return
+
     print(f"Runs per depth: {runs}")
     for agg in aggregates:
-        print(f"\nDepth {agg.depth}:")
-        print(f"  Walkable % avg: {agg.walkable_avg * 100:.2f}% "
+        print("-" * 64)
+        print(f"Depth {agg.depth}")
+        print(f"  Walkable %: avg {agg.walkable_avg * 100:.2f}% "
               f"(min {agg.walkable_min * 100:.2f}% / max {agg.walkable_max * 100:.2f}%)")
-        print(f"  Reachable % avg: {agg.reachable_avg * 100:.2f}%")
-        print(f"  Avg monsters: {agg.monsters_avg:.1f}")
-        print(f"  Avg items: {agg.items_avg:.1f}")
+        print(f"  Reachable % of walkable: avg {agg.reachable_avg * 100:.2f}%")
+        print(f"  Monsters per run (avg): {agg.monsters_avg:.1f}")
+        print(f"  Items per run (avg):    {agg.items_avg:.1f}")
         if agg.walkable_avg < 0.03:
-            print("  [WARN] Average walkable % < 3% - maps may be too cramped")
-    print()
+            print("  [WARN] Average walkable % < 3% — maps may be too cramped")
+    print("-" * 64)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="World generation sanity harness")
-    parser.add_argument("--runs", type=int, default=10, help="Number of runs per depth")
-    parser.add_argument("--depth", type=int, help="Single depth to generate")
-    parser.add_argument("--depth-range", type=str, help="Depth range, e.g. 1-3")
-    parser.add_argument("--export-json", type=str, help="Path to export aggregated metrics JSON")
-    parser.add_argument("--verbose", action="store_true", help="Print per-run results")
+    parser = argparse.ArgumentParser(
+        description="Headless world generation sanity harness (mapgen + spawns)",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--runs",
+        type=int,
+        default=10,
+        help="Number of runs per depth",
+    )
+    parser.add_argument(
+        "--depth",
+        type=int,
+        help="Single depth to generate (default 1 if neither depth nor range is provided)",
+    )
+    parser.add_argument(
+        "--depth-range",
+        type=str,
+        help="Inclusive depth range, e.g. 1-3",
+    )
+    parser.add_argument(
+        "--export-json",
+        type=str,
+        help="Path to write JSON with per-run metrics and per-depth aggregates",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print per-run results (walkable %, reachable %, counts)",
+    )
     return parser.parse_args()
 
 
@@ -269,7 +298,7 @@ def main() -> None:
         }
         with open(args.export_json, "w", encoding="utf-8") as f:
             json.dump(export_data, f, indent=2)
-        print(f"Exported metrics to {args.export_json}")
+        print(f"Exported metrics (runs + aggregates) to {args.export_json}")
 
 
 if __name__ == "__main__":
