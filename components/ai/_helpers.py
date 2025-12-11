@@ -1,9 +1,6 @@
 from random import randint
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 
-import tcod as libtcod
-import tcod.libtcodpy as libtcodpy
-
 from game_messages import Message
 from message_builder import MessageBuilder as MB
 from fov_functions import map_is_in_fov
@@ -11,6 +8,10 @@ from components.monster_action_logger import MonsterActionLogger
 from components.faction import Faction, are_factions_hostile, get_target_priority
 from components.component_registry import ComponentType
 from logger_config import get_logger
+
+# Legacy libtcod hooks retained for tests/monkeypatching.
+libtcod = None
+libtcodpy = None
 
 if TYPE_CHECKING:
     pass

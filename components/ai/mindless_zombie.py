@@ -1,10 +1,11 @@
 from random import randint
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 
-import tcod as libtcod
-import tcod.libtcodpy as libtcodpy
-
 from game_messages import Message
+
+# Legacy libtcod hooks retained for tests/monkeypatching.
+libtcod = None
+libtcodpy = None
 from message_builder import MessageBuilder as MB
 from fov_functions import map_is_in_fov
 from components.monster_action_logger import MonsterActionLogger

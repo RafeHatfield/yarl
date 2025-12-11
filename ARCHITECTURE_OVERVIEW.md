@@ -16,7 +16,7 @@ This document summarizes the current architecture, highlights coupling/tech-debt
 - **Combat/Balance**: Combat math (`components/fighter.py`, `balance/hit_model.py`), ETP encounter budgeting (`balance/etp.py` + services), loot pity and tag system (`balance/pity.py`, `balance/loot_tags.py`).
 - **Map generation**: `map_objects/game_map.py`, `map_objects/room_generators.py`, `map_objects/secret_door.py`, `config/level_templates.yaml` with template registry overrides.
 - **Events**: `events/core.py`, `events/game_events.py` define an event bus and typed game events. Some systems use direct calls rather than events; the bus exists for decoupling.
-- **Rendering/Input abstraction (IO layer)**: Protocols in `io_layer/interfaces.py`; concrete `ConsoleRenderer`, `KeyboardInputSource`, `BotInputSource` (`io_layer/console_renderer.py`, `io_layer/keyboard_input.py`, `io_layer/bot_input.py`). Main loop is decoupled from libtcod via `engine_integration.py`.
+- **Rendering/Input abstraction (IO layer)**: Protocols in `io_layer/interfaces.py`; concrete `ConsoleRenderer`, `KeyboardInputSource`, `BotInputSource` (`io_layer/console_renderer.py`, `io_layer/keyboard_input.py`, `io_layer/bot_input.py`). Main loop is decoupled from libtcod via `engine_integration.py`. All libtcod/console drawing now lives in IO renderers (`io_layer/*renderer*.py`, `render_functions.py`, entrypoints) including menus/tooltips/death/victory/dialogue/cutscenes; core modules emit data only.
 - **BotBrain / autoplay**: Bot decision engine (`io_layer/bot_brain.py`) used by `BotInputSource`; supports personas and soak/testing modes. Integrated with telemetry and scenario harness.
 - **Scenario harness**: Scenario YAML + loader + invariants + metrics (`services/scenario_harness.py`, `services/scenario_level_loader.py`, `services/scenario_invariants.py`, `services/scenario_metrics.py`, configs in `config/levels/scenario_*.yaml`). Provides automated, CI-friendly simulations with metrics aggregation.
 - **State management**: `state_management/*` and `state_machine/*` handle state definitions and transitions; `GameStates` remains the primary enum.
@@ -25,7 +25,7 @@ This document summarizes the current architecture, highlights coupling/tech-debt
 
 ### Rendering Boundary Guardrail (IO-only rendering)
 - libtcod imports and console drawing live ONLY in renderer implementations (`io_layer/*renderer*.py`), `render_functions.py`, or entrypoints (`engine.py`, `engine/soak_harness.py`).
-- Core logic (components, services, systems, GameCore/TurnStateAdapter) must not call libtcod or write to consoles; they surface data the renderer consumes.
+- Core logic (components, services, systems, GameCore/TurnStateAdapter) must not call libtcod or write to consoles; they surface data the renderer consumes. Legacy modules that previously drew (tooltips, death screen, menus, cutscenes) now delegate to IO-layer renderers.
 - Visual effects are queued in core (`visual_effect_queue.py`) and rendered in IO (`io_layer/effect_renderer.py`); future sprite/screenshot frontends plug in by implementing `Renderer` and consuming the same queue/state without touching gameplay code.
 - **Telemetry/metrics**: `instrumentation/*`, `services/telemetry_service.py`, run metrics in `instrumentation/run_metrics.py`, bot results logging in `engine_integration.py`.
 

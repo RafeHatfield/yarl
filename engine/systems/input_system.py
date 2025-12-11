@@ -7,7 +7,6 @@ input methods or key mappings.
 """
 
 from typing import Dict, Any, Optional, Callable
-import tcod.libtcodpy as libtcod
 import logging
 
 from ..system import System

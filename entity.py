@@ -9,13 +9,16 @@ import math
 from typing import Optional, Tuple, List, Any, Dict, TYPE_CHECKING
 
 import tcod
-import tcod.libtcodpy as libtcodpy
 
 from components.item import Item
 from components.faction import Faction, get_faction_from_string
 from components.component_registry import ComponentRegistry, ComponentType
 from config.game_constants import get_pathfinding_config
 from render_functions import RenderOrder
+
+# Legacy libtcod symbols retained for tests/monkeypatching.
+libtcod = None
+libtcodpy = None
 
 # Avoid circular imports
 if TYPE_CHECKING:
