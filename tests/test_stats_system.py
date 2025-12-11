@@ -197,7 +197,7 @@ class TestPlayerStatInitialization(unittest.TestCase):
         
         self.assertIsNotNone(player_stats)
         self.assertEqual(player_stats.strength, 14)
-        self.assertEqual(player_stats.dexterity, 12)
+        self.assertEqual(player_stats.dexterity, 14)  # Phase 13F: buffed from 12
         self.assertEqual(player_stats.constitution, 14)
 
 
