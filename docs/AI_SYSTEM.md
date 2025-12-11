@@ -51,7 +51,7 @@ ELSE:
     → Stand still (passive)
 ```
 
-**Code Location:** `components/ai.py` - `BasicMonster` class
+**Code Location:** `components/ai/basic_monster.py` - `BasicMonster` class
 
 ---
 
@@ -86,7 +86,7 @@ IF best_target exists:
 - Enables monster-vs-monster combat
 - Used for chaotic encounters
 
-**Code Location:** `components/ai.py` - `SlimeAI` class
+**Code Location:** `components/ai/slime_ai.py` - `SlimeAI` class
 
 ---
 
@@ -127,7 +127,7 @@ IF no adjacent entities:
 - Not reliable allies
 - Sticky targeting makes them focused
 
-**Code Location:** `components/ai.py` - `MindlessZombieAI` class
+**Code Location:** `components/ai/mindless_zombie.py` - `MindlessZombieAI` class
 
 ---
 
@@ -158,7 +158,7 @@ ELSE:
 - Can damage allies
 - Chaotic behavior
 
-**Code Location:** `components/ai.py` - `ConfusedMonster` class
+**Code Location:** `components/ai/confused_monster.py` - `ConfusedMonster` class
 
 ---
 

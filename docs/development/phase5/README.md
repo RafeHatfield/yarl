@@ -1,6 +1,6 @@
 # Phase 5: Victory Condition & Dramatic Ending System
 
-**Status:** ✅ COMPLETE
+**Status:** ✅ COMPLETE (historical snapshot; current planning in `ROADMAP.md`)
 
 Phase 5 implemented the endgame victory condition with six distinct endings and dramatic cutscene system.
 

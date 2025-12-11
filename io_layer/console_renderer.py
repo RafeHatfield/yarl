@@ -214,11 +214,12 @@ class ConsoleRenderer:
         # effects appear as part of the same visual frame as the rest of the game.
         from visual_effect_queue import get_effect_queue
         from ui.debug_flags import TOOLTIP_DISABLE_EFFECTS
+        from io_layer.effect_renderer import render_effects
         
         if not TOOLTIP_DISABLE_EFFECTS:
             effect_queue = get_effect_queue()
             if effect_queue.has_effects():
-                effect_queue.play_all(con=0, camera=camera)
+                render_effects(effect_queue.drain_draw_calls(camera=camera), console=0)
 
         # Flush console to display (single flush per frame - canonical renderer only!)
         # CRITICAL: console_flush() REQUIRES a valid libtcod root console!

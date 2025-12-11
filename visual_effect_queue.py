@@ -1,19 +1,16 @@
 """Visual Effect Queue System.
 
-This module provides a deferred rendering system for visual effects.
-Instead of displaying effects immediately during action processing
-(which causes double-entity artifacts), effects are queued and then
-played back during the render phase when the screen state is correct.
-
-Architecture:
-1. Actions queue effects instead of showing them
-2. Render system plays queued effects AFTER entities are drawn
-3. Screen state matches game state when effects display
+This module stays IO-agnostic: it only captures *what* to show, never draws.
+Renderers convert the queued effects into console draw calls.
 """
 
-from typing import List, Tuple, Optional, Dict, Any, Union
+from dataclasses import dataclass
 from enum import Enum, auto
-import tcod.libtcodpy as libtcodpy
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+# Placeholders so tests can patch tcod mocks without reintroducing IO coupling
+libtcod = None
+libtcodpy = None
 
 # Forward reference for Entity type
 Entity = Any  # Avoid circular import
@@ -25,6 +22,16 @@ def _world_to_screen(ui_layout, camera, world_x: int, world_y: int):
     camera_x = getattr(camera, "x", 0) if camera else 0
     camera_y = getattr(camera, "y", 0) if camera else 0
     return ui_layout.world_to_screen(world_x, world_y, camera_x, camera_y)
+
+
+@dataclass
+class DrawCall:
+    """A single glyph to render on the target console."""
+
+    x: int
+    y: int
+    char: int
+    color: Tuple[int, int, int]
 
 
 class EffectType(Enum):
@@ -196,15 +203,12 @@ class QueuedEffect:
         self.y = y
         self.entity = entity
         self.params = kwargs
-        self.screen_x: Optional[int] = None
-        self.screen_y: Optional[int] = None
 
-    def play(self, con=0, camera=None) -> None:
-        """Play this queued effect using the provided console and camera."""
+    def _compute_screen(self, ui_layout, camera) -> Optional[Tuple[int, int]]:
+        return _world_to_screen(ui_layout, camera, self.x, self.y)
 
-        from config.ui_layout import get_ui_layout
-
-        ui_layout = get_ui_layout()
+    def to_draw_calls(self, ui_layout, camera) -> List[DrawCall]:
+        """Translate this effect into concrete draw calls."""
 
         needs_world_sampling = self.effect_type in {
             EffectType.FIREBALL,
@@ -215,93 +219,66 @@ class QueuedEffect:
             EffectType.PROJECTILE,
         }
 
-        screen_coords = _world_to_screen(ui_layout, camera, self.x, self.y)
+        screen_coords = self._compute_screen(ui_layout, camera)
         if screen_coords is None and not needs_world_sampling:
-            return
-
-        if screen_coords is not None:
-            self.screen_x, self.screen_y = screen_coords
-        else:
-            self.screen_x = self.screen_y = None
+            return []
 
         dispatch = {
-            EffectType.HIT: self._play_hit,
-            EffectType.CRITICAL_HIT: self._play_critical_hit,
-            EffectType.MISS: self._play_miss,
-            EffectType.FIREBALL: lambda: self._play_area_tiles(
-                con, camera, 'tiles', default_color=(255, 100, 0), default_char=ord('*')
+            EffectType.HIT: self._draw_single_tile((255, 50, 50), ord('*'), screen_coords),
+            EffectType.CRITICAL_HIT: self._draw_single_tile((255, 255, 0), ord('*'), screen_coords),
+            EffectType.MISS: self._draw_single_tile((128, 128, 128), ord('-'), screen_coords),
+            EffectType.FIREBALL: lambda: self._draw_area_tiles(
+                ui_layout, camera, 'tiles', default_color=(255, 100, 0), default_char=ord('*')
             ),
-            EffectType.LIGHTNING: lambda: self._play_path_tiles(
-                con, camera, 'path', default_color=(255, 255, 100), default_char=ord('|')
+            EffectType.LIGHTNING: lambda: self._draw_path_tiles(
+                ui_layout, camera, 'path', default_color=(255, 255, 100), default_char=ord('|')
             ),
-            EffectType.DRAGON_FART: lambda: self._play_area_tiles(
-                con, camera, 'tiles', default_color=(100, 200, 50), default_char=ord('~')
+            EffectType.DRAGON_FART: lambda: self._draw_area_tiles(
+                ui_layout, camera, 'tiles', default_color=(100, 200, 50), default_char=ord('~')
             ),
-            EffectType.AREA_EFFECT: lambda: self._play_area_tiles(
-                con, camera, 'tiles', default_color=(255, 100, 0), default_char=ord('*')
+            EffectType.AREA_EFFECT: lambda: self._draw_area_tiles(
+                ui_layout, camera, 'tiles', default_color=(255, 100, 0), default_char=ord('*')
             ),
-            EffectType.PATH_EFFECT: lambda: self._play_path_tiles(
-                con, camera, 'path', default_color=(255, 255, 100), default_char=ord('|')
+            EffectType.PATH_EFFECT: lambda: self._draw_path_tiles(
+                ui_layout, camera, 'path', default_color=(255, 255, 100), default_char=ord('|')
             ),
-            EffectType.WAND_RECHARGE: lambda: self._play_wand_recharge(con),
-            EffectType.PROJECTILE: lambda: self._play_projectile(con, camera),
-            # Phase 7: Debuff/buff effect handlers (use central config)
-            EffectType.SLOW: lambda: self._play_effect_from_config(con, EffectType.SLOW),
-            EffectType.POISON: lambda: self._play_effect_from_config(con, EffectType.POISON),
-            EffectType.HEAL: lambda: self._play_effect_from_config(con, EffectType.HEAL),
-            EffectType.BUFF: lambda: self._play_effect_from_config(con, EffectType.BUFF),
-            EffectType.DEBUFF: lambda: self._play_effect_from_config(con, EffectType.DEBUFF),
-            # Phase 9: Surprise attack
-            EffectType.SURPRISE: lambda: self._play_effect_from_config(con, EffectType.SURPRISE),
-            # Phase 10: Faction manipulation effects
-            EffectType.ANGER: lambda: self._play_effect_from_config(con, EffectType.ANGER),
-            EffectType.PLAGUE: lambda: self._play_effect_from_config(con, EffectType.PLAGUE),
-            EffectType.REANIMATE: lambda: self._play_effect_from_config(con, EffectType.REANIMATE),
+            EffectType.WAND_RECHARGE: self._draw_single_tile(
+                (255, 255, 150), ord('✦'), self._compute_screen(ui_layout, camera)
+            ),
+            EffectType.PROJECTILE: lambda: self._draw_projectile(ui_layout, camera),
+            EffectType.SLOW: lambda: self._draw_from_config(ui_layout, camera, EffectType.SLOW),
+            EffectType.POISON: lambda: self._draw_from_config(ui_layout, camera, EffectType.POISON),
+            EffectType.HEAL: lambda: self._draw_from_config(ui_layout, camera, EffectType.HEAL),
+            EffectType.BUFF: lambda: self._draw_from_config(ui_layout, camera, EffectType.BUFF),
+            EffectType.DEBUFF: lambda: self._draw_from_config(ui_layout, camera, EffectType.DEBUFF),
+            EffectType.SURPRISE: lambda: self._draw_from_config(ui_layout, camera, EffectType.SURPRISE),
+            EffectType.ANGER: lambda: self._draw_from_config(ui_layout, camera, EffectType.ANGER),
+            EffectType.PLAGUE: lambda: self._draw_from_config(ui_layout, camera, EffectType.PLAGUE),
+            EffectType.REANIMATE: lambda: self._draw_from_config(ui_layout, camera, EffectType.REANIMATE),
         }
 
         handler = dispatch.get(self.effect_type)
-        if handler:
-            handler()
+        if callable(handler):
+            return handler()
+        # For single-tile dispatch entries that are precomputed DrawCall lists
+        return handler if handler else []
 
-    def _play_hit(self, con=0) -> None:
-        self._single_tile_flash(con, (255, 50, 50), ord('*'))
-
-    def _play_critical_hit(self, con=0) -> None:
-        self._single_tile_flash(con, (255, 255, 0), ord('*'))
-
-    def _play_miss(self, con=0) -> None:
-        self._single_tile_flash(con, (128, 128, 128), ord('-'))
-
-    def _play_wand_recharge(self, con=0) -> None:
-        if self.screen_x is None or self.screen_y is None:
-            return
-        libtcodpy.console_set_default_foreground(con, (255, 255, 150))
-        libtcodpy.console_put_char(
-            con, self.screen_x, self.screen_y, ord('✦'), libtcodpy.BKGND_NONE
-        )
-
-    def _play_projectile(self, con=0, camera=None) -> None:
-        path = self.params.get('path', [])
-        if not path:
-            return
-
-        from config.ui_layout import get_ui_layout
-
-        ui_layout = get_ui_layout()
-        world_x, world_y = path[-1]
-        screen_coords = _world_to_screen(ui_layout, camera, world_x, world_y)
-        if screen_coords is None:
-            return
-
-        color = self.params.get('color', (255, 255, 255))
-        char = self.params.get('char', ord('*'))
-        screen_x, screen_y = screen_coords
-        libtcodpy.console_set_default_foreground(con, color)
-        libtcodpy.console_put_char(con, screen_x, screen_y, char, libtcodpy.BKGND_NONE)
-
-    def _play_area_tiles(
+    def _draw_single_tile(
         self,
-        con,
+        color: Tuple[int, int, int],
+        fallback_char: int,
+        screen_coords: Optional[Tuple[int, int]],
+    ) -> List[DrawCall]:
+        if screen_coords is None:
+            return []
+
+        x, y = screen_coords
+        char = self._resolve_char(fallback_char)
+        return [DrawCall(x=x, y=y, char=char, color=color)]
+
+    def _draw_area_tiles(
+        self,
+        ui_layout,
         camera,
         tiles_key: str,
         *,
@@ -309,92 +286,72 @@ class QueuedEffect:
         default_char,
         color_key: str = 'color',
         char_key: str = 'char',
-    ) -> None:
+    ) -> List[DrawCall]:
         tiles = self.params.get(tiles_key, [])
         color = self.params.get(color_key, default_color)
         char = self.params.get(char_key, default_char)
 
-        from config.ui_layout import get_ui_layout
-
-        ui_layout = get_ui_layout()
-
+        calls: List[DrawCall] = []
         for world_x, world_y in tiles:
             screen_coords = _world_to_screen(ui_layout, camera, world_x, world_y)
             if screen_coords is None:
                 continue
             screen_x, screen_y = screen_coords
-            libtcodpy.console_set_default_foreground(con, color)
-            libtcodpy.console_put_char(
-                con, screen_x, screen_y, char, libtcodpy.BKGND_NONE
-            )
+            calls.append(DrawCall(x=screen_x, y=screen_y, char=char, color=color))
+        return calls
 
-    def _play_path_tiles(
+    def _draw_path_tiles(
         self,
-        con,
+        ui_layout,
         camera,
         path_key: str,
         *,
         default_color,
         default_char,
-    ) -> None:
+    ) -> List[DrawCall]:
         path = self.params.get(path_key, [])
         color = self.params.get('color', default_color)
         char = self.params.get('char', default_char)
 
-        from config.ui_layout import get_ui_layout
-
-        ui_layout = get_ui_layout()
-
+        calls: List[DrawCall] = []
         for world_x, world_y in path:
             screen_coords = _world_to_screen(ui_layout, camera, world_x, world_y)
             if screen_coords is None:
                 continue
             screen_x, screen_y = screen_coords
-            libtcodpy.console_set_default_foreground(con, color)
-            libtcodpy.console_put_char(
-                con, screen_x, screen_y, char, libtcodpy.BKGND_NONE
-            )
+            calls.append(DrawCall(x=screen_x, y=screen_y, char=char, color=color))
+        return calls
 
-    def _single_tile_flash(self, con, color, fallback_char):
-        if self.screen_x is None or self.screen_y is None:
-            return
+    def _draw_projectile(self, ui_layout, camera) -> List[DrawCall]:
+        path = self.params.get('path', [])
+        if not path:
+            return []
 
-        char = self._resolve_char(con, fallback=fallback_char)
-        libtcodpy.console_set_default_foreground(con, color)
-        libtcodpy.console_put_char(
-            con, self.screen_x, self.screen_y, char, libtcodpy.BKGND_NONE
-        )
-    
-    def _play_effect_from_config(self, con, effect_type: EffectType) -> None:
-        """Play an effect using the central VFX config registry.
-        
-        Phase 7: Unified effect rendering using EFFECT_VFX_CONFIG.
-        
-        Args:
-            con: Console to draw on
-            effect_type: Effect type to look up in config
-        """
-        if self.screen_x is None or self.screen_y is None:
-            return
-        
-        # Get config from central registry, allow param overrides
+        world_x, world_y = path[-1]
+        screen_coords = _world_to_screen(ui_layout, camera, world_x, world_y)
+        if screen_coords is None:
+            return []
+
+        color = self.params.get('color', (255, 255, 255))
+        char = self.params.get('char', ord('*'))
+        screen_x, screen_y = screen_coords
+        return [DrawCall(x=screen_x, y=screen_y, char=char, color=color)]
+
+    def _draw_from_config(self, ui_layout, camera, effect_type: EffectType) -> List[DrawCall]:
+        screen_coords = self._compute_screen(ui_layout, camera)
+        if screen_coords is None:
+            return []
+
         config = EFFECT_VFX_CONFIG.get(effect_type, {})
         color = self.params.get('color', config.get('color', (255, 255, 255)))
         char = self.params.get('char', config.get('char', ord('*')))
-        
-        self._single_tile_flash(con, color, char)
 
-    def _resolve_char(self, con, fallback: int) -> int:
+        return self._draw_single_tile(color, char, screen_coords)
+
+    def _resolve_char(self, fallback: int) -> int:
         if self.entity and hasattr(self.entity, 'char'):
             return self.entity.char
-
-        if self.screen_x is None or self.screen_y is None:
-            return fallback
-
-        char = libtcodpy.console_get_char(con, self.screen_x, self.screen_y)
-        if char == 0 or char == ord(' '):
-            return fallback
-        return char
+        return fallback
 
 
 class VisualEffectQueue:
@@ -617,23 +574,20 @@ class VisualEffectQueue:
             entity: The new revenant zombie
         """
         self.queue_effect_vfx(x, y, EffectType.REANIMATE, entity)
-    
-    def play_all(self, con=0, camera=None) -> None:
-        """Play all queued effects and clear the queue.
-        
-        This should be called during rendering, after entities are drawn
-        but before the final screen flush.
-        
-        Args:
-            con: Console to draw on (default: root console 0)
-            camera: Camera for coordinate translation (optional)
-        """
+
+    def drain_draw_calls(self, camera=None) -> List[DrawCall]:
+        """Convert queued effects to draw calls and clear the queue."""
+
+        from config.ui_layout import get_ui_layout
+
+        ui_layout = get_ui_layout()
+        draw_calls: List[DrawCall] = []
         for effect in self.effects:
-            effect.play(con, camera)
-        
-        # Clear the queue
+            draw_calls.extend(effect.to_draw_calls(ui_layout, camera))
+
         self.effects.clear()
-    
+        return draw_calls
+
     def clear(self) -> None:
         """Clear all queued effects without playing them."""
         self.effects.clear()

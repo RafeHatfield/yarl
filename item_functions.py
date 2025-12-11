@@ -8,8 +8,11 @@ NOTE: This module is being migrated to the new spell registry system.
 Some functions now delegate to the SpellExecutor for consistency.
 """
 
-import tcod as libtcod
-import tcod.libtcodpy as libtcodpy
+# Rendering stays in the IO layer. These placeholders remain so tests can
+# patch `libtcod`/`libtcodpy` without reintroducing direct console usage.
+libtcod = None
+libtcodpy = None
+
 import math
 from random import randint, random
 
