@@ -67,7 +67,7 @@ class TestMonsterMigrationCompatibility:
         
         # Verify fighter component matches hardcoded values
         assert monster.fighter is not None
-        assert monster.fighter.base_max_hp == 24  # Phase 13F: buffed from 20
+        assert monster.fighter.base_max_hp == 28  # Phase 16A: buffed from 24 for swarm pressure
         assert monster.fighter.base_power == 0  # New system uses damage_min/max instead of power
         assert monster.fighter.base_defense == 0
         assert monster.fighter.xp == 35
@@ -193,7 +193,7 @@ class TestMonsterMigrationIntegration:
         
         # Verify orc stats
         orc = registry.get_monster("orc")
-        assert orc.stats.hp == 24  # Phase 13F: buffed from 20
+        assert orc.stats.hp == 28  # Phase 16A: buffed from 24 for swarm pressure
         assert orc.stats.power == 0  # New system uses damage_min/max instead of power
         assert orc.stats.defense == 0
         assert orc.stats.xp == 35
@@ -215,7 +215,7 @@ class TestMonsterMigrationIntegration:
         assert orc.name == "Orc"
         assert orc.x == 10
         assert orc.y == 15
-        assert orc.fighter.base_max_hp == 24  # Phase 13F: buffed from 20
+        assert orc.fighter.base_max_hp == 28  # Phase 16A: buffed from 24 for swarm pressure
         
         # Create troll
         troll = factory.create_monster("troll", 5, 8)
@@ -243,10 +243,10 @@ class TestBackwardCompatibility:
         """Test that config values exactly match the old hardcoded values."""
         registry = get_entity_registry()
         
-        # Test orc stats match hardcoded Fighter(hp=24, defense=0, power=4, xp=35)
-        # Phase 13F: HP buffed from 20 to 24
+        # Test orc stats match hardcoded Fighter(hp=28, defense=0, power=4, xp=35)
+        # Phase 16A: HP buffed from 24 to 28 for swarm pressure
         orc = registry.get_monster("orc")
-        assert orc.stats.hp == 24  # Phase 13F: buffed from 20
+        assert orc.stats.hp == 28  # Phase 16A: buffed from 24 for swarm pressure
         assert orc.stats.defense == 0
         assert orc.stats.power == 0  # New system uses damage_min/max instead of power
         assert orc.stats.xp == 35
@@ -278,9 +278,9 @@ class TestBackwardCompatibility:
         from components.ai import BasicMonster
         from entity import Entity
         from render_functions import RenderOrder
-        
-        # Phase 13F: HP buffed from 20 to 24
-        old_fighter = Fighter(hp=24, defense=0, power=0, xp=35)  # New system uses damage_min/max instead of power
+
+        # Phase 16A: HP buffed from 24 to 28 for swarm pressure
+        old_fighter = Fighter(hp=28, defense=0, power=0, xp=35)  # New system uses damage_min/max instead of power
         old_ai = BasicMonster()
         old_orc = Entity(
             5, 5, "o", (63, 127, 63), "Orc",
