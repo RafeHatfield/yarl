@@ -504,8 +504,8 @@ def main():
             if show_load_error_message and (new_game or load_saved_game or show_hall_of_fame or exit_game):
                 show_load_error_message = False
             elif show_hall_of_fame:
-                # Display Hall of Fame screen
-                from systems.hall_of_fame import display_hall_of_fame
+                # Display Hall of Fame screen (IO-layer renderer)
+                from io_layer.hall_of_fame_renderer import display_hall_of_fame
                 display_hall_of_fame(con, con, ui_layout.screen_width, ui_layout.screen_height)
             elif new_game:
                 player, entities, game_map, message_log, game_state = (

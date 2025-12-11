@@ -22,6 +22,11 @@ This document summarizes the current architecture, highlights coupling/tech-debt
 - **State management**: `state_management/*` and `state_machine/*` handle state definitions and transitions; `GameStates` remains the primary enum.
 - **Memory/perf**: `memory/*`, `performance/*` for pooling, GC tuning, instrumentation.
 - **Screens/UI**: `screens/*`, `ui/*`, `rendering/*`, `render_functions.py`, `death_screen.py`. Rendering is intended read-only; gameplay logic should live in services/systems.
+
+### Rendering Boundary Guardrail (IO-only rendering)
+- libtcod imports and console drawing live ONLY in renderer implementations (`io_layer/*renderer*.py`), `render_functions.py`, or entrypoints (`engine.py`, `engine/soak_harness.py`).
+- Core logic (components, services, systems, GameCore/TurnStateAdapter) must not call libtcod or write to consoles; they surface data the renderer consumes.
+- Visual effects are queued in core (`visual_effect_queue.py`) and rendered in IO (`io_layer/effect_renderer.py`); future sprite/screenshot frontends plug in by implementing `Renderer` and consuming the same queue/state without touching gameplay code.
 - **Telemetry/metrics**: `instrumentation/*`, `services/telemetry_service.py`, run metrics in `instrumentation/run_metrics.py`, bot results logging in `engine_integration.py`.
 
 ## Subsystems (Responsibilities, Entry Points, Interactions)

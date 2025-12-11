@@ -5,10 +5,12 @@ render at the correct screen position when the camera is scrolled.
 """
 
 import unittest
-from unittest.mock import Mock, patch, call
-from visual_effect_queue import QueuedEffect, EffectType
-from rendering.camera import Camera
+from unittest.mock import Mock, patch
+
 from config.ui_layout import UILayoutConfig, set_ui_layout
+from io_layer.effect_renderer import render_effects
+from rendering.camera import Camera
+from visual_effect_queue import EffectType, QueuedEffect
 
 
 class TestVisualEffectsWithCamera(unittest.TestCase):
@@ -37,8 +39,8 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         # Reset UI layout to default
         set_ui_layout(None)
     
-    @patch('visual_effect_queue.libtcodpy.console_put_char')
-    @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
+    @patch('io_layer.effect_renderer.libtcod.console_put_char')
+    @patch('io_layer.effect_renderer.libtcod.console_set_default_foreground')
     def test_fireball_coordinates_with_camera_scroll(self, mock_fg, mock_put):
         """Test that fireball renders at correct screen position with camera scrolling.
         
@@ -60,8 +62,9 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
             char=ord('*')
         )
         
-        # Play effect with camera
-        effect.play(con=self.mock_con, camera=self.camera)
+        # Render via IO-layer helper using draw calls
+        draw_calls = effect.to_draw_calls(self.test_layout, self.camera)
+        render_effects(draw_calls, console=self.mock_con)
         
         # Verify coordinates were translated correctly
         # Camera center: (60, 40), viewport: 80x45
@@ -86,8 +89,8 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         self.assertEqual(screen_y, expected_screen_y,
                         f"Fireball Y should be {expected_screen_y}, got {screen_y}")
     
-    @patch('visual_effect_queue.libtcodpy.console_put_char')
-    @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
+    @patch('io_layer.effect_renderer.libtcod.console_put_char')
+    @patch('io_layer.effect_renderer.libtcod.console_set_default_foreground')
     def test_lightning_coordinates_with_camera_scroll(self, mock_fg, mock_put):
         """Test that lightning renders at correct screen position with camera scrolling."""
         # Lightning path from (55, 40) to (60, 40) in world coords
@@ -103,8 +106,8 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
             char=ord('|')
         )
         
-        # Play effect with camera
-        effect.play(con=self.mock_con, camera=self.camera)
+        draw_calls = effect.to_draw_calls(self.test_layout, self.camera)
+        render_effects(draw_calls, console=self.mock_con)
         
         # Verify all path tiles were drawn
         self.assertEqual(mock_put.call_count, len(lightning_path),
@@ -124,8 +127,8 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         self.assertEqual(screen_y, expected_screen_y,
                         f"Lightning start Y should be {expected_screen_y}, got {screen_y}")
     
-    @patch('visual_effect_queue.libtcodpy.console_put_char')
-    @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
+    @patch('io_layer.effect_renderer.libtcod.console_put_char')
+    @patch('io_layer.effect_renderer.libtcod.console_set_default_foreground')
     def test_dragon_fart_coordinates_with_camera_scroll(self, mock_fg, mock_put):
         """Test that dragon fart renders at correct screen position with camera scrolling."""
         # Dragon fart cone tiles in world coords
@@ -141,8 +144,8 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
             char=ord('~')
         )
         
-        # Play effect with camera
-        effect.play(con=self.mock_con, camera=self.camera)
+        draw_calls = effect.to_draw_calls(self.test_layout, self.camera)
+        render_effects(draw_calls, console=self.mock_con)
         
         # Verify all cone tiles were drawn
         self.assertEqual(mock_put.call_count, len(cone_tiles),
@@ -162,8 +165,8 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
         self.assertEqual(screen_y, expected_screen_y,
                         f"Dragon fart Y should be {expected_screen_y}, got {screen_y}")
     
-    @patch('visual_effect_queue.libtcodpy.console_put_char')
-    @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
+    @patch('io_layer.effect_renderer.libtcod.console_put_char')
+    @patch('io_layer.effect_renderer.libtcod.console_set_default_foreground')
     def test_effects_cull_outside_viewport(self, mock_fg, mock_put):
         """Test that effects outside viewport are culled and not drawn.
         
@@ -186,15 +189,15 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
             char=ord('*')
         )
         
-        # Play effect with camera
-        effect.play(con=self.mock_con, camera=self.camera)
+        draw_calls = effect.to_draw_calls(self.test_layout, self.camera)
+        render_effects(draw_calls, console=self.mock_con)
         
         # Should NOT draw any tiles (all outside viewport)
         self.assertEqual(mock_put.call_count, 0,
                         "Should not draw tiles outside viewport")
     
-    @patch('visual_effect_queue.libtcodpy.console_put_char')
-    @patch('visual_effect_queue.libtcodpy.console_set_default_foreground')
+    @patch('io_layer.effect_renderer.libtcod.console_put_char')
+    @patch('io_layer.effect_renderer.libtcod.console_set_default_foreground')
     def test_effects_partially_visible(self, mock_fg, mock_put):
         """Test that partially visible effects only draw visible tiles.
         
@@ -216,8 +219,8 @@ class TestVisualEffectsWithCamera(unittest.TestCase):
             char=ord('*')
         )
         
-        # Play effect with camera
-        effect.play(con=self.mock_con, camera=self.camera)
+        draw_calls = effect.to_draw_calls(self.test_layout, self.camera)
+        render_effects(draw_calls, console=self.mock_con)
         
         # Should only draw 2 tiles (the ones inside viewport)
         self.assertEqual(mock_put.call_count, 2,
