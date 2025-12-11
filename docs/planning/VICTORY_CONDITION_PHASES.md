@@ -2,6 +2,8 @@
 
 **⚠️ STORY LORE:** For canonical story/lore, see `STORY_LORE_CANONICAL.md`
 
+*Historical planning document; current roadmap lives in `ROADMAP.md` and ongoing architecture work is tracked separately.*
+
 *This document tracks implementation phases and technical details.*
 *For story content and character motivations, see `STORY_LORE_CANONICAL.md`*
 

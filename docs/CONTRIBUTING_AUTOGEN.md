@@ -1,6 +1,6 @@
 # Contributing: AI/Automated Agent Guidelines
 
-This guide is for AI assistants, autonomous agents, and developers making broad changes to Catacombs of Yarl. It clarifies module responsibilities and testing requirements to keep the codebase robust and maintainable.
+This guide is for AI assistants, autonomous agents, and developers making broad changes to Catacombs of Yarl. It clarifies module responsibilities and testing requirements to keep the codebase robust and maintainable. **Historical note:** file paths/tests may drift; prefer `README.md`, `docs/README.md`, and `ARCHITECTURE_OVERVIEW.md` for current entrypoints before changing behavior.
 
 ---
 

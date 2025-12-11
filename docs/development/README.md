@@ -1,6 +1,6 @@
 # Development Documentation
 
-This folder contains session notes, implementation plans, and feature development work.
+This folder contains session notes, implementation plans, and feature development work. These are historical snapshots; current planning lives in `ROADMAP.md` and architecture work is tracked separately.
 
 ## Current Development
 

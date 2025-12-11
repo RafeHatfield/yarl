@@ -1,6 +1,6 @@
 # Phase 4: Environmental Lore
 
-**Status:** ✅ COMPLETE
+**Status:** ✅ COMPLETE (historical snapshot; current planning in `ROADMAP.md`)
 
 Phase 4 added atmospheric story clues through signpost lore, murals & inscriptions, and easter eggs.
 

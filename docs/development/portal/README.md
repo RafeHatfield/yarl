@@ -1,6 +1,6 @@
 # Portal System Development
 
-**Status:** ✅ COMPLETE & PRODUCTION-READY
+**Status:** ✅ COMPLETE & PRODUCTION-READY (historical snapshot; current planning in `ROADMAP.md`)
 
 Complete two-phase implementation of the portal system: core mechanics (Phase A) and advanced features (Phase B).
 
