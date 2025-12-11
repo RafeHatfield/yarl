@@ -18,7 +18,7 @@ _Purpose_: Track future architecture work once we resume refactors. Keep changes
 - `portal_manager` logic improvements (not schema)
 
 ## Recommended Next Refactors (when ready)
-- **Phase 14A – Input path unification** — High value: retire duplicate input paths; stabilizes action ingestion. Tests: golden path, `engine_integration` smoke, input handler unit tests. Blast: input handlers, `engine_integration`, bot input. Tag: Codex-scale refactor.
+- **Phase 14A – Input path unification** — **COMPLETE** (Dec 2025): unified InputSource → engine_integration → ActionProcessor; normalized action routing; legacy handler imports removed. Tests: golden path, `engine_integration` smoke, input handler unit tests. Blast: input handlers, `engine_integration`, bot input. Tag: Codex-scale refactor.
 - **Phase 14B – Render responsibility hardening** — High value: enforce render-as-read-only, prevent double-render. Tests: golden path visuals checks, `worldgen_sanity` for FOV stability. Blast: `RenderSystem`, `ConsoleRenderer`, IO layer. Tag: Codex-scale refactor.
 - **Phase 14C – Turn authority consolidation** — High value: single authority for turn/phase via `TurnStateAdapter`. Tests: AI turns, portal invariants, golden path. Blast: AISystem, TurnManager, TurnController callers. Tag: Codex-scale refactor.
 - **Phase 14D – GameMap sprawl extraction** — High value: isolate spawn/ETP/pity hooks to reduce coupling. Tests: `ecosystem_sanity.py`, `worldgen_sanity.py`, ETP/loot CI scripts. Blast: mapgen, balance, spawn_service. Tag: Codex-scale refactor.

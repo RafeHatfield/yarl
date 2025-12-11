@@ -33,7 +33,7 @@ See engine.py and engine/soak_harness.py for examples of proper initialization.
 import logging
 import time
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Tuple
 
 import tcod.libtcodpy as libtcod
 from engine import GameEngine
@@ -46,6 +46,73 @@ from io_layer.bot_input import BotInputSource
 from components.component_registry import ComponentType
 
 logger = logging.getLogger(__name__)
+
+# Canonical action keys for validation and routing
+_ACTION_KEYS = {
+    "move",
+    "wait",
+    "pickup",
+    "show_inventory",
+    "drop_inventory",
+    "throw",
+    "inventory_index",
+    "take_stairs",
+    "start_auto_explore",
+    "search",
+    "show_character_screen",
+    "show_wizard_menu",
+    "exit",
+    "restart",
+    "fullscreen",
+    "level_up",
+    "bot_abort_run",
+    "faction_index",
+}
+
+_MOUSE_KEYS = {
+    "left_click",
+    "right_click",
+    "sidebar_click",
+    "sidebar_right_click",
+}
+
+
+def _normalize_actions(combined_action: Any) -> Tuple[ActionDict, ActionDict]:
+    """Filter and split combined actions into keyboard and mouse dictionaries.
+
+    This ensures that all input sources (keyboard, mouse, bot) return only
+    recognized ActionDict keys, preventing “ghost” inputs from bypassing
+    validation. Unknown keys are dropped with a debug log for diagnostics.
+    """
+    if not isinstance(combined_action, dict):
+        return {}, {}
+
+    valid_action: ActionDict = {}
+    mouse_action: ActionDict = {}
+
+    for key, value in combined_action.items():
+        if key in _MOUSE_KEYS:
+            mouse_action[key] = value
+        elif key in _ACTION_KEYS:
+            valid_action[key] = value
+        else:
+            logger.debug(f"Dropping unknown action key from input source: {key}={value}")
+
+    return valid_action, mouse_action
+
+
+def _pull_next_input(
+    input_source: InputSource,
+    state_manager,
+) -> Tuple[ActionDict, ActionDict]:
+    """Unified entrypoint for acquiring and validating the next input action."""
+    raw_action: ActionDict = input_source.next_action(state_manager.state)
+
+    # Keep mouse state in game_state for tooltip/render parity (KeyboardInputSource sets it)
+    if hasattr(input_source, "current_mouse"):
+        state_manager.state.mouse = getattr(input_source, "current_mouse", None)
+
+    return _normalize_actions(raw_action or {})
 
 
 def _log_bot_results_summary(run_metrics, constants: dict) -> None:
@@ -211,7 +278,6 @@ from fov_functions import initialize_fov
 from game_actions import ActionProcessor
 from game_messages import Message
 from game_states import GameStates
-from input_handlers import handle_keys, handle_mouse
 from loader_functions.data_loaders import save_game
 from config.ui_layout import get_ui_layout
 from rendering.camera import Camera, CameraMode
@@ -542,16 +608,17 @@ def play_game_with_engine(
         pump_events_and_sleep(input_source)
 
         # =====================================================================
-        # INPUT HANDLING (PHASE 1: COMPLETE)
-        # Input comes ONLY from input_source.next_action() - no InputSystem.update()
-        # Mouse and keyboard actions are mixed in the dict from KeyboardInputSource
+        # INPUT HANDLING (Unified)
+        # All input sources are normalized and validated here.
         # =====================================================================
-        combined_action: ActionDict = input_source.next_action(engine.state_manager.state)
+        action, mouse_action = _pull_next_input(
+            input_source=input_source,
+            state_manager=engine.state_manager,
+        )
         
-        # KEYBOARD DEBUG: Log keyboard input for debugging double-move issue
-        if combined_action and input_mode != "bot":
+        if (action or mouse_action) and input_mode != "bot":
             turn_num = engine.turn_manager.turn_number if engine.turn_manager else 0
-            logger.debug(f"[KEYBOARD INPUT] turn={turn_num}, action={combined_action}")
+            logger.debug(f"[INPUT] turn={turn_num}, action={action}, mouse={mouse_action}")
         
         # BOT LIMITS CHECK: Enforce --max-turns and --max-floors if configured
         # This prevents infinite loops and provides deterministic run termination
@@ -594,23 +661,12 @@ def play_game_with_engine(
                 return {"ended": "max_floors"}
         
         # BOT MODE DIAGNOSTIC: Log frame state for debugging tight loops
-        if input_mode == "bot" and combined_action:
+        if input_mode == "bot" and (action or mouse_action):
             current_state = engine.state_manager.state.current_state
             turn_phase = engine.turn_manager.current_phase if engine.turn_manager else None
             logger.debug(
-                f"BOT FRAME: state={current_state}, turn_phase={turn_phase}, action={combined_action}"
+                f"BOT FRAME: state={current_state}, turn_phase={turn_phase}, action={action}, mouse={mouse_action}"
             )
-        
-        # Update game state with current mouse position for tooltip rendering
-        # KeyboardInputSource maintains current_mouse with libtcod mouse events
-        if isinstance(input_source, KeyboardInputSource):
-            engine.state_manager.state.mouse = input_source.current_mouse
-        
-        # Separate mouse actions from keyboard actions
-        # KeyboardInputSource mixes both into one dict, but ActionProcessor expects them separate
-        mouse_action_keys = {'left_click', 'right_click', 'sidebar_click', 'sidebar_right_click'}
-        action: ActionDict = {k: v for k, v in combined_action.items() if k not in mouse_action_keys}
-        mouse_action: ActionDict = {k: v for k, v in combined_action.items() if k in mouse_action_keys}
         
         # Phase 1.5.5: Auto-exit on death in bot mode
         # In bot mode, when player dies, automatically exit after a short delay
