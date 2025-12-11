@@ -49,11 +49,13 @@ from balance.pity import (
 )
 from balance.loot_tags import (
     get_loot_tags,
-    get_band_density_multiplier,
-    get_healing_multiplier,
-    get_rare_multiplier,
     get_items_by_category,
     get_items_for_band,
+)
+from services.spawn_service import (
+    EncounterBudget,
+    SpawnContext,
+    SpawnService,
 )
 
 logger = get_logger(__name__)
@@ -964,6 +966,8 @@ class GameMap:
             exclude_coords = [exclude_coords]
         config = get_testing_config()
         
+        spawn_service = SpawnService(self.dungeon_level)
+        
         # Get spawn limits from configuration
         max_monsters_per_room = from_dungeon_level(
             config.get_max_monsters_per_room(self.dungeon_level), self.dungeon_level
@@ -986,14 +990,9 @@ class GameMap:
         # ─────────────────────────────────────────────────────────────────────
         # BAND-BASED DENSITY SCALING: Reduce loot flood in B1-B2
         # ─────────────────────────────────────────────────────────────────────
-        # ETP's get_band_for_depth returns strings like "B1", extract the number
         band_str = get_band_for_depth(self.dungeon_level)
         band_num = int(band_str[1:]) if band_str.startswith("B") else 1
-        density_multiplier = get_band_density_multiplier(band_num)
-        
-        # Scale max_items_per_room by band density multiplier
-        # Ensure at least 1 item can spawn (for pity system compatibility)
-        max_items_per_room = max(1, int(max_items_per_room * density_multiplier))
+        max_items_per_room = spawn_service.scale_max_items_per_room(max_items_per_room, band_num)
         
         # Get ETP budget for this room
         # Priority: explicit encounter_budget param > level override > default band budget
@@ -1009,157 +1008,86 @@ class GameMap:
             etp_max = level_override.encounter_budget.etp_max
             allow_spike = level_override.encounter_budget.allow_spike
         
-        # Get a random number of monsters and items
-        number_of_monsters = randint(0, max_monsters_per_room)
-        number_of_items = randint(0, max_items_per_room)
-        
-        # DEBUG: Tier 1 - No monsters mode (peaceful testing)
-        if config.no_monsters:
-            number_of_monsters = 0
-
-        # Note: band_str already computed above for density scaling
-        band_id = band_str  # Use for legacy B1 constraint checks
-        
-        monster_chances = {
-            "orc": 80,
-            "troll": from_dungeon_level(
-                [[15, 3], [30, 5], [60, 7]], self.dungeon_level
-            ),
-        }
-        
-        # B1 SPAWN CONSTRAINTS: Limit troll presence in early game
-        # Trolls in B1 should be rare and never appear with multiple other monsters
-        if band_id == "B1":
-            # Reduce troll spawn chance in B1 to prevent "troll + friends" death rooms
-            monster_chances["troll"] = from_dungeon_level(
-                [[5, 3], [10, 4], [15, 5]], self.dungeon_level  # Much lower than normal
-            )
-        
-        # Add slimes for testing or higher levels
+        # Build spawn context and plan
         from config.testing_config import is_testing_mode
-        if is_testing_mode():
-            # In testing mode, slimes appear early for testing
-            monster_chances["slime"] = 40  # 40% chance on level 1
-            monster_chances["large_slime"] = from_dungeon_level(
-                [[10, 1], [20, 3]], self.dungeon_level  # Small chance from level 1
-            )
-        else:
-            # In normal mode, slimes appear later
-            monster_chances["slime"] = from_dungeon_level(
-                [[20, 2], [40, 4], [60, 6]], self.dungeon_level
-            )
-            monster_chances["large_slime"] = from_dungeon_level(
-                [[5, 3], [15, 5], [25, 7]], self.dungeon_level
-            )
-        
-        # Phase 10: Add undead monsters (zombies, plague zombies, wraiths)
-        # Undead appear in mid-to-late game (B3+, depth 11+)
-        monster_chances["zombie"] = from_dungeon_level(
-            [[20, 10], [40, 13], [60, 16]], self.dungeon_level
-        )
-        
-        # Plague zombies appear later and are rarer - they spread the plague!
-        monster_chances["plague_zombie"] = from_dungeon_level(
-            [[10, 13], [20, 16], [35, 19]], self.dungeon_level
-        )
-        
-        # Wraiths are rare, fast, and dangerous - late game only
-        monster_chances["wraith"] = from_dungeon_level(
-            [[5, 15], [15, 18], [25, 21]], self.dungeon_level
-        )
-        
-        # Giant spiders (independent faction) appear mid-game
-        monster_chances["giant_spider"] = from_dungeon_level(
-            [[15, 8], [30, 11], [45, 14]], self.dungeon_level
-        )
-        
-        # Cultist blademasters appear later (defensive faction)
-        monster_chances["cultist_blademaster"] = from_dungeon_level(
-            [[10, 12], [20, 15], [35, 18]], self.dungeon_level
-        )
-
-        # Get item spawn chances from configuration (normal or testing mode)
         item_spawn_config = config.get_item_spawn_chances(self.dungeon_level)
-        item_chances = {}
         
-        # Get band-based multipliers for category scaling
-        healing_mult = get_healing_multiplier(band_num)
-        rare_mult = get_rare_multiplier(band_num)
+        spawn_context = SpawnContext(
+            depth=self.dungeon_level,
+            band_id=band_str,
+            band_num=band_num,
+            max_monsters=max_monsters_per_room,
+            max_items=max_items_per_room,
+            encounter_budget=EncounterBudget(
+                etp_min=etp_min,
+                etp_max=etp_max,
+                allow_spike=allow_spike,
+            ),
+            testing_mode=is_testing_mode(),
+            no_monsters=config.no_monsters,
+            item_spawn_config=item_spawn_config,
+        )
         
-        for item_name, chance_config in item_spawn_config.items():
-            if isinstance(chance_config, int):
-                # Simple percentage chance
-                base_chance = chance_config
-            else:
-                # Dungeon level-based progression
-                base_chance = from_dungeon_level(chance_config, self.dungeon_level)
-            
-            # Apply category-based band multipliers
-            # Check item's loot tags to determine if it's healing or rare
-            item_tags = get_loot_tags(item_name)
-            if item_tags:
-                if item_tags.has_category("healing"):
-                    base_chance = int(base_chance * healing_mult)
-                if item_tags.has_category("rare"):
-                    base_chance = int(base_chance * rare_mult)
-            
-            # Only add to chances if > 0
-            if base_chance > 0:
-                item_chances[item_name] = base_chance
-
+        spawn_plan = spawn_service.generate_room_plan(
+            spawn_context,
+            randint_fn=randint,
+            choice_fn=random_choice_from_dict,
+        )
+        
         # ETP budgeting: Track total ETP as we spawn monsters
         room_total_etp = 0.0
         spawned_monsters = []  # Track (type, etp) for logging
         room_id = f"room_{room.x1}_{room.y1}"
+        HEAVY_MONSTER_TYPES = {"troll", "large_slime"}
         
-        # B1 constraint: Track if we've spawned a high-ETP monster (troll)
-        # to prevent "troll + friends" scenarios
+        # Track heavy monster presence for B1 constraint (still enforced)
         spawned_heavy_monster = False
-        HEAVY_MONSTER_TYPES = {"troll", "large_slime"}  # ETP 50+ monsters
         
-        for i in range(number_of_monsters):
+        for _ in range(spawn_plan.num_monsters):
             # Check if we've hit ETP budget
             if room_total_etp >= etp_max:
                 logger.debug(
                     f"Room {room_id}: ETP budget reached ({room_total_etp:.1f}/{etp_max}), "
-                    f"stopping monster spawns ({i}/{number_of_monsters} placed)"
+                    f"stopping monster spawns ({len(spawned_monsters)}/{spawn_plan.num_monsters} placed)"
+                )
+                break
+            
+            # B1 CONSTRAINT: If we've already spawned a heavy monster, skip further spawns
+            if band_str == "B1" and spawned_heavy_monster:
+                logger.debug(
+                    f"Room {room_id}: B1 constraint - already has heavy monster, "
+                    f"skipping additional spawn"
                 )
                 break
             
             # Choose a random location in the room
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
-
+            
             if not any(
                 [entity for entity in entities if entity.x == x and entity.y == y]
             ):
-                monster_choice = random_choice_from_dict(monster_chances)
+                monster_choice = spawn_service.pick_monster(
+                    spawn_plan.monster_chances,
+                    choice_fn=random_choice_from_dict,
+                )
+                if not monster_choice:
+                    continue
                 
-                # B1 CONSTRAINT: If we've already spawned a heavy monster, 
-                # don't add more monsters at all in this room
-                if band_id == "B1" and spawned_heavy_monster:
-                    logger.debug(
-                        f"Room {room_id}: B1 constraint - already has heavy monster, "
-                        f"skipping additional spawn"
-                    )
-                    break
+                is_heavy = monster_choice in HEAVY_MONSTER_TYPES
                 
-                # B1 CONSTRAINT: If trying to spawn a troll and room already has monsters,
-                # skip the troll to prevent "troll + friends" scenarios
-                if (band_id == "B1" and 
-                    monster_choice in HEAVY_MONSTER_TYPES and 
-                    len(spawned_monsters) > 0):
+                # B1 CONSTRAINT: If trying to spawn a heavy and room already has monsters, skip
+                if band_str == "B1" and is_heavy and len(spawned_monsters) > 0:
                     logger.debug(
                         f"Room {room_id}: B1 constraint - skipping {monster_choice} "
                         f"(room already has monsters)"
                     )
                     continue
                 
-                # Check if this monster would exceed budget (unless allow_spike)
                 monster_etp = get_monster_etp(monster_choice, self.dungeon_level)
                 
+                # Check if this monster would exceed budget (unless allow_spike)
                 if not allow_spike and (room_total_etp + monster_etp) > etp_max:
-                    # Skip this monster - would exceed budget
                     logger.debug(
                         f"Room {room_id}: Skipping {monster_choice} "
                         f"(ETP {monster_etp:.1f} would exceed budget "
@@ -1185,7 +1113,7 @@ class GameMap:
                     spawned_monsters.append((monster_choice, monster_etp))
                     
                     # Track heavy monsters for B1 constraint
-                    if monster_choice in HEAVY_MONSTER_TYPES:
+                    if is_heavy:
                         spawned_heavy_monster = True
         
         # Debug log in the requested format: [DEBUG] Room X @ depth Y (band Z): ETP=N, monsters=[type:count, ...]
@@ -1203,7 +1131,7 @@ class GameMap:
             etp_status = "OVER"
         
         logger.debug(
-            f"[ETP] Room {room_id} @ depth {self.dungeon_level} (band {band_id}): "
+            f"[ETP] Room {room_id} @ depth {self.dungeon_level} (band {band_str}): "
             f"ETP={room_total_etp:.1f} [{etp_status}], budget=[{etp_min}-{etp_max}], "
             f"monsters=[{monster_summary if monster_summary else 'empty'}]"
         )
@@ -1217,11 +1145,11 @@ class GameMap:
             budget_min=etp_min,
             budget_max=etp_max
         )
-
+        
         # Track items spawned in this room for pity system
         spawned_item_ids = []
         
-        for i in range(number_of_items):
+        for _ in range(spawn_plan.num_items):
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
 
@@ -1229,7 +1157,12 @@ class GameMap:
             if (not self.is_blocked(x, y) and 
                 not any([entity for entity in entities if entity.x == x and entity.y == y]) and
                 (x, y) not in exclude_coords):
-                item_choice = random_choice_from_dict(item_chances)
+                item_choice = spawn_service.pick_item(
+                    spawn_plan.item_chances,
+                    choice_fn=random_choice_from_dict,
+                )
+                if not item_choice:
+                    continue
                 
                 # Get entity factory for equipment creation
                 entity_factory = get_entity_factory()
@@ -1298,7 +1231,7 @@ class GameMap:
                     if not item:
                         logger.warning(f"Failed to create item: {item_choice}, falling back to healing potion")
                         item = entity_factory.create_spell_item("healing_potion", x, y)
-
+                
                 entities.append(item)
                 # Invalidate entity sorting cache when new entities are added
                 invalidate_entity_cache("entity_added_item")
