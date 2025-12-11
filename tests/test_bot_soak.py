@@ -61,6 +61,8 @@ class TestSoakRunResult:
         assert result.floor_count == 3
         assert result.avg_etp_per_floor == 25.5
         assert result.exception is None
+        assert result.bot_steps == 0
+        assert result.bot_actions == {}
     
     def test_from_run_metrics_and_telemetry_with_none_metrics(self):
         """Test fallback when run_metrics is None."""
@@ -83,6 +85,7 @@ class TestSoakRunResult:
         assert result.failure_type == "exception"
         assert result.floor_count == 2
         assert result.exception == "Test exception"
+        assert result.bot_floors == 0
 
 
 class TestSoakSessionResult:

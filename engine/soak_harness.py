@@ -40,6 +40,8 @@ from typing import List, Optional, Dict, Any
 import json
 import tcod.libtcodpy as libtcod
 
+from io_layer.bot_metrics import BotMetricsRecorder, BotRunSummary
+
 logger = logging.getLogger(__name__)
 
 
@@ -82,6 +84,11 @@ class SoakRunResult:
         steps_taken: Total steps taken
         floor_count: Number of floors in telemetry
         avg_etp_per_floor: Average ETP per floor
+        bot_steps: Bot decision count (from bot metrics)
+        bot_floors: Unique floors seen in bot metrics
+        bot_actions: Flattened action counts (dict)
+        bot_contexts: Flattened context counts (dict)
+        bot_reasons: Flattened reason counts (dict)
         exception: Optional exception message if run crashed
         timestamp: ISO timestamp when run completed
     """
@@ -104,6 +111,11 @@ class SoakRunResult:
     steps_taken: int = 0
     floor_count: int = 0
     avg_etp_per_floor: float = 0.0
+    bot_steps: int = 0
+    bot_floors: int = 0
+    bot_actions: Dict[str, int] = field(default_factory=dict)
+    bot_contexts: Dict[str, int] = field(default_factory=dict)
+    bot_reasons: Dict[str, int] = field(default_factory=dict)
     exception: Optional[str] = None
     timestamp: str = ""
     
@@ -129,6 +141,11 @@ class SoakRunResult:
             'steps_taken': self.steps_taken,
             'floor_count': self.floor_count,
             'avg_etp_per_floor': round(self.avg_etp_per_floor, 2),
+            'bot_steps': self.bot_steps,
+            'bot_floors': self.bot_floors,
+            'bot_actions': dict(self.bot_actions),
+            'bot_contexts': dict(self.bot_contexts),
+            'bot_reasons': dict(self.bot_reasons),
             'exception': self.exception,
             'timestamp': self.timestamp,
         }
@@ -279,6 +296,7 @@ class SoakRunResult:
         persona: str = "balanced",
         bot_abort_reason: Optional[str] = None,
         auto_explore_terminal_reason: str = "",
+        bot_summary: Optional[BotRunSummary] = None,
     ) -> "SoakRunResult":
         """Create from run metrics and telemetry.
         
@@ -295,6 +313,7 @@ class SoakRunResult:
             SoakRunResult instance
         """
         timestamp = datetime.now().isoformat()
+        bot_summary_dict = bot_summary.to_dict() if bot_summary else {}
         
         if run_metrics:
             # Rich failure classification - returns (refined_outcome, failure_type, failure_detail)
@@ -326,6 +345,11 @@ class SoakRunResult:
                 steps_taken=run_metrics.steps_taken,
                 floor_count=telemetry_stats.get('floors', 0),
                 avg_etp_per_floor=telemetry_stats.get('avg_etp_per_floor', 0.0),
+                bot_steps=bot_summary_dict.get("total_steps", 0),
+                bot_floors=bot_summary_dict.get("floors_seen", 0),
+                bot_actions=bot_summary_dict.get("action_counts", {}),
+                bot_contexts=bot_summary_dict.get("context_counts", {}),
+                bot_reasons=bot_summary_dict.get("reason_counts", {}),
                 exception=exception,
                 timestamp=timestamp,
             )
@@ -345,6 +369,11 @@ class SoakRunResult:
                 auto_explore_terminal_reason=auto_explore_terminal_reason,
                 floor_count=telemetry_stats.get('floors', 0),
                 avg_etp_per_floor=telemetry_stats.get('avg_etp_per_floor', 0.0),
+                bot_steps=bot_summary_dict.get("total_steps", 0),
+                bot_floors=bot_summary_dict.get("floors_seen", 0),
+                bot_actions=bot_summary_dict.get("action_counts", {}),
+                bot_contexts=bot_summary_dict.get("context_counts", {}),
+                bot_reasons=bot_summary_dict.get("reason_counts", {}),
                 exception=exception,
                 timestamp=timestamp,
             )
@@ -448,6 +477,7 @@ class SoakSessionResult:
             'duration_seconds', 'deepest_floor', 'floors_visited',
             'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
             'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
+            'bot_steps', 'bot_floors', 'bot_actions', 'bot_contexts', 'bot_reasons',
             'exception', 'timestamp'
         ]
         
@@ -643,6 +673,11 @@ def run_bot_soak(
         
         run_result = None
         exception_msg = None
+        bot_metrics_recorder = BotMetricsRecorder(
+            enabled=True, run_id=f"soak_run_{run_num}"
+        )
+        # Provide recorder to downstream creation path
+        constants["bot_metrics_recorder"] = bot_metrics_recorder
         
         try:
             # Reset global singletons for clean run
@@ -721,6 +756,7 @@ def run_bot_soak(
                 logger.info(f"Run {run_num}: bot_completed with abort_reason={bot_abort_reason}")
             
             telemetry_stats = telemetry_service.get_stats() if telemetry_service else {}
+            bot_summary = bot_metrics_recorder.summarize()
             
             # Capture final AutoExplore stop_reason for this run
             from components.component_registry import ComponentType
@@ -740,13 +776,16 @@ def run_bot_soak(
                 persona=persona,
                 bot_abort_reason=bot_abort_reason,  # Pass abort reason for classification
                 auto_explore_terminal_reason=auto_explore_reason,
+                bot_summary=bot_summary,
             )
             
             session_result.completed_runs += 1
             
             # Write telemetry to JSONL
             if telemetry_enabled and jsonl_path and run_metrics:
-                _append_run_to_jsonl(jsonl_path, run_metrics, telemetry_service)
+                _append_run_to_jsonl(
+                    jsonl_path, run_metrics, telemetry_service, bot_summary
+                )
             
             logger.info(f"Run {run_num} completed: outcome={run_result.outcome}, "
                        f"duration={run_result.duration_seconds:.1f}s, "
@@ -755,6 +794,7 @@ def run_bot_soak(
         except Exception as e:
             exception_msg = str(e)
             logger.error(f"Run {run_num} crashed: {exception_msg}", exc_info=True)
+            bot_summary = bot_metrics_recorder.summarize()
             
             # Classify the error - returns (refined_outcome, failure_type, failure_detail)
             refined_outcome, failure_type, failure_detail = SoakRunResult.classify_failure(
@@ -769,6 +809,11 @@ def run_bot_soak(
                 outcome=refined_outcome,  # Should be "exception"
                 failure_type=failure_type,
                 failure_detail=failure_detail,
+                bot_steps=bot_summary.total_steps if bot_summary else 0,
+                bot_floors=bot_summary.floors_seen if bot_summary else 0,
+                bot_actions=bot_summary.action_counts if bot_summary else {},
+                bot_contexts=bot_summary.context_counts if bot_summary else {},
+                bot_reasons=bot_summary.reason_counts if bot_summary else {},
                 exception=exception_msg,
                 timestamp=datetime.now().isoformat(),
             )
@@ -801,6 +846,7 @@ def _append_run_to_jsonl(
     jsonl_path: Path,
     run_metrics,  # RunMetrics
     telemetry_service,  # TelemetryService
+    bot_summary: Optional[BotRunSummary] = None,
 ) -> None:
     """Append a single run's telemetry to JSONL file.
     
@@ -823,6 +869,7 @@ def _append_run_to_jsonl(
                 'total_doors': telemetry_stats.get('total_doors', 0),
                 'total_keys': telemetry_stats.get('total_keys', 0),
             },
+            'bot_summary': bot_summary.to_dict() if bot_summary else None,
             'timestamp': datetime.now().isoformat(),
         }
         

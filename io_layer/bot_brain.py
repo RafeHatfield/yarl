@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
+from io_layer.bot_metrics import BotMetricsRecorder
+
 from game_states import GameStates
 from components.component_registry import ComponentType
 from fov_functions import map_is_in_fov
@@ -183,7 +185,8 @@ class BotBrain:
         self, 
         debug: bool = False, 
         log_level: LogLevel = LogLevel.SUMMARY,
-        persona: Optional[str] = None
+        persona: Optional[str] = None,
+        metrics_recorder: Optional[BotMetricsRecorder] = None,
     ) -> None:
         """Initialize BotBrain with default EXPLORE state.
         
@@ -238,6 +241,8 @@ class BotBrain:
         self._stair_walk_attempts = 0
         self._stair_walk_last_pos = None
         self._stair_walk_stuck_threshold = 5  # Abort after 5 failed attempts to walk to stairs
+        # Optional metrics recorder (bot-scoped, opt-in)
+        self.metrics_recorder = metrics_recorder
     
     def decide_action(self, game_state: Any) -> Dict[str, Any]:
         """Decide the next action based on current game state.
@@ -1810,4 +1815,57 @@ class BotBrain:
         
         # No potions available
         return None
+
+    # ========================================================================
+    # METRICS SUPPORT
+    # ========================================================================
+    def get_state_snapshot(self, game_state: Any) -> Dict[str, Any]:
+        """Return a lightweight snapshot of current bot context for telemetry.
+        
+        This is read-only and does not change bot behavior.
+        """
+        snapshot: Dict[str, Any] = {
+            "state": self.state.name if isinstance(self.state, BotState) else str(self.state),
+            "turn_number": self._turn_counter,
+            "persona": self.persona.name if self.persona else "unknown",
+            "in_combat": self.state == BotState.COMBAT,
+            "in_explore": self.state == BotState.EXPLORE,
+            "in_loot": self.state == BotState.LOOT,
+            "low_hp": False,
+            "floor_complete": False,
+            "auto_explore_active": False,
+            "visible_enemies": 0,
+            "floor": None,
+        }
+
+        player = self._get_player(game_state)
+        if not player:
+            return snapshot
+
+        # Floor/dungeon level if available
+        game_map = getattr(game_state, "game_map", None)
+        if game_map and hasattr(game_map, "dungeon_level"):
+            snapshot["floor"] = getattr(game_map, "dungeon_level")
+
+        # Visible enemies count (safe helper that tolerates mocks)
+        visible_enemies = self._get_visible_enemies(game_state, player)
+        snapshot["visible_enemies"] = len(visible_enemies)
+
+        # HP fraction
+        hp_fraction = self._get_player_hp_fraction(player)
+        snapshot["low_hp"] = hp_fraction <= self.persona.potion_hp_threshold
+
+        # Floor complete check (safe, catches exceptions)
+        try:
+            snapshot["floor_complete"] = self._is_floor_complete(player)
+        except Exception:
+            snapshot["floor_complete"] = False
+
+        # Auto-explore active?
+        try:
+            snapshot["auto_explore_active"] = self._is_autoexplore_active(game_state)
+        except Exception:
+            snapshot["auto_explore_active"] = False
+
+        return snapshot
 
