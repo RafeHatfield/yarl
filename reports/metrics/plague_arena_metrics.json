@@ -1,0 +1,41 @@
+{
+  "bonus_attacks_per_run": 11.93,
+  "death_rate": 0.38,
+  "depth": null,
+  "family": "plague_arena",
+  "monster_attacks_per_run": 23.17,
+  "monster_hit_rate": 0.24341821320673285,
+  "player_attacks_per_run": 19.24,
+  "player_hit_rate": 0.8357588357588358,
+  "pressure_index": 3.9300000000000033,
+  "raw": {
+    "metrics": {
+      "average_turns": 172.48,
+      "player_deaths": 38,
+      "runs": 100,
+      "total_bonus_attacks_triggered": 1193,
+      "total_kills_by_faction": {
+        "Plague_Zombie": 38,
+        "Player": 251
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 38,
+        "PLAYER": 251
+      },
+      "total_monster_attacks": 2317,
+      "total_monster_hits": 564,
+      "total_plague_infections": 75,
+      "total_player_attacks": 1924,
+      "total_player_hits": 1608,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 289
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 100,
+    "scenario_id": "plague_arena",
+    "turn_limit": 500
+  },
+  "runs": 100,
+  "scenario_id": "plague_arena"
+}

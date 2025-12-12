@@ -1,0 +1,39 @@
+{
+  "bonus_attacks_per_run": 15.88,
+  "death_rate": 0.0,
+  "depth": null,
+  "family": "orc_swarm",
+  "monster_attacks_per_run": 14.28,
+  "monster_hit_rate": 0.33753501400560226,
+  "player_attacks_per_run": 36.02,
+  "player_hit_rate": 0.742365352581899,
+  "pressure_index": -21.740000000000002,
+  "raw": {
+    "metrics": {
+      "average_turns": 50.0,
+      "player_deaths": 0,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 794,
+      "total_kills_by_faction": {
+        "Player": 250
+      },
+      "total_kills_by_source": {
+        "PLAYER": 250
+      },
+      "total_monster_attacks": 714,
+      "total_monster_hits": 241,
+      "total_plague_infections": 0,
+      "total_player_attacks": 1801,
+      "total_player_hits": 1337,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 250
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "orc_swarm_brutal_speed_full",
+    "turn_limit": 100
+  },
+  "runs": 50,
+  "scenario_id": "orc_swarm_brutal_speed_full"
+}

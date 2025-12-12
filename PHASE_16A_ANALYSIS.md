@@ -327,3 +327,12 @@ If further tuning is needed:
 - Makefile targets: `eco-swarm-tight`, `eco-swarm-tight-json`, `eco-zombie-horde`, `eco-zombie-horde-json`.
 - `reports/eco_balance_report.md` now includes both new scenarios.
 - Docs updated: `docs/COMBAT_METRICS_GUIDE.md` + `docs/README.md` pointers.
+
+## Phase 16D Visualizer Tooling
+
+- Purpose: headless pipeline for difficulty curves across scenarios.
+- Inputs: scenario exports from `ecosystem_sanity.py`, normalized into `reports/metrics/*.json`.
+- Processing: `make difficulty-collect` normalizes metrics; `make difficulty-graphs` renders Matplotlib PNGs (Agg backend); `make difficulty-dashboard` composes Markdown with tables + embedded graphs.
+- Outputs: PNGs in `reports/graphs/` and dashboard at `reports/difficulty_dashboard.md` (includes raw metrics appendix).
+- One-shot: `make difficulty-all` runs export → normalize → graphs → dashboard.
+- Interpretation: player/monster hit and death curves track difficulty by depth; `pressure_index` highlights where monsters outpace player actions (positive = higher pressure).

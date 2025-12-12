@@ -33,6 +33,7 @@ import sys
 import logging
 import warnings
 import json
+from pathlib import Path
 from typing import Optional
 from services.scenario_invariants import ScenarioInvariantError
 from services.scenario_harness import evaluate_expectations
@@ -244,6 +245,47 @@ def run_scenario(
         except OSError as e:
             print(f"Error: Failed to write JSON export to '{export_json}': {e}")
             return 1
+        # Phase 16D: also drop a normalized copy into reports/metrics for tooling.
+        try:
+            metrics_dir = Path("reports") / "metrics"
+            metrics_dir.mkdir(parents=True, exist_ok=True)
+            dest = metrics_dir / f"{scenario_id}_metrics.json"
+
+            def _safe_div(numerator: float, denominator: float) -> float:
+                return numerator / denominator if denominator else 0.0
+
+            totals = payload["metrics"]
+            runs_for_div = totals.get("runs", runs) or runs or 1
+            player_attacks = totals.get("total_player_attacks", 0)
+            monster_attacks = totals.get("total_monster_attacks", 0)
+            player_hits = totals.get("total_player_hits", 0)
+            monster_hits = totals.get("total_monster_hits", 0)
+            bonus_attacks = totals.get("total_bonus_attacks_triggered", 0)
+            player_deaths = totals.get("player_deaths", 0)
+
+            player_attacks_per_run = _safe_div(player_attacks, runs_for_div)
+            monster_attacks_per_run = _safe_div(monster_attacks, runs_for_div)
+
+            family_parts = scenario_id.split("_")
+            family = "_".join(family_parts[:2]) if len(family_parts) > 1 else scenario_id
+
+            normalized = {
+                "scenario_id": scenario_id,
+                "family": family,
+                "runs": runs_for_div,
+                "depth": payload.get("depth") or totals.get("depth"),
+                "player_hit_rate": _safe_div(player_hits, player_attacks),
+                "monster_hit_rate": _safe_div(monster_hits, monster_attacks),
+                "bonus_attacks_per_run": _safe_div(bonus_attacks, runs_for_div),
+                "death_rate": _safe_div(player_deaths, runs_for_div),
+                "player_attacks_per_run": player_attacks_per_run,
+                "monster_attacks_per_run": monster_attacks_per_run,
+                "pressure_index": monster_attacks_per_run - player_attacks_per_run,
+                "raw": payload,
+            }
+            dest.write_text(json.dumps(normalized, indent=2, sort_keys=True), encoding="utf-8")
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Failed to write reports/metrics sidecar: %s", e)
     
     if fail_on_expected:
         if expectations_failed:

@@ -7,6 +7,7 @@ This folder is the index for stable docs. Architecture refactors continue elsewh
 - Roadmap (docs branch): `ROADMAP.md`
 - Architecture reference: `ARCHITECTURE_OVERVIEW.md` (locked)
 - Combat metrics & scenarios: `docs/COMBAT_METRICS_GUIDE.md`
+- Difficulty curve tooling: `reports/difficulty_dashboard.md` (generated) and `tools/difficulty_curve_visualizer.py` (supports family filters and speed-variant exclusion)
 - Scenario/bot harnesses: `docs/BOT_SOAK_HARNESS.md`, `HEADLESS_MODE.md`
 - YAML/config references: `docs/YAML_CONSTANTS_GUIDE.md`, `docs/YAML_ROOM_GENERATION_SYSTEM.md`, `docs/balance/`
 - Testing: `docs/testing/GOLDEN_PATH_IMPLEMENTATION.md`, `docs/testing/GOLDEN_PATH_QUICKSTART.md`

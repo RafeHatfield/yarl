@@ -1,0 +1,41 @@
+{
+  "bonus_attacks_per_run": 11.5,
+  "death_rate": 0.14,
+  "depth": null,
+  "family": "zombie_horde",
+  "monster_attacks_per_run": 22.84,
+  "monster_hit_rate": 0.2084063047285464,
+  "player_attacks_per_run": 20.94,
+  "player_hit_rate": 0.8500477554918816,
+  "pressure_index": 1.8999999999999986,
+  "raw": {
+    "metrics": {
+      "average_turns": 55.72,
+      "player_deaths": 7,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 575,
+      "total_kills_by_faction": {
+        "Player": 239,
+        "Zombie": 7
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 7,
+        "PLAYER": 239
+      },
+      "total_monster_attacks": 1142,
+      "total_monster_hits": 238,
+      "total_plague_infections": 0,
+      "total_player_attacks": 1047,
+      "total_player_hits": 890,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 246
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "zombie_horde",
+    "turn_limit": 120
+  },
+  "runs": 50,
+  "scenario_id": "zombie_horde"
+}

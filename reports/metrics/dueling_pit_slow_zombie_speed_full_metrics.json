@@ -1,0 +1,39 @@
+{
+  "bonus_attacks_per_run": 2.36,
+  "death_rate": 0.0,
+  "depth": null,
+  "family": "dueling_pit",
+  "monster_attacks_per_run": 1.58,
+  "monster_hit_rate": 0.21518987341772153,
+  "player_attacks_per_run": 5.34,
+  "player_hit_rate": 0.8801498127340824,
+  "pressure_index": -3.76,
+  "raw": {
+    "metrics": {
+      "average_turns": 50.0,
+      "player_deaths": 0,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 118,
+      "total_kills_by_faction": {
+        "Player": 50
+      },
+      "total_kills_by_source": {
+        "PLAYER": 50
+      },
+      "total_monster_attacks": 79,
+      "total_monster_hits": 17,
+      "total_plague_infections": 0,
+      "total_player_attacks": 267,
+      "total_player_hits": 235,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 50
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "dueling_pit_slow_zombie_speed_full",
+    "turn_limit": 100
+  },
+  "runs": 50,
+  "scenario_id": "dueling_pit_slow_zombie_speed_full"
+}

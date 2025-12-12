@@ -2,7 +2,8 @@
         eco-swarm-baseline eco-swarm-baseline-json eco-swarm-speed-full eco-swarm-speed-full-json \
         eco-swarm-brutal-baseline eco-swarm-brutal-baseline-json eco-swarm-brutal-speed-full eco-swarm-brutal-speed-full-json \
         eco-swarm-tight eco-swarm-tight-json eco-zombie-horde eco-zombie-horde-json \
-        eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report
+        eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report \
+        difficulty-collect difficulty-graphs difficulty-dashboard difficulty-all
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -509,3 +510,18 @@ eco-balance-report:
 	    plague_arena_100runs.json backstab_training_100runs.json \
 	  --worldgen-json worldgen_depth3_20runs.json \
 	  --output-markdown reports/eco_balance_report.md
+
+# --------------------------------------------------------------------
+# Difficulty Curve Tooling (Phase 16D)
+# --------------------------------------------------------------------
+
+difficulty-collect:
+	python3 tools/collect_metrics_for_visualizer.py
+
+difficulty-graphs:
+	python3 tools/difficulty_curve_visualizer.py
+
+difficulty-dashboard:
+	python3 tools/generate_difficulty_dashboard.py
+
+difficulty-all: eco-all difficulty-collect difficulty-graphs difficulty-dashboard

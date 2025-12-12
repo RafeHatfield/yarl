@@ -239,6 +239,48 @@ jq '.metrics | {
 
 ---
 
+## Phase 16D Difficulty Curve Visualizer
+
+### What It Does
+- Aggregates scenario metrics into normalized fields (hit rates, bonus/run, pressure_index).
+- Groups by depth when available; otherwise by scenario family.
+- Emits graphs to `reports/graphs/` and a dashboard to `reports/difficulty_dashboard.md`.
+
+### Run the Full Chain
+```bash
+make difficulty-all
+```
+This runs ecosystem JSON exports, normalizes metrics, builds graphs, and regenerates the dashboard.
+
+### Quick Iteration
+```bash
+python3 tools/collect_metrics_for_visualizer.py --skip-make   # reuse existing exports
+python3 tools/difficulty_curve_visualizer.py                  # regenerate PNGs
+python3 tools/generate_difficulty_dashboard.py                # refresh dashboard
+```
+
+Filter examples:
+```bash
+# Canonical early-game curve (omit speed variants)
+python3 tools/difficulty_curve_visualizer.py \
+  --families dueling_pit,orc_swarm,plague_arena,zombie_horde \
+  --exclude-speed-variants
+```
+
+### Reading the Graphs
+- **Player/Monster Hit Rate vs Depth**: accuracy feel per band; look for smooth progression.
+- **Death Rate vs Depth**: target curves for early/mid pressure.
+- **Bonus Attacks per Run**: cadence of momentum mechanics.
+- **Pressure Index** (`monster_attacks_per_run - player_attacks_per_run`): negative means player acts more; positive means monsters pressure harder.
+
+Dashboard includes **Family Insights** to summarize each family’s death range, hit ranges, bonus/run, and tempo (pressure index).
+
+### Inputs & Outputs
+- Inputs: scenario JSON exports (from `ecosystem_sanity.py`) normalized into `reports/metrics/*.json`.
+- Outputs: PNGs in `reports/graphs/` and Markdown dashboard `reports/difficulty_dashboard.md` with embedded graphs plus raw metrics appendix.
+
+---
+
 ## Troubleshooting
 
 ### Metrics show 0/0 attacks
