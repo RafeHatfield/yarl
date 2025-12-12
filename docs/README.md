@@ -31,4 +31,4 @@ This folder is the index for stable docs. Architecture refactors continue elsewh
 ## Pointers
 - For architecture questions, start at `ARCHITECTURE_OVERVIEW.md` (read-only here).
 - For scenario harness usage, see `ecosystem_sanity.py`, `etp_sanity.py`, `loot_sanity.py`, `docs/BOT_SOAK_HARNESS.md`, and `HEADLESS_MODE.md`.
-- For combat metrics and dueling/orc swarm scenarios, see `docs/COMBAT_METRICS_GUIDE.md` and baseline JSONs in the repo.
+- For combat metrics and dueling/orc swarm scenarios (including new `orc_swarm_tight` and `zombie_horde` probes), see `docs/COMBAT_METRICS_GUIDE.md` and baseline JSONs in the repo.

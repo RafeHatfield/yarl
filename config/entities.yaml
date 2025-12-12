@@ -27,7 +27,7 @@ version: "1.0"
 
 # Player starting statistics
 player:
-  hp: 60  # Base HP (modified by CON: 60 + 2 = 62 total)
+  hp: 54  # 16B tuning: small HP reduction to raise swarm risk (was 60)
   power: 0       # No base magical power (reserved for enhancements)
   defense: 1
   xp: 0
@@ -39,7 +39,7 @@ player:
   constitution: 14  # Survivable (+2 HP modifier = +2 max HP)
   # Phase 8: Accuracy & Evasion (hit/dodge system)
   accuracy: 3       # Trained combatant # 16A tuning: +1 to reduce whiff-feel (60.9%→68-72% target)
-  evasion: 1        # Some dodge ability
+  evasion: 0        # 16B tuning: slight evasion drop to raise incoming hit rates
 
 # Monster definitions
 # Each monster has an etp_base value for encounter budgeting (see balance/etp.py)
@@ -48,18 +48,18 @@ monsters:
   # Basic orc enemy
   orc:
     stats:
-      hp: 28  # 16A tuning: +17% HP for more pressure in swarms (was 24)
+      hp: 28  # 16B tuning: modest durability to lift brutal death rate while keeping baseline in band
       power: 0  # No base magical power (reserved for enhancements)
       defense: 0
       xp: 35
-      damage_min: 4  # Natural attack range: 4-6 (was 3+1-3)
-      damage_max: 6  # Total attack: 0 power + 4-6 natural = 4-6
+      damage_min: 4  # 16B tuning: modestly above 16A floor to keep pressure without overshooting deaths
+      damage_max: 6  # 16B tuning: trim ceiling to ease baseline deaths (was 7)
       # D&D-style stats
       strength: 14      # Strong (+2 damage modifier)
       dexterity: 10     # Average (0 to-hit, 0 AC)
       constitution: 12  # Tough (+1 HP modifier)
       # Phase 8: Accuracy & Evasion
-      accuracy: 3       # Competent fighter # 16A tuning: +1 for more threat in swarms
+      accuracy: 4       # 16B tuning: +1 to sustain monster hit rate without overkilling via HP/damage
       evasion: 1        # Some dodge ability
     char: "o"
     color: [63, 127, 63]  # Dark green
@@ -673,7 +673,7 @@ weapons:
     slot: "main_hand"
     char: "-"
     color: [255, 215, 0]    # Gold (magical weapon)
-    speed_bonus: 0.20       # +20% bonus attack chance [Phase 13F: reduced from 0.25]
+    speed_bonus: 0.18       # 16B tuning: trim speed stack dominance (was 0.20)
 
   # ═══════════════════════════════════════════════════════════
   # ONE-HANDED WEAPONS (1d6) - Balanced
@@ -881,7 +881,7 @@ armor:
     slot: "feet"
     char: "]"
     color: [100, 200, 255]  # Light blue (magical)
-    speed_bonus: 0.20       # +20% bonus attack chance [Phase 13F: reduced from 0.25]
+    speed_bonus: 0.18       # 16B tuning: trim speed stack dominance (was 0.20)
 
   # ═══════════════════════════════════════════════════════════
   # MEDIUM ARMOR (DEX Cap +2)

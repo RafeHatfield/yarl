@@ -67,7 +67,7 @@ monsters:
 # Items - minimal healing support as in other swarm scenarios
 items:
   - type: "healing_potion"
-    count: 1
+    count: 7   # 16B mitigation: further sustain to bring brutal deaths into band
     position: [6, 6]
 
 # Player spawn configuration - baseline equipment (no speed items)

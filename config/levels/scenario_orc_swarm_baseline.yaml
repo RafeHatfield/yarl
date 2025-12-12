@@ -50,20 +50,23 @@ monsters:
     position: [10, 6]
     facing: "west"
     state: "aware"
+  - type: "orc"  # 16B tuning: add fourth orc to keep death rate in band
+    count: 1
+    position: [9, 7]
+    facing: "north"
+    state: "aware"
 
 # Items - small healing support as in dueling pit
 items:
   - type: "healing_potion"
-    count: 1
+    count: 1   # 16B tuning: restore a single potion after adding the fourth orc
     position: [6, 6]
 
 # Player spawn configuration - baseline equipment (no speed items)
 player:
   position: [3, 6]
   facing: "east"
-  inventory:
-    - type: "healing_potion"
-      count: 1
+  inventory: []  # 16B tuning: remove starting potion to raise baseline danger
   equipment:
     weapon: "dagger"
     armor: "leather_armor"

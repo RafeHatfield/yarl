@@ -1,0 +1,61 @@
+# Scenario: Orc Swarm - Tight
+# Purpose: Measure multi-orc pressure in a tighter arena where positioning/mobility are constrained.
+#
+# Layout: 9x9 box room, player center, 3 orcs at close range.
+# No speed items to avoid momentum masking positional risk.
+
+scenario_id: orc_swarm_tight
+name: "Orc Swarm – Tight"
+description: "Tighter 9x9 arena with three close orcs to stress positioning and melee pressure (no speed gear)."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 120
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes (loose, used for harness sanity only)
+expected:
+  min_player_kills: 120
+  max_player_deaths: 25
+
+# Dungeon depth (matched to other swarm scenarios)
+depth: 5
+
+# Room definitions - 9x9 enclosed arena
+rooms:
+  - id: "tight_swarm_arena"
+    type: "arena"
+    width: 9
+    height: 9
+    description: "Tight enclosed arena that limits kiting and forces close combat"
+    walls: "enclosed"
+
+# Monster placements - three orcs close to the player
+monsters:
+  - type: "orc_chieftain"
+    count: 1
+    position: [5, 4]
+    facing: "west"
+    state: "aware"
+  - type: "orc_veteran"
+    count: 1
+    position: [3, 4]
+    facing: "east"
+    state: "aware"
+  - type: "orc_veteran"
+    count: 1
+    position: [4, 3]
+    facing: "south"
+    state: "aware"
+
+# Items - none (no speed or healing crutches)
+items: []
+
+# Player spawn configuration - baseline equipment (no speed items)
+player:
+  position: [4, 4]
+  facing: "north"
+  inventory: []
+  equipment:
+    weapon: "dagger"

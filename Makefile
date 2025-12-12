@@ -1,4 +1,8 @@
-.PHONY: clean test run quick-test bot bot-smoke soak help test-fast test-full ci-quick balance-ci-local eco-swarm-baseline eco-swarm-baseline-json eco-swarm-speed-full eco-swarm-speed-full-json eco-swarm-brutal-baseline eco-swarm-brutal-baseline-json eco-swarm-brutal-speed-full eco-swarm-brutal-speed-full-json eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report
+.PHONY: clean test run quick-test bot bot-smoke soak help test-fast test-full ci-quick balance-ci-local \
+        eco-swarm-baseline eco-swarm-baseline-json eco-swarm-speed-full eco-swarm-speed-full-json \
+        eco-swarm-brutal-baseline eco-swarm-brutal-baseline-json eco-swarm-brutal-speed-full eco-swarm-brutal-speed-full-json \
+        eco-swarm-tight eco-swarm-tight-json eco-zombie-horde eco-zombie-horde-json \
+        eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -451,6 +455,40 @@ eco-swarm-brutal-speed-full-json:
 	  --fail-on-expected \
 	  --export-json orc_swarm_brutal_speed_full_50runs.json
 
+eco-swarm-tight:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_tight \
+	  --runs 50 \
+	  --turn-limit 120 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-swarm-tight-json:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_tight \
+	  --runs 50 \
+	  --turn-limit 120 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json orc_swarm_tight_50runs.json
+
+eco-zombie-horde:
+	python3 ecosystem_sanity.py \
+	  --scenario zombie_horde \
+	  --runs 50 \
+	  --turn-limit 120 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-zombie-horde-json:
+	python3 ecosystem_sanity.py \
+	  --scenario zombie_horde \
+	  --runs 50 \
+	  --turn-limit 120 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json zombie_horde_50runs.json
+
 eco-swarm-all: eco-swarm-baseline eco-swarm-speed-full eco-swarm-brutal-baseline eco-swarm-brutal-speed-full
 
 eco-swarm-report: \
@@ -467,6 +505,7 @@ eco-balance-report:
 	python3 tools/eco_balance_report.py \
 	  --ecosystem-json dueling_pit_50runs.json dueling_pit_speed_light_50runs.json dueling_pit_speed_full_50runs.json \
 	    orc_swarm_baseline_50runs.json orc_swarm_speed_full_50runs.json orc_swarm_brutal_baseline_50runs.json orc_swarm_brutal_speed_full_50runs.json \
+	    orc_swarm_tight_50runs.json zombie_horde_50runs.json \
 	    plague_arena_100runs.json backstab_training_100runs.json \
 	  --worldgen-json worldgen_depth3_20runs.json \
 	  --output-markdown reports/eco_balance_report.md

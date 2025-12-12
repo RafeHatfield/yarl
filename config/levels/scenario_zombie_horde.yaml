@@ -1,0 +1,74 @@
+# Scenario: Zombie Horde
+# Purpose: Measure zombie HP tuning and slow-enemy momentum dynamics with multiple shamblers.
+#
+# Layout: Medium arena with five zombies, no speed gear for the player.
+# Emphasizes bonus-attack cadence vs slow targets after HP reduction.
+
+scenario_id: zombie_horde
+name: "Zombie Horde"
+description: "Medium arena with five shambling zombies to test HP tuning and slow-enemy momentum (no speed gear)."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 120
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes (loose sanity)
+expected:
+  min_player_kills: 200
+  max_player_deaths: 10
+
+# Dungeon depth (aligned with dueling/swam scenarios)
+depth: 5
+
+# Room definitions - medium enclosed arena
+rooms:
+  - id: "zombie_horde_arena"
+    type: "arena"
+    width: 13
+    height: 13
+    description: "Medium arena for testing swarm pressure from slow zombies"
+    walls: "enclosed"
+
+# Monster placements - five zombies spaced to converge
+monsters:
+  - type: "zombie"
+    count: 1
+    position: [7, 6]
+    facing: "west"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [9, 4]
+    facing: "south"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [9, 8]
+    facing: "north"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [11, 6]
+    facing: "west"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [10, 10]
+    facing: "west"
+    state: "aware"
+
+# Items - none (no speed/healing assistance)
+items: []
+
+# Player spawn configuration - baseline equipment (no speed items)
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    weapon: "shortsword"
+    armor: "studded_leather_armor"

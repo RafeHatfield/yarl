@@ -65,7 +65,7 @@ monsters:
 # Items - same minimal healing support
 items:
   - type: "healing_potion"
-    count: 1
+    count: 2   # 16B mitigation: extra sustain to keep brutal death rate in band
     position: [6, 6]
 
 # Player spawn configuration - full speed equipment

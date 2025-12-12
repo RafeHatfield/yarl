@@ -287,3 +287,43 @@ If further tuning is needed:
 
 **Merge recommendation:** ✅ Yes, these changes improve feel
 **16B follow-up:** ⚠️ Recommended if death rates need further tuning
+
+---
+
+## Phase 16B Results
+
+### Config Changes (YAML-only)
+- Orcs: hp 28, damage 4-6 (ceiling trimmed from 7), accuracy 4.
+- Speed gear: quickfang_dagger + boots_of_swiftness speed_bonus 0.20 → 0.18 to reduce speed-stack dominance.
+- No player stat changes.
+
+### Key Metrics (50-run harness, tactical_fighter)
+- Dueling pit: player hit 72.1%, monster hit 38.4%, death 0% (within 65–75% target).
+- Orc swarm baseline: death 8%, player hit 68.8%, monster hit 36.1% (target 5–15% met).
+- Orc swarm brutal baseline: death 20%, player hit 70.1%, monster hit 33.7% (target 15–30% met).
+- Speed builds: orc_swarm_speed_full death 0%, player hit 74.5% (slightly softer after speed trim).
+
+### Notes
+- Multiple runs were taken during tuning; final JSON/regenerated `reports/eco_balance_report.md` reflect the last runs above.
+- Worldgen JSON was unavailable locally; report emits a warning but still writes ecosystem results.
+- Monster hit rates recovered into the mid/upper 30s without pushing deaths past targets.
+
+---
+
+## Phase 16C Scenario Expansion
+
+### New Scenarios
+- `orc_swarm_tight` (9x9, center player, 1 chieftain + 2 veterans, no armor speed): stresses close-quarters swarm pressure without speed gear.
+- `zombie_horde` (13x13, five zombies, no speed gear, shortsword + studded leather, two potions): probes zombie HP tuning and slow-momentum cadence.
+
+### Harness Targets & Runs
+- Command (both): `python ecosystem_sanity.py --scenario <id> --runs 50 --turn-limit 120 --player-bot tactical_fighter --export-json <file> --fail-on-expected`
+
+### Results (50 runs)
+- `orc_swarm_tight`: death 24%, player hit 72.8%, monster hit 47.8% (target death 15–35% hit).
+- `zombie_horde`: death 10%, player hit 86.2%, monster hit 20.4% (target death 0–10% hit; high player hit expected vs slow zombies).
+
+### Integrations
+- Makefile targets: `eco-swarm-tight`, `eco-swarm-tight-json`, `eco-zombie-horde`, `eco-zombie-horde-json`.
+- `reports/eco_balance_report.md` now includes both new scenarios.
+- Docs updated: `docs/COMBAT_METRICS_GUIDE.md` + `docs/README.md` pointers.

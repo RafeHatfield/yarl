@@ -101,6 +101,22 @@ All d20-based melee attacks, including:
 - **Note**: Zombies have lower accuracy
 - **Use For**: AOE/swarm balance
 
+### orc_swarm_tight
+**Purpose**: Close-quarters 3-orc pressure test (no speed gear)
+
+- **Depth**: 5
+- **Arena**: 9x9 box; player center, three adjacent orcs
+- **Turn Limit**: 120
+- **Use For**: Mobility denial, early danger when kiting isn’t possible
+
+### zombie_horde
+**Purpose**: Validate zombie HP tuning vs slow, multiple foes
+
+- **Depth**: 5
+- **Arena**: 13x13; five zombies converge from mid-range
+- **Turn Limit**: 120
+- **Use For**: Momentum/bonus-attack cadence against slow enemies
+
 ---
 
 ## Analysis Examples
