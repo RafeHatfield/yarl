@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
-DEFAULT_INPUT_DIR = Path("logs")
+DEFAULT_INPUT_DIR = Path("reports/soak")
 
 
 def _percentiles(values: List[float]) -> Tuple[float, float, float]:
@@ -86,16 +86,30 @@ def summarize(records: Iterable[dict]) -> dict:
     deaths_with_potions = 0
     deaths_without_potions = 0
     scenario_buckets = {}
+    seen_scenarios = set()  # Track all scenarios seen, not just deaths
 
     for rec in records:
         bot_decisions = rec.get("bot_decisions") or []
         survivability = rec.get("survivability") or {}
         run_metrics = rec.get("run_metrics") or {}
+        
+        # Extract scenario_id from multiple possible locations
         scenario_id = (
             survivability.get("scenario_id")
             or run_metrics.get("scenario_id")
             or run_metrics.get("scenario")
         )
+        
+        # Fallback: extract from first bot_decision if available
+        if not scenario_id and bot_decisions:
+            scenario_id = bot_decisions[0].get("scenario_id")
+        
+        # Track scenario if found (even for non-death runs)
+        if scenario_id and scenario_id not in seen_scenarios:
+            seen_scenarios.add(scenario_id)
+            # Initialize bucket if this is a new scenario
+            if scenario_id not in scenario_buckets:
+                scenario_buckets[scenario_id] = {"deaths": 0, "unused_potion_deaths": 0}
 
         # Heal decisions - iterate through bot_decisions array
         for decision in bot_decisions:
@@ -216,13 +230,18 @@ def render_markdown(summary: dict) -> str:
     lines.append("## Scenario Breakdown")
     if not summary["scenario_buckets"]:
         lines.append("- No scenario data available.")
+        lines.append("")
+        lines.append("_Scenario-level breakdowns require scenario_id in the telemetry data._")
     else:
+        lines.append("")
+        lines.append("| Scenario | Deaths | Unused Potion Deaths | % Unused |")
+        lines.append("|----------|--------|---------------------|----------|")
         for scenario_id, bucket in sorted(summary["scenario_buckets"].items()):
             deaths = bucket["deaths"]
             unused = bucket["unused_potion_deaths"]
             pct_unused = (unused / deaths * 100) if deaths else 0.0
             lines.append(
-                f"- {scenario_id}: deaths {deaths}, unused-potion deaths {unused} ({pct_unused:.1f}%)"
+                f"| {scenario_id} | {deaths} | {unused} | {pct_unused:.1f}% |"
             )
     lines.append("")
     return "\n".join(lines)
@@ -260,9 +279,20 @@ def main() -> int:
         print(f"         Make sure you ran 'make bot-soak' with telemetry enabled.", file=sys.stderr)
     else:
         print(f"INFO: Read {len(records)} events from {args.input}", file=sys.stderr)
+        
+        # Warn if dataset is very small
+        if len(records) < 200:
+            print(f"WARNING: Small dataset ({len(records)} events) - results may not be statistically significant.", file=sys.stderr)
+            print(f"         Consider running more soak runs for better insights.", file=sys.stderr)
     
     # Generate summary and report
     summary = summarize(records)
+    
+    # Warn if no scenario data found
+    if records and not summary.get("scenario_buckets"):
+        print(f"WARNING: No scenario data found in events.", file=sys.stderr)
+        print(f"         Scenario breakdowns require scenario_id in the telemetry.", file=sys.stderr)
+    
     report = render_markdown(summary)
 
     # Write or print report

@@ -53,6 +53,11 @@ SCENARIO_JOBS: List[ScenarioJob] = [
     ScenarioJob("eco-swarm-brutal-speed-full-json", Path("orc_swarm_brutal_speed_full_50runs.json")),
     ScenarioJob("eco-swarm-tight-json", Path("orc_swarm_tight_50runs.json")),
     ScenarioJob("eco-zombie-horde-json", Path("zombie_horde_50runs.json")),
+    ScenarioJob("eco-depth1-orc-json", Path("depth1_orc_easy_30runs.json")),
+    ScenarioJob("eco-depth2-orc-json", Path("depth2_orc_baseline_40runs.json")),
+    ScenarioJob("eco-depth3-orc-json", Path("depth3_orc_brutal_50runs.json")),
+    ScenarioJob("eco-depth4-plague-json", Path("depth4_plague_50runs.json")),
+    ScenarioJob("eco-depth5-zombie-json", Path("depth5_zombie_50runs.json")),
 ]
 
 

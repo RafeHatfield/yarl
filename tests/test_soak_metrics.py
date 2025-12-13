@@ -233,7 +233,8 @@ class TestCSVOutput:
                 'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
                 'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
                 'bot_steps', 'bot_floors', 'bot_actions', 'bot_contexts', 'bot_reasons',
-                'exception', 'timestamp'
+                'exception', 'timestamp',
+                'final_hp', 'final_max_hp', 'final_hp_percent', 'potions_remaining_on_death',
             ]
             assert headers == expected_headers
 

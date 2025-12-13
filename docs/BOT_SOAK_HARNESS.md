@@ -31,6 +31,30 @@ Run a specific number of games:
 python3 engine.py --bot-soak --runs 50
 ```
 
+### Scenario-Based Soak Testing (Phase 17b)
+
+Run bot soaks against specific scenarios for survivability testing:
+
+```bash
+# Via Makefile (recommended)
+make bot-soak-scenario SCENARIO=orc_swarm_tight RUNS=50 MAX_TURNS=150 MAX_FLOORS=1
+
+# Directly via engine.py
+python3 engine.py --bot-soak --scenario orc_swarm_tight --runs 50 --max-turns 150 --max-floors 1
+```
+
+**Benefits:**
+- Deterministic enemy configurations for reproducible testing
+- Scenario ID is exported in telemetry for survivability breakdowns
+- Output goes to `reports/soak/soak_<PERSONA>_<SCENARIO>_telemetry.jsonl`
+- Can analyze scenario-specific death patterns with `tools/bot_survivability_report.py`
+
+**Available Scenarios:**
+- `orc_swarm_tight` - Compact orc encounter
+- `orc_swarm_baseline` - Standard orc spread
+- `orc_swarm_brutal` - Dense high-pressure orc fight
+- (See `services/scenario_harness.py` for full list)
+
 ### Custom Telemetry Path
 
 Specify telemetry output location:
@@ -41,6 +65,8 @@ python3 engine.py --bot-soak --runs 20 --telemetry-json telemetry/my_soak.json
 
 This will create:
 - `telemetry/my_soak_soak_YYYYMMDD_HHMMSS.jsonl` - Per-run telemetry
+
+**Note:** Scenario-based soaks automatically write to `reports/soak/` when using the Makefile target.
 
 ## Output
 

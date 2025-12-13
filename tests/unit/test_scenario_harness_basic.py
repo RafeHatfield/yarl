@@ -138,6 +138,7 @@ class TestAggregatedMetrics:
         assert metrics.runs == 0
         assert metrics.average_turns == 0.0
         assert metrics.player_deaths == 0
+        assert metrics.depth is None
         assert metrics.total_kills_by_faction == {}
         assert metrics.total_kills_by_source == {}
         assert metrics.total_plague_infections == 0
@@ -165,11 +166,13 @@ class TestAggregatedMetrics:
             total_player_hits=60,
             total_monster_attacks=80,
             total_monster_hits=40,
+            depth=5,
         )
         
         assert metrics.runs == 10
         assert metrics.average_turns == 145.5
         assert metrics.player_deaths == 3
+        assert metrics.depth == 5
         assert metrics.total_kills_by_faction == {'PLAYER': 50, 'ENEMY': 20}
         assert metrics.total_kills_by_source == {'PLAYER': 30}
         assert metrics.total_plague_infections == 4
@@ -197,6 +200,7 @@ class TestAggregatedMetrics:
             total_player_hits=30,
             total_monster_attacks=40,
             total_monster_hits=20,
+            depth=7,
         )
         
         result = metrics.to_dict()
@@ -205,6 +209,7 @@ class TestAggregatedMetrics:
         assert result['runs'] == 5
         assert result['average_turns'] == 100.33  # Rounded to 2 decimal places
         assert result['player_deaths'] == 1
+        assert result['depth'] == 7
         assert result['total_kills_by_faction'] == {'ZOMBIE': 15}
         assert result['total_kills_by_source'] == {'PLAYER': 5}
         assert result['total_plague_infections'] == 2

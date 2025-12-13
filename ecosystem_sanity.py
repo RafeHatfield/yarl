@@ -237,6 +237,7 @@ def run_scenario(
             "runs": runs,
             "turn_limit": turn_limit,
             "player_bot": player_bot,
+            "depth": getattr(scenario, "depth", None),
             "metrics": metrics.to_dict(),
         }
         try:

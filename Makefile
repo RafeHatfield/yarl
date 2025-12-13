@@ -148,15 +148,15 @@ PYTHON     ?= python3
 PERSONA ?= balanced
 
 bot-soak:
-	mkdir -p $(LOG_DIR)
+	mkdir -p reports/soak
 	$(PYTHON) engine.py \
 	  --bot-soak \
 	  --bot-persona $(PERSONA) \
 	  --runs $(RUNS) \
 	  --max-turns $(MAX_TURNS) \
 	  --max-floors $(MAX_FLOORS) \
-	  --metrics-log $(LOG_DIR)/soak_$(PERSONA).csv \
-	  --telemetry-json $(LOG_DIR)/soak_$(PERSONA)_telemetry.json
+	  --metrics-log reports/soak/soak_$(PERSONA).csv \
+	  --telemetry-json reports/soak/soak_$(PERSONA)_telemetry.json
 
 # Convenience shortcuts for common personas
 bot-soak-balanced:
@@ -173,6 +173,24 @@ bot-soak-greedy:
 
 bot-soak-speedrunner:
 	$(MAKE) bot-soak PERSONA=speedrunner
+
+# Scenario-based soak testing
+# Usage:
+#   make bot-soak-scenario SCENARIO=orc_swarm_tight RUNS=50 MAX_TURNS=150 MAX_FLOORS=1
+#   make bot-soak-scenario SCENARIO=orc_swarm_baseline PERSONA=cautious RUNS=100
+SCENARIO ?= orc_swarm_tight
+
+bot-soak-scenario:
+	mkdir -p reports/soak
+	$(PYTHON) engine.py \
+	  --bot-soak \
+	  --bot-persona $(PERSONA) \
+	  --runs $(RUNS) \
+	  --max-turns $(MAX_TURNS) \
+	  --max-floors $(MAX_FLOORS) \
+	  --scenario $(SCENARIO) \
+	  --metrics-log reports/soak/soak_$(PERSONA)_$(SCENARIO).csv \
+	  --telemetry-json reports/soak/soak_$(PERSONA)_$(SCENARIO)_telemetry.json
 
 # A tiny "smoke" run for quick sanity checks
 bot-smoke:
@@ -251,7 +269,8 @@ eco-report: \
 	eco-duel-slow-zombie-baseline-json \
 	eco-duel-slow-zombie-full-json \
 	eco-depth1-orc-json eco-depth2-orc-json eco-depth3-orc-json \
-	eco-depth4-plague-json eco-depth5-zombie-json
+	eco-depth4-plague-json eco-depth5-zombie-json \
+	eco-orc-gauntlet-json eco-orc-wave3-json eco-tight-funnel-json eco-plague-gauntlet-json
 
 # --------------------
 # Plague Arena
@@ -547,6 +566,78 @@ eco-zombie-horde-json:
 	  --fail-on-expected \
 	  --export-json zombie_horde_50runs.json
 
+# --------------------
+# Phase 17B.1: Lethal Scenarios for Survivability Testing
+# --------------------
+
+eco-orc-gauntlet:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_gauntlet_5rooms \
+	  --runs 50 \
+	  --turn-limit 250 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-orc-gauntlet-json:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_gauntlet_5rooms \
+	  --runs 50 \
+	  --turn-limit 250 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json reports/orc_gauntlet_5rooms_50runs.json
+
+eco-orc-wave3:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_wave3 \
+	  --runs 50 \
+	  --turn-limit 250 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-orc-wave3-json:
+	python3 ecosystem_sanity.py \
+	  --scenario orc_swarm_wave3 \
+	  --runs 50 \
+	  --turn-limit 250 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json reports/orc_swarm_wave3_50runs.json
+
+eco-tight-funnel:
+	python3 ecosystem_sanity.py \
+	  --scenario tight_brutal_funnel \
+	  --runs 50 \
+	  --turn-limit 200 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-tight-funnel-json:
+	python3 ecosystem_sanity.py \
+	  --scenario tight_brutal_funnel \
+	  --runs 50 \
+	  --turn-limit 200 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json reports/tight_brutal_funnel_50runs.json
+
+eco-plague-gauntlet:
+	python3 ecosystem_sanity.py \
+	  --scenario plague_gauntlet \
+	  --runs 50 \
+	  --turn-limit 300 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-plague-gauntlet-json:
+	python3 ecosystem_sanity.py \
+	  --scenario plague_gauntlet \
+	  --runs 50 \
+	  --turn-limit 300 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json reports/plague_gauntlet_50runs.json
+
 eco-swarm-all: eco-swarm-baseline eco-swarm-speed-full eco-swarm-brutal-baseline eco-swarm-brutal-speed-full
 
 eco-swarm-report: \
@@ -582,3 +673,12 @@ difficulty-dashboard:
 	python3 tools/generate_difficulty_dashboard.py
 
 difficulty-all: eco-all difficulty-collect difficulty-graphs difficulty-dashboard
+
+
+bot-soak-and-report:
+	make bot-soak
+	python3 tools/bot_survivability_report.py > reports/bot_survivability_report.md
+
+
+bot-survivability:
+	python3 tools/bot_survivability_report.py > reports/bot_survivability_report.md
