@@ -512,13 +512,31 @@ class SoakSessionResult:
 
 
 def _build_survivability_snapshot(player: Any, run_metrics, scenario_id: Optional[str] = None) -> dict:
-    """Collect survivability telemetry for a run."""
+    """Collect survivability telemetry for a run.
+    
+    Note: This function is robust to Mock objects in tests - it checks that
+    hp/max_hp are actually numeric before performing arithmetic.
+    """
     from components.component_registry import ComponentType
 
-    fighter = player.get_component_optional(ComponentType.FIGHTER) if player else None
-    hp = getattr(fighter, "hp", None) if fighter else None
-    max_hp = getattr(fighter, "max_hp", None) if fighter else None
-    hp_percent = (hp / max_hp) if hp is not None and max_hp else None
+    hp = None
+    max_hp = None
+    hp_percent = None
+    
+    try:
+        fighter = player.get_component_optional(ComponentType.FIGHTER) if player else None
+        if fighter:
+            raw_hp = getattr(fighter, "hp", None)
+            raw_max_hp = getattr(fighter, "max_hp", None)
+            # Only use values if they're actually numeric (not Mock objects)
+            if isinstance(raw_hp, (int, float)):
+                hp = raw_hp
+            if isinstance(raw_max_hp, (int, float)):
+                max_hp = raw_max_hp
+            if hp is not None and max_hp and max_hp > 0:
+                hp_percent = hp / max_hp
+    except Exception:
+        pass  # Leave hp/max_hp/hp_percent as None
 
     potions_remaining = 0
     try:

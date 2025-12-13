@@ -638,6 +638,13 @@ def play_game_with_engine(
             turn_num = engine.turn_manager.turn_number if engine.turn_manager else 0
             logger.debug(f"[INPUT] turn={turn_num}, action={action}, mouse={mouse_action}")
         
+        # BOT MODE: Early exit check for player death
+        # This must run BEFORE turn limits to prevent overwriting death outcome
+        if input_mode == "bot" and engine.state_manager.state.current_state == GameStates.PLAYER_DEAD:
+            logger.info("Bot mode: Player dead, exiting immediately without overwriting metrics")
+            engine.stop()
+            return {"ended": "death"}
+        
         # BOT LIMITS CHECK: Enforce --max-turns and --max-floors if configured
         # This prevents infinite loops and provides deterministic run termination
         if input_mode == "bot" and engine.turn_manager:
@@ -652,8 +659,16 @@ def play_game_with_engine(
             if not player or not game_map:
                 # Skip limit checks if core objects missing (e.g., in tests)
                 pass
-            # Check turn limit
+            # Check turn limit - but only if player is still alive
+            # If player died, don't overwrite the death outcome with max_turns!
             elif max_turns and engine.turn_manager.turn_number >= max_turns:
+                current_state = engine.state_manager.state.current_state
+                if current_state == GameStates.PLAYER_DEAD:
+                    # Player already died, don't overwrite outcome
+                    logger.info(f"Turn limit reached but player already dead - preserving death outcome")
+                    engine.stop()
+                    return {"ended": "death"}
+                
                 logger.info(f"Turn limit reached ({engine.turn_manager.turn_number} >= {max_turns}), ending run")
                 
                 # Finalize metrics with "max_turns" outcome
@@ -665,8 +680,16 @@ def play_game_with_engine(
                 engine.stop()
                 return {"ended": "max_turns"}
             
-            # Check floor limit
+            # Check floor limit - but only if player is still alive
+            # If player died, don't overwrite the death outcome with max_floors!
             if max_floors and game_map and game_map.dungeon_level >= max_floors:
+                current_state = engine.state_manager.state.current_state
+                if current_state == GameStates.PLAYER_DEAD:
+                    # Player already died, don't overwrite outcome
+                    logger.info(f"Floor limit reached but player already dead - preserving death outcome")
+                    engine.stop()
+                    return {"ended": "death"}
+                    
                 logger.info(f"Floor limit reached (floor {game_map.dungeon_level} >= {max_floors}), ending run")
                 
                 # Finalize metrics with "max_floors" outcome

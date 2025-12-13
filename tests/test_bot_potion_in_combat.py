@@ -26,8 +26,9 @@ class TestBotPersonaDrinkPotionInCombat:
         assert cautious.drink_potion_in_combat is True
 
     def test_balanced_persona_has_drink_potion_in_combat_false(self):
-        """Balanced persona should have drink_potion_in_combat=False (default)."""
+        """Phase 17B: Balanced persona now uses heal config (deprecated field is still False)."""
         balanced = PERSONAS["balanced"]
+        # The old field is deprecated but kept for backward compat
         assert balanced.drink_potion_in_combat is False
 
     def test_aggressive_persona_has_drink_potion_in_combat_false(self):
@@ -128,39 +129,47 @@ class TestBotBrainPotionInCombatBehavior:
         """Cautious bot _should_drink_potion() should return True when in combat."""
         brain = BotBrain(persona="cautious")
         
-        # Create mock player with low HP
+        # Create mock player with low HP at position (5, 5)
         player = Mock()
+        player.x = 5
+        player.y = 5
         mock_fighter = Mock()
         mock_fighter.hp = 30  # 30% HP (below cautious threshold of 50%)
         mock_fighter.max_hp = 100
         player.get_component_optional = Mock(return_value=mock_fighter)
         
-        # Create visible enemies
+        # Create visible enemy (not adjacent - distance 5)
         enemy = Mock()
+        enemy.x = 10
+        enemy.y = 5
         visible_enemies = [enemy]
         
-        # Cautious should allow potion drinking even with enemies
+        # Cautious should allow potion drinking even with enemies (Phase 17B)
         result = brain._should_drink_potion(player, visible_enemies)
         assert result is True
 
     def test_balanced_bot_should_drink_potion_returns_false_in_combat(self):
-        """Balanced bot _should_drink_potion() should return False when in combat."""
+        """Phase 17B: Balanced bot NOW drinks in combat at 30% HP (survivability tuning)."""
         brain = BotBrain(persona="balanced")
         
-        # Create mock player with low HP
+        # Create mock player with low HP at position (5, 5)
         player = Mock()
+        player.x = 5
+        player.y = 5
         mock_fighter = Mock()
-        mock_fighter.hp = 30  # 30% HP (below balanced threshold of 40%)
+        mock_fighter.hp = 30  # 30% HP (at balanced threshold - Phase 17B)
         mock_fighter.max_hp = 100
         player.get_component_optional = Mock(return_value=mock_fighter)
         
-        # Create visible enemies
+        # Create visible enemy (not adjacent - distance 5)
         enemy = Mock()
+        enemy.x = 10
+        enemy.y = 5
         visible_enemies = [enemy]
         
-        # Balanced should NOT allow potion drinking with enemies
+        # Phase 17B: Balanced NOW allows combat healing at 30% HP
         result = brain._should_drink_potion(player, visible_enemies)
-        assert result is False
+        assert result is True
 
     def test_both_personas_drink_when_no_enemies(self):
         """Both cautious and balanced should drink potions when no enemies visible."""

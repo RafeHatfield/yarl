@@ -68,12 +68,12 @@ class BotPersonaConfig:
     """
     name: str
     retreat_hp_threshold: float = 0.25  # Retreat when HP below this
-    potion_hp_threshold: float = 0.40   # Drink potion when HP below this
+    potion_hp_threshold: float = 0.40   # Drink potion when HP below this (DEPRECATED - use PERSONA_HEAL_CONFIG)
     combat_engagement_distance: int = 8  # Max distance to chase enemies
     loot_priority: int = 1               # 0=skip, 1=normal, 2=greedy
     prefer_stairs: bool = False          # True = prioritize stairs over exploration
     avoid_combat: bool = False           # True = avoid non-adjacent enemies
-    drink_potion_in_combat: bool = False # True = allow potions while enemies visible
+    drink_potion_in_combat: bool = False # True = allow potions while enemies visible (DEPRECATED - use PERSONA_HEAL_CONFIG)
 
 
 # Pre-defined personas
@@ -152,6 +152,75 @@ def list_personas() -> List[str]:
         List of valid persona name strings
     """
     return list(PERSONAS.keys())
+
+
+# =============================================================================
+# PERSONA HEAL CONFIGURATION — Phase 17B survivability tuning
+# =============================================================================
+
+@dataclass(frozen=True)
+class PersonaHealConfig:
+    """Healing behavior configuration for a persona.
+    
+    Phase 17B: Calibrated heal thresholds to improve survivability in lethal scenarios.
+    
+    Attributes:
+        base_heal_threshold: Normal HP% threshold to drink a potion (0.0-1.0)
+        panic_threshold: HP% threshold for panic healing (0.0-1.0)
+        panic_multi_enemy_count: Number of adjacent enemies to trigger panic
+        allow_combat_healing: If True, allow drinking potions while enemies are visible
+    """
+    base_heal_threshold: float
+    panic_threshold: float
+    panic_multi_enemy_count: int = 2
+    allow_combat_healing: bool = False
+
+
+# Phase 17B survivability tuning: Heal threshold configuration per persona
+PERSONA_HEAL_CONFIG: Dict[str, PersonaHealConfig] = {
+    "balanced": PersonaHealConfig(
+        base_heal_threshold=0.30,      # 30% HP - heal before it's too late
+        panic_threshold=0.15,          # 15% HP - panic mode (multi-attacker pressure)
+        panic_multi_enemy_count=2,     # 2+ adjacent enemies = panic
+        allow_combat_healing=True,     # Phase 17B: Enable combat healing for balanced
+    ),
+    "cautious": PersonaHealConfig(
+        base_heal_threshold=0.50,      # 50% HP - very conservative
+        panic_threshold=0.30,          # 30% HP - panic earlier
+        panic_multi_enemy_count=2,
+        allow_combat_healing=True,
+    ),
+    "aggressive": PersonaHealConfig(
+        base_heal_threshold=0.20,      # 20% HP - risky play
+        panic_threshold=0.10,          # 10% HP - last-ditch panic
+        panic_multi_enemy_count=3,     # Need 3+ enemies to panic (brave)
+        allow_combat_healing=True,
+    ),
+    "greedy": PersonaHealConfig(
+        base_heal_threshold=0.30,      # Same as balanced
+        panic_threshold=0.15,
+        panic_multi_enemy_count=2,
+        allow_combat_healing=True,
+    ),
+    "speedrunner": PersonaHealConfig(
+        base_heal_threshold=0.40,      # Heal more to avoid death (time penalty)
+        panic_threshold=0.20,
+        panic_multi_enemy_count=2,
+        allow_combat_healing=True,
+    ),
+}
+
+
+def _get_persona_heal_config(persona_name: str) -> PersonaHealConfig:
+    """Get heal configuration for a persona.
+    
+    Args:
+        persona_name: Persona name string
+        
+    Returns:
+        PersonaHealConfig for the persona (defaults to balanced if not found)
+    """
+    return PERSONA_HEAL_CONFIG.get(persona_name, PERSONA_HEAL_CONFIG["balanced"])
 
 
 
@@ -1749,13 +1818,106 @@ class BotBrain:
         
         return potions
     
+    def _count_adjacent_enemies(self, player: Any, enemies: List[Any]) -> int:
+        """Count how many enemies are adjacent (Manhattan distance 1) to player.
+        
+        Phase 17B: Used for panic detection under multi-attacker pressure.
+        
+        Args:
+            player: Player entity
+            enemies: List of enemy entities
+            
+        Returns:
+            Count of adjacent enemies
+        """
+        count = 0
+        for enemy in enemies:
+            if self._is_adjacent(player, enemy):
+                count += 1
+        return count
+    
+    def _is_panic_state(self, player: Any, visible_enemies: List[Any], heal_config: PersonaHealConfig) -> bool:
+        """Check if bot is in a panic state requiring immediate healing.
+        
+        Phase 17B: Panic logic for multi-attacker pressure and burst damage scenarios.
+        
+        Panic conditions:
+        1. HP below panic threshold (e.g., 15% for balanced)
+        2. Multiple adjacent enemies (e.g., 2+ for balanced)
+        
+        Args:
+            player: Player entity
+            visible_enemies: List of visible hostile enemies
+            heal_config: PersonaHealConfig for current persona
+            
+        Returns:
+            True if in panic state
+        """
+        hp_fraction = self._get_player_hp_fraction(player)
+        
+        # Panic threshold check
+        if hp_fraction <= heal_config.panic_threshold:
+            # Check for multi-attacker pressure
+            adjacent_count = self._count_adjacent_enemies(player, visible_enemies)
+            if adjacent_count >= heal_config.panic_multi_enemy_count:
+                self._debug(
+                    f"PANIC: HP {hp_fraction:.1%} ≤ {heal_config.panic_threshold:.1%} "
+                    f"with {adjacent_count} adjacent enemies"
+                )
+                return True
+        
+        return False
+    
+    def _should_heal_now(self, player: Any, visible_enemies: List[Any], heal_config: PersonaHealConfig) -> bool:
+        """Determine if bot should heal immediately.
+        
+        Phase 17B: New heal decision logic with panic mode and survivability tuning.
+        
+        Decision flow:
+        1. Check if we have any potions
+        2. Check panic state (low HP + multi-attacker pressure)
+        3. Check base heal threshold
+        4. Check combat healing policy
+        
+        Args:
+            player: Player entity
+            visible_enemies: List of visible hostile enemies
+            heal_config: PersonaHealConfig for current persona
+            
+        Returns:
+            True if bot should heal now
+        """
+        hp_fraction = self._get_player_hp_fraction(player)
+        
+        # Don't heal if HP is above base threshold
+        if hp_fraction > heal_config.base_heal_threshold:
+            return False
+        
+        # Check panic state (overrides combat policy)
+        if self._is_panic_state(player, visible_enemies, heal_config):
+            self._log_summary(
+                f"PANIC HEAL: HP {hp_fraction:.1%}, "
+                f"{self._count_adjacent_enemies(player, visible_enemies)} adjacent enemies"
+            )
+            return True
+        
+        # Normal healing logic
+        if visible_enemies:
+            # Enemies present - check combat healing policy
+            if not heal_config.allow_combat_healing:
+                return False
+            # Combat healing allowed
+            self._log_summary(f"COMBAT HEAL: HP {hp_fraction:.1%} ≤ {heal_config.base_heal_threshold:.1%}")
+            return True
+        else:
+            # No enemies - safe to heal
+            self._log_summary(f"SAFE HEAL: HP {hp_fraction:.1%} ≤ {heal_config.base_heal_threshold:.1%}")
+            return True
+    
     def _should_drink_potion(self, player: Any, visible_enemies: List[Any]) -> bool:
         """Check if bot should drink a potion.
         
-        Conditions:
-        - HP <= persona.potion_hp_threshold (configurable per persona)
-        - Either no visible enemies (safe to drink), OR
-          persona.drink_potion_in_combat is True (allow in-combat potion use)
+        Phase 17B: Refactored to use new heal config and panic logic.
         
         Args:
             player: Player entity
@@ -1764,20 +1926,11 @@ class BotBrain:
         Returns:
             bool: True if bot should try to drink a potion
         """
-        # Must be low on HP (threshold from persona)
-        hp_fraction = self._get_player_hp_fraction(player)
-        if hp_fraction > self.persona.potion_hp_threshold:
-            return False
+        # Get heal config for current persona
+        heal_config = _get_persona_heal_config(self.persona.name)
         
-        # Check visibility of enemies
-        if visible_enemies:
-            # Enemies are present - only allow potion if persona permits it
-            if not self.persona.drink_potion_in_combat:
-                return False
-            # Log that we're drinking in combat (useful for debugging)
-            self._log_summary(f"POTION: Drinking in combat (persona allows it)")
-        
-        return True
+        # Use new heal decision logic
+        return self._should_heal_now(player, visible_enemies, heal_config)
     
     def _choose_potion_to_drink(self, player: Any) -> Optional[int]:
         """Choose which potion to drink and return its inventory index.

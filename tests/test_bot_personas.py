@@ -15,10 +15,13 @@ from io_layer.bot_brain import (
     BotPersonaConfig, 
     PERSONAS, 
     get_persona, 
-    list_personas
+    list_personas,
+    PERSONA_HEAL_CONFIG,
+    _get_persona_heal_config,
 )
 from io_layer.bot_input import BotInputSource
 from game_states import GameStates
+from components.component_registry import ComponentType
 
 
 class TestPersonaConfig:
@@ -174,4 +177,193 @@ class TestPersonaBehaviorDifferences:
         assert cautious.combat_engagement_distance == 5
         assert aggressive.combat_engagement_distance == 12
         assert speedrunner.combat_engagement_distance == 4
+
+
+class TestPersonaHealConfig:
+    """Tests for Phase 17B heal threshold configuration."""
+    
+    def test_all_personas_have_heal_config(self):
+        """All personas should have a heal config defined."""
+        for persona_name in list_personas():
+            heal_config = _get_persona_heal_config(persona_name)
+            assert heal_config is not None
+            assert heal_config.base_heal_threshold > 0.0
+            assert heal_config.panic_threshold >= 0.0
+            assert heal_config.panic_multi_enemy_count >= 1
+    
+    def test_balanced_heal_thresholds(self):
+        """Balanced persona should have survivability-tuned thresholds."""
+        heal_config = _get_persona_heal_config("balanced")
+        assert heal_config.base_heal_threshold == 0.30  # 30% HP
+        assert heal_config.panic_threshold == 0.15  # 15% HP
+        assert heal_config.panic_multi_enemy_count == 2
+        assert heal_config.allow_combat_healing is True
+    
+    def test_cautious_heals_earlier_than_balanced(self):
+        """Cautious persona should have higher thresholds than balanced."""
+        cautious = _get_persona_heal_config("cautious")
+        balanced = _get_persona_heal_config("balanced")
+        assert cautious.base_heal_threshold > balanced.base_heal_threshold
+        assert cautious.panic_threshold >= balanced.panic_threshold
+    
+    def test_aggressive_heals_later_than_balanced(self):
+        """Aggressive persona should have lower thresholds than balanced."""
+        aggressive = _get_persona_heal_config("aggressive")
+        balanced = _get_persona_heal_config("balanced")
+        assert aggressive.base_heal_threshold < balanced.base_heal_threshold
+        assert aggressive.panic_threshold <= balanced.panic_threshold
+    
+    def test_unknown_persona_defaults_to_balanced(self):
+        """Unknown persona should fall back to balanced heal config."""
+        heal_config = _get_persona_heal_config("nonexistent_persona")
+        balanced_config = _get_persona_heal_config("balanced")
+        assert heal_config.base_heal_threshold == balanced_config.base_heal_threshold
+
+
+class TestHealThresholdBehavior:
+    """Tests for Phase 17B heal threshold behavior."""
+    
+    def _make_player(self, hp: int, max_hp: int) -> Mock:
+        """Helper to create mock player with specified HP."""
+        mock_player = Mock()
+        mock_fighter = Mock()
+        mock_fighter.hp = hp
+        mock_fighter.max_hp = max_hp
+        mock_player.get_component_optional = Mock(return_value=mock_fighter)
+        return mock_player
+    
+    def test_balanced_heals_at_30_percent(self):
+        """Balanced persona should heal at 30% HP with no enemies."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=30, max_hp=100)  # 30% HP
+        
+        # No enemies = safe to heal
+        should_heal = brain._should_drink_potion(player, [])
+        assert should_heal is True, "Should heal at 30% HP when safe"
+    
+    def test_balanced_does_not_heal_above_30_percent(self):
+        """Balanced persona should NOT heal above 30% HP."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=35, max_hp=100)  # 35% HP
+        
+        should_heal = brain._should_drink_potion(player, [])
+        assert should_heal is False, "Should NOT heal at 35% HP"
+    
+    def test_balanced_heals_at_25_percent_with_enemies(self):
+        """Balanced persona should heal at 25% HP even with enemies (combat healing)."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=25, max_hp=100)  # 25% HP
+        
+        # Create mock enemy
+        enemy = Mock()
+        enemy.x = 10
+        enemy.y = 10
+        
+        # Combat healing enabled for balanced
+        should_heal = brain._should_drink_potion(player, [enemy])
+        assert should_heal is True, "Should heal in combat at 25% HP"
+
+
+class TestPanicLogic:
+    """Tests for Phase 17B panic healing logic."""
+    
+    def _make_player(self, hp: int, max_hp: int, x: int = 5, y: int = 5) -> Mock:
+        """Helper to create mock player with specified HP and position."""
+        mock_player = Mock()
+        mock_player.x = x
+        mock_player.y = y
+        mock_fighter = Mock()
+        mock_fighter.hp = hp
+        mock_fighter.max_hp = max_hp
+        mock_player.get_component_optional = Mock(return_value=mock_fighter)
+        return mock_player
+    
+    def _make_enemy(self, x: int, y: int) -> Mock:
+        """Helper to create mock enemy at position."""
+        enemy = Mock()
+        enemy.x = x
+        enemy.y = y
+        return enemy
+    
+    def test_count_adjacent_enemies(self):
+        """_count_adjacent_enemies should count enemies at distance 1."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=50, max_hp=100, x=5, y=5)
+        
+        # Adjacent enemies (Manhattan distance 1)
+        adjacent1 = self._make_enemy(x=6, y=5)  # East
+        adjacent2 = self._make_enemy(x=5, y=6)  # South
+        distant = self._make_enemy(x=7, y=7)   # Distance 4
+        
+        enemies = [adjacent1, adjacent2, distant]
+        count = brain._count_adjacent_enemies(player, enemies)
+        assert count == 2, "Should count only adjacent enemies"
+    
+    def test_panic_with_low_hp_and_multi_attacker(self):
+        """Panic state should trigger at low HP with 2+ adjacent enemies."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=15, max_hp=100, x=5, y=5)  # 15% HP
+        
+        # Two adjacent enemies
+        enemy1 = self._make_enemy(x=6, y=5)
+        enemy2 = self._make_enemy(x=4, y=5)
+        
+        heal_config = _get_persona_heal_config("balanced")
+        is_panic = brain._is_panic_state(player, [enemy1, enemy2], heal_config)
+        assert is_panic is True, "Should panic at 15% HP with 2 adjacent enemies"
+    
+    def test_no_panic_with_low_hp_and_one_enemy(self):
+        """No panic with only 1 adjacent enemy (need 2+ for balanced)."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=15, max_hp=100, x=5, y=5)  # 15% HP
+        
+        # One adjacent enemy
+        enemy = self._make_enemy(x=6, y=5)
+        
+        heal_config = _get_persona_heal_config("balanced")
+        is_panic = brain._is_panic_state(player, [enemy], heal_config)
+        assert is_panic is False, "Should NOT panic with only 1 enemy"
+    
+    def test_no_panic_above_panic_threshold(self):
+        """No panic if HP is above panic threshold, even with multiple enemies."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=20, max_hp=100, x=5, y=5)  # 20% HP > 15% panic threshold
+        
+        # Two adjacent enemies
+        enemy1 = self._make_enemy(x=6, y=5)
+        enemy2 = self._make_enemy(x=4, y=5)
+        
+        heal_config = _get_persona_heal_config("balanced")
+        is_panic = brain._is_panic_state(player, [enemy1, enemy2], heal_config)
+        assert is_panic is False, "Should NOT panic at 20% HP (above 15% threshold)"
+    
+    def test_panic_triggers_healing(self):
+        """Panic state should trigger immediate healing."""
+        brain = BotBrain(persona="balanced")
+        player = self._make_player(hp=10, max_hp=100, x=5, y=5)  # 10% HP
+        
+        # Two adjacent enemies
+        enemy1 = self._make_enemy(x=6, y=5)
+        enemy2 = self._make_enemy(x=4, y=5)
+        
+        should_heal = brain._should_drink_potion(player, [enemy1, enemy2])
+        assert should_heal is True, "Should heal in panic state"
+    
+    def test_aggressive_requires_3_enemies_for_panic(self):
+        """Aggressive persona needs 3+ enemies to panic."""
+        brain = BotBrain(persona="aggressive")
+        player = self._make_player(hp=10, max_hp=100, x=5, y=5)  # 10% HP
+        
+        # Two adjacent enemies (not enough for aggressive)
+        enemy1 = self._make_enemy(x=6, y=5)
+        enemy2 = self._make_enemy(x=4, y=5)
+        
+        heal_config = _get_persona_heal_config("aggressive")
+        is_panic = brain._is_panic_state(player, [enemy1, enemy2], heal_config)
+        assert is_panic is False, "Aggressive should NOT panic with only 2 enemies"
+        
+        # Three adjacent enemies (enough for aggressive)
+        enemy3 = self._make_enemy(x=5, y=6)
+        is_panic = brain._is_panic_state(player, [enemy1, enemy2, enemy3], heal_config)
+        assert is_panic is True, "Aggressive should panic with 3 enemies"
 
