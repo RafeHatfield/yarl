@@ -227,7 +227,7 @@ class TestCSVOutput:
                 headers = next(reader)
             
             expected_headers = [
-                'run_number', 'run_id', 'seed', 'persona', 'outcome',
+                'run_number', 'run_id', 'seed', 'scenario_id', 'persona', 'outcome',
                 'failure_type', 'failure_detail', 'auto_explore_terminal_reason',
                 'duration_seconds', 'deepest_floor', 'floors_visited',
                 'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
