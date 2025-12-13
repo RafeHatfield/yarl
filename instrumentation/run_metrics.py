@@ -35,6 +35,7 @@ class RunMetrics:
         run_id: Unique identifier for this run (UUID hex)
         mode: "human" for keyboard input, "bot" for automated play
         seed: Optional RNG seed (for future deterministic replay)
+        scenario_id: Optional scenario identifier for scenario-based runs
         
         start_time_utc: When the run started (ISO 8601 format)
         end_time_utc: When the run ended (ISO 8601 format, None if in progress)
@@ -58,6 +59,7 @@ class RunMetrics:
     run_id: str
     mode: Literal["human", "bot"]
     seed: Optional[int] = None
+    scenario_id: Optional[str] = None
     
     start_time_utc: str = ""
     end_time_utc: Optional[str] = None
@@ -158,7 +160,8 @@ class RunMetricsRecorder:
     """
     
     def __init__(self, mode: Literal["human", "bot"], seed: Optional[int] = None, 
-                 start_floor: int = 1, max_turns: Optional[int] = None, max_floors: Optional[int] = None):
+                 start_floor: int = 1, max_turns: Optional[int] = None, max_floors: Optional[int] = None,
+                 scenario_id: Optional[str] = None):
         """Initialize recorder for a new run.
         
         Args:
@@ -167,6 +170,7 @@ class RunMetricsRecorder:
             start_floor: Starting floor for this run (default: 1)
             max_turns: Optional maximum turns limit
             max_floors: Optional maximum floors limit
+            scenario_id: Optional scenario identifier for scenario-based runs
         """
         self.run_id = uuid.uuid4().hex
         self.mode = mode
@@ -174,11 +178,13 @@ class RunMetricsRecorder:
         self.start_floor = start_floor
         self.max_turns_limit = max_turns
         self.max_floors_limit = max_floors
+        self.scenario_id = scenario_id
         self.start_time: Optional[datetime] = None
         self.end_time: Optional[datetime] = None
         self._metrics: Optional[RunMetrics] = None
         
-        logger.info(f"RunMetricsRecorder initialized: run_id={self.run_id}, mode={mode}, start_floor={start_floor}")
+        scenario_str = f", scenario={scenario_id}" if scenario_id else ""
+        logger.info(f"RunMetricsRecorder initialized: run_id={self.run_id}, mode={mode}, start_floor={start_floor}{scenario_str}")
     
     def start(self) -> None:
         """Mark the run as started with current timestamp."""
@@ -214,6 +220,7 @@ class RunMetricsRecorder:
             run_id=self.run_id,
             mode=self.mode,
             seed=self.seed,
+            scenario_id=self.scenario_id,
             start_time_utc=self.start_time.isoformat() if self.start_time else "",
             end_time_utc=self.end_time.isoformat() if self.end_time else None,
             duration_seconds=duration_seconds,
@@ -286,7 +293,8 @@ def initialize_run_metrics_recorder(
     seed: Optional[int] = None,
     start_floor: int = 1,
     max_turns: Optional[int] = None,
-    max_floors: Optional[int] = None
+    max_floors: Optional[int] = None,
+    scenario_id: Optional[str] = None,
 ) -> RunMetricsRecorder:
     """Initialize the global run metrics recorder for a new game.
     
@@ -298,6 +306,7 @@ def initialize_run_metrics_recorder(
         start_floor: Starting floor for this run (default: 1)
         max_turns: Optional maximum turns limit
         max_floors: Optional maximum floors limit
+        scenario_id: Optional scenario identifier for scenario-based runs
         
     Returns:
         Initialized RunMetricsRecorder singleton
@@ -308,7 +317,8 @@ def initialize_run_metrics_recorder(
         seed=seed,
         start_floor=start_floor,
         max_turns=max_turns,
-        max_floors=max_floors
+        max_floors=max_floors,
+        scenario_id=scenario_id,
     )
     _run_metrics_recorder.start()
     return _run_metrics_recorder

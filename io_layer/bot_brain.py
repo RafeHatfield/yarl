@@ -1836,6 +1836,12 @@ class BotBrain:
             "auto_explore_active": False,
             "visible_enemies": 0,
             "floor": None,
+            "hp": None,
+            "max_hp": None,
+            "hp_percent": None,
+            "has_healing_potion": None,
+            "healing_potions_in_inventory": None,
+            "scenario_id": None,
         }
 
         player = self._get_player(game_state)
@@ -1853,7 +1859,21 @@ class BotBrain:
 
         # HP fraction
         hp_fraction = self._get_player_hp_fraction(player)
+        snapshot["hp_percent"] = hp_fraction
+        fighter = player.get_component_optional(ComponentType.FIGHTER)
+        if fighter:
+            snapshot["hp"] = getattr(fighter, "hp", None)
+            snapshot["max_hp"] = getattr(fighter, "max_hp", None)
         snapshot["low_hp"] = hp_fraction <= self.persona.potion_hp_threshold
+
+        # Potion availability snapshot
+        try:
+            healing_potions = self._get_healing_potions_in_inventory(player)
+            snapshot["healing_potions_in_inventory"] = len(healing_potions)
+            snapshot["has_healing_potion"] = bool(healing_potions)
+        except Exception:
+            snapshot["healing_potions_in_inventory"] = None
+            snapshot["has_healing_potion"] = None
 
         # Floor complete check (safe, catches exceptions)
         try:
@@ -1866,6 +1886,14 @@ class BotBrain:
             snapshot["auto_explore_active"] = self._is_autoexplore_active(game_state)
         except Exception:
             snapshot["auto_explore_active"] = False
+
+        # Scenario id if present on constants (best-effort)
+        try:
+            constants = getattr(game_state, "constants", {}) or {}
+            if isinstance(constants, dict):
+                snapshot["scenario_id"] = constants.get("scenario_id")
+        except Exception:
+            snapshot["scenario_id"] = None
 
         return snapshot
 

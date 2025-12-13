@@ -1661,6 +1661,7 @@ class ScenarioDefinition:
     scenario_id: str
     name: str
     description: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
     depth: Optional[int] = None
     defaults: Dict[str, Any] = field(default_factory=dict)
     expected: Dict[str, Any] = field(default_factory=dict)
@@ -1832,6 +1833,7 @@ class ScenarioRegistry:
             scenario_id=scenario_id,
             name=data['name'],
             description=data.get('description'),
+            metadata=data.get('metadata', {}) or {},
             depth=data.get('depth'),
             defaults=data.get('defaults', {}),
             expected=data.get('expected', {}),
@@ -1846,7 +1848,7 @@ class ScenarioRegistry:
             source_file=filepath
         )
         
-        # Validate defaults and expected are dicts
+        # Validate defaults/expected/metadata are dicts
         if not isinstance(scenario.defaults, dict):
             raise ScenarioLoadError(
                 f"'defaults' must be a dictionary, got {type(scenario.defaults).__name__}",
@@ -1856,6 +1858,12 @@ class ScenarioRegistry:
         if not isinstance(scenario.expected, dict):
             raise ScenarioLoadError(
                 f"'expected' must be a dictionary, got {type(scenario.expected).__name__}",
+                filepath
+            )
+        
+        if not isinstance(scenario.metadata, dict):
+            raise ScenarioLoadError(
+                f"'metadata' must be a dictionary, got {type(scenario.metadata).__name__}",
                 filepath
             )
         

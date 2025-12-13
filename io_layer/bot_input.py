@@ -217,7 +217,30 @@ class BotInputSource:
                 "auto_explore_active": False,
                 "visible_enemies": 0,
                 "floor": None,
+                "hp": None,
+                "max_hp": None,
+                "hp_percent": None,
             }
+
+        # Gather survivability context
+        from components.component_registry import ComponentType
+
+        player = getattr(game_state, "player", None)
+        fighter = player.get_component_optional(ComponentType.FIGHTER) if player else None
+        hp = getattr(fighter, "hp", None) if fighter else None
+        max_hp = getattr(fighter, "max_hp", None) if fighter else None
+        hp_percent = snapshot.get("hp_percent")
+        if hp_percent is None and hp is not None and max_hp:
+            hp_percent = hp / max_hp if max_hp else None
+
+        healing_list = self.bot_brain._get_healing_potions_in_inventory(player) if player else []  # noqa: SLF001
+        potions_remaining = len(healing_list)
+        has_healing_potion = potions_remaining > 0 if player else None
+
+        scenario_id = None
+        constants = getattr(game_state, "constants", {}) if game_state else {}
+        if isinstance(constants, dict):
+            scenario_id = constants.get("scenario_id") or constants.get("scenario")
 
         action_type, reason = self._classify_action(action, snapshot)
 
@@ -226,6 +249,7 @@ class BotInputSource:
             floor=snapshot.get("floor"),
             turn_number=snapshot.get("turn_number", 0),
             action_type=action_type,
+            decision_type=action_type,
             reason=reason,
             in_combat=bool(snapshot.get("in_combat")),
             in_explore=bool(snapshot.get("in_explore")),
@@ -234,6 +258,12 @@ class BotInputSource:
             floor_complete=bool(snapshot.get("floor_complete")),
             auto_explore_active=bool(snapshot.get("auto_explore_active")),
             visible_enemies=int(snapshot.get("visible_enemies") or 0),
+            hp=hp,
+            max_hp=max_hp,
+            hp_percent=hp_percent,
+            has_healing_potion=has_healing_potion,
+            healing_potions_in_inventory=potions_remaining,
+            scenario_id=scenario_id,
         )
         self._metrics_recorder.record_decision(telemetry)
 

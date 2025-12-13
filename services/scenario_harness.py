@@ -92,6 +92,7 @@ class AggregatedMetrics:
     runs: int = 0
     average_turns: float = 0.0
     player_deaths: int = 0
+    depth: Optional[int] = None
     total_kills_by_faction: Dict[str, int] = field(default_factory=dict)
     total_kills_by_source: Dict[str, int] = field(default_factory=dict)
     total_plague_infections: int = 0
@@ -110,6 +111,7 @@ class AggregatedMetrics:
             'runs': self.runs,
             'average_turns': round(self.average_turns, 2),
             'player_deaths': self.player_deaths,
+            'depth': self.depth,
             'total_kills_by_faction': dict(self.total_kills_by_faction),
             'total_kills_by_source': dict(self.total_kills_by_source),
             'total_plague_infections': self.total_plague_infections,
@@ -682,6 +684,7 @@ def run_scenario_many(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
         player_deaths=player_deaths,
+        depth=getattr(scenario, "depth", None),
         total_kills_by_faction=dict(merged_kills_by_faction),
         total_kills_by_source=dict(merged_kills_by_source),
         total_plague_infections=total_plague_infections,

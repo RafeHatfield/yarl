@@ -1,0 +1,124 @@
+# Scenario: Orc Gauntlet - 5 Rooms
+# Purpose: Sustained attrition test - evaluates mid-run healing judgment over multiple engagements
+#
+# Layout: 5 sequential rooms connected by corridors, 2 orcs per room (10 total)
+# Starting items: 3 healing potions
+# Bot must survive 10 fights with no rest between encounters
+#
+# Expected death rates:
+#   balanced: ~20-30%
+#   aggressive: ~35-45%
+#   cautious: ~10-20%
+
+scenario_id: orc_gauntlet_5rooms
+name: "Orc Gauntlet – 5 Rooms"
+description: "Five-room gauntlet with 2 orcs per room. Tests sustained attrition and healing judgment."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 250
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+expected:
+  min_player_kills: 200  # 10 orcs * 50 runs * 0.4 (accounting for deaths)
+  max_player_deaths: 25  # Target 30% death rate
+  target_death_rate: [0.20, 0.40]
+  target_player_hit_rate: [0.60, 0.75]
+  target_monster_hit_rate: [0.35, 0.50]
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - simplified to single open arena for gauntlet
+rooms:
+  - id: "gauntlet_arena"
+    type: "arena"
+    width: 50
+    height: 10
+    description: "Long gauntlet arena with sequential encounters"
+    walls: "enclosed"
+
+# Monster placements - 10 orcs in 5 groups along the arena
+monsters:
+  # Group 1 - Initial contact (x=6-7)
+  - type: "orc"
+    count: 1
+    position: [6, 3]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [7, 6]
+    facing: "west"
+    state: "aware"
+  
+  # Group 2 (x=13-14)
+  - type: "orc"
+    count: 1
+    position: [13, 2]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [14, 7]
+    facing: "west"
+    state: "aware"
+  
+  # Group 3 - Midpoint pressure (x=20-21)
+  - type: "orc"
+    count: 1
+    position: [20, 3]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [21, 6]
+    facing: "west"
+    state: "aware"
+  
+  # Group 4 (x=27-28)
+  - type: "orc"
+    count: 1
+    position: [27, 2]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [28, 7]
+    facing: "west"
+    state: "aware"
+  
+  # Group 5 - Final test (x=35-36)
+  - type: "orc"
+    count: 1
+    position: [35, 4]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [36, 5]
+    facing: "west"
+    state: "aware"
+
+# Items - 3 healing potions at start
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [2, 3]
+  - type: "healing_potion"
+    count: 1
+    position: [3, 3]
+  - type: "healing_potion"
+    count: 1
+    position: [4, 3]
+
+# Player spawn - start position with baseline equipment
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+

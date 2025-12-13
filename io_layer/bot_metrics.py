@@ -8,7 +8,7 @@ harness or other callers. Overhead when disabled is minimal (early return).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Dict, Optional
 
 
@@ -20,6 +20,7 @@ class BotDecisionTelemetry:
     floor: Optional[int]
     turn_number: int
     action_type: str
+    decision_type: Optional[str] = None
     reason: str = ""
     in_combat: bool = False
     in_explore: bool = False
@@ -28,6 +29,12 @@ class BotDecisionTelemetry:
     floor_complete: bool = False
     auto_explore_active: bool = False
     visible_enemies: int = 0
+    hp: Optional[int] = None
+    max_hp: Optional[int] = None
+    hp_percent: Optional[float] = None
+    has_healing_potion: Optional[bool] = None
+    healing_potions_in_inventory: Optional[int] = None
+    scenario_id: Optional[str] = None
 
 
 @dataclass
@@ -70,6 +77,10 @@ class BotMetricsRecorder:
         if not self.enabled:
             return
         self._decisions.append(decision)
+
+    def get_decisions(self) -> list[BotDecisionTelemetry]:
+        """Return recorded decisions (copy) for downstream export."""
+        return list(self._decisions)
 
     def summarize(self) -> BotRunSummary:
         """Aggregate recorded decisions into a summary."""
@@ -116,4 +127,8 @@ class BotMetricsRecorder:
             context_counts=context_counts,
             reason_counts=reason_counts,
         )
+
+    def decisions_as_dicts(self) -> list[dict]:
+        """Return recorded decisions as serializable dicts."""
+        return [asdict(decision) for decision in self._decisions]
 

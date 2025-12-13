@@ -253,6 +253,13 @@ Examples:
         help='Path for action replay log output (bot-soak only). When provided, actions are logged for replay.'
     )
     
+    parser.add_argument(
+        '--scenario',
+        type=str,
+        metavar='NAME',
+        help='Scenario name to use for bot-soak runs instead of normal worldgen (e.g., orc_swarm_tight)'
+    )
+    
     return parser.parse_args()
 
 
@@ -290,6 +297,14 @@ def main():
         # Get constants (needed for game initialization)
         constants = get_constants()
         
+        # CRITICAL: Enable bot input mode for soak runs
+        # This ensures ActionProcessor recognizes bot mode and enables:
+        # - AutoExplore opportunistic loot (bot_mode=True)
+        # - Auto-equipment optimization
+        # - Proper bot behavior throughout the engine
+        constants.setdefault("input_config", {})
+        constants["input_config"]["bot_enabled"] = True
+        
         # Set up bot config (persona, debug) for soak mode
         constants.setdefault("bot_config", {})
         if args.bot_debug:
@@ -297,6 +312,12 @@ def main():
         if args.bot_persona:
             constants["bot_config"]["persona"] = args.bot_persona
             print(f"🤖 BOT PERSONA: {args.bot_persona}")
+        
+        # Set scenario_id if provided (for scenario-based soaks)
+        if args.scenario:
+            constants["scenario_id"] = args.scenario
+            constants["scenario"] = args.scenario  # Fallback for compatibility
+            print(f"🎯 SCENARIO: {args.scenario}")
         
         # Handle seed
         if args.seed:

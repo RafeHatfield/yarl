@@ -61,35 +61,54 @@ def render_death_screen(con, player, screen_width, screen_height, entity_quote=N
                                     "COMBAT")
         y += 1
 
+        # Defensive stat lookups - handle schema changes gracefully
+        turns_survived = getattr(stats, 'turns_survived', None) or getattr(stats, 'turns_taken', 0)
+        monsters_killed = getattr(stats, 'total_kills', getattr(stats, 'monsters_killed', 0))
+        if isinstance(monsters_killed, dict):
+            monsters_killed = sum(monsters_killed.values())
+        damage_dealt = getattr(stats, 'damage_dealt', 0)
+        damage_taken = getattr(stats, 'damage_taken', 0)
+        critical_hits = getattr(stats, 'critical_hits', 0)
+        times_stunned = getattr(stats, 'times_stunned', 0)
+        
+        floors_descended = getattr(stats, 'floors_descended', None) or getattr(stats, 'deepest_level', 1) - 1
+        items_picked_up = getattr(stats, 'items_picked_up', 0)
+        potions_drunk = getattr(stats, 'potions_drunk', None) or getattr(stats, 'potions_used', 0)
+        scrolls_read = getattr(stats, 'scrolls_read', 0)
+        
+        bosses_defeated = getattr(stats, 'bosses_defeated', 0)
+        secrets_found = getattr(stats, 'secrets_found', 0)
+        traps_disarmed = getattr(stats, 'traps_disarmed', 0)
+
         libtcodpy.console_set_default_foreground(con, libtcodpy.Color(200, 200, 200))
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Turns survived: {stats.turns_survived}")
+                                    f"Turns survived: {turns_survived}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Monsters killed: {stats.monsters_killed}")
+                                    f"Monsters killed: {monsters_killed}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Damage dealt: {stats.damage_dealt}")
+                                    f"Damage dealt: {damage_dealt}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Damage taken: {stats.damage_taken}")
+                                    f"Damage taken: {damage_taken}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Critical hits: {stats.critical_hits}")
+                                    f"Critical hits: {critical_hits}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Times stunned: {stats.times_stunned}")
+                                    f"Times stunned: {times_stunned}")
         y += 2
 
         libtcodpy.console_set_default_foreground(con, libtcodpy.Color(180, 180, 180))
@@ -101,22 +120,22 @@ def render_death_screen(con, player, screen_width, screen_height, entity_quote=N
         libtcodpy.console_set_default_foreground(con, libtcodpy.Color(200, 200, 200))
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Floors descended: {stats.floors_descended}")
+                                    f"Floors descended: {floors_descended}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Items picked up: {stats.items_picked_up}")
+                                    f"Items picked up: {items_picked_up}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Potions drunk: {stats.potions_drunk}")
+                                    f"Potions drunk: {potions_drunk}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Scrolls read: {stats.scrolls_read}")
+                                    f"Scrolls read: {scrolls_read}")
         y += 2
 
         libtcodpy.console_set_default_foreground(con, libtcodpy.Color(150, 150, 150))
@@ -127,17 +146,17 @@ def render_death_screen(con, player, screen_width, screen_height, entity_quote=N
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Bosses defeated: {stats.bosses_defeated}")
+                                    f"Bosses defeated: {bosses_defeated}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Secrets found: {stats.secrets_found}")
+                                    f"Secrets found: {secrets_found}")
         y += 1
 
         libtcodpy.console_print_ex(con, screen_width // 2 - 15, y,
                                     libtcodpy.BKGND_NONE, libtcodpy.LEFT,
-                                    f"Traps disarmed: {stats.traps_disarmed}")
+                                    f"Traps disarmed: {traps_disarmed}")
         y += 2
 
         if run_metrics and hasattr(run_metrics, "turns_per_floor"):

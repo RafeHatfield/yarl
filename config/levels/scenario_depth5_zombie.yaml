@@ -1,0 +1,89 @@
+# Scenario: Depth 5 Zombie Horde Probe
+# Purpose: Depth-tagged zombie horde probe for difficulty vs depth.
+
+metadata:
+  scenario_id: depth5_zombie
+  family: zombie_horde
+  depth: 5
+
+scenario_id: depth5_zombie
+name: "Depth 5 – Zombie Horde"
+description: "Zombie horde probe tagged for depth 5."
+
+depth: 5
+
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 50
+
+expected:
+  min_player_kills: 70
+  max_player_deaths: 40
+
+rooms:
+  - id: "zombie_horde_probe"
+    type: "arena"
+    width: 16
+    height: 16
+    description: "Wide arena for late-depth horde"
+    walls: "enclosed"
+
+monsters:
+  - type: "zombie"
+    count: 1
+    position: [10, 8]
+    facing: "west"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [11, 8]
+    facing: "south"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [9, 8]
+    facing: "west"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [10, 6]
+    facing: "south"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [11, 6]
+    facing: "south"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [9, 6]
+    facing: "west"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [11, 7]
+    facing: "west"
+    state: "aware"
+  - type: "zombie"
+    count: 1
+    position: [12, 7]
+    facing: "west"
+    state: "aware"
+
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 8]
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+player:
+  position: [3, 7]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"

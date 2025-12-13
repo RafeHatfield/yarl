@@ -1,10 +1,10 @@
 # Difficulty Curve Dashboard
-_Updated: 2025-12-11_
+_Updated: 2025-12-12_
 
 [Eco Balance Report](reports/eco_balance_report.md)
 
 ## Overview
-- Scenarios: 13
+- Scenarios: 18
 - Metrics source: `/Users/rafehatfield/development/rlike/reports/metrics`
 - Graphs: `/Users/rafehatfield/development/rlike/reports/graphs`
 
@@ -12,19 +12,24 @@ _Updated: 2025-12-11_
 
 | scenario | family | depth | runs | death% | player_hit% | monster_hit% | bonus/run | pressure_index |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| backstab_training | backstab_training | None | 100 | 1.0% | 69.3% | 47.2% | 5.20 | -7.60 |
-| dueling_pit | dueling_pit | None | 50 | 0.0% | 70.3% | 34.9% | 2.38 | -3.50 |
-| dueling_pit_slow_zombie_baseline | dueling_pit | None | 50 | 0.0% | 80.4% | 26.7% | 3.14 | 0.60 |
-| dueling_pit_slow_zombie_speed_full | dueling_pit | None | 50 | 0.0% | 88.0% | 21.5% | 2.36 | -3.76 |
-| dueling_pit_speed_full | dueling_pit | None | 50 | 0.0% | 72.7% | 27.9% | 3.38 | -4.54 |
-| dueling_pit_speed_light | dueling_pit | None | 50 | 0.0% | 73.2% | 36.4% | 3.08 | -4.24 |
-| orc_swarm_baseline | orc_swarm | None | 50 | 10.0% | 69.4% | 36.4% | 10.60 | -15.22 |
-| orc_swarm_brutal_baseline | orc_swarm | None | 50 | 14.0% | 69.8% | 34.8% | 13.04 | -19.20 |
-| orc_swarm_brutal_speed_full | orc_swarm | None | 50 | 0.0% | 74.2% | 33.8% | 15.88 | -21.74 |
-| orc_swarm_speed_full | orc_swarm | None | 50 | 2.0% | 74.3% | 31.8% | 9.42 | -12.98 |
-| orc_swarm_tight | orc_swarm | None | 50 | 24.0% | 70.3% | 46.3% | 4.04 | -7.54 |
-| plague_arena | plague_arena | None | 100 | 38.0% | 83.6% | 24.3% | 11.93 | 3.93 |
-| zombie_horde | zombie_horde | None | 50 | 14.0% | 85.0% | 20.8% | 11.50 | 1.90 |
+| backstab_training | backstab_training | 5 | 100 | 0.0% | 68.8% | 46.7% | 5.50 | -8.01 |
+| depth1_orc_easy | depth1_orc | 1 | 30 | 0.0% | 68.3% | 37.6% | 5.30 | -7.77 |
+| depth2_orc_baseline | depth2_orc | 2 | 40 | 2.5% | 68.2% | 37.9% | 8.07 | -11.65 |
+| depth3_orc_brutal | depth3_orc | 3 | 50 | 6.0% | 69.7% | 34.8% | 10.50 | -15.14 |
+| depth4_plague | depth4_plague | 4 | 50 | 12.0% | 83.8% | 36.5% | 9.14 | 4.84 |
+| depth5_zombie | depth5_zombie | 5 | 50 | 38.0% | 85.7% | 34.3% | 13.88 | 15.92 |
+| dueling_pit | dueling_pit | 5 | 50 | 0.0% | 68.4% | 41.8% | 2.52 | -3.84 |
+| dueling_pit_slow_zombie_baseline | dueling_pit | 5 | 50 | 2.0% | 84.1% | 27.5% | 3.34 | 0.76 |
+| dueling_pit_slow_zombie_speed_full | dueling_pit | 5 | 50 | 0.0% | 86.4% | 21.8% | 2.42 | -3.86 |
+| dueling_pit_speed_full | dueling_pit | 5 | 50 | 0.0% | 74.3% | 34.5% | 3.28 | -4.42 |
+| dueling_pit_speed_light | dueling_pit | 5 | 50 | 0.0% | 72.7% | 41.6% | 2.76 | -3.96 |
+| orc_swarm_baseline | orc_swarm | 5 | 50 | 8.0% | 68.4% | 35.7% | 10.84 | -15.76 |
+| orc_swarm_brutal_baseline | orc_swarm | 5 | 50 | 30.0% | 69.7% | 38.2% | 12.62 | -18.22 |
+| orc_swarm_brutal_speed_full | orc_swarm | 5 | 50 | 6.0% | 75.0% | 28.5% | 15.60 | -21.26 |
+| orc_swarm_speed_full | orc_swarm | 5 | 50 | 0.0% | 75.0% | 32.1% | 9.54 | -13.02 |
+| orc_swarm_tight | orc_swarm | 5 | 50 | 40.0% | 67.3% | 50.5% | 3.84 | -7.20 |
+| plague_arena | plague_arena | 8 | 100 | 29.0% | 84.2% | 24.9% | 12.05 | 3.43 |
+| zombie_horde | zombie_horde | 5 | 50 | 4.0% | 84.0% | 19.1% | 11.96 | 1.00 |
 
 ## Graphs
 
@@ -41,142 +46,197 @@ _Updated: 2025-12-11_
 ![difficulty_curve_overview.png](graphs/difficulty_curve_overview.png)
 
 ## Family Insights
-- **backstab_training** — deaths 1–1%, player hit ~69%, monster hit ~47%, bonus/run ~5, pressure index ~-7.6 (player drives tempo).
-- **dueling_pit** — deaths 0–0%, player hit ~77%, monster hit ~29%, bonus/run ~3, pressure index ~-3.1 (balanced tempo).
-- **orc_swarm** — deaths 0–24%, player hit ~72%, monster hit ~37%, bonus/run ~11, pressure index ~-15.3 (player drives tempo).
-- **plague_arena** — deaths 38–38%, player hit ~84%, monster hit ~24%, bonus/run ~12, pressure index ~3.9 (balanced tempo).
-- **zombie_horde** — deaths 14–14%, player hit ~85%, monster hit ~21%, bonus/run ~12, pressure index ~1.9 (balanced tempo).
+- **backstab_training** — deaths 0–0%, player hit ~69%, monster hit ~47%, bonus/run ~6, pressure index ~-8.0 (player drives tempo).
+- **depth1_orc** — deaths 0–0%, player hit ~68%, monster hit ~38%, bonus/run ~5, pressure index ~-7.8 (player drives tempo).
+- **depth2_orc** — deaths 2–2%, player hit ~68%, monster hit ~38%, bonus/run ~8, pressure index ~-11.7 (player drives tempo).
+- **depth3_orc** — deaths 6–6%, player hit ~70%, monster hit ~35%, bonus/run ~10, pressure index ~-15.1 (player drives tempo).
+- **depth4_plague** — deaths 12–12%, player hit ~84%, monster hit ~37%, bonus/run ~9, pressure index ~4.8 (balanced tempo).
+- **depth5_zombie** — deaths 38–38%, player hit ~86%, monster hit ~34%, bonus/run ~14, pressure index ~15.9 (monsters drive tempo).
+- **dueling_pit** — deaths 0–2%, player hit ~77%, monster hit ~33%, bonus/run ~3, pressure index ~-3.1 (balanced tempo).
+- **orc_swarm** — deaths 0–40%, player hit ~71%, monster hit ~37%, bonus/run ~10, pressure index ~-15.1 (player drives tempo).
+- **plague_arena** — deaths 29–29%, player hit ~84%, monster hit ~25%, bonus/run ~12, pressure index ~3.4 (balanced tempo).
+- **zombie_horde** — deaths 4–4%, player hit ~84%, monster hit ~19%, bonus/run ~12, pressure index ~1.0 (balanced tempo).
 
 ## Scenario Breakdown
 ### backstab_training
 - family: backstab_training
-- depth: None
+- depth: 5
 - runs: 100
-- death_rate: 0.010
-- player_hit_rate: 0.693
-- monster_hit_rate: 0.472
-- bonus_attacks_per_run: 5.200
-- pressure_index: -7.600
+- death_rate: 0.000
+- player_hit_rate: 0.688
+- monster_hit_rate: 0.467
+- bonus_attacks_per_run: 5.500
+- pressure_index: -8.010
+
+### depth1_orc_easy
+- family: depth1_orc
+- depth: 1
+- runs: 30
+- death_rate: 0.000
+- player_hit_rate: 0.683
+- monster_hit_rate: 0.376
+- bonus_attacks_per_run: 5.300
+- pressure_index: -7.767
+
+### depth2_orc_baseline
+- family: depth2_orc
+- depth: 2
+- runs: 40
+- death_rate: 0.025
+- player_hit_rate: 0.682
+- monster_hit_rate: 0.379
+- bonus_attacks_per_run: 8.075
+- pressure_index: -11.650
+
+### depth3_orc_brutal
+- family: depth3_orc
+- depth: 3
+- runs: 50
+- death_rate: 0.060
+- player_hit_rate: 0.697
+- monster_hit_rate: 0.348
+- bonus_attacks_per_run: 10.500
+- pressure_index: -15.140
+
+### depth4_plague
+- family: depth4_plague
+- depth: 4
+- runs: 50
+- death_rate: 0.120
+- player_hit_rate: 0.838
+- monster_hit_rate: 0.365
+- bonus_attacks_per_run: 9.140
+- pressure_index: 4.840
+
+### depth5_zombie
+- family: depth5_zombie
+- depth: 5
+- runs: 50
+- death_rate: 0.380
+- player_hit_rate: 0.857
+- monster_hit_rate: 0.343
+- bonus_attacks_per_run: 13.880
+- pressure_index: 15.920
 
 ### dueling_pit
 - family: dueling_pit
-- depth: None
+- depth: 5
 - runs: 50
 - death_rate: 0.000
-- player_hit_rate: 0.703
-- monster_hit_rate: 0.349
-- bonus_attacks_per_run: 2.380
-- pressure_index: -3.500
+- player_hit_rate: 0.684
+- monster_hit_rate: 0.418
+- bonus_attacks_per_run: 2.520
+- pressure_index: -3.840
 
 ### dueling_pit_slow_zombie_baseline
 - family: dueling_pit
-- depth: None
+- depth: 5
 - runs: 50
-- death_rate: 0.000
-- player_hit_rate: 0.804
-- monster_hit_rate: 0.267
-- bonus_attacks_per_run: 3.140
-- pressure_index: 0.600
+- death_rate: 0.020
+- player_hit_rate: 0.841
+- monster_hit_rate: 0.275
+- bonus_attacks_per_run: 3.340
+- pressure_index: 0.760
 
 ### dueling_pit_slow_zombie_speed_full
 - family: dueling_pit
-- depth: None
+- depth: 5
 - runs: 50
 - death_rate: 0.000
-- player_hit_rate: 0.880
-- monster_hit_rate: 0.215
-- bonus_attacks_per_run: 2.360
-- pressure_index: -3.760
+- player_hit_rate: 0.864
+- monster_hit_rate: 0.218
+- bonus_attacks_per_run: 2.420
+- pressure_index: -3.860
 
 ### dueling_pit_speed_full
 - family: dueling_pit
-- depth: None
+- depth: 5
 - runs: 50
 - death_rate: 0.000
-- player_hit_rate: 0.727
-- monster_hit_rate: 0.279
-- bonus_attacks_per_run: 3.380
-- pressure_index: -4.540
+- player_hit_rate: 0.743
+- monster_hit_rate: 0.345
+- bonus_attacks_per_run: 3.280
+- pressure_index: -4.420
 
 ### dueling_pit_speed_light
 - family: dueling_pit
-- depth: None
+- depth: 5
 - runs: 50
 - death_rate: 0.000
-- player_hit_rate: 0.732
-- monster_hit_rate: 0.364
-- bonus_attacks_per_run: 3.080
-- pressure_index: -4.240
+- player_hit_rate: 0.727
+- monster_hit_rate: 0.416
+- bonus_attacks_per_run: 2.760
+- pressure_index: -3.960
 
 ### orc_swarm_baseline
 - family: orc_swarm
-- depth: None
+- depth: 5
 - runs: 50
-- death_rate: 0.100
-- player_hit_rate: 0.694
-- monster_hit_rate: 0.364
-- bonus_attacks_per_run: 10.600
-- pressure_index: -15.220
+- death_rate: 0.080
+- player_hit_rate: 0.684
+- monster_hit_rate: 0.357
+- bonus_attacks_per_run: 10.840
+- pressure_index: -15.760
 
 ### orc_swarm_brutal_baseline
 - family: orc_swarm
-- depth: None
+- depth: 5
 - runs: 50
-- death_rate: 0.140
-- player_hit_rate: 0.698
-- monster_hit_rate: 0.348
-- bonus_attacks_per_run: 13.040
-- pressure_index: -19.200
+- death_rate: 0.300
+- player_hit_rate: 0.697
+- monster_hit_rate: 0.382
+- bonus_attacks_per_run: 12.620
+- pressure_index: -18.220
 
 ### orc_swarm_brutal_speed_full
 - family: orc_swarm
-- depth: None
+- depth: 5
 - runs: 50
-- death_rate: 0.000
-- player_hit_rate: 0.742
-- monster_hit_rate: 0.338
-- bonus_attacks_per_run: 15.880
-- pressure_index: -21.740
+- death_rate: 0.060
+- player_hit_rate: 0.750
+- monster_hit_rate: 0.285
+- bonus_attacks_per_run: 15.600
+- pressure_index: -21.260
 
 ### orc_swarm_speed_full
 - family: orc_swarm
-- depth: None
+- depth: 5
 - runs: 50
-- death_rate: 0.020
-- player_hit_rate: 0.743
-- monster_hit_rate: 0.318
-- bonus_attacks_per_run: 9.420
-- pressure_index: -12.980
+- death_rate: 0.000
+- player_hit_rate: 0.750
+- monster_hit_rate: 0.321
+- bonus_attacks_per_run: 9.540
+- pressure_index: -13.020
 
 ### orc_swarm_tight
 - family: orc_swarm
-- depth: None
+- depth: 5
 - runs: 50
-- death_rate: 0.240
-- player_hit_rate: 0.703
-- monster_hit_rate: 0.463
-- bonus_attacks_per_run: 4.040
-- pressure_index: -7.540
+- death_rate: 0.400
+- player_hit_rate: 0.673
+- monster_hit_rate: 0.505
+- bonus_attacks_per_run: 3.840
+- pressure_index: -7.200
 
 ### plague_arena
 - family: plague_arena
-- depth: None
+- depth: 8
 - runs: 100
-- death_rate: 0.380
-- player_hit_rate: 0.836
-- monster_hit_rate: 0.243
-- bonus_attacks_per_run: 11.930
-- pressure_index: 3.930
+- death_rate: 0.290
+- player_hit_rate: 0.842
+- monster_hit_rate: 0.249
+- bonus_attacks_per_run: 12.050
+- pressure_index: 3.430
 
 ### zombie_horde
 - family: zombie_horde
-- depth: None
+- depth: 5
 - runs: 50
-- death_rate: 0.140
-- player_hit_rate: 0.850
-- monster_hit_rate: 0.208
-- bonus_attacks_per_run: 11.500
-- pressure_index: 1.900
+- death_rate: 0.040
+- player_hit_rate: 0.840
+- monster_hit_rate: 0.191
+- bonus_attacks_per_run: 11.960
+- pressure_index: 1.000
 
 ## Raw Metrics (appendix)
 
@@ -185,34 +245,34 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/backstab_training_metrics.json",
-  "bonus_attacks_per_run": 5.2,
-  "death_rate": 0.01,
-  "depth": null,
+  "bonus_attacks_per_run": 5.5,
+  "death_rate": 0.0,
+  "depth": 5,
   "family": "backstab_training",
-  "monster_attacks_per_run": 7.84,
-  "monster_hit_rate": 0.4719387755102041,
-  "player_attacks_per_run": 15.44,
-  "player_hit_rate": 0.6930051813471503,
-  "pressure_index": -7.6,
+  "monster_attacks_per_run": 7.77,
+  "monster_hit_rate": 0.4671814671814672,
+  "player_attacks_per_run": 15.78,
+  "player_hit_rate": 0.6875792141951838,
+  "pressure_index": -8.01,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 24.96,
-      "player_deaths": 1,
+      "average_turns": 25.0,
+      "depth": 5,
+      "player_deaths": 0,
       "runs": 100,
-      "total_bonus_attacks_triggered": 520,
+      "total_bonus_attacks_triggered": 550,
       "total_kills_by_faction": {
-        "Orc": 1,
-        "Player": 199
+        "Player": 200
       },
       "total_kills_by_source": {
-        "MONSTERS": 1,
-        "PLAYER": 199
+        "PLAYER": 200
       },
-      "total_monster_attacks": 784,
-      "total_monster_hits": 370,
+      "total_monster_attacks": 777,
+      "total_monster_hits": 363,
       "total_plague_infections": 0,
-      "total_player_attacks": 1544,
-      "total_player_hits": 1070,
+      "total_player_attacks": 1578,
+      "total_player_hits": 1085,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 200
@@ -229,37 +289,295 @@ _Updated: 2025-12-11_
 
 </details>
 
+<details><summary>depth1_orc_easy</summary>
+
+```json
+{
+  "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/depth1_orc_easy_metrics.json",
+  "bonus_attacks_per_run": 5.3,
+  "death_rate": 0.0,
+  "depth": 1,
+  "family": "depth1_orc",
+  "monster_attacks_per_run": 8.333333333333334,
+  "monster_hit_rate": 0.376,
+  "player_attacks_per_run": 16.1,
+  "player_hit_rate": 0.6832298136645962,
+  "pressure_index": -7.7666666666666675,
+  "raw": {
+    "depth": 1,
+    "metrics": {
+      "average_turns": 40.0,
+      "depth": 1,
+      "player_deaths": 0,
+      "runs": 30,
+      "total_bonus_attacks_triggered": 159,
+      "total_kills_by_faction": {
+        "Player": 60
+      },
+      "total_kills_by_source": {
+        "PLAYER": 60
+      },
+      "total_monster_attacks": 250,
+      "total_monster_hits": 94,
+      "total_plague_infections": 0,
+      "total_player_attacks": 483,
+      "total_player_hits": 330,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 60
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 30,
+    "scenario_id": "depth1_orc_easy",
+    "turn_limit": 80
+  },
+  "runs": 30,
+  "scenario_id": "depth1_orc_easy"
+}
+```
+
+</details>
+
+<details><summary>depth2_orc_baseline</summary>
+
+```json
+{
+  "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/depth2_orc_baseline_metrics.json",
+  "bonus_attacks_per_run": 8.075,
+  "death_rate": 0.025,
+  "depth": 2,
+  "family": "depth2_orc",
+  "monster_attacks_per_run": 11.6,
+  "monster_hit_rate": 0.3793103448275862,
+  "player_attacks_per_run": 23.25,
+  "player_hit_rate": 0.6817204301075269,
+  "pressure_index": -11.65,
+  "raw": {
+    "depth": 2,
+    "metrics": {
+      "average_turns": 49.25,
+      "depth": 2,
+      "player_deaths": 1,
+      "runs": 40,
+      "total_bonus_attacks_triggered": 323,
+      "total_kills_by_faction": {
+        "Orc": 1,
+        "Player": 119
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 1,
+        "PLAYER": 119
+      },
+      "total_monster_attacks": 464,
+      "total_monster_hits": 176,
+      "total_plague_infections": 0,
+      "total_player_attacks": 930,
+      "total_player_hits": 634,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 120
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 40,
+    "scenario_id": "depth2_orc_baseline",
+    "turn_limit": 100
+  },
+  "runs": 40,
+  "scenario_id": "depth2_orc_baseline"
+}
+```
+
+</details>
+
+<details><summary>depth3_orc_brutal</summary>
+
+```json
+{
+  "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/depth3_orc_brutal_metrics.json",
+  "bonus_attacks_per_run": 10.5,
+  "death_rate": 0.06,
+  "depth": 3,
+  "family": "depth3_orc",
+  "monster_attacks_per_run": 14.98,
+  "monster_hit_rate": 0.3484646194926569,
+  "player_attacks_per_run": 30.12,
+  "player_hit_rate": 0.6972111553784861,
+  "pressure_index": -15.14,
+  "raw": {
+    "depth": 3,
+    "metrics": {
+      "average_turns": 53.14,
+      "depth": 3,
+      "player_deaths": 3,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 525,
+      "total_kills_by_faction": {
+        "Orc": 3,
+        "Player": 196
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 3,
+        "PLAYER": 196
+      },
+      "total_monster_attacks": 749,
+      "total_monster_hits": 261,
+      "total_plague_infections": 0,
+      "total_player_attacks": 1506,
+      "total_player_hits": 1050,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 199
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "depth3_orc_brutal",
+    "turn_limit": 110
+  },
+  "runs": 50,
+  "scenario_id": "depth3_orc_brutal"
+}
+```
+
+</details>
+
+<details><summary>depth4_plague</summary>
+
+```json
+{
+  "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/depth4_plague_metrics.json",
+  "bonus_attacks_per_run": 9.14,
+  "death_rate": 0.12,
+  "depth": 4,
+  "family": "depth4_plague",
+  "monster_attacks_per_run": 24.76,
+  "monster_hit_rate": 0.3651050080775444,
+  "player_attacks_per_run": 19.92,
+  "player_hit_rate": 0.8383534136546185,
+  "pressure_index": 4.84,
+  "raw": {
+    "depth": 4,
+    "metrics": {
+      "average_turns": 64.24,
+      "depth": 4,
+      "player_deaths": 6,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 457,
+      "total_kills_by_faction": {
+        "Plague_Zombie": 13,
+        "Player": 160,
+        "Revenant Plague_Zombie": 1,
+        "Revenant Zombie": 2,
+        "Zombie": 22
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 38,
+        "PLAYER": 160
+      },
+      "total_monster_attacks": 1238,
+      "total_monster_hits": 452,
+      "total_plague_infections": 52,
+      "total_player_attacks": 996,
+      "total_player_hits": 835,
+      "total_portals_used": 0,
+      "total_reanimations": 16,
+      "total_surprise_attacks": 168
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "depth4_plague",
+    "turn_limit": 140
+  },
+  "runs": 50,
+  "scenario_id": "depth4_plague"
+}
+```
+
+</details>
+
+<details><summary>depth5_zombie</summary>
+
+```json
+{
+  "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/depth5_zombie_metrics.json",
+  "bonus_attacks_per_run": 13.88,
+  "death_rate": 0.38,
+  "depth": 5,
+  "family": "depth5_zombie",
+  "monster_attacks_per_run": 41.94,
+  "monster_hit_rate": 0.34334763948497854,
+  "player_attacks_per_run": 26.02,
+  "player_hit_rate": 0.857033051498847,
+  "pressure_index": 15.919999999999998,
+  "raw": {
+    "depth": 5,
+    "metrics": {
+      "average_turns": 58.32,
+      "depth": 5,
+      "player_deaths": 19,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 694,
+      "total_kills_by_faction": {
+        "Player": 277,
+        "Zombie": 70
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 70,
+        "PLAYER": 277
+      },
+      "total_monster_attacks": 2097,
+      "total_monster_hits": 720,
+      "total_plague_infections": 0,
+      "total_player_attacks": 1301,
+      "total_player_hits": 1115,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 341
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "depth5_zombie",
+    "turn_limit": 150
+  },
+  "runs": 50,
+  "scenario_id": "depth5_zombie"
+}
+```
+
+</details>
+
 <details><summary>dueling_pit</summary>
 
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/dueling_pit_metrics.json",
-  "bonus_attacks_per_run": 2.38,
+  "bonus_attacks_per_run": 2.52,
   "death_rate": 0.0,
-  "depth": null,
+  "depth": 5,
   "family": "dueling_pit",
-  "monster_attacks_per_run": 3.9,
-  "monster_hit_rate": 0.3487179487179487,
-  "player_attacks_per_run": 7.4,
-  "player_hit_rate": 0.7027027027027027,
-  "pressure_index": -3.5000000000000004,
+  "monster_attacks_per_run": 3.88,
+  "monster_hit_rate": 0.4175257731958763,
+  "player_attacks_per_run": 7.72,
+  "player_hit_rate": 0.6839378238341969,
+  "pressure_index": -3.84,
   "raw": {
+    "depth": 5,
     "metrics": {
       "average_turns": 50.0,
+      "depth": 5,
       "player_deaths": 0,
       "runs": 50,
-      "total_bonus_attacks_triggered": 119,
+      "total_bonus_attacks_triggered": 126,
       "total_kills_by_faction": {
         "Player": 50
       },
       "total_kills_by_source": {
         "PLAYER": 50
       },
-      "total_monster_attacks": 195,
-      "total_monster_hits": 68,
+      "total_monster_attacks": 194,
+      "total_monster_hits": 81,
       "total_plague_infections": 0,
-      "total_player_attacks": 370,
-      "total_player_hits": 260,
+      "total_player_attacks": 386,
+      "total_player_hits": 264,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 50
@@ -281,32 +599,36 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/dueling_pit_slow_zombie_baseline_metrics.json",
-  "bonus_attacks_per_run": 3.14,
-  "death_rate": 0.0,
-  "depth": null,
+  "bonus_attacks_per_run": 3.34,
+  "death_rate": 0.02,
+  "depth": 5,
   "family": "dueling_pit",
-  "monster_attacks_per_run": 6.3,
-  "monster_hit_rate": 0.26666666666666666,
-  "player_attacks_per_run": 5.7,
-  "player_hit_rate": 0.8035087719298246,
-  "pressure_index": 0.5999999999999996,
+  "monster_attacks_per_run": 6.04,
+  "monster_hit_rate": 0.27483443708609273,
+  "player_attacks_per_run": 5.28,
+  "player_hit_rate": 0.8409090909090909,
+  "pressure_index": 0.7599999999999998,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 50.0,
-      "player_deaths": 0,
+      "average_turns": 49.26,
+      "depth": 5,
+      "player_deaths": 1,
       "runs": 50,
-      "total_bonus_attacks_triggered": 157,
+      "total_bonus_attacks_triggered": 167,
       "total_kills_by_faction": {
-        "Player": 50
+        "Player": 49,
+        "Zombie": 1
       },
       "total_kills_by_source": {
-        "PLAYER": 50
+        "MONSTERS": 1,
+        "PLAYER": 49
       },
-      "total_monster_attacks": 315,
-      "total_monster_hits": 84,
+      "total_monster_attacks": 302,
+      "total_monster_hits": 83,
       "total_plague_infections": 0,
-      "total_player_attacks": 285,
-      "total_player_hits": 229,
+      "total_player_attacks": 264,
+      "total_player_hits": 222,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 50
@@ -328,32 +650,34 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/dueling_pit_slow_zombie_speed_full_metrics.json",
-  "bonus_attacks_per_run": 2.36,
+  "bonus_attacks_per_run": 2.42,
   "death_rate": 0.0,
-  "depth": null,
+  "depth": 5,
   "family": "dueling_pit",
-  "monster_attacks_per_run": 1.58,
-  "monster_hit_rate": 0.21518987341772153,
-  "player_attacks_per_run": 5.34,
-  "player_hit_rate": 0.8801498127340824,
-  "pressure_index": -3.76,
+  "monster_attacks_per_run": 1.74,
+  "monster_hit_rate": 0.21839080459770116,
+  "player_attacks_per_run": 5.6,
+  "player_hit_rate": 0.8642857142857143,
+  "pressure_index": -3.8599999999999994,
   "raw": {
+    "depth": 5,
     "metrics": {
       "average_turns": 50.0,
+      "depth": 5,
       "player_deaths": 0,
       "runs": 50,
-      "total_bonus_attacks_triggered": 118,
+      "total_bonus_attacks_triggered": 121,
       "total_kills_by_faction": {
         "Player": 50
       },
       "total_kills_by_source": {
         "PLAYER": 50
       },
-      "total_monster_attacks": 79,
-      "total_monster_hits": 17,
+      "total_monster_attacks": 87,
+      "total_monster_hits": 19,
       "total_plague_infections": 0,
-      "total_player_attacks": 267,
-      "total_player_hits": 235,
+      "total_player_attacks": 280,
+      "total_player_hits": 242,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 50
@@ -375,31 +699,33 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/dueling_pit_speed_full_metrics.json",
-  "bonus_attacks_per_run": 3.38,
+  "bonus_attacks_per_run": 3.28,
   "death_rate": 0.0,
-  "depth": null,
+  "depth": 5,
   "family": "dueling_pit",
-  "monster_attacks_per_run": 2.94,
-  "monster_hit_rate": 0.2789115646258503,
-  "player_attacks_per_run": 7.48,
-  "player_hit_rate": 0.7272727272727273,
-  "pressure_index": -4.540000000000001,
+  "monster_attacks_per_run": 2.9,
+  "monster_hit_rate": 0.3448275862068966,
+  "player_attacks_per_run": 7.32,
+  "player_hit_rate": 0.7431693989071039,
+  "pressure_index": -4.42,
   "raw": {
+    "depth": 5,
     "metrics": {
       "average_turns": 50.0,
+      "depth": 5,
       "player_deaths": 0,
       "runs": 50,
-      "total_bonus_attacks_triggered": 169,
+      "total_bonus_attacks_triggered": 164,
       "total_kills_by_faction": {
         "Player": 50
       },
       "total_kills_by_source": {
         "PLAYER": 50
       },
-      "total_monster_attacks": 147,
-      "total_monster_hits": 41,
+      "total_monster_attacks": 145,
+      "total_monster_hits": 50,
       "total_plague_infections": 0,
-      "total_player_attacks": 374,
+      "total_player_attacks": 366,
       "total_player_hits": 272,
       "total_portals_used": 0,
       "total_reanimations": 0,
@@ -422,32 +748,34 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/dueling_pit_speed_light_metrics.json",
-  "bonus_attacks_per_run": 3.08,
+  "bonus_attacks_per_run": 2.76,
   "death_rate": 0.0,
-  "depth": null,
+  "depth": 5,
   "family": "dueling_pit",
-  "monster_attacks_per_run": 3.3,
-  "monster_hit_rate": 0.36363636363636365,
-  "player_attacks_per_run": 7.54,
-  "player_hit_rate": 0.7320954907161804,
-  "pressure_index": -4.24,
+  "monster_attacks_per_run": 3.08,
+  "monster_hit_rate": 0.4155844155844156,
+  "player_attacks_per_run": 7.04,
+  "player_hit_rate": 0.7272727272727273,
+  "pressure_index": -3.96,
   "raw": {
+    "depth": 5,
     "metrics": {
       "average_turns": 50.0,
+      "depth": 5,
       "player_deaths": 0,
       "runs": 50,
-      "total_bonus_attacks_triggered": 154,
+      "total_bonus_attacks_triggered": 138,
       "total_kills_by_faction": {
         "Player": 50
       },
       "total_kills_by_source": {
         "PLAYER": 50
       },
-      "total_monster_attacks": 165,
-      "total_monster_hits": 60,
+      "total_monster_attacks": 154,
+      "total_monster_hits": 64,
       "total_plague_infections": 0,
-      "total_player_attacks": 377,
-      "total_player_hits": 276,
+      "total_player_attacks": 352,
+      "total_player_hits": 256,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 50
@@ -469,34 +797,36 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/orc_swarm_baseline_metrics.json",
-  "bonus_attacks_per_run": 10.6,
-  "death_rate": 0.1,
-  "depth": null,
+  "bonus_attacks_per_run": 10.84,
+  "death_rate": 0.08,
+  "depth": 5,
   "family": "orc_swarm",
-  "monster_attacks_per_run": 15.4,
-  "monster_hit_rate": 0.36363636363636365,
-  "player_attacks_per_run": 30.62,
-  "player_hit_rate": 0.6943174395819726,
-  "pressure_index": -15.22,
+  "monster_attacks_per_run": 15.86,
+  "monster_hit_rate": 0.35687263556116017,
+  "player_attacks_per_run": 31.62,
+  "player_hit_rate": 0.6843769765970904,
+  "pressure_index": -15.760000000000002,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 47.76,
-      "player_deaths": 5,
+      "average_turns": 48.26,
+      "depth": 5,
+      "player_deaths": 4,
       "runs": 50,
-      "total_bonus_attacks_triggered": 530,
+      "total_bonus_attacks_triggered": 542,
       "total_kills_by_faction": {
-        "Orc": 5,
-        "Player": 195
+        "Orc": 4,
+        "Player": 196
       },
       "total_kills_by_source": {
-        "MONSTERS": 5,
-        "PLAYER": 195
+        "MONSTERS": 4,
+        "PLAYER": 196
       },
-      "total_monster_attacks": 770,
-      "total_monster_hits": 280,
+      "total_monster_attacks": 793,
+      "total_monster_hits": 283,
       "total_plague_infections": 0,
-      "total_player_attacks": 1531,
-      "total_player_hits": 1063,
+      "total_player_attacks": 1581,
+      "total_player_hits": 1082,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 200
@@ -518,37 +848,39 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/orc_swarm_brutal_baseline_metrics.json",
-  "bonus_attacks_per_run": 13.04,
-  "death_rate": 0.14,
-  "depth": null,
+  "bonus_attacks_per_run": 12.62,
+  "death_rate": 0.3,
+  "depth": 5,
   "family": "orc_swarm",
-  "monster_attacks_per_run": 18.2,
-  "monster_hit_rate": 0.34835164835164834,
-  "player_attacks_per_run": 37.4,
-  "player_hit_rate": 0.6983957219251337,
-  "pressure_index": -19.2,
+  "monster_attacks_per_run": 18.1,
+  "monster_hit_rate": 0.38232044198895027,
+  "player_attacks_per_run": 36.32,
+  "player_hit_rate": 0.6965859030837004,
+  "pressure_index": -18.22,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 46.84,
-      "player_deaths": 7,
+      "average_turns": 43.8,
+      "depth": 5,
+      "player_deaths": 15,
       "runs": 50,
-      "total_bonus_attacks_triggered": 652,
+      "total_bonus_attacks_triggered": 631,
       "total_kills_by_faction": {
-        "Orc": 7,
-        "Player": 237
+        "Orc": 15,
+        "Player": 225
       },
       "total_kills_by_source": {
-        "MONSTERS": 7,
-        "PLAYER": 237
+        "MONSTERS": 15,
+        "PLAYER": 225
       },
-      "total_monster_attacks": 910,
-      "total_monster_hits": 317,
+      "total_monster_attacks": 905,
+      "total_monster_hits": 346,
       "total_plague_infections": 0,
-      "total_player_attacks": 1870,
-      "total_player_hits": 1306,
+      "total_player_attacks": 1816,
+      "total_player_hits": 1265,
       "total_portals_used": 0,
       "total_reanimations": 0,
-      "total_surprise_attacks": 244
+      "total_surprise_attacks": 240
     },
     "player_bot": "tactical_fighter",
     "runs": 50,
@@ -567,35 +899,39 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/orc_swarm_brutal_speed_full_metrics.json",
-  "bonus_attacks_per_run": 15.88,
-  "death_rate": 0.0,
-  "depth": null,
+  "bonus_attacks_per_run": 15.6,
+  "death_rate": 0.06,
+  "depth": 5,
   "family": "orc_swarm",
-  "monster_attacks_per_run": 14.28,
-  "monster_hit_rate": 0.33753501400560226,
-  "player_attacks_per_run": 36.02,
-  "player_hit_rate": 0.742365352581899,
-  "pressure_index": -21.740000000000002,
+  "monster_attacks_per_run": 14.2,
+  "monster_hit_rate": 0.28450704225352114,
+  "player_attacks_per_run": 35.46,
+  "player_hit_rate": 0.7501410039481106,
+  "pressure_index": -21.26,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 50.0,
-      "player_deaths": 0,
+      "average_turns": 48.44,
+      "depth": 5,
+      "player_deaths": 3,
       "runs": 50,
-      "total_bonus_attacks_triggered": 794,
+      "total_bonus_attacks_triggered": 780,
       "total_kills_by_faction": {
-        "Player": 250
+        "Orc": 3,
+        "Player": 245
       },
       "total_kills_by_source": {
-        "PLAYER": 250
+        "MONSTERS": 3,
+        "PLAYER": 245
       },
-      "total_monster_attacks": 714,
-      "total_monster_hits": 241,
+      "total_monster_attacks": 710,
+      "total_monster_hits": 202,
       "total_plague_infections": 0,
-      "total_player_attacks": 1801,
-      "total_player_hits": 1337,
+      "total_player_attacks": 1773,
+      "total_player_hits": 1330,
       "total_portals_used": 0,
       "total_reanimations": 0,
-      "total_surprise_attacks": 250
+      "total_surprise_attacks": 248
     },
     "player_bot": "tactical_fighter",
     "runs": 50,
@@ -614,37 +950,37 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/orc_swarm_speed_full_metrics.json",
-  "bonus_attacks_per_run": 9.42,
-  "death_rate": 0.02,
-  "depth": null,
+  "bonus_attacks_per_run": 9.54,
+  "death_rate": 0.0,
+  "depth": 5,
   "family": "orc_swarm",
-  "monster_attacks_per_run": 8.24,
-  "monster_hit_rate": 0.3179611650485437,
-  "player_attacks_per_run": 21.22,
-  "player_hit_rate": 0.7426955702167767,
-  "pressure_index": -12.979999999999999,
+  "monster_attacks_per_run": 8.42,
+  "monster_hit_rate": 0.32066508313539194,
+  "player_attacks_per_run": 21.44,
+  "player_hit_rate": 0.75,
+  "pressure_index": -13.020000000000001,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 49.3,
-      "player_deaths": 1,
+      "average_turns": 50.0,
+      "depth": 5,
+      "player_deaths": 0,
       "runs": 50,
-      "total_bonus_attacks_triggered": 471,
+      "total_bonus_attacks_triggered": 477,
       "total_kills_by_faction": {
-        "Orc": 1,
-        "Player": 148
+        "Player": 150
       },
       "total_kills_by_source": {
-        "MONSTERS": 1,
-        "PLAYER": 148
+        "PLAYER": 150
       },
-      "total_monster_attacks": 412,
-      "total_monster_hits": 131,
+      "total_monster_attacks": 421,
+      "total_monster_hits": 135,
       "total_plague_infections": 0,
-      "total_player_attacks": 1061,
-      "total_player_hits": 788,
+      "total_player_attacks": 1072,
+      "total_player_hits": 804,
       "total_portals_used": 0,
       "total_reanimations": 0,
-      "total_surprise_attacks": 149
+      "total_surprise_attacks": 150
     },
     "player_bot": "tactical_fighter",
     "runs": 50,
@@ -663,38 +999,40 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/orc_swarm_tight_metrics.json",
-  "bonus_attacks_per_run": 4.04,
-  "death_rate": 0.24,
-  "depth": null,
+  "bonus_attacks_per_run": 3.84,
+  "death_rate": 0.4,
+  "depth": 5,
   "family": "orc_swarm",
-  "monster_attacks_per_run": 14.34,
-  "monster_hit_rate": 0.4630404463040446,
-  "player_attacks_per_run": 21.88,
-  "player_hit_rate": 0.7029250457038391,
-  "pressure_index": -7.539999999999999,
+  "monster_attacks_per_run": 14.42,
+  "monster_hit_rate": 0.5048543689320388,
+  "player_attacks_per_run": 21.62,
+  "player_hit_rate": 0.6725254394079556,
+  "pressure_index": -7.200000000000001,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 49.98,
-      "player_deaths": 12,
+      "average_turns": 42.86,
+      "depth": 5,
+      "player_deaths": 20,
       "runs": 50,
-      "total_bonus_attacks_triggered": 202,
+      "total_bonus_attacks_triggered": 192,
       "total_kills_by_faction": {
-        "Orc_Chieftain": 2,
-        "Orc_Veteran": 10,
-        "Player": 131
+        "Orc_Chieftain": 3,
+        "Orc_Veteran": 17,
+        "Player": 120
       },
       "total_kills_by_source": {
-        "MONSTERS": 12,
-        "PLAYER": 131
+        "MONSTERS": 20,
+        "PLAYER": 120
       },
-      "total_monster_attacks": 717,
-      "total_monster_hits": 332,
+      "total_monster_attacks": 721,
+      "total_monster_hits": 364,
       "total_plague_infections": 0,
-      "total_player_attacks": 1094,
-      "total_player_hits": 769,
+      "total_player_attacks": 1081,
+      "total_player_hits": 727,
       "total_portals_used": 0,
       "total_reanimations": 0,
-      "total_surprise_attacks": 143
+      "total_surprise_attacks": 140
     },
     "player_bot": "tactical_fighter",
     "runs": 50,
@@ -713,37 +1051,39 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/plague_arena_metrics.json",
-  "bonus_attacks_per_run": 11.93,
-  "death_rate": 0.38,
-  "depth": null,
+  "bonus_attacks_per_run": 12.05,
+  "death_rate": 0.29,
+  "depth": 8,
   "family": "plague_arena",
-  "monster_attacks_per_run": 23.17,
-  "monster_hit_rate": 0.24341821320673285,
-  "player_attacks_per_run": 19.24,
-  "player_hit_rate": 0.8357588357588358,
-  "pressure_index": 3.9300000000000033,
+  "monster_attacks_per_run": 23.0,
+  "monster_hit_rate": 0.24869565217391304,
+  "player_attacks_per_run": 19.57,
+  "player_hit_rate": 0.8421052631578947,
+  "pressure_index": 3.4299999999999997,
   "raw": {
+    "depth": 8,
     "metrics": {
-      "average_turns": 172.48,
-      "player_deaths": 38,
+      "average_turns": 192.16,
+      "depth": 8,
+      "player_deaths": 29,
       "runs": 100,
-      "total_bonus_attacks_triggered": 1193,
+      "total_bonus_attacks_triggered": 1205,
       "total_kills_by_faction": {
-        "Plague_Zombie": 38,
-        "Player": 251
+        "Plague_Zombie": 29,
+        "Player": 270
       },
       "total_kills_by_source": {
-        "MONSTERS": 38,
-        "PLAYER": 251
+        "MONSTERS": 29,
+        "PLAYER": 270
       },
-      "total_monster_attacks": 2317,
-      "total_monster_hits": 564,
-      "total_plague_infections": 75,
-      "total_player_attacks": 1924,
-      "total_player_hits": 1608,
+      "total_monster_attacks": 2300,
+      "total_monster_hits": 572,
+      "total_plague_infections": 84,
+      "total_player_attacks": 1957,
+      "total_player_hits": 1648,
       "total_portals_used": 0,
-      "total_reanimations": 0,
-      "total_surprise_attacks": 289
+      "total_reanimations": 1,
+      "total_surprise_attacks": 297
     },
     "player_bot": "tactical_fighter",
     "runs": 100,
@@ -762,37 +1102,39 @@ _Updated: 2025-12-11_
 ```json
 {
   "_source_path": "/Users/rafehatfield/development/rlike/reports/metrics/zombie_horde_metrics.json",
-  "bonus_attacks_per_run": 11.5,
-  "death_rate": 0.14,
-  "depth": null,
+  "bonus_attacks_per_run": 11.96,
+  "death_rate": 0.04,
+  "depth": 5,
   "family": "zombie_horde",
-  "monster_attacks_per_run": 22.84,
-  "monster_hit_rate": 0.2084063047285464,
-  "player_attacks_per_run": 20.94,
-  "player_hit_rate": 0.8500477554918816,
-  "pressure_index": 1.8999999999999986,
+  "monster_attacks_per_run": 22.44,
+  "monster_hit_rate": 0.19073083778966132,
+  "player_attacks_per_run": 21.44,
+  "player_hit_rate": 0.8404850746268657,
+  "pressure_index": 1.0,
   "raw": {
+    "depth": 5,
     "metrics": {
-      "average_turns": 55.72,
-      "player_deaths": 7,
+      "average_turns": 58.82,
+      "depth": 5,
+      "player_deaths": 2,
       "runs": 50,
-      "total_bonus_attacks_triggered": 575,
+      "total_bonus_attacks_triggered": 598,
       "total_kills_by_faction": {
-        "Player": 239,
-        "Zombie": 7
+        "Player": 247,
+        "Zombie": 2
       },
       "total_kills_by_source": {
-        "MONSTERS": 7,
-        "PLAYER": 239
+        "MONSTERS": 2,
+        "PLAYER": 247
       },
-      "total_monster_attacks": 1142,
-      "total_monster_hits": 238,
+      "total_monster_attacks": 1122,
+      "total_monster_hits": 214,
       "total_plague_infections": 0,
-      "total_player_attacks": 1047,
-      "total_player_hits": 890,
+      "total_player_attacks": 1072,
+      "total_player_hits": 901,
       "total_portals_used": 0,
       "total_reanimations": 0,
-      "total_surprise_attacks": 246
+      "total_surprise_attacks": 249
     },
     "player_bot": "tactical_fighter",
     "runs": 50,

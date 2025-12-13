@@ -603,6 +603,18 @@ def play_game_with_engine(
     # and the screen would stay black/stuck on menu
     first_frame_needs_render = True
     
+    # SCENARIO MODE: Defensive validation to ensure scenario map wasn't overwritten
+    # This check runs once at session start for scenario-based soak runs
+    if getattr(game_map, 'is_scenario_run', False):
+        from engine.scenario_bootstrap import validate_scenario_map_not_overwritten
+        try:
+            validate_scenario_map_not_overwritten(game_map, entities)
+        except AssertionError as e:
+            logger.error(f"Scenario validation failed: {e}")
+            # In bot mode, we want this to fail loudly so we catch the bug
+            if input_mode == "bot":
+                raise
+    
     # Main game loop
     # PHASE 1 (INPUT): ✅ COMPLETE - input_source.next_action() is the primary input path
     # PHASE 2 (RENDERING): ✅ COMPLETE - renderer.render() is called each frame
