@@ -95,6 +95,7 @@ class SoakRunResult:
     run_number: int
     run_id: str = ""
     seed: Optional[int] = None
+    scenario_id: Optional[str] = None  # Scenario identifier for scenario-based runs
     persona: str = "balanced"
     outcome: str = "unknown"
     failure_type: str = "none"
@@ -118,6 +119,10 @@ class SoakRunResult:
     bot_reasons: Dict[str, int] = field(default_factory=dict)
     exception: Optional[str] = None
     timestamp: str = ""
+    final_hp: Optional[int] = None
+    final_max_hp: Optional[int] = None
+    final_hp_percent: Optional[float] = None
+    potions_remaining_on_death: Optional[int] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -125,6 +130,7 @@ class SoakRunResult:
             'run_number': self.run_number,
             'run_id': self.run_id,
             'seed': self.seed,
+            'scenario_id': self.scenario_id,
             'persona': self.persona,
             'outcome': self.outcome,
             'failure_type': self.failure_type,
@@ -148,6 +154,10 @@ class SoakRunResult:
             'bot_reasons': dict(self.bot_reasons),
             'exception': self.exception,
             'timestamp': self.timestamp,
+            'final_hp': self.final_hp,
+            'final_max_hp': self.final_max_hp,
+            'final_hp_percent': self.final_hp_percent,
+            'potions_remaining_on_death': self.potions_remaining_on_death,
         }
     
     @staticmethod
@@ -297,6 +307,10 @@ class SoakRunResult:
         bot_abort_reason: Optional[str] = None,
         auto_explore_terminal_reason: str = "",
         bot_summary: Optional[BotRunSummary] = None,
+        final_hp: Optional[int] = None,
+        final_max_hp: Optional[int] = None,
+        final_hp_percent: Optional[float] = None,
+        potions_remaining: Optional[int] = None,
     ) -> "SoakRunResult":
         """Create from run metrics and telemetry.
         
@@ -324,11 +338,13 @@ class SoakRunResult:
                 auto_explore_reason=auto_explore_terminal_reason,
                 max_turns_limit=getattr(run_metrics, 'max_turns_limit', None),
             )
+            potions_remaining_on_death = potions_remaining if refined_outcome == "death" else None
             
             return cls(
                 run_number=run_number,
                 run_id=run_metrics.run_id,
                 seed=run_metrics.seed,
+                scenario_id=getattr(run_metrics, 'scenario_id', None),  # Get scenario_id from run_metrics
                 persona=persona,
                 outcome=refined_outcome,  # Use refined outcome from classify_failure
                 failure_type=failure_type,
@@ -352,6 +368,10 @@ class SoakRunResult:
                 bot_reasons=bot_summary_dict.get("reason_counts", {}),
                 exception=exception,
                 timestamp=timestamp,
+                final_hp=final_hp,
+                final_max_hp=final_max_hp,
+                final_hp_percent=final_hp_percent,
+                potions_remaining_on_death=potions_remaining_on_death,
             )
         else:
             # Fallback for missing run_metrics - classify as exception
@@ -472,13 +492,14 @@ class SoakSessionResult:
         
         # Define CSV columns (matches SoakRunResult.to_dict() keys)
         fieldnames = [
-            'run_number', 'run_id', 'seed', 'persona', 'outcome',
+            'run_number', 'run_id', 'seed', 'scenario_id', 'persona', 'outcome',
             'failure_type', 'failure_detail', 'auto_explore_terminal_reason',
             'duration_seconds', 'deepest_floor', 'floors_visited',
             'monsters_killed', 'items_picked_up', 'potions_used', 'portals_used',
             'tiles_explored', 'steps_taken', 'floor_count', 'avg_etp_per_floor',
             'bot_steps', 'bot_floors', 'bot_actions', 'bot_contexts', 'bot_reasons',
-            'exception', 'timestamp'
+            'exception', 'timestamp',
+            'final_hp', 'final_max_hp', 'final_hp_percent', 'potions_remaining_on_death',
         ]
         
         with open(output_path, 'w', newline='') as csvfile:
@@ -488,6 +509,39 @@ class SoakSessionResult:
                 writer.writerow(run.to_dict())
         
         logger.info(f"Wrote {len(self.runs)} run metrics to {output_path}")
+
+
+def _build_survivability_snapshot(player: Any, run_metrics, scenario_id: Optional[str] = None) -> dict:
+    """Collect survivability telemetry for a run."""
+    from components.component_registry import ComponentType
+
+    fighter = player.get_component_optional(ComponentType.FIGHTER) if player else None
+    hp = getattr(fighter, "hp", None) if fighter else None
+    max_hp = getattr(fighter, "max_hp", None) if fighter else None
+    hp_percent = (hp / max_hp) if hp is not None and max_hp else None
+
+    potions_remaining = 0
+    try:
+        inventory = player.get_component_optional(ComponentType.INVENTORY) if player else None
+        if inventory and hasattr(inventory, "items"):
+            for item in getattr(inventory, "items", []):
+                item_comp = item.get_component_optional(ComponentType.ITEM) if hasattr(item, "get_component_optional") else None
+                if not item_comp:
+                    continue
+                name = str(getattr(item, "name", "")).lower().replace(" ", "_")
+                if name == "healing_potion":
+                    potions_remaining += 1
+    except Exception:
+        potions_remaining = None
+
+    return {
+        "final_hp": hp,
+        "final_max_hp": max_hp,
+        "final_hp_percent": hp_percent,
+        "potions_remaining_on_death": potions_remaining,
+        "potions_used": getattr(run_metrics, "potions_used", None) if run_metrics else None,
+        "scenario_id": scenario_id,
+    }
 
 
 def _initialize_libtcod_for_soak(constants: Dict[str, Any]) -> None:
@@ -522,6 +576,33 @@ def _initialize_libtcod_for_soak(constants: Dict[str, Any]) -> None:
     )
     
     logger.info(f"Libtcod root console initialized: {ui_layout.screen_width}x{ui_layout.screen_height}")
+
+
+def _create_scenario_game(constants: Dict[str, Any]):
+    """Create a game from a scenario definition (for scenario-based soak).
+    
+    DEPRECATED: This is a thin wrapper around engine.scenario_bootstrap.create_scenario_session().
+    Use create_scenario_session() directly for new code.
+    
+    Performs the same crucial initialization as get_game_variables() but uses
+    a scenario map instead of procedural generation.
+    
+    Args:
+        constants: Game constants including scenario_id
+        
+    Returns:
+        Tuple of (player, entities, game_map, message_log, game_state)
+        
+    Raises:
+        ValueError: if scenario_id not found
+    """
+    from engine.scenario_bootstrap import create_scenario_session
+    
+    scenario_id = constants.get("scenario_id")
+    if not scenario_id:
+        raise ValueError("scenario_id not found in constants")
+    
+    return create_scenario_session(scenario_id, constants)
 
 
 def run_bot_soak(
@@ -619,9 +700,12 @@ def run_bot_soak(
     
     # Store soak harness config in constants for per-run access
     # Note: seed is set per-run in the loop below
+    # For scenarios: max_floors is NOT passed because scenarios are single-floor arenas
+    # that start at their defined depth, and applying a floor limit would cause instant exit
+    is_scenario = bool(constants.get("scenario_id"))
     constants["soak_config"] = {
         "max_turns": max_turns,
-        "max_floors": max_floors,
+        "max_floors": None if is_scenario else max_floors,  # Scenarios ignore floor limits
         "start_floor": start_floor,
         "seed": None,  # Will be set per-run
     }
@@ -713,9 +797,15 @@ def run_bot_soak(
             else:
                 telemetry_service = get_telemetry_service(None)
             
-            # Create new game
-            player, entities, game_map, message_log, game_state = get_game_variables(constants)
-            game_state = GameStates.PLAYERS_TURN
+            # Create new game (scenario or campaign)
+            if constants.get("scenario_id"):
+                # Scenario-based game initialization
+                player, entities, game_map, message_log, game_state = _create_scenario_game(constants)
+                logger.info(f"Initialized scenario: {constants['scenario_id']} with {len(entities)} entities")
+            else:
+                # Normal campaign game initialization
+                player, entities, game_map, message_log, game_state = get_game_variables(constants)
+                game_state = GameStates.PLAYERS_TURN
             
             # Phase 1.6: Reset bot input source state for this run
             # This clears any exploration tracking from previous runs
@@ -757,9 +847,21 @@ def run_bot_soak(
             
             telemetry_stats = telemetry_service.get_stats() if telemetry_service else {}
             bot_summary = bot_metrics_recorder.summarize()
+            from components.component_registry import ComponentType
+            
+            decisions_data = bot_metrics_recorder.decisions_as_dicts()
+
+            survivability_snapshot = _build_survivability_snapshot(
+                player,
+                run_metrics,
+                scenario_id=constants.get("scenario_id") if isinstance(constants, dict) else None,
+            )
+            final_hp = survivability_snapshot.get("final_hp")
+            final_max_hp = survivability_snapshot.get("final_max_hp")
+            final_hp_percent = survivability_snapshot.get("final_hp_percent")
+            potions_remaining = survivability_snapshot.get("potions_remaining_on_death")
             
             # Capture final AutoExplore stop_reason for this run
-            from components.component_registry import ComponentType
             auto_explore_reason = ""
             if player and hasattr(player, 'get_component_optional'):
                 auto_explore = player.get_component_optional(ComponentType.AUTO_EXPLORE)
@@ -777,6 +879,10 @@ def run_bot_soak(
                 bot_abort_reason=bot_abort_reason,  # Pass abort reason for classification
                 auto_explore_terminal_reason=auto_explore_reason,
                 bot_summary=bot_summary,
+                final_hp=final_hp,
+                final_max_hp=final_max_hp,
+                final_hp_percent=final_hp_percent,
+                potions_remaining=potions_remaining,
             )
             
             session_result.completed_runs += 1
@@ -784,7 +890,12 @@ def run_bot_soak(
             # Write telemetry to JSONL
             if telemetry_enabled and jsonl_path and run_metrics:
                 _append_run_to_jsonl(
-                    jsonl_path, run_metrics, telemetry_service, bot_summary
+                    jsonl_path,
+                    run_metrics,
+                    telemetry_service,
+                    bot_summary,
+                    bot_decisions=decisions_data,
+                    survivability=survivability_snapshot,
                 )
             
             logger.info(f"Run {run_num} completed: outcome={run_result.outcome}, "
@@ -847,6 +958,8 @@ def _append_run_to_jsonl(
     run_metrics,  # RunMetrics
     telemetry_service,  # TelemetryService
     bot_summary: Optional[BotRunSummary] = None,
+    bot_decisions: Optional[list] = None,
+    survivability: Optional[dict] = None,
 ) -> None:
     """Append a single run's telemetry to JSONL file.
     
@@ -870,6 +983,8 @@ def _append_run_to_jsonl(
                 'total_keys': telemetry_stats.get('total_keys', 0),
             },
             'bot_summary': bot_summary.to_dict() if bot_summary else None,
+            'bot_decisions': bot_decisions,
+            'survivability': survivability,
             'timestamp': datetime.now().isoformat(),
         }
         
