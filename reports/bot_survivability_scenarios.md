@@ -1,8 +1,8 @@
 # Bot Survivability Report
 
 ## Global Heal Thresholds
-- Heal events: 2720
-- HP% at heal: mean 8.0% (P25 3.6%, P50 3.6%, P75 5.8%)
+- Heal events: 2854
+- HP% at heal: mean 7.6% (P25 3.6%, P50 3.6%, P75 5.4%)
 - Range: -23.2% – 39.3%
 
 ## Deaths with Unused Potions
