@@ -718,6 +718,7 @@ weapons:
   longsword:
     damage_dice: "1d8"      # 1-8 damage (avg 4.5)
     to_hit_bonus: 0
+    damage_type: "slashing" # Phase 18
     slot: "main_hand"
     char: "/"
     color: [192, 192, 192]  # Silver
@@ -747,6 +748,7 @@ weapons:
   battleaxe:
     damage_dice: "1d10"     # 1-10 damage (avg 5.5)
     to_hit_bonus: 0
+    damage_type: "slashing" # Phase 18
     slot: "main_hand"
     char: "/"
     color: [169, 169, 169]  # Dark gray
@@ -755,6 +757,7 @@ weapons:
   warhammer:
     damage_dice: "1d10"     # 1-10 damage (avg 5.5)
     to_hit_bonus: 0
+    damage_type: "bludgeoning" # Phase 18
     slot: "main_hand"
     char: ")"
     color: [105, 105, 105]  # Dim gray
@@ -785,6 +788,7 @@ weapons:
   sword:
     damage_dice: "1d8"      # Same as longsword
     to_hit_bonus: 0
+    damage_type: "slashing" # Phase 18
     slot: "main_hand"
     char: "/"
     color: [150, 150, 170]  # Silver (darker)

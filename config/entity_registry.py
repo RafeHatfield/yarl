@@ -99,6 +99,9 @@ class MonsterDefinition:
     boss_name: Optional[str] = None
     # Combat speed bonus (Phase 4) - monsters with this can get bonus attacks
     speed_bonus: float = 0.0  # e.g., 0.25 = +25% chance per attack
+    # Phase 18: Damage type resistance/vulnerability
+    damage_resistance: Optional[str] = None  # Damage type this monster resists (takes -1 damage)
+    damage_vulnerability: Optional[str] = None  # Damage type this monster is vulnerable to (+1 damage)
 
 
 @dataclass  
@@ -113,6 +116,8 @@ class WeaponDefinition:
     - reach: Attack range in tiles (default 1, spears have 2)
     - resistances: Dict mapping resistance type string to percentage (e.g., {"fire": 30})
     - speed_bonus: Combat speed bonus ratio (Phase 5, e.g., 0.25 = +25%)
+    - crit_threshold: D20 roll needed for crit (Phase 18, default 20, Keen 19)
+    - damage_type: slashing/piercing/bludgeoning (Phase 18)
     """
     name: str
     power_bonus: int = 0
@@ -124,6 +129,8 @@ class WeaponDefinition:
     reach: int = 1  # Attack range in tiles (1 = adjacent, 2 = spear reach)
     resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 30})
     speed_bonus: float = 0.0  # Combat speed bonus ratio (Phase 5)
+    crit_threshold: int = 20  # Phase 18: D20 roll for crit (Keen weapons = 19)
+    damage_type: Optional[str] = None  # Phase 18: slashing, piercing, bludgeoning
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -470,7 +477,10 @@ class EntityRegistry:
                     is_boss=monster_data.get('is_boss', False),
                     boss_name=monster_data.get('boss_name', None),
                     # Combat speed bonus (Phase 4)
-                    speed_bonus=monster_data.get('speed_bonus', 0.0)
+                    speed_bonus=monster_data.get('speed_bonus', 0.0),
+                    # Phase 18: Damage type resistance/vulnerability
+                    damage_resistance=monster_data.get('damage_resistance'),
+                    damage_vulnerability=monster_data.get('damage_vulnerability')
                 )
                 
                 self.monsters[monster_id] = monster_def
@@ -505,6 +515,8 @@ class EntityRegistry:
                     two_handed=weapon_data.get('two_handed', False),  # NEW!
                     reach=weapon_data.get('reach', 1),  # NEW!
                     speed_bonus=weapon_data.get('speed_bonus', 0.0),  # Phase 5
+                    crit_threshold=weapon_data.get('crit_threshold', 20),  # Phase 18
+                    damage_type=weapon_data.get('damage_type'),  # Phase 18
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),

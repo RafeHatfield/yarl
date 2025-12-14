@@ -1,13 +1,13 @@
 {
-  "bonus_attacks_per_run": 2.76,
+  "bonus_attacks_per_run": 3.14,
   "death_rate": 0.0,
   "depth": 5,
   "family": "dueling_pit",
-  "monster_attacks_per_run": 3.2,
-  "monster_hit_rate": 0.3625,
-  "player_attacks_per_run": 7.12,
-  "player_hit_rate": 0.7696629213483146,
-  "pressure_index": -3.92,
+  "monster_attacks_per_run": 3.74,
+  "monster_hit_rate": 0.37433155080213903,
+  "player_attacks_per_run": 8.04,
+  "player_hit_rate": 0.664179104477612,
+  "pressure_index": -4.299999999999999,
   "raw": {
     "depth": 5,
     "metrics": {
@@ -15,18 +15,18 @@
       "depth": 5,
       "player_deaths": 0,
       "runs": 50,
-      "total_bonus_attacks_triggered": 138,
+      "total_bonus_attacks_triggered": 157,
       "total_kills_by_faction": {
         "Player": 50
       },
       "total_kills_by_source": {
         "PLAYER": 50
       },
-      "total_monster_attacks": 160,
-      "total_monster_hits": 58,
+      "total_monster_attacks": 187,
+      "total_monster_hits": 70,
       "total_plague_infections": 0,
-      "total_player_attacks": 356,
-      "total_player_hits": 274,
+      "total_player_attacks": 402,
+      "total_player_hits": 267,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 50
