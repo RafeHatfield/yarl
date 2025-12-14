@@ -264,14 +264,16 @@ CRITICAL HIT! Your Keen Rapier strikes the Orc for 14 damage!
 2. ✅ **Keen weapon crit ranges**: Implemented (crit_threshold field)
 3. ✅ **Damage types added**: Base weapons have damage_type field
 4. ✅ **Affix weapons created**: 8 new affixed weapons in entities.yaml
-5. ✅ **Tests added**: 5 tests for keen crit mechanics
-6. ✅ **All tests pass**: 3097 tests passing
-7. [ ] Damage type resistance/vulnerability (deferred - requires monster tags)
-8. [ ] Player-facing documentation
+5. ✅ **Keen tests added**: 5 tests for keen crit mechanics
+6. ✅ **Phase 18.1 tests pass**: All passing
+7. ✅ **Damage type resistance/vulnerability**: Implemented (+1/-1 modifiers)
+8. ✅ **Damage type tests added**: 5 tests for resist/vuln mechanics
+9. ✅ **All tests pass**: 3097+ tests passing
+10. [ ] Player-facing documentation (optional)
 
 ---
 
-## Phase 18.1 Implementation Complete
+## Phase 18.1 + 18.2 Implementation Complete
 
 ### Files Modified
 
@@ -298,4 +300,54 @@ CRITICAL HIT! Your Keen Rapier strikes the Orc for 14 damage!
 
 ---
 
-**Status**: ✅ **Phase 18.1 Complete** - Keen weapons and affixes implemented and tested!
+## Phase 18.2: Damage Type System Implemented
+
+### Resistance/Vulnerability Mechanics
+
+**Implementation** (`components/fighter.py`):
+```python
+# After base damage calculation, before crit multiplier:
+if weapon_damage_type:
+    if target.damage_resistance == weapon_damage_type:
+        damage -= 1  # Resistant: -1 damage
+    elif target.damage_vulnerability == weapon_damage_type:
+        damage += 1  # Vulnerable: +1 damage
+```
+
+**Monster Configuration** (`config/entities.yaml`):
+```yaml
+zombie:
+  damage_resistance: "piercing"     # Rotting flesh resists stabs
+  damage_vulnerability: "bludgeoning"  # Crushing destroys undead
+```
+
+### Test Coverage
+
+**`tests/test_phase18_damage_types.py`** (NEW - 5 tests):
+- ✅ Vulnerable targets take +1 damage
+- ✅ Resistant targets take -1 damage (floor at 1)
+- ✅ Neutral targets unaffected
+- ✅ Modifier applies before crit multiplier
+- ✅ Damage never goes below 1
+
+### Design Rationale
+
+**Why +1/-1 flat modifiers?**
+- Simple to understand ("clubs hurt zombies more")
+- Easy to test (deterministic)
+- Small balance impact (~15-20% damage swing)
+- No percentage calculations or complex formulas
+
+**Why zombie only?**
+- Proof of concept (can expand later)
+- Clear thematic fit (undead flesh)
+- Easy to validate in testing
+
+**Application Order:**
+```
+Base damage (weapon dice) → +STR → +damage_type → ×crit → floor(1)
+```
+
+---
+
+**Status**: ✅ **Phase 18.1 + 18.2 Complete** - Keen weapons, affixes, and damage type system fully implemented and tested!

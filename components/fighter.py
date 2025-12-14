@@ -930,6 +930,26 @@ class Fighter:
             # Add STR modifier to damage
             damage = base_damage + self.strength_mod
             
+            # Phase 18: Apply damage type modifier (resistance/vulnerability)
+            # Get weapon damage type
+            weapon_damage_type = None
+            if equipment and equipment.main_hand:
+                weapon = equipment.main_hand
+                if weapon.components.has(ComponentType.EQUIPPABLE) or hasattr(weapon, 'equippable'):
+                    equippable = weapon.equippable if hasattr(weapon, 'equippable') else weapon.get_component_optional(ComponentType.EQUIPPABLE)
+                    if equippable and hasattr(equippable, 'damage_type'):
+                        weapon_damage_type = equippable.damage_type
+            
+            # Check target for resistance/vulnerability
+            if weapon_damage_type:
+                target_resistance = getattr(target, 'damage_resistance', None)
+                target_vulnerability = getattr(target, 'damage_vulnerability', None)
+                
+                if target_resistance == weapon_damage_type:
+                    damage = damage - 1  # Resistant: -1 damage
+                elif target_vulnerability == weapon_damage_type:
+                    damage = damage + 1  # Vulnerable: +1 damage
+            
             # Record statistics (only for player)
             statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
             if statistics:

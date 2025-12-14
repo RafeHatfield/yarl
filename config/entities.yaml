@@ -290,6 +290,9 @@ monsters:
     blocks: true
     # Phase 10: Zombies have rotting flesh but are already undead
     tags: ["corporeal_flesh", "undead", "mindless", "low_undead"]
+    # Phase 18: Damage type interactions - undead flesh
+    damage_resistance: "piercing"     # Rotting flesh resists stabs (-1 damage)
+    damage_vulnerability: "bludgeoning"  # Crushing destroys undead (+1 damage)
     special_abilities: ["swarm"]  # Phase 10: Zombie swarm behavior
     can_seek_items: false     # Mindless - doesn't seek items
     inventory_size: 0
