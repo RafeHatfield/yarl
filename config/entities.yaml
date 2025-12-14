@@ -662,6 +662,7 @@ weapons:
   dagger:
     damage_dice: "1d4"      # 1-4 damage (avg 2.5)
     to_hit_bonus: 1         # Finesse weapon: easier to hit
+    damage_type: "piercing" # Phase 18: Damage type
     slot: "main_hand"
     char: "-"
     color: [139, 69, 19]    # Brown
@@ -683,6 +684,7 @@ weapons:
   club:
     damage_dice: "1d6"      # 1-6 damage (avg 3.5)
     to_hit_bonus: 0
+    damage_type: "bludgeoning" # Phase 18
     slot: "main_hand"
     char: ")"
     color: [101, 67, 33]    # Dark brown
@@ -691,6 +693,7 @@ weapons:
   shortsword:
     damage_dice: "1d6"      # 1-6 damage (avg 3.5)
     to_hit_bonus: 1         # Finesse: better to-hit
+    damage_type: "slashing" # Phase 18
     slot: "main_hand"
     char: "/"
     color: [192, 192, 192]  # Silver
@@ -699,6 +702,7 @@ weapons:
   mace:
     damage_dice: "1d6"      # 1-6 damage (avg 3.5)
     to_hit_bonus: 0
+    damage_type: "bludgeoning" # Phase 18
     slot: "main_hand"
     char: ")"
     color: [128, 128, 128]  # Gray
@@ -781,6 +785,73 @@ weapons:
     slot: "main_hand"
     char: "/"
     color: [150, 150, 170]  # Silver (darker)
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 18: AFFIXED WEAPONS - Explicit Mechanical Identity
+  # ═══════════════════════════════════════════════════════════
+  
+  # KEEN WEAPONS - Expanded crit range (19-20, 10% crit chance)
+  keen_dagger:
+    damage_dice: "1d4"
+    to_hit_bonus: 1         # Still finesse
+    crit_threshold: 19      # Phase 18: Crit on 19-20 (10% chance)
+    damage_type: "piercing"
+    slot: "main_hand"
+    char: "-"
+    color: [200, 200, 255]  # Pale blue (magical sheen)
+  
+  keen_rapier:
+    damage_dice: "1d8"
+    to_hit_bonus: 1         # Finesse
+    crit_threshold: 19      # Phase 18: Crit on 19-20 (10% chance)
+    damage_type: "piercing"
+    slot: "main_hand"
+    char: "/"
+    color: [240, 240, 255]  # Bright pale blue
+  
+  # VICIOUS WEAPONS - Bonus damage (+1)
+  vicious_battleaxe:
+    damage_dice: "1d10+1"   # Phase 18: Extra damage die bonus
+    to_hit_bonus: 0
+    damage_type: "slashing"
+    slot: "main_hand"
+    char: "/"
+    color: [200, 50, 50]    # Blood red
+  
+  vicious_warhammer:
+    damage_dice: "1d10+1"   # Phase 18: Extra damage die bonus
+    to_hit_bonus: 0
+    damage_type: "bludgeoning"
+    slot: "main_hand"
+    char: ")"
+    color: [200, 50, 50]    # Blood red
+  
+  # FINE WEAPONS - Improved accuracy (+1 to-hit beyond base)
+  fine_longsword:
+    damage_dice: "1d8"
+    to_hit_bonus: 1         # Phase 18: Fine quality (+1 to-hit)
+    damage_type: "slashing"
+    slot: "main_hand"
+    char: "/"
+    color: [220, 220, 220]  # Bright silver
+  
+  fine_mace:
+    damage_dice: "1d6"
+    to_hit_bonus: 1         # Phase 18: Fine quality (+1 to-hit)
+    damage_type: "bludgeoning"
+    slot: "main_hand"
+    char: ")"
+    color: [150, 150, 150]  # Polished gray
+  
+  # MASTERWORK WEAPONS - Combined bonuses (+1 hit, +1 damage)
+  masterwork_greatsword:
+    damage_dice: "2d6+1"    # Phase 18: Masterwork damage bonus
+    to_hit_bonus: 1         # Phase 18: Masterwork accuracy bonus
+    two_handed: true
+    damage_type: "slashing"
+    slot: "main_hand"
+    char: "/"
+    color: [255, 215, 0]    # Gold (legendary quality)
 
   # ═══════════════════════════════════════════════════════════
   # RANGED WEAPONS - Bows & Crossbows

@@ -38,7 +38,8 @@ class Equippable:
                  damage_min: int = 0, damage_max: int = 0, defense_min: int = 0, defense_max: int = 0,
                  armor_type: Optional[str] = None, dex_cap: Optional[int] = None, damage_dice: Optional[str] = None,
                  two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None,
-                 speed_bonus: float = 0.0) -> None:
+                 speed_bonus: float = 0.0,
+                 crit_threshold: int = 20, damage_type: Optional[str] = None) -> None:
         """Initialize an Equippable component.
 
         Args:
@@ -77,6 +78,9 @@ class Equippable:
         self.reach: int = reach  # Attack range in tiles (1 = adjacent, 2 = spear reach)
         self.resistances: dict = resistances if resistances is not None else {}  # Resistance bonuses (ResistanceType: percentage)
         self.speed_bonus: float = speed_bonus  # Combat speed bonus ratio (Phase 5)
+        # Phase 18: Affix mechanics
+        self.crit_threshold: int = crit_threshold  # D20 roll needed for crit (default 20, Keen weapons 19)
+        self.damage_type: Optional[str] = damage_type  # slashing, piercing, bludgeoning
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
     
     def get_damage_range_text(self) -> str:

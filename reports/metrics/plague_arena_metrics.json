@@ -1,37 +1,37 @@
 {
-  "bonus_attacks_per_run": 12.05,
-  "death_rate": 0.29,
+  "bonus_attacks_per_run": 11.93,
+  "death_rate": 0.32,
   "depth": 8,
   "family": "plague_arena",
-  "monster_attacks_per_run": 23.0,
-  "monster_hit_rate": 0.24869565217391304,
-  "player_attacks_per_run": 19.57,
-  "player_hit_rate": 0.8421052631578947,
-  "pressure_index": 3.4299999999999997,
+  "monster_attacks_per_run": 22.55,
+  "monster_hit_rate": 0.25587583148558757,
+  "player_attacks_per_run": 19.2,
+  "player_hit_rate": 0.8348958333333333,
+  "pressure_index": 3.3500000000000014,
   "raw": {
     "depth": 8,
     "metrics": {
-      "average_turns": 192.16,
+      "average_turns": 184.51,
       "depth": 8,
-      "player_deaths": 29,
+      "player_deaths": 32,
       "runs": 100,
-      "total_bonus_attacks_triggered": 1205,
+      "total_bonus_attacks_triggered": 1193,
       "total_kills_by_faction": {
-        "Plague_Zombie": 29,
-        "Player": 270
+        "Plague_Zombie": 33,
+        "Player": 258
       },
       "total_kills_by_source": {
-        "MONSTERS": 29,
-        "PLAYER": 270
+        "MONSTERS": 33,
+        "PLAYER": 258
       },
-      "total_monster_attacks": 2300,
-      "total_monster_hits": 572,
-      "total_plague_infections": 84,
-      "total_player_attacks": 1957,
-      "total_player_hits": 1648,
+      "total_monster_attacks": 2255,
+      "total_monster_hits": 577,
+      "total_plague_infections": 76,
+      "total_player_attacks": 1920,
+      "total_player_hits": 1603,
       "total_portals_used": 0,
-      "total_reanimations": 1,
-      "total_surprise_attacks": 297
+      "total_reanimations": 2,
+      "total_surprise_attacks": 289
     },
     "player_bot": "tactical_fighter",
     "runs": 100,

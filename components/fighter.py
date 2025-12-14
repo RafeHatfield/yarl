@@ -870,9 +870,22 @@ class Fighter:
         # Get target's AC
         target_ac = target.require_component(ComponentType.FIGHTER).armor_class
         
+        # Phase 18: Get crit threshold from weapon (default 20, Keen weapons 19)
+        crit_threshold = 20  # Default: only natural 20 crits
+        if equipment and equipment.main_hand:
+            weapon = equipment.main_hand
+            if weapon.components.has(ComponentType.EQUIPPABLE) or hasattr(weapon, 'equippable'):
+                equippable = weapon.equippable if hasattr(weapon, 'equippable') else weapon.get_component_optional(ComponentType.EQUIPPABLE)
+                if equippable and hasattr(equippable, 'crit_threshold'):
+                    threshold_value = equippable.crit_threshold
+                    # Defensive: ensure it's an integer (handle mocks)
+                    if isinstance(threshold_value, int) and 1 <= threshold_value <= 20:
+                        crit_threshold = threshold_value
+        
         # Check for critical hit or fumble
         # Phase 9: Surprise attacks are always critical hits
-        is_critical = (d20_roll == 20) or is_surprise
+        # Phase 18: Keen weapons crit on expanded range (e.g., 19-20)
+        is_critical = (d20_roll >= crit_threshold) or is_surprise
         is_fumble = (d20_roll == 1) and not is_surprise  # Surprise attacks can't fumble
         
         # Determine if attack hits
