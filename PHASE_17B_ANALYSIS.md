@@ -131,6 +131,13 @@ PERSONA_HEAL_CONFIG: Dict[str, PersonaHealConfig] = {
 - `greedy`: Same as balanced (loot-focused, not combat-focused)
 - `speedrunner`: Higher thresholds to avoid death (time penalty)
 
+**Combat Healing Configuration** (Phase 17B Revised):
+- **All current personas** have `allow_combat_healing=True` for survivability testing
+- This is a **persona-level configuration flag**, not a global setting
+- Decision flow: Panic healing ALWAYS overrides combat restrictions
+- Future personas (e.g., reckless berserker) can set `allow_combat_healing=False`
+- Default value in PersonaHealConfig is `True` to ensure safe behavior
+
 ---
 
 ## Expected Outcomes
@@ -271,6 +278,48 @@ python3 tools/bot_survivability_report.py \
 
 ---
 
+## Combat Healing Flag Clarification (Phase 17B Revised)
+
+### Issue
+The original Phase 17B implementation had `allow_combat_healing` default to `False` in the `PersonaHealConfig` dataclass, which could cause personas without explicit configuration to skip combat healing entirely.
+
+### Fix
+1. **Changed default value** from `False` to `True` in `PersonaHealConfig`
+2. **Explicitly set** `allow_combat_healing=True` for all current personas
+3. **Added clear comments** documenting that:
+   - All current personas have combat healing enabled
+   - This is a persona-level flag (not global)
+   - Panic healing ALWAYS overrides combat restrictions
+   - Future personas can disable this if desired
+
+### Decision Flow (Priority Order)
+```python
+# Step 1: HP above threshold? → no heal
+if hp_fraction > adaptive_threshold:
+    return False
+
+# Step 2: PANIC STATE? → ALWAYS heal (overrides all restrictions)
+if _is_panic_state(player, enemies, heal_config):
+    return True  # Panic overrides combat restrictions
+
+# Step 3: In combat?
+if visible_enemies:
+    if not heal_config.allow_combat_healing:
+        return False  # Persona blocks combat healing
+    return True  # Combat healing allowed, HP threshold met
+
+# Step 4: Safe to heal (no enemies)
+return True
+```
+
+### Verification
+- ✅ All 48 persona/potion tests passing
+- ✅ Combat healing enabled for: balanced, cautious, aggressive, greedy, speedrunner
+- ✅ Panic healing works regardless of persona combat restrictions
+- ✅ Default value ensures safe behavior for new/unconfigured personas
+
+---
+
 ## Conclusion
 
 Phase 17B successfully implements heal threshold calibration and panic logic without breaking core systems. The implementation is:
@@ -279,5 +328,6 @@ Phase 17B successfully implements heal threshold calibration and panic logic wit
 - **Testable**: 48 passing tests with clear assertions
 - **Configurable**: Per-persona heal configs allow easy tuning
 - **Backward Compatible**: Old code paths preserved, new behavior opt-in
+- **Correctly Configured**: All personas have combat healing enabled with proper priority order
 
 **Status**: ✅ Ready for manual validation and soak testing.

@@ -313,7 +313,7 @@ class TestPanicLogic:
         assert is_panic is True, "Should panic at 15% HP with 2 adjacent enemies"
     
     def test_no_panic_with_low_hp_and_one_enemy(self):
-        """No panic with only 1 adjacent enemy (need 2+ for balanced)."""
+        """Phase 17C: Panic NOW triggers with ANY adjacent enemy at low HP (strengthened)."""
         brain = BotBrain(persona="balanced")
         player = self._make_player(hp=15, max_hp=100, x=5, y=5)  # 15% HP
         
@@ -322,7 +322,8 @@ class TestPanicLogic:
         
         heal_config = _get_persona_heal_config("balanced")
         is_panic = brain._is_panic_state(player, [enemy], heal_config)
-        assert is_panic is False, "Should NOT panic with only 1 enemy"
+        # Phase 17C: Strengthened panic - ANY adjacent enemy at low HP triggers panic
+        assert is_panic is True, "Phase 17C: Should panic with 1 adjacent enemy at 15% HP"
     
     def test_no_panic_above_panic_threshold(self):
         """No panic if HP is above panic threshold, even with multiple enemies."""
@@ -350,19 +351,19 @@ class TestPanicLogic:
         assert should_heal is True, "Should heal in panic state"
     
     def test_aggressive_requires_3_enemies_for_panic(self):
-        """Aggressive persona needs 3+ enemies to panic."""
+        """Phase 17C: Panic triggers with ANY adjacent enemy at low HP (persona-independent)."""
         brain = BotBrain(persona="aggressive")
-        player = self._make_player(hp=10, max_hp=100, x=5, y=5)  # 10% HP
+        player = self._make_player(hp=10, max_hp=100, x=5, y=5)  # 10% HP (at panic threshold)
         
-        # Two adjacent enemies (not enough for aggressive)
+        # Phase 17C: ANY adjacent enemy at low HP triggers panic
         enemy1 = self._make_enemy(x=6, y=5)
-        enemy2 = self._make_enemy(x=4, y=5)
         
         heal_config = _get_persona_heal_config("aggressive")
-        is_panic = brain._is_panic_state(player, [enemy1, enemy2], heal_config)
-        assert is_panic is False, "Aggressive should NOT panic with only 2 enemies"
+        is_panic = brain._is_panic_state(player, [enemy1], heal_config)
+        assert is_panic is True, "Phase 17C: Aggressive should panic with 1 adjacent enemy at 10% HP"
         
-        # Three adjacent enemies (enough for aggressive)
+        # Multiple enemies should still trigger panic
+        enemy2 = self._make_enemy(x=4, y=5)
         enemy3 = self._make_enemy(x=5, y=6)
         is_panic = brain._is_panic_state(player, [enemy1, enemy2, enemy3], heal_config)
         assert is_panic is True, "Aggressive should panic with 3 enemies"
