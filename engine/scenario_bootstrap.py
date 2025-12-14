@@ -212,6 +212,15 @@ def create_scenario_session(
     # This prevents any code from accidentally triggering worldgen
     map_result.game_map.is_scenario_run = True
     
+    # === SCENARIO CANARY ===
+    # This is a unique, deterministic marker that worldgen can NEVER create.
+    # Used as a tripwire to detect if worldgen overwrote the scenario map.
+    # The canary is a hash of scenario_id + "canary" to ensure uniqueness.
+    import hashlib
+    canary_hash = hashlib.sha256(f"{scenario_id}:canary".encode()).hexdigest()[:16]
+    map_result.game_map._scenario_canary = f"SCENARIO_CANARY_{canary_hash}"
+    logger.info(f"Scenario canary planted: {map_result.game_map._scenario_canary}")
+    
     # === INITIALIZE RUN METRICS WITH SCENARIO_ID ===
     bot_enabled = constants.get("input_config", {}).get("bot_enabled", False)
     run_mode = "bot" if bot_enabled else "human"
@@ -265,11 +274,40 @@ def create_scenario_session(
     )
 
 
+def check_scenario_canary(game_map: Any) -> Tuple[bool, str]:
+    """Check if the scenario canary marker is present.
+    
+    The canary is a unique marker that worldgen can NEVER create.
+    If it's missing, worldgen has overwritten the scenario map.
+    
+    Args:
+        game_map: The GameMap to check
+        
+    Returns:
+        Tuple of (is_valid, message)
+    """
+    canary = getattr(game_map, '_scenario_canary', None)
+    is_scenario_run = getattr(game_map, 'is_scenario_run', False)
+    
+    if not is_scenario_run:
+        return True, "Not a scenario run, canary check skipped"
+    
+    if canary is None:
+        return False, "SCENARIO CANARY MISSING - worldgen overwrote the scenario map!"
+    
+    if not canary.startswith("SCENARIO_CANARY_"):
+        return False, f"SCENARIO CANARY CORRUPTED - got '{canary}'"
+    
+    return True, f"Scenario canary intact: {canary}"
+
+
 def validate_scenario_map_not_overwritten(game_map: Any, entities: List[Any]) -> None:
     """Defensive check to ensure the scenario map wasn't overwritten by worldgen.
     
     This function should be called at the start of the first turn in scenario mode.
-    It verifies that expected monsters from the scenario definition are present.
+    It verifies:
+    1. The scenario canary marker is present
+    2. Expected monsters from the scenario definition are present
     
     Args:
         game_map: The GameMap to validate
@@ -282,6 +320,17 @@ def validate_scenario_map_not_overwritten(game_map: Any, entities: List[Any]) ->
         # Not a scenario run, skip validation
         return
     
+    # === CHECK CANARY FIRST ===
+    # This is the most reliable check - if the canary is missing, worldgen ran
+    canary_valid, canary_msg = check_scenario_canary(game_map)
+    if not canary_valid:
+        error_msg = f"SCENARIO MAP VALIDATION FAILED: {canary_msg}"
+        logger.error(error_msg)
+        raise AssertionError(error_msg)
+    
+    logger.info(f"Canary check passed: {canary_msg}")
+    
+    # === CHECK EXPECTED MONSTERS ===
     scenario_context = getattr(game_map, 'scenario_context', None)
     if not scenario_context:
         logger.warning("Scenario run flag set but no scenario_context found")

@@ -89,10 +89,13 @@ items:
     position: [12, 12]
 
 # Player spawn - center-left of arena with baseline equipment
+# Phase 17B survivability: Start with 4 potions in inventory (plague DoT + melee attrition)
 player:
   position: [11, 12]
   facing: "east"
-  inventory: []
+  inventory:
+    - type: "healing_potion"
+      count: 4
   equipment:
     weapon: "dagger"
 

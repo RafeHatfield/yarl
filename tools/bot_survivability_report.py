@@ -87,11 +87,25 @@ def summarize(records: Iterable[dict]) -> dict:
     deaths_without_potions = 0
     scenario_buckets = {}
     seen_scenarios = set()  # Track all scenarios seen, not just deaths
+    
+    # Phase 17B: Track potions_seen vs potions_used to detect zero-potion scenarios
+    total_potions_seen = 0
+    total_potions_used = 0
+    runs_with_potions_data = 0
 
     for rec in records:
         bot_decisions = rec.get("bot_decisions") or []
         survivability = rec.get("survivability") or {}
         run_metrics = rec.get("run_metrics") or {}
+        
+        # Phase 17B: Aggregate potions_seen and potions_used
+        potions_seen = survivability.get("potions_seen")
+        potions_used = survivability.get("potions_used")
+        if potions_seen is not None:
+            total_potions_seen += potions_seen
+            runs_with_potions_data += 1
+        if potions_used is not None:
+            total_potions_used += potions_used
         
         # Extract scenario_id from multiple possible locations
         scenario_id = (
@@ -167,6 +181,10 @@ def summarize(records: Iterable[dict]) -> dict:
         "deaths_without_potions": deaths_without_potions,
         "death_hp_percents": death_hp_percents,
         "scenario_buckets": scenario_buckets,
+        # Phase 17B: Potion availability tracking
+        "total_potions_seen": total_potions_seen,
+        "total_potions_used": total_potions_used,
+        "runs_with_potions_data": runs_with_potions_data,
     }
 
 
@@ -179,6 +197,31 @@ def render_markdown(summary: dict) -> str:
     lines = []
     lines.append("# Bot Survivability Report")
     lines.append("")
+    
+    # Phase 17B: Potion Availability Warning
+    total_potions_seen = summary.get("total_potions_seen", 0)
+    total_potions_used = summary.get("total_potions_used", 0)
+    runs_with_data = summary.get("runs_with_potions_data", 0)
+    
+    if runs_with_data > 0 and total_potions_seen == 0:
+        lines.append("## ⚠️ WARNING: Zero Potions Available")
+        lines.append("")
+        lines.append(f"**CRITICAL**: These runs had **ZERO healing potions available**.")
+        lines.append(f"This makes heal threshold analysis meaningless - the bot cannot drink what doesn't exist.")
+        lines.append("")
+        lines.append("**Action Required**: Update scenario YAMLs to include starting potions in player inventory.")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+    elif runs_with_data > 0:
+        lines.append("## Potion Availability")
+        lines.append(f"- Total potions seen: {total_potions_seen}")
+        lines.append(f"- Total potions used: {total_potions_used}")
+        if total_potions_seen > 0:
+            usage_rate = (total_potions_used / total_potions_seen) * 100
+            lines.append(f"- Usage rate: {usage_rate:.1f}%")
+        lines.append(f"- Runs with potion data: {runs_with_data}")
+        lines.append("")
     
     # Global Heal Thresholds
     lines.append("## Global Heal Thresholds")

@@ -99,6 +99,7 @@ class TurnController:
             # Opening inventory doesn't consume a turn
             turn_controller.end_player_action(turn_consumed=False)
         """
+        logger.debug(f"[TURN_CONTROLLER] end_player_action called, turn_consumed={turn_consumed}")
         if not turn_consumed:
             return
         

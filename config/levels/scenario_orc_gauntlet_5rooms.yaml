@@ -115,10 +115,13 @@ items:
     position: [4, 3]
 
 # Player spawn - start position with baseline equipment
+# Phase 17B survivability: Start with 3 potions in inventory for sustained gauntlet testing
 player:
   position: [2, 5]
   facing: "east"
-  inventory: []
+  inventory:
+    - type: "healing_potion"
+      count: 3
   equipment:
     weapon: "dagger"
 

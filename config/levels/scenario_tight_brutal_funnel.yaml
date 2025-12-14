@@ -107,10 +107,13 @@ items:
     position: [4, 5]
 
 # Player spawn - corridor start with baseline equipment
+# Phase 17B survivability: Start with 2 potions in inventory for heal-behavior testing
 player:
   position: [2, 5]
   facing: "east"
-  inventory: []
+  inventory:
+    - type: "healing_potion"
+      count: 2
   equipment:
     weapon: "dagger"
 

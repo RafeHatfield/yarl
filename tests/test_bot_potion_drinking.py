@@ -145,7 +145,7 @@ class TestBotPotionDrinking:
             f"Expected bot to drink unidentified potion, got {action}"
 
     def test_bot_does_not_drink_when_enemies_visible(self):
-        """Bot should NOT drink potions when enemies are visible (unsafe)."""
+        """Phase 17B: Balanced persona NOW drinks in combat at 30% HP (survivability tuning)."""
         brain = BotBrain()
         
         # Setup: Player at low HP (30%), enemy visible, has healing potion
@@ -222,11 +222,9 @@ class TestBotPotionDrinking:
             # Act
             action = brain.decide_action(game_state)
         
-        # Assert: Should NOT drink potion (should move toward enemy instead)
-        assert action != {'inventory_index': 0}, \
-            f"Bot should NOT drink potion when enemy visible, got {action}"
-        # Should be in combat and moving toward enemy
-        assert brain.state == BotState.COMBAT
+        # Phase 17B: Should drink potion in combat at 30% HP (survivability tuning)
+        assert action == {'inventory_index': 0}, \
+            f"Bot should drink potion in combat at 30% HP (Phase 17B), got {action}"
 
     def test_bot_does_not_drink_when_above_threshold(self):
         """Bot should NOT drink potions when HP > 40% (healthy enough)."""
@@ -295,7 +293,7 @@ class TestBotPotionDrinking:
         """Bot should prefer known healing potions over unidentified potions."""
         brain = BotBrain()
         
-        # Setup: Player at low HP (35%), no enemies, has both unidentified and healing potion
+        # Setup: Player at low HP (25% - below 30% threshold), no enemies, has both unidentified and healing potion
         game_state = Mock()
         game_state.current_state = GameStates.PLAYERS_TURN
         game_state.entities = []
@@ -309,9 +307,9 @@ class TestBotPotionDrinking:
         player.components = Mock()
         player.components.has = Mock(return_value=False)
         
-        # Mock fighter component with low HP
+        # Mock fighter component with low HP (25% - below Phase 17B 30% threshold)
         mock_fighter = Mock()
-        mock_fighter.hp = 35
+        mock_fighter.hp = 25
         mock_fighter.max_hp = 100
         
         # Mock unidentified potion (index 0)
@@ -414,16 +412,16 @@ class TestBotPotionDrinking:
             f"Expected bot to explore when no potions available, got {action}"
 
     def test_bot_drinks_at_exactly_40_percent_hp(self):
-        """Bot should drink potions at exactly 40% HP (boundary condition)."""
+        """Phase 17B: Balanced persona drinks at 30% HP, not 40%."""
         brain = BotBrain()
         
-        # Setup: Player at exactly 40% HP, no enemies, has healing potion
+        # Setup: Player at exactly 30% HP (Phase 17B threshold), no enemies, has healing potion
         game_state = Mock()
         game_state.current_state = GameStates.PLAYERS_TURN
         game_state.entities = []
         game_state.fov_map = Mock()
         
-        # Mock player at exactly 40% HP
+        # Mock player at exactly 30% HP
         player = Mock()
         player.x = 10
         player.y = 10
@@ -431,9 +429,9 @@ class TestBotPotionDrinking:
         player.components = Mock()
         player.components.has = Mock(return_value=False)
         
-        # Mock fighter component at exactly 40% HP
+        # Mock fighter component at exactly 30% HP (Phase 17B threshold)
         mock_fighter = Mock()
-        mock_fighter.hp = 40
+        mock_fighter.hp = 30
         mock_fighter.max_hp = 100
         
         # Mock healing potion in inventory
@@ -470,9 +468,9 @@ class TestBotPotionDrinking:
         # Act
         action = brain.decide_action(game_state)
         
-        # Assert: Should drink the potion (≤ 40% threshold)
+        # Assert: Should drink the potion (≤ 30% threshold in Phase 17B)
         assert action == {'inventory_index': 0}, \
-            f"Expected bot to drink at exactly 40% HP, got {action}"
+            f"Expected bot to drink at exactly 30% HP (Phase 17B), got {action}"
 
     def test_bot_does_not_drink_at_41_percent_hp(self):
         """Bot should NOT drink potions at 41% HP (just above threshold)."""

@@ -126,10 +126,13 @@ items:
     position: [11, 13]
 
 # Player spawn - center of arena, baseline equipment
+# Phase 17B survivability: Start with 3 potions in inventory for wave pressure testing
 player:
   position: [11, 12]
   facing: "north"
-  inventory: []
+  inventory:
+    - type: "healing_potion"
+      count: 3
   equipment:
     weapon: "dagger"
 

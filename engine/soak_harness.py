@@ -511,11 +511,25 @@ class SoakSessionResult:
         logger.info(f"Wrote {len(self.runs)} run metrics to {output_path}")
 
 
-def _build_survivability_snapshot(player: Any, run_metrics, scenario_id: Optional[str] = None) -> dict:
+def _build_survivability_snapshot(
+    player: Any, 
+    run_metrics, 
+    scenario_id: Optional[str] = None,
+    initial_potions: Optional[int] = None
+) -> dict:
     """Collect survivability telemetry for a run.
+    
+    Phase 17B: Enhanced to track potions_seen (initial + pickups) vs potions_used
+    to detect when scenarios provide zero potions (making heal testing impossible).
     
     Note: This function is robust to Mock objects in tests - it checks that
     hp/max_hp are actually numeric before performing arithmetic.
+    
+    Args:
+        player: Player entity
+        run_metrics: RunMetrics instance (optional)
+        scenario_id: Scenario identifier (optional)
+        initial_potions: Count of potions player started with (optional)
     """
     from components.component_registry import ComponentType
 
@@ -551,13 +565,21 @@ def _build_survivability_snapshot(player: Any, run_metrics, scenario_id: Optiona
                     potions_remaining += 1
     except Exception:
         potions_remaining = None
+    
+    # Phase 17B: Calculate potions_seen (initial + picked_up)
+    potions_used_count = getattr(run_metrics, "potions_used", 0) if run_metrics else 0
+    potions_seen = None
+    if initial_potions is not None:
+        # potions_seen = initial + used + remaining
+        potions_seen = initial_potions + potions_used_count + (potions_remaining or 0)
 
     return {
         "final_hp": hp,
         "final_max_hp": max_hp,
         "final_hp_percent": hp_percent,
         "potions_remaining_on_death": potions_remaining,
-        "potions_used": getattr(run_metrics, "potions_used", None) if run_metrics else None,
+        "potions_used": potions_used_count,
+        "potions_seen": potions_seen,  # Phase 17B: Total potions available this run
         "scenario_id": scenario_id,
     }
 
@@ -825,6 +847,23 @@ def run_bot_soak(
                 player, entities, game_map, message_log, game_state = get_game_variables(constants)
                 game_state = GameStates.PLAYERS_TURN
             
+            # Phase 17B: Count initial healing potions for survivability tracking
+            initial_potions_count = 0
+            try:
+                inventory = player.get_component_optional(ComponentType.INVENTORY) if player else None
+                if inventory and hasattr(inventory, "items"):
+                    for item in getattr(inventory, "items", []):
+                        item_comp = item.get_component_optional(ComponentType.ITEM) if hasattr(item, "get_component_optional") else None
+                        if not item_comp:
+                            continue
+                        name = str(getattr(item, "name", "")).lower().replace(" ", "_")
+                        if name == "healing_potion":
+                            initial_potions_count += 1
+                logger.info(f"Run {run_num}: Player starts with {initial_potions_count} healing potions")
+            except Exception as e:
+                logger.warning(f"Failed to count initial potions: {e}")
+                initial_potions_count = 0
+            
             # Phase 1.6: Reset bot input source state for this run
             # This clears any exploration tracking from previous runs
             from io_layer.bot_input import BotInputSource
@@ -873,6 +912,7 @@ def run_bot_soak(
                 player,
                 run_metrics,
                 scenario_id=constants.get("scenario_id") if isinstance(constants, dict) else None,
+                initial_potions=initial_potions_count,  # Phase 17B: Track initial potion count
             )
             final_hp = survivability_snapshot.get("final_hp")
             final_max_hp = survivability_snapshot.get("final_max_hp")

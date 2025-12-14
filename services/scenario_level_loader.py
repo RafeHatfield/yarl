@@ -191,14 +191,24 @@ def _apply_player_loadout(player: Entity, player_cfg: Dict[str, Any]) -> None:
 
     # Inventory items
     for item_entry in inventory_cfg:
-        item_type = item_entry.get("type")
-        count = int(item_entry.get("count", 1))
+        # Phase 17B: Support both string format ("healing_potion") and dict format ({"type": "healing_potion"})
+        if isinstance(item_entry, str):
+            item_type = item_entry
+            count = 1
+        elif isinstance(item_entry, dict):
+            item_type = item_entry.get("type")
+            count = int(item_entry.get("count", 1))
+        else:
+            continue
+        
         if not item_type:
             continue
+        
         for _ in range(max(count, 1)):
+            # Phase 17B: Try all item creation methods (spell_item includes potions)
             item_entity = (
-                entity_factory.create_spell_item(item_type, player.x, player.y)
-                or entity_factory.create_wand(item_type, player.x, player.y)
+                entity_factory.create_spell_item(item_type, player.x, player.y)  # Potions, scrolls
+                or entity_factory.create_wand(item_type, player.x, player.y)     # Wands
             )
             if item_entity:
                 player.require_component(ComponentType.INVENTORY).add_item(item_entity)
