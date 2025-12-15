@@ -243,13 +243,23 @@ def generate_verdict_json(
     if baseline is None:
         verdict_data = {
             "status": "NO_BASELINE",
+            "acceptance_status": "PASS",  # No baseline = not blocked
             "timestamp": datetime.now().isoformat(),
             "scenarios": len(summary),
             "verdicts": {},
         }
     else:
+        # Determine acceptance_status based on verdicts
+        if verdict_summary.get("FAIL", 0) > 0:
+            acceptance_status = "FAIL"
+        elif verdict_summary.get("WARN", 0) > 0:
+            acceptance_status = "WARN"
+        else:
+            acceptance_status = "PASS"
+        
         verdict_data = {
             "status": "COMPLETED",
+            "acceptance_status": acceptance_status,
             "timestamp": datetime.now().isoformat(),
             "scenarios": len(summary),
             "verdicts": verdict_summary,
@@ -376,6 +386,7 @@ def main() -> int:
     print(f"\n{'='*60}")
     if baseline_summary is None:
         print("Status: NO_BASELINE")
+        print("Acceptance: PASS (no baseline to compare against)")
         print("\nTo create a baseline, run:")
         print("  make balance-suite-baseline")
     else:
@@ -386,11 +397,17 @@ def main() -> int:
         
         if verdict_summary["FAIL"] > 0:
             print("\n❌ FAIL: One or more scenarios exceeded thresholds")
+            print("   Acceptance: FAIL (merge blocked)")
+            print("   See docs/BALANCE_ACCEPTANCE_CONTRACT.md")
+            print(f"{'='*60}\n")
             return 1
         elif verdict_summary["WARN"] > 0:
             print("\n⚠️  WARN: Some scenarios show notable drift")
+            print("   Acceptance: WARN (may merge after review)")
+            print("   See docs/BALANCE_ACCEPTANCE_CONTRACT.md")
         else:
             print("\n✅ PASS: All scenarios within acceptable thresholds")
+            print("   Acceptance: PASS (may merge)")
     
     print(f"{'='*60}\n")
     return 0

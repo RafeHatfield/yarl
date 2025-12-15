@@ -1,32 +1,34 @@
 {
-  "bonus_attacks_per_run": 7.775,
-  "death_rate": 0.0,
+  "bonus_attacks_per_run": 7.7,
+  "death_rate": 0.1,
   "depth": 2,
   "family": "depth2_orc",
-  "monster_attacks_per_run": 11.2,
-  "monster_hit_rate": 0.34598214285714285,
-  "player_attacks_per_run": 22.5,
-  "player_hit_rate": 0.7166666666666667,
-  "pressure_index": -11.3,
+  "monster_attacks_per_run": 11.175,
+  "monster_hit_rate": 0.41387024608501116,
+  "player_attacks_per_run": 22.2,
+  "player_hit_rate": 0.7150900900900901,
+  "pressure_index": -11.024999999999999,
   "raw": {
     "depth": 2,
     "metrics": {
-      "average_turns": 50.0,
+      "average_turns": 47.15,
       "depth": 2,
-      "player_deaths": 0,
+      "player_deaths": 4,
       "runs": 40,
-      "total_bonus_attacks_triggered": 311,
+      "total_bonus_attacks_triggered": 308,
       "total_kills_by_faction": {
-        "Player": 120
+        "Orc": 4,
+        "Player": 116
       },
       "total_kills_by_source": {
-        "PLAYER": 120
+        "MONSTERS": 4,
+        "PLAYER": 116
       },
-      "total_monster_attacks": 448,
-      "total_monster_hits": 155,
+      "total_monster_attacks": 447,
+      "total_monster_hits": 185,
       "total_plague_infections": 0,
-      "total_player_attacks": 900,
-      "total_player_hits": 645,
+      "total_player_attacks": 888,
+      "total_player_hits": 635,
       "total_portals_used": 0,
       "total_reanimations": 0,
       "total_surprise_attacks": 120

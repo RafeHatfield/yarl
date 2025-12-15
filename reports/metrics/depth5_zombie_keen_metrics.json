@@ -1,37 +1,37 @@
 {
-  "bonus_attacks_per_run": 8.94,
-  "death_rate": 0.12,
+  "bonus_attacks_per_run": 9.8,
+  "death_rate": 0.06,
   "depth": 5,
   "family": "depth5_zombie",
-  "monster_attacks_per_run": 26.36,
-  "monster_hit_rate": 0.37025796661608495,
-  "player_attacks_per_run": 21.14,
-  "player_hit_rate": 0.879848628192999,
-  "pressure_index": 5.219999999999999,
+  "monster_attacks_per_run": 28.14,
+  "monster_hit_rate": 0.3326226012793177,
+  "player_attacks_per_run": 22.22,
+  "player_hit_rate": 0.882988298829883,
+  "pressure_index": 5.920000000000002,
   "raw": {
     "depth": 5,
     "metrics": {
-      "average_turns": 69.52,
+      "average_turns": 71.96,
       "depth": 5,
-      "player_deaths": 6,
+      "player_deaths": 3,
       "runs": 50,
-      "total_bonus_attacks_triggered": 447,
+      "total_bonus_attacks_triggered": 490,
       "total_kills_by_faction": {
-        "Player": 346,
-        "Zombie": 30
+        "Player": 357,
+        "Zombie": 25
       },
       "total_kills_by_source": {
-        "MONSTERS": 30,
-        "PLAYER": 346
+        "MONSTERS": 25,
+        "PLAYER": 357
       },
-      "total_monster_attacks": 1318,
-      "total_monster_hits": 488,
+      "total_monster_attacks": 1407,
+      "total_monster_hits": 468,
       "total_plague_infections": 0,
-      "total_player_attacks": 1057,
-      "total_player_hits": 930,
+      "total_player_attacks": 1111,
+      "total_player_hits": 981,
       "total_portals_used": 0,
       "total_reanimations": 0,
-      "total_surprise_attacks": 371
+      "total_surprise_attacks": 382
     },
     "player_bot": "tactical_fighter",
     "runs": 50,

@@ -1,0 +1,180 @@
+name: Balance Suite CI
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      # Run on combat-related changes
+      - 'balance/**'
+      - 'components/**'
+      - 'systems/**'
+      - 'config/entities.yaml'
+      - 'config/levels/scenario_*.yaml'
+      - 'tools/balance_suite.py'
+      # Run on balance suite changes
+      - 'reports/baselines/balance_suite_baseline.json'
+      # Run on workflow changes
+      - '.github/workflows/balance-ci.yml'
+
+jobs:
+  balance-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      SDL_VIDEODRIVER: dummy
+      PYTHONUNBUFFERED: "1"
+      CI: "true"
+
+    steps:
+      # ─────────────────────────────────────────────────────────────────────
+      # Setup
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt || true; fi
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Balance Suite (fast mode for CI)
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Run Balance Suite
+        id: balance_suite
+        run: |
+          echo "Running balance suite..."
+          make balance-suite-fast
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          # Extract acceptance status from verdict.json
+          LATEST_DIR=$(cat reports/balance_suite/latest.txt 2>/dev/null || echo "")
+          if [ -f "$LATEST_DIR/verdict.json" ]; then
+            ACCEPTANCE=$(jq -r '.acceptance_status // "UNKNOWN"' "$LATEST_DIR/verdict.json")
+            echo "acceptance_status=$ACCEPTANCE" >> $GITHUB_OUTPUT
+            echo "Acceptance Status: $ACCEPTANCE"
+          else
+            echo "acceptance_status=UNKNOWN" >> $GITHUB_OUTPUT
+          fi
+          
+          exit $EXIT_CODE
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Upload Results (always run, even on failure)
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Upload Balance Suite Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance-suite-results
+          path: |
+            reports/balance_suite/*/balance_report.md
+            reports/balance_suite/*/verdict.json
+            reports/balance_suite/*/summary.json
+            reports/balance_suite/latest.txt
+          if-no-files-found: warn
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Report Results
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Report Balance Suite Results
+        if: always()
+        run: |
+          LATEST_DIR=$(cat reports/balance_suite/latest.txt 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_DIR" ] || [ ! -d "$LATEST_DIR" ]; then
+            echo "::error::Balance suite did not produce output"
+            exit 1
+          fi
+          
+          echo "## Balance Suite Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Extract verdict info
+          if [ -f "$LATEST_DIR/verdict.json" ]; then
+            ACCEPTANCE=$(jq -r '.acceptance_status // "UNKNOWN"' "$LATEST_DIR/verdict.json")
+            PASS=$(jq -r '.verdicts.PASS // 0' "$LATEST_DIR/verdict.json")
+            WARN=$(jq -r '.verdicts.WARN // 0' "$LATEST_DIR/verdict.json")
+            FAIL=$(jq -r '.verdicts.FAIL // 0' "$LATEST_DIR/verdict.json")
+            
+            echo "**Acceptance Status:** \`$ACCEPTANCE\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Verdict | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| PASS    | $PASS |" >> $GITHUB_STEP_SUMMARY
+            echo "| WARN    | $WARN |" >> $GITHUB_STEP_SUMMARY
+            echo "| FAIL    | $FAIL |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Add contract reference
+            echo "See [Balance Acceptance Contract](docs/BALANCE_ACCEPTANCE_CONTRACT.md) for details." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Surface WARN scenarios
+            if [ "$WARN" -gt 0 ]; then
+              echo "### ⚠️ WARN Scenarios" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              jq -r '.details | to_entries[] | select(.value.verdict == "WARN") | "- `" + .key + "`"' "$LATEST_DIR/verdict.json" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "::warning title=Balance drift detected::$WARN scenario(s) show notable drift. Review required before merge. See Balance Acceptance Contract."
+            fi
+            
+            # Surface FAIL scenarios
+            if [ "$FAIL" -gt 0 ]; then
+              echo "### ❌ FAIL Scenarios" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              jq -r '.details | to_entries[] | select(.value.verdict == "FAIL") | "- `" + .key + "`"' "$LATEST_DIR/verdict.json" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "::error title=Balance regression::$FAIL scenario(s) exceeded thresholds. Merge blocked. See Balance Acceptance Contract."
+            fi
+          else
+            echo "::error::verdict.json not found"
+            exit 1
+          fi
+          
+          # Show full report in collapsed details
+          if [ -f "$LATEST_DIR/balance_report.md" ]; then
+            echo "<details>" >> $GITHUB_STEP_SUMMARY
+            echo "<summary>Full Balance Report</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat "$LATEST_DIR/balance_report.md" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Final Status Check
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Check Balance Suite Status
+        if: always()
+        run: |
+          if [ "${{ steps.balance_suite.outputs.exit_code }}" != "0" ]; then
+            echo "::error::Balance suite failed with exit code ${{ steps.balance_suite.outputs.exit_code }}"
+            echo "Balance regression detected. See Balance Acceptance Contract (docs/BALANCE_ACCEPTANCE_CONTRACT.md)."
+            exit 1
+          fi
+          
+          ACCEPTANCE="${{ steps.balance_suite.outputs.acceptance_status }}"
+          if [ "$ACCEPTANCE" == "WARN" ]; then
+            echo "::warning::Balance suite passed with warnings. Review required before merge."
+            echo "Some scenarios show notable drift. See Balance Acceptance Contract (docs/BALANCE_ACCEPTANCE_CONTRACT.md)."
+          elif [ "$ACCEPTANCE" == "PASS" ]; then
+            echo "✅ Balance suite passed. All scenarios within acceptable thresholds."
+          fi
+

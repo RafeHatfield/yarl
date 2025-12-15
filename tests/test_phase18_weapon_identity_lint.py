@@ -230,3 +230,4 @@ class TestDamageTypePresence:
         
         assert len(invalid_weapons) == 0, \
             f"Weapons with invalid damage_type: {', '.join(invalid_weapons)}"
+
