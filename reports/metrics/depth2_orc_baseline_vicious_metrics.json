@@ -1,0 +1,41 @@
+{
+  "bonus_attacks_per_run": 3.55,
+  "death_rate": 0.0,
+  "depth": 2,
+  "family": "depth2_orc",
+  "monster_attacks_per_run": 4.425,
+  "monster_hit_rate": 0.3333333333333333,
+  "player_attacks_per_run": 11.125,
+  "player_hit_rate": 0.6921348314606741,
+  "pressure_index": -6.7,
+  "raw": {
+    "depth": 2,
+    "metrics": {
+      "average_turns": 50.0,
+      "depth": 2,
+      "player_deaths": 0,
+      "runs": 40,
+      "total_bonus_attacks_triggered": 142,
+      "total_kills_by_faction": {
+        "Player": 120
+      },
+      "total_kills_by_source": {
+        "PLAYER": 120
+      },
+      "total_monster_attacks": 177,
+      "total_monster_hits": 59,
+      "total_plague_infections": 0,
+      "total_player_attacks": 445,
+      "total_player_hits": 308,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 120
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 40,
+    "scenario_id": "depth2_orc_baseline_vicious",
+    "turn_limit": 100
+  },
+  "runs": 40,
+  "scenario_id": "depth2_orc_baseline_vicious"
+}

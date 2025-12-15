@@ -1,0 +1,43 @@
+{
+  "bonus_attacks_per_run": 10.94,
+  "death_rate": 0.14,
+  "depth": 3,
+  "family": "depth3_orc",
+  "monster_attacks_per_run": 15.72,
+  "monster_hit_rate": 0.35368956743002544,
+  "player_attacks_per_run": 31.16,
+  "player_hit_rate": 0.6803594351732991,
+  "pressure_index": -15.44,
+  "raw": {
+    "depth": 3,
+    "metrics": {
+      "average_turns": 50.46,
+      "depth": 3,
+      "player_deaths": 7,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 547,
+      "total_kills_by_faction": {
+        "Orc": 7,
+        "Player": 190
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 7,
+        "PLAYER": 190
+      },
+      "total_monster_attacks": 786,
+      "total_monster_hits": 278,
+      "total_plague_infections": 0,
+      "total_player_attacks": 1558,
+      "total_player_hits": 1060,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 197
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "depth3_orc_brutal_keen",
+    "turn_limit": 110
+  },
+  "runs": 50,
+  "scenario_id": "depth3_orc_brutal_keen"
+}

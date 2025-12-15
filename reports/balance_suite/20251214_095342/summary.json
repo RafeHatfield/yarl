@@ -1,0 +1,22 @@
+{
+  "depth2_orc_baseline": {
+    "scenario_id": "depth2_orc_baseline",
+    "runs": 5,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.6747967479674797,
+    "monster_hit_rate": 0.3064516129032258,
+    "pressure_index": -12.200000000000001,
+    "bonus_attacks_per_run": 8.8
+  },
+  "depth2_orc_baseline_keen": {
+    "scenario_id": "depth2_orc_baseline_keen",
+    "runs": 5,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.79,
+    "monster_hit_rate": 0.425531914893617,
+    "pressure_index": -10.6,
+    "bonus_attacks_per_run": 7.2
+  }
+}

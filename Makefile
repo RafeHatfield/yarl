@@ -3,7 +3,8 @@
         eco-swarm-brutal-baseline eco-swarm-brutal-baseline-json eco-swarm-brutal-speed-full eco-swarm-brutal-speed-full-json \
         eco-swarm-tight eco-swarm-tight-json eco-zombie-horde eco-zombie-horde-json \
         eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report \
-        difficulty-collect difficulty-graphs difficulty-dashboard difficulty-all
+        difficulty-collect difficulty-graphs difficulty-dashboard difficulty-all \
+        balance-suite balance-suite-fast balance-suite-baseline
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -26,8 +27,11 @@ help:
 	@echo "  make worldgen-report - Worldgen sanity report (depth 3, 50 runs)"
 	@echo ""
 	@echo "CI / Balance:"
-	@echo "  make ci-quick         - Run quick CI checks (fast tests + ETP + loot)"
-	@echo "  make balance-ci-local - Run full Balance CI locally (with coverage)"
+	@echo "  make ci-quick              - Run quick CI checks (fast tests + ETP + loot)"
+	@echo "  make balance-ci-local      - Run full Balance CI locally (with coverage)"
+	@echo "  make balance-suite         - Run full balance suite (ecosystem + weapon variants)"
+	@echo "  make balance-suite-fast    - Run balance suite (fast mode)"
+	@echo "  make balance-suite-baseline - Create/update balance suite baseline"
 	@echo ""
 	@echo "Bot Testing:"
 	@echo "  make bot         - Single bot run (watch the bot play)"
@@ -191,17 +195,6 @@ bot-soak-scenario:
 	  --scenario $(SCENARIO) \
 	  --metrics-log reports/soak/soak_$(PERSONA)_$(SCENARIO).csv \
 	  --telemetry-json reports/soak/soak_$(PERSONA)_$(SCENARIO)_telemetry.json
-
-# A tiny "smoke" run for quick sanity checks
-bot-smoke:
-	mkdir -p $(LOG_DIR)
-	$(PYTHON) engine.py \
-	  --bot-soak \
-	  --bot-persona balanced \
-	  --runs 10 \
-	  --max-turns 500 \
-	  --max-floors 2 \
-	  --metrics-log $(LOG_DIR)/bot_smoke.csv
 
 bot-survivability-report:
 	python3 tools/bot_survivability_report.py
@@ -682,3 +675,31 @@ bot-soak-and-report:
 
 bot-survivability:
 	python3 tools/bot_survivability_report.py > reports/bot_survivability_report.md
+
+# --------------------------------------------------------------------
+# Balance Suite (Phase 18 QOL)
+# --------------------------------------------------------------------
+
+balance-suite:
+	python3 tools/balance_suite.py
+
+balance-suite-fast:
+	python3 tools/balance_suite.py --fast
+
+balance-suite-baseline:
+	@echo "🎯 Running balance suite and creating new baseline..."
+	@python3 tools/balance_suite.py
+	@echo ""
+	@echo "📊 Creating baseline from latest run..."
+	@mkdir -p reports/baselines
+	@LATEST_DIR=$$(cat reports/balance_suite/latest.txt 2>/dev/null || echo ""); \
+	if [ -z "$$LATEST_DIR" ]; then \
+		echo "❌ Error: No latest run found"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "$$LATEST_DIR/summary.json" ]; then \
+		echo "❌ Error: summary.json not found in $$LATEST_DIR"; \
+		exit 1; \
+	fi; \
+	cp "$$LATEST_DIR/summary.json" reports/baselines/balance_suite_baseline.json; \
+	echo "✅ Baseline created: reports/baselines/balance_suite_baseline.json"

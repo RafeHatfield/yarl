@@ -1,0 +1,41 @@
+{
+  "bonus_attacks_per_run": 2.96,
+  "death_rate": 0.0,
+  "depth": 3,
+  "family": "depth3_orc",
+  "monster_attacks_per_run": 3.94,
+  "monster_hit_rate": 0.41116751269035534,
+  "player_attacks_per_run": 11.06,
+  "player_hit_rate": 0.786618444846293,
+  "pressure_index": -7.120000000000001,
+  "raw": {
+    "depth": 3,
+    "metrics": {
+      "average_turns": 55.0,
+      "depth": 3,
+      "player_deaths": 0,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 148,
+      "total_kills_by_faction": {
+        "Player": 200
+      },
+      "total_kills_by_source": {
+        "PLAYER": 200
+      },
+      "total_monster_attacks": 197,
+      "total_monster_hits": 81,
+      "total_plague_infections": 0,
+      "total_player_attacks": 553,
+      "total_player_hits": 435,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 200
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "depth3_orc_brutal_masterwork",
+    "turn_limit": 110
+  },
+  "runs": 50,
+  "scenario_id": "depth3_orc_brutal_masterwork"
+}

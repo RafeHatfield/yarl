@@ -1,0 +1,43 @@
+{
+  "bonus_attacks_per_run": 8.94,
+  "death_rate": 0.12,
+  "depth": 5,
+  "family": "depth5_zombie",
+  "monster_attacks_per_run": 26.36,
+  "monster_hit_rate": 0.37025796661608495,
+  "player_attacks_per_run": 21.14,
+  "player_hit_rate": 0.879848628192999,
+  "pressure_index": 5.219999999999999,
+  "raw": {
+    "depth": 5,
+    "metrics": {
+      "average_turns": 69.52,
+      "depth": 5,
+      "player_deaths": 6,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 447,
+      "total_kills_by_faction": {
+        "Player": 346,
+        "Zombie": 30
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 30,
+        "PLAYER": 346
+      },
+      "total_monster_attacks": 1318,
+      "total_monster_hits": 488,
+      "total_plague_infections": 0,
+      "total_player_attacks": 1057,
+      "total_player_hits": 930,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 371
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "depth5_zombie_keen",
+    "turn_limit": 150
+  },
+  "runs": 50,
+  "scenario_id": "depth5_zombie_keen"
+}

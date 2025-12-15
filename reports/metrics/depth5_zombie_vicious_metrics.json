@@ -1,0 +1,43 @@
+{
+  "bonus_attacks_per_run": 6.88,
+  "death_rate": 0.06,
+  "depth": 5,
+  "family": "depth5_zombie",
+  "monster_attacks_per_run": 20.42,
+  "monster_hit_rate": 0.3712047012732615,
+  "player_attacks_per_run": 18.1,
+  "player_hit_rate": 0.8552486187845304,
+  "pressure_index": 2.3200000000000003,
+  "raw": {
+    "depth": 5,
+    "metrics": {
+      "average_turns": 71.96,
+      "depth": 5,
+      "player_deaths": 3,
+      "runs": 50,
+      "total_bonus_attacks_triggered": 344,
+      "total_kills_by_faction": {
+        "Player": 377,
+        "Zombie": 15
+      },
+      "total_kills_by_source": {
+        "MONSTERS": 15,
+        "PLAYER": 377
+      },
+      "total_monster_attacks": 1021,
+      "total_monster_hits": 379,
+      "total_plague_infections": 0,
+      "total_player_attacks": 905,
+      "total_player_hits": 774,
+      "total_portals_used": 0,
+      "total_reanimations": 0,
+      "total_surprise_attacks": 390
+    },
+    "player_bot": "tactical_fighter",
+    "runs": 50,
+    "scenario_id": "depth5_zombie_vicious",
+    "turn_limit": 150
+  },
+  "runs": 50,
+  "scenario_id": "depth5_zombie_vicious"
+}

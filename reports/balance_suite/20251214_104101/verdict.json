@@ -1,0 +1,162 @@
+{
+  "status": "COMPLETED",
+  "timestamp": "2025-12-14T10:41:07.957926",
+  "scenarios": 15,
+  "verdicts": {
+    "PASS": 13,
+    "WARN": 2,
+    "FAIL": 0
+  },
+  "details": {
+    "depth3_orc_brutal": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.09999999999999999,
+        "player_hit_rate": -0.025260000813469574,
+        "monster_hit_rate": 0.007820415060161179,
+        "pressure_index": -0.02000000000000135,
+        "bonus_attacks_per_run": 0.35999999999999943
+      }
+    },
+    "depth3_orc_brutal_keen": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": 0.009240924092409286,
+        "monster_hit_rate": 0.010831454601056834,
+        "pressure_index": -0.3200000000000003,
+        "bonus_attacks_per_run": 0.14000000000000057
+      }
+    },
+    "depth3_orc_brutal_vicious": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": 0.007990897515464557,
+        "monster_hit_rate": 0.008387445887445888,
+        "pressure_index": -0.20000000000000284,
+        "bonus_attacks_per_run": 0.13999999999999968
+      }
+    },
+    "depth3_orc_brutal_fine": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": 0.0002682926829268295,
+        "monster_hit_rate": 0.04452690166975881,
+        "pressure_index": -0.14000000000000057,
+        "bonus_attacks_per_run": -0.09999999999999964
+      }
+    },
+    "depth3_orc_brutal_masterwork": {
+      "verdict": "WARN",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": 0.055804182249384326,
+        "monster_hit_rate": -0.010230414746543737,
+        "pressure_index": 0.28000000000000114,
+        "bonus_attacks_per_run": -0.28000000000000025
+      }
+    },
+    "depth5_zombie": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": -0.02802069810768304,
+        "monster_hit_rate": 0.041200056880636826,
+        "pressure_index": -3.5199999999999996,
+        "bonus_attacks_per_run": -1.620000000000001
+      }
+    },
+    "depth5_zombie_keen": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.039999999999999994,
+        "player_hit_rate": 0.0057994734220451205,
+        "monster_hit_rate": 0.009967840532772165,
+        "pressure_index": 0.3200000000000003,
+        "bonus_attacks_per_run": 0.6799999999999997
+      }
+    },
+    "depth5_zombie_vicious": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.04,
+        "player_hit_rate": 0.02669640188758382,
+        "monster_hit_rate": 0.01846249686278728,
+        "pressure_index": -1.5999999999999979,
+        "bonus_attacks_per_run": -1.5599999999999996
+      }
+    },
+    "depth5_zombie_fine": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.06,
+        "player_hit_rate": 0.005183960241125218,
+        "monster_hit_rate": -0.030196458889158395,
+        "pressure_index": 1.0200000000000067,
+        "bonus_attacks_per_run": 0.08000000000000007
+      }
+    },
+    "depth5_zombie_masterwork": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": -0.04,
+        "player_hit_rate": -0.0163146749620523,
+        "monster_hit_rate": 0.002169060421119806,
+        "pressure_index": 1.4600000000000009,
+        "bonus_attacks_per_run": 0.3799999999999999
+      }
+    },
+    "depth2_orc_baseline": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": -0.007496994303959559,
+        "monster_hit_rate": 0.01447911713921074,
+        "pressure_index": 0.05000000000000249,
+        "bonus_attacks_per_run": 0.04999999999999982
+      }
+    },
+    "depth2_orc_baseline_keen": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": -0.004101615488962929,
+        "monster_hit_rate": 0.02097749470478233,
+        "pressure_index": 0.07500000000000107,
+        "bonus_attacks_per_run": -0.125
+      }
+    },
+    "depth2_orc_baseline_vicious": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": -0.01961103867883529,
+        "monster_hit_rate": -0.03018968741651079,
+        "pressure_index": 0.27500000000000124,
+        "bonus_attacks_per_run": -0.19999999999999973
+      }
+    },
+    "depth2_orc_baseline_fine": {
+      "verdict": "PASS",
+      "deltas": {
+        "death_rate": 0.025,
+        "player_hit_rate": -0.01408054212116061,
+        "monster_hit_rate": -0.004220711103432084,
+        "pressure_index": 0.24999999999999822,
+        "bonus_attacks_per_run": -0.125
+      }
+    },
+    "depth2_orc_baseline_masterwork": {
+      "verdict": "WARN",
+      "deltas": {
+        "death_rate": 0.0,
+        "player_hit_rate": -0.01000824496526509,
+        "monster_hit_rate": 0.06287467884670278,
+        "pressure_index": -0.3250000000000002,
+        "bonus_attacks_per_run": 0.30000000000000027
+      }
+    }
+  }
+}
