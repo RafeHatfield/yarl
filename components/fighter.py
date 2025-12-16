@@ -531,8 +531,28 @@ class Fighter:
         if ai and hasattr(ai, 'in_combat'):
             ai.in_combat = True
         
-        # Check for boss dialogue triggers (if not dead yet)
-        if self.hp > 0:
+        # Phase 19: Check for Split Under Pressure (before death check)
+        # If split triggers, entity is removed and replaced by children
+        # This happens even if HP would cause death - split takes precedence
+        split_triggered = False
+        if self.owner:
+            try:
+                from services.slime_split_service import check_split_trigger
+                # Note: We don't pass game_map/entities here - caller will handle execution
+                # We just check if conditions are met
+                split_data = check_split_trigger(self.owner, game_map=None, entities=None)
+                if split_data:
+                    # Split triggered! Store data and mark entity
+                    results.append({
+                        "split": split_data,
+                        "message": split_data['message']
+                    })
+                    split_triggered = True
+            except ImportError:
+                pass  # Service not available (shouldn't happen in production)
+        
+        # Check for boss dialogue triggers (if not dead yet and not splitting)
+        if self.hp > 0 and not split_triggered:
             boss = self.owner.get_component_optional(ComponentType.BOSS) if self.owner else None
             if boss:
                 # Check for enrage trigger (only triggers once)
@@ -555,7 +575,8 @@ class Fighter:
                     if hit_line:
                         results.append({"message": MB.custom(f"{boss.boss_name}: \"{hit_line}\"", MB.LIGHT_GRAY)})
 
-        if self.hp <= 0:
+        # Normal death check (only if not splitting)
+        if self.hp <= 0 and not split_triggered:
             results.append({"dead": self.owner, "xp": self.xp})
             # Note: HP can go negative for XP calculation purposes, but should be
             # displayed as 0 in UI. The UI layer should handle the display clamping.

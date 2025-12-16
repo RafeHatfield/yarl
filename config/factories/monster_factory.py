@@ -104,6 +104,19 @@ class MonsterFactory(FactoryBase):
             if hasattr(monster_def, 'tags') and monster_def.tags:
                 monster.tags = set(monster_def.tags)
             
+            # Set regeneration amount if defined (Phase 19: troll regeneration)
+            if hasattr(monster_def, 'regeneration_amount') and monster_def.regeneration_amount:
+                monster.regeneration_amount = monster_def.regeneration_amount
+            
+            # Phase 19: Set Split Under Pressure config if defined
+            if hasattr(monster_def, 'split_trigger_hp_pct'):
+                monster.split_trigger_hp_pct = monster_def.split_trigger_hp_pct
+                monster.split_child_type = getattr(monster_def, 'split_child_type', None)
+                monster.split_min_children = getattr(monster_def, 'split_min_children', 2)
+                monster.split_max_children = getattr(monster_def, 'split_max_children', 3)
+                monster.split_weights = getattr(monster_def, 'split_weights', None)
+                logger.debug(f"Added Split Under Pressure config to {monster_def.name}: trigger={monster.split_trigger_hp_pct}, child_type={monster.split_child_type}")
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai

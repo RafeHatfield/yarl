@@ -102,6 +102,14 @@ class MonsterDefinition:
     # Phase 18: Damage type resistance/vulnerability
     damage_resistance: Optional[str] = None  # Damage type this monster resists (takes -1 damage)
     damage_vulnerability: Optional[str] = None  # Damage type this monster is vulnerable to (+1 damage)
+    # Phase 19: Regeneration ability
+    regeneration_amount: int = 0  # HP regenerated per turn (0 = no regeneration)
+    # Phase 19: Split Under Pressure config
+    split_trigger_hp_pct: Optional[float] = None  # HP % threshold for splitting (e.g., 0.35 = 35%)
+    split_child_type: Optional[str] = None  # Monster type to spawn as children
+    split_min_children: int = 2  # Minimum number of children to spawn
+    split_max_children: int = 3  # Maximum number of children to spawn
+    split_weights: Optional[List[int]] = None  # Weighted distribution for child count
 
 
 @dataclass  
@@ -480,7 +488,15 @@ class EntityRegistry:
                     speed_bonus=monster_data.get('speed_bonus', 0.0),
                     # Phase 18: Damage type resistance/vulnerability
                     damage_resistance=monster_data.get('damage_resistance'),
-                    damage_vulnerability=monster_data.get('damage_vulnerability')
+                    damage_vulnerability=monster_data.get('damage_vulnerability'),
+                    # Phase 19: Regeneration ability
+                    regeneration_amount=monster_data.get('regeneration_amount', 0),
+                    # Phase 19: Split Under Pressure config
+                    split_trigger_hp_pct=monster_data.get('split_trigger_hp_pct'),
+                    split_child_type=monster_data.get('split_child_type'),
+                    split_min_children=monster_data.get('split_min_children', 2),
+                    split_max_children=monster_data.get('split_max_children', 3),
+                    split_weights=monster_data.get('split_weights')
                 )
                 
                 self.monsters[monster_id] = monster_def

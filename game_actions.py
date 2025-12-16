@@ -927,13 +927,35 @@ class ActionProcessor:
         # Pass is_surprise flag to force critical hit
         attack_results = attacker_fighter.attack_d20(target, is_surprise=is_surprise_attack)
         
-        # Track if target died (for bonus attack eligibility)
+        # Track if target died or split (for bonus attack eligibility)
         target_died = False
         
         for result in attack_results:
             message = result.get("message")
             if message:
                 self.state_manager.state.message_log.add_message(message)
+            
+            # Phase 19: Handle Split Under Pressure
+            split_data = result.get("split")
+            if split_data:
+                # Entity is splitting - execute the split
+                from services.slime_split_service import execute_split
+                spawned_children = execute_split(
+                    split_data,
+                    game_map=self.state_manager.state.game_map,
+                    entities=self.state_manager.state.entities
+                )
+                # Add children to entities list
+                if spawned_children:
+                    self.state_manager.state.entities.extend(spawned_children)
+                    from entity_sorting_cache import invalidate_entity_cache
+                    invalidate_entity_cache("entity_added_split")
+                
+                # Treat split like death for bonus attack purposes
+                if split_data['original_entity'] == target:
+                    target_died = True
+                    if collector:
+                        collector.record_kill(attacker, split_data['original_entity'])
             
             dead_entity = result.get("dead")
             if dead_entity:
@@ -1161,14 +1183,8 @@ class ActionProcessor:
                 # Invalidate entity sorting cache when new entities are added
                 invalidate_entity_cache("entity_added_loot")
             
-            # Handle spawned entities (e.g., slime splitting)
-            if hasattr(dead_entity, '_spawned_entities') and dead_entity._spawned_entities:
-                # Add spawned entities to the entities list
-                self.state_manager.state.entities.extend(dead_entity._spawned_entities)
-                # Clean up the temporary attribute
-                delattr(dead_entity, '_spawned_entities')
-                # Invalidate entity sorting cache when new entities are added
-                invalidate_entity_cache("entity_added_spawned")
+            # Phase 19: Old split-on-death mechanism removed
+            # _spawned_entities no longer used (Split Under Pressure replaced it)
             
             # Phase 10.1: Handle pending plague reanimations
             # The _pending_reanimation data was set by kill_monster if the entity

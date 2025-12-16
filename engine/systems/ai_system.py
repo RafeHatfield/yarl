@@ -384,6 +384,9 @@ class AISystem(System):
                 # Process AI turn results (combat, death, etc.)
                 self._process_ai_results(ai_results, game_state)
             
+            # Phase 19: Apply regeneration after entity completes its turn
+            self._apply_regeneration(entity, game_state)
+            
             # Check for portal collision AFTER AI moves (for monsters with portal_usable=True)
             from services.portal_manager import get_portal_manager
             portal_manager = get_portal_manager()
@@ -427,6 +430,23 @@ class AISystem(System):
             if message and game_state.message_log:
                 game_state.message_log.add_message(message)
             
+            # Phase 19: Handle Split Under Pressure
+            split_data = result.get("split")
+            if split_data:
+                # Entity is splitting - execute the split
+                from services.slime_split_service import execute_split
+                spawned_children = execute_split(
+                    split_data,
+                    game_map=game_state.game_map,
+                    entities=game_state.entities
+                )
+                # Add children to entities list
+                if spawned_children:
+                    game_state.entities.extend(spawned_children)
+                    invalidate_entity_cache("entity_added_split_ai")
+                
+                logger.debug(f"Entity {split_data['original_entity'].name} split into {len(spawned_children)} children")
+            
             # Handle death (critical for player death detection)
             dead_entity = result.get("dead")
             if dead_entity:
@@ -462,16 +482,56 @@ class AISystem(System):
                         # Invalidate entity sorting cache when new entities are added
                         invalidate_entity_cache("entity_added_loot_ai")
                     
-                    # Handle spawned entities (e.g., slime splitting)
-                    if hasattr(dead_entity, '_spawned_entities') and dead_entity._spawned_entities:
-                        # Add spawned entities to the entities list
-                        game_state.entities.extend(dead_entity._spawned_entities)
-                        # Clean up the temporary attribute
-                        delattr(dead_entity, '_spawned_entities')
-                        # Invalidate entity sorting cache when new entities are added
-                        invalidate_entity_cache("entity_added_spawned_ai")
+                    # Phase 19: Old split-on-death mechanism removed
+                    # _spawned_entities no longer used (Split Under Pressure replaced it)
                     
                     logger.debug(f"Monster {dead_entity.name} died and transformed to corpse")
+    
+    def _apply_regeneration(self, entity: Any, game_state) -> None:
+        """Apply regeneration to entities with regeneration_amount attribute.
+        
+        Phase 19: Troll regeneration ability.
+        Heals the entity at the end of its turn if:
+        - Entity has regeneration_amount attribute
+        - Entity has fighter component
+        - Entity is not at max HP
+        
+        Args:
+            entity: The entity to potentially regenerate
+            game_state: Current game state (for message logging)
+        """
+        # Check if entity has regeneration ability
+        if not hasattr(entity, 'regeneration_amount'):
+            return
+        
+        regeneration_amount = entity.regeneration_amount
+        if regeneration_amount <= 0:
+            return
+        
+        # Check if entity has fighter component and is alive
+        if not hasattr(entity, 'fighter') or not entity.fighter:
+            return
+        
+        fighter = entity.fighter
+        
+        # Only regenerate if below max HP
+        if fighter.hp >= fighter.max_hp:
+            return
+        
+        # Calculate healing amount (don't exceed max HP)
+        old_hp = fighter.hp
+        fighter.hp = min(fighter.hp + regeneration_amount, fighter.max_hp)
+        actual_heal = fighter.hp - old_hp
+        
+        # Log regeneration message
+        if actual_heal > 0 and game_state.message_log:
+            from game_messages import Message
+            message = Message(
+                f"The {entity.name} regenerates {actual_heal} HP!",
+                (0, 200, 0)  # Green for regeneration
+            )
+            game_state.message_log.add_message(message)
+            logger.debug(f"{entity.name} regenerated {actual_heal} HP ({old_hp} -> {fighter.hp})")
     
     def _process_player_status_effects(self, game_state) -> None:
         """Process player status effects at the start of their turn.

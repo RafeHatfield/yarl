@@ -10,16 +10,17 @@ MODULE CONTRACT: Death & Combat System
 OWNERSHIP:
   - Entity death handling (player and monsters)
   - Death message generation
-  - Special death behaviors (slime splitting, boss drops, etc.)
+  - Special death behaviors (boss drops, etc.)
   - Game state transitions on death
   - Phase 10: Plague reanimation (revenant zombie creation)
+  - Phase 19: Slime splitting moved to Split Under Pressure (see slime_split_service.py)
 
 KEY CONTRACTS:
   - Use kill_monster() for monster death (not duplicated elsewhere)
   - Use kill_player() for player death
   - Loot generation is separate; see components/loot.py
   - Death messages use MessageBuilder
-  - Special behaviors via monster components (boss, slime), not new functions
+  - Special behaviors via monster components (boss), not new functions
 
 WHEN CHANGING BEHAVIOR:
   - Update tests/test_golden_path_floor1.py::test_kill_basic_monster_and_loot
@@ -66,59 +67,9 @@ def kill_player(player):
     return MB.death("You died!"), GameStates.PLAYER_DEAD
 
 
-def _handle_slime_splitting(monster, game_map, entities=None) -> List:
-    """Handle Large Slime splitting when it dies.
-    
-    Args:
-        monster: The Large Slime that died
-        game_map: Game map for spawning new slimes
-        entities: List of all entities (to avoid spawning on occupied tiles)
-        
-    Returns:
-        List of newly spawned slime entities, or empty list if no splitting
-    """
-    # Check if this monster can split
-    if not _can_monster_split(monster):
-        return []
-    
-    # 60% chance to split
-    if random.random() > 0.6:
-        return []
-    
-    # Spawn 2-3 regular slimes
-    num_slimes = random.randint(2, 3)
-    spawned_slimes = []
-    
-    # Get valid spawn positions around the dead slime
-    spawn_positions = _get_valid_spawn_positions(monster.x, monster.y, game_map, num_slimes, entities)
-    
-    # Create new slimes
-    entity_factory = get_entity_factory()
-    
-    for i, (x, y) in enumerate(spawn_positions):
-        if i >= num_slimes:
-            break
-            
-        # Create a fresh regular slime (not inheriting from large slime)
-        new_slime = entity_factory.create_monster("slime", x, y)
-        if new_slime:
-            spawned_slimes.append(new_slime)
-    
-    return spawned_slimes
-
-
-def _can_monster_split(monster) -> bool:
-    """Check if a monster has splitting ability.
-    
-    Args:
-        monster: Entity to check
-        
-    Returns:
-        True if monster can split
-    """
-    return (hasattr(monster, 'special_abilities') and 
-            monster.special_abilities and 
-            'splitting' in monster.special_abilities)
+# Phase 19: Slime split-on-death removed in favor of "Split Under Pressure"
+# Old split-on-death functions removed - splitting now happens at low HP threshold
+# See services/slime_split_service.py for new implementation
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -444,23 +395,10 @@ def kill_monster(monster, game_map=None, entities=None):
         logger = logging.getLogger(__name__)
         logger.debug(f"Loot dropping failed for {monster.name}: {e}")
     
-    # Handle slime splitting before transforming to corpse
-    spawned_slimes = _handle_slime_splitting(monster, game_map, entities)
-    
     # Phase 10: Check for Plague of Restless Death - schedule reanimation
     pending_reanimation = _check_plague_reanimation(monster, game_map, entities)
     
-    if spawned_slimes:
-        # Store spawned slimes on the monster for the caller to handle
-        monster._spawned_entities = spawned_slimes
-        
-        # Create special death message for splitting
-        death_message = MB.custom(
-            "{0} dies and splits into {1} smaller slimes!".format(
-                monster.name.capitalize(), len(spawned_slimes)
-            ), (0, 255, 0)  # Green for special event
-        )
-    elif pending_reanimation:
+    if pending_reanimation:
         # Plague reanimation pending - special death message
         death_message = MB.custom(
             "{0} falls... but the plague stirs within the corpse!".format(

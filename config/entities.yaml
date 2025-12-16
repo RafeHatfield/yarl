@@ -162,6 +162,8 @@ monsters:
     # Phase 10: Trolls are part of the orc faction (allies with orcs/goblins)
     faction: "orc"
     tags: ["corporeal_flesh", "humanoid", "living", "regenerating"]
+    # Phase 19: Troll regeneration ability
+    regeneration_amount: 2    # Heals 2 HP at end of turn
     # Item-seeking behavior (trolls are smarter and seek further)
     can_seek_items: true      # Trolls actively seek items
     inventory_size: 8         # Larger inventory than orcs (smarter)
@@ -182,12 +184,19 @@ monsters:
     inventory_size: 12        # Override: even larger inventory (ancient hoard)
     seek_distance: 10         # Override: ancient senses
     speed_bonus: 0.15         # Phase 4: +15% bonus attack chance (ancient reflexes)
+    regeneration_amount: 3    # Override: faster regeneration (ancient vitality)
     # Inherits: damage_min: 8, damage_max: 12, ai_type: "basic", etc.
     # Total damage: 3 power + 8-12 natural = 11-15 (very powerful!)
     # ETP: DPS=13 × 6 × durability=2.22 × behavior=1.1 = 95 (elite brute)
     etp_base: 95
 
-  # Slime monsters - hostile to all factions (independent predator)
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: SLIME SYSTEM - SPLIT UNDER PRESSURE
+  # Tiered slimes with low-HP splitting (not split-on-death)
+  # ═══════════════════════════════════════════════════════════
+  
+  # Slime (minor) - hostile to all factions (independent predator)
+  # Does NOT split - base tier
   slime:
     stats:
       hp: 15
@@ -212,11 +221,12 @@ monsters:
     can_seek_items: false
     inventory_size: 0
     special_abilities: ["corrosion"]  # Can corrode equipment on successful hits
+    # Phase 19: Minor slimes do NOT split
     # ETP: DPS=2 × 6 × durability=0.77 × behavior=1.1 = 10 (zone/attrition)
     # Note: Higher effective threat in groups due to corrosion + slow tiles
     etp_base: 10
 
-  # Large slime - can split into smaller slimes when defeated
+  # Large slime (normal tier) - splits under pressure into minor slimes
   large_slime:
     extends: slime            # Inherit all slime properties
     stats:
@@ -232,11 +242,45 @@ monsters:
       constitution: 14        # Override: tougher (+2 HP modifier)
     char: "S"                 # Override: capital S for Large Slime
     color: [0, 200, 0]        # Override: darker green (more mature)
-    special_abilities: ["corrosion", "splitting"]  # Override: can split + corrode
+    special_abilities: ["corrosion"]  # Phase 19: removed "splitting" - now config-driven
+    # Phase 19: Split Under Pressure config
+    split_trigger_hp_pct: 0.35        # Split when HP < 35% of max
+    split_child_type: "slime"         # Spawns minor slimes
+    split_min_children: 2             # Minimum 2 children
+    split_max_children: 3             # Maximum 3 children
+    # Weighted outcomes for number of children:
+    # 2 children: 40% | 3 children: 60%
+    split_weights: [40, 60]
     # Inherits: ai_type: "slime", faction: "hostile_all", can_seek_items: false, etc.
-    # ETP: DPS=3.5 × 6 × durability=2.05 × behavior=1.15 = 50 (splits into 2 small)
+    # ETP: DPS=3.5 × 6 × durability=2.05 × behavior=1.15 = 50 (splits into 2-3 small)
     # Effective ETP higher due to splitting mechanic
     etp_base: 35
+
+  # Greater slime - elite tier, splits into normal slimes
+  greater_slime:
+    extends: large_slime      # Inherit from large slime
+    stats:
+      hp: 80                  # Override: elite health pool
+      power: 0                # Same as other slimes
+      defense: 2              # Override: tougher hide
+      xp: 150                 # Override: high XP reward
+      damage_min: 3           # Override: strong attacks: 3-7
+      damage_max: 7
+      # D&D-style stats
+      strength: 14            # Override: very strong (+2 damage modifier)
+      dexterity: 6            # Same as other slimes (-2 to-hit, -2 AC)
+      constitution: 16        # Override: elite resilience (+3 HP modifier)
+    char: "S"                 # Capital S (same as large, but different color)
+    color: [0, 150, 0]        # Override: dark forest green (elder slime)
+    special_abilities: ["corrosion"]  # Same as other slimes
+    # Phase 19: Split Under Pressure config
+    split_trigger_hp_pct: 0.30        # Split when HP < 30% of max (more resilient)
+    split_child_type: "large_slime"   # Spawns normal (large) slimes
+    split_min_children: 2             # Minimum 2 children
+    split_max_children: 2             # Maximum 2 children (fixed for elite)
+    split_weights: [100]              # Always 2 children (100% weight for max)
+    # ETP: DPS=5 × 6 × durability=4.00 × behavior=1.2 = 144 (elite threat)
+    etp_base: 75
 
   # ═══════════════════════════════════════════════════════════
   # PHASE 6: SPEED-AWARE MONSTERS
