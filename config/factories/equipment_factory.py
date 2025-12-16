@@ -61,7 +61,10 @@ class EquipmentFactory(FactoryBase):
                 two_handed=weapon_def.two_handed,
                 reach=weapon_def.reach,
                 resistances=resistances_dict,
-                speed_bonus=weapon_def.speed_bonus  # Phase 5
+                speed_bonus=weapon_def.speed_bonus,  # Phase 5
+                crit_threshold=weapon_def.crit_threshold,  # Phase 18
+                damage_type=weapon_def.damage_type,  # Phase 18
+                material=weapon_def.material  # Phase 19
             )
 
             # Create entity

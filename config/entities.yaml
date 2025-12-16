@@ -710,6 +710,7 @@ weapons:
     damage_dice: "1d4"      # 1-4 damage (avg 2.5)
     to_hit_bonus: 1         # Finesse weapon: easier to hit
     damage_type: "piercing" # Phase 18: Damage type
+    material: "metal"       # Phase 19: Corrosion affects metal only
     slot: "main_hand"
     char: "-"
     color: [139, 69, 19]    # Brown
@@ -718,6 +719,7 @@ weapons:
   quickfang_dagger:
     damage_dice: "1d4"      # 1-4 damage (same as regular dagger)
     to_hit_bonus: 2         # +2 to-hit (magical finesse)
+    material: "metal"       # Phase 19: Magical metal weapon
     slot: "main_hand"
     char: "-"
     color: [255, 215, 0]    # Gold (magical weapon)
@@ -732,6 +734,7 @@ weapons:
     damage_dice: "1d6"      # 1-6 damage (avg 3.5)
     to_hit_bonus: 0
     damage_type: "bludgeoning" # Phase 18
+    material: "wood"        # Phase 19: Wood weapons immune to acid
     slot: "main_hand"
     char: ")"
     color: [101, 67, 33]    # Dark brown
@@ -741,6 +744,7 @@ weapons:
     damage_dice: "1d6"      # 1-6 damage (avg 3.5)
     to_hit_bonus: 1         # Finesse: better to-hit
     damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel blade
     slot: "main_hand"
     char: "/"
     color: [192, 192, 192]  # Silver
@@ -750,6 +754,7 @@ weapons:
     damage_dice: "1d6"      # 1-6 damage (avg 3.5)
     to_hit_bonus: 0
     damage_type: "bludgeoning" # Phase 18
+    material: "metal"       # Phase 19: Iron/steel mace
     slot: "main_hand"
     char: ")"
     color: [128, 128, 128]  # Gray
@@ -763,6 +768,7 @@ weapons:
     damage_dice: "1d8"      # 1-8 damage (avg 4.5)
     to_hit_bonus: 0
     damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel sword
     slot: "main_hand"
     char: "/"
     color: [192, 192, 192]  # Silver
@@ -771,6 +777,7 @@ weapons:
   rapier:
     damage_dice: "1d8"      # 1-8 damage (avg 4.5)
     to_hit_bonus: 1         # Finesse: precision strikes
+    material: "metal"       # Phase 19: Fine steel blade
     slot: "main_hand"
     char: "/"
     color: [220, 220, 220]  # Bright silver
@@ -780,6 +787,7 @@ weapons:
     damage_dice: "1d8"      # 1-8 damage (avg 4.5)
     to_hit_bonus: 0
     reach: 2                # Can attack from 2 tiles away!
+    material: "wood"        # Phase 19: Wooden shaft (immune to acid)
     slot: "main_hand"
     char: "/"
     color: [160, 82, 45]    # Brown/wood
@@ -793,6 +801,7 @@ weapons:
     damage_dice: "1d10"     # 1-10 damage (avg 5.5)
     to_hit_bonus: 0
     damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel axe head
     slot: "main_hand"
     char: "/"
     color: [169, 169, 169]  # Dark gray
@@ -802,6 +811,7 @@ weapons:
     damage_dice: "1d10"     # 1-10 damage (avg 5.5)
     to_hit_bonus: 0
     damage_type: "bludgeoning" # Phase 18
+    material: "metal"       # Phase 19: Heavy iron/steel
     slot: "main_hand"
     char: ")"
     color: [105, 105, 105]  # Dim gray
@@ -815,6 +825,7 @@ weapons:
     damage_dice: "1d12"     # 1-12 damage (avg 6.5) - HIGHEST!
     to_hit_bonus: -1        # Unwieldy: harder to hit
     two_handed: true        # Requires both hands, prevents shield use
+    material: "metal"       # Phase 19: Large steel blade
     slot: "main_hand"
     char: "/"
     color: [110, 110, 110]  # Dark gray
@@ -824,6 +835,7 @@ weapons:
     damage_dice: "2d6"      # 2-12 damage (avg 7.0) - MOST CONSISTENT!
     to_hit_bonus: 0
     two_handed: true        # Requires both hands, prevents shield use
+    material: "metal"       # Phase 19: Large steel blade
     slot: "main_hand"
     char: "/"
     color: [140, 140, 160]  # Steel gray (darker)
@@ -833,6 +845,7 @@ weapons:
     damage_dice: "1d8"      # Same as longsword
     to_hit_bonus: 0
     damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel sword
     slot: "main_hand"
     char: "/"
     color: [150, 150, 170]  # Silver (darker)
@@ -847,6 +860,7 @@ weapons:
     to_hit_bonus: 1         # Still finesse
     crit_threshold: 19      # Phase 18: Crit on 19-20 (10% chance)
     damage_type: "piercing"
+    material: "metal"       # Phase 19: Steel blade
     slot: "main_hand"
     char: "-"
     color: [200, 200, 255]  # Pale blue (magical sheen)
@@ -856,6 +870,7 @@ weapons:
     to_hit_bonus: 1         # Finesse
     crit_threshold: 19      # Phase 18: Crit on 19-20 (10% chance)
     damage_type: "piercing"
+    material: "metal"       # Phase 19: Steel blade
     slot: "main_hand"
     char: "/"
     color: [240, 240, 255]  # Bright pale blue
@@ -865,6 +880,7 @@ weapons:
     damage_dice: "1d10+1"   # Phase 18: Extra damage die bonus
     to_hit_bonus: 0
     damage_type: "slashing"
+    material: "metal"       # Phase 19: Steel weapon
     slot: "main_hand"
     char: "/"
     color: [200, 50, 50]    # Blood red
@@ -873,6 +889,7 @@ weapons:
     damage_dice: "1d10+1"   # Phase 18: Extra damage die bonus
     to_hit_bonus: 0
     damage_type: "bludgeoning"
+    material: "metal"       # Phase 19: Steel weapon
     slot: "main_hand"
     char: ")"
     color: [200, 50, 50]    # Blood red
@@ -882,6 +899,7 @@ weapons:
     damage_dice: "1d8"
     to_hit_bonus: 1         # Phase 18: Fine quality (+1 to-hit)
     damage_type: "slashing"
+    material: "metal"       # Phase 19: Quality steel
     slot: "main_hand"
     char: "/"
     color: [220, 220, 220]  # Bright silver
@@ -890,6 +908,7 @@ weapons:
     damage_dice: "1d6"
     to_hit_bonus: 1         # Phase 18: Fine quality (+1 to-hit)
     damage_type: "bludgeoning"
+    material: "metal"       # Phase 19: Quality steel
     slot: "main_hand"
     char: ")"
     color: [150, 150, 150]  # Polished gray
@@ -900,6 +919,7 @@ weapons:
     to_hit_bonus: 1         # Phase 18: Masterwork accuracy bonus
     two_handed: true
     damage_type: "slashing"
+    material: "metal"       # Phase 19: Master-crafted steel
     slot: "main_hand"
     char: "/"
     color: [255, 215, 0]    # Gold (legendary quality)

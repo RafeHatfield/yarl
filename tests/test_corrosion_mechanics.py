@@ -45,7 +45,7 @@ class TestCorrosionMechanics:
         # Create weapon and armor for player
         self.sword = Entity(
             x=0, y=0, char='/', color=(192, 192, 192), name='Sword',
-            equippable=Equippable(EquipmentSlots.MAIN_HAND, power_bonus=0, damage_min=4, damage_max=7)
+            equippable=Equippable(EquipmentSlots.MAIN_HAND, power_bonus=0, damage_min=4, damage_max=7, material="metal")
         )
         
         self.shield = Entity(
@@ -97,41 +97,56 @@ class TestCorrosionMechanics:
         assert 'Sword' in results[0]['message'].text
     
     def test_weapon_corrosion_minimum_protection(self):
-        """Test that weapons can't be corroded below minimum damage."""
-        # Set weapon to minimum damage
-        self.sword.equippable.damage_max = self.sword.equippable.damage_min
+        """Test that weapons can't be corroded below 50% of base damage."""
+        # Phase 19: Corrosion floor is 50% of base_damage_max
+        base_max = self.sword.equippable.base_damage_max
+        floor = max(1, int(base_max * 0.5))
+        
+        # Set weapon to floor
+        self.sword.equippable.damage_max = floor
         
         # Try to corrode
         results = self.slime.fighter._corrode_weapon(self.player)
         
         # Should not corrode further
         assert len(results) == 0
-        assert self.sword.equippable.damage_max == self.sword.equippable.damage_min
+        assert self.sword.equippable.damage_max == floor
     
-    def test_armor_corrosion(self):
-        """Test that armor can be corroded."""
-        initial_max_defense = self.shield.equippable.defense_max
+    def test_non_metal_weapon_immune(self):
+        """Test that non-metal weapons are immune to corrosion."""
+        # Create a wooden club
+        wooden_club = Entity(
+            x=0, y=0, char=')', color=(101, 67, 33), name='Wooden Club',
+            equippable=Equippable(EquipmentSlots.MAIN_HAND, damage_min=3, damage_max=6, material="wood")
+        )
+        self.player.equipment.toggle_equip(wooden_club)
         
-        # Corrode armor
-        results = self.slime.fighter._corrode_armor(self.player)
+        initial_max = wooden_club.equippable.damage_max
         
-        # Check that defense was reduced
-        assert self.shield.equippable.defense_max == initial_max_defense - 1
-        assert len(results) == 1
-        assert 'corroded by acid' in results[0]['message'].text
-        assert 'Shield' in results[0]['message'].text
+        # Try to corrode wooden weapon
+        results = self.slime.fighter._corrode_weapon(self.player)
+        
+        # Should NOT corrode (wood is immune)
+        assert len(results) == 0
+        assert wooden_club.equippable.damage_max == initial_max
     
-    def test_armor_corrosion_minimum_protection(self):
-        """Test that armor can't be corroded below minimum defense."""
-        # Set armor to minimum defense
-        self.shield.equippable.defense_max = self.shield.equippable.defense_min
+    def test_weapon_without_material_immune(self):
+        """Test that weapons without material field are immune to corrosion."""
+        # Create a weapon without material field
+        mysterious_weapon = Entity(
+            x=0, y=0, char='?', color=(255, 0, 255), name='Mysterious Weapon',
+            equippable=Equippable(EquipmentSlots.MAIN_HAND, damage_min=2, damage_max=5)
+        )
+        self.player.equipment.toggle_equip(mysterious_weapon)
+        
+        initial_max = mysterious_weapon.equippable.damage_max
         
         # Try to corrode
-        results = self.slime.fighter._corrode_armor(self.player)
+        results = self.slime.fighter._corrode_weapon(self.player)
         
-        # Should not corrode further
+        # Should NOT corrode (no material = immune)
         assert len(results) == 0
-        assert self.shield.equippable.defense_max == self.shield.equippable.defense_min
+        assert mysterious_weapon.equippable.damage_max == initial_max
     
     def test_corrosion_no_equipment(self):
         """Test corrosion when target has no equipment."""
@@ -143,10 +158,8 @@ class TestCorrosionMechanics:
         
         # Try to corrode - should not crash and return no results
         weapon_results = self.slime.fighter._corrode_weapon(unequipped_entity)
-        armor_results = self.slime.fighter._corrode_armor(unequipped_entity)
         
         assert len(weapon_results) == 0
-        assert len(armor_results) == 0
     
     def test_corrosion_integration_with_combat(self):
         """Test that corrosion is applied during combat."""
@@ -165,13 +178,13 @@ class TestCorrosionMechanics:
                 # Strong slime attacks player
                 results = strong_slime.fighter.attack(self.player)
                 
-                # Should have attack message and corrosion messages
+                # Should have attack message and corrosion message (Phase 19: weapon only)
                 messages = [r for r in results if 'message' in r]
                 assert len(messages) >= 2  # At least attack + corrosion messages
                 
-                # Check for corrosion messages
-                corrosion_messages = [m for m in messages if 'corrodes' in m['message'].text or 'corroded by acid' in m['message'].text]
-                assert len(corrosion_messages) >= 1  # Should have at least one corrosion message
+                # Check for corrosion messages (only weapon, not armor)
+                corrosion_messages = [m for m in messages if 'corrodes' in m['message'].text]
+                assert len(corrosion_messages) == 1  # Exactly one corrosion message (weapon only)
     
     def test_no_corrosion_on_miss(self):
         """Test that corrosion doesn't apply when no damage is dealt."""
@@ -185,7 +198,7 @@ class TestCorrosionMechanics:
         # Equip weapon for corrosion testing
         sword = Entity(
             x=0, y=0, char='/', color=(192, 192, 192), name='Sword',
-            equippable=Equippable(EquipmentSlots.MAIN_HAND, damage_min=4, damage_max=7)
+            equippable=Equippable(EquipmentSlots.MAIN_HAND, damage_min=4, damage_max=7, material="metal")
         )
         invulnerable_player.equipment.toggle_equip(sword)
         
@@ -194,7 +207,7 @@ class TestCorrosionMechanics:
             
             # Should have attack message but no corrosion
             messages = [r for r in results if 'message' in r]
-            corrosion_messages = [m for m in messages if 'corrodes' in m['message'].text or 'corroded by acid' in m['message'].text]
+            corrosion_messages = [m for m in messages if 'corrodes' in m['message'].text]
             assert len(corrosion_messages) == 0
     
     def test_corrosion_mechanism_works(self):
@@ -252,6 +265,7 @@ class TestCorrosionMessageColors:
             faction=Faction.HOSTILE_ALL,
             fighter=Fighter(hp=15, defense=0, power=0, xp=25)
         )
+        self.slime.special_abilities = ['corrosion']
         
         self.player = Entity(
             x=0, y=0, char='@', color=(255, 255, 255), name='Player',
@@ -259,10 +273,10 @@ class TestCorrosionMessageColors:
             equipment=Equipment()
         )
         
-        # Equip a weapon
+        # Equip a metal weapon
         sword = Entity(
             x=0, y=0, char='/', color=(192, 192, 192), name='Sword',
-            equippable=Equippable(EquipmentSlots.MAIN_HAND, damage_min=4, damage_max=7)
+            equippable=Equippable(EquipmentSlots.MAIN_HAND, damage_min=4, damage_max=7, material="metal")
         )
         self.player.equipment.toggle_equip(sword)
     

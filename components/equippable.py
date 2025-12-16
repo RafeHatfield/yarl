@@ -30,6 +30,9 @@ class Equippable:
         reach (int): Attack range in tiles (1 = adjacent, 2 = spear reach)
         resistances (dict): Dict mapping ResistanceType to percentage (0-100)
         speed_bonus (float): Combat speed bonus ratio (Phase 5, e.g., 0.25 = +25%)
+        material (str): Material type (metal/wood/bone/stone/organic/other) for corrosion
+        base_damage_min (int): Original minimum damage (for corrosion floor calculation)
+        base_damage_max (int): Original maximum damage (for corrosion floor calculation)
         owner (Entity): The entity that owns this component
     """
 
@@ -39,7 +42,7 @@ class Equippable:
                  armor_type: Optional[str] = None, dex_cap: Optional[int] = None, damage_dice: Optional[str] = None,
                  two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None,
                  speed_bonus: float = 0.0,
-                 crit_threshold: int = 20, damage_type: Optional[str] = None) -> None:
+                 crit_threshold: int = 20, damage_type: Optional[str] = None, material: Optional[str] = None) -> None:
         """Initialize an Equippable component.
 
         Args:
@@ -60,6 +63,7 @@ class Equippable:
             reach (int, optional): Attack range in tiles (1 = adjacent, 2 = spear). Defaults to 1.
             resistances (Optional[dict], optional): Dict mapping ResistanceType to percentage (0-100). Defaults to None.
             speed_bonus (float, optional): Combat speed bonus ratio (Phase 5). Defaults to 0.0.
+            material (Optional[str], optional): Material type (metal/wood/bone/stone/organic/other). Defaults to None.
         """
         self.slot: Any = slot
         self.power_bonus: int = power_bonus
@@ -81,6 +85,10 @@ class Equippable:
         # Phase 18: Affix mechanics
         self.crit_threshold: int = crit_threshold  # D20 roll needed for crit (default 20, Keen weapons 19)
         self.damage_type: Optional[str] = damage_type  # slashing, piercing, bludgeoning
+        # Phase 19: Corrosion mechanics
+        self.material: Optional[str] = material  # Material type for corrosion (metal/wood/bone/stone/organic/other)
+        self.base_damage_min: int = damage_min  # Store original damage for corrosion floor (50% base)
+        self.base_damage_max: int = damage_max  # Store original damage for corrosion floor (50% base)
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
     
     def get_damage_range_text(self) -> str:

@@ -1201,6 +1201,9 @@ class Fighter:
     def _apply_corrosion_effects(self, target, damage_dealt):
         """Apply corrosion effects if attacker has corrosion ability.
         
+        Phase 19: Corrosive Contact - Only affects METAL weapons with small
+        chance per successful hit. Permanent degradation clamped at 50% base.
+        
         Args:
             target: The entity that was attacked
             damage_dealt: Amount of damage that was dealt
@@ -1222,17 +1225,11 @@ class Fighter:
         import random
         from game_messages import Message
         
-        # 5% chance to corrode equipment on successful hit
+        # 5% chance to corrode equipment on successful hit (deterministic under seeded runs)
         if random.random() < 0.05:
-            # Corrode target's weapon (when slime hits player/monster)
+            # Phase 19: Only corrode target's METAL weapon
             weapon_corrosion = self._corrode_weapon(target)
             results.extend(weapon_corrosion)
-            
-            # Corrode attacker's "armor" (when player/monster hits slime)
-            # Note: This is a bit of a stretch since slimes don't wear armor,
-            # but it represents acid splash-back from hitting the slime
-            armor_corrosion = self._corrode_armor(self.owner)
-            results.extend(armor_corrosion)
         
         return results
     
@@ -1353,6 +1350,9 @@ class Fighter:
     def _corrode_weapon(self, target):
         """Corrode target's equipped weapon.
         
+        Phase 19: Only corrodes METAL weapons. Reduces damage in small steps
+        but clamps at 50% of base effectiveness.
+        
         Args:
             target: Entity whose weapon to corrode
             
@@ -1366,13 +1366,25 @@ class Fighter:
             weapon = target_equipment.main_hand
             equippable = weapon.equippable
             
-            # Only corrode if max damage is greater than min damage
-            if equippable.damage_max > equippable.damage_min:
+            # Phase 19: Only corrode metal weapons
+            if not equippable.material or equippable.material.lower() != "metal":
+                return results  # Non-metal weapons are immune
+            
+            # Calculate 50% floor based on base damage
+            base_damage_max = equippable.base_damage_max
+            damage_floor = max(1, int(base_damage_max * 0.5))  # 50% of base, minimum 1
+            
+            # Only corrode if current damage is above the floor
+            if equippable.damage_max > damage_floor:
                 equippable.damage_max -= 1
+                
+                # Show current condition (optional: could show percentage)
+                condition_pct = int((equippable.damage_max / base_damage_max) * 100)
+                condition_note = f" [{condition_pct}%]" if condition_pct < 100 else ""
                 
                 results.append({
                     'message': MB.custom(
-                        f'The {self.owner.name} corrodes {target.name}\'s {weapon.name}!',
+                        f'The {self.owner.name} corrodes {target.name}\'s {weapon.name}{condition_note}!',
                         MB.ORANGE
                     )
                 })

@@ -139,6 +139,7 @@ class WeaponDefinition:
     speed_bonus: float = 0.0  # Combat speed bonus ratio (Phase 5)
     crit_threshold: int = 20  # Phase 18: D20 roll for crit (Keen weapons = 19)
     damage_type: Optional[str] = None  # Phase 18: slashing, piercing, bludgeoning
+    material: Optional[str] = None  # Phase 19: material type (metal/wood/bone/stone/organic/other)
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -533,6 +534,7 @@ class EntityRegistry:
                     speed_bonus=weapon_data.get('speed_bonus', 0.0),  # Phase 5
                     crit_threshold=weapon_data.get('crit_threshold', 20),  # Phase 18
                     damage_type=weapon_data.get('damage_type'),  # Phase 18
+                    material=weapon_data.get('material'),  # Phase 19: corrosion
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),
