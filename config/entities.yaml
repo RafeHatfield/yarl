@@ -220,7 +220,7 @@ monsters:
     # Slimes don't seek items - they're simple creatures
     can_seek_items: false
     inventory_size: 0
-    special_abilities: ["corrosion"]  # Can corrode equipment on successful hits
+    special_abilities: ["corrosion", "engulf"]  # Phase 19: Corrode metal + engulf on hit
     # Phase 19: Minor slimes do NOT split
     # ETP: DPS=2 × 6 × durability=0.77 × behavior=1.1 = 10 (zone/attrition)
     # Note: Higher effective threat in groups due to corrosion + slow tiles

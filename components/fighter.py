@@ -748,6 +748,10 @@ class Fighter:
             # Apply corrosion effects if attacker has corrosion ability
             corrosion_results = self._apply_corrosion_effects(target, final_damage)
             results.extend(corrosion_results)
+            
+            # Phase 19: Apply engulf effects if attacker has engulf ability
+            engulf_results = self._apply_engulf_effects(target, final_damage)
+            results.extend(engulf_results)
         else:
             # Attack was completely blocked - show the same clear breakdown
             attack_breakdown = f"{total_attack} attack"
@@ -1020,6 +1024,10 @@ class Fighter:
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
             
+            # Phase 19: Apply engulf effects if applicable
+            engulf_results = self._apply_engulf_effects(target, damage)
+            results.extend(engulf_results)
+            
             # Phase 10.1: Apply plague spread if attacker has plague_attack ability
             plague_results = self._apply_plague_spread(target)
             results.extend(plague_results)
@@ -1233,6 +1241,45 @@ class Fighter:
         
         return results
     
+    def _apply_engulf_effects(self, target, damage_dealt):
+        """Apply engulf effects if attacker has engulf ability.
+        
+        Phase 19: Slime Engulf - Movement penalty that persists while adjacent.
+        Deterministic (no RNG) - always applies on successful hit.
+        
+        Args:
+            target: The entity that was attacked
+            damage_dealt: Amount of damage that was dealt
+            
+        Returns:
+            list: List of result dictionaries with engulf messages
+        """
+        results = []
+        
+        # Only apply engulf if damage was dealt and attacker has engulf ability
+        if damage_dealt <= 0:
+            return results
+        
+        # Check if attacker has engulf ability
+        if not self._has_engulf_ability():
+            return results
+        
+        # Phase 19: Engulf is deterministic (no RNG) - always applies on hit
+        # Apply EngulfedEffect to target
+        from components.status_effects import EngulfedEffect
+        from components.component_registry import ComponentType
+        
+        # Ensure target has status effect manager
+        if not target.status_effects:
+            target.status_effects = target.get_status_effect_manager()
+        
+        # Apply or refresh engulfed effect (3 turn duration)
+        engulf_effect = EngulfedEffect(duration=3, owner=target)
+        engulf_results = target.add_status_effect(engulf_effect)
+        results.extend(engulf_results)
+        
+        return results
+    
     def _has_corrosion_ability(self):
         """Check if this entity has corrosion ability.
         
@@ -1343,6 +1390,23 @@ class Fighter:
             self.owner.tags and 
             isinstance(self.owner.tags, (list, tuple, set)) and
             'plague_carrier' in self.owner.tags):
+            return True
+        
+        return False
+    
+    def _has_engulf_ability(self):
+        """Check if this entity has engulf ability.
+        
+        Phase 19: Slime Engulf - Slimes can engulf targets on hit.
+        
+        Returns:
+            bool: True if entity can engulf
+        """
+        # Check if entity has special_abilities with engulf
+        if (hasattr(self.owner, 'special_abilities') and 
+            self.owner.special_abilities and 
+            isinstance(self.owner.special_abilities, (list, tuple)) and
+            'engulf' in self.owner.special_abilities):
             return True
         
         return False

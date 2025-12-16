@@ -268,6 +268,139 @@ class SlowedEffect(StatusEffect):
         return results
 
 
+class EngulfedEffect(StatusEffect):
+    """Phase 19: Slime Engulf - Movement penalty that persists while adjacent to slimes.
+    
+    Identity: Slimes envelope targets; being adjacent is dangerous.
+    Creates "break contact" decision for players.
+    
+    Mechanics:
+    - Applies on successful slime hit (no RNG)
+    - Slows movement (acts every 2nd turn, like SlowedEffect)
+    - Duration DOES NOT decay while adjacent to ANY slime
+    - Duration decays normally when not adjacent to slimes
+    - Refresh to max duration if hit again while already engulfed
+    
+    Attributes:
+        turn_counter (int): Tracks turn parity for movement slowdown
+        max_duration (int): Maximum duration for refresh logic
+        was_adjacent_last_turn (bool): Tracks adjacency for messaging
+    """
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("engulfed", duration, owner)
+        self.turn_counter = 0
+        self.max_duration = duration
+        self.was_adjacent_last_turn = True  # Assume true on first application
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({
+            'message': MB.status_effect(
+                f"{self.owner.name} is engulfed by slime!"
+            )
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({
+            'message': MB.status_effect(
+                f"{self.owner.name} pulls free of the slime's grasp!"
+            )
+        })
+        return results
+    
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Process engulf at turn start - check adjacency and apply movement penalty.
+        
+        Args:
+            entities: List of all game entities (needed for adjacency check)
+        
+        Returns:
+            List of result dictionaries
+        """
+        results = []
+        
+        # Check if owner is adjacent to any slime
+        adjacent_to_slime = self._is_adjacent_to_slime(entities)
+        
+        # If adjacent to slime, refresh duration to max and don't decay
+        if adjacent_to_slime:
+            self.duration = self.max_duration
+            # Don't spam message if already adjacent
+            if not self.was_adjacent_last_turn:
+                results.append({
+                    'message': MB.status_effect(
+                        f"{self.owner.name} is still engulfed by slime!"
+                    )
+                })
+            self.was_adjacent_last_turn = True
+        else:
+            # Not adjacent - show message first time breaking contact
+            if self.was_adjacent_last_turn:
+                results.append({
+                    'message': MB.status_effect(
+                        f"{self.owner.name} starts pulling free of the slime!"
+                    )
+                })
+            self.was_adjacent_last_turn = False
+        
+        # Apply movement penalty (slow - skip every other turn)
+        self.turn_counter += 1
+        if self.turn_counter % 2 == 1:
+            results.append({
+                'message': MB.status_effect(
+                    f"{self.owner.name} moves sluggishly through the slime!"
+                ),
+                'skip_turn': True  # Signal to AI/player that this turn is skipped
+            })
+        
+        return results
+    
+    def process_turn_end(self) -> List[Dict[str, Any]]:
+        """Process at turn end - decay duration if not adjacent to slime.
+        
+        Returns:
+            List of result dictionaries
+        """
+        # Only decay if not adjacent to slime
+        if not self.was_adjacent_last_turn:
+            self.duration -= 1
+        # Don't call super().process_turn_end() as we handle duration manually
+        return []
+    
+    def _is_adjacent_to_slime(self, entities) -> bool:
+        """Check if owner is adjacent to any slime.
+        
+        Args:
+            entities: List of all game entities
+        
+        Returns:
+            bool: True if adjacent to at least one slime
+        """
+        if not entities or not self.owner:
+            return False
+        
+        owner_x, owner_y = self.owner.x, self.owner.y
+        
+        for entity in entities:
+            if entity == self.owner:
+                continue
+            
+            # Check if entity is a slime (has special_abilities with 'engulf')
+            if (hasattr(entity, 'special_abilities') and 
+                entity.special_abilities and 
+                'engulf' in entity.special_abilities):
+                
+                # Check adjacency (Chebyshev distance <= 1)
+                dx = abs(entity.x - owner_x)
+                dy = abs(entity.y - owner_y)
+                if max(dx, dy) <= 1 and (dx != 0 or dy != 0):  # Adjacent but not same tile
+                    return True
+        
+        return False
+
+
 class ImmobilizedEffect(StatusEffect):
     """Prevents the owner from moving for X turns.
     
