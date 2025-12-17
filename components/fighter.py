@@ -337,7 +337,7 @@ class Fighter:
     def armor_class(self):
         """Calculate Armor Class (AC) for d20 combat system with DEX caps.
         
-        AC = 10 + capped DEX modifier + armor AC bonus from all equipped items
+        AC = 10 + capped DEX modifier + armor AC bonus from all equipped items + shield wall bonus
         
         DEX Modifier Capping:
         - Light Armor: No cap (full DEX bonus)
@@ -345,12 +345,19 @@ class Fighter:
         - Heavy Armor: Cap at 0 DEX (no DEX bonus!)
         - Multiple armor pieces: Use the MOST RESTRICTIVE cap
         
+        Phase 19 Shield Wall:
+        - Skeletons gain +1 AC per adjacent skeleton ally (4-way adjacency)
+        - NO CAP on shield wall bonus
+        
         Example:
             DEX 18 (+4), wearing Plate Mail (heavy, dex_cap=0):
             AC = 10 + 0 (capped) + 6 (plate) = 16
             
             DEX 18 (+4), wearing Studded Leather (light, no cap):
             AC = 10 + 4 (full) + 3 (studded) = 17
+            
+            Skeleton with 3 adjacent skeleton allies:
+            AC = 10 + 1 (DEX) + 0 (no armor) + 3 (shield wall) = 14
         
         Returns:
             int: Armor Class (typically 10-25)
@@ -404,8 +411,36 @@ class Fighter:
                 if ring and ring.components.has(ComponentType.RING):
                     ring_ac_bonus += ring.ring.get_ac_bonus()
         
-        return base_ac + dex_bonus + armor_ac_bonus + status_ac_bonus + ring_ac_bonus
+        # Phase 19: Shield Wall bonus - count adjacent skeleton allies (4-way adjacency)
+        shield_wall_bonus = self._calculate_shield_wall_bonus()
+        
+        return base_ac + dex_bonus + armor_ac_bonus + status_ac_bonus + ring_ac_bonus + shield_wall_bonus
 
+    def _calculate_shield_wall_bonus(self) -> int:
+        """Calculate Shield Wall AC bonus from adjacent skeleton allies.
+        
+        Phase 19: Skeletons gain +1 AC per adjacent skeleton ally (4-way adjacency).
+        NO CAP on the bonus.
+        
+        Returns:
+            int: AC bonus from shield wall (0 if not a skeleton or no allies nearby)
+        """
+        # Check if this entity has shield wall ability
+        if not self.owner or not hasattr(self.owner, 'shieldwall_ac_per_adjacent'):
+            return 0
+        
+        ac_per_adjacent = getattr(self.owner, 'shieldwall_ac_per_adjacent', 0)
+        if ac_per_adjacent <= 0:
+            return 0
+        
+        # Count adjacent skeleton allies (4-way adjacency: N, S, E, W)
+        # Need access to game state to find other entities
+        # This is called during AC calculation, so we need a way to pass entities
+        # For now, use a cached value if available (set during combat/AI turns)
+        adjacent_count = getattr(self.owner, '_cached_adjacent_skeleton_count', 0)
+        
+        return adjacent_count * ac_per_adjacent
+    
     @property
     def max_hp(self):
         """Get maximum HP including CON modifier and equipment bonuses.
@@ -955,7 +990,7 @@ class Fighter:
             # Add STR modifier to damage
             damage = base_damage + self.strength_mod
             
-            # Phase 18: Apply damage type modifier (resistance/vulnerability)
+            # Phase 18/19: Apply damage type modifier (resistance/vulnerability/multipliers)
             # Get weapon damage type
             weapon_damage_type = None
             if equipment and equipment.main_hand:
@@ -967,13 +1002,25 @@ class Fighter:
             
             # Check target for resistance/vulnerability
             if weapon_damage_type:
-                target_resistance = getattr(target, 'damage_resistance', None)
-                target_vulnerability = getattr(target, 'damage_vulnerability', None)
-                
-                if target_resistance == weapon_damage_type:
-                    damage = damage - 1  # Resistant: -1 damage
-                elif target_vulnerability == weapon_damage_type:
-                    damage = damage + 1  # Vulnerable: +1 damage
+                # Phase 19: Check for damage_type_modifiers dict (multiplier system)
+                damage_type_modifiers = getattr(target, 'damage_type_modifiers', None)
+                if damage_type_modifiers and isinstance(damage_type_modifiers, dict):
+                    multiplier = damage_type_modifiers.get(weapon_damage_type, 1.0)
+                    if multiplier != 1.0:
+                        # Apply multiplier and round
+                        original_damage = damage
+                        damage = int(damage * multiplier)
+                        # Log damage type modifier application
+                        logger.debug(f"[DAMAGE TYPE] {target.name} takes {multiplier}x damage from {weapon_damage_type}: {original_damage} → {damage}")
+                else:
+                    # Phase 18: Fallback to old ±1 system for backward compatibility
+                    target_resistance = getattr(target, 'damage_resistance', None)
+                    target_vulnerability = getattr(target, 'damage_vulnerability', None)
+                    
+                    if target_resistance == weapon_damage_type:
+                        damage = damage - 1  # Resistant: -1 damage
+                    elif target_vulnerability == weapon_damage_type:
+                        damage = damage + 1  # Vulnerable: +1 damage
             
             # Record statistics (only for player)
             statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None

@@ -138,9 +138,68 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ---
 
+### Skeleton: Shield Wall (Phase 19.3)
+
+**Status:** ✅ Complete (Phase 19.3)
+
+**Identity:** Defensive undead warriors that form shield walls  
+**Decision:** Do I break their formation or use the right weapon type?
+
+**Mechanics:**
+
+**A) Shield Wall:**
+- Skeletons gain **+1 AC per adjacent skeleton ally** (4-way adjacency: N/S/E/W)
+- **NO CAP** on shield wall bonus
+- Deterministic AC calculation based on formation
+- Cached per-turn for performance
+
+**B) Damage Type Modifiers:**
+- **Piercing weapons:** Skeletons take 50% damage (0.5x multiplier)
+- **Bludgeoning weapons:** Skeletons take 150% damage (1.5x multiplier)
+- **Slashing weapons:** Normal damage (1.0x multiplier)
+- Multipliers apply before crit doubling
+
+**C) Formation AI:**
+- Skeletons try to group up when not in combat
+- Prefer moves that increase adjacency to allies
+- Still attack player when in range (combat priority)
+- Deterministic movement selection
+
+**D) Bone Pile:**
+- Spawns on skeleton death
+- Future hook for necromancer abilities
+- Currently cosmetic/lore element
+
+**Tuning:**
+- Base skeleton: 20 HP, 3-5 damage, 11 AC (base)
+- With 2 adjacent allies: 13 AC
+- With 4 adjacent allies: 15 AC
+- Piercing damage: 50% effectiveness
+- Bludgeoning damage: 150% effectiveness
+
+**Implementation:**
+- Shield wall: `components/fighter.py` (armor_class property)
+- Adjacency counting: `services/skeleton_service.py`
+- Damage modifiers: `components/fighter.py` (attack_d20 method)
+- Formation AI: `components/ai/skeleton_ai.py`
+- Bone pile: `death_functions.py` (_spawn_death_feature)
+- Monster definitions: `config/entities.yaml`
+
+**Testing:**
+- Scenario: `scenario_monster_skeleton_identity.yaml`
+- Validates shield wall AC, damage types, formation AI, bone piles
+- Unit tests: `test_skeleton_shield_wall.py` (16 tests, all passing)
+
+**Balance Impact:**
+- Scenario runs: 30 runs, 200 turn limit
+- Expected: 4 skeletons per run, demonstrating all mechanics
+- Included in full balance suite (not fast mode)
+
+---
+
 ## Future Abilities (Planned)
 
-### Orc Chieftain: Rally Cry (Phase 19.3)
+### Orc Chieftain: Rally Cry (Phase 19.4)
 
 **Status:** Not Started
 

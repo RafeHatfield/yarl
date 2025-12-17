@@ -77,6 +77,40 @@ def kill_player(player):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def _spawn_death_feature(monster, game_map, entities) -> None:
+    """Spawn a feature/item on monster death if configured.
+    
+    Phase 19: Skeletons spawn bone piles on death (future necromancer hook).
+    
+    Args:
+        monster: The monster that just died
+        game_map: Game map for position validation
+        entities: List of all entities
+    """
+    if not hasattr(monster, 'death_spawns'):
+        return
+    
+    death_spawn_type = monster.death_spawns
+    if not death_spawn_type:
+        return
+    
+    # Create the death feature at monster's position
+    try:
+        factory = get_entity_factory()
+        feature = factory.create_map_feature(death_spawn_type, monster.x, monster.y)
+        
+        if feature and entities is not None:
+            # Add to entities list (caller will handle this)
+            # Store on monster so caller can add it
+            if not hasattr(monster, '_death_spawned_features'):
+                monster._death_spawned_features = []
+            monster._death_spawned_features.append(feature)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Failed to spawn death feature {death_spawn_type} for {monster.name}: {e}")
+
+
 def _check_plague_reanimation(monster, game_map, entities) -> Optional[Dict[str, Any]]:
     """Check if a monster should reanimate as a revenant zombie.
     
@@ -394,6 +428,9 @@ def kill_monster(monster, game_map=None, entities=None):
         import logging
         logger = logging.getLogger(__name__)
         logger.debug(f"Loot dropping failed for {monster.name}: {e}")
+    
+    # Phase 19: Check for death spawns (e.g., bone pile from skeleton)
+    _spawn_death_feature(monster, game_map, entities)
     
     # Phase 10: Check for Plague of Restless Death - schedule reanimation
     pending_reanimation = _check_plague_reanimation(monster, game_map, entities)
