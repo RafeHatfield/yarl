@@ -108,6 +108,10 @@ class MonsterFactory(FactoryBase):
             if hasattr(monster_def, 'regeneration_amount') and monster_def.regeneration_amount:
                 monster.regeneration_amount = monster_def.regeneration_amount
             
+            # Phase 19: Set corrosion chance if defined (tiered slime corrosion)
+            if hasattr(monster_def, 'corrosion_chance'):
+                monster.corrosion_chance = monster_def.corrosion_chance
+            
             # Phase 19: Set Split Under Pressure config if defined
             if hasattr(monster_def, 'split_trigger_hp_pct'):
                 monster.split_trigger_hp_pct = monster_def.split_trigger_hp_pct

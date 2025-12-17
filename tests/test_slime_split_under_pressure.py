@@ -47,15 +47,15 @@ class TestSlimeSplitUnderPressure(unittest.TestCase):
         
         # Verify initial state (42 HP due to constitution modifier +2)
         self.assertEqual(large_slime.fighter.max_hp, 42)
-        self.assertEqual(large_slime.split_trigger_hp_pct, 0.35)
+        self.assertEqual(large_slime.split_trigger_hp_pct, 0.40)  # Phase 19.3: tuned for 40% split rate
         
-        # Damage to 16 HP (38%) - above threshold
-        large_slime.fighter.hp = 16
+        # Damage to 18 HP (43%) - above threshold
+        large_slime.fighter.hp = 18
         split_data = check_split_trigger(large_slime, game_map=mock_map, entities=[])
         self.assertIsNone(split_data, "Should not split above threshold")
         
-        # Damage to 14 HP (33%) - below threshold
-        large_slime.fighter.hp = 14
+        # Damage to 16 HP (38%) - below 40% threshold
+        large_slime.fighter.hp = 16
         split_data = check_split_trigger(large_slime, game_map=mock_map, entities=[])
         self.assertIsNotNone(split_data, "Should split below threshold")
         self.assertEqual(split_data['child_type'], "slime")
@@ -120,7 +120,7 @@ class TestSlimeSplitUnderPressure(unittest.TestCase):
         mock_map.tiles = [[Mock(blocked=False) for _ in range(20)] for _ in range(20)]
         
         # Verify config
-        self.assertEqual(greater_slime.split_trigger_hp_pct, 0.30)
+        self.assertEqual(greater_slime.split_trigger_hp_pct, 0.35)  # Phase 19.3: tuned for 40% split rate
         self.assertEqual(greater_slime.split_child_type, "large_slime")
         
         # Drop below 30% threshold (HP=83 with CON+3, 30% = 24.9)
@@ -181,15 +181,15 @@ class TestSlimeSplitUnderPressure(unittest.TestCase):
         """Slime killed from above threshold should NOT split."""
         large_slime = self.factory.create_monster("large_slime", 5, 5)
         
-        # Kill from high HP (one-shot) - Stay above 35% threshold
-        large_slime.fighter.hp = 42  # Full HP (35% = 14.7)
-        damage_results = large_slime.fighter.take_damage(27)  # Damage to 15 HP (35.7%)
+        # Damage from high HP but stay above 40% threshold
+        large_slime.fighter.hp = 42  # Full HP (40% = 16.8)
+        damage_results = large_slime.fighter.take_damage(24)  # Damage to 18 HP (42.9%)
         
-        # Check for split in results - should NOT trigger (still above 35%)
+        # Check for split in results - should NOT trigger (still above 40%)
         split_results = [r for r in damage_results if 'split' in r]
         self.assertEqual(len(split_results), 0, "Should not split when above threshold")
         
-        # Entity should still be alive at 15 HP
+        # Entity should still be alive at 18 HP
         self.assertGreater(large_slime.fighter.hp, 0)
 
 

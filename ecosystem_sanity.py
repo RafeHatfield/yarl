@@ -208,6 +208,17 @@ def run_scenario(
         for source, count in sorted(metrics.total_kills_by_source.items()):
             print(f"  {source}: {count}")
     
+    # Phase 19: Split metrics
+    if hasattr(metrics, 'total_split_events') and metrics.total_split_events > 0:
+        print(f"\nSplit Events:")
+        print(f"  Total Splits: {metrics.total_split_events}")
+        if hasattr(metrics, 'total_split_children_spawned'):
+            print(f"  Children Spawned: {metrics.total_split_children_spawned}")
+        if hasattr(metrics, 'total_split_events_by_type'):
+            print(f"  Splits by Type:")
+            for monster_type, count in sorted(metrics.total_split_events_by_type.items()):
+                print(f"    {monster_type}: {count}")
+    
     print("=" * 60)
     
     # Expected outcomes

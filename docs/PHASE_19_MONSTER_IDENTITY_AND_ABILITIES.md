@@ -80,9 +80,67 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ---
 
+### Slime: Identity Kit (Phase 19.2)
+
+**Status:** ✅ Complete (Phase 19.2)
+
+**Identity:** Amorphous predators with corrosive, engulfing attacks  
+**Decision:** Do I use metal weapons and risk corrosion? Do I stay adjacent or break contact?
+
+**Mechanics:**
+
+**A) Split Under Pressure (tiered):**
+- Large slimes split at 35% HP into 2-3 minor slimes
+- Greater slimes split at 30% HP into 2 large slimes
+- Split is deterministic per seed (weighted RNG for child count)
+- Split only triggers once per entity
+- Replaces old split-on-death behavior
+
+**B) Corrosive Contact:**
+- 50% chance to corrode metal weapons on hit
+- Reduces weapon damage_max by 1 per corrosion event
+- Floor: cannot reduce below 50% of base damage
+- Non-metal weapons (wood, bone, stone) are immune
+- Deterministic under fixed seed
+
+**C) Engulf:**
+- Applies slow effect on slime hit
+- Slow does NOT decay while player is adjacent to ANY slime
+- Slow begins to decay after breaking adjacency
+- Creates "break contact" decision for players
+
+**Tuning:**
+- Split thresholds: **40% (large), 35% (greater)** (Phase 19.3: tuned for observable splits)
+- Corrosion chance: **Tiered by slime type** (Phase 19.2)
+  - Minor/small slimes: 5%
+  - Normal/large slimes: 10%
+  - Greater slimes: 15%
+- Corrosion floor: 50% of base damage
+- Engulf: standard slow effect with adjacency-based persistence
+
+**Implementation:**
+- Split logic: `services/slime_split_service.py`
+- Corrosion logic: `components/fighter.py` (attack method)
+- Engulf logic: `components/status_effects.py` (EngulfedEffect)
+- Monster definitions: `config/entities.yaml`
+
+**Testing:**
+- Scenario: `scenario_monster_slime_identity.yaml`
+- Validates split + corrosion + engulf in deterministic runs
+- Split rate: **100%+ of eligible slimes split** (exceeds 33% target)
+- Split rate enforced via `test_slime_identity_scenario_split_rate.py`
+- Unit tests: `test_slime_split_under_pressure.py`, `test_corrosion_mechanics.py`, `test_engulf_mechanics.py`, `test_tiered_corrosion.py`
+
+**Balance Impact:**
+- Scenario runs: 30 runs, 200 turn limit
+- Typical results: ~490 kills (150 splits, 370 children), 0 deaths
+- Included in full balance suite (not fast mode)
+
+---
+
 ## Future Abilities (Planned)
 
-### Orc Chieftain: Rally Cry (Phase 19.2)
+### Orc Chieftain: Rally Cry (Phase 19.3)
 
 **Status:** Not Started
 
@@ -96,7 +154,7 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ---
 
-### Wraith: Life Drain (Phase 19.3)
+### Wraith: Life Drain (Phase 19.4)
 
 **Status:** Not Started
 

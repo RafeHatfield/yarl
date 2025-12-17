@@ -2,151 +2,161 @@
   "depth3_orc_brutal": {
     "scenario_id": "depth3_orc_brutal",
     "runs": 50,
-    "deaths": 5,
-    "death_rate": 0.1,
-    "player_hit_rate": 0.6701097482246611,
-    "monster_hit_rate": 0.3475452196382429,
-    "pressure_index": -15.5,
-    "bonus_attacks_per_run": 10.88
+    "deaths": 6,
+    "death_rate": 0.12,
+    "player_hit_rate": 0.707186030893217,
+    "monster_hit_rate": 0.37349397590361444,
+    "pressure_index": -14.840000000000002,
+    "bonus_attacks_per_run": 10.26
   },
   "depth3_orc_brutal_keen": {
     "scenario_id": "depth3_orc_brutal_keen",
     "runs": 50,
-    "deaths": 5,
-    "death_rate": 0.1,
-    "player_hit_rate": 0.7114047287899861,
-    "monster_hit_rate": 0.38764044943820225,
-    "pressure_index": -14.520000000000001,
-    "bonus_attacks_per_run": 9.96
+    "deaths": 7,
+    "death_rate": 0.14,
+    "player_hit_rate": 0.6693989071038251,
+    "monster_hit_rate": 0.40331491712707185,
+    "pressure_index": -14.8,
+    "bonus_attacks_per_run": 10.3
   },
   "depth3_orc_brutal_vicious": {
     "scenario_id": "depth3_orc_brutal_vicious",
     "runs": 50,
-    "deaths": 0,
-    "death_rate": 0.0,
-    "player_hit_rate": 0.72264631043257,
-    "monster_hit_rate": 0.3836065573770492,
-    "pressure_index": -9.620000000000001,
-    "bonus_attacks_per_run": 5.1
+    "deaths": 1,
+    "death_rate": 0.02,
+    "player_hit_rate": 0.6929824561403509,
+    "monster_hit_rate": 0.3474320241691843,
+    "pressure_index": -9.34,
+    "bonus_attacks_per_run": 5.0
   },
   "depth3_orc_brutal_fine": {
     "scenario_id": "depth3_orc_brutal_fine",
     "runs": 50,
-    "deaths": 0,
-    "death_rate": 0.0,
-    "player_hit_rate": 0.736318407960199,
-    "monster_hit_rate": 0.34977578475336324,
-    "pressure_index": -11.180000000000001,
-    "bonus_attacks_per_run": 6.7
+    "deaths": 1,
+    "death_rate": 0.02,
+    "player_hit_rate": 0.7044573643410853,
+    "monster_hit_rate": 0.39112050739957716,
+    "pressure_index": -11.18,
+    "bonus_attacks_per_run": 6.72
   },
   "depth3_orc_brutal_masterwork": {
     "scenario_id": "depth3_orc_brutal_masterwork",
     "runs": 50,
     "deaths": 0,
     "death_rate": 0.0,
-    "player_hit_rate": 0.7604690117252931,
-    "monster_hit_rate": 0.3671497584541063,
-    "pressure_index": -7.8,
-    "bonus_attacks_per_run": 3.54
+    "player_hit_rate": 0.7712305025996534,
+    "monster_hit_rate": 0.35858585858585856,
+    "pressure_index": -7.579999999999999,
+    "bonus_attacks_per_run": 3.36
   },
   "depth5_zombie": {
     "scenario_id": "depth5_zombie",
     "runs": 50,
-    "deaths": 24,
-    "death_rate": 0.48,
-    "player_hit_rate": 0.8702460850111857,
-    "monster_hit_rate": 0.33603046168491196,
-    "pressure_index": 15.200000000000003,
-    "bonus_attacks_per_run": 14.04
+    "deaths": 25,
+    "death_rate": 0.5,
+    "player_hit_rate": 0.8487530168946098,
+    "monster_hit_rate": 0.35636722606120436,
+    "pressure_index": 15.660000000000004,
+    "bonus_attacks_per_run": 13.38
   },
   "depth5_zombie_keen": {
     "scenario_id": "depth5_zombie_keen",
     "runs": 50,
-    "deaths": 5,
-    "death_rate": 0.1,
-    "player_hit_rate": 0.8680248007085917,
-    "monster_hit_rate": 0.33698030634573306,
-    "pressure_index": 4.840000000000003,
-    "bonus_attacks_per_run": 9.66
+    "deaths": 3,
+    "death_rate": 0.06,
+    "player_hit_rate": 0.8793565683646113,
+    "monster_hit_rate": 0.34721242060691604,
+    "pressure_index": 5.960000000000001,
+    "bonus_attacks_per_run": 9.4
   },
   "depth5_zombie_vicious": {
     "scenario_id": "depth5_zombie_vicious",
     "runs": 50,
-    "deaths": 0,
-    "death_rate": 0.0,
-    "player_hit_rate": 0.8695163104611924,
-    "monster_hit_rate": 0.3568627450980392,
-    "pressure_index": 2.6199999999999974,
-    "bonus_attacks_per_run": 6.78
+    "deaths": 1,
+    "death_rate": 0.02,
+    "player_hit_rate": 0.8733031674208145,
+    "monster_hit_rate": 0.34831460674157305,
+    "pressure_index": 3.6799999999999997,
+    "bonus_attacks_per_run": 7.04
   },
   "depth5_zombie_fine": {
     "scenario_id": "depth5_zombie_fine",
     "runs": 50,
-    "deaths": 18,
-    "death_rate": 0.36,
-    "player_hit_rate": 0.8584745762711864,
-    "monster_hit_rate": 0.35718341851220897,
-    "pressure_index": 11.619999999999997,
-    "bonus_attacks_per_run": 12.1
+    "deaths": 19,
+    "death_rate": 0.38,
+    "player_hit_rate": 0.8686868686868687,
+    "monster_hit_rate": 0.34870641169853767,
+    "pressure_index": 11.8,
+    "bonus_attacks_per_run": 12.16
   },
   "depth5_zombie_masterwork": {
     "scenario_id": "depth5_zombie_masterwork",
     "runs": 50,
-    "deaths": 0,
-    "death_rate": 0.0,
-    "player_hit_rate": 0.9090909090909091,
-    "monster_hit_rate": 0.40924092409240925,
-    "pressure_index": -2.1800000000000015,
-    "bonus_attacks_per_run": 3.86
+    "deaths": 2,
+    "death_rate": 0.04,
+    "player_hit_rate": 0.9144021739130435,
+    "monster_hit_rate": 0.3738819320214669,
+    "pressure_index": -3.540000000000001,
+    "bonus_attacks_per_run": 3.08
   },
   "depth2_orc_baseline": {
     "scenario_id": "depth2_orc_baseline",
     "runs": 40,
-    "deaths": 0,
-    "death_rate": 0.0,
-    "player_hit_rate": 0.7240990990990991,
-    "monster_hit_rate": 0.3348729792147806,
-    "pressure_index": -11.375,
-    "bonus_attacks_per_run": 7.775
+    "deaths": 3,
+    "death_rate": 0.075,
+    "player_hit_rate": 0.6723585912486659,
+    "monster_hit_rate": 0.3826086956521739,
+    "pressure_index": -11.925,
+    "bonus_attacks_per_run": 8.225
   },
   "depth2_orc_baseline_keen": {
     "scenario_id": "depth2_orc_baseline_keen",
     "runs": 40,
-    "deaths": 2,
-    "death_rate": 0.05,
-    "player_hit_rate": 0.6807095343680709,
-    "monster_hit_rate": 0.35947712418300654,
-    "pressure_index": -11.075000000000001,
-    "bonus_attacks_per_run": 7.525
+    "deaths": 1,
+    "death_rate": 0.025,
+    "player_hit_rate": 0.6740331491712708,
+    "monster_hit_rate": 0.3915929203539823,
+    "pressure_index": -11.325,
+    "bonus_attacks_per_run": 8.0
   },
   "depth2_orc_baseline_vicious": {
     "scenario_id": "depth2_orc_baseline_vicious",
     "runs": 40,
     "deaths": 0,
     "death_rate": 0.0,
-    "player_hit_rate": 0.740139211136891,
-    "monster_hit_rate": 0.4506172839506173,
-    "pressure_index": -6.7250000000000005,
-    "bonus_attacks_per_run": 3.425
+    "player_hit_rate": 0.7235421166306696,
+    "monster_hit_rate": 0.3404255319148936,
+    "pressure_index": -6.874999999999999,
+    "bonus_attacks_per_run": 3.525
   },
   "depth2_orc_baseline_fine": {
     "scenario_id": "depth2_orc_baseline_fine",
     "runs": 40,
     "deaths": 0,
     "death_rate": 0.0,
-    "player_hit_rate": 0.695583596214511,
-    "monster_hit_rate": 0.370242214532872,
-    "pressure_index": -8.625,
-    "bonus_attacks_per_run": 5.275
+    "player_hit_rate": 0.75,
+    "monster_hit_rate": 0.3786764705882353,
+    "pressure_index": -7.8999999999999995,
+    "bonus_attacks_per_run": 4.6
   },
   "depth2_orc_baseline_masterwork": {
     "scenario_id": "depth2_orc_baseline_masterwork",
     "runs": 40,
     "deaths": 0,
     "death_rate": 0.0,
-    "player_hit_rate": 0.7780898876404494,
-    "monster_hit_rate": 0.36065573770491804,
-    "pressure_index": -5.8500000000000005,
-    "bonus_attacks_per_run": 2.725
+    "player_hit_rate": 0.7844827586206896,
+    "monster_hit_rate": 0.3543307086614173,
+    "pressure_index": -5.5249999999999995,
+    "bonus_attacks_per_run": 2.4
+  },
+  "monster_slime_identity": {
+    "scenario_id": "monster_slime_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.8017902813299232,
+    "monster_hit_rate": 0.0,
+    "pressure_index": -52.13333333333333,
+    "bonus_attacks_per_run": 18.133333333333333
   }
 }

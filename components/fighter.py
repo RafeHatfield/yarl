@@ -1233,8 +1233,12 @@ class Fighter:
         import random
         from game_messages import Message
         
-        # 5% chance to corrode equipment on successful hit (deterministic under seeded runs)
-        if random.random() < 0.05:
+        # Phase 19: Tiered corrosion chance by slime type (5%/10%/15%)
+        # Get corrosion chance from entity config, default to 0.05 for backward compatibility
+        corrosion_chance = getattr(self.owner, 'corrosion_chance', 0.05)
+        
+        # Chance to corrode equipment on successful hit (deterministic under seeded runs)
+        if random.random() < corrosion_chance:
             # Phase 19: Only corrode target's METAL weapon
             weapon_corrosion = self._corrode_weapon(target)
             results.extend(weapon_corrosion)

@@ -272,6 +272,20 @@ To add a weapon variant or new base scenario:
 
 See `docs/BALANCE_SUITE.md` for detailed instructions.
 
+### Phase 19 Monster Identity Scenarios
+
+Phase 19 introduces monster-specific ability scenarios for regression testing:
+
+- **`scenario_monster_slime_identity.yaml`**: Validates Phase 19 slime mechanics
+  - Split Under Pressure (tiered splitting at low HP)
+  - Corrosive Contact (metal weapons only, 50% damage floor)
+  - Engulf (slow that persists while adjacent, decays after breaking contact)
+  - Location: `config/levels/scenario_monster_slime_identity.yaml`
+  - Included in full balance suite (30 runs, 80 turn limit)
+  - Purpose: Ongoing regression anchor for slime identity kit
+
+See `docs/PHASE_19_MONSTER_IDENTITY_AND_ABILITIES.md` for full details.
+
 -----------------------------------------------------------------------
 
 ## References

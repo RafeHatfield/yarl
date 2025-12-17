@@ -1,0 +1,107 @@
+# Scenario: Slime Identity Kit (Phase 19)
+# Purpose: Regression anchor for Phase 19 slime identity mechanics:
+#   - Split Under Pressure (tiered: large_slime → slime, greater_slime → large_slime)
+#   - Corrosive Contact (metal weapons only, 50% damage floor)
+#   - Engulf (slow that persists while adjacent, decays after breaking contact)
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+
+metadata:
+  scenario_id: monster_slime_identity
+  family: ability_tests
+  depth: 3
+
+scenario_id: monster_slime_identity
+name: "Slime Identity Kit (Phase 19)"
+description: "Validate Phase 19 slime mechanics: split, corrosion, engulf."
+
+depth: 3
+
+defaults:
+  turn_limit: 200
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 400  # 4 initial per run (120 base) + splits (~370 children) = ~490 total
+  max_player_deaths: 5  # Should win consistently with split mechanics working
+
+rooms:
+  - id: "slime_arena"
+    type: "arena"
+    width: 11
+    height: 11
+    description: "Arena for testing slime identity mechanics"
+    walls: "enclosed"
+
+monsters:
+  # Focused set of slimes to test all three tiers and their mechanics
+  # Minor slime: no split, but test engulf + 5% corrosion
+  - type: "slime"
+    count: 1
+    position: [7, 5]
+    facing: "west"
+    state: "aware"
+  
+  # Large slimes: split at 35% HP into 2-3 minor slimes (10% corrosion)
+  - type: "large_slime"
+    count: 1
+    position: [8, 4]
+    facing: "west"
+    state: "aware"
+  - type: "large_slime"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+  
+  # Greater slime: splits at 30% HP into 2 large slimes (15% corrosion)
+  - type: "greater_slime"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Metal dagger: subject to corrosion (test weapon)
+  - type: "dagger"
+    count: 1
+    position: [3, 4]
+  
+  # Wooden club: immune to corrosion (control weapon)
+  - type: "club"
+    count: 1
+    position: [3, 6]
+  
+  # Healing potions: allow extended combat to observe all mechanics
+  - type: "healing_potion"
+    count: 3
+    position: [2, 3]
+  - type: "healing_potion"
+    count: 2
+    position: [2, 7]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"  # Weak metal weapon (1d4+2 = 3-6 damage), subject to corrosion
+    armor: null  # No armor - weaker to allow longer combat and potential splits
+
+# Scenario design notes (Phase 19.3 - Split Rate Tuning + Full Mechanics Coverage):
+# - Player starts with metal dagger (subject to tiered corrosion)
+# - No armor: ensures sustained combat to observe all mechanics
+# - 4 slimes total (1 minor, 2 large, 1 greater) representing all tiers
+# - Tiered corrosion chances: minor=5%, large=10%, greater=15%
+# - Large slime HP=42 (with CON+2), splits at 40% = ~17 HP → 2-3 minor slimes
+# - Greater slime HP=83 (with CON+3), splits at 35% = ~29 HP → 2 large slimes
+# - Split rate: 100%+ of eligible slimes split (exceeds 33% target)
+# - Typical results (30 runs): ~150 splits, ~370 children spawned, ~490 total kills
+# - Engulf applies on slime hit, persists while adjacent, decays after breaking contact
+# - Corrosion: metal dagger degrades by 1 per corrosion event (floor at 50% base)
+# - Wooden club available as corrosion-immune alternative
+# - Split rate enforced via test_slime_identity_scenario_split_rate.py
+
+

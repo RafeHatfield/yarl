@@ -65,7 +65,7 @@ class RunMetrics:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
-        return {
+        result = {
             'turns_taken': self.turns_taken,
             'player_died': self.player_died,
             'kills_by_faction': dict(self.kills_by_faction),
@@ -80,6 +80,14 @@ class RunMetrics:
             'monster_hits': self.monster_hits,
             'portals_used': self.portals_used,
         }
+        # Phase 19: Split metrics (optional)
+        if hasattr(self, 'split_events_total'):
+            result['split_events_total'] = self.split_events_total
+        if hasattr(self, 'split_children_spawned'):
+            result['split_children_spawned'] = self.split_children_spawned
+        if hasattr(self, 'split_events_by_type'):
+            result['split_events_by_type'] = dict(self.split_events_by_type)
+        return result
 
 
 # =============================================================================
@@ -104,10 +112,14 @@ class AggregatedMetrics:
     total_monster_attacks: int = 0
     total_monster_hits: int = 0
     total_portals_used: int = 0
+    # Phase 19: Split metrics
+    total_split_events: int = 0
+    total_split_children_spawned: int = 0
+    total_split_events_by_type: Dict[str, int] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
-        return {
+        result = {
             'runs': self.runs,
             'average_turns': round(self.average_turns, 2),
             'player_deaths': self.player_deaths,
@@ -123,7 +135,12 @@ class AggregatedMetrics:
             'total_monster_attacks': self.total_monster_attacks,
             'total_monster_hits': self.total_monster_hits,
             'total_portals_used': self.total_portals_used,
+            # Phase 19: Split metrics
+            'total_split_events': self.total_split_events,
+            'total_split_children_spawned': self.total_split_children_spawned,
+            'total_split_events_by_type': dict(self.total_split_events_by_type),
         }
+        return result
 
 
 from services.scenario_metrics import (
@@ -288,6 +305,88 @@ def _create_game_state_from_map(result: ScenarioMapResult, constants: Dict[str, 
     )
 
 
+def _handle_combat_results(
+    results: List[Dict[str, Any]],
+    game_state: Any,
+    attacker: Any,
+    target: Any,
+    message_log: Any,
+) -> bool:
+    """Handle combat action results in a centralized, future-proof way.
+    
+    Processes all known result types from combat actions:
+    - "message": Add to message log
+    - "split": Execute split, spawn children, record kill
+    - "dead": Handle death, record kill
+    - Unknown types: Log warning to prevent silent drops
+    
+    Args:
+        results: List of result dictionaries from combat
+        game_state: Current game state
+        attacker: The attacking entity
+        target: The target entity
+        message_log: Message log for combat messages
+        
+    Returns:
+        bool: True if target died or split, False otherwise
+    """
+    collector = get_active_metrics_collector()
+    target_died = False
+    
+    # Known result types we handle
+    # Note: 'xp' is part of 'dead' result, not a separate type
+    KNOWN_RESULT_TYPES = {'message', 'split', 'dead', 'xp'}
+    
+    for result in results:
+        # Check for unknown result types (future-proofing)
+        unknown_types = set(result.keys()) - KNOWN_RESULT_TYPES
+        if unknown_types:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"Scenario harness: Unknown combat result types {unknown_types} "
+                f"from {attacker.name if attacker else 'unknown'} -> {target.name if target else 'unknown'}. "
+                f"These may not be handled correctly. Result: {result}"
+            )
+        
+        # Handle message
+        msg = result.get("message")
+        if msg:
+            message_log.add_message(msg)
+        
+        # Phase 19: Handle Split Under Pressure
+        split_data = result.get("split")
+        if split_data:
+            # Entity is splitting - execute the split
+            from services.slime_split_service import execute_split
+            spawned_children = execute_split(
+                split_data,
+                game_map=game_state.game_map,
+                entities=game_state.entities
+            )
+            # Add children to entities list
+            if spawned_children:
+                game_state.entities.extend(spawned_children)
+            
+            # Treat split like death for combat purposes
+            if split_data['original_entity'] == target:
+                target_died = True
+                if collector:
+                    collector.record_kill(attacker, split_data['original_entity'])
+        
+        # Handle death
+        dead_entity = result.get("dead")
+        if dead_entity:
+            # Record kill attribution
+            if collector:
+                collector.record_kill(attacker, dead_entity)
+            if dead_entity == target:
+                target_died = True
+            _handle_entity_death_simple(game_state, dead_entity, message_log)
+    
+    return target_died
+
+
 def _process_player_action(
     game_state: Any,
     action: Optional[Dict[str, Any]],
@@ -357,19 +456,11 @@ def _process_player_action(
             
             # Perform attack (with surprise flag if applicable)
             attack_results = player_fighter.attack_d20(target, is_surprise=is_surprise)
-            target_died = False
-            for result in attack_results:
-                msg = result.get("message")
-                if msg:
-                    message_log.add_message(msg)
-                dead_entity = result.get("dead")
-                if dead_entity:
-                    # Record kill attribution
-                    if collector:
-                        collector.record_kill(player, dead_entity)
-                    if dead_entity == target:
-                        target_died = True
-                    _handle_entity_death_simple(game_state, dead_entity, message_log)
+            
+            # Handle all combat results (centralized for future-proofing)
+            target_died = _handle_combat_results(
+                attack_results, game_state, player, target, message_log
+            )
             
             # Phase 13D: Check for player bonus attack (speed momentum system)
             # Only roll if target is still alive and player is faster than target
@@ -388,15 +479,11 @@ def _process_player_action(
                                 collector.record_bonus_attack(player, target)
                             # Execute bonus attack immediately
                             bonus_attack_results = player_fighter.attack_d20(target, is_surprise=False)
-                            for result in bonus_attack_results:
-                                msg = result.get("message")
-                                if msg:
-                                    message_log.add_message(msg)
-                                dead_entity = result.get("dead")
-                                if dead_entity:
-                                    if collector:
-                                        collector.record_kill(player, dead_entity)
-                                    _handle_entity_death_simple(game_state, dead_entity, message_log)
+                            
+                            # Handle all combat results (centralized for future-proofing)
+                            _handle_combat_results(
+                                bonus_attack_results, game_state, player, target, message_log
+                            )
         game_state.current_state = GameStates.ENEMY_TURN
         return
     
@@ -680,6 +767,17 @@ def run_scenario_many(
         total_monster_hits += run.monster_hits
         total_portals_used += getattr(run, "portals_used", 0)
     
+    # Phase 19: Aggregate split metrics
+    total_split_events = 0
+    total_split_children = 0
+    merged_split_by_type = {}
+    for run in all_runs:
+        total_split_events += getattr(run, "split_events_total", 0)
+        total_split_children += getattr(run, "split_children_spawned", 0)
+        if hasattr(run, "split_events_by_type"):
+            for monster_type, count in run.split_events_by_type.items():
+                merged_split_by_type[monster_type] = merged_split_by_type.get(monster_type, 0) + count
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -696,6 +794,9 @@ def run_scenario_many(
         total_monster_attacks=total_monster_attacks,
         total_monster_hits=total_monster_hits,
         total_portals_used=total_portals_used,
+        total_split_events=total_split_events,
+        total_split_children_spawned=total_split_children,
+        total_split_events_by_type=dict(merged_split_by_type),
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

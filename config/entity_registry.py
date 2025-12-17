@@ -104,6 +104,8 @@ class MonsterDefinition:
     damage_vulnerability: Optional[str] = None  # Damage type this monster is vulnerable to (+1 damage)
     # Phase 19: Regeneration ability
     regeneration_amount: int = 0  # HP regenerated per turn (0 = no regeneration)
+    # Phase 19: Tiered corrosion chance
+    corrosion_chance: float = 0.05  # Chance to corrode equipment on hit (default 5%)
     # Phase 19: Split Under Pressure config
     split_trigger_hp_pct: Optional[float] = None  # HP % threshold for splitting (e.g., 0.35 = 35%)
     split_child_type: Optional[str] = None  # Monster type to spawn as children
@@ -492,6 +494,8 @@ class EntityRegistry:
                     damage_vulnerability=monster_data.get('damage_vulnerability'),
                     # Phase 19: Regeneration ability
                     regeneration_amount=monster_data.get('regeneration_amount', 0),
+                    # Phase 19: Tiered corrosion chance
+                    corrosion_chance=monster_data.get('corrosion_chance', 0.05),
                     # Phase 19: Split Under Pressure config
                     split_trigger_hp_pct=monster_data.get('split_trigger_hp_pct'),
                     split_child_type=monster_data.get('split_child_type'),

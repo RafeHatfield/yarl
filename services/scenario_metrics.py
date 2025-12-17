@@ -32,6 +32,31 @@ class ScenarioMetricsCollector:
     def record_bonus_attack(self, attacker: Any, defender: Any) -> None:
         self.metrics.bonus_attacks_triggered += 1
     
+    def record_split_event(self, original_entity: Any, child_type: str, num_children: int) -> None:
+        """Record a slime split event.
+        
+        Args:
+            original_entity: The entity that split
+            child_type: Type of children spawned
+            num_children: Number of children spawned
+        """
+        # Increment total split counter
+        if not hasattr(self.metrics, 'split_events_total'):
+            self.metrics.split_events_total = 0
+        self.metrics.split_events_total += 1
+        
+        # Track by monster type
+        if not hasattr(self.metrics, 'split_events_by_type'):
+            self.metrics.split_events_by_type = {}
+        monster_type = getattr(original_entity, 'name', 'unknown')
+        self.metrics.split_events_by_type[monster_type] = \
+            self.metrics.split_events_by_type.get(monster_type, 0) + 1
+        
+        # Track children spawned
+        if not hasattr(self.metrics, 'split_children_spawned'):
+            self.metrics.split_children_spawned = 0
+        self.metrics.split_children_spawned += num_children
+    
     def record_player_attack(self, hit: bool) -> None:
         """Record a player attack attempt and whether it hit.
         

@@ -148,6 +148,15 @@ def execute_split(split_data: Dict[str, Any], game_map=None, entities=None) -> L
     if entities and original in entities:
         entities.remove(original)
     
+    # Record split event for metrics (if collector is active)
+    try:
+        from services.scenario_metrics import get_active_metrics_collector
+        collector = get_active_metrics_collector()
+        if collector:
+            collector.record_split_event(original, child_type, actual_children)
+    except ImportError:
+        pass  # Metrics not available
+    
     return spawned_children
 
 

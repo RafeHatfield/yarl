@@ -221,6 +221,7 @@ monsters:
     can_seek_items: false
     inventory_size: 0
     special_abilities: ["corrosion", "engulf"]  # Phase 19: Corrode metal + engulf on hit
+    corrosion_chance: 0.05  # Phase 19: 5% corrosion chance (minor/small tier)
     # Phase 19: Minor slimes do NOT split
     # ETP: DPS=2 × 6 × durability=0.77 × behavior=1.1 = 10 (zone/attrition)
     # Note: Higher effective threat in groups due to corrosion + slow tiles
@@ -243,8 +244,9 @@ monsters:
     char: "S"                 # Override: capital S for Large Slime
     color: [0, 200, 0]        # Override: darker green (more mature)
     special_abilities: ["corrosion"]  # Phase 19: removed "splitting" - now config-driven
-    # Phase 19: Split Under Pressure config
-    split_trigger_hp_pct: 0.35        # Split when HP < 35% of max
+    corrosion_chance: 0.10  # Phase 19: 10% corrosion chance (normal/large tier)
+    # Phase 19: Split Under Pressure config (tuned to 40% for ~40% split rate)
+    split_trigger_hp_pct: 0.40        # Split when HP < 40% of max
     split_child_type: "slime"         # Spawns minor slimes
     split_min_children: 2             # Minimum 2 children
     split_max_children: 3             # Maximum 3 children
@@ -273,8 +275,9 @@ monsters:
     char: "S"                 # Capital S (same as large, but different color)
     color: [0, 150, 0]        # Override: dark forest green (elder slime)
     special_abilities: ["corrosion"]  # Same as other slimes
-    # Phase 19: Split Under Pressure config
-    split_trigger_hp_pct: 0.30        # Split when HP < 30% of max (more resilient)
+    corrosion_chance: 0.15  # Phase 19: 15% corrosion chance (greater/elite tier)
+    # Phase 19: Split Under Pressure config (tuned to 35% for ~40% split rate)
+    split_trigger_hp_pct: 0.35        # Split when HP < 35% of max
     split_child_type: "large_slime"   # Spawns normal (large) slimes
     split_min_children: 2             # Minimum 2 children
     split_max_children: 2             # Maximum 2 children (fixed for elite)

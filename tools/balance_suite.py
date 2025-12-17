@@ -50,6 +50,9 @@ SCENARIO_MATRIX = [
     {"id": "depth2_orc_baseline_vicious", "runs": 40, "turn_limit": 100},
     {"id": "depth2_orc_baseline_fine", "runs": 40, "turn_limit": 100},
     {"id": "depth2_orc_baseline_masterwork", "runs": 40, "turn_limit": 100},
+    
+    # Phase 19 Monster Identity Scenarios
+    {"id": "monster_slime_identity", "runs": 30, "turn_limit": 80},
 ]
 
 # Drift thresholds for WARN/FAIL classification
