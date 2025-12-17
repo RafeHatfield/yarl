@@ -4,7 +4,7 @@
         eco-swarm-tight eco-swarm-tight-json eco-zombie-horde eco-zombie-horde-json \
         eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report \
         difficulty-collect difficulty-graphs difficulty-dashboard difficulty-all \
-        balance-suite balance-suite-fast balance-suite-baseline
+        balance-suite balance-suite-fast balance-suite-update-baseline balance-suite-update-baseline-fast
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -29,9 +29,10 @@ help:
 	@echo "CI / Balance:"
 	@echo "  make ci-quick              - Run quick CI checks (fast tests + ETP + loot)"
 	@echo "  make balance-ci-local      - Run full Balance CI locally (with coverage)"
-	@echo "  make balance-suite         - Run full balance suite (ecosystem + weapon variants)"
-	@echo "  make balance-suite-fast    - Run balance suite (fast mode)"
-	@echo "  make balance-suite-baseline - Create/update balance suite baseline"
+	@echo "  make balance-suite              - Run full balance suite (compare mode)"
+	@echo "  make balance-suite-fast         - Run balance suite (fast compare mode)"
+	@echo "  make balance-suite-update-baseline      - Update baseline (full)"
+	@echo "  make balance-suite-update-baseline-fast - Update baseline (fast)"
 	@echo ""
 	@echo "Bot Testing:"
 	@echo "  make bot         - Single bot run (watch the bot play)"
@@ -686,20 +687,9 @@ balance-suite:
 balance-suite-fast:
 	python3 tools/balance_suite.py --fast
 
-balance-suite-baseline:
-	@echo "🎯 Running balance suite and creating new baseline..."
-	@python3 tools/balance_suite.py
-	@echo ""
-	@echo "📊 Creating baseline from latest run..."
-	@mkdir -p reports/baselines
-	@LATEST_DIR=$$(cat reports/balance_suite/latest.txt 2>/dev/null || echo ""); \
-	if [ -z "$$LATEST_DIR" ]; then \
-		echo "❌ Error: No latest run found"; \
-		exit 1; \
-	fi; \
-	if [ ! -f "$$LATEST_DIR/summary.json" ]; then \
-		echo "❌ Error: summary.json not found in $$LATEST_DIR"; \
-		exit 1; \
-	fi; \
-	cp "$$LATEST_DIR/summary.json" reports/baselines/balance_suite_baseline.json; \
-	echo "✅ Baseline created: reports/baselines/balance_suite_baseline.json"
+# Baseline update targets - write new baseline and exit 0
+balance-suite-update-baseline:
+	python3 tools/balance_suite.py --update-baseline
+
+balance-suite-update-baseline-fast:
+	python3 tools/balance_suite.py --update-baseline --fast

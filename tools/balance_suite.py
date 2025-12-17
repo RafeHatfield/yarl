@@ -5,9 +5,14 @@ Phase 18 QOL: Orchestrates ecosystem_sanity runs across a curated scenario matri
 generates unified reports, and compares against stored baselines.
 
 Usage:
+    # Compare mode (CI) - exits non-zero on FAIL
     python3 tools/balance_suite.py
     python3 tools/balance_suite.py --fast
     python3 tools/balance_suite.py --baseline reports/baselines/custom_baseline.json
+    
+    # Baseline update mode - writes baseline, exits 0 on success
+    python3 tools/balance_suite.py --update-baseline
+    python3 tools/balance_suite.py --update-baseline --fast
 """
 
 import argparse
@@ -192,7 +197,7 @@ def generate_markdown_report(
     lines.append("\n## Verdict Summary")
     if baseline is None:
         lines.append("\n**Status:** NO_BASELINE")
-        lines.append("\nNo baseline found. Run `make balance-suite-baseline` to create one.")
+        lines.append("\nNo baseline found. Run `make balance-suite-update-baseline` to create one.")
     else:
         lines.append(f"\n- PASS: {verdict_summary.get('PASS', 0)}")
         lines.append(f"- WARN: {verdict_summary.get('WARN', 0)}")
@@ -297,6 +302,11 @@ def main() -> int:
         action="store_true",
         help="Skip bot soak (not yet implemented)",
     )
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="Update baseline mode: writes new baseline and exits 0 (ignores FAIL verdicts)",
+    )
     
     args = parser.parse_args()
     
@@ -317,16 +327,22 @@ def main() -> int:
     print(f"Output Directory: {out_dir}")
     print(f"Baseline: {args.baseline}")
     print(f"Fast Mode: {args.fast}")
+    print(f"Update Baseline Mode: {args.update_baseline}")
     print(f"{'='*60}\n")
     
-    # Load baseline (if exists)
+    # Load baseline (if exists) - for comparison/visibility only in update mode
     baseline_summary = None
     if args.baseline.exists():
         print(f"📊 Loading baseline: {args.baseline}")
         baseline_summary = json.loads(args.baseline.read_text(encoding="utf-8"))
+        if args.update_baseline:
+            print("    (comparison for visibility only; will write new baseline)")
     else:
         print(f"⚠️  No baseline found at {args.baseline}")
-        print("    Run 'make balance-suite-baseline' to create one.\n")
+        if args.update_baseline:
+            print("    (will create new baseline)")
+        else:
+            print("    Run 'make balance-suite-update-baseline' to create one.\n")
     
     # Run scenarios
     print(f"\n🎯 Running {len(SCENARIO_MATRIX)} scenarios...\n")
@@ -382,13 +398,40 @@ def main() -> int:
     latest_path.write_text(str(out_dir.resolve()), encoding="utf-8")
     print(f"✅ Latest pointer updated: {latest_path}")
     
-    # Final verdict
+    # Handle baseline update mode
+    if args.update_baseline:
+        print(f"\n{'='*60}")
+        print("🎯 BASELINE UPDATE MODE")
+        print(f"{'='*60}")
+        
+        # Write summary.json directly to the baseline path
+        args.baseline.parent.mkdir(parents=True, exist_ok=True)
+        args.baseline.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        print(f"✅ Baseline written: {args.baseline}")
+        
+        # Show comparison for visibility (if old baseline existed)
+        if baseline_summary is not None:
+            print(f"\n📊 Comparison with previous baseline:")
+            print(f"  PASS: {verdict_summary['PASS']}")
+            print(f"  WARN: {verdict_summary['WARN']}")
+            print(f"  FAIL: {verdict_summary['FAIL']}")
+            if verdict_summary["FAIL"] > 0:
+                print("\n⚠️  Note: FAILs against OLD baseline (now overwritten)")
+        else:
+            print("\n📊 First baseline created (no previous baseline to compare)")
+        
+        print(f"\n{'='*60}")
+        print("✅ Baseline update complete - exiting with code 0")
+        print(f"{'='*60}\n")
+        return 0
+    
+    # Compare mode - final verdict
     print(f"\n{'='*60}")
     if baseline_summary is None:
         print("Status: NO_BASELINE")
         print("Acceptance: PASS (no baseline to compare against)")
         print("\nTo create a baseline, run:")
-        print("  make balance-suite-baseline")
+        print("  make balance-suite-update-baseline")
     else:
         print(f"Status: COMPLETED")
         print(f"  PASS: {verdict_summary['PASS']}")

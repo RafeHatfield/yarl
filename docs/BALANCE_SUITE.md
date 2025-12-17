@@ -49,10 +49,19 @@ Compares current metrics against baseline (if exists) and classifies each scenar
 ### Creating/Updating Baseline
 
 ```bash
-make balance-suite-baseline
+make balance-suite-update-baseline
 ```
 
 Runs the full suite and stores the results as the new baseline in `reports/baselines/balance_suite_baseline.json`.
+
+**Note:** This command exits 0 on success, even if the old baseline would have shown FAILs.
+The intent is to declare "this is the new ground truth."
+
+For a fast baseline update:
+
+```bash
+make balance-suite-update-baseline-fast
+```
 
 ## Output Structure
 
@@ -147,7 +156,7 @@ The baseline represents the "expected" state of combat balance. Update it when:
 1. Make combat changes
 2. Run `make balance-suite` to see drift
 3. Validate changes are intentional
-4. Run `make balance-suite-baseline` to establish new baseline
+4. Run `make balance-suite-update-baseline` to establish new baseline
 5. Commit the new baseline file to version control
 
 ## Interpreting Reports
@@ -170,7 +179,7 @@ The baseline represents the "expected" state of combat balance. Update it when:
 
 - First run or baseline missing
 - Report shows current metrics only
-- Run `make balance-suite-baseline` to create one
+- Run `make balance-suite-update-baseline` to create one
 
 ## Integration with CI
 

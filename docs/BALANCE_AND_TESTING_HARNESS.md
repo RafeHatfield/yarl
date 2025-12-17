@@ -18,7 +18,7 @@ If you only remember three things:
 
     make balance-suite
 
-This is the one command that matters most.
+This is the one command that matters most. Exits non-zero if balance drifts beyond thresholds.
 
 ### 2. For fast iteration while tuning YAML or gear:
 
@@ -28,9 +28,14 @@ This skips slow soaks but still catches balance regressions.
 
 ### 3. When results feel good and you want to lock them in:
 
-    make balance-suite-baseline
+    make balance-suite-update-baseline
 
 This updates the canonical baseline used for future comparisons.
+**Important:** This command exits 0 on success, even if the old baseline would have shown FAILs.
+
+For fast baseline updates:
+
+    make balance-suite-update-baseline-fast
 
 Everything else exists to support, feed, or debug this pipeline.
 
@@ -162,7 +167,12 @@ If you changed combat logic, affixes, or damage types:
 Before merging or checkpointing a milestone:
 
     make balance-suite
-    make balance-suite-baseline
+    make balance-suite-update-baseline
+
+**Note on baseline updates:**
+- `balance-suite-update-baseline` writes the baseline and exits 0 (success)
+- It does NOT fail due to thresholds against the old baseline
+- This is intentional: you're declaring "this is the new ground truth"
 
 -----------------------------------------------------------------------
 
@@ -188,7 +198,7 @@ Rules:
 - **PASS**: All metrics within acceptable drift (changes < WARN threshold)
 - **WARN**: One or more metrics show notable drift (≥ WARN, < FAIL)
 - **FAIL**: One or more metrics exceed thresholds (≥ FAIL)
-- **NO_BASELINE**: No baseline exists yet (run `make balance-suite-baseline`)
+- **NO_BASELINE**: No baseline exists yet (run `make balance-suite-update-baseline`)
 
 **Example drift classification:**
 - Death rate +0.08 → PASS (below 0.10 WARN threshold)
@@ -258,7 +268,7 @@ To add a weapon variant or new base scenario:
 1. Create YAML in `config/levels/scenario_<name>.yaml`
 2. Add to `SCENARIO_MATRIX` in `tools/balance_suite.py`
 3. Run `make balance-suite` to test
-4. Update baseline with `make balance-suite-baseline` when ready
+4. Update baseline with `make balance-suite-update-baseline` when ready
 
 See `docs/BALANCE_SUITE.md` for detailed instructions.
 

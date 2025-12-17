@@ -1,0 +1,119 @@
+{
+  "timestamp": "20251216_144557",
+  "scenarios": [
+    {
+      "id": "depth3_orc_brutal_vicious",
+      "runs": 50,
+      "turn_limit": 110
+    },
+    {
+      "id": "depth2_orc_baseline_masterwork",
+      "runs": 40,
+      "turn_limit": 100
+    }
+  ],
+  "configurations": {
+    "MATERIAL_ONLY": {
+      "PHASE18_CRIT_THRESHOLD": "0",
+      "PHASE18_DAMAGE_TYPE": "0",
+      "description": "Material only (Phase 18 disabled)"
+    },
+    "DAMAGE_TYPE_ONLY": {
+      "PHASE18_CRIT_THRESHOLD": "0",
+      "PHASE18_DAMAGE_TYPE": "1",
+      "description": "Damage type only"
+    },
+    "CRIT_THRESHOLD_ONLY": {
+      "PHASE18_CRIT_THRESHOLD": "1",
+      "PHASE18_DAMAGE_TYPE": "0",
+      "description": "Crit threshold only"
+    },
+    "BOTH_ENABLED": {
+      "PHASE18_CRIT_THRESHOLD": "1",
+      "PHASE18_DAMAGE_TYPE": "1",
+      "description": "Both enabled (current)"
+    }
+  },
+  "baselines": {
+    "depth3_orc_brutal_vicious": 0.2919254658385093,
+    "depth2_orc_baseline_masterwork": 0.30303030303030304
+  },
+  "results": {
+    "depth3_orc_brutal_vicious": {
+      "MATERIAL_ONLY": {
+        "monster_hit_rate": 0.3289036544850498,
+        "delta_from_baseline": 0.03697818864654051,
+        "metrics": {
+          "monster_attacks": 301,
+          "monster_hits": 99,
+          "monster_hit_rate": 0.3289036544850498
+        }
+      },
+      "DAMAGE_TYPE_ONLY": {
+        "monster_hit_rate": 0.37846153846153846,
+        "delta_from_baseline": 0.08653607262302915,
+        "metrics": {
+          "monster_attacks": 325,
+          "monster_hits": 123,
+          "monster_hit_rate": 0.37846153846153846
+        }
+      },
+      "CRIT_THRESHOLD_ONLY": {
+        "monster_hit_rate": 0.3894080996884735,
+        "delta_from_baseline": 0.0974826338499642,
+        "metrics": {
+          "monster_attacks": 321,
+          "monster_hits": 125,
+          "monster_hit_rate": 0.3894080996884735
+        }
+      },
+      "BOTH_ENABLED": {
+        "monster_hit_rate": 0.40540540540540543,
+        "delta_from_baseline": 0.11347993956689612,
+        "metrics": {
+          "monster_attacks": 333,
+          "monster_hits": 135,
+          "monster_hit_rate": 0.40540540540540543
+        }
+      }
+    },
+    "depth2_orc_baseline_masterwork": {
+      "MATERIAL_ONLY": {
+        "monster_hit_rate": 0.3217391304347826,
+        "delta_from_baseline": 0.018708827404479544,
+        "metrics": {
+          "monster_attacks": 115,
+          "monster_hits": 37,
+          "monster_hit_rate": 0.3217391304347826
+        }
+      },
+      "DAMAGE_TYPE_ONLY": {
+        "monster_hit_rate": 0.3783783783783784,
+        "delta_from_baseline": 0.07534807534807536,
+        "metrics": {
+          "monster_attacks": 111,
+          "monster_hits": 42,
+          "monster_hit_rate": 0.3783783783783784
+        }
+      },
+      "CRIT_THRESHOLD_ONLY": {
+        "monster_hit_rate": 0.3879310344827586,
+        "delta_from_baseline": 0.08490073145245558,
+        "metrics": {
+          "monster_attacks": 116,
+          "monster_hits": 45,
+          "monster_hit_rate": 0.3879310344827586
+        }
+      },
+      "BOTH_ENABLED": {
+        "monster_hit_rate": 0.3969465648854962,
+        "delta_from_baseline": 0.09391626185519314,
+        "metrics": {
+          "monster_attacks": 131,
+          "monster_hits": 52,
+          "monster_hit_rate": 0.3969465648854962
+        }
+      }
+    }
+  }
+}

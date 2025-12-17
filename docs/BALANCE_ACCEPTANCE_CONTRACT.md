@@ -137,8 +137,8 @@ make balance-suite-fast
 cat reports/balance_suite/latest.txt
 cat $(cat reports/balance_suite/latest.txt)/balance_report.md
 
-# If results are desired
-make balance-suite-baseline
+# If results are desired, update the baseline
+make balance-suite-update-baseline
 
 # Commit the updated baseline
 git add reports/baselines/balance_suite_baseline.json
