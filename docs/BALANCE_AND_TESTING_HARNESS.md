@@ -284,6 +284,15 @@ Phase 19 introduces monster-specific ability scenarios for regression testing:
   - Included in full balance suite (30 runs, 80 turn limit)
   - Purpose: Ongoing regression anchor for slime identity kit
 
+- **`scenario_monster_skeleton_identity.yaml`**: Validates Phase 19 skeleton mechanics
+  - Shield Wall (+1 AC per adjacent skeleton ally, 4-way adjacency, NO CAP)
+  - Damage Type Modifiers (50% resist piercing, 150% vuln bludgeoning)
+  - Formation AI (skeletons try to group up to maximize shield wall bonus)
+  - Bone Pile (spawns on death as future necromancer hook)
+  - Location: `config/levels/scenario_monster_skeleton_identity.yaml`
+  - Included in full balance suite (30 runs, 200 turn limit)
+  - Purpose: Ongoing regression anchor for skeleton identity kit
+
 See `docs/PHASE_19_MONSTER_IDENTITY_AND_ABILITIES.md` for full details.
 
 -----------------------------------------------------------------------
