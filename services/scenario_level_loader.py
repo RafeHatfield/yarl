@@ -43,12 +43,35 @@ class ScenarioBuildError(Exception):
     """Raised when a scenario map or entity fails to build."""
 
 
+class _ModuleLevelRandom:
+    """Wrapper that delegates to module-level random functions.
+    
+    This allows build_scenario_map to use the module-level random (which is
+    seeded by set_global_seed) by default, while still accepting an explicit
+    random.Random instance for tests.
+    """
+    
+    def randint(self, a: int, b: int) -> int:
+        return random.randint(a, b)
+    
+    def choice(self, seq):
+        return random.choice(seq)
+    
+    def shuffle(self, seq):
+        return random.shuffle(seq)
+
+
+# Singleton instance for module-level random delegation
+_module_rng = _ModuleLevelRandom()
+
+
 def build_scenario_map(scenario, rng: Optional[random.Random] = None) -> ScenarioMapResult:
     """Construct a simple map plus entities for a scenario.
 
     Args:
         scenario: ScenarioDefinition
-        rng: Optional random.Random for deterministic tests
+        rng: Optional random.Random for deterministic tests. If None, uses
+             the module-level random (which respects set_global_seed).
 
     Returns:
         ScenarioMapResult with map, player, and all entities (player first)
@@ -56,7 +79,8 @@ def build_scenario_map(scenario, rng: Optional[random.Random] = None) -> Scenari
     Raises:
         ScenarioBuildError: on construction failures (invalid types, etc.)
     """
-    rng = rng or random.Random()
+    # Use module-level random by default (respects set_global_seed)
+    rng = rng or _module_rng
 
     # Map dimensions: derive from rooms if present; otherwise use a small arena.
     default_width = 30

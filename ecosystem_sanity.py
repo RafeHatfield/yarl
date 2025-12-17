@@ -106,6 +106,7 @@ def run_scenario(
     verbose: bool,
     fail_on_expected: bool,
     export_json: Optional[str],
+    seed_base: Optional[int] = None,
 ) -> int:
     """Run a scenario and display results.
     
@@ -115,6 +116,9 @@ def run_scenario(
         turn_limit: Maximum turns per run
         player_bot: Bot policy name
         verbose: Enable verbose output
+        fail_on_expected: Exit non-zero if expected invariants fail
+        export_json: Path to write JSON export (or None)
+        seed_base: Base seed for deterministic runs (or None for non-deterministic)
         
     Returns:
         Exit code (0 for success, 1 for error)
@@ -156,11 +160,13 @@ def run_scenario(
     
     # Run the scenario
     print("Running scenarios...")
+    if seed_base is not None:
+        print(f"  (deterministic mode, seed_base={seed_base})")
     if verbose:
         print()
     
     try:
-        metrics = run_scenario_many(scenario, policy, runs, turn_limit)
+        metrics = run_scenario_many(scenario, policy, runs, turn_limit, seed_base=seed_base)
     except ScenarioInvariantError as e:
         print(f"Scenario invariant failed: {e}")
         return 1
@@ -379,6 +385,12 @@ Examples:
         metavar='PATH',
         help='Write aggregated metrics JSON to PATH'
     )
+    parser.add_argument(
+        '--seed-base',
+        type=int,
+        default=None,
+        help='Base seed for deterministic runs (enables reproducible results)'
+    )
     
     args = parser.parse_args()
     
@@ -420,6 +432,7 @@ Examples:
             verbose=args.verbose,
             fail_on_expected=args.fail_on_expected,
             export_json=args.export_json,
+            seed_base=args.seed_base,
         )
     
     # Should not reach here due to mutually exclusive group
