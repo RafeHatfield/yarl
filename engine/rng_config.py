@@ -16,8 +16,13 @@ Usage:
     
     # Query current seed:
     current = get_current_seed()
+    
+    # For deterministic scenario runs (balance suite):
+    from engine.rng_config import stable_scenario_seed
+    seed = stable_scenario_seed("depth3_orc_brutal", run_idx=5, seed_base=1337)
 """
 
+import hashlib
 import logging
 import random
 import time
@@ -78,4 +83,40 @@ def reset_rng_state() -> None:
     global _current_seed
     _current_seed = None
     logger.debug("RNG state reset")
+
+
+def stable_scenario_seed(scenario_id: str, run_idx: int, seed_base: int = 1337) -> int:
+    """Generate a stable, deterministic seed for a scenario run.
+    
+    Uses SHA-256 to produce a reproducible seed from the combination of
+    scenario_id, run index, and a base seed. This ensures:
+    - Same inputs always produce same seed (deterministic)
+    - Different runs get different but predictable seeds
+    - Seed is stable across Python versions (unlike built-in hash())
+    
+    Args:
+        scenario_id: Unique identifier for the scenario (e.g., "depth3_orc_brutal")
+        run_idx: Zero-based index of the current run within the batch
+        seed_base: Base seed value (default: 1337). Change this to get
+                   an entirely different sequence of runs.
+    
+    Returns:
+        int: A stable 32-bit seed value suitable for random.seed()
+    
+    Example:
+        >>> stable_scenario_seed("depth3_orc_brutal", 0, 1337)
+        1234567890  # Always the same for these inputs
+        >>> stable_scenario_seed("depth3_orc_brutal", 1, 1337)
+        987654321   # Different but also stable
+    """
+    # Create a unique string from all inputs
+    key = f"{scenario_id}:{run_idx}:{seed_base}"
+    
+    # Hash with SHA-256 (stable across Python versions and platforms)
+    hash_bytes = hashlib.sha256(key.encode('utf-8')).digest()
+    
+    # Take first 4 bytes as a 32-bit unsigned int
+    seed = int.from_bytes(hash_bytes[:4], byteorder='big')
+    
+    return seed
 
