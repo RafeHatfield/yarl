@@ -14,7 +14,7 @@ from typing import Optional
 from entity import Entity
 from components.component_registry import ComponentType
 from components.fighter import Fighter
-from components.ai import BasicMonster, SlimeAI, BossAI
+from components.ai import BasicMonster, SlimeAI, BossAI, SkeletonAI
 from components.inventory import Inventory
 from components.equipment import Equipment
 from components.faction import Faction, get_faction_from_string
@@ -121,6 +121,21 @@ class MonsterFactory(FactoryBase):
                 monster.split_weights = getattr(monster_def, 'split_weights', None)
                 logger.debug(f"Added Split Under Pressure config to {monster_def.name}: trigger={monster.split_trigger_hp_pct}, child_type={monster.split_child_type}")
             
+            # Phase 19: Set Shield Wall config if defined (skeleton identity)
+            if hasattr(monster_def, 'shieldwall_ac_per_adjacent'):
+                monster.shieldwall_ac_per_adjacent = monster_def.shieldwall_ac_per_adjacent
+                logger.debug(f"Added Shield Wall to {monster_def.name}: +{monster.shieldwall_ac_per_adjacent} AC per adjacent ally")
+            
+            # Phase 19: Set damage type modifiers if defined (skeleton identity)
+            if hasattr(monster_def, 'damage_type_modifiers'):
+                monster.damage_type_modifiers = monster_def.damage_type_modifiers
+                logger.debug(f"Added damage type modifiers to {monster_def.name}: {monster.damage_type_modifiers}")
+            
+            # Phase 19: Set death spawns if defined (bone pile on skeleton death)
+            if hasattr(monster_def, 'death_spawns'):
+                monster.death_spawns = monster_def.death_spawns
+                logger.debug(f"Added death spawn to {monster_def.name}: {monster.death_spawns}")
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai
@@ -187,6 +202,8 @@ class MonsterFactory(FactoryBase):
             return BossAI()
         elif ai_type == "slime":
             return SlimeAI()
+        elif ai_type == "skeleton":
+            return SkeletonAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()

@@ -708,6 +708,7 @@ def run_scenario_many(
     bot_policy: BotPolicy,
     runs: int,
     turn_limit: int,
+    seed_base: Optional[int] = None,
 ) -> AggregatedMetrics:
     """Run a scenario multiple times and aggregate metrics.
     
@@ -716,11 +717,14 @@ def run_scenario_many(
         bot_policy: BotPolicy for player control
         runs: Number of times to run the scenario
         turn_limit: Maximum turns per run
+        seed_base: Base seed for deterministic runs (or None for non-deterministic)
         
     Returns:
         AggregatedMetrics with combined data from all runs
     """
     logger.info(f"Starting {runs} scenario runs: {scenario.scenario_id}")
+    if seed_base is not None:
+        logger.info(f"Deterministic mode enabled: seed_base={seed_base}")
     
     # Collect individual run results
     all_runs: List[RunMetrics] = []
@@ -730,6 +734,13 @@ def run_scenario_many(
         
         # Reset any necessary state between runs
         _reset_global_services()
+        
+        # Set deterministic seed for this run if seed_base is provided
+        if seed_base is not None:
+            from engine.rng_config import stable_scenario_seed, set_global_seed
+            run_seed = stable_scenario_seed(scenario.scenario_id, run_num - 1, seed_base)
+            set_global_seed(run_seed)
+            logger.debug(f"Run {run_num}: seed={run_seed}")
         
         # Run the scenario
         run_metrics = run_scenario_once(scenario, bot_policy, turn_limit)
@@ -839,6 +850,13 @@ def _reset_global_services() -> None:
     try:
         from services.floor_state_manager import reset_floor_state_manager
         reset_floor_state_manager()
+    except ImportError:
+        pass
+    
+    # Reset identification manager (caches item identification decisions)
+    try:
+        from config.identification_manager import reset_identification_manager
+        reset_identification_manager()
     except ImportError:
         pass
 

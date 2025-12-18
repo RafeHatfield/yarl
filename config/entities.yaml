@@ -141,6 +141,49 @@ monsters:
     # ETP: DPS=5 × 6 × durability=0.77 × behavior=0.9 = 21 (fragile)
     etp_base: 21
 
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: SKELETON SHIELD WALL ENEMY
+  # Skeletons form defensive walls and have damage type identity
+  # ═══════════════════════════════════════════════════════════
+  
+  # Skeleton - Shield wall enemy with damage type identity
+  skeleton:
+    stats:
+      hp: 20
+      power: 0
+      defense: 0
+      xp: 30
+      damage_min: 3           # Weak individual attacks: 3-5
+      damage_max: 5
+      # D&D-style stats
+      strength: 10            # Average (0 modifier)
+      dexterity: 12           # Slightly agile (+1 to-hit, +1 AC)
+      constitution: 10        # Average
+      # Phase 8: Accuracy & Evasion
+      accuracy: 2             # Basic accuracy
+      evasion: 1              # Some dodge ability
+    char: "s"
+    color: [200, 200, 200]    # Bone white
+    ai_type: "skeleton"       # Phase 19: Custom skeleton AI for formation
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Skeletons are undead with no flesh
+    tags: ["undead", "no_flesh", "low_undead"]
+    # Phase 19: Shield Wall ability - +1 AC per adjacent skeleton (NO CAP)
+    shieldwall_ac_per_adjacent: 1  # Bonus AC per adjacent skeleton ally
+    # Phase 19: Damage type modifiers (50% resist piercing, 50% vuln bludgeoning)
+    damage_type_modifiers:
+      piercing: 0.5           # Takes 50% damage from piercing
+      bludgeoning: 1.5        # Takes 150% damage from bludgeoning
+    # Phase 19: Bone pile on death (future necromancer hook)
+    death_spawns: "bone_pile"
+    # Skeletons don't seek items - mindless undead
+    can_seek_items: false
+    inventory_size: 0
+    # ETP: DPS=4 × 6 × durability=1.03 × behavior=1.1 (formation bonus) = 27
+    etp_base: 27
+
   # Stronger troll enemy  
   troll:
     stats:
@@ -1811,6 +1854,20 @@ map_features:
     render_order: "item"
     sign_type: "hint"
   
+  # ============================================================================
+  # PHASE 19: BONE PILE - Skeleton death remnant (future necromancer hook)
+  # ============================================================================
+  
+  bone_pile:
+    char: "%"
+    color: [180, 180, 180]    # Light gray (bones)
+    blocks: false
+    render_order: "item"
+    description: "A pile of bones from a fallen skeleton. Perhaps a necromancer could make use of these..."
+    # Future: Can be used with "Raise Dead" spell or necromancer abilities
+    # For now: Cosmetic/lore hook
+    is_bone_pile: true
+
   # ============================================================================
   # CORRIDOR DOORS - Basic doors placed during corridor connections
   # ============================================================================

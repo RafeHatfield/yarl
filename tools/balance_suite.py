@@ -53,6 +53,7 @@ SCENARIO_MATRIX = [
     
     # Phase 19 Monster Identity Scenarios
     {"id": "monster_slime_identity", "runs": 30, "turn_limit": 80},
+    {"id": "monster_skeleton_identity", "runs": 30, "turn_limit": 200},
 ]
 
 # Drift thresholds for WARN/FAIL classification
@@ -69,7 +70,13 @@ THRESHOLDS = {
 # CORE LOGIC
 # ============================================================================
 
-def run_ecosystem_scenario(scenario_id: str, runs: int, turn_limit: int, output_path: Path) -> bool:
+def run_ecosystem_scenario(
+    scenario_id: str,
+    runs: int,
+    turn_limit: int,
+    output_path: Path,
+    seed_base: int = 1337,
+) -> bool:
     """Run ecosystem_sanity for a single scenario and export JSON.
     
     Args:
@@ -77,6 +84,7 @@ def run_ecosystem_scenario(scenario_id: str, runs: int, turn_limit: int, output_
         runs: Number of runs
         turn_limit: Turn limit per run
         output_path: Where to write JSON export
+        seed_base: Base seed for deterministic runs (default: 1337)
         
     Returns:
         True if successful, False otherwise
@@ -89,6 +97,7 @@ def run_ecosystem_scenario(scenario_id: str, runs: int, turn_limit: int, output_
         "--turn-limit", str(turn_limit),
         "--player-bot", "tactical_fighter",
         "--export-json", str(output_path),
+        "--seed-base", str(seed_base),
     ]
     
     print(f"  Running {scenario_id} ({runs} runs, {turn_limit} turns)...")
@@ -310,6 +319,12 @@ def main() -> int:
         action="store_true",
         help="Update baseline mode: writes new baseline and exits 0 (ignores FAIL verdicts)",
     )
+    parser.add_argument(
+        "--seed-base",
+        type=int,
+        default=1337,
+        help="Base seed for deterministic scenario runs (default: 1337)",
+    )
     
     args = parser.parse_args()
     
@@ -331,6 +346,7 @@ def main() -> int:
     print(f"Baseline: {args.baseline}")
     print(f"Fast Mode: {args.fast}")
     print(f"Update Baseline Mode: {args.update_baseline}")
+    print(f"Seed Base: {args.seed_base}")
     print(f"{'='*60}\n")
     
     # Load baseline (if exists) - for comparison/visibility only in update mode
@@ -358,7 +374,7 @@ def main() -> int:
         turn_limit = scenario_config["turn_limit"]
         raw_json_path = raw_dir / f"{scenario_id}.json"
         
-        success = run_ecosystem_scenario(scenario_id, runs, turn_limit, raw_json_path)
+        success = run_ecosystem_scenario(scenario_id, runs, turn_limit, raw_json_path, args.seed_base)
         if not success:
             failed.append(scenario_id)
             continue
