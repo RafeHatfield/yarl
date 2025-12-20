@@ -5,7 +5,7 @@ such as negative HP, broken targeting, and other game-breaking issues.
 """
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 import sys
 import os
 import pytest
@@ -22,6 +22,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.item import Item
 from item_functions import heal, cast_confuse, cast_fireball
+from components.component_registry import ComponentType
 
 
 class TestDeathSystemRegression(unittest.TestCase):

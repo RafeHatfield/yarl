@@ -39,7 +39,9 @@ level_overrides:
       monsters:
         # Just a few weak monsters for testing
         - type: "orc"
-          count: 2
+          count: "1-6"
+        - type: "orc_chieftain"
+          count: "1-3"    # ETP 57 base
       
       map_features:
         # CHESTS - Test all types

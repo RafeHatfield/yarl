@@ -301,11 +301,25 @@ class MovementService:
             # Spike trap: damage + bleed
             fighter = player.components.get(ComponentType.FIGHTER)
             if fighter:
+                from services.damage_service import apply_damage
+                
                 damage = trap.spike_damage
-                fighter.take_damage(damage)
                 result.messages.append({"message": MB.player_hit(f"Spikes pierce you for {damage} damage!")})
                 
-                # Apply bleed status effect
+                # Apply damage using centralized service (handles death automatically)
+                damage_results = apply_damage(
+                    self.state_manager,
+                    player,
+                    damage,
+                    cause="spike_trap"
+                )
+                
+                # Check if player died (service already finalized death, just need to stop processing)
+                for damage_result in damage_results:
+                    if damage_result.get("dead") == player:
+                        return  # Don't apply bleed to dead player
+                
+                # Apply bleed status effect (only if player survived)
                 status_effects = player.components.get(ComponentType.STATUS_EFFECTS)
                 if status_effects:
                     status_effects.add_effect("bleed", {

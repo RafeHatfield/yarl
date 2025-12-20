@@ -193,7 +193,9 @@ class SpellExecutor:
             path = self._bresenham_line(caster.x, caster.y, target.x, target.y)
             spell.visual_effect(path)
         
-        # Apply damage (with damage type for resistance)
+        # Apply damage using centralized damage service
+        from services.damage_service import apply_damage
+        
         damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
         message_text = spell.success_message or f"The {spell.name} strikes the {target.name} for {damage} damage!"
         results.append(
@@ -203,8 +205,20 @@ class SpellExecutor:
                 "message": MB.spell_effect(message_text.format(target.name, damage)),
             }
         )
-        target_fighter = target.require_component(ComponentType.FIGHTER)
-        results.extend(target_fighter.take_damage(damage, damage_type=damage_type_str))
+        
+        # Get state_manager from kwargs (passed from game_actions)
+        state_manager = kwargs.get('state_manager')
+        
+        # Apply damage with centralized service (handles death automatically)
+        damage_results = apply_damage(
+            state_manager,
+            target,
+            damage,
+            cause=f"spell:{spell.name}",
+            attacker_entity=caster,
+            damage_type=damage_type_str
+        )
+        results.extend(damage_results)
         
         return results
     
@@ -263,6 +277,11 @@ class SpellExecutor:
         else:
             damage = self._calculate_damage(spell.damage) if spell.damage else 0
         
+        # Get state_manager from kwargs for damage service
+        from services.damage_service import apply_damage
+        state_manager = kwargs.get('state_manager')
+        damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
+        
         for entity in entities:
             entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
             if entity_fighter:
@@ -277,9 +296,16 @@ class SpellExecutor:
                             )
                         }
                     )
-                    # Apply damage with type for resistance
-                    damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
-                    results.extend(entity_fighter.take_damage(damage, damage_type=damage_type_str))
+                    # Apply damage using centralized service (handles death automatically)
+                    damage_results = apply_damage(
+                        state_manager,
+                        entity,
+                        damage,
+                        cause=f"spell:{spell.name}",
+                        attacker_entity=caster,
+                        damage_type=damage_type_str
+                    )
+                    results.extend(damage_results)
         
         # Create ground hazards if defined
         if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager'):
@@ -362,8 +388,12 @@ class SpellExecutor:
         if spell.visual_effect:
             spell.visual_effect(cone_tiles)
         
-        # Deal damage to entities in cone
+        # Deal damage to entities in cone using centralized damage service
+        from services.damage_service import apply_damage
+        
         damage = self._calculate_damage(spell.damage) if spell.damage else 0
+        state_manager = kwargs.get('state_manager')
+        damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
         
         for entity in entities:
             if entity.fighter and (entity.x, entity.y) in cone_tiles:
@@ -374,9 +404,16 @@ class SpellExecutor:
                         )
                     }
                 )
-                # Apply damage with type for resistance
-                damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
-                results.extend(entity.fighter.take_damage(damage, damage_type=damage_type_str))
+                # Apply damage using centralized service (handles death automatically)
+                damage_results = apply_damage(
+                    state_manager,
+                    entity,
+                    damage,
+                    cause=f"spell:{spell.name}",
+                    attacker_entity=caster,
+                    damage_type=damage_type_str
+                )
+                results.extend(damage_results)
         
         # Create ground hazards if defined
         if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager'):

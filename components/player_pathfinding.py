@@ -252,6 +252,7 @@ class PlayerPathfinding:
             fov = tcod.map.Map(game_map.width, game_map.height)
         
         # Scan the current map each turn and set all the walls as unwalkable
+        # Note: fov arrays use [y, x] indexing, game_map.tiles uses [x][y] indexing
         for y1 in range(game_map.height):
             for x1 in range(game_map.width):
                 fov.transparent[y1, x1] = not game_map.tiles[x1][y1].block_sight
@@ -303,7 +304,10 @@ class PlayerPathfinding:
         logger.debug(f"Computing path to ({target_x}, {target_y}), in_fov={destination_in_fov}, "
                     f"max_length={max_path_length}")
         
-        cost = fov.walkable.astype("int8")
+        # Create cost map for A*
+        # tcod.path.AStar expects: non-zero = walkable (cost), zero = blocked
+        # fov.walkable is indexed as [y, x], but AStar expects cost[x, y], so transpose
+        cost = fov.walkable.T.astype("int8")
         astar = tcod.path.AStar(cost, diagonal=pathfinding_config.DIAGONAL_MOVE_COST)
         path: List[Tuple[int, int]] = astar.get_path(self.owner.x, self.owner.y, target_x, target_y)
 

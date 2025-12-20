@@ -93,6 +93,7 @@ monsters:
             weight: 100
 
   # Elite orc variant using inheritance system
+  # Phase 19: Orc Chieftain - Leader with Rally Cry and Sonic Bellow abilities
   orc_chieftain:
     extends: orc              # Inherit all orc properties
     stats:
@@ -104,10 +105,23 @@ monsters:
     inventory_size: 8         # Override: larger inventory (smarter, more organized)
     seek_distance: 7          # Override: better awareness and leadership
     speed_bonus: 0.25         # Phase 4: +25% bonus attack chance (trained warrior)
-    # Inherits: damage_min: 4, damage_max: 6, defense: 0, ai_type: "basic", etc.
+    ai_type: "orc_chieftain"  # Phase 19: Custom AI with hang-back and ability triggers
+    # Inherits: damage_min: 4, damage_max: 6, defense: 0, etc.
     # Total damage: 2 power + 4-6 natural = 6-8 (stronger than basic orc's 4-6)
     # ETP: DPS=7 × 6 × durability=1.33 × behavior=1.1 = 57 (leader buff)
     etp_base: 57
+    # Phase 19: Rally Cry ability (ONE-TIME, very impactful)
+    rally_radius: 5                      # Radius to affect orc allies
+    rally_min_allies: 2                  # Minimum allies needed to trigger rally
+    rally_hit_bonus: 1                   # +1 to-hit for rallied orcs
+    rally_damage_bonus: 1                # +1 damage for rallied orcs
+    rally_cleanses_tags: ["fear", "morale_debuff"]  # Cleanse these debuff types
+    # Rally ends when chieftain is damaged (first time after rally)
+    rally_end_on_chieftain_damaged: true
+    # Phase 19: Sonic Bellow ability (ONE-TIME at <50% HP)
+    bellow_hp_threshold: 0.5             # Trigger when HP < 50% of max
+    bellow_to_hit_penalty: 1             # -1 to-hit for player
+    bellow_duration: 2                   # Duration in turns
 
   # Veteran orc variant - experienced fighter
   orc_veteran:

@@ -168,5 +168,15 @@
     "monster_hit_rate": 0.5454545454545454,
     "pressure_index": -12.766666666666667,
     "bonus_attacks_per_run": 7.333333333333333
+  },
+  "monster_orc_chieftain_identity": {
+    "scenario_id": "monster_orc_chieftain_identity",
+    "runs": 30,
+    "deaths": 13,
+    "death_rate": 0.43333333333333335,
+    "player_hit_rate": 0.6809421841541756,
+    "monster_hit_rate": 0.4565619223659889,
+    "pressure_index": -13.099999999999998,
+    "bonus_attacks_per_run": 8.266666666666667
   }
 }

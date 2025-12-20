@@ -566,6 +566,23 @@ class Fighter:
         if ai and hasattr(ai, 'in_combat'):
             ai.in_combat = True
         
+        # Phase 19: Check if this is an Orc Chieftain taking damage
+        # If chieftain has an active rally, end it immediately for all rallied orcs
+        if ai and hasattr(ai, 'rally_active') and ai.rally_active:
+            # Rally is active - end it!
+            results.append({'message': MB.combat("The rally falters as the chieftain is struck!")})
+            
+            # End rally for all rallied orcs
+            # We need to find all entities with rally_buff from this chieftain
+            # This is handled by the game state, but we mark the rally as ended here
+            ai.rally_active = False
+            
+            # Mark that rally should be cleared (game state will handle removal)
+            results.append({
+                'end_rally': True,
+                'chieftain_id': id(self.owner)
+            })
+        
         # Phase 19: Check for Split Under Pressure (before death check)
         # If split triggers, entity is removed and replaced by children
         # This happens even if HP would cause death - split takes precedence
@@ -924,8 +941,32 @@ class Fighter:
         if equipment and equipment.main_hand and (equipment.main_hand.components.has(ComponentType.EQUIPPABLE) or hasattr(equipment.main_hand, 'equippable')):
             weapon_bonus = getattr(equipment.main_hand.equippable, 'to_hit_bonus', 0)
         
+        # Phase 19: Check for status effect bonuses/penalties
+        status_effect_to_hit_bonus = 0
+        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS) if self.owner else None
+        if status_effects:
+            # Rally buff: +to-hit
+            rally_buff = status_effects.get_effect('rally_buff')
+            if rally_buff and hasattr(rally_buff, 'to_hit_bonus'):
+                status_effect_to_hit_bonus += rally_buff.to_hit_bonus
+            
+            # Heroism: +to-hit
+            heroism = status_effects.get_effect('heroism')
+            if heroism and hasattr(heroism, 'attack_bonus'):
+                status_effect_to_hit_bonus += heroism.attack_bonus
+            
+            # Sonic Bellow debuff: -to-hit
+            bellow_debuff = status_effects.get_effect('sonic_bellow_debuff')
+            if bellow_debuff and hasattr(bellow_debuff, 'to_hit_penalty'):
+                status_effect_to_hit_bonus -= bellow_debuff.to_hit_penalty
+            
+            # Blindness: -to-hit (severe penalty)
+            blindness = status_effects.get_effect('blindness')
+            if blindness:
+                status_effect_to_hit_bonus -= 5  # Blindness is a major penalty
+        
         # Calculate total attack roll
-        attack_roll = d20_roll + to_hit_bonus + weapon_bonus
+        attack_roll = d20_roll + to_hit_bonus + weapon_bonus + status_effect_to_hit_bonus
         
         # Get target's AC
         target_ac = target.require_component(ComponentType.FIGHTER).armor_class
@@ -989,6 +1030,26 @@ class Fighter:
             
             # Add STR modifier to damage
             damage = base_damage + self.strength_mod
+            
+            # Phase 19: Add status effect damage bonuses
+            status_effect_damage_bonus = 0
+            if status_effects:
+                # Rally buff: +damage
+                rally_buff = status_effects.get_effect('rally_buff')
+                if rally_buff and hasattr(rally_buff, 'damage_bonus'):
+                    status_effect_damage_bonus += rally_buff.damage_bonus
+                
+                # Heroism: +damage
+                heroism = status_effects.get_effect('heroism')
+                if heroism and hasattr(heroism, 'damage_bonus'):
+                    status_effect_damage_bonus += heroism.damage_bonus
+                
+                # Weakness: -damage
+                weakness = status_effects.get_effect('weakness')
+                if weakness and hasattr(weakness, 'damage_penalty'):
+                    status_effect_damage_bonus -= weakness.damage_penalty
+            
+            damage += status_effect_damage_bonus
             
             # Phase 18/19: Apply damage type modifier (resistance/vulnerability/multipliers)
             # Get weapon damage type

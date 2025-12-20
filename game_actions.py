@@ -1545,7 +1545,8 @@ class ActionProcessor:
             game_map=self.state_manager.state.game_map,
             target_x=target_x,
             target_y=target_y,
-            target_faction=selected_faction_value  # Pass the selected faction
+            target_faction=selected_faction_value,  # Pass the selected faction
+            state_manager=self.state_manager  # For spell death finalization
         )
         
         # Process results
@@ -1603,7 +1604,8 @@ class ActionProcessor:
                     target_y=target_y,
                     entities=self.state_manager.state.entities,
                     game_map=self.state_manager.state.game_map,
-                    fov_map=self.state_manager.state.fov_map
+                    fov_map=self.state_manager.state.fov_map,
+                    state_manager=self.state_manager
                 )
                 
                 player_died = False
@@ -1681,7 +1683,8 @@ class ActionProcessor:
                 entities=self.state_manager.state.entities,
                 fov_map=self.state_manager.state.fov_map,
                 game_map=self.state_manager.state.game_map,
-                wand_entity=item  # Pass the wand itself
+                wand_entity=item,  # Pass the wand itself
+                state_manager=self.state_manager  # For spell death finalization
             )
             
             for result in item_use_results:
@@ -1715,7 +1718,8 @@ class ActionProcessor:
             item,
             entities=self.state_manager.state.entities,
             fov_map=self.state_manager.state.fov_map,
-            game_map=self.state_manager.state.game_map  # CRITICAL: Pass game_map for spells like magic mapping
+            game_map=self.state_manager.state.game_map,  # CRITICAL: Pass game_map for spells like magic mapping
+            state_manager=self.state_manager  # For spell death finalization
         )
         
         player_died = False
@@ -2113,7 +2117,8 @@ class ActionProcessor:
                         target_y=target_y,
                         entities=self.state_manager.state.entities,
                         game_map=self.state_manager.state.game_map,
-                        fov_map=self.state_manager.state.fov_map
+                        fov_map=self.state_manager.state.fov_map,
+                        state_manager=self.state_manager
                     )
                     
                     # Process results
@@ -2155,7 +2160,8 @@ class ActionProcessor:
                         fov_map=self.state_manager.state.fov_map,
                         game_map=self.state_manager.state.game_map,
                         target_x=target_x,
-                        target_y=target_y
+                        target_y=target_y,
+                        state_manager=self.state_manager  # For spell death finalization
                     )
                     print(f"DEBUG: Item use results: {len(item_use_results) if item_use_results else 0} results")
 
@@ -2404,7 +2410,10 @@ class ActionProcessor:
         click_x, click_y = click_pos
         
         # Handle the mouse click (with FOV map for smart pathfinding limits)
-        click_result = handle_mouse_click(click_x, click_y, player, entities, game_map, fov_map)
+        click_result = handle_mouse_click(
+            click_x, click_y, player, entities, game_map, fov_map, 
+            state_manager=self.state_manager
+        )
         
         # Process results
         attack_target = None  # Track attack target for speed bonus
@@ -2662,7 +2671,8 @@ class ActionProcessor:
                         fov_map=self.state_manager.state.fov_map,
                         game_map=self.state_manager.state.game_map,
                         target_x=target_x,
-                        target_y=target_y
+                        target_y=target_y,
+                        state_manager=self.state_manager  # For spell death finalization
                     )
 
                     # Process results

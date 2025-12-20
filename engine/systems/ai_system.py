@@ -447,6 +447,31 @@ class AISystem(System):
                 
                 logger.debug(f"Entity {split_data['original_entity'].name} split into {len(spawned_children)} children")
             
+            # Phase 19: Handle rally ending (when chieftain is damaged)
+            if result.get('end_rally'):
+                chieftain_id = result.get('chieftain_id')
+                if chieftain_id:
+                    # Remove rally buff from all entities with rally_buff from this chieftain
+                    from components.component_registry import ComponentType
+                    for entity in game_state.entities:
+                        status_effects = entity.get_component_optional(ComponentType.STATUS_EFFECTS)
+                        if status_effects and status_effects.has_effect('rally_buff'):
+                            rally_buff = status_effects.get_effect('rally_buff')
+                            if rally_buff and hasattr(rally_buff, 'chieftain_id') and rally_buff.chieftain_id == chieftain_id:
+                                # Remove rally buff
+                                remove_results = status_effects.remove_effect('rally_buff')
+                                # Add messages to game log
+                                for remove_result in remove_results:
+                                    msg = remove_result.get('message')
+                                    if msg and game_state.message_log:
+                                        game_state.message_log.add_message(msg)
+                                
+                                # Clear AI directive
+                                if hasattr(entity, 'ai') and hasattr(entity.ai, 'rally_directive_target_id'):
+                                    entity.ai.rally_directive_target_id = None
+                    
+                    logger.info(f"[ORC CHIEFTAIN] Rally ended - chieftain {chieftain_id} was damaged")
+            
             # Handle death (critical for player death detection)
             dead_entity = result.get("dead")
             if dead_entity:

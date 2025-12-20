@@ -192,6 +192,24 @@ class BasicMonster:
             MonsterActionLogger.log_turn_summary(self.owner, ["paralyzed"])
             return results
         
+        # Phase 19: Check for rally directive - prioritize chieftain's target
+        rally_target = None
+        if hasattr(self, 'rally_directive_target_id') and self.rally_directive_target_id:
+            # Find the rally target entity
+            for entity in entities:
+                if id(entity) == self.rally_directive_target_id:
+                    rally_target = entity
+                    break
+            
+            # If rally target found and alive, prioritize it over normal target
+            if rally_target:
+                fighter = rally_target.get_component_optional(ComponentType.FIGHTER)
+                if fighter and fighter.hp > 0:
+                    target = rally_target
+                else:
+                    # Rally target is dead - clear directive
+                    self.rally_directive_target_id = None
+        
         # Check for fear - causes monster to flee
         if (hasattr(self.owner, 'has_status_effect') and 
             callable(self.owner.has_status_effect) and 

@@ -39,7 +39,8 @@ def _show_interact_hint_once() -> None:
 
 
 def handle_mouse_click(click_x: int, click_y: int, player: 'Entity', 
-                      entities: List['Entity'], game_map: 'GameMap', fov_map=None) -> dict:
+                      entities: List['Entity'], game_map: 'GameMap', fov_map=None, 
+                      state_manager=None) -> dict:
     """Handle a mouse click for movement or combat.
     
     This function processes mouse clicks and determines the appropriate action:
@@ -255,11 +256,25 @@ def _handle_chest_click(player: 'Entity', chest_entity: 'Entity', results: list,
                     # Handle trap damage
                     trap_type = result.get('trap_type')
                     if trap_type == 'damage' and player.fighter:
+                        from services.damage_service import apply_damage
+                        
                         damage = 10  # Base trap damage
-                        player.fighter.take_damage(damage)
                         results.append({
                             "message": MB.combat(f"The trap deals {damage} damage!")
                         })
+                        
+                        # Apply damage using centralized service (handles death automatically)
+                        damage_results = apply_damage(
+                            state_manager,
+                            player,
+                            damage,
+                            cause="chest_trap"
+                        )
+                        
+                        # Check if player died (service already finalized death, just stop processing)
+                        for damage_result in damage_results:
+                            if damage_result.get("dead") == player:
+                                return results  # Stop processing
                     elif trap_type == 'poison':
                         # TODO: Apply poison status effect
                         results.append({

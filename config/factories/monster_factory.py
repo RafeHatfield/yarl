@@ -136,6 +136,23 @@ class MonsterFactory(FactoryBase):
                 monster.death_spawns = monster_def.death_spawns
                 logger.debug(f"Added death spawn to {monster_def.name}: {monster.death_spawns}")
             
+            # Phase 19: Set Orc Chieftain Rally Cry config if defined
+            if hasattr(monster_def, 'rally_radius'):
+                monster.rally_radius = monster_def.rally_radius
+                monster.rally_min_allies = getattr(monster_def, 'rally_min_allies', 2)
+                monster.rally_hit_bonus = getattr(monster_def, 'rally_hit_bonus', 1)
+                monster.rally_damage_bonus = getattr(monster_def, 'rally_damage_bonus', 1)
+                monster.rally_cleanses_tags = getattr(monster_def, 'rally_cleanses_tags', ['fear', 'morale_debuff'])
+                monster.rally_end_on_chieftain_damaged = getattr(monster_def, 'rally_end_on_chieftain_damaged', True)
+                logger.debug(f"Added Rally Cry to {monster_def.name}: radius={monster.rally_radius}, min_allies={monster.rally_min_allies}")
+            
+            # Phase 19: Set Orc Chieftain Sonic Bellow config if defined
+            if hasattr(monster_def, 'bellow_hp_threshold'):
+                monster.bellow_hp_threshold = monster_def.bellow_hp_threshold
+                monster.bellow_to_hit_penalty = getattr(monster_def, 'bellow_to_hit_penalty', 1)
+                monster.bellow_duration = getattr(monster_def, 'bellow_duration', 2)
+                logger.debug(f"Added Sonic Bellow to {monster_def.name}: threshold={monster.bellow_hp_threshold}, penalty={monster.bellow_to_hit_penalty}")
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai
@@ -204,6 +221,9 @@ class MonsterFactory(FactoryBase):
             return SlimeAI()
         elif ai_type == "skeleton":
             return SkeletonAI()
+        elif ai_type == "orc_chieftain":
+            from components.ai.orc_chieftain_ai import OrcChieftainAI
+            return OrcChieftainAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()

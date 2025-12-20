@@ -54,6 +54,7 @@ SCENARIO_MATRIX = [
     # Phase 19 Monster Identity Scenarios
     {"id": "monster_slime_identity", "runs": 30, "turn_limit": 80},
     {"id": "monster_skeleton_identity", "runs": 30, "turn_limit": 200},
+    {"id": "monster_orc_chieftain_identity", "runs": 30, "turn_limit": 200},
 ]
 
 # Drift thresholds for WARN/FAIL classification

@@ -197,19 +197,74 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ---
 
+## Orc Chieftain: Rally Cry + Sonic Bellow (Phase 19.4)
+
+**Status:** ✅ COMPLETE
+
+**Identity:** High-priority leader enemy with deterministic, scenario-backed behavior  
+**Decision:** Focus fire the chieftain to break rally, or deal with buffed orcs?
+
+**Mechanic 1: Rallying Cry (ONE-TIME, very impactful)**
+- Triggers once at start of chieftain's turn when:
+  - Not yet rallied
+  - >= 2 orc allies within radius 5
+- Effects on nearby ORC allies:
+  - +1 to-hit bonus
+  - +1 damage bonus
+  - Cleanses fear/morale-debuff effects
+  - Issues "call to attack" directive: rallied orcs prioritize chieftain's target
+- Rally persists UNTIL THE CHIEFTAIN IS DAMAGED (first time)
+- When chieftain takes ANY damage (first time after rally):
+  - Rally ends immediately for ALL rallied orcs
+  - Buffs removed, directives cleared
+  - Message: "The rally falters as the chieftain is struck!"
+- Deterministic, no RNG
+
+**Mechanic 2: Sonic Bellow (ONE-TIME desperation shout)**
+- Triggers once when chieftain drops below 50% HP (first time only)
+- Effect on player:
+  - -1 to-hit penalty for 2 turns
+- Message: "The Orc Chieftain's bellow rings in your ears!"
+- Deterministic, no RNG
+
+**Mechanic 3: Hang-back AI Heuristic**
+- Chieftain prefers to "hang back" when other orcs can engage
+- Positional preference:
+  - If any non-chieftain orc ally can attack the player, chieftain prefers distance 2-4
+  - If already at good distance, stays put or moves laterally
+  - If too close (distance 1), tries to move away
+  - If boxed in or no allies can engage, attacks normally
+- Never stalls: if forced to engage, attacks
+- Encourages tactical play: reach chieftain via flanking/ranged/funneling
+
+**Implementation:**
+- Status effects: `RallyBuffEffect`, `SonicBellowDebuffEffect` in `components/status_effects.py`
+- AI: `OrcChieftainAI` in `components/ai/orc_chieftain_ai.py`
+- Config: `config/entities.yaml` (orc_chieftain with rally/bellow fields)
+- Rally break: `Fighter.take_damage()` detects chieftain damage and ends rally
+- Combat bonuses: `Fighter.attack_d20()` applies rally buffs and bellow debuffs
+- AI directive: `BasicMonster.take_turn()` respects rally_directive_target_id
+- Scenario: `scenario_monster_orc_chieftain_identity.yaml`
+- Unit tests: `test_orc_chieftain.py` (15 tests)
+
+**Scenario:**
+- 1 Orc Chieftain + 3 basic orcs
+- Chieftain hangs back while orcs engage
+- Rally triggers when chieftain has 2+ allies nearby
+- Player can break rally by tagging chieftain with ranged weapon or flanking
+- Bellow triggers when chieftain drops below 50% HP
+- Validates: rally trigger, rally buffs, rally break-on-damage, bellow trigger, hang-back AI
+
+**Balance Impact:**
+- Scenario runs: 30 runs, 200 turn limit
+- Expected: 4 enemies per run (1 chieftain + 3 orcs)
+- Rally is very impactful (+to-hit +damage for all allies) but breakable
+- Encourages tactical play: prioritize chieftain or deal with buffed orcs
+- Included in full balance suite (not fast mode)
+
+---
+
 ## Future Abilities (Planned)
-
-### Orc Chieftain: Rally Cry (Phase 19.4)
-
-**Status:** Not Started
-
-**Identity:** Leadership and tactical coordination  
-**Decision:** Focus fire the chieftain, or deal with buffed orcs?
-
-**Mechanic Ideas:**
-- Once per combat: buff nearby orcs (+1 accuracy for 3 turns)
-- Triggered when chieftain HP < 50%
-- Limited-use ability (not always-on)
 
 ---
 

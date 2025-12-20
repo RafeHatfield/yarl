@@ -68,7 +68,8 @@ def throw_item(
     target_y: int,
     entities: List,
     game_map,
-    fov_map
+    fov_map,
+    state_manager=None
 ) -> List[Dict[str, Any]]:
     """Execute a throw action - calculates path, animates projectile, applies effects.
     
@@ -288,7 +289,7 @@ def _throw_weapon(
         # Apply damage to target
         target_fighter = target.components.get(ComponentType.FIGHTER)
         if target_fighter:
-            target_fighter.take_damage(throw_damage)
+            from services.damage_service import apply_damage
             
             results.append({
                 "message": MB.combat_hit(
@@ -296,12 +297,23 @@ def _throw_weapon(
                 )
             })
             
-            # Check if target died
-            if target_fighter.hp <= 0:
-                results.append({
-                    "dead": target,
-                    "message": MB.death(f"{target.name} is killed by the thrown {weapon.name}!")
-                })
+            # Apply damage using centralized service (handles death automatically)
+            damage_results = apply_damage(
+                state_manager,
+                target,
+                throw_damage,
+                cause="thrown_weapon",
+                attacker_entity=thrower,
+                message_on_kill=f"{target.name} is killed by the thrown {weapon.name}!"
+            )
+            
+            # Add XP results if monster died
+            for damage_result in damage_results:
+                if damage_result.get("dead"):
+                    results.append({
+                        "dead": damage_result["dead"],
+                        "xp": damage_result.get("xp", 0)
+                    })
     else:
         # Missed - weapon lands on ground
         results.append({

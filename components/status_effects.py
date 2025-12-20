@@ -1076,6 +1076,68 @@ class PlagueOfRestlessDeathEffect(StatusEffect):
         }
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 19: ORC CHIEFTAIN ABILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class RallyBuffEffect(StatusEffect):
+    """Phase 19: Orc Chieftain Rally Cry buff.
+    
+    Applied to orc allies within rally radius when chieftain uses Rally Cry.
+    Provides:
+    - +1 to-hit bonus
+    - +1 damage bonus
+    - AI directive to prioritize chieftain's target
+    
+    Rally ends immediately when the chieftain takes damage (first time).
+    """
+    def __init__(self, duration: int, owner: 'Entity', chieftain_id: int, 
+                 to_hit_bonus: int = 1, damage_bonus: int = 1):
+        super().__init__("rally_buff", duration, owner)
+        self.chieftain_id = chieftain_id  # Track which chieftain applied this
+        self.to_hit_bonus = to_hit_bonus
+        self.damage_bonus = damage_bonus
+        self.directive_target_id = None  # Set by rally system
+        # Tag for cleansing: rally cleanses fear/morale debuffs
+        self.tags = []
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        # Don't spam per-orc messages - chieftain rally message is enough
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        # Clear AI directive when rally ends
+        if hasattr(self.owner, 'ai') and hasattr(self.owner.ai, 'rally_directive_target_id'):
+            self.owner.ai.rally_directive_target_id = None
+        return results
+
+
+class SonicBellowDebuffEffect(StatusEffect):
+    """Phase 19: Orc Chieftain Sonic Bellow debuff.
+    
+    Applied to player when chieftain drops below 50% HP (one-time).
+    Provides:
+    - -1 to-hit penalty for 2 turns
+    
+    Deterministic, no RNG.
+    """
+    def __init__(self, duration: int, owner: 'Entity', to_hit_penalty: int = 1):
+        super().__init__("sonic_bellow_debuff", duration, owner)
+        self.to_hit_penalty = to_hit_penalty
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.warning(f"{self.owner.name}'s ears ring from the bellow!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name}'s hearing recovers.")})
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):

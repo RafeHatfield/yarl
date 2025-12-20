@@ -112,6 +112,17 @@ class MonsterDefinition:
     split_min_children: int = 2  # Minimum number of children to spawn
     split_max_children: int = 3  # Maximum number of children to spawn
     split_weights: Optional[List[int]] = None  # Weighted distribution for child count
+    # Phase 19: Orc Chieftain Rally Cry ability
+    rally_radius: int = 5  # Radius to affect orc allies
+    rally_min_allies: int = 2  # Minimum allies needed to trigger rally
+    rally_hit_bonus: int = 1  # +to-hit bonus for rallied orcs
+    rally_damage_bonus: int = 1  # +damage bonus for rallied orcs
+    rally_cleanses_tags: Optional[List[str]] = None  # Debuff tags to cleanse (e.g., ["fear", "morale_debuff"])
+    rally_end_on_chieftain_damaged: bool = True  # Rally ends when chieftain takes damage
+    # Phase 19: Orc Chieftain Sonic Bellow ability
+    bellow_hp_threshold: float = 0.5  # Trigger when HP < this % of max
+    bellow_to_hit_penalty: int = 1  # -to-hit penalty for player
+    bellow_duration: int = 2  # Duration in turns
 
 
 @dataclass  
