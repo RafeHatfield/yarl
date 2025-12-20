@@ -121,11 +121,25 @@ def apply_damage(
             dead_entity = result.get("dead")
             if dead_entity:
                 # LOUD WARNING: Death occurred but won't be finalized!
+                # Gather context for debugging
+                entity_name = dead_entity.name if dead_entity else 'Unknown'
+                entity_hp = dead_entity.fighter.hp if dead_entity and hasattr(dead_entity, 'fighter') else 'N/A'
+                
+                # Try to get run context (may be None in unit tests)
+                run_id = "N/A"
+                floor_depth = "N/A"
+                scenario_id = "N/A"
+                
+                # Check if we can extract context from fighter/entity
+                if hasattr(dead_entity, 'run_id'):
+                    run_id = dead_entity.run_id
+                
+                # Log with stable prefix for alerting/grepping
                 logger.error(
-                    f"⚠️  DEATH WITHOUT FINALIZATION: {dead_entity.name if dead_entity else 'Unknown'} "
-                    f"reached 0 HP (cause={cause}) but state_manager=None, so death will NOT be finalized! "
-                    f"This is OK for unit tests, but a BUG in production code. "
-                    f"Target HP: {dead_entity.fighter.hp if dead_entity and hasattr(dead_entity, 'fighter') else 'N/A'}"
+                    f"DEATH_WITHOUT_FINALIZATION: {entity_name} reached 0 HP "
+                    f"(cause={cause}, hp={entity_hp}, run_id={run_id}, floor={floor_depth}, scenario={scenario_id}) "
+                    f"but state_manager=None - death will NOT be finalized! "
+                    f"This is OK for unit tests, but a BUG in production code."
                 )
                 # In testing mode, this is expected. In production, this is the bug we're fixing.
                 # The warning ensures we catch any missed call sites.

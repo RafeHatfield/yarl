@@ -14,6 +14,40 @@ This prevents regressions and makes the codebase resilient to automated refactor
 
 ## 📦 Module Ownership & Responsibilities
 
+### Damage Application & Death Handling
+
+**Owns:** Centralized damage application, death finalization enforcement
+
+**Key Files:**
+- `services/damage_service.py` - Central damage application service
+- `components/fighter.py` - Fighter component with `take_damage()` method
+- `engine_integration.py` - Player death finalization (`finalize_player_death()`)
+- `death_functions.py` - Monster death handling (`kill_monster()`)
+
+**Contract:**
+- **NEVER call `Fighter.take_damage()` directly from gameplay code**
+- **ALWAYS use `damage_service.apply_damage()` for non-combat damage**
+- Combat system (`game_actions.py`, `ai_system.py`) may call `take_damage()` but MUST process death results
+- `apply_damage()` requires `state_manager` parameter (prevents ignored death results)
+
+**When Changing:**
+- Update `tests/regression/test_damage_service_enforcement.py` if adding new damage sources
+- Ensure `tests/regression/test_spell_death_finalization.py` passes for spell damage
+- Ensure `tests/regression/test_player_death_regression.py` passes for trap/hazard damage
+
+**Enforcement:**
+- `tests/regression/test_damage_service_enforcement.py` scans codebase for forbidden `.take_damage()` calls
+- This test will **fail PRs** if you call `take_damage()` from forbidden modules
+- Forbidden modules: `spells/spell_executor.py`, `throwing.py`, `mouse_movement.py`, `services/movement_service.py`, `io_layer/`, `ui/`, `input/`
+- Allowed modules: `components/fighter.py`, `game_actions.py`, `engine/systems/ai_system.py`, `services/damage_service.py`, `services/scenario_harness.py`
+
+**Tests to Update:**
+- `tests/regression/test_damage_service_enforcement.py` - Enforcement guard
+- `tests/regression/test_spell_death_finalization.py` - Spell death finalization
+- `tests/regression/test_player_death_regression.py` - Player death from various sources
+
+---
+
 ### Rendering & Visibility System
 
 **Owns:** Screen rendering, field of view (FOV), visual display of entities/map
