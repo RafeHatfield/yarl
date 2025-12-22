@@ -1138,6 +1138,27 @@ class SonicBellowDebuffEffect(StatusEffect):
         return results
 
 
+class WardAgainstDrainEffect(StatusEffect):
+    """Phase 19: Temporary immunity to wraith life drain.
+    
+    Applied by scroll_ward_against_drain consumable.
+    Blocks life drain heals from wraith hits completely.
+    Duration: 10 turns (from scroll config).
+    """
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__(name='ward_against_drain', duration=duration, owner=owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect("A pale ward surrounds you, repelling life drain!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect("The ward against drain fades away.")})
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):

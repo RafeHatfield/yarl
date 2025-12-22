@@ -264,21 +264,77 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ---
 
-## Future Abilities (Planned)
+### Wraith: Life Drain + Ward Against Drain (Phase 19.5)
+
+**Status:** ✅ COMPLETE
+
+**Identity:** Ethereal predator that drains life force  
+**Decision:** Do I use the ward scroll proactively, or save it for a crisis?
+
+**Mechanic 1: % Life Drain**
+- On successful melee hit where damage_dealt > 0:
+  - `drain_amount = ceil(damage_dealt * 0.50)`  (50% of final damage)
+  - `drain_amount = min(drain_amount, wraith.missing_hp)`  (capped at missing HP, no overheal)
+  - Wraith heals for `drain_amount`
+- Deterministic (no RNG)
+- Uses **final damage dealt** (after resistances/armor)
+- Message: "The wraith drains your life! (+X HP)"
+
+**Mechanic 2: Ward Against Drain (Counter)**
+- Consumable scroll: `scroll_ward_against_drain`
+- Applies `WardAgainstDrainEffect` to player (10 turn duration)
+- While ward is active:
+  - Life drain heals are reduced to 0 (full immunity)
+  - Message on drain attempt: "The ward repels the drain!"
+- Ward duration ticks down each turn (standard status effect)
+- Message on apply: "A pale ward surrounds you, repelling life drain!"
+- Message on expire: "The ward against drain fades away."
+
+**Tuning:**
+- Life drain %: 50% of damage dealt (wraith is VERY dangerous)
+- Ward duration: 10 turns (1 scroll per ~1-2 wraith encounters)
+- Wraith base stats: HP=20, speed=2.0, power=3, evasion=4 (fast + hard to hit)
+- No drain when damage_dealt = 0 (armor/resistance matters)
+
+**Implementation:**
+- Life drain: `Fighter._apply_life_drain_effects()` in `components/fighter.py`
+- Ward effect: `WardAgainstDrainEffect` in `components/status_effects.py`
+- Ward scroll: `use_ward_scroll()` in `item_functions.py`
+- Config: `config/entities.yaml` (wraith with `life_drain_pct: 0.50` and `scroll_ward_against_drain`)
+- Scenario: `scenario_monster_wraith_identity.yaml`
+- Unit tests: `test_wraith_life_drain.py` (13 tests, all passing)
+
+**Metrics Tracking:**
+- `life_drain_attempts`: Total wraith hits that attempted drain
+- `life_drain_heal_total`: Total HP healed by wraiths via drain
+- `life_drain_blocked_attempts`: Drain attempts blocked by ward
+- Tracked in `services/scenario_metrics.py` and aggregated in balance suite
+
+**Scenario:**
+- 2 wraiths in 13x13 arena
+- Player starts with: dagger, 2 ward scrolls, 3 healing potions, longsword
+- Expected behavior:
+  - Without ward: Wraiths drain life and heal themselves
+  - With ward active: Wraiths hit but drain is blocked (message displayed)
+- Validates: drain calculation, heal capping, ward immunity, metrics tracking
+
+**Balance Impact:**
+- Scenario runs: 30 runs, 200 turn limit
+- Expected: ~30+ kills (1-2 wraiths per run)
+- Expected player deaths: <= 15 (wraiths are dangerous but ward helps)
+- Wraiths are high-threat with speed=2.0 + drain, but deterministic and counterable
+- Included in full balance suite (not fast mode)
+
+**Teaching Moment:**
+- Ward scroll teaches **preparation**: use before engaging wraiths
+- Drain mechanic teaches **burst damage**: kill wraiths fast to minimize healing
+- Counter availability teaches **resource management**: save wards for dangerous fights
 
 ---
 
-### Wraith: Life Drain (Phase 19.4)
+## Future Abilities (Planned)
 
-**Status:** Not Started
-
-**Identity:** Ethereal predator that drains life force  
-**Decision:** High-damage burst to kill before it heals?
-
-**Mechanic Ideas:**
-- On hit: heal 25% of damage dealt
-- Or: drain 1 max HP from player (permanent until rest)
-- Must be telegraphed and limited
+(None at this time - Phase 19 complete!)
 
 ---
 

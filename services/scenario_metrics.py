@@ -81,6 +81,34 @@ class ScenarioMetricsCollector:
         """Record a portal teleportation event."""
         if hasattr(self.metrics, "portals_used"):
             self.metrics.portals_used += 1
+    
+    def record_life_drain_attempt(self, attacker: Any, target: Any, heal_amount: int, blocked: bool) -> None:
+        """Record a wraith life drain attempt.
+        
+        Phase 19: Track wraith drain attempts, heal amounts, and ward blocks.
+        
+        Args:
+            attacker: The entity attempting to drain life
+            target: The entity being drained
+            heal_amount: Amount healed (0 if blocked)
+            blocked: True if ward blocked the drain
+        """
+        # Initialize counters if needed
+        if not hasattr(self.metrics, 'life_drain_attempts'):
+            self.metrics.life_drain_attempts = 0
+        if not hasattr(self.metrics, 'life_drain_heal_total'):
+            self.metrics.life_drain_heal_total = 0
+        if not hasattr(self.metrics, 'life_drain_blocked_attempts'):
+            self.metrics.life_drain_blocked_attempts = 0
+        
+        # Increment attempt counter
+        self.metrics.life_drain_attempts += 1
+        
+        # Track heal amount or block
+        if blocked:
+            self.metrics.life_drain_blocked_attempts += 1
+        else:
+            self.metrics.life_drain_heal_total += heal_amount
 
 
 _active_scenario_metrics_collector: Optional[ScenarioMetricsCollector] = None
