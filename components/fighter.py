@@ -1136,6 +1136,10 @@ class Fighter:
             engulf_results = self._apply_engulf_effects(target, damage)
             results.extend(engulf_results)
             
+            # Phase 19: Apply life drain effects if applicable
+            life_drain_results = self._apply_life_drain_effects(target, damage)
+            results.extend(life_drain_results)
+            
             # Phase 10.1: Apply plague spread if attacker has plague_attack ability
             plague_results = self._apply_plague_spread(target)
             results.extend(plague_results)
@@ -1389,6 +1393,89 @@ class Fighter:
         engulf_effect = EngulfedEffect(duration=3, owner=target)
         engulf_results = target.add_status_effect(engulf_effect)
         results.extend(engulf_results)
+        
+        return results
+    
+    def _apply_life_drain_effects(self, target, damage_dealt):
+        """Apply life drain effects if attacker has life_drain_pct attribute.
+        
+        Phase 19: Wraith Life Drain - Heals attacker for % of damage dealt.
+        Deterministic (no RNG) - always applies on successful hit.
+        Capped at attacker's missing HP (can't overheal).
+        Blocked by WardAgainstDrainEffect status on target.
+        
+        Args:
+            target: The entity that was attacked
+            damage_dealt: Amount of damage that was dealt (after resistances)
+            
+        Returns:
+            list: List of result dictionaries with drain messages
+        """
+        results = []
+        
+        # Only apply drain if damage was dealt
+        if damage_dealt <= 0:
+            return results
+        
+        # Check if attacker has life_drain_pct attribute
+        life_drain_pct = getattr(self.owner, 'life_drain_pct', None)
+        if life_drain_pct is None or not isinstance(life_drain_pct, (int, float)) or life_drain_pct <= 0:
+            return results
+        
+        # Check if target has ward against drain effect (full immunity)
+        if target.status_effects and target.status_effects.has_effect('ward_against_drain'):
+            # Ward blocks drain - emit message
+            results.append({
+                'message': MB.status_effect("The ward repels the drain!")
+            })
+            
+            # Record blocked drain attempt for metrics
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                collector = get_active_metrics_collector()
+                if collector:
+                    collector.record_life_drain_attempt(
+                        attacker=self.owner,
+                        target=target,
+                        heal_amount=0,
+                        blocked=True
+                    )
+            except ImportError:
+                pass  # Metrics not available
+            
+            return results
+        
+        # Calculate drain amount: ceil(damage * drain_pct)
+        import math
+        drain_amount = math.ceil(damage_dealt * life_drain_pct)
+        
+        # Cap drain at attacker's missing HP (can't overheal)
+        missing_hp = self.base_max_hp - self.hp
+        drain_amount = min(drain_amount, missing_hp)
+        
+        # Only heal if there's missing HP to recover
+        if drain_amount > 0:
+            # Heal the attacker
+            self.hp += drain_amount
+            
+            # Emit drain message
+            results.append({
+                'message': MB.combat("The wraith drains your life! (+{0} HP)".format(drain_amount))
+            })
+            
+            # Record successful drain for metrics
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                collector = get_active_metrics_collector()
+                if collector:
+                    collector.record_life_drain_attempt(
+                        attacker=self.owner,
+                        target=target,
+                        heal_amount=drain_amount,
+                        blocked=False
+                    )
+            except ImportError:
+                pass  # Metrics not available
         
         return results
     

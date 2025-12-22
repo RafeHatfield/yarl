@@ -449,6 +449,8 @@ monsters:
     can_seek_items: false     # Incorporeal - can't interact with items
     inventory_size: 0
     speed_bonus: 2.0          # Phase 6: VERY fast - bonus attack every hit!
+    # Phase 19: Life Drain - heals wraith for % of damage dealt
+    life_drain_pct: 0.50      # Heals 50% of damage dealt (deterministic, capped at missing HP)
     # ETP: DPS=10 × 6 × durability=1.03 × behavior=1.05 × speed=2.0 = 130
     etp_base: 65              # Base before speed multiplier (65 × 2.0 = 130)
 
@@ -1521,6 +1523,17 @@ spells:
     char: "!"
     color: [50, 255, 150]  # Bright cyan-green (cleansing)
     effect_function: "drink_antidote_potion"
+  
+  # ════════════════════════════════════════════════════════
+  # PHASE 19: WARD AGAINST DRAIN - Counter to Wraith life drain
+  # ════════════════════════════════════════════════════════
+  # Ward Against Drain scroll - blocks wraith life drain for 10 turns
+  scroll_ward_against_drain:
+    spell_type: "utility"
+    char: "~"
+    color: [200, 220, 255]  # Pale silvery-blue (protective ward)
+    effect_function: "use_ward_scroll"
+    duration: 10  # Turns of drain immunity
   
   # ════════════════════════════════════════════════════════
   # KEYS - Unlock vault doors and special chests

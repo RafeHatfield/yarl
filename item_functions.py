@@ -1817,3 +1817,42 @@ def _is_corporeal_flesh(entity) -> bool:
     # Default: assume corporeal
     return True
 
+
+def use_ward_scroll(*args, **kwargs):
+    """Use a Ward Against Drain scroll to gain temporary immunity to life drain.
+    
+    Phase 19: Applies WardAgainstDrainEffect to the caster, which blocks
+    wraith life drain for the specified duration (default 10 turns).
+    
+    Args:
+        *args: First argument should be the caster (player)
+        **kwargs: duration (optional, defaults to 10)
+    
+    Returns:
+        list: List of result dictionaries with status effect application
+    """
+    caster = args[0] if args else None
+    if not caster:
+        return [{"consumed": False, "message": MB.failure("No caster!")}]
+    
+    results = []
+    duration = kwargs.get('duration', 10)
+    
+    # Apply WardAgainstDrainEffect to the caster
+    from components.status_effects import WardAgainstDrainEffect
+    from components.component_registry import ComponentType
+    
+    # Ensure caster has status effect manager
+    if not caster.status_effects:
+        caster.status_effects = caster.get_status_effect_manager()
+    
+    # Create and apply the ward effect
+    ward_effect = WardAgainstDrainEffect(duration=duration, owner=caster)
+    effect_results = caster.add_status_effect(ward_effect)
+    results.extend(effect_results)
+    
+    # Scroll is consumed
+    results.append({"consumed": True})
+    
+    return results
+

@@ -62,6 +62,10 @@ class RunMetrics:
     monster_attacks: int = 0
     monster_hits: int = 0
     portals_used: int = 0
+    # Phase 19: Wraith drain metrics
+    life_drain_attempts: int = 0
+    life_drain_heal_total: int = 0
+    life_drain_blocked_attempts: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -87,6 +91,13 @@ class RunMetrics:
             result['split_children_spawned'] = self.split_children_spawned
         if hasattr(self, 'split_events_by_type'):
             result['split_events_by_type'] = dict(self.split_events_by_type)
+        # Phase 19: Wraith drain metrics (optional)
+        if hasattr(self, 'life_drain_attempts'):
+            result['life_drain_attempts'] = self.life_drain_attempts
+        if hasattr(self, 'life_drain_heal_total'):
+            result['life_drain_heal_total'] = self.life_drain_heal_total
+        if hasattr(self, 'life_drain_blocked_attempts'):
+            result['life_drain_blocked_attempts'] = self.life_drain_blocked_attempts
         return result
 
 
@@ -116,6 +127,10 @@ class AggregatedMetrics:
     total_split_events: int = 0
     total_split_children_spawned: int = 0
     total_split_events_by_type: Dict[str, int] = field(default_factory=dict)
+    # Phase 19: Wraith drain metrics
+    total_life_drain_attempts: int = 0
+    total_life_drain_heal_total: int = 0
+    total_life_drain_blocked_attempts: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -782,6 +797,15 @@ def run_scenario_many(
     total_split_events = 0
     total_split_children = 0
     merged_split_by_type = {}
+    # Phase 19: Aggregate wraith drain metrics
+    total_drain_attempts = 0
+    total_drain_heal = 0
+    total_drain_blocked = 0
+    for run in all_runs:
+        total_drain_attempts += getattr(run, "life_drain_attempts", 0)
+        total_drain_heal += getattr(run, "life_drain_heal_total", 0)
+        total_drain_blocked += getattr(run, "life_drain_blocked_attempts", 0)
+    
     for run in all_runs:
         total_split_events += getattr(run, "split_events_total", 0)
         total_split_children += getattr(run, "split_children_spawned", 0)
@@ -808,6 +832,9 @@ def run_scenario_many(
         total_split_events=total_split_events,
         total_split_children_spawned=total_split_children,
         total_split_events_by_type=dict(merged_split_by_type),
+        total_life_drain_attempts=total_drain_attempts,
+        total_life_drain_heal_total=total_drain_heal,
+        total_life_drain_blocked_attempts=total_drain_blocked,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "
