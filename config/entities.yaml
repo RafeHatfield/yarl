@@ -274,6 +274,8 @@ monsters:
     blocks: true
     # Phase 10: Slimes have no flesh (not affected by plague)
     tags: ["no_flesh", "amorphous", "acidic"]
+    # Phase 19: Natural attack damage type (for regeneration suppression, etc.)
+    natural_damage_type: "acid"  # Acidic touch
     # Slimes don't seek items - they're simple creatures
     can_seek_items: false
     inventory_size: 0
