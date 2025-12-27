@@ -109,6 +109,24 @@ class ScenarioMetricsCollector:
             self.metrics.life_drain_blocked_attempts += 1
         else:
             self.metrics.life_drain_heal_total += heal_amount
+    
+    def increment(self, metric_name: str, amount: int = 1) -> None:
+        """Increment a custom metric counter.
+        
+        Phase 19: Generic increment method for ability-specific metrics.
+        Used by Orc Shaman, and potentially other Phase 19 monsters.
+        
+        Args:
+            metric_name: Name of the metric to increment (e.g., 'shaman_hex_casts')
+            amount: Amount to increment by (default: 1)
+        """
+        # Initialize counter if needed
+        if not hasattr(self.metrics, metric_name):
+            setattr(self.metrics, metric_name, 0)
+        
+        # Increment
+        current_value = getattr(self.metrics, metric_name, 0)
+        setattr(self.metrics, metric_name, current_value + amount)
 
 
 _active_scenario_metrics_collector: Optional[ScenarioMetricsCollector] = None

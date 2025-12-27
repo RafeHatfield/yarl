@@ -123,6 +123,20 @@ class MonsterDefinition:
     bellow_hp_threshold: float = 0.5  # Trigger when HP < this % of max
     bellow_to_hit_penalty: int = 1  # -to-hit penalty for player
     bellow_duration: int = 2  # Duration in turns
+    # Phase 19: Orc Shaman Crippling Hex ability
+    hex_enabled: bool = False  # Whether hex ability is enabled
+    hex_radius: int = 6  # Range to apply hex
+    hex_duration_turns: int = 5  # Duration of hex effect
+    hex_cooldown_turns: int = 10  # Cooldown between hex casts
+    hex_to_hit_delta: int = -1  # To-hit penalty (negative)
+    hex_ac_delta: int = -1  # AC penalty (negative)
+    # Phase 19: Orc Shaman Chant of Dissonance ability
+    chant_enabled: bool = False  # Whether chant ability is enabled
+    chant_radius: int = 5  # Range to apply chant
+    chant_duration_turns: int = 3  # Duration of channeling
+    chant_cooldown_turns: int = 15  # Cooldown between chant casts
+    chant_move_energy_tax: int = 1  # Movement tax (alternating block)
+    chant_is_channeled: bool = True  # Chant requires channeling
 
 
 @dataclass  
@@ -512,7 +526,30 @@ class EntityRegistry:
                     split_child_type=monster_data.get('split_child_type'),
                     split_min_children=monster_data.get('split_min_children', 2),
                     split_max_children=monster_data.get('split_max_children', 3),
-                    split_weights=monster_data.get('split_weights')
+                    split_weights=monster_data.get('split_weights'),
+                    # Phase 19: Orc Chieftain abilities
+                    rally_radius=monster_data.get('rally_radius', 5),
+                    rally_min_allies=monster_data.get('rally_min_allies', 2),
+                    rally_hit_bonus=monster_data.get('rally_hit_bonus', 1),
+                    rally_damage_bonus=monster_data.get('rally_damage_bonus', 1),
+                    rally_cleanses_tags=monster_data.get('rally_cleanses_tags'),
+                    rally_end_on_chieftain_damaged=monster_data.get('rally_end_on_chieftain_damaged', True),
+                    bellow_hp_threshold=monster_data.get('bellow_hp_threshold', 0.5),
+                    bellow_to_hit_penalty=monster_data.get('bellow_to_hit_penalty', 1),
+                    bellow_duration=monster_data.get('bellow_duration', 2),
+                    # Phase 19: Orc Shaman abilities
+                    hex_enabled=monster_data.get('hex_enabled', False),
+                    hex_radius=monster_data.get('hex_radius', 6),
+                    hex_duration_turns=monster_data.get('hex_duration_turns', 5),
+                    hex_cooldown_turns=monster_data.get('hex_cooldown_turns', 10),
+                    hex_to_hit_delta=monster_data.get('hex_to_hit_delta', -1),
+                    hex_ac_delta=monster_data.get('hex_ac_delta', -1),
+                    chant_enabled=monster_data.get('chant_enabled', False),
+                    chant_radius=monster_data.get('chant_radius', 5),
+                    chant_duration_turns=monster_data.get('chant_duration_turns', 3),
+                    chant_cooldown_turns=monster_data.get('chant_cooldown_turns', 15),
+                    chant_move_energy_tax=monster_data.get('chant_move_energy_tax', 1),
+                    chant_is_channeled=monster_data.get('chant_is_channeled', True)
                 )
                 
                 self.monsters[monster_id] = monster_def

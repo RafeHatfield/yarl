@@ -155,6 +155,54 @@ monsters:
     # ETP: DPS=5 × 6 × durability=0.77 × behavior=0.9 = 21 (fragile)
     etp_base: 21
 
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # PHASE 19: ORC SHAMAN - BATTLEFIELD CONTROLLER
+  # Hang-back support enemy with deterministic debuff abilities
+  # ═══════════════════════════════════════════════════════════════════════════════
+  
+  # Orc Shaman - Battlefield controller with hex and channeled chant
+  orc_shaman:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 24                  # Override: less health than basic orc (support, not frontline)
+      power: 1                # Override: minor magical power
+      defense: 0              # Same as base orc (not tanky)
+      xp: 60                  # Override: good XP for tactical threat
+      damage_min: 3           # Override: weak melee (prefers range/abilities)
+      damage_max: 5
+      # D&D-style stats
+      strength: 10            # Average (0 modifier) - not a melee fighter
+      dexterity: 12           # Slightly agile (+1 to-hit, +1 AC)
+      constitution: 10        # Average
+      # Phase 8: Accuracy & Evasion
+      accuracy: 3             # Decent accuracy for a caster
+      evasion: 1              # Some dodge ability
+    char: "S"                 # Override: capital S for Shaman
+    color: [100, 80, 120]     # Override: purple-ish (magical orc)
+    ai_type: "orc_shaman"     # Phase 19: Custom AI with hang-back and ability triggers
+    inventory_size: 6         # Override: moderate inventory
+    seek_distance: 6          # Override: good awareness
+    # Inherits: faction: "orc", tags, etc.
+    # Total damage: 1 power + 3-5 natural = 4-6 (weak melee, relies on abilities)
+    # ETP: DPS=5 × 6 × durability=1.0 × behavior=1.15 (controller) = 34
+    etp_base: 34
+    
+    # Phase 19: Crippling Hex ability (cooldown-based debuff)
+    hex_enabled: true
+    hex_radius: 6             # Range to apply hex to player
+    hex_duration_turns: 5     # Duration of hex effect
+    hex_cooldown_turns: 10    # Cooldown before can hex again
+    hex_to_hit_delta: -1      # Player's to-hit penalty
+    hex_ac_delta: -1          # Player's AC penalty
+    
+    # Phase 19: Chant of Dissonance (channeled movement tax, interruptible)
+    chant_enabled: true
+    chant_radius: 5           # Range to apply chant to player
+    chant_duration_turns: 3   # Duration of channeling
+    chant_cooldown_turns: 15  # Cooldown before can chant again
+    chant_move_energy_tax: 1  # Additional energy cost per move (+1)
+    chant_is_channeled: true  # Chant requires channeling (interruptible by damage)
+
   # ═══════════════════════════════════════════════════════════
   # PHASE 19: SKELETON SHIELD WALL ENEMY
   # Skeletons form defensive walls and have damage type identity

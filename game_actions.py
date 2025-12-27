@@ -698,7 +698,9 @@ class ActionProcessor:
             # Process status effects at end of player turn
             self._process_player_status_effects()
             
-            # Switch to enemy turn
+            # Switch to enemy turn (single turn consumption)
+            # Phase 19: Chant movement tax is now handled in MovementService via alternating block
+            # (no double world-tick needed)
             self.turn_controller.end_player_action(turn_consumed=True)
     
     def _check_secret_reveals(self, player, game_map) -> None:
@@ -956,6 +958,29 @@ class ActionProcessor:
                     target_died = True
                     if collector:
                         collector.record_kill(attacker, split_data['original_entity'])
+            
+            # Phase 19: Handle chant interruption (when shaman is damaged)
+            if result.get('interrupt_chant'):
+                shaman_id = result.get('shaman_id')
+                if shaman_id:
+                    # Remove dissonant_chant effect from all entities (should just be player)
+                    for entity in self.state_manager.state.entities:
+                        status_effects = entity.get_component_optional(ComponentType.STATUS_EFFECTS)
+                        if status_effects and status_effects.has_effect('dissonant_chant'):
+                            # Remove chant effect
+                            remove_results = status_effects.remove_effect('dissonant_chant')
+                            # Add messages to game log
+                            for remove_result in remove_results:
+                                msg = remove_result.get('message')
+                                if msg:
+                                    self.state_manager.state.message_log.add_message(msg)
+                    
+                    # Record interrupt metric
+                    if collector:
+                        try:
+                            collector.increment('shaman_chant_interrupts')
+                        except Exception:
+                            pass
             
             dead_entity = result.get("dead")
             if dead_entity:

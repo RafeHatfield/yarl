@@ -396,13 +396,18 @@ class Fighter:
         if most_restrictive_dex_cap is not None:
             dex_bonus = min(dex_bonus, most_restrictive_dex_cap)
         
-        # Apply status effect bonuses
+        # Apply status effect bonuses/penalties
         status_ac_bonus = 0
         if hasattr(self.owner, 'status_effects') and self.owner.status_effects is not None:
             # Protection: +ac_bonus to AC
             protection = self.owner.status_effects.get_effect('protection')
             if protection:
                 status_ac_bonus += protection.ac_bonus
+            
+            # Phase 19: Crippling Hex: -AC penalty
+            hex_debuff = self.owner.status_effects.get_effect('crippling_hex')
+            if hex_debuff and hasattr(hex_debuff, 'ac_delta'):
+                status_ac_bonus += hex_debuff.ac_delta  # Delta is negative
         
         # Apply ring bonuses (Ring of Protection)
         ring_ac_bonus = 0
@@ -585,22 +590,43 @@ class Fighter:
         if ai and hasattr(ai, 'in_combat'):
             ai.in_combat = True
         
-        # Phase 19: Check if this is an Orc Chieftain taking damage
-        # If chieftain has an active rally, end it immediately for all rallied orcs
-        if ai and hasattr(ai, 'rally_active') and ai.rally_active:
-            # Rally is active - end it!
-            results.append({'message': MB.combat("The rally falters as the chieftain is struck!")})
+        # Phase 19: Interrupt abilities only if final damage > 0
+        # Zero damage (from full resistance) should not interrupt abilities
+        if amount > 0:
+            # Phase 19: Check if this is an Orc Chieftain taking damage
+            # If chieftain has an active rally, end it immediately for all rallied orcs
+            if ai and hasattr(ai, 'rally_active') and ai.rally_active:
+                # Rally is active - end it!
+                results.append({'message': MB.combat("The rally falters as the chieftain is struck!")})
+                
+                # End rally for all rallied orcs
+                # We need to find all entities with rally_buff from this chieftain
+                # This is handled by the game state, but we mark the rally as ended here
+                ai.rally_active = False
+                
+                # Mark that rally should be cleared (game state will handle removal)
+                results.append({
+                    'end_rally': True,
+                    'chieftain_id': id(self.owner)
+                })
             
-            # End rally for all rallied orcs
-            # We need to find all entities with rally_buff from this chieftain
-            # This is handled by the game state, but we mark the rally as ended here
-            ai.rally_active = False
-            
-            # Mark that rally should be cleared (game state will handle removal)
-            results.append({
-                'end_rally': True,
-                'chieftain_id': id(self.owner)
-            })
+            # Phase 19: Check if this is an Orc Shaman taking damage while channeling
+            # If shaman is channeling Chant of Dissonance, interrupt it immediately
+            # IMPORTANT: Only interrupt if final damage > 0 (after resistances)
+            if ai and hasattr(ai, 'is_channeling') and ai.is_channeling:
+                # Shaman is channeling - interrupt it!
+                results.append({'message': MB.combat("The chant is broken!")})
+                
+                # End channeling
+                ai.is_channeling = False
+                ai.chant_target_id = None
+                
+                # Remove DissonantChant effect from target (player)
+                # Mark that chant should be cleared (will be handled by result processor)
+                results.append({
+                    'interrupt_chant': True,
+                    'shaman_id': id(self.owner)
+                })
         
         # Phase 19: Check for Split Under Pressure (before death check)
         # If split triggers, entity is removed and replaced by children
@@ -978,6 +1004,11 @@ class Fighter:
             bellow_debuff = status_effects.get_effect('sonic_bellow_debuff')
             if bellow_debuff and hasattr(bellow_debuff, 'to_hit_penalty'):
                 status_effect_to_hit_bonus -= bellow_debuff.to_hit_penalty
+            
+            # Phase 19: Crippling Hex debuff: -to-hit
+            hex_debuff = status_effects.get_effect('crippling_hex')
+            if hex_debuff and hasattr(hex_debuff, 'to_hit_delta'):
+                status_effect_to_hit_bonus += hex_debuff.to_hit_delta  # Delta is negative
             
             # Blindness: -to-hit (severe penalty)
             blindness = status_effects.get_effect('blindness')

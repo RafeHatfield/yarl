@@ -472,6 +472,34 @@ class AISystem(System):
                     
                     logger.info(f"[ORC CHIEFTAIN] Rally ended - chieftain {chieftain_id} was damaged")
             
+            # Phase 19: Handle chant interruption (when shaman is damaged)
+            if result.get('interrupt_chant'):
+                shaman_id = result.get('shaman_id')
+                if shaman_id:
+                    # Remove dissonant_chant effect from all entities (should just be player)
+                    from components.component_registry import ComponentType
+                    for entity in game_state.entities:
+                        status_effects = entity.get_component_optional(ComponentType.STATUS_EFFECTS)
+                        if status_effects and status_effects.has_effect('dissonant_chant'):
+                            # Remove chant effect
+                            remove_results = status_effects.remove_effect('dissonant_chant')
+                            # Add messages to game log
+                            for remove_result in remove_results:
+                                msg = remove_result.get('message')
+                                if msg and game_state.message_log:
+                                    game_state.message_log.add_message(msg)
+                    
+                    # Record interrupt metric
+                    try:
+                        from services.scenario_metrics import get_active_metrics_collector
+                        metrics = get_active_metrics_collector()
+                        if metrics:
+                            metrics.increment('shaman_chant_interrupts')
+                    except Exception:
+                        pass
+                    
+                    logger.info(f"[ORC SHAMAN] Chant interrupted - shaman {shaman_id} was damaged")
+            
             # Handle death (critical for player death detection)
             dead_entity = result.get("dead")
             if dead_entity:

@@ -158,6 +158,26 @@ class MonsterFactory(FactoryBase):
                 monster.bellow_duration = getattr(monster_def, 'bellow_duration', 2)
                 logger.debug(f"Added Sonic Bellow to {monster_def.name}: threshold={monster.bellow_hp_threshold}, penalty={monster.bellow_to_hit_penalty}")
             
+            # Phase 19: Set Orc Shaman Crippling Hex config if defined
+            if hasattr(monster_def, 'hex_enabled'):
+                monster.hex_enabled = monster_def.hex_enabled
+                monster.hex_radius = getattr(monster_def, 'hex_radius', 6)
+                monster.hex_duration_turns = getattr(monster_def, 'hex_duration_turns', 5)
+                monster.hex_cooldown_turns = getattr(monster_def, 'hex_cooldown_turns', 10)
+                monster.hex_to_hit_delta = getattr(monster_def, 'hex_to_hit_delta', -1)
+                monster.hex_ac_delta = getattr(monster_def, 'hex_ac_delta', -1)
+                logger.debug(f"Added Crippling Hex to {monster_def.name}: radius={monster.hex_radius}, duration={monster.hex_duration_turns}")
+            
+            # Phase 19: Set Orc Shaman Chant of Dissonance config if defined
+            if hasattr(monster_def, 'chant_enabled'):
+                monster.chant_enabled = monster_def.chant_enabled
+                monster.chant_radius = getattr(monster_def, 'chant_radius', 5)
+                monster.chant_duration_turns = getattr(monster_def, 'chant_duration_turns', 3)
+                monster.chant_cooldown_turns = getattr(monster_def, 'chant_cooldown_turns', 15)
+                monster.chant_move_energy_tax = getattr(monster_def, 'chant_move_energy_tax', 1)
+                monster.chant_is_channeled = getattr(monster_def, 'chant_is_channeled', True)
+                logger.debug(f"Added Chant of Dissonance to {monster_def.name}: radius={monster.chant_radius}, duration={monster.chant_duration_turns}")
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai
@@ -229,6 +249,9 @@ class MonsterFactory(FactoryBase):
         elif ai_type == "orc_chieftain":
             from components.ai.orc_chieftain_ai import OrcChieftainAI
             return OrcChieftainAI()
+        elif ai_type == "orc_shaman":
+            from components.ai.orc_shaman_ai import OrcShamanAI
+            return OrcShamanAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()

@@ -301,6 +301,96 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ---
 
+### Orc Shaman: Crippling Hex + Chant of Dissonance (Phase 19 Battlefield Controller)
+
+**Status:** ✅ COMPLETE
+
+**Identity:** Battlefield controller with deterministic debuff abilities  
+**Decision:** Do I interrupt the shaman's chant with ranged attacks, or endure the movement tax?
+
+**Mechanics:**
+
+**Mechanic 1: Crippling Hex (Cooldown-Based Debuff)**
+- Applied to player when shaman is within hex_radius (default: 6 tiles)
+- Effect on player:
+  - -1 to-hit penalty
+  - -1 AC penalty
+  - Duration: 5 turns
+- Cooldown: 10 turns
+- Message: "🔮 A dark hex settles over [player]!"
+- Deterministic, no RNG
+- Can be recast after cooldown expires
+
+**Mechanic 2: Chant of Dissonance (Channeled Movement Tax, Interruptible)**
+- Applied to player when shaman is within chant_radius (default: 5 tiles)
+- Effect on player:
+  - +1 energy cost per movement (movement costs 2 turns instead of 1)
+  - Duration: 3 turns (while shaman channels)
+- Channeling requirements:
+  - Shaman must maintain channeling (sets `is_channeling=True`)
+  - Shaman cannot perform other actions while channeling
+  - **Interruptible:** ANY damage to shaman immediately breaks the chant
+- Cooldown: 15 turns (applies even if interrupted)
+- Message on start: "🎵 A dissonant chant assaults [player]'s senses!"
+- Message on interrupt: "The chant is broken!"
+- Message on natural expiry: "The chant affecting [player] ceases."
+- Deterministic, no RNG
+
+**Mechanic 3: Hang-back AI Heuristic**
+- Shaman prefers to "hang back" at distance 4-7 from player
+- Positional preference:
+  - If too close (≤2), tries to retreat if possible
+  - If at good distance (4-7), stays put or moves laterally
+  - If too far (>7), moves closer (but prefers to cast abilities)
+  - If boxed in or no retreat possible, attacks normally
+- Never stalls: if forced to engage, attacks
+- Encourages tactical play: reach shaman via flanking/ranged/funneling
+
+**Implementation:**
+- Status effects: `CripplingHexEffect`, `DissonantChantEffect` in `components/status_effects.py`
+- AI: `OrcShamanAI` in `components/ai/orc_shaman_ai.py`
+- Config: `config/entities.yaml` (orc_shaman with hex/chant fields)
+- Chant interrupt: `Fighter.take_damage()` detects channeling and ends it
+- Combat penalties: `Fighter.attack_d20()` applies hex to-hit penalty, `Fighter.armor_class` applies hex AC penalty
+- Movement tax: `game_actions.py._handle_movement()` consumes extra turn when chant is active
+- AI system: `engine/systems/ai_system.py` processes interrupt_chant result
+- Scenario: `scenario_monster_orc_shaman_identity.yaml`
+- Unit tests: `tests/unit/test_orc_shaman.py` (14 tests)
+
+**Scenario:**
+- 1 Orc Shaman + 3 basic orcs
+- Shaman hangs back (distance 4-7) while orcs engage
+- Hex triggers when player is within range (6 tiles)
+- Chant triggers when player is within range (5 tiles)
+- Player can interrupt chant by:
+  - Using shortbow to damage shaman from distance
+  - Throwing daggers at shaman
+  - Flanking to reach shaman with melee
+- Validates: hex application, chant application, chant interrupt, hang-back AI, cooldowns
+
+**Balance Impact:**
+- Scenario runs: 30 runs, 200 turn limit
+- Expected: 4 enemies per run (1 shaman + 3 orcs)
+- Hex is impactful (-1 to-hit and -1 AC) but temporary (5 turns, 10 turn cooldown)
+- Chant is powerful (double movement cost) but interruptible (counterplay required)
+- Encourages tactical play: prioritize shaman or endure debuffs
+- Included in full balance suite (not fast mode)
+
+**Metrics Tracking:**
+- `shaman_hex_casts`: Total hex casts across all runs
+- `shaman_chant_starts`: Total chant starts
+- `shaman_chant_interrupts`: Chants interrupted by damage (proves counterplay)
+- `shaman_chant_expiries`: Chants that completed naturally
+- Tracked in `OrcShamanAI` and `engine/systems/ai_system.py`
+
+**Expected Thresholds (30 runs):**
+- `shaman_hex_casts >= 30`: At least 1 hex per run
+- `shaman_chant_starts >= 15`: At least half of runs see chant
+- `shaman_chant_interrupts >= 5`: Counterplay is viable and used
+- `shaman_chant_expiries >= 5`: Some chants complete naturally
+
+---
+
 ### Wraith: Life Drain + Ward Against Drain (Phase 19.5)
 
 **Status:** ✅ COMPLETE

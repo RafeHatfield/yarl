@@ -66,6 +66,11 @@ class RunMetrics:
     life_drain_attempts: int = 0
     life_drain_heal_total: int = 0
     life_drain_blocked_attempts: int = 0
+    # Phase 19: Orc Shaman metrics
+    shaman_hex_casts: int = 0
+    shaman_chant_starts: int = 0
+    shaman_chant_interrupts: int = 0
+    shaman_chant_expiries: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -98,6 +103,15 @@ class RunMetrics:
             result['life_drain_heal_total'] = self.life_drain_heal_total
         if hasattr(self, 'life_drain_blocked_attempts'):
             result['life_drain_blocked_attempts'] = self.life_drain_blocked_attempts
+        # Phase 19: Orc Shaman metrics (optional)
+        if hasattr(self, 'shaman_hex_casts'):
+            result['shaman_hex_casts'] = self.shaman_hex_casts
+        if hasattr(self, 'shaman_chant_starts'):
+            result['shaman_chant_starts'] = self.shaman_chant_starts
+        if hasattr(self, 'shaman_chant_interrupts'):
+            result['shaman_chant_interrupts'] = self.shaman_chant_interrupts
+        if hasattr(self, 'shaman_chant_expiries'):
+            result['shaman_chant_expiries'] = self.shaman_chant_expiries
         return result
 
 
@@ -131,6 +145,11 @@ class AggregatedMetrics:
     total_life_drain_attempts: int = 0
     total_life_drain_heal_total: int = 0
     total_life_drain_blocked_attempts: int = 0
+    # Phase 19: Orc Shaman metrics
+    total_shaman_hex_casts: int = 0
+    total_shaman_chant_starts: int = 0
+    total_shaman_chant_interrupts: int = 0
+    total_shaman_chant_expiries: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -350,7 +369,8 @@ def _handle_combat_results(
     
     # Known result types we handle
     # Note: 'xp' is part of 'dead' result, not a separate type
-    KNOWN_RESULT_TYPES = {'message', 'split', 'dead', 'xp'}
+    # Phase 19: Added interrupt_chant, shaman_id, end_rally, chieftain_id
+    KNOWN_RESULT_TYPES = {'message', 'split', 'dead', 'xp', 'interrupt_chant', 'shaman_id', 'end_rally', 'chieftain_id'}
     
     for result in results:
         # Check for unknown result types (future-proofing)
@@ -388,6 +408,15 @@ def _handle_combat_results(
                 target_died = True
                 if collector:
                     collector.record_kill(attacker, split_data['original_entity'])
+        
+        # Phase 19: Handle chant interruption
+        if result.get('interrupt_chant'):
+            # Chant was interrupted - record metric
+            if collector:
+                collector.increment('shaman_chant_interrupts')
+            
+            # Remove dissonant_chant effect from all entities (handled by AI system in normal flow)
+            # In scenario harness, we just record the metric
         
         # Handle death
         dead_entity = result.get("dead")
@@ -806,6 +835,17 @@ def run_scenario_many(
         total_drain_heal += getattr(run, "life_drain_heal_total", 0)
         total_drain_blocked += getattr(run, "life_drain_blocked_attempts", 0)
     
+    # Phase 19: Aggregate orc shaman metrics
+    total_shaman_hex_casts = 0
+    total_shaman_chant_starts = 0
+    total_shaman_chant_interrupts = 0
+    total_shaman_chant_expiries = 0
+    for run in all_runs:
+        total_shaman_hex_casts += getattr(run, "shaman_hex_casts", 0)
+        total_shaman_chant_starts += getattr(run, "shaman_chant_starts", 0)
+        total_shaman_chant_interrupts += getattr(run, "shaman_chant_interrupts", 0)
+        total_shaman_chant_expiries += getattr(run, "shaman_chant_expiries", 0)
+    
     for run in all_runs:
         total_split_events += getattr(run, "split_events_total", 0)
         total_split_children += getattr(run, "split_children_spawned", 0)
@@ -835,6 +875,10 @@ def run_scenario_many(
         total_life_drain_attempts=total_drain_attempts,
         total_life_drain_heal_total=total_drain_heal,
         total_life_drain_blocked_attempts=total_drain_blocked,
+        total_shaman_hex_casts=total_shaman_hex_casts,
+        total_shaman_chant_starts=total_shaman_chant_starts,
+        total_shaman_chant_interrupts=total_shaman_chant_interrupts,
+        total_shaman_chant_expiries=total_shaman_chant_expiries,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

@@ -103,6 +103,10 @@ class MovementService:
 
         # Check for immobilized status effect
         from components.component_registry import ComponentType
+        
+        # Track whether we should flip chant toggle after successful movement
+        chant_should_flip_toggle = False
+        
         if player.components.has(ComponentType.STATUS_EFFECTS):
             status_effects = player.status_effects
             if status_effects and status_effects.has_effect("immobilized"):
@@ -110,6 +114,28 @@ class MovementService:
                 result.messages.append(MB.warning("You are stuck in place and cannot move!"))
                 logger.debug("Movement blocked by immobilized status effect")
                 return result
+            
+            # Phase 19: Check for Dissonant Chant movement tax (alternating block)
+            # While chanted, movement alternates: allowed -> blocked -> allowed -> blocked
+            # This creates "movement costs 2" without double-advancing the world
+            # IMPORTANT: Toggle only flips on SUCCESSFUL movement (not wall bumps)
+            if status_effects.has_effect("dissonant_chant"):
+                # Initialize toggle flag if not present
+                if not hasattr(player, '_chant_move_block_next'):
+                    player._chant_move_block_next = False
+                
+                if player._chant_move_block_next:
+                    # Block this move, reset toggle for next attempt
+                    player._chant_move_block_next = False
+                    result.blocked_by_status = True
+                    result.messages.append(MB.warning("🎵 The chant disrupts your footing!"))
+                    logger.debug("Movement blocked by Dissonant Chant (alternating tax)")
+                    return result
+                else:
+                    # Mark that we should flip toggle IF movement succeeds
+                    # Don't flip yet - wait until after wall/entity checks
+                    chant_should_flip_toggle = True
+                    # Movement proceeds to validation checks below
 
         # Check for door at destination FIRST (before wall check)
         # Doors may block tiles, but we want to handle them specially
@@ -149,6 +175,12 @@ class MovementService:
         logger.debug(f"[PLAYER_MOVE] SUCCESS: moved from {old_pos} to ({player.x}, {player.y}) via {source}")
         result.new_position = (player.x, player.y)
         result.fov_recompute = True
+        
+        # Phase 19: Flip chant toggle AFTER successful movement
+        # This ensures wall bumps and blocked entities don't waste the toggle
+        if chant_should_flip_toggle:
+            player._chant_move_block_next = True
+            logger.debug("Chant toggle flipped: next move will be blocked")
         
         logger.info(f"Player moved: {old_pos} -> {result.new_position} via {source}")
         

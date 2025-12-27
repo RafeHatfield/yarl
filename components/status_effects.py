@@ -1134,7 +1134,79 @@ class SonicBellowDebuffEffect(StatusEffect):
     
     def remove(self) -> List[Dict[str, Any]]:
         results = super().remove()
-        results.append({'message': MB.status_effect(f"{self.owner.name}'s hearing recovers.")})
+        results.append({'message': MB.status_effect(f"{self.owner.name} recovers from the bellow.")})
+        return results
+
+
+class CripplingHexEffect(StatusEffect):
+    """Phase 19: Orc Shaman Crippling Hex debuff.
+    
+    Applied to player by Orc Shaman (cooldown-based ability).
+    Provides:
+    - -1 to-hit penalty
+    - -1 AC penalty
+    
+    Duration: config-driven (default 5 turns)
+    Cooldown: config-driven (default 10 turns)
+    Deterministic, no RNG.
+    """
+    def __init__(self, duration: int, owner: 'Entity', to_hit_delta: int = -1, ac_delta: int = -1):
+        super().__init__("crippling_hex", duration, owner)
+        self.to_hit_delta = to_hit_delta  # Negative value = penalty
+        self.ac_delta = ac_delta          # Negative value = penalty
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({
+            'message': MB.warning(f"🔮 A dark hex settles over {self.owner.name}!")
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({
+            'message': MB.status_effect(f"The hex on {self.owner.name} fades away.")
+        })
+        return results
+
+
+class DissonantChantEffect(StatusEffect):
+    """Phase 19: Orc Shaman Chant of Dissonance (movement tax).
+    
+    Applied to player by Orc Shaman while channeling (interruptible by damage).
+    Provides:
+    - +1 energy cost per movement (movement tax)
+    
+    Duration: config-driven (default 3 turns, while channeling)
+    Cooldown: config-driven (default 15 turns)
+    Chant is interruptible: ends immediately if shaman takes damage.
+    Deterministic, no RNG.
+    """
+    def __init__(self, duration: int, owner: 'Entity', move_energy_tax: int = 1):
+        super().__init__("dissonant_chant", duration, owner)
+        self.move_energy_tax = move_energy_tax  # Additional energy cost per move
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({
+            'message': MB.warning(f"🎵 A dissonant chant assaults {self.owner.name}'s senses!")
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({
+            'message': MB.status_effect(f"The chant affecting {self.owner.name} ceases.")
+        })
+        
+        # Reset alternating movement block toggle when chant ends
+        # This ensures no sticky block state after effect expires/interrupts
+        # Note: Effect refresh (shaman re-casts chant) also calls remove(), resetting toggle
+        # This gives player a "free" allowed move after refresh, but player trades this
+        # for extended chant duration - minor edge case, acceptable behavior
+        if hasattr(self.owner, '_chant_move_block_next'):
+            self.owner._chant_move_block_next = False
+        
         return results
 
 
