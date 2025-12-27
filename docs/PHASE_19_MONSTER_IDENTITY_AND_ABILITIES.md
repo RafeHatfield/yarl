@@ -46,37 +46,74 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ## Phase 19 Monster Abilities
 
-### Troll: Regeneration
+### Troll: Regeneration + Acid/Fire Suppression
 
-**Status:** ✅ In Progress (Phase 19.1)
+**Status:** ✅ COMPLETE (Phase 19.6)
 
-**Identity:** Trolls are classically known for regeneration  
-**Decision:** Do I finish this troll quickly, or deal with its healing?
+**Identity:** Trolls regenerate rapidly but are vulnerable to acid and fire  
+**Decision:** Do I use acid/fire damage to suppress regeneration, or rush to finish it quickly?
 
-**Mechanic:**
-- Trolls heal **2 HP at end of their turn** (after all actions)
+**Mechanics:**
+
+**A) Natural Regeneration:**
+- Trolls heal **2 HP at end of their turn** (after all actions, 3 HP for ancient trolls)
 - Regeneration stops if troll is at max HP
 - Regeneration is **deterministic** (no RNG)
-- Only applies to monsters with "regenerating" tag
+- Only applies to monsters with `regeneration_amount` attribute
+
+**B) Acid/Fire Suppression (Counterplay):**
+- When a troll takes damage from `acid` or `fire` damage type:
+  - Regeneration is suppressed until the **next turn**
+  - Message: "The acid prevents the troll from regenerating!" (orange)
+  - Suppression is turn-based (turn number tracked via TurnManager)
+- Slimes deal acid damage via `natural_damage_type: "acid"` field
+- Creates tactical decision: let slime attack troll first, then finish it off
 
 **Tuning:**
-- Baseline: 2 HP/turn
-- Max HP unchanged (30 for basic troll, 50 for ancient)
-- If balance suite shows WARN/FAIL: reduce to 1 HP/turn
+- Basic troll: 2 HP/turn regeneration, 30 HP, defense 2
+- Ancient troll: 3 HP/turn regeneration, 50 HP, defense 3
+- Suppression duration: 1 turn (until next turn)
+- Slimes always deal acid damage (no RNG)
 
 **Implementation:**
-- Add `regeneration_amount` field to monster definitions
-- Handle in `systems/combat_system.py` end-of-turn processing
-- Telegraphed in combat log: "The troll regenerates 2 HP!"
+- Regeneration: `engine/systems/ai_system.py` (_apply_regeneration method)
+- Suppression tracking: `components/fighter.py` (take_damage method, tracks `regeneration_suppressed_until_turn`)
+- Damage type plumbing: `components/fighter.py` (attack_d20 passes `weapon_damage_type` or `natural_damage_type`)
+- Natural damage types: `config/factories/monster_factory.py` (stores `natural_damage_type` on entity)
+- Monster definitions: `config/entities.yaml` (slime has `natural_damage_type: "acid"`)
+
+**Metrics Tracking:**
+- `troll_regen_attempts`: Total regeneration attempts
+- `troll_regen_successes`: Successful regenerations
+- `troll_regen_suppressed`: Regenerations suppressed by acid/fire damage
+- Tracked in `engine/systems/ai_system.py` (_apply_regeneration method)
 
 **Testing:**
-- Scenario: `troll_regeneration_test.yaml`
-- Validates healing per turn, capped at max HP
-- Ensures deterministic behavior
+- Scenario: `scenario_monster_troll_identity.yaml`
+- Setup: 1 troll + 1 slime in arena with player
+- Validates: regeneration occurs, acid suppression works, metrics are tracked
+- Expected behavior: Slime's acid attacks suppress troll regeneration
+
+**Scenario:**
+- 1 troll (regenerates 2 HP/turn normally)
+- 1 slime (deals acid damage, hostile to all)
+- Player starts with longsword and 3 healing potions
+- Expected behavior:
+  - Without acid: Troll regenerates each turn
+  - With slime acid hit: Troll regeneration suppressed for 1 turn
+  - Player learns to use slime's acid tactically
+- Validates: regen occurs, suppression works, metrics track
 
 **Balance Impact:**
-- Expected: WARN on troll-heavy scenarios (intended)
-- If FAIL: reduce to 1 HP/turn or add "fire stops regeneration" mechanic
+- Scenario runs: 30 runs, 100 turn limit
+- Expected: ~20-25 kills (learning curve), <= 15 deaths
+- Trolls are tough without counterplay, manageable with acid/fire
+- Included in full balance suite (not fast mode)
+
+**Teaching Moment:**
+- Regeneration teaches **burst damage**: finish trolls quickly
+- Suppression teaches **damage type awareness**: acid/fire are valuable vs trolls
+- Slime interaction teaches **multi-enemy tactics**: use hostile slimes to your advantage
 
 ---
 

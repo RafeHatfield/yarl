@@ -520,6 +520,7 @@ class AISystem(System):
         - Entity has regeneration_amount attribute
         - Entity has fighter component
         - Entity is not at max HP
+        - Regeneration is not suppressed by acid/fire damage
         
         Args:
             entity: The entity to potentially regenerate
@@ -543,6 +544,41 @@ class AISystem(System):
         if fighter.hp >= fighter.max_hp:
             return
         
+        # Phase 19: Check for regeneration suppression (acid/fire damage)
+        # Get current turn number from TurnManager
+        turn_number = None
+        try:
+            from engine.turn_manager import TurnManager
+            turn_mgr = TurnManager.get_instance()
+            if turn_mgr:
+                turn_number = turn_mgr.turn_number
+        except:
+            pass
+        
+        # Check if regeneration is suppressed
+        suppressed_until = getattr(entity, 'regeneration_suppressed_until_turn', None)
+        if suppressed_until is not None and turn_number is not None:
+            if turn_number < suppressed_until:
+                # Regeneration is suppressed - show message
+                if game_state.message_log:
+                    from game_messages import Message
+                    message = Message(
+                        f"The acid prevents the {entity.name} from regenerating!",
+                        (200, 100, 0)  # Orange for suppression
+                    )
+                    game_state.message_log.add_message(message)
+                    logger.debug(f"{entity.name} regeneration suppressed (turn {turn_number}, suppressed until {suppressed_until})")
+                
+                # Record suppression metric
+                if hasattr(game_state, 'scenario_metrics'):
+                    game_state.scenario_metrics['troll_regen_suppressed'] = game_state.scenario_metrics.get('troll_regen_suppressed', 0) + 1
+                
+                return
+        
+        # Record regeneration attempt metric
+        if hasattr(game_state, 'scenario_metrics'):
+            game_state.scenario_metrics['troll_regen_attempts'] = game_state.scenario_metrics.get('troll_regen_attempts', 0) + 1
+        
         # Calculate healing amount (don't exceed max HP)
         old_hp = fighter.hp
         fighter.hp = min(fighter.hp + regeneration_amount, fighter.max_hp)
@@ -557,6 +593,10 @@ class AISystem(System):
             )
             game_state.message_log.add_message(message)
             logger.debug(f"{entity.name} regenerated {actual_heal} HP ({old_hp} -> {fighter.hp})")
+            
+            # Record successful regeneration metric
+            if hasattr(game_state, 'scenario_metrics'):
+                game_state.scenario_metrics['troll_regen_successes'] = game_state.scenario_metrics.get('troll_regen_successes', 0) + 1
     
     def _process_player_status_effects(self, game_state) -> None:
         """Process player status effects at the start of their turn.

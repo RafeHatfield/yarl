@@ -545,6 +545,25 @@ class Fighter:
         
         self.hp -= amount
         
+        # Phase 19: Track damage type for regeneration suppression (troll identity)
+        if damage_type and self.owner and hasattr(self.owner, 'regeneration_amount'):
+            # Suppress regeneration if damage type is acid or fire
+            if damage_type.lower() in ['acid', 'fire']:
+                # Get current turn number from TurnManager if available
+                turn_number = None
+                try:
+                    from engine.turn_manager import TurnManager
+                    turn_mgr = TurnManager.get_instance()
+                    if turn_mgr:
+                        turn_number = turn_mgr.turn_number
+                except:
+                    pass
+                
+                # Suppress regeneration until next turn
+                if turn_number is not None:
+                    self.owner.regeneration_suppressed_until_turn = turn_number + 1
+                    logger.debug(f"[REGEN SUPPRESSION] {self.owner.name} regeneration suppressed by {damage_type} until turn {turn_number + 1}")
+        
         # Record damage taken (only for player)
         statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
         if statistics:
@@ -1052,7 +1071,7 @@ class Fighter:
             damage += status_effect_damage_bonus
             
             # Phase 18/19: Apply damage type modifier (resistance/vulnerability/multipliers)
-            # Get weapon damage type
+            # Get weapon damage type (or natural damage type for monsters)
             weapon_damage_type = None
             if equipment and equipment.main_hand:
                 weapon = equipment.main_hand
@@ -1060,6 +1079,9 @@ class Fighter:
                     equippable = weapon.equippable if hasattr(weapon, 'equippable') else weapon.get_component_optional(ComponentType.EQUIPPABLE)
                     if equippable and hasattr(equippable, 'damage_type'):
                         weapon_damage_type = equippable.damage_type
+            elif hasattr(self.owner, 'natural_damage_type'):
+                # Phase 19: Use natural damage type for unarmed monsters (slimes = acid, etc.)
+                weapon_damage_type = self.owner.natural_damage_type
             
             # Check target for resistance/vulnerability
             if weapon_damage_type:
@@ -1125,8 +1147,8 @@ class Fighter:
                 self._log_d20_combat(d20_roll, to_hit_bonus, weapon_bonus, attack_roll,
                                     target_ac, hit, is_critical, damage, base_damage)
             
-            # Apply damage
-            results.extend(target.require_component(ComponentType.FIGHTER).take_damage(damage))
+            # Apply damage (pass damage type for regeneration suppression)
+            results.extend(target.require_component(ComponentType.FIGHTER).take_damage(damage, damage_type=weapon_damage_type))
             
             # Apply corrosion effects if applicable
             corrosion_results = self._apply_corrosion_effects(target, damage)

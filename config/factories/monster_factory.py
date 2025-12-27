@@ -136,6 +136,11 @@ class MonsterFactory(FactoryBase):
                 monster.death_spawns = monster_def.death_spawns
                 logger.debug(f"Added death spawn to {monster_def.name}: {monster.death_spawns}")
             
+            # Phase 19: Set natural damage type if defined (slime acid, etc.)
+            if hasattr(monster_def, 'natural_damage_type'):
+                monster.natural_damage_type = monster_def.natural_damage_type
+                logger.debug(f"Added natural damage type to {monster_def.name}: {monster.natural_damage_type}")
+            
             # Phase 19: Set Orc Chieftain Rally Cry config if defined
             if hasattr(monster_def, 'rally_radius'):
                 monster.rally_radius = monster_def.rally_radius
