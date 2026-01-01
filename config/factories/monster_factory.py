@@ -178,6 +178,16 @@ class MonsterFactory(FactoryBase):
                 monster.chant_is_channeled = getattr(monster_def, 'chant_is_channeled', True)
                 logger.debug(f"Added Chant of Dissonance to {monster_def.name}: radius={monster.chant_radius}, duration={monster.chant_duration_turns}")
             
+            # Phase 19: Set Necromancer Raise Dead config if defined
+            if hasattr(monster_def, 'raise_dead_enabled'):
+                monster.raise_dead_enabled = monster_def.raise_dead_enabled
+                monster.raise_dead_range = getattr(monster_def, 'raise_dead_range', 5)
+                monster.raise_dead_cooldown_turns = getattr(monster_def, 'raise_dead_cooldown_turns', 4)
+                monster.danger_radius_from_player = getattr(monster_def, 'danger_radius_from_player', 2)
+                monster.preferred_distance_min = getattr(monster_def, 'preferred_distance_min', 4)
+                monster.preferred_distance_max = getattr(monster_def, 'preferred_distance_max', 7)
+                logger.debug(f"Added Raise Dead to {monster_def.name}: range={monster.raise_dead_range}, cooldown={monster.raise_dead_cooldown_turns}")
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai
@@ -252,6 +262,9 @@ class MonsterFactory(FactoryBase):
         elif ai_type == "orc_shaman":
             from components.ai.orc_shaman_ai import OrcShamanAI
             return OrcShamanAI()
+        elif ai_type == "necromancer":
+            from components.ai.necromancer_ai import NecromancerAI
+            return NecromancerAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()

@@ -6,12 +6,15 @@ class _DummyMap:
     height = 100
 
 def _monster_with(store=None, name="orc"):
+    from components.component_registry import ComponentRegistry
+    
     class M:
         def __init__(self, name, store):
             self.name = name
             self.x = 10  # Position for loot dropping
             self.y = 10
             self._c = store or {}
+            self.components = ComponentRegistry()  # Phase 19: Required for CorpseComponent
         def get_component_optional(self, key):
             if hasattr(key, "value"):  # accept Enum or str
                 key = key.value

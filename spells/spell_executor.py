@@ -1218,7 +1218,11 @@ class SpellExecutor:
         target_y: Optional[int],
         **kwargs
     ) -> List[Dict[str, Any]]:
-        """Cast raise dead spell - resurrect a corpse as a zombie."""
+        """Cast raise dead spell - resurrect a corpse as a zombie.
+        
+        Phase 19: Now uses CorpseComponent for safe raise tracking.
+        Supports raiser_faction parameter for Necromancer AI.
+        """
         import math
         from entity import get_blocking_entities_at_location
         from components.fighter import Fighter
@@ -1226,9 +1230,11 @@ class SpellExecutor:
         from config.entity_registry import get_entity_registry
         from render_functions import RenderOrder
         from components.faction import Faction
+        from components.corpse import CorpseComponent
         
         results = []
         max_range = kwargs.get("range", spell.max_range)
+        raiser_faction = kwargs.get("raiser_faction", None)  # Phase 19: Faction override for AI
         
         # Validate target
         if target_x is None or target_y is None:
@@ -1245,19 +1251,42 @@ class SpellExecutor:
                 "message": MB.warning("That corpse is too far away!")
             }]
         
-        # Find corpse at location
+        # Phase 19: Find corpse at location using CorpseComponent (primary)
+        # Fallback to name check for backward compatibility with pre-Phase19 saves
         corpse = None
         for ent in entities:
-            if (ent.x == target_x and ent.y == target_y and 
-                ent.name.startswith("remains of ")):
-                corpse = ent
-                break
+            if ent.x == target_x and ent.y == target_y:
+                # Prefer CorpseComponent check
+                corpse_comp = ent.get_component_optional(ComponentType.CORPSE)
+                if corpse_comp:
+                    corpse = ent
+                    break
+                # Fallback: legacy name-based check
+                elif ent.name.startswith("remains of "):
+                    corpse = ent
+                    break
         
         if not corpse:
             return [{
                 "consumed": False,
                 "message": MB.warning(spell.fail_message or "No corpse there!")
             }]
+        
+        # Phase 19: Check corpse eligibility via CorpseComponent
+        corpse_comp = corpse.get_component_optional(ComponentType.CORPSE)
+        if corpse_comp:
+            if not corpse_comp.can_be_raised():
+                # Corpse already consumed or at max raises
+                if corpse_comp.consumed:
+                    return [{
+                        "consumed": False,
+                        "message": MB.warning("That corpse has already been raised!")
+                    }]
+                else:
+                    return [{
+                        "consumed": False,
+                        "message": MB.warning("That corpse cannot be raised again!")
+                    }]
         
         # Check if location is blocked
         blocking_entity = get_blocking_entities_at_location(entities, corpse.x, corpse.y)
@@ -1267,16 +1296,17 @@ class SpellExecutor:
                 "message": MB.warning(f"{blocking_entity.name} is in the way!")
             }]
         
-        # Resurrect the corpse!
-        original_name = corpse.name.replace("remains of ", "")
-        corpse.name = f"Zombified {original_name}"
-        corpse.color = (40, 40, 40)  # Dark gray/black
-        corpse.blocks = True
-        corpse.render_order = RenderOrder.ACTOR
-        
-        # Get original stats
+        # Get original monster stats
         registry = get_entity_registry()
-        monster_id = original_name.lower()
+        
+        # Phase 19: Use CorpseComponent for accurate monster ID (no name parsing)
+        if corpse_comp:
+            monster_id = corpse_comp.original_monster_id
+        else:
+            # Fallback: extract from name for legacy corpses
+            original_name = corpse.name.replace("remains of ", "")
+            monster_id = original_name.lower()
+        
         original_def = registry.monsters.get(monster_id)
         
         if original_def and hasattr(original_def, 'stats'):
@@ -1299,6 +1329,13 @@ class SpellExecutor:
             base_dexterity = 10
             base_constitution = 10
         
+        # Resurrect the corpse!
+        original_name = corpse.name.replace("remains of ", "")
+        corpse.name = f"Zombified {original_name}"
+        corpse.color = (40, 40, 40)  # Dark gray/black
+        corpse.blocks = True
+        corpse.render_order = RenderOrder.ACTOR
+        
         # Create zombie: 2x HP, 0.5x damage
         zombie_hp = base_hp * 2
         zombie_power = max(1, int(base_power * 0.5))
@@ -1308,7 +1345,8 @@ class SpellExecutor:
         zombie_dexterity = max(6, int(base_dexterity * 0.5))
         zombie_constitution = min(18, int(base_constitution * 1.5))
         
-        corpse.fighter = Fighter(
+        # Create fighter component
+        new_fighter = Fighter(
             hp=zombie_hp,
             defense=base_defense,
             power=zombie_power,
@@ -1318,16 +1356,25 @@ class SpellExecutor:
             dexterity=zombie_dexterity,
             constitution=zombie_constitution
         )
-        corpse.fighter.owner = corpse
-        corpse.components.add(ComponentType.FIGHTER, corpse.fighter)
+        new_fighter.owner = corpse
         
-        # Add mindless zombie AI (attacks everything)
-        corpse.ai = MindlessZombieAI()
-        corpse.ai.owner = corpse
-        corpse.components.add(ComponentType.AI, corpse.ai)
+        # Set fighter (Entity.__setattr__ auto-registers, so don't call .add())
+        corpse.fighter = new_fighter
         
-        # Set faction to NEUTRAL (zombies are hostile to all)
-        corpse.faction = Faction.NEUTRAL
+        # Create mindless zombie AI (attacks everything)
+        new_ai = MindlessZombieAI()
+        new_ai.owner = corpse
+        
+        # Set AI (Entity.__setattr__ auto-registers, so don't call .add())
+        corpse.ai = new_ai
+        
+        # Phase 19: Set faction based on raiser_faction parameter
+        # If raiser_faction provided (Necromancer AI), zombies are friendly to raiser
+        # Otherwise, default to NEUTRAL (hostile to all) for player-raised zombies
+        if raiser_faction is not None:
+            corpse.faction = raiser_faction
+        else:
+            corpse.faction = Faction.NEUTRAL
         
         # Clear any inventory/equipment from the original monster
         if corpse.components.has(ComponentType.INVENTORY):
@@ -1338,6 +1385,11 @@ class SpellExecutor:
             corpse.components.remove(ComponentType.EQUIPMENT)
         if hasattr(corpse, 'equipment'):
             corpse.equipment = None
+        
+        # Phase 19: Consume corpse via CorpseComponent
+        if corpse_comp:
+            raiser_name = getattr(caster, 'name', 'Unknown')
+            corpse_comp.consume(raiser_name)
         
         # Invalidate entity cache since we added AI to an existing entity
         from entity_sorting_cache import invalidate_entity_cache

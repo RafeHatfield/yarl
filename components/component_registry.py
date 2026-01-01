@@ -84,6 +84,7 @@ class ComponentType(Enum):
     DOOR = auto()
     TRAP = auto()
     SPEED_BONUS_TRACKER = auto()  # Combat speed bonus system (Phase 1)
+    CORPSE = auto()  # Phase 19: Corpse tracking for safe resurrection
 
 
 class ComponentRegistry:

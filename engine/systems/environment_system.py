@@ -233,6 +233,12 @@ class EnvironmentSystem(System):
                 delattr(entity, '_dropped_loot')
                 invalidate_entity_cache("entity_added_loot_hazard")
             
+            # Phase 19: Handle death-spawned features (bone piles, etc.)
+            if hasattr(entity, '_death_spawned_features') and entity._death_spawned_features:
+                game_state.entities.extend(entity._death_spawned_features)
+                delattr(entity, '_death_spawned_features')
+                invalidate_entity_cache("entity_added_death_features_hazard")
+            
             # Handle spawned entities (e.g., slime splitting)
             if hasattr(entity, '_spawned_entities') and entity._spawned_entities:
                 game_state.entities.extend(entity._spawned_entities)

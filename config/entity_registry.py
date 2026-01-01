@@ -73,7 +73,18 @@ class EntityStats:
 
 @dataclass
 class MonsterDefinition:
-    """Definition for a monster entity."""
+    """Definition for a monster entity.
+    
+    ⚠️  TECHNICAL DEBT WARNING (as of 2026-01-01):
+    This dataclass currently has 54 fields (18 core + 36 ability-specific).
+    Each new ability-based monster adds ~6 fields on average.
+    
+    TRIGGER FOR REFACTOR: When field count hits 80 (6-7 more Phase 19-style monsters).
+    RECOMMENDED APPROACH: Generic 'custom_attrs: Dict[str, Any]' for ability configs.
+    SEE: docs/INVESTIGATIONS/ENTITY_REGISTRY_TECHNICAL_DEBT_ANALYSIS.md
+    
+    For now, the current system works fine and is well-tested.
+    """
     name: str
     stats: EntityStats
     char: str
@@ -137,6 +148,13 @@ class MonsterDefinition:
     chant_cooldown_turns: int = 15  # Cooldown between chant casts
     chant_move_energy_tax: int = 1  # Movement tax (alternating block)
     chant_is_channeled: bool = True  # Chant requires channeling
+    # Phase 19: Necromancer Raise Dead ability
+    raise_dead_enabled: bool = False  # Whether raise dead ability is enabled
+    raise_dead_range: int = 5  # Range to raise corpses
+    raise_dead_cooldown_turns: int = 4  # Cooldown between raises
+    danger_radius_from_player: int = 2  # Never approach within this distance of player
+    preferred_distance_min: int = 4  # Minimum preferred distance from player
+    preferred_distance_max: int = 7  # Maximum preferred distance from player
 
 
 @dataclass  
@@ -549,7 +567,14 @@ class EntityRegistry:
                     chant_duration_turns=monster_data.get('chant_duration_turns', 3),
                     chant_cooldown_turns=monster_data.get('chant_cooldown_turns', 15),
                     chant_move_energy_tax=monster_data.get('chant_move_energy_tax', 1),
-                    chant_is_channeled=monster_data.get('chant_is_channeled', True)
+                    chant_is_channeled=monster_data.get('chant_is_channeled', True),
+                    # Phase 19: Necromancer abilities
+                    raise_dead_enabled=monster_data.get('raise_dead_enabled', False),
+                    raise_dead_range=monster_data.get('raise_dead_range', 5),
+                    raise_dead_cooldown_turns=monster_data.get('raise_dead_cooldown_turns', 4),
+                    danger_radius_from_player=monster_data.get('danger_radius_from_player', 2),
+                    preferred_distance_min=monster_data.get('preferred_distance_min', 4),
+                    preferred_distance_max=monster_data.get('preferred_distance_max', 7)
                 )
                 
                 self.monsters[monster_id] = monster_def

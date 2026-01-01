@@ -46,6 +46,7 @@ from game_states import GameStates
 from render_functions import RenderOrder
 from components.component_registry import ComponentType
 from config.factories import get_entity_factory
+from components.corpse import CorpseComponent
 
 
 def kill_player(player):
@@ -468,6 +469,31 @@ def kill_monster(monster, game_map=None, entities=None):
         monster.components.remove(ComponentType.AI)
     monster.fighter = None
     monster.ai = None
+    
+    # Phase 19: Attach CorpseComponent for safe resurrection tracking
+    # Extract original monster ID from entity (use monster_id if available, else derive from name)
+    original_monster_id = getattr(monster, 'monster_id', monster.name.lower())
+    
+    # Get current turn number for death tracking (if available)
+    death_turn = 0
+    try:
+        from engine.turn_manager import TurnManager
+        turn_mgr = TurnManager.get_instance()
+        if turn_mgr:
+            death_turn = turn_mgr.turn_number
+    except:
+        pass  # Turn tracking optional
+    
+    # Create and attach corpse component
+    corpse_component = CorpseComponent(
+        original_monster_id=original_monster_id,
+        death_turn=death_turn,
+        raise_count=0,
+        max_raises=1,
+        consumed=False
+    )
+    corpse_component.owner = monster
+    monster.components.add(ComponentType.CORPSE, corpse_component)
     
     monster.name = "remains of " + monster.name
     monster.render_order = RenderOrder.CORPSE

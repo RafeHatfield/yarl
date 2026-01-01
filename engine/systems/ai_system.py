@@ -535,6 +535,12 @@ class AISystem(System):
                         # Invalidate entity sorting cache when new entities are added
                         invalidate_entity_cache("entity_added_loot_ai")
                     
+                    # Phase 19: Handle death-spawned features (bone piles, etc.)
+                    if hasattr(dead_entity, '_death_spawned_features') and dead_entity._death_spawned_features:
+                        game_state.entities.extend(dead_entity._death_spawned_features)
+                        delattr(dead_entity, '_death_spawned_features')
+                        invalidate_entity_cache("entity_added_death_features_ai")
+                    
                     # Phase 19: Old split-on-death mechanism removed
                     # _spawned_entities no longer used (Split Under Pressure replaced it)
                     

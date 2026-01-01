@@ -204,6 +204,47 @@ monsters:
     chant_is_channeled: true  # Chant requires channeling (interruptible by damage)
 
   # ═══════════════════════════════════════════════════════════
+  # PHASE 19: NECROMANCER - Corpse economy controller
+  # Necromancer raises dead on cooldown and seeks corpses
+  # ═══════════════════════════════════════════════════════════
+  
+  necromancer:
+    stats:
+      hp: 28                  # Moderate health (support/controller, not tank)
+      power: 1                # Low physical power (relies on summons)
+      defense: 0              # Not armored
+      xp: 80                  # Good XP for tactical threat
+      damage_min: 2           # Very weak melee (avoid combat)
+      damage_max: 4
+      # D&D-style stats
+      strength: 8             # Below average (-1 modifier) - weak fighter
+      dexterity: 14           # Agile (+2 to-hit, +2 AC)
+      constitution: 12        # Slightly resilient (+1)
+      # Phase 8: Accuracy & Evasion
+      accuracy: 4             # Good accuracy for ranged abilities
+      evasion: 2              # Decent evasion
+    char: "N"                 # Capital N for Necromancer
+    color: [80, 40, 120]      # Dark purple (necromantic)
+    ai_type: "necromancer"    # Phase 19: Custom AI with raise dead + corpse seeking
+    faction: "cultist"        # Cultist faction
+    render_order: "actor"
+    blocks: true
+    tags: ["caster", "controller"]
+    inventory_size: 4
+    seek_distance: 7          # Good awareness for corpse spotting
+    # Phase 19: Raise Dead ability (cooldown-based resurrection)
+    raise_dead_enabled: true
+    raise_dead_range: 5       # Range to raise corpses
+    raise_dead_cooldown_turns: 4  # Short cooldown (frequent raising)
+    # Phase 19: Hang-back behavior (maintain safe distance)
+    preferred_distance_min: 4 # Minimum preferred distance from player
+    preferred_distance_max: 7 # Maximum preferred distance from player
+    danger_radius_from_player: 2  # Never approach within 2 tiles of player
+    # Total damage: 1 power + 2-4 natural = 3-5 (very weak, relies on zombies)
+    # ETP: DPS=4 × 7 × durability=1.2 × behavior=1.3 (summons) = 44
+    etp_base: 44
+
+  # ═══════════════════════════════════════════════════════════
   # PHASE 19: SKELETON SHIELD WALL ENEMY
   # Skeletons form defensive walls and have damage type identity
   # ═══════════════════════════════════════════════════════════

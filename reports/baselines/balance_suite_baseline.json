@@ -189,6 +189,16 @@
     "pressure_index": -18.06666666666667,
     "bonus_attacks_per_run": 10.7
   },
+  "monster_necromancer_identity": {
+    "scenario_id": "monster_necromancer_identity",
+    "runs": 30,
+    "deaths": 10,
+    "death_rate": 0.3333333333333333,
+    "player_hit_rate": 0.7693430656934307,
+    "monster_hit_rate": 0.2818911685994648,
+    "pressure_index": -8.299999999999997,
+    "bonus_attacks_per_run": 16.4
+  },
   "monster_wraith_identity": {
     "scenario_id": "monster_wraith_identity",
     "runs": 30,

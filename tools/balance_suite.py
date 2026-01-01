@@ -56,6 +56,7 @@ SCENARIO_MATRIX = [
     {"id": "monster_skeleton_identity", "runs": 30, "turn_limit": 200},
     {"id": "monster_orc_chieftain_identity", "runs": 30, "turn_limit": 200},
     {"id": "monster_orc_shaman_identity", "runs": 30, "turn_limit": 200},
+    {"id": "monster_necromancer_identity", "runs": 30, "turn_limit": 250},
     {"id": "monster_wraith_identity", "runs": 30, "turn_limit": 200},
     {"id": "troll_identity", "runs": 30, "turn_limit": 100},
 ]

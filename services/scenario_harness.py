@@ -71,6 +71,11 @@ class RunMetrics:
     shaman_chant_starts: int = 0
     shaman_chant_interrupts: int = 0
     shaman_chant_expiries: int = 0
+    # Phase 19: Necromancer metrics
+    necro_raise_attempts: int = 0
+    necro_raise_successes: int = 0
+    necro_corpse_seek_moves: int = 0
+    necro_unsafe_move_blocks: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -112,6 +117,15 @@ class RunMetrics:
             result['shaman_chant_interrupts'] = self.shaman_chant_interrupts
         if hasattr(self, 'shaman_chant_expiries'):
             result['shaman_chant_expiries'] = self.shaman_chant_expiries
+        # Phase 19: Necromancer metrics (optional)
+        if hasattr(self, 'necro_raise_attempts'):
+            result['necro_raise_attempts'] = self.necro_raise_attempts
+        if hasattr(self, 'necro_raise_successes'):
+            result['necro_raise_successes'] = self.necro_raise_successes
+        if hasattr(self, 'necro_corpse_seek_moves'):
+            result['necro_corpse_seek_moves'] = self.necro_corpse_seek_moves
+        if hasattr(self, 'necro_unsafe_move_blocks'):
+            result['necro_unsafe_move_blocks'] = self.necro_unsafe_move_blocks
         return result
 
 
@@ -150,6 +164,11 @@ class AggregatedMetrics:
     total_shaman_chant_starts: int = 0
     total_shaman_chant_interrupts: int = 0
     total_shaman_chant_expiries: int = 0
+    # Phase 19: Necromancer metrics
+    total_necro_raise_attempts: int = 0
+    total_necro_raise_successes: int = 0
+    total_necro_corpse_seek_moves: int = 0
+    total_necro_unsafe_move_blocks: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -680,6 +699,10 @@ def run_scenario_once(
     # Initialize headless mode
     _initialize_headless_mode()
     
+    # Phase 19: Initialize spell registry for raise_dead and other spells
+    from spells.spell_catalog import register_all_spells
+    register_all_spells()
+    
     # Initialize metrics
     metrics = RunMetrics(
         turns_taken=0,
@@ -846,6 +869,17 @@ def run_scenario_many(
         total_shaman_chant_interrupts += getattr(run, "shaman_chant_interrupts", 0)
         total_shaman_chant_expiries += getattr(run, "shaman_chant_expiries", 0)
     
+    # Phase 19: Aggregate necromancer metrics
+    total_necro_raise_attempts = 0
+    total_necro_raise_successes = 0
+    total_necro_corpse_seek_moves = 0
+    total_necro_unsafe_move_blocks = 0
+    for run in all_runs:
+        total_necro_raise_attempts += getattr(run, "necro_raise_attempts", 0)
+        total_necro_raise_successes += getattr(run, "necro_raise_successes", 0)
+        total_necro_corpse_seek_moves += getattr(run, "necro_corpse_seek_moves", 0)
+        total_necro_unsafe_move_blocks += getattr(run, "necro_unsafe_move_blocks", 0)
+    
     for run in all_runs:
         total_split_events += getattr(run, "split_events_total", 0)
         total_split_children += getattr(run, "split_children_spawned", 0)
@@ -879,6 +913,10 @@ def run_scenario_many(
         total_shaman_chant_starts=total_shaman_chant_starts,
         total_shaman_chant_interrupts=total_shaman_chant_interrupts,
         total_shaman_chant_expiries=total_shaman_chant_expiries,
+        total_necro_raise_attempts=total_necro_raise_attempts,
+        total_necro_raise_successes=total_necro_raise_successes,
+        total_necro_corpse_seek_moves=total_necro_corpse_seek_moves,
+        total_necro_unsafe_move_blocks=total_necro_unsafe_move_blocks,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

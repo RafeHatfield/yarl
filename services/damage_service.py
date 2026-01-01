@@ -274,6 +274,15 @@ def _finalize_monster_damage_death(
         from entity_sorting_cache import invalidate_entity_cache
         invalidate_entity_cache(f"entity_added_loot_{cause}")
     
+    # Phase 19: Handle death-spawned features (bone piles, etc.)
+    if hasattr(dead_entity, '_death_spawned_features') and dead_entity._death_spawned_features:
+        entities.extend(dead_entity._death_spawned_features)
+        delattr(dead_entity, '_death_spawned_features')
+        
+        # Invalidate entity sorting cache
+        from entity_sorting_cache import invalidate_entity_cache
+        invalidate_entity_cache(f"entity_added_death_features_{cause}")
+    
     # Handle XP award if enabled
     if allow_xp and attacker_entity:
         xp_value = result_dict.get("xp", 0)

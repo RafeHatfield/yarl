@@ -459,9 +459,94 @@ Phase 19 introduces **monster-specific abilities** that:
 
 ---
 
+### Necromancer: Raise Dead + Corpse Seeking
+
+**Implementation Date:** 2026-01-01
+
+**Identity:** Corpse economy controller who raises dead on cooldown and seeks distant corpses while maintaining safe distance from player.
+
+**Mechanics:**
+
+1. **Raise Dead (Cooldown-Based Resurrection):**
+   - Range: 5 tiles
+   - Cooldown: 4 turns (short - frequent raising)
+   - Effect: Transforms raisable corpse (CorpseComponent.can_be_raised() == True) into friendly zombie
+   - Zombies: Faction matches necromancer (friendly to cultists), moderate stats (2x HP, 0.5x damage)
+   - Deterministic: Targets nearest raisable corpse, tie-break by (y, x) position
+
+2. **Corpse Seeking Movement:**
+   - Behavior: Moves toward raisable corpses when out of range
+   - Safety Constraint: Never approaches within 2 tiles of player (danger radius)
+   - Pathfinding: Deterministic step toward corpse, with safety check
+   - If unsafe: Try alternative steps, or block move and record metric
+
+3. **Hang-Back AI:**
+   - Preferred distance: 4-7 tiles from player
+   - If too close (<=2): Retreats if possible
+   - Never stalls: Attacks or waits if boxed in
+
+**Corpse Persistence Invariant:**
+- Raised corpses are NOT removed from entities list
+- Corpse entity transformed in-place to zombie
+- CorpseComponent marked consumed=True (supports future corpse explosion)
+- Design rationale: Enables future mechanics targeting spent corpses, supports decay/tooltips
+
+**Stats (config/entities.yaml):**
+```yaml
+necromancer:
+  hp: 28
+  power: 1 (weak melee)
+  damage_min/max: 2-4 (very weak)
+  faction: cultist
+  ai_type: necromancer
+  raise_dead_range: 5
+  raise_dead_cooldown_turns: 4
+  danger_radius_from_player: 2
+  preferred_distance_min: 4
+  preferred_distance_max: 7
+```
+
+**Scenario:** `config/levels/scenario_monster_necromancer_identity.yaml`
+- 1 Necromancer + 4 skeletons + 4 orcs (corpse sources)
+- Enemies positioned at various distances (9-17 tiles)
+- Creates corpses at different locations to test seeking behavior
+- Player starts with dagger, ranged weapon available
+- Healing potions support extended combat for multiple raise cycles
+- 30 runs, 250 turn limit
+
+**Expected Metrics (30 runs):**
+- `necro_raise_successes`: >= 20 (frequent raising)
+- `necro_corpse_seek_moves`: >= 10 (demonstrates corpse seeking)
+- `necro_unsafe_move_blocks`: >= 0 (informational, proves safety constraint)
+- Player deaths: <= 15 (moderate threat)
+
+**Enforcement Test:**
+- `tests/integration/test_necromancer_identity_scenario_metrics.py`
+- Marked @pytest.mark.slow
+- Asserts minimum raise successes, corpse seek moves, reasonable deaths
+- Validates corpse persistence invariant (design-level)
+
+**Balance Impact:**
+- ETP: 44 (controller with summons, moderate individual threat)
+- No baseline changes required
+- Included in full balance suite (not fast mode)
+- Expected: ~30+ kills (1 necromancer + enemies per run)
+- Expected player deaths: <= 15 (necromancer + zombies moderate threat)
+- Necromancer weak in melee, relies on zombies for damage
+
+**Teaching Moment:**
+- Corpse economy teaches **target prioritization**: kill enemies to deny necromancer corpses
+- Raise mechanic teaches **positioning**: force necromancer away from corpses
+- Safety radius teaches **threat assessment**: necromancer won't suicide rush
+- Zombies teach **faction awareness**: raised zombies attack player, not necromancer
+
+---
+
 ## Future Abilities (Planned)
 
-(None at this time - Phase 19 complete!)
+- **Corpse Explosion:** Necromancer ability targeting consumed corpses for AoE damage (requires corpse persistence invariant)
+
+(Phase 19 complete!)
 
 ---
 
