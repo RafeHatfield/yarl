@@ -1364,6 +1364,11 @@ class SoulBurnEffect(StatusEffect):
 
 class StatusEffectManager:
     """Manages status effects for an entity."""
+    
+    # Class-level cache for effect signature introspection
+    # Maps effect class to whether it accepts state_manager parameter
+    _signature_cache: Dict[type, bool] = {}
+    
     def __init__(self, owner: 'Entity'):
         self.owner = owner
         self.active_effects: Dict[str, StatusEffect] = {}
@@ -1434,9 +1439,16 @@ class StatusEffectManager:
             
             # Pass state_manager to process_turn_start for death finalization
             # Check if effect accepts state_manager parameter (new Soul Burn does, old effects don't)
-            import inspect
-            sig = inspect.signature(effect.process_turn_start)
-            if 'state_manager' in sig.parameters:
+            # Cache the signature check per effect class to avoid reflection cost every turn
+            effect_class = type(effect)
+            if effect_class not in StatusEffectManager._signature_cache:
+                import inspect
+                sig = inspect.signature(effect.process_turn_start)
+                StatusEffectManager._signature_cache[effect_class] = 'state_manager' in sig.parameters
+            
+            accepts_state_manager = StatusEffectManager._signature_cache[effect_class]
+            
+            if accepts_state_manager:
                 results.extend(effect.process_turn_start(entities=entities, state_manager=state_manager))
             else:
                 results.extend(effect.process_turn_start(entities=entities))

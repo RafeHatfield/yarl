@@ -1739,18 +1739,21 @@ class Fighter:
         
         return results
     
-    def _check_command_the_dead_aura(self) -> int:
+    def _check_command_the_dead_aura(self, entities=None) -> int:
         """Phase 19: Check if attacker benefits from Lich's Command the Dead aura.
         
         Command the Dead: Allied undead within radius 6 of a living lich get +1 to-hit.
         
         Defensive checks to prevent accidental player buffing:
         - Attacker must be undead faction
-        - Attacker must have AI (never buff player, even if undead)
-        - Attacker must not be the player (explicit check)
+        - Attacker must have AI component (player never has AI)
         - Lich must be alive
         - Lich faction must match attacker faction
         - Distance <= 6
+        
+        Args:
+            entities: Optional list of all entities (for finding liches)
+                     If None, will be retrieved from game state
         
         Returns:
             int: +1 if undead attacker is within aura range of allied lich, 0 otherwise
@@ -1760,76 +1763,61 @@ class Fighter:
         if attacker_faction != 'undead':
             return 0
         
-        # DEFENSE 2: Check for AI component (prevents player buff)
+        # DEFENSE 2: Must have AI component (player never has AI)
+        # This is the primary player-exclusion check
         attacker_ai = self.owner.get_component_optional(ComponentType.AI)
         if not attacker_ai:
             return 0
         
-        # DEFENSE 3: Explicit player check (paranoid defense-in-depth)
-        # Never buff the player, even if they somehow become undead faction + have AI
-        try:
-            from state_management.state_manager import get_state_manager
-            state_manager = get_state_manager()
-            if state_manager and state_manager.state:
-                player = state_manager.state.player
-                if player and self.owner == player:
-                    logger.warning(
-                        "⚠️ Command the Dead: Prevented player buff! "
-                        "Player has undead faction and AI - this should never happen."
-                    )
-                    return 0
-        except Exception:
-            pass  # Fail open if state access fails
-        
-        # Find living liches in entities (need access to game state)
-        try:
-            from state_management.state_manager import get_state_manager
-            state_manager = get_state_manager()
-            if not state_manager or not state_manager.state:
+        # Get entities list (either passed in or from game state)
+        if entities is None:
+            try:
+                from state_management.state_manager import get_state_manager
+                state_manager = get_state_manager()
+                if not state_manager or not state_manager.state:
+                    return 0  # Fail closed: no entities = no buff
+                entities = state_manager.state.entities
+            except Exception as e:
+                # FAIL CLOSED: If we can't access game state, don't buff
+                logger.debug(f"Command the Dead: Failed to get entities, returning 0: {e}")
                 return 0
-            
-            entities = state_manager.state.entities
-            if not entities:
-                return 0
-            
-            # Look for allied liches within radius 6
-            command_radius = 6
-            
-            for entity in entities:
-                # Skip self (lich doesn't buff itself)
-                if entity == self.owner:
-                    continue
-                
-                # Check if entity is a lich
-                ai = entity.get_component_optional(ComponentType.AI)
-                if not ai:
-                    continue
-                
-                # Check if it's a lich (by AI type)
-                from components.ai.lich_ai import LichAI
-                if not isinstance(ai, LichAI):
-                    continue
-                
-                # Check if lich is alive
-                fighter = entity.get_component_optional(ComponentType.FIGHTER)
-                if not fighter or fighter.hp <= 0:
-                    continue
-                
-                # Check faction match (both must be undead)
-                lich_faction = getattr(entity, 'faction', None)
-                if lich_faction != 'undead' or lich_faction != attacker_faction:
-                    continue
-                
-                # Check distance
-                import math
-                distance = math.sqrt((entity.x - self.owner.x)**2 + (entity.y - self.owner.y)**2)
-                if distance <= command_radius:
-                    # Within aura range!
-                    logger.debug(f"Command the Dead: {self.owner.name} gets +1 to-hit from {entity.name}")
-                    return 1
-        except Exception as e:
-            # Fail gracefully if state_manager unavailable (unit tests, etc.)
-            logger.debug(f"Command the Dead check failed: {e}")
-            return 0
         
-        return 0
+        if not entities:
+            return 0  # Fail closed: no entities = no buff
+        
+        # Look for allied liches within radius 6
+        command_radius = 6
+        
+        for entity in entities:
+            # Skip self (lich doesn't buff itself)
+            if entity == self.owner:
+                continue
+            
+            # Check if entity is a lich (by AI type)
+            ai = entity.get_component_optional(ComponentType.AI)
+            if not ai:
+                continue
+            
+            from components.ai.lich_ai import LichAI
+            if not isinstance(ai, LichAI):
+                continue
+            
+            # Check if lich is alive
+            fighter = entity.get_component_optional(ComponentType.FIGHTER)
+            if not fighter or fighter.hp <= 0:
+                continue
+            
+            # Check faction match (both must be undead)
+            lich_faction = getattr(entity, 'faction', None)
+            if lich_faction != 'undead' or lich_faction != attacker_faction:
+                continue
+            
+            # Check distance
+            import math
+            distance = math.sqrt((entity.x - self.owner.x)**2 + (entity.y - self.owner.y)**2)
+            if distance <= command_radius:
+                # Within aura range!
+                logger.debug(f"Command the Dead: {self.owner.name} gets +1 to-hit from {entity.name}")
+                return 1
+        
+        return 0  # No lich found in range
