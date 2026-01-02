@@ -122,9 +122,13 @@ def _trigger_death_siphon(monster, entities) -> None:
         monster: The monster that just died
         entities: List of all entities
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     # Only trigger for undead faction deaths
+    from components.faction import Faction
     monster_faction = getattr(monster, 'faction', None)
-    if monster_faction != 'undead':
+    if monster_faction != Faction.UNDEAD:
         return
     
     if not entities:
@@ -164,15 +168,6 @@ def _trigger_death_siphon(monster, entities) -> None:
                 heal_amount = min(siphon_heal_amount, missing_hp)
                 fighter.heal(heal_amount)
                 
-                # Add message to log
-                from state_management.state_manager import get_state_manager
-                state_manager = get_state_manager()
-                if state_manager and state_manager.state and state_manager.state.message_log:
-                    from message_builder import MessageBuilder as MB
-                    state_manager.state.message_log.add_message(
-                        MB.combat(f"💀 The {entity.name} siphons {heal_amount} HP from {monster.name}'s death!")
-                    )
-                
                 # Record metric
                 try:
                     from services.scenario_metrics import get_active_metrics_collector
@@ -182,9 +177,7 @@ def _trigger_death_siphon(monster, entities) -> None:
                 except Exception:
                     pass  # Metrics are optional
                 
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.info(f"[DEATH SIPHON] {entity.name} healed {heal_amount} HP from {monster.name}'s death")
+                logger.debug(f"[DEATH SIPHON] {entity.name} healed {heal_amount} HP from {monster.name}'s death")
 
 
 def _check_plague_reanimation(monster, game_map, entities) -> Optional[Dict[str, Any]]:
