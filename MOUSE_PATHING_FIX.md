@@ -87,3 +87,4 @@ To verify the fix works:
 - `tests/test_player_explored_pathfinding.py` - Existing pathfinding tests
 
 
+

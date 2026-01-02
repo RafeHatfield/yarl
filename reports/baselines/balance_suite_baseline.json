@@ -199,6 +199,36 @@
     "pressure_index": -8.299999999999997,
     "bonus_attacks_per_run": 16.4
   },
+  "monster_bone_necromancer_identity": {
+    "scenario_id": "monster_bone_necromancer_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.7095990279465371,
+    "monster_hit_rate": 0.43597560975609756,
+    "pressure_index": -16.5,
+    "bonus_attacks_per_run": 9.1
+  },
+  "monster_plague_necromancer_identity": {
+    "scenario_id": "monster_plague_necromancer_identity",
+    "runs": 30,
+    "deaths": 20,
+    "death_rate": 0.6666666666666666,
+    "player_hit_rate": 0.7692967409948542,
+    "monster_hit_rate": 0.3168516649848638,
+    "pressure_index": -5.833333333333336,
+    "bonus_attacks_per_run": 13.8
+  },
+  "monster_exploder_necromancer_identity": {
+    "scenario_id": "monster_exploder_necromancer_identity",
+    "runs": 30,
+    "deaths": 16,
+    "death_rate": 0.5333333333333333,
+    "player_hit_rate": 0.7331768388106417,
+    "monster_hit_rate": 0.3193588162762022,
+    "pressure_index": -15.566666666666666,
+    "bonus_attacks_per_run": 14.966666666666667
+  },
   "monster_wraith_identity": {
     "scenario_id": "monster_wraith_identity",
     "runs": 30,
