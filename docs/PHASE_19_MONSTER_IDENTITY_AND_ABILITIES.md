@@ -542,6 +542,118 @@ necromancer:
 
 ---
 
+### Lich (Arch-Necromancer): Soul Bolt + Command + Death Siphon
+
+**Implementation Date:** 2026-01-02
+
+**Identity:** Elite undead controller with powerful personal abilities and necromancer corpse economy.
+
+**Mechanics:**
+
+1. **Soul Bolt (2-turn telegraph + resolve):**
+   - Turn 1 (charging): Apply ChargingSoulBoltEffect, message "channeling dark energy!"
+   - Turn 2 (resolve): If player still in LOS + range, fire Soul Bolt
+   - Damage: ceil(0.35 * target.max_hp) - deterministic, very high (35% max HP)
+   - Range: 7 tiles
+   - Cooldown: 4 turns after resolution
+   - Telegraph gives player 1 turn to react (retreat, use Soul Ward scroll, etc.)
+
+2. **Soul Ward (Counter - Scroll):**
+   - Consumable: scroll_soul_ward (player starts with 2 in scenario)
+   - Effect: SoulWardEffect (10 turn duration)
+   - When Soul Bolt hits while ward active:
+     - Reduces upfront damage by 70% (rounded up): ceil(base * 0.30)
+     - Converts prevented damage to Soul Burn DOT over 3 turns
+   - Example: 19 damage bolt → 6 upfront + 13 DOT (4-4-5 split)
+   - Ward does NOT trivialize bolt; it reshapes it into manageable DOT
+
+3. **Soul Burn (DOT from Ward):**
+   - 3-turn deterministic DOT
+   - Damage split: total_damage // 3 per turn, remainder on last tick
+   - Example: 13 damage → 4-4-5 over 3 turns
+   - Status effect: SoulBurnEffect
+
+4. **Command the Dead (Passive Aura):**
+   - Allied undead within radius 6 get +1 to-hit
+   - Applied during attack_d20() in fighter.py
+   - Faction-aware: only undead faction allies benefit
+   - Deterministic, fast (no scanning every frame; computed during attack roll)
+
+5. **Death Siphon (Passive Heal):**
+   - When allied undead dies within radius 6, lich heals 2 HP
+   - Capped at missing HP (no overheal)
+   - Hooked into death finalization path in death_functions.py
+   - Deterministic
+
+6. **AI Behavior:**
+   - Priority 1: If charging Soul Bolt, resolve it if able (LOS + range)
+   - Priority 2: If Soul Bolt off cooldown + not charging, start charge
+   - Priority 3: Fallback to necromancer base behavior (raise dead, corpse seeking, hang-back)
+   - Inherits NecromancerBase patterns: avoid moving within 2 tiles of player, prefer distance 4-7
+
+**Stats (config/entities.yaml):**
+```yaml
+lich:
+  hp: 40
+  power: 2
+  defense: 2
+  xp: 150
+  damage_min/max: 3-6 (weak melee)
+  faction: undead
+  ai_type: lich
+  soul_bolt_range: 7
+  soul_bolt_damage_pct: 0.35
+  soul_bolt_cooldown_turns: 4
+  command_the_dead_radius: 6
+  death_siphon_radius: 6
+  action_enabled: true  # Can still raise dead like necromancer
+  action_range: 5
+  summon_monster_id: zombie
+  etp_base: 131  # Elite controller
+```
+
+**Scenario:** `config/levels/scenario_monster_lich_identity.yaml`
+- 1 Lich + 4 skeletons in 17x17 arena
+- Lich positioned at back, skeletons guard flanks
+- Player starts with dagger + equipment scattered (shortbow, longsword, arrows)
+- 2 soul_ward scrolls + 4 healing potions available
+- Expected behavior:
+  - Soul Bolt charges and fires multiple times per run
+  - Soul Ward used tactically when lich charges
+  - Skeletons benefit from Command the Dead (+1 to-hit)
+  - Lich heals via Death Siphon when skeletons die
+- 30 runs, 300 turn limit
+
+**Expected Metrics (30 runs):**
+- `lich_soul_bolt_casts`: >= 20 (frequent casting)
+- `soul_ward_blocks`: >= 15 (counterplay used)
+- `lich_death_siphon_heals`: >= 60 (4 skeletons × ~15 runs)
+- Player deaths: <= 15 (dangerous but counterable)
+
+**Enforcement Test:**
+- `tests/integration/test_lich_identity_scenario_metrics.py`
+- Marked @pytest.mark.slow
+- Asserts minimum Soul Bolt casts, Soul Ward blocks, Death Siphon heals
+- Validates balance: player should win most runs with proper tactics
+
+**Balance Impact:**
+- ETP: 131 (elite controller with strong personal threat)
+- No baseline changes required
+- Included in full balance suite (not fast mode)
+- Expected: ~40+ kills (1 lich + 4 skeletons per run)
+- Expected player deaths: <= 15 (lich is dangerous but ward + tactics help)
+- Soul Bolt is high-threat but telegraphed (1 turn warning)
+- Soul Ward reshapes damage, doesn't eliminate it (upfront + DOT)
+
+**Teaching Moment:**
+- Soul Bolt telegraph teaches **positioning**: player learns to retreat when lich charges
+- Soul Ward teaches **resource management**: use scrolls proactively when lich charges
+- Command the Dead teaches **target priority**: kill lich to weaken undead allies
+- Death Siphon teaches **kill order**: focus lich before clearing skeletons
+- Combined: lich is a high-priority target that rewards tactical play
+
+---
+
 ## Future Abilities (Planned)
 
 - **Corpse Explosion:** Necromancer ability targeting consumed corpses for AoE damage (requires corpse persistence invariant)

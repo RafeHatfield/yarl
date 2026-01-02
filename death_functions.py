@@ -112,6 +112,81 @@ def _spawn_death_feature(monster, game_map, entities) -> None:
         logger.debug(f"Failed to spawn death feature {death_spawn_type} for {monster.name}: {e}")
 
 
+def _trigger_death_siphon(monster, entities) -> None:
+    """Phase 19: Trigger Death Siphon for nearby allied liches.
+    
+    Death Siphon: When an allied undead dies within radius 6 of a lich,
+    the lich heals 2 HP (capped at missing HP).
+    
+    Args:
+        monster: The monster that just died
+        entities: List of all entities
+    """
+    # Only trigger for undead faction deaths
+    monster_faction = getattr(monster, 'faction', None)
+    if monster_faction != 'undead':
+        return
+    
+    if not entities:
+        return
+    
+    # Find living liches within radius 6
+    siphon_radius = 6
+    siphon_heal_amount = 2
+    
+    for entity in entities:
+        # Check if entity is a lich
+        ai = entity.get_component_optional(ComponentType.AI)
+        if not ai:
+            continue
+        
+        from components.ai.lich_ai import LichAI
+        if not isinstance(ai, LichAI):
+            continue
+        
+        # Check if lich is alive
+        fighter = entity.get_component_optional(ComponentType.FIGHTER)
+        if not fighter or fighter.hp <= 0:
+            continue
+        
+        # Check faction match
+        lich_faction = getattr(entity, 'faction', None)
+        if lich_faction != monster_faction:
+            continue
+        
+        # Check distance
+        import math
+        distance = math.sqrt((entity.x - monster.x)**2 + (entity.y - monster.y)**2)
+        if distance <= siphon_radius:
+            # Lich is within siphon range!
+            missing_hp = fighter.max_hp - fighter.hp
+            if missing_hp > 0:
+                heal_amount = min(siphon_heal_amount, missing_hp)
+                fighter.heal(heal_amount)
+                
+                # Add message to log
+                from state_management.state_manager import get_state_manager
+                state_manager = get_state_manager()
+                if state_manager and state_manager.state and state_manager.state.message_log:
+                    from message_builder import MessageBuilder as MB
+                    state_manager.state.message_log.add_message(
+                        MB.combat(f"💀 The {entity.name} siphons {heal_amount} HP from {monster.name}'s death!")
+                    )
+                
+                # Record metric
+                try:
+                    from services.scenario_metrics import get_active_metrics_collector
+                    metrics = get_active_metrics_collector()
+                    if metrics:
+                        metrics.increment('lich_death_siphon_heals')
+                except Exception:
+                    pass  # Metrics are optional
+                
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"[DEATH SIPHON] {entity.name} healed {heal_amount} HP from {monster.name}'s death")
+
+
 def _check_plague_reanimation(monster, game_map, entities) -> Optional[Dict[str, Any]]:
     """Check if a monster should reanimate as a revenant zombie.
     
@@ -432,6 +507,9 @@ def kill_monster(monster, game_map=None, entities=None):
     
     # Phase 19: Check for death spawns (e.g., bone pile from skeleton)
     _spawn_death_feature(monster, game_map, entities)
+    
+    # Phase 19: Death Siphon - Lich heals when allied undead dies nearby
+    _trigger_death_siphon(monster, entities)
     
     # Phase 10: Check for Plague of Restless Death - schedule reanimation
     pending_reanimation = _check_plague_reanimation(monster, game_map, entities)

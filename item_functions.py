@@ -1856,3 +1856,44 @@ def use_ward_scroll(*args, **kwargs):
     
     return results
 
+
+def use_soul_ward_scroll(*args, **kwargs):
+    """Use a Soul Ward scroll to gain protection against Soul Bolt damage.
+    
+    Phase 19: Applies SoulWardEffect to the caster, which:
+    - Reduces Soul Bolt upfront damage by 70%
+    - Converts prevented damage to Soul Burn DOT over 3 turns
+    - Lasts for the specified duration (default 10 turns)
+    
+    Args:
+        *args: First argument should be the caster (player)
+        **kwargs: duration (optional, defaults to 10)
+    
+    Returns:
+        list: List of result dictionaries with status effect application
+    """
+    caster = args[0] if args else None
+    if not caster:
+        return [{"consumed": False, "message": MB.failure("No caster!")}]
+    
+    results = []
+    duration = kwargs.get('duration', 10)
+    
+    # Apply SoulWardEffect to the caster
+    from components.status_effects import SoulWardEffect
+    from components.component_registry import ComponentType
+    
+    # Ensure caster has status effect manager
+    if not caster.status_effects:
+        caster.status_effects = caster.get_status_effect_manager()
+    
+    # Create and apply the soul ward effect
+    soul_ward_effect = SoulWardEffect(duration=duration, owner=caster)
+    effect_results = caster.add_status_effect(soul_ward_effect)
+    results.extend(effect_results)
+    
+    # Scroll is consumed
+    results.append({"consumed": True})
+    
+    return results
+

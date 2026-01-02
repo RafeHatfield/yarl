@@ -17,6 +17,7 @@ from .mindless_zombie import MindlessZombieAI
 from .confused_monster import ConfusedMonster
 from .slime_ai import SlimeAI
 from .skeleton_ai import SkeletonAI
+from .lich_ai import LichAI
 from ._helpers import find_taunted_target, get_weapon_reach
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     'ConfusedMonster',
     'SlimeAI',
     'SkeletonAI',
+    'LichAI',
     'find_taunted_target',
     'get_weapon_reach',
 ]

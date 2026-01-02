@@ -239,6 +239,16 @@
     "pressure_index": 4.066666666666666,
     "bonus_attacks_per_run": 6.2
   },
+  "monster_lich_identity": {
+    "scenario_id": "monster_lich_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.7018633540372671,
+    "monster_hit_rate": 0.5,
+    "pressure_index": -24.26666666666667,
+    "bonus_attacks_per_run": 11.0
+  },
   "troll_identity": {
     "scenario_id": "troll_identity",
     "runs": 30,

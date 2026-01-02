@@ -636,6 +636,57 @@ monsters:
     # ETP: DPS=10 × 6 × durability=1.03 × behavior=1.05 × speed=2.0 = 130
     etp_base: 65              # Base before speed multiplier (65 × 2.0 = 130)
 
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: LICH (ARCH-NECROMANCER) - Elite undead controller
+  # Powerful personal abilities + necromancer corpse economy
+  # ═══════════════════════════════════════════════════════════
+  
+  lich:
+    stats:
+      hp: 40                  # Durable for elite controller
+      power: 2                # Moderate physical power
+      defense: 2              # Some arcane protection
+      xp: 150                 # High XP for elite threat
+      damage_min: 3           # Weak melee (prefers Soul Bolt)
+      damage_max: 6
+      strength: 10            # Average
+      dexterity: 14           # Agile (+2 to-hit, +2 AC)
+      constitution: 14        # Resilient (+2)
+      # Phase 8: Powerful undead spellcaster
+      accuracy: 5             # Excellent accuracy for Soul Bolt
+      evasion: 3              # Decent evasion
+      resistances:
+        cold: 100             # Immune to cold (undead)
+        poison: 100           # Immune to poison (undead)
+    char: "L"
+    color: [140, 80, 180]     # Dark purple (necromantic)
+    ai_type: "lich"           # Phase 19: Custom AI with Soul Bolt + raise dead
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    tags: ["undead", "high_undead", "caster", "no_flesh"]
+    can_seek_items: false     # Focused on soul magic and corpse economy
+    inventory_size: 0
+    # Phase 19: Soul Bolt ability (2-turn: charge + resolve)
+    soul_bolt_range: 7              # Range to target player
+    soul_bolt_damage_pct: 0.35      # 35% of target's max HP
+    soul_bolt_cooldown_turns: 4     # Cooldown after bolt resolves
+    # Phase 19: Command the Dead passive aura
+    command_the_dead_radius: 6      # Allied undead in this radius get +1 to-hit
+    # Phase 19: Death Siphon passive heal
+    death_siphon_radius: 6          # Heals 2 HP when allied undead dies in radius
+    # Necromancer base config (raise dead when off Soul Bolt cooldown)
+    action_enabled: true
+    action_type: "raise"
+    action_range: 5                 # Range to raise corpses
+    action_cooldown_turns: 4        # Same as Soul Bolt cooldown
+    summon_monster_id: "zombie"     # Raises standard zombies
+    danger_radius_from_player: 2    # Safety distance
+    preferred_distance_min: 4       # Hang-back behavior
+    preferred_distance_max: 7
+    # ETP: DPS=7 × 6 × durability=2.0 × behavior=1.2 × synergy=1.3 = 131 (elite controller)
+    etp_base: 131
+
   # Giant Spider - Fast predatory creature
   giant_spider:
     stats:
@@ -1716,6 +1767,14 @@ spells:
     color: [200, 220, 255]  # Pale silvery-blue (protective ward)
     effect_function: "use_ward_scroll"
     duration: 10  # Turns of drain immunity
+  
+  # Phase 19: Soul Ward - Reshapes Soul Bolt damage into DOT
+  scroll_soul_ward:
+    spell_type: "utility"
+    char: "~"
+    color: [180, 160, 255]  # Soft violet-blue (soul protection)
+    effect_function: "use_soul_ward_scroll"
+    duration: 10  # Turns of Soul Ward protection
   
   # ════════════════════════════════════════════════════════
   # KEYS - Unlock vault doors and special chests

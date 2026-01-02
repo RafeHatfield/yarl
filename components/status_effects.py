@@ -1231,6 +1231,102 @@ class WardAgainstDrainEffect(StatusEffect):
         return results
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 19: LICH (ARCH-NECROMANCER) ABILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ChargingSoulBoltEffect(StatusEffect):
+    """Phase 19: Lich is charging Soul Bolt (telegraph turn).
+    
+    Applied to lich when it starts charging Soul Bolt.
+    Next turn, if lich still has LOS + range to player, Soul Bolt fires.
+    This gives the player 1 turn to react (retreat, use Soul Ward scroll, etc.)
+    """
+    def __init__(self, owner: 'Entity'):
+        super().__init__(name='charging_soul_bolt', duration=1, owner=owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.combat(f"⚡ The {self.owner.name} begins channeling dark energy!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        # No message on natural expiry - Soul Bolt resolution will message
+        return results
+
+
+class SoulWardEffect(StatusEffect):
+    """Phase 19: Soul Ward - Reshapes Soul Bolt damage into DOT.
+    
+    Applied by scroll_soul_ward consumable.
+    When Soul Bolt hits while this is active:
+    - Reduces upfront damage by 70% (rounded up)
+    - Converts prevented damage to Soul Burn DOT over 3 turns
+    Duration: 10 turns.
+    """
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__(name='soul_ward', duration=duration, owner=owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect("🛡️ A spectral ward envelops you, protecting your soul!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect("The soul ward dissipates.")})
+        return results
+
+
+class SoulBurnEffect(StatusEffect):
+    """Phase 19: Soul Burn DOT - Residual damage from Soul Ward conversion.
+    
+    Applied when Soul Ward converts Soul Bolt damage to DOT.
+    Deals deterministic damage over 3 turns (total_damage split evenly, remainder on last tick).
+    """
+    def __init__(self, total_damage: int, owner: 'Entity'):
+        super().__init__(name='soul_burn', duration=3, owner=owner)
+        self.total_damage = total_damage
+        self.damage_per_turn = total_damage // 3
+        self.remainder = total_damage % 3
+        self.ticks_remaining = 3
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"🔥 {self.owner.name} is burning with soul fire!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"The soul burn affecting {self.owner.name} fades.")})
+        return results
+    
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Tick Soul Burn damage at start of turn."""
+        results = []
+        
+        # Calculate damage for this tick
+        damage_this_tick = self.damage_per_turn
+        if self.ticks_remaining == 1:
+            # Last tick gets remainder
+            damage_this_tick += self.remainder
+        
+        if damage_this_tick > 0:
+            # Apply damage directly via Fighter.take_damage()
+            fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+            if fighter:
+                damage_results = fighter.take_damage(damage_this_tick)
+                
+                # Add message about burn damage
+                results.append({'message': MB.combat(f"🔥 {self.owner.name} takes {damage_this_tick} soul burn damage!")})
+                results.extend(damage_results)
+        
+        self.ticks_remaining -= 1
+        
+        return results
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     def __init__(self, owner: 'Entity'):
