@@ -124,6 +124,8 @@ class LichAI(NecromancerBase):
                 return results
             else:
                 # Charge expired without resolution (LOS broken, out of range, etc.)
+                # Record why charge failed
+                self._increment_metric('lich_soul_bolt_fizzles')
                 # Remove charge effect and continue to other actions
                 status_effects.remove_effect('charging_soul_bolt')
         
@@ -207,12 +209,14 @@ class LichAI(NecromancerBase):
         # Check if player is still in range
         distance = self._distance_to(target)
         if distance > soul_bolt_range:
+            self._increment_metric('lich_fizzle_range')
             logger.debug(f"[LICH] Soul Bolt fizzles - target out of range (distance={distance:.1f})")
             return None
         
         # Check if lich still has LOS to player (mutual visibility via player's FOV)
         from components.ai._helpers import map_is_in_fov
         if not map_is_in_fov(fov_map, self.owner.x, self.owner.y):
+            self._increment_metric('lich_fizzle_los')
             logger.debug(f"[LICH] Soul Bolt fizzles - LOS broken")
             return None
         
@@ -265,10 +269,9 @@ class LichAI(NecromancerBase):
             # Record metrics
             self._increment_metric('lich_soul_bolt_casts')
         
-        # Remove charging effect
-        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
-        if status_effects:
-            status_effects.remove_effect('charging_soul_bolt')
+        # Remove charging effect immediately after resolution
+        if hasattr(self.owner, 'status_effects') and self.owner.status_effects:
+            self.owner.status_effects.remove_effect('charging_soul_bolt')
         
         # Set cooldown
         self.soul_bolt_cooldown_remaining = soul_bolt_cooldown

@@ -1241,9 +1241,15 @@ class ChargingSoulBoltEffect(StatusEffect):
     Applied to lich when it starts charging Soul Bolt.
     Next turn, if lich still has LOS + range to player, Soul Bolt fires.
     This gives the player 1 turn to react (retreat, use Soul Ward scroll, etc.)
+    
+    Duration: 2 turns because:
+    - Turn 1 (apply): duration=2
+    - End of turn 1: process_turn_end() → duration=1
+    - Turn 2 (resolve): is_charging still True, resolve Soul Bolt
+    - End of turn 2: process_turn_end() → duration=0, removed
     """
     def __init__(self, owner: 'Entity'):
-        super().__init__(name='charging_soul_bolt', duration=1, owner=owner)
+        super().__init__(name='charging_soul_bolt', duration=2, owner=owner)
     
     def apply(self) -> List[Dict[str, Any]]:
         results = super().apply()
