@@ -649,14 +649,19 @@ class AISystem(System):
         
         # Process status effects at turn start
         # Pass entities list so effects like IdentifyMode can sync globally
-        status_results = player.status_effects.process_turn_start(entities=game_state.entities)
+        # Pass state_manager so DOT effects can finalize deaths properly
+        status_results = player.status_effects.process_turn_start(
+            entities=game_state.entities,
+            state_manager=self.engine.state_manager
+        )
         
         # Add any messages to the message log
         for result in status_results:
             if 'message' in result:
                 game_state.message_log.add_message(result['message'])
             
-            # Check for player death from status effects (e.g., poison, bleeding)
+            # Check for player death from status effects (e.g., poison, bleeding, Soul Burn)
+            # Note: Death should already be finalized by damage_service in the effect
             if result.get('dead'):
                 from game_states import GameStates
                 self.engine.state_manager.set_game_state(GameStates.PLAYER_DEAD)

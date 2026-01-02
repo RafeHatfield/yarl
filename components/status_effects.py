@@ -1302,8 +1302,16 @@ class SoulBurnEffect(StatusEffect):
         results.append({'message': MB.status_effect(f"The soul burn affecting {self.owner.name} fades.")})
         return results
     
-    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
-        """Tick Soul Burn damage at start of turn."""
+    def process_turn_start(self, entities=None, state_manager=None) -> List[Dict[str, Any]]:
+        """Tick Soul Burn damage at start of turn.
+        
+        Args:
+            entities: Optional list of all game entities (not used by this effect)
+            state_manager: Optional state manager for death finalization (CRITICAL)
+        
+        Returns:
+            List of result dictionaries including death results if applicable
+        """
         results = []
         
         # Calculate damage for this tick
@@ -1313,14 +1321,41 @@ class SoulBurnEffect(StatusEffect):
             damage_this_tick += self.remainder
         
         if damage_this_tick > 0:
-            # Apply damage directly via Fighter.take_damage()
-            fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
-            if fighter:
-                damage_results = fighter.take_damage(damage_this_tick)
+            # Add message about burn damage BEFORE applying damage
+            results.append({'message': MB.combat(f"🔥 {self.owner.name} takes {damage_this_tick} soul burn damage!")})
+            
+            # CRITICAL: Route through damage_service to ensure death finalization
+            # This prevents "0 HP undead limbo" bug where entities hit 0 HP but don't die
+            if state_manager:
+                from services.damage_service import apply_damage
                 
-                # Add message about burn damage
-                results.append({'message': MB.combat(f"🔥 {self.owner.name} takes {damage_this_tick} soul burn damage!")})
+                damage_results = apply_damage(
+                    state_manager=state_manager,
+                    target_entity=self.owner,
+                    amount=damage_this_tick,
+                    cause="soul_burn_dot",
+                    attacker_entity=None,  # DOT has no attacker
+                    damage_type="necrotic",
+                    allow_xp=False,  # DOT doesn't award XP
+                )
                 results.extend(damage_results)
+            else:
+                # FALLBACK: state_manager not available (unit tests, edge cases)
+                # Use direct Fighter.take_damage() but log LOUD warning if death occurs
+                fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+                if fighter:
+                    damage_results = fighter.take_damage(damage_this_tick)
+                    
+                    # Check if death occurred without finalization
+                    for result in damage_results:
+                        if result.get('dead'):
+                            logger.error(
+                                f"⚠️ DEATH_WITHOUT_FINALIZATION: Soul Burn killed {self.owner.name} "
+                                f"but state_manager=None - death will NOT be finalized! "
+                                f"This is OK for unit tests, but a BUG in production."
+                            )
+                    
+                    results.extend(damage_results)
         
         self.ticks_remaining -= 1
         
@@ -1371,12 +1406,13 @@ class StatusEffectManager:
     def get_effect(self, name: str) -> Optional[StatusEffect]:
         return self.active_effects.get(name)
 
-    def process_turn_start(self, entities=None, turn_number: int = None) -> List[Dict[str, Any]]:
+    def process_turn_start(self, entities=None, turn_number: int = None, state_manager=None) -> List[Dict[str, Any]]:
         """Process status effects at turn start.
         
         Args:
             entities: Optional list of all game entities (for effects that need global access)
             turn_number: Optional current turn number (for time-based effects like Ring of Regeneration)
+            state_manager: Optional state manager (CRITICAL for death finalization in DOT effects)
         
         Returns:
             List of result dictionaries
@@ -1392,10 +1428,19 @@ class StatusEffectManager:
                     ring_results = ring.ring.process_turn(self.owner, turn_number=turn_number)
                     results.extend(ring_results)
         
-        # Then process status effects (pass entities to effects that need it)
+        # Then process status effects (pass entities AND state_manager to effects that need them)
         for effect_name in list(self.active_effects.keys()): # Iterate over a copy
             effect = self.active_effects[effect_name]
-            results.extend(effect.process_turn_start(entities=entities))
+            
+            # Pass state_manager to process_turn_start for death finalization
+            # Check if effect accepts state_manager parameter (new Soul Burn does, old effects don't)
+            import inspect
+            sig = inspect.signature(effect.process_turn_start)
+            if 'state_manager' in sig.parameters:
+                results.extend(effect.process_turn_start(entities=entities, state_manager=state_manager))
+            else:
+                results.extend(effect.process_turn_start(entities=entities))
+            
             if effect.duration <= 0 and effect_name in self.active_effects: # Check if effect was removed by itself
                 results.extend(self.remove_effect(effect_name))
         return results
