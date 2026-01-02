@@ -643,7 +643,7 @@ monsters:
   
   lich:
     stats:
-      hp: 40                  # Durable for elite controller
+      hp: 80                  # Very durable for elite controller (survives to cast Soul Bolt)
       power: 2                # Moderate physical power
       defense: 2              # Some arcane protection
       xp: 150                 # High XP for elite threat

@@ -58,6 +58,9 @@ class LichAI(NecromancerBase):
         self.ticks_player_in_range = 0
         self.ticks_has_los = 0
         self.ticks_eligible_to_charge = 0
+        
+        # Debug: Log lich spawn (use print for immediate visibility)
+        print(f"[LICH SPAWN] LichAI.__init__() called!")
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of lich AI behavior.
@@ -75,6 +78,10 @@ class LichAI(NecromancerBase):
         
         # Instrumentation: Track ticks alive
         self.ticks_alive += 1
+        
+        # Debug: Log each lich turn (use print for immediate visibility)
+        if self.ticks_alive <= 5:  # Only log first 5 turns to avoid spam
+            print(f"[LICH TURN #{self.ticks_alive}] {self.owner.name} at ({self.owner.x},{self.owner.y}), HP:{self.owner.fighter.hp}/{self.owner.fighter.max_hp}")
         
         # Instrumentation: Check eligibility conditions for Soul Bolt
         soul_bolt_range = getattr(self.owner, 'soul_bolt_range', 7)
@@ -421,13 +428,14 @@ class LichAI(NecromancerBase):
         
         This helps diagnose why Soul Bolt isn't firing in scenarios.
         """
-        logger.info(
-            f"[LICH DIAGNOSTICS] {self.owner.name} death report:\n"
-            f"  - Ticks alive: {self.ticks_alive}\n"
-            f"  - Ticks player in range ({getattr(self.owner, 'soul_bolt_range', 7)}): {self.ticks_player_in_range}\n"
-            f"  - Ticks had LOS: {self.ticks_has_los}\n"
-            f"  - Ticks eligible to charge: {self.ticks_eligible_to_charge}\n"
-        )
+        # Use print for immediate visibility in test output
+        print(f"\n{'='*60}")
+        print(f"[LICH DIAGNOSTICS] {self.owner.name} death report:")
+        print(f"  - Ticks alive: {self.ticks_alive}")
+        print(f"  - Ticks player in range: {self.ticks_player_in_range}")
+        print(f"  - Ticks had LOS: {self.ticks_has_los}")
+        print(f"  - Ticks eligible: {self.ticks_eligible_to_charge}")
+        print(f"{'='*60}\n")
         
         # Record to metrics for aggregation
         try:

@@ -599,6 +599,17 @@ def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
         and e.fighter.hp > 0
     ]
     
+    # DIAGNOSTIC: Check for liches
+    liches = [e for e in ai_entities if 'lich' in e.name.lower()]
+    if liches:
+        for lich in liches:
+            logger.info(f"[ENEMY TURN] Lich alive: {lich.name} HP: {lich.fighter.hp}/{lich.fighter.max_hp}")
+    else:
+        # Check if there are dead liches in entities
+        dead_liches = [e for e in game_state.entities if 'lich' in e.name.lower() and (not hasattr(e, 'fighter') or not e.fighter or e.fighter.hp <= 0)]
+        if dead_liches:
+            logger.warning(f"[ENEMY TURN] Found {len(dead_liches)} dead lich(es) - they died before enemy phase!")
+    
     # Process each AI entity's turn
     for entity in ai_entities:
         try:

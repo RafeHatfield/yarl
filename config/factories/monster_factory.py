@@ -63,7 +63,8 @@ class MonsterFactory(FactoryBase):
             )
 
             # Create AI component based on ai_type
-            ai_component = self._create_ai_component(monster_def.ai_type)
+            ai_type = getattr(monster_def, 'ai_type', 'basic')
+            ai_component = self._create_ai_component(ai_type)
             
             # Create equipment component for monsters (needed for equipment system)
             equipment_component = Equipment()
@@ -142,7 +143,8 @@ class MonsterFactory(FactoryBase):
                 logger.debug(f"Added natural damage type to {monster_def.name}: {monster.natural_damage_type}")
             
             # Phase 19: Set Orc Chieftain Rally Cry config if defined
-            if hasattr(monster_def, 'rally_radius'):
+            # Only apply to orc_chieftain AI type to prevent cross-contamination
+            if hasattr(monster_def, 'rally_radius') and ai_type == 'orc_chieftain':
                 monster.rally_radius = monster_def.rally_radius
                 monster.rally_min_allies = getattr(monster_def, 'rally_min_allies', 2)
                 monster.rally_hit_bonus = getattr(monster_def, 'rally_hit_bonus', 1)
@@ -152,14 +154,16 @@ class MonsterFactory(FactoryBase):
                 logger.debug(f"Added Rally Cry to {monster_def.name}: radius={monster.rally_radius}, min_allies={monster.rally_min_allies}")
             
             # Phase 19: Set Orc Chieftain Sonic Bellow config if defined
-            if hasattr(monster_def, 'bellow_hp_threshold'):
+            # Only apply to orc_chieftain AI type to prevent cross-contamination
+            if hasattr(monster_def, 'bellow_hp_threshold') and ai_type == 'orc_chieftain':
                 monster.bellow_hp_threshold = monster_def.bellow_hp_threshold
                 monster.bellow_to_hit_penalty = getattr(monster_def, 'bellow_to_hit_penalty', 1)
                 monster.bellow_duration = getattr(monster_def, 'bellow_duration', 2)
                 logger.debug(f"Added Sonic Bellow to {monster_def.name}: threshold={monster.bellow_hp_threshold}, penalty={monster.bellow_to_hit_penalty}")
             
             # Phase 19: Set Orc Shaman Crippling Hex config if defined
-            if hasattr(monster_def, 'hex_enabled'):
+            # Only apply to orc_shaman AI type to prevent cross-contamination
+            if hasattr(monster_def, 'hex_enabled') and ai_type == 'orc_shaman':
                 monster.hex_enabled = monster_def.hex_enabled
                 monster.hex_radius = getattr(monster_def, 'hex_radius', 6)
                 monster.hex_duration_turns = getattr(monster_def, 'hex_duration_turns', 5)
@@ -169,7 +173,8 @@ class MonsterFactory(FactoryBase):
                 logger.debug(f"Added Crippling Hex to {monster_def.name}: radius={monster.hex_radius}, duration={monster.hex_duration_turns}")
             
             # Phase 19: Set Orc Shaman Chant of Dissonance config if defined
-            if hasattr(monster_def, 'chant_enabled'):
+            # Only apply to orc_shaman AI type to prevent cross-contamination
+            if hasattr(monster_def, 'chant_enabled') and ai_type == 'orc_shaman':
                 monster.chant_enabled = monster_def.chant_enabled
                 monster.chant_radius = getattr(monster_def, 'chant_radius', 5)
                 monster.chant_duration_turns = getattr(monster_def, 'chant_duration_turns', 3)
@@ -276,6 +281,7 @@ class MonsterFactory(FactoryBase):
             return ExploderNecromancerAI()
         elif ai_type == "lich":
             from components.ai.lich_ai import LichAI
+            logger.info(f"[FACTORY] Creating LichAI for monster")
             return LichAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")

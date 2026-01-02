@@ -473,6 +473,20 @@ def kill_monster(monster, game_map=None, entities=None):
     """
     # Import MessageBuilder at the top so it's available throughout the function
     
+    # DIAGNOSTIC: Log lich deaths with stack trace to find where they're dying
+    import logging
+    logger = logging.getLogger(__name__)
+    if 'lich' in monster.name.lower():
+        import traceback
+        has_ai = hasattr(monster, 'ai') and monster.ai is not None
+        has_fighter = hasattr(monster, 'fighter') and monster.fighter is not None
+        hp_info = f"HP: {monster.fighter.hp}/{monster.fighter.max_hp}" if has_fighter and monster.fighter else "NO FIGHTER"
+        logger.warning(
+            f"⚠️ LICH DEATH: {monster.name} killed at ({monster.x}, {monster.y})\n"
+            f"   Has AI: {has_ai}, Has Fighter: {has_fighter}, {hp_info}\n"
+            f"   Stack trace:\n{''.join(traceback.format_stack())}"
+        )
+    
     # GUARD: Check if this monster has already been processed
     # This prevents duplicate loot drops if kill_monster is called multiple times
     if hasattr(monster, '_death_processed') and monster._death_processed:

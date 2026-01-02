@@ -38,10 +38,11 @@ rooms:
 
 monsters:
   # 1 Lich (elite controller)
-  # Stats: HP=40, Soul Bolt=ceil(0.35 * player.max_hp), Command aura=+1 to-hit for undead
+  # Stats: HP=80, Soul Bolt=ceil(0.35 * player.max_hp), Command aura=+1 to-hit for undead
+  # Positioned at back to survive long enough to cast Soul Bolt
   - type: "lich"
     count: 1
-    position: [13, 8]
+    position: [15, 8]
     facing: "west"
     state: "aware"
   
