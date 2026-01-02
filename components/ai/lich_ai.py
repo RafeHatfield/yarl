@@ -52,6 +52,12 @@ class LichAI(NecromancerBase):
         """Initialize lich AI."""
         super().__init__()
         self.soul_bolt_cooldown_remaining = 0
+        
+        # Instrumentation for diagnosing Soul Bolt gating issues
+        self.ticks_alive = 0
+        self.ticks_player_in_range = 0
+        self.ticks_has_los = 0
+        self.ticks_eligible_to_charge = 0
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of lich AI behavior.
@@ -66,6 +72,21 @@ class LichAI(NecromancerBase):
             list: List of result dictionaries
         """
         results = []
+        
+        # Instrumentation: Track ticks alive
+        self.ticks_alive += 1
+        
+        # Instrumentation: Check eligibility conditions for Soul Bolt
+        soul_bolt_range = getattr(self.owner, 'soul_bolt_range', 7)
+        distance = self._distance_to(target)
+        has_los = fov_map and fov_map.fov[target.y, target.x] if fov_map else False
+        
+        if distance <= soul_bolt_range:
+            self.ticks_player_in_range += 1
+        if has_los:
+            self.ticks_has_los += 1
+        if distance <= soul_bolt_range and has_los and self.soul_bolt_cooldown_remaining <= 0:
+            self.ticks_eligible_to_charge += 1
         
         # Decrement Soul Bolt cooldown at start of turn
         if self.soul_bolt_cooldown_remaining > 0:
@@ -394,4 +415,29 @@ class LichAI(NecromancerBase):
                         best_distance = distance
         
         return best_corpse
+    
+    def report_diagnostics(self) -> None:
+        """Report Soul Bolt diagnostic counters (called on lich death).
+        
+        This helps diagnose why Soul Bolt isn't firing in scenarios.
+        """
+        logger.info(
+            f"[LICH DIAGNOSTICS] {self.owner.name} death report:\n"
+            f"  - Ticks alive: {self.ticks_alive}\n"
+            f"  - Ticks player in range ({getattr(self.owner, 'soul_bolt_range', 7)}): {self.ticks_player_in_range}\n"
+            f"  - Ticks had LOS: {self.ticks_has_los}\n"
+            f"  - Ticks eligible to charge: {self.ticks_eligible_to_charge}\n"
+        )
+        
+        # Record to metrics for aggregation
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            metrics = get_active_metrics_collector()
+            if metrics:
+                metrics.increment('lich_ticks_alive', self.ticks_alive)
+                metrics.increment('lich_ticks_player_in_range', self.ticks_player_in_range)
+                metrics.increment('lich_ticks_has_los', self.ticks_has_los)
+                metrics.increment('lich_ticks_eligible_to_charge', self.ticks_eligible_to_charge)
+        except Exception:
+            pass  # Metrics are optional
 

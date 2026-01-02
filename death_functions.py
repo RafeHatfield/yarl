@@ -539,6 +539,12 @@ def kill_monster(monster, game_map=None, entities=None):
     monster.color = (127, 0, 0)
     monster.blocks = False
     
+    # Phase 19: Report lich diagnostics before removing AI component
+    if hasattr(monster, 'ai') and monster.ai:
+        from components.ai.lich_ai import LichAI
+        if isinstance(monster.ai, LichAI):
+            monster.ai.report_diagnostics()
+    
     # Remove combat components from the registry (not just set to None)
     # This ensures get_all_entities_at_position() correctly identifies corpses
     # vs living monsters (checks components.has(ComponentType.FIGHTER/AI))
