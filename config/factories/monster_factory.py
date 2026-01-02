@@ -265,6 +265,15 @@ class MonsterFactory(FactoryBase):
         elif ai_type == "necromancer":
             from components.ai.necromancer_ai import NecromancerAI
             return NecromancerAI()
+        elif ai_type == "bone_necromancer":
+            from components.ai.bone_necromancer_ai import BoneNecromancerAI
+            return BoneNecromancerAI()
+        elif ai_type == "plague_necromancer":
+            from components.ai.plague_necromancer_ai import PlagueNecromancerAI
+            return PlagueNecromancerAI()
+        elif ai_type == "exploder_necromancer":
+            from components.ai.exploder_necromancer_ai import ExploderNecromancerAI
+            return ExploderNecromancerAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()

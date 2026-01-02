@@ -1,28 +1,15 @@
-"""Phase 19: Necromancer AI - Corpse economy controller with raise dead + corpse seeking
+"""Phase 19: Plague Necromancer AI - Raises corpses into plague zombies
 
-Necromancer is a hang-back controller enemy with deterministic, corpse-focused gameplay:
-1. Raise Dead (cooldown-based resurrection):
-   - Raises corpses with CorpseComponent.can_be_raised() == True
-   - Range: config-driven (default 5)
-   - Cooldown: config-driven (default 4 turns)
-   - Creates friendly zombies (raiser_faction override)
-   - Deterministic corpse selection (nearest, tie-break by position)
-
-2. Corpse-seeking movement:
-   - Moves toward raisable corpses when out of range
-   - Safety constraint: Never approach within danger_radius (default 2) of player
-   - Deterministic pathfinding (no RNG)
-
-3. Hang-back AI heuristic:
-   - Prefers distance 4-7 from player
-   - If too close (<=2), retreats if possible
-   - Never stalls: attacks or waits if boxed in
+Plague Necromancer variant that:
+- Targets regular corpses (with CorpseComponent)
+- Summons plague zombies that spread infection
+- Reuses existing plague mechanics (plague_attack ability)
+- Shares hang-back and safety behavior with base necromancer
 """
 
-from typing import Optional, List, Tuple, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 from components.ai.necromancer_base import NecromancerBase
 from logger_config import get_logger
-import math
 
 if TYPE_CHECKING:
     from entity import Entity
@@ -30,16 +17,13 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class NecromancerAI(NecromancerBase):
-    """AI for Necromancer with Raise Dead, corpse-seeking, and hang-back behavior.
+class PlagueNecromancerAI(NecromancerBase):
+    """AI for Plague Necromancer that raises plague zombies.
     
-    Phase 19: Necromancer is a controller enemy that:
-    - Raises dead on cooldown when corpses are in range
-    - Seeks corpses when out of range (respecting danger radius)
-    - Hangs back to avoid melee combat (weak stats, prefers summons)
-    
-    This class now inherits from NecromancerBase which provides the base
-    action-profile framework. It implements corpse-raising specific behavior.
+    Overrides base necromancer to:
+    - Raise corpses into plague zombies (not regular zombies)
+    - Plague zombies have plague_attack ability (existing mechanic)
+    - Track plague-specific metrics
     """
     
     def _try_execute_action(
@@ -50,7 +34,7 @@ class NecromancerAI(NecromancerBase):
         action_range: int,
         action_cooldown: int
     ) -> Optional[List]:
-        """Attempt to raise a corpse if one is in range.
+        """Attempt to raise a corpse into a plague zombie if one is in range.
         
         Args:
             target: The player entity
@@ -71,11 +55,11 @@ class NecromancerAI(NecromancerBase):
         if corpse is None:
             return None
         
-        # Attempt to raise the corpse
-        logger.debug(f"{self.owner.name} attempting to raise {corpse.name} at ({corpse.x}, {corpse.y})")
+        # Attempt to raise the corpse as a plague zombie
+        logger.debug(f"{self.owner.name} attempting to raise {corpse.name} as plague zombie at ({corpse.x}, {corpse.y})")
         
-        # Record metric: raise attempt
-        self._increment_metric('necro_raise_attempts')
+        # Record metric: plague raise attempt
+        self._increment_metric('plague_raise_attempts')
         
         try:
             # Cast raise dead with raiser_faction override
@@ -94,11 +78,47 @@ class NecromancerAI(NecromancerBase):
             
             # Check if raise was successful
             if raise_results and any(r.get("consumed", False) for r in raise_results):
-                self.action_cooldown_remaining = action_cooldown
-                logger.info(f"{self.owner.name} successfully raised {corpse.name}")
+                # Raise succeeded - now convert to plague zombie
+                # Find the newly raised zombie
+                raised_zombie = None
+                for entity in entities:
+                    if entity.x == corpse.x and entity.y == corpse.y:
+                        if hasattr(entity, 'ai') and entity.ai is not None:
+                            raised_zombie = entity
+                            break
                 
-                # Record metric: raise success
-                self._increment_metric('necro_raise_successes')
+                if raised_zombie:
+                    # Convert to plague zombie by adding plague abilities
+                    if not hasattr(raised_zombie, 'special_abilities'):
+                        raised_zombie.special_abilities = []
+                    if "plague_attack" not in raised_zombie.special_abilities:
+                        raised_zombie.special_abilities.append("plague_attack")
+                    
+                    # Add plague_carrier tag
+                    if not hasattr(raised_zombie, 'tags'):
+                        raised_zombie.tags = []
+                    if "plague_carrier" not in raised_zombie.tags:
+                        raised_zombie.tags.append("plague_carrier")
+                    
+                    # Update appearance for plague zombie
+                    raised_zombie.char = "Z"
+                    raised_zombie.color = (100, 180, 80)  # Sickly green
+                    
+                    # Boost stats slightly (plague zombies are stronger)
+                    if hasattr(raised_zombie, 'fighter') and raised_zombie.fighter:
+                        raised_zombie.fighter.hp = min(raised_zombie.fighter.hp + 6, raised_zombie.fighter.max_hp + 6)
+                        raised_zombie.fighter.base_max_hp += 6
+                        if hasattr(raised_zombie.fighter, 'damage_min'):
+                            raised_zombie.fighter.damage_min += 1
+                        if hasattr(raised_zombie.fighter, 'damage_max'):
+                            raised_zombie.fighter.damage_max += 1
+                
+                self.action_cooldown_remaining = action_cooldown
+                logger.info(f"{self.owner.name} successfully raised plague zombie")
+                
+                # Record metrics
+                self._increment_metric('plague_raise_successes')
+                self._increment_metric('plague_zombies_spawned')
                 
                 return raise_results
             else:
@@ -106,15 +126,11 @@ class NecromancerAI(NecromancerBase):
                 if raise_results:
                     failure_msg = raise_results[0].get("message")
                     if failure_msg:
-                        logger.warning(f"{self.owner.name} raise failed at ({corpse.x},{corpse.y}): {failure_msg.text if hasattr(failure_msg, 'text') else failure_msg}")
-                    else:
-                        logger.warning(f"{self.owner.name} raise failed: consumed={raise_results[0].get('consumed')}, results={raise_results}")
-                else:
-                    logger.warning(f"{self.owner.name} raise returned no results")
+                        logger.warning(f"{self.owner.name} plague raise failed at ({corpse.x},{corpse.y}): {failure_msg.text if hasattr(failure_msg, 'text') else failure_msg}")
                 return None
                 
         except Exception as e:
-            logger.warning(f"{self.owner.name} raise dead error: {e}")
+            logger.warning(f"{self.owner.name} plague raise error: {e}")
             return None
     
     def _try_target_seeking_movement(
@@ -151,11 +167,11 @@ class NecromancerAI(NecromancerBase):
         
         # Try to move toward corpse while respecting danger radius
         return self._try_safe_target_approach(
-            corpse, target, game_map, entities, danger_radius, "necro_corpse_seek_moves"
+            corpse, target, game_map, entities, danger_radius, "plague_corpse_seek_moves"
         )
     
     def _find_best_raisable_corpse(
-        self, 
+        self,
         entities: List,
         max_range: Optional[int] = None
     ) -> Optional['Entity']:
@@ -189,8 +205,7 @@ class NecromancerAI(NecromancerBase):
             if not corpse_comp.can_be_raised():
                 continue
             
-            # Phase 19: Check if corpse tile is blocked by another entity
-            # Skip if player or any other blocking entity is on the corpse
+            # Check if corpse tile is blocked by another entity
             tile_blocked = False
             for other in entities:
                 if other != entity and other.blocks and other.x == entity.x and other.y == entity.y:
@@ -219,4 +234,5 @@ class NecromancerAI(NecromancerBase):
         ))
         
         return raisable_corpses[0]
+
 

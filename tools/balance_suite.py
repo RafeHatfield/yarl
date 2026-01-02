@@ -57,6 +57,9 @@ SCENARIO_MATRIX = [
     {"id": "monster_orc_chieftain_identity", "runs": 30, "turn_limit": 200},
     {"id": "monster_orc_shaman_identity", "runs": 30, "turn_limit": 200},
     {"id": "monster_necromancer_identity", "runs": 30, "turn_limit": 250},
+    {"id": "monster_bone_necromancer_identity", "runs": 30, "turn_limit": 250},
+    {"id": "monster_plague_necromancer_identity", "runs": 30, "turn_limit": 250},
+    {"id": "monster_exploder_necromancer_identity", "runs": 30, "turn_limit": 250},
     {"id": "monster_wraith_identity", "runs": 30, "turn_limit": 200},
     {"id": "troll_identity", "runs": 30, "turn_limit": 100},
 ]

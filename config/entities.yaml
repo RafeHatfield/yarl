@@ -245,6 +245,97 @@ monsters:
     etp_base: 44
 
   # ═══════════════════════════════════════════════════════════
+  # PHASE 19: BONE NECROMANCER - Bone pile variant
+  # Targets bone piles only, summons weak bone thralls
+  # ═══════════════════════════════════════════════════════════
+  
+  bone_necromancer:
+    extends: necromancer          # Inherit base necromancer properties
+    char: "N"
+    color: [120, 120, 100]        # Override: bone-grey (different from regular necro)
+    ai_type: "bone_necromancer"   # Phase 19: Custom AI targeting bone piles
+    # Override action config for bone pile targeting
+    action_enabled: true
+    action_type: "bone_raise"
+    action_range: 5               # Range to raise bone piles
+    action_cooldown_turns: 4      # Same cooldown as regular necro
+    summon_monster_id: "bone_thrall"  # Summons bone thralls instead of zombies
+    # Inherits: stats, hang-back behavior, danger_radius, etc.
+    # ETP: Same as base necromancer (44) - summons are weaker but more frequent
+    etp_base: 44
+
+  # Bone Thrall - Weak undead summon from bone piles
+  bone_thrall:
+    stats:
+      hp: 12                      # Very fragile
+      power: 0
+      defense: 0
+      xp: 15                      # Low XP (summon, not main threat)
+      damage_min: 2               # Weak attacks: 2-3
+      damage_max: 3
+      # D&D-style stats
+      strength: 8                 # Weak (-1 modifier)
+      dexterity: 10               # Average
+      constitution: 8             # Fragile (-1)
+      # Phase 8: Accuracy & Evasion
+      accuracy: 1                 # Poor accuracy
+      evasion: 0                  # No dodge
+    char: "t"                     # Lowercase t for thrall
+    color: [140, 140, 120]        # Bone grey (matches bone necro)
+    ai_type: "basic"              # Simple aggressive AI
+    faction: "cultist"            # Cultist faction (same as necromancer)
+    render_order: "actor"
+    blocks: true
+    tags: ["undead", "summon", "no_flesh"]
+    can_seek_items: false
+    inventory_size: 0
+    # ETP: DPS=2.5 × 6 × durability=0.67 × behavior=0.9 = 9 (very weak summon)
+    etp_base: 9
+  
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: PLAGUE NECROMANCER - Raises plague zombies
+  # Creates plague zombies that spread infection
+  # ═══════════════════════════════════════════════════════════
+  
+  plague_necromancer:
+    extends: necromancer          # Inherit base necromancer properties
+    char: "N"
+    color: [100, 180, 80]         # Override: sickly green (plague theme)
+    ai_type: "plague_necromancer" # Phase 19: Custom AI raising plague zombies
+    # Override action config for plague zombie raising
+    action_enabled: true
+    action_type: "plague_raise"
+    action_range: 5               # Range to raise corpses
+    action_cooldown_turns: 4      # Same cooldown as regular necro
+    summon_monster_id: "plague_zombie"  # Raises plague zombies instead of regular zombies
+    # Inherits: stats, hang-back behavior, danger_radius, etc.
+    # ETP: Same as base necromancer (44) - zombies are stronger and spread plague
+    etp_base: 44
+  
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: EXPLODER NECROMANCER - Corpse explosion specialist
+  # Consumes spent corpses for deterministic AoE damage
+  # ═══════════════════════════════════════════════════════════
+  
+  exploder_necromancer:
+    extends: necromancer          # Inherit base necromancer properties
+    char: "N"
+    color: [180, 40, 40]          # Override: blood red (explosion theme)
+    ai_type: "exploder_necromancer" # Phase 19: Custom AI with corpse explosion
+    # Override action config for corpse explosion
+    action_enabled: true
+    action_type: "corpse_explosion"
+    action_range: 5               # Range to target spent corpses
+    action_cooldown_turns: 3      # Faster cooldown (explosions are flashy but less sustainable)
+    explosion_radius: 2           # AoE blast radius
+    explosion_damage_min: 4       # Deterministic damage range
+    explosion_damage_max: 8
+    explosion_damage_type: "necrotic"
+    # Inherits: stats, hang-back behavior, danger_radius, etc.
+    # ETP: Same as base necromancer (44) - burst AoE damage
+    etp_base: 44
+
+  # ═══════════════════════════════════════════════════════════
   # PHASE 19: SKELETON SHIELD WALL ENEMY
   # Skeletons form defensive walls and have damage type identity
   # ═══════════════════════════════════════════════════════════

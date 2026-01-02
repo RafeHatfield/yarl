@@ -52,6 +52,7 @@ def test_necromancer_ai_has_cooldown_tracking():
     
     ai = NecromancerAI()
     
-    assert hasattr(ai, 'raise_cooldown_remaining')
-    assert ai.raise_cooldown_remaining == 0  # Starts ready
+    # Updated to action_cooldown_remaining (base class attribute)
+    assert hasattr(ai, 'action_cooldown_remaining')
+    assert ai.action_cooldown_remaining == 0  # Starts ready
 
