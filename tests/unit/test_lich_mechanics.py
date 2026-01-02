@@ -29,7 +29,7 @@ class TestChargingSoulBoltEffect:
         charge_effect = ChargingSoulBoltEffect(owner=owner)
         
         assert charge_effect.name == "charging_soul_bolt"
-        assert charge_effect.duration == 1  # 1 turn telegraph
+        assert charge_effect.duration == 2  # 2 turns (to survive turn_end processing)
         assert charge_effect.owner == owner
     
     def test_charging_apply(self):
