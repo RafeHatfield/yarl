@@ -281,7 +281,6 @@ class MonsterFactory(FactoryBase):
             return ExploderNecromancerAI()
         elif ai_type == "lich":
             from components.ai.lich_ai import LichAI
-            logger.info(f"[FACTORY] Creating LichAI for monster")
             return LichAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")

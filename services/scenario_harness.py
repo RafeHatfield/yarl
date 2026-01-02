@@ -169,6 +169,15 @@ class AggregatedMetrics:
     total_necro_raise_successes: int = 0
     total_necro_corpse_seek_moves: int = 0
     total_necro_unsafe_move_blocks: int = 0
+    # Phase 19: Lich metrics
+    total_lich_ticks_alive: int = 0
+    total_lich_ticks_player_in_range: int = 0
+    total_lich_ticks_has_los: int = 0
+    total_lich_ticks_eligible_to_charge: int = 0
+    total_lich_soul_bolt_charges: int = 0
+    total_lich_soul_bolt_casts: int = 0
+    total_soul_ward_blocks: int = 0
+    total_lich_death_siphon_heals: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -338,16 +347,30 @@ def _create_game_state_from_map(result: ScenarioMapResult, constants: Dict[str, 
         constants["message_height"],
     )
 
+    # Initialize FOV map for monster LOS checks (Phase 19: lich Soul Bolt needs LOS)
+    from fov_functions import initialize_fov, recompute_fov
+    fov_map = initialize_fov(result.game_map)
+    
+    # Recompute FOV from player's position
+    recompute_fov(
+        fov_map=fov_map,
+        x=result.player.x,
+        y=result.player.y,
+        radius=constants.get("fov_radius", 10),
+        light_walls=True,
+        algorithm=12
+    )
+
     class SimpleGameState:
-        def __init__(self, player, entities, game_map, message_log, constants):
+        def __init__(self, player, entities, game_map, message_log, constants, fov_map):
             self.player = player
             self.entities = entities
             self.game_map = game_map
             self.message_log = message_log
             self.current_state = GameStates.PLAYERS_TURN
             self.constants = constants
-            self.fov_recompute = True
-            self.fov_map = None
+            self.fov_recompute = False  # Already computed above
+            self.fov_map = fov_map
 
     return SimpleGameState(
         player=result.player,
@@ -355,6 +378,7 @@ def _create_game_state_from_map(result: ScenarioMapResult, constants: Dict[str, 
         game_map=result.game_map,
         message_log=message_log,
         constants=constants,
+        fov_map=fov_map,
     )
 
 
@@ -599,16 +623,10 @@ def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
         and e.fighter.hp > 0
     ]
     
-    # DIAGNOSTIC: Check for liches
-    liches = [e for e in ai_entities if 'lich' in e.name.lower()]
-    if liches:
-        for lich in liches:
-            logger.info(f"[ENEMY TURN] Lich alive: {lich.name} HP: {lich.fighter.hp}/{lich.fighter.max_hp}")
-    else:
-        # Check if there are dead liches in entities
-        dead_liches = [e for e in game_state.entities if 'lich' in e.name.lower() and (not hasattr(e, 'fighter') or not e.fighter or e.fighter.hp <= 0)]
-        if dead_liches:
-            logger.warning(f"[ENEMY TURN] Found {len(dead_liches)} dead lich(es) - they died before enemy phase!")
+    # Phase 19: Lich diagnostics can be enabled if needed
+    # liches = [e for e in ai_entities if 'lich' in e.name.lower()]
+    # if liches:
+    #     logger.debug(f"[ENEMY TURN] {len(liches)} lich(es) alive")
     
     # Process each AI entity's turn
     for entity in ai_entities:
@@ -742,8 +760,24 @@ def run_scenario_once(
                     break
 
                 if game_state.current_state == GameStates.PLAYERS_TURN:
+                    # Recompute FOV from player position (for monster LOS checks)
+                    if game_state.fov_map and game_state.fov_recompute:
+                        from fov_functions import recompute_fov
+                        recompute_fov(
+                            fov_map=game_state.fov_map,
+                            x=game_state.player.x,
+                            y=game_state.player.y,
+                            radius=constants.get("fov_radius", 10),
+                            light_walls=True,
+                            algorithm=12
+                        )
+                        game_state.fov_recompute = False
+                    
                     action = bot_policy.choose_action(game_state)
                     _process_player_action(game_state, action, metrics)
+                    
+                    # Request FOV recompute after player action (movement changes visibility)
+                    game_state.fov_recompute = True
 
                 elif game_state.current_state == GameStates.ENEMY_TURN:
                     _process_enemy_turn(game_state, metrics)
@@ -891,6 +925,25 @@ def run_scenario_many(
         total_necro_corpse_seek_moves += getattr(run, "necro_corpse_seek_moves", 0)
         total_necro_unsafe_move_blocks += getattr(run, "necro_unsafe_move_blocks", 0)
     
+    # Phase 19: Aggregate lich metrics
+    total_lich_ticks_alive = 0
+    total_lich_ticks_in_range = 0
+    total_lich_ticks_has_los = 0
+    total_lich_ticks_eligible = 0
+    total_lich_soul_bolt_charges = 0
+    total_lich_soul_bolt_casts = 0
+    total_soul_ward_blocks = 0
+    total_lich_death_siphon_heals = 0
+    for run in all_runs:
+        total_lich_ticks_alive += getattr(run, "lich_ticks_alive", 0)
+        total_lich_ticks_in_range += getattr(run, "lich_ticks_player_in_range", 0)
+        total_lich_ticks_has_los += getattr(run, "lich_ticks_has_los", 0)
+        total_lich_ticks_eligible += getattr(run, "lich_ticks_eligible_to_charge", 0)
+        total_lich_soul_bolt_charges += getattr(run, "lich_soul_bolt_charges", 0)
+        total_lich_soul_bolt_casts += getattr(run, "lich_soul_bolt_casts", 0)
+        total_soul_ward_blocks += getattr(run, "soul_ward_blocks", 0)
+        total_lich_death_siphon_heals += getattr(run, "lich_death_siphon_heals", 0)
+    
     for run in all_runs:
         total_split_events += getattr(run, "split_events_total", 0)
         total_split_children += getattr(run, "split_children_spawned", 0)
@@ -924,6 +977,14 @@ def run_scenario_many(
         total_shaman_chant_starts=total_shaman_chant_starts,
         total_shaman_chant_interrupts=total_shaman_chant_interrupts,
         total_shaman_chant_expiries=total_shaman_chant_expiries,
+        total_lich_ticks_alive=total_lich_ticks_alive,
+        total_lich_ticks_player_in_range=total_lich_ticks_in_range,
+        total_lich_ticks_has_los=total_lich_ticks_has_los,
+        total_lich_ticks_eligible_to_charge=total_lich_ticks_eligible,
+        total_lich_soul_bolt_charges=total_lich_soul_bolt_charges,
+        total_lich_soul_bolt_casts=total_lich_soul_bolt_casts,
+        total_soul_ward_blocks=total_soul_ward_blocks,
+        total_lich_death_siphon_heals=total_lich_death_siphon_heals,
         total_necro_raise_attempts=total_necro_raise_attempts,
         total_necro_raise_successes=total_necro_raise_successes,
         total_necro_corpse_seek_moves=total_necro_corpse_seek_moves,

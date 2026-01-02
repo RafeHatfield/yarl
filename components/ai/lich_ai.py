@@ -59,8 +59,8 @@ class LichAI(NecromancerBase):
         self.ticks_has_los = 0
         self.ticks_eligible_to_charge = 0
         
-        # Debug: Log lich spawn (use print for immediate visibility)
-        print(f"[LICH SPAWN] LichAI.__init__() called!")
+        # Debug logging can be enabled if needed
+        # logger.debug(f"[LICH] LichAI initialized for {getattr(self, 'owner', 'unknown')}")
     
     def take_turn(self, target, fov_map, game_map, entities):
         """Execute one turn of lich AI behavior.
@@ -79,28 +79,37 @@ class LichAI(NecromancerBase):
         # Instrumentation: Track ticks alive
         self.ticks_alive += 1
         
-        # Debug: Log each lich turn (use print for immediate visibility)
-        if self.ticks_alive <= 5:  # Only log first 5 turns to avoid spam
-            print(f"[LICH TURN #{self.ticks_alive}] {self.owner.name} at ({self.owner.x},{self.owner.y}), HP:{self.owner.fighter.hp}/{self.owner.fighter.max_hp}")
+        # Debug logging can be enabled if needed
+        # if self.ticks_alive <= 3:
+        #     logger.debug(f"[LICH TURN #{self.ticks_alive}] at ({self.owner.x},{self.owner.y})")
         
         # Instrumentation: Check eligibility conditions for Soul Bolt
         soul_bolt_range = getattr(self.owner, 'soul_bolt_range', 7)
         distance = self._distance_to(target)
-        has_los = fov_map and fov_map.fov[target.y, target.x] if fov_map else False
+        
+        # Check LOS: Use player-centric FOV (if lich is visible to player, player is visible to lich)
+        from components.ai._helpers import map_is_in_fov
+        has_los = map_is_in_fov(fov_map, self.owner.x, self.owner.y) if fov_map else False
         
         if distance <= soul_bolt_range:
             self.ticks_player_in_range += 1
+            self._increment_metric('lich_ticks_player_in_range')
         if has_los:
             self.ticks_has_los += 1
+            self._increment_metric('lich_ticks_has_los')
         if distance <= soul_bolt_range and has_los and self.soul_bolt_cooldown_remaining <= 0:
             self.ticks_eligible_to_charge += 1
+            self._increment_metric('lich_ticks_eligible_to_charge')
+        
+        # Always record ticks_alive each turn (for aggregation)
+        self._increment_metric('lich_ticks_alive')
         
         # Decrement Soul Bolt cooldown at start of turn
         if self.soul_bolt_cooldown_remaining > 0:
             self.soul_bolt_cooldown_remaining -= 1
         
         # Check if charging Soul Bolt
-        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
+        status_effects = self.owner.status_effects if hasattr(self.owner, 'status_effects') else None
         is_charging = status_effects and status_effects.has_effect('charging_soul_bolt')
         
         # Priority 1: If charging, try to resolve Soul Bolt
@@ -155,17 +164,16 @@ class LichAI(NecromancerBase):
         if distance > soul_bolt_range:
             return None
         
-        # Check if player is in LOS
-        if not fov_map.fov[target.y, target.x]:
+        # Check if lich has LOS to player (mutual visibility via player's FOV)
+        from components.ai._helpers import map_is_in_fov
+        if not map_is_in_fov(fov_map, self.owner.x, self.owner.y):
             return None
         
         # Start charging
         results = []
         
-        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
-        if not status_effects:
-            logger.warning(f"{self.owner.name} tried to charge Soul Bolt but has no status_effects component!")
-            return None
+        # Get or create status effect manager
+        status_effects = self.owner.get_status_effect_manager()
         
         charge_effect = ChargingSoulBoltEffect(owner=self.owner)
         charge_results = status_effects.add_effect(charge_effect)
@@ -199,12 +207,13 @@ class LichAI(NecromancerBase):
         # Check if player is still in range
         distance = self._distance_to(target)
         if distance > soul_bolt_range:
-            logger.info(f"[LICH] Soul Bolt fizzles - target out of range (distance={distance:.1f})")
+            logger.debug(f"[LICH] Soul Bolt fizzles - target out of range (distance={distance:.1f})")
             return None
         
-        # Check if player is still in LOS
-        if not fov_map.fov[target.y, target.x]:
-            logger.info(f"[LICH] Soul Bolt fizzles - LOS broken")
+        # Check if lich still has LOS to player (mutual visibility via player's FOV)
+        from components.ai._helpers import map_is_in_fov
+        if not map_is_in_fov(fov_map, self.owner.x, self.owner.y):
+            logger.debug(f"[LICH] Soul Bolt fizzles - LOS broken")
             return None
         
         results = []
@@ -231,18 +240,8 @@ class LichAI(NecromancerBase):
             
             # Apply upfront damage
             if upfront_damage > 0:
-                from services.damage_service import apply_damage
-                from state_management.state_manager import get_state_manager
-                
-                state_manager = get_state_manager()
-                damage_results = apply_damage(
-                    state_manager=state_manager,
-                    target_entity=target,
-                    amount=upfront_damage,
-                    cause="lich_soul_bolt_warded",
-                    attacker_entity=self.owner,
-                    allow_xp=True,
-                )
+                # Use Fighter.take_damage() directly - caller will finalize death
+                damage_results = target_fighter.take_damage(upfront_damage)
                 results.extend(damage_results)
             
             # Apply Soul Burn DOT
@@ -259,18 +258,8 @@ class LichAI(NecromancerBase):
             # No ward: full damage
             results.append({'message': MB.combat(f"⚡💀 The {self.owner.name} unleashes a devastating Soul Bolt!")})
             
-            from services.damage_service import apply_damage
-            from state_management.state_manager import get_state_manager
-            
-            state_manager = get_state_manager()
-            damage_results = apply_damage(
-                state_manager=state_manager,
-                target_entity=target,
-                amount=base_damage,
-                cause="lich_soul_bolt",
-                attacker_entity=self.owner,
-                allow_xp=True,
-            )
+            # Use Fighter.take_damage() directly - caller will finalize death
+            damage_results = target_fighter.take_damage(base_damage)
             results.extend(damage_results)
             
             # Record metrics
@@ -428,14 +417,14 @@ class LichAI(NecromancerBase):
         
         This helps diagnose why Soul Bolt isn't firing in scenarios.
         """
-        # Use print for immediate visibility in test output
-        print(f"\n{'='*60}")
-        print(f"[LICH DIAGNOSTICS] {self.owner.name} death report:")
-        print(f"  - Ticks alive: {self.ticks_alive}")
-        print(f"  - Ticks player in range: {self.ticks_player_in_range}")
-        print(f"  - Ticks had LOS: {self.ticks_has_los}")
-        print(f"  - Ticks eligible: {self.ticks_eligible_to_charge}")
-        print(f"{'='*60}\n")
+        # Log diagnostics for debugging (can be disabled in production)
+        logger.info(
+            f"[LICH DIAGNOSTICS] {self.owner.name} death report:\n"
+            f"  - Ticks alive: {self.ticks_alive}\n"
+            f"  - Ticks player in range: {self.ticks_player_in_range}\n"
+            f"  - Ticks had LOS: {self.ticks_has_los}\n"
+            f"  - Ticks eligible: {self.ticks_eligible_to_charge}"
+        )
         
         # Record to metrics for aggregation
         try:
