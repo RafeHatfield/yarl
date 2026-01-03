@@ -576,10 +576,28 @@ def kill_monster(monster, game_map=None, entities=None):
         # Re-death of raised entity → SPENT corpse
         corpse_state = CorpseState.SPENT
         corpse_id = raised_from_corpse  # Preserve lineage ID
+        
+        # Record metric
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            metrics_collector = get_active_metrics_collector()
+            if metrics_collector:
+                metrics_collector.increment('spent_corpses_created')
+        except Exception:
+            pass  # Metrics optional
     else:
         # Normal death → FRESH corpse
         corpse_state = CorpseState.FRESH
         corpse_id = f"corpse_{monster.x}_{monster.y}_{death_turn}"
+        
+        # Record metric
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            metrics_collector = get_active_metrics_collector()
+            if metrics_collector:
+                metrics_collector.increment('fresh_corpses_created')
+        except Exception:
+            pass  # Metrics optional
     
     # Create and attach corpse component
     corpse_component = CorpseComponent(

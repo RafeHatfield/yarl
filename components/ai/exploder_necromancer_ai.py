@@ -102,12 +102,16 @@ class ExploderNecromancerAI(NecromancerBase):
                         
                         logger.debug(f"Corpse explosion hits {entity.name} for {damage} damage")
             
-            # Remove the spent corpse
+            # Phase 20: Mark corpse as CONSUMED and remove from map
+            corpse_comp = spent_corpse.get_component_optional(ComponentType.CORPSE)
+            if corpse_comp:
+                corpse_comp.mark_consumed()
+            
             if spent_corpse in entities:
                 entities.remove(spent_corpse)
             
-            # Record metrics
-            self._increment_metric('spent_corpses_consumed')
+            # Record metrics (Phase 20: use 'spent_corpses_exploded' instead of 'consumed')
+            self._increment_metric('spent_corpses_exploded')
             self._increment_metric('explosion_damage_total', total_damage_dealt)
             if player_hit:
                 self._increment_metric('player_hits_from_explosion')

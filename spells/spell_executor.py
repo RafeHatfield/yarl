@@ -1394,6 +1394,15 @@ class SpellExecutor:
             # Phase 20: Track lineage so re-death creates SPENT corpse
             if corpse_comp.corpse_id:
                 corpse.raised_from_corpse_id = corpse_comp.corpse_id
+            
+            # Record metric
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                metrics_collector = get_active_metrics_collector()
+                if metrics_collector:
+                    metrics_collector.increment('raises_completed')
+            except Exception:
+                pass  # Metrics optional
         
         # Invalidate entity cache since we added AI to an existing entity
         from entity_sorting_cache import invalidate_entity_cache
