@@ -266,37 +266,50 @@ Status: Phase 18 QOL work is complete. The project is stable and ready for the n
 
 ### Phase 19: Monster Identity & Abilities
 
-**Status:** PLANNED
+**Status:** ✅ COMPLETE (v4.10.0)
 
 **Intent:**
-Monster-specific abilities and tactical patterns to differentiate enemy types beyond HP/damage stats. Currently, orcs and zombies are mostly stat variations. This phase gives each monster family unique mechanics.
+Monster-specific abilities and tactical patterns to differentiate enemy types beyond HP/damage stats.
 
-**Potential features:**
-- Active abilities (orc charge, zombie grab, skeleton archer volley)
-- Passive traits (regeneration, dodge, counterattack)
-- Elite variants with enhanced abilities
-- Monster telegraphing (visual cues for dangerous actions)
+**Implemented Features:**
+- **Orc Chieftain:** Rally aura (+2 damage to nearby orcs), tactical positioning
+- **Orc Shaman:** Channeled Chant of War (+2 to-hit aura), interruptible by damage
+- **Necromancer Variants:**
+  - Base Necromancer: Raises corpses into zombies, hang-back AI
+  - Bone Necromancer: Summons bone thralls from bone piles
+  - Plague Necromancer: Raises plague zombies with infection
+  - Exploder Necromancer: Detonates spent corpses (Phase 20 integration)
+- **Lich (Arch-Necromancer):** Soul Bolt telegraph+resolve, Soul Ward counter, Command the Dead aura, Death Siphon
+- **Wraith:** Life Drain melee (heals on hit), countered by Ward Against Drain
+- **Troll:** Regeneration (2 HP/turn), suppressed by acid/fire damage
+- **Skeleton:** Death-spawns bone pile (targetable by Bone Necromancer)
+- **Corpse Safety System:** CorpseComponent prevents infinite raise loops
 
-**Dependencies:**
-- Stable combat system (Phase 18)
-- Ability framework (new)
-- Animation/feedback system improvements
-
-**Risks:**
-- Ability complexity may break combat assumptions
-- Bot intelligence may need updates to handle new threats
-- Balance suite must expand to cover new abilities
+**Deliverables:**
+- 12 new monster variants with unique abilities
+- 26-scenario balance suite (all identity kits validated)
+- Deterministic ability mechanics (no RNG where avoidable)
+- Faction-aware AI and aura systems
 
 ---
 
 ### Phase 20: Status Effects & Combat Depth
 
-**Status:** PLANNED
+**Status:** 🚧 IN PROGRESS
 
 **Intent:**
-Introduce persistent combat effects (poison, slow, stun, blind, etc.) to create tactical depth and build on Phase 9's momentum system.
+Introduce persistent combat effects and corpse explosion mechanics to create tactical depth.
 
-**Potential features:**
+**Completed Features (v4.11.0):**
+- **Corpse Explosion Lifecycle:**
+  - FRESH corpses: Created on death, raisable, NOT explodable
+  - SPENT corpses: Created on re-death of raised entities, explodable, NOT raisable
+  - CONSUMED corpses: Post-explosion, inert
+  - Lineage tracking: Raised entities carry corpse_id for deterministic SPENT creation
+  - Exploder Necromancer: Targets ONLY SPENT corpses
+  - State machine prevents illegal double-use (raise+explode same corpse)
+
+**Planned Features:**
 - Damage-over-time effects (poison, bleed, burning)
 - Movement penalties (slow, root, knockback)
 - Action denial (stun, silence, disarm)
@@ -304,9 +317,9 @@ Introduce persistent combat effects (poison, slow, stun, blind, etc.) to create 
 - Status effect resistance system
 
 **Dependencies:**
-- Status effect component framework
-- Turn-based duration tracking
-- Visual indicators for active effects
+- Status effect component framework (partially exists)
+- Turn-based duration tracking (exists)
+- Visual indicators for active effects (partial)
 
 **Risks:**
 - Status stacking may create degenerate strategies
