@@ -76,13 +76,22 @@ class ExploderNecromancerAI(NecromancerBase):
             # Find all entities in explosion radius
             explosion_x = spent_corpse.x
             explosion_y = spent_corpse.y
-            damaged_entities = []
-            total_damage_dealt = 0
-            player_hit = False
+            results = []
+            
+            # Phase 20: Get state_manager for damage_service (required for death finalization)
+            from state_management.state_manager import get_state_manager
+            state_manager = get_state_manager()
+            
+            if not state_manager:
+                logger.error(f"{self.owner.name} corpse explosion failed: no state_manager available")
+                return None
+            
+            # Apply damage to all entities in radius via damage_service
+            from services.damage_service import apply_damage
             
             for entity in entities:
-                # Skip the corpse itself
-                if entity == spent_corpse:
+                # Skip the corpse itself and the exploder
+                if entity == spent_corpse or entity == self.owner:
                     continue
                 
                 # Check if entity is in explosion radius
@@ -90,17 +99,23 @@ class ExploderNecromancerAI(NecromancerBase):
                 if distance <= explosion_radius:
                     # Check if entity has fighter component
                     fighter = entity.get_component_optional(ComponentType.FIGHTER)
-                    if fighter and entity.fighter.hp > 0:
-                        # Apply damage
-                        entity.fighter.hp -= damage
-                        total_damage_dealt += damage
-                        damaged_entities.append(entity)
+                    if fighter and fighter.hp > 0:
+                        # Phase 20: Route through damage_service for proper death handling
+                        damage_results = apply_damage(
+                            state_manager=state_manager,
+                            target_entity=entity,
+                            amount=damage,
+                            cause="corpse_explosion",
+                            attacker_entity=self.owner,
+                            damage_type=damage_type,
+                            allow_xp=False,  # No XP for explosions
+                            message_on_kill=None
+                        )
                         
-                        # Check if player was hit
-                        if entity == target:
-                            player_hit = True
+                        # Extend results with damage_service results
+                        results.extend(damage_results)
                         
-                        logger.debug(f"Corpse explosion hits {entity.name} for {damage} damage")
+                        logger.debug(f"Corpse explosion hits {entity.name} for {damage} {damage_type} damage")
             
             # Phase 20: Mark corpse as CONSUMED and remove from map
             corpse_comp = spent_corpse.get_component_optional(ComponentType.CORPSE)
@@ -110,19 +125,13 @@ class ExploderNecromancerAI(NecromancerBase):
             if spent_corpse in entities:
                 entities.remove(spent_corpse)
             
-            # Record metrics (Phase 20: use 'spent_corpses_exploded' instead of 'consumed')
+            # Record metric
             self._increment_metric('spent_corpses_exploded')
-            self._increment_metric('explosion_damage_total', total_damage_dealt)
-            if player_hit:
-                self._increment_metric('player_hits_from_explosion')
             
             # Set cooldown
             self.action_cooldown_remaining = action_cooldown
             
-            logger.info(f"{self.owner.name} exploded corpse, hit {len(damaged_entities)} entities for {damage} damage each")
-            
-            # Create visual effect and messages
-            results = []
+            logger.info(f"{self.owner.name} exploded SPENT corpse, damage routed through damage_service")
             
             # Import visual effects
             try:
@@ -132,28 +141,15 @@ class ExploderNecromancerAI(NecromancerBase):
             except ImportError:
                 pass  # VFX optional
             
-            # Create message
+            # Create explosion message
             from game_messages import Message
-            results.append({
+            results.insert(0, {
                 'consumed': True,
                 'message': Message(
                     f"{self.owner.name} detonates a corpse! BOOM!",
                     (220, 80, 80)
                 )
             })
-            
-            # Add damage messages for each damaged entity
-            for damaged_entity in damaged_entities:
-                results.append({
-                    'message': Message(
-                        f"{damaged_entity.name} takes {damage} {damage_type} damage from the explosion!",
-                        (200, 100, 100)
-                    )
-                })
-                
-                # Check if entity died
-                if damaged_entity.fighter.hp <= 0:
-                    results.append({'dead': damaged_entity})
             
             return results
             
