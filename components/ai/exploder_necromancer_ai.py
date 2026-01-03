@@ -201,8 +201,10 @@ class ExploderNecromancerAI(NecromancerBase):
     ) -> Optional['Entity']:
         """Find the best spent corpse deterministically.
         
+        Phase 20: Now enforces SPENT state explicitly.
+        
         Selection criteria (in order):
-        1. Must have CorpseComponent with consumed=True OR raise_count > 0
+        1. Must have CorpseComponent with corpse_state == SPENT
         2. If max_range provided, must be within range
         3. Prefer nearest spent corpse
         4. Tie-break by (y, x) for determinism
@@ -215,6 +217,7 @@ class ExploderNecromancerAI(NecromancerBase):
             Best spent corpse entity, or None if no spent corpses
         """
         from components.component_registry import ComponentType
+        from components.corpse import CorpseState
         
         spent_corpses = []
         
@@ -224,8 +227,8 @@ class ExploderNecromancerAI(NecromancerBase):
             if corpse_comp is None:
                 continue
             
-            # Check if corpse is spent (consumed OR raise_count > 0)
-            if not (corpse_comp.consumed or corpse_comp.raise_count > 0):
+            # Phase 20: Enforce SPENT state only
+            if corpse_comp.corpse_state != CorpseState.SPENT:
                 continue
             
             # Check range constraint

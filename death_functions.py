@@ -46,7 +46,7 @@ from game_states import GameStates
 from render_functions import RenderOrder
 from components.component_registry import ComponentType
 from config.factories import get_entity_factory
-from components.corpse import CorpseComponent
+from components.corpse import CorpseComponent, CorpseState
 
 
 def kill_player(player):
@@ -555,7 +555,7 @@ def kill_monster(monster, game_map=None, entities=None):
     monster.fighter = None
     monster.ai = None
     
-    # Phase 19: Attach CorpseComponent for safe resurrection tracking
+    # Phase 19/20: Attach CorpseComponent for safe resurrection tracking
     # Extract original monster ID from entity (use monster_id if available, else derive from name)
     original_monster_id = getattr(monster, 'monster_id', monster.name.lower())
     
@@ -566,8 +566,20 @@ def kill_monster(monster, game_map=None, entities=None):
         turn_mgr = TurnManager.get_instance()
         if turn_mgr:
             death_turn = turn_mgr.turn_number
-    except:
+    except Exception:
         pass  # Turn tracking optional
+    
+    # Phase 20: Determine corpse state (FRESH or SPENT based on lineage)
+    raised_from_corpse = getattr(monster, 'raised_from_corpse_id', None)
+    
+    if raised_from_corpse:
+        # Re-death of raised entity → SPENT corpse
+        corpse_state = CorpseState.SPENT
+        corpse_id = raised_from_corpse  # Preserve lineage ID
+    else:
+        # Normal death → FRESH corpse
+        corpse_state = CorpseState.FRESH
+        corpse_id = f"corpse_{monster.x}_{monster.y}_{death_turn}"
     
     # Create and attach corpse component
     corpse_component = CorpseComponent(
@@ -575,7 +587,9 @@ def kill_monster(monster, game_map=None, entities=None):
         death_turn=death_turn,
         raise_count=0,
         max_raises=1,
-        consumed=False
+        consumed=False,
+        corpse_state=corpse_state,
+        corpse_id=corpse_id
     )
     corpse_component.owner = monster
     monster.components.add(ComponentType.CORPSE, corpse_component)

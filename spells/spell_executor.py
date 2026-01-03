@@ -1386,10 +1386,14 @@ class SpellExecutor:
         if hasattr(corpse, 'equipment'):
             corpse.equipment = None
         
-        # Phase 19: Consume corpse via CorpseComponent
+        # Phase 19/20: Consume corpse via CorpseComponent
         if corpse_comp:
             raiser_name = getattr(caster, 'name', 'Unknown')
             corpse_comp.consume(raiser_name)
+            
+            # Phase 20: Track lineage so re-death creates SPENT corpse
+            if corpse_comp.corpse_id:
+                corpse.raised_from_corpse_id = corpse_comp.corpse_id
         
         # Invalidate entity cache since we added AI to an existing entity
         from entity_sorting_cache import invalidate_entity_cache

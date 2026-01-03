@@ -76,6 +76,11 @@ class RunMetrics:
     necro_raise_successes: int = 0
     necro_corpse_seek_moves: int = 0
     necro_unsafe_move_blocks: int = 0
+    # Phase 20: Corpse lifecycle metrics
+    fresh_corpses_created: int = 0
+    spent_corpses_created: int = 0
+    raises_completed: int = 0
+    spent_corpses_exploded: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -169,6 +174,11 @@ class AggregatedMetrics:
     total_necro_raise_successes: int = 0
     total_necro_corpse_seek_moves: int = 0
     total_necro_unsafe_move_blocks: int = 0
+    # Phase 20: Corpse lifecycle metrics
+    total_fresh_corpses_created: int = 0
+    total_spent_corpses_created: int = 0
+    total_raises_completed: int = 0
+    total_spent_corpses_exploded: int = 0
     # Phase 19: Lich metrics
     total_lich_ticks_alive: int = 0
     total_lich_ticks_player_in_range: int = 0
@@ -894,6 +904,17 @@ def run_scenario_many(
         total_necro_corpse_seek_moves += getattr(run, "necro_corpse_seek_moves", 0)
         total_necro_unsafe_move_blocks += getattr(run, "necro_unsafe_move_blocks", 0)
     
+    # Phase 20: Aggregate corpse lifecycle metrics
+    total_fresh_corpses_created = 0
+    total_spent_corpses_created = 0
+    total_raises_completed = 0
+    total_spent_corpses_exploded = 0
+    for run in all_runs:
+        total_fresh_corpses_created += getattr(run, "fresh_corpses_created", 0)
+        total_spent_corpses_created += getattr(run, "spent_corpses_created", 0)
+        total_raises_completed += getattr(run, "raises_completed", 0)
+        total_spent_corpses_exploded += getattr(run, "spent_corpses_exploded", 0)
+    
     # Phase 19: Aggregate lich metrics
     total_lich_ticks_alive = 0
     total_lich_ticks_in_range = 0
@@ -958,6 +979,10 @@ def run_scenario_many(
         total_necro_raise_successes=total_necro_raise_successes,
         total_necro_corpse_seek_moves=total_necro_corpse_seek_moves,
         total_necro_unsafe_move_blocks=total_necro_unsafe_move_blocks,
+        total_fresh_corpses_created=total_fresh_corpses_created,
+        total_spent_corpses_created=total_spent_corpses_created,
+        total_raises_completed=total_raises_completed,
+        total_spent_corpses_exploded=total_spent_corpses_exploded,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

@@ -14,10 +14,29 @@ Design Decisions:
 - raise_count enforces max raises (default 1)
 - consumed flag prevents re-targeting
 - original_monster_id enables stat lookup without name parsing
+
+Phase 20 Lifecycle:
+- FRESH: Created on death, raisable, NOT explodable
+- SPENT: Created on re-death of raised entity, explodable, NOT raisable  
+- CONSUMED: Post-explosion/full-consumption, inert
 """
 
 from typing import Optional
 from dataclasses import dataclass
+from enum import Enum, auto
+
+
+class CorpseState(Enum):
+    """Lifecycle state for corpses (Phase 20).
+    
+    States:
+        FRESH: Newly dead, can be raised, cannot be exploded
+        SPENT: Already raised once and died again, can be exploded, cannot be raised
+        CONSUMED: Fully consumed (exploded or max raises), inert
+    """
+    FRESH = auto()
+    SPENT = auto()
+    CONSUMED = auto()
 
 
 @dataclass
@@ -60,6 +79,8 @@ class CorpseComponent:
     max_raises: int = 1
     consumed: bool = False
     raised_by_name: Optional[str] = None
+    corpse_state: CorpseState = CorpseState.FRESH  # Phase 20
+    corpse_id: Optional[str] = None  # Phase 20: lineage tracking
     
     # Owner reference (set by Entity when component is attached)
     owner: Optional['Entity'] = None
@@ -67,10 +88,37 @@ class CorpseComponent:
     def can_be_raised(self) -> bool:
         """Check if this corpse is eligible for resurrection.
         
+        Phase 20: Now enforces FRESH state.
+        
         Returns:
             True if corpse can be raised, False otherwise
         """
-        return not self.consumed and self.raise_count < self.max_raises
+        return (
+            self.corpse_state == CorpseState.FRESH and
+            not self.consumed and 
+            self.raise_count < self.max_raises
+        )
+    
+    def can_raise(self) -> bool:
+        """Alias for can_be_raised() (Phase 20)."""
+        return self.can_be_raised()
+    
+    def can_explode(self) -> bool:
+        """Check if this corpse can be exploded (Phase 20).
+        
+        Returns:
+            True if corpse state is SPENT
+        """
+        return self.corpse_state == CorpseState.SPENT
+    
+    def mark_spent(self) -> None:
+        """Mark corpse as SPENT (Phase 20: raised and died again)."""
+        self.corpse_state = CorpseState.SPENT
+    
+    def mark_consumed(self) -> None:
+        """Mark corpse as CONSUMED (Phase 20: exploded or fully used)."""
+        self.corpse_state = CorpseState.CONSUMED
+        self.consumed = True
     
     def consume(self, raiser_name: Optional[str] = None) -> None:
         """Mark corpse as consumed/raised.
@@ -85,12 +133,13 @@ class CorpseComponent:
         
         # Mark consumed if at max raises
         if self.raise_count >= self.max_raises:
-            self.consumed = True
+            self.mark_consumed()
     
     def __repr__(self) -> str:
         return (
             f"CorpseComponent(id={self.original_monster_id}, "
             f"raises={self.raise_count}/{self.max_raises}, "
+            f"state={self.corpse_state.name}, "
             f"consumed={self.consumed})"
         )
 
