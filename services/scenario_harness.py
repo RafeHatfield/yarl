@@ -347,30 +347,16 @@ def _create_game_state_from_map(result: ScenarioMapResult, constants: Dict[str, 
         constants["message_height"],
     )
 
-    # Initialize FOV map for monster LOS checks (Phase 19: lich Soul Bolt needs LOS)
-    from fov_functions import initialize_fov, recompute_fov
-    fov_map = initialize_fov(result.game_map)
-    
-    # Recompute FOV from player's position
-    recompute_fov(
-        fov_map=fov_map,
-        x=result.player.x,
-        y=result.player.y,
-        radius=constants.get("fov_radius", 10),
-        light_walls=True,
-        algorithm=12
-    )
-
     class SimpleGameState:
-        def __init__(self, player, entities, game_map, message_log, constants, fov_map):
+        def __init__(self, player, entities, game_map, message_log, constants):
             self.player = player
             self.entities = entities
             self.game_map = game_map
             self.message_log = message_log
             self.current_state = GameStates.PLAYERS_TURN
             self.constants = constants
-            self.fov_recompute = False  # Already computed above
-            self.fov_map = fov_map
+            self.fov_recompute = True
+            self.fov_map = None
 
     return SimpleGameState(
         player=result.player,
@@ -378,7 +364,6 @@ def _create_game_state_from_map(result: ScenarioMapResult, constants: Dict[str, 
         game_map=result.game_map,
         message_log=message_log,
         constants=constants,
-        fov_map=fov_map,
     )
 
 
@@ -760,24 +745,8 @@ def run_scenario_once(
                     break
 
                 if game_state.current_state == GameStates.PLAYERS_TURN:
-                    # Recompute FOV from player position (for monster LOS checks)
-                    if game_state.fov_map and game_state.fov_recompute:
-                        from fov_functions import recompute_fov
-                        recompute_fov(
-                            fov_map=game_state.fov_map,
-                            x=game_state.player.x,
-                            y=game_state.player.y,
-                            radius=constants.get("fov_radius", 10),
-                            light_walls=True,
-                            algorithm=12
-                        )
-                        game_state.fov_recompute = False
-                    
                     action = bot_policy.choose_action(game_state)
                     _process_player_action(game_state, action, metrics)
-                    
-                    # Request FOV recompute after player action (movement changes visibility)
-                    game_state.fov_recompute = True
 
                 elif game_state.current_state == GameStates.ENEMY_TURN:
                     _process_enemy_turn(game_state, metrics)
