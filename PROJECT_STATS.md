@@ -1,42 +1,39 @@
 # Catacombs of Yarl - Project Statistics
 
-**Last Updated:** November 20, 2025
-**Status:** Active Development - v4.3.1 (Bot Finalization & Documentation Polish)
-**Latest Release:** v4.3.1 - Bot Metrics Finalization, AutoExplore Fix, Documentation Consolidation ✅
+**Last Updated:** January 04, 2026
+**Status:** Active Development - v3.12.0 (Latest Changelog Entry)
+**Latest Release:** v3.12.0 - Balance tooling, AI/event updates, documentation refresh ✅
 
 ---
 
 ## 📊 Overall Project Size
 
 ### Code Base
-- **Total Python Files:** 363 (↑ from 322)
-- **Total Lines of Code:** 116,322 (↑ from 113,539)
-- **Production Code:** 221 files, 79,393 lines
-- **Test Code:** 142 files, 36,929 lines
-- **Root Level Files:** 40
-- **Average Lines per File:** 320
+- **Total Python Files:** 554 (excluding `source/` virtual env)
+- **Total Lines of Code:** 181,525
+- **Production Code:** 296 files, 111,143 lines
+- **Test Code:** 258 files, 70,382 lines
+- **Root Level Files:** 127
+- **Average Lines per File:** 328
 
 ### Documentation
-- **Markdown Files:** 69 total (consolidated from 103 - removed completed fix/analysis docs)
-- **Root Documentation:** 7 strategic files (README, ROADMAP, PROJECT_STATS, STORY_LORE_CANONICAL, PLAYER_PAIN_POINTS, TRADITIONAL_ROGUELIKE_FEATURES, CHANGELOG)
-- **docs/ Directory:** Organized into architecture/, development/, and reference materials
-- **Configuration Files:** 21 YAML files + 16 config modules
+- **Markdown Files:** 215 total
+- **Root Documentation:** 39 markdown files in repo root
+- **docs/ Directory:** 121 markdown files across architecture, development, testing, and reference materials
+- **Configuration Files:** 74 YAML files + 22 config modules
 - **Architecture Documentation:** docs/architecture/
 - **Development Documentation:** docs/development/
-- **Tech Debt Analysis:** Actively maintained
+- **Tech Debt Analysis:** docs/TECH_DEBT_ANALYSIS_2025.md
 
 ### Test Coverage
-- **Test Files:** 142 (39% of total - up from earlier phases)
-- **Total Test Lines:** 36,929 (comprehensive test suite!)
-- **Production Code:** 79,393 lines
-- **Test/Production Ratio:** 0.47x (nearly 1:2 - still professional-grade!)
+- **Test Files:** 258 (47% of total)
+- **Total Test Lines:** 70,382
+- **Production Code:** 111,143 lines
+- **Test/Production Ratio:** 0.63x (roughly 2:3)
 
 **Test Distribution:**
-- Core tests: 67 files in tests/
-- Integration tests: 28 files (AI, combat, equipment, movement, portals, spells)
-- Regression tests: 10 files (bug fix verification)
-- Unit tests: 11 component files
-- Engine tests: 12 files
+- Main suite: 249 files in tests/
+- Root-level tests: 9 files in repo root
 
 ---
 
@@ -44,26 +41,25 @@
 
 | Directory | Files | Lines | Purpose |
 |-----------|-------|-------|---------|
-| **root** | 40 | 13,488 | Core game loop, UI, integration |
-| **tests/** | 67 | 21,454 | Main test suite |
-| **components/** | 35 | 10,380 | Entity components (AI, Fighter, Items, etc.) |
-| **ui/** | 13 | 4,506 | User interface rendering & menus |
-| **config/** | 16 | 5,480 | Game configuration, entity registry, factories |
-| **state_machine/** | 8 | 4,502 | Game state management & transitions |
+| **root** | 48 | 18,087 | Core game loop, UI, integration |
+| **tests/** | 249 | 68,878 | Main test suite |
+| **components/** | 53 | 18,422 | Entity components (AI, Fighter, Items, etc.) |
+| **config/** | 22 | 8,327 | Game configuration, entity registry, factories |
+| **engine/** | 20 | 6,052 | Core game engine & harnesses |
+| **io_layer/** | 21 | 7,591 | Input/output abstractions and bot brain |
+| **services/** | 22 | 7,513 | Business logic services |
+| **state_machine/** | 8 | 4,514 | Game state management & transitions |
 | **memory/** | 8 | 4,288 | Memory optimization & caching |
 | **performance/** | 9 | 4,737 | Performance profiling & optimization |
+| **map_objects/** | 6 | 3,884 | Game map & tiles |
 | **events/** | 8 | 3,267 | Event system & bus |
-| **services/** | 11 | 3,203 | Business logic services |
 | **input/** | 8 | 3,289 | Input handling & key mapping |
-| **map_objects/** | 6 | 2,941 | Game map & tiles |
 | **assets/** | 7 | 2,905 | Asset loading & management |
-| **engine/** | 7 | 1,193 | Core game engine |
-| **engine/systems/** | 7 | 2,307 | ECS systems |
-| **spells/** | 6 | 2,250 | Spell definitions & execution |
-| **screens/** | 7 | 1,956 | Menu screens & UI |
-| **rendering/** | 7 | 1,687 | Rendering optimizations |
-| **loader_functions/** | 2 | 898 | Save/load functionality |
-| **examples/demos/** | 7 | 2,792 | Demo code & examples |
+| **balance/** | 6 | 2,743 | Balance tooling and metrics |
+| **spells/** | 6 | 2,352 | Spell definitions & execution |
+| **ui/** | 14 | 4,529 | User interface rendering & menus |
+| **rendering/** | 8 | 1,735 | Rendering optimizations |
+| **loader_functions/** | 2 | 1,062 | Save/load functionality |
 
 ---
 
@@ -73,26 +69,26 @@ The "heavy lifters" that drive core gameplay:
 
 | Rank | File | Lines | Key Responsibility |
 |------|------|-------|-------------------|
-| 1 | `game_actions.py` | 2,235 | Action processing engine (movement, combat, items) |
-| 2 | `map_objects/game_map.py` | 2,152 | Game map data structure & tile management |
-| 3 | `spells/spell_executor.py` | 1,469 | Spell casting & effect execution |
-| 4 | `config/level_template_registry.py` | 1,392 | Level generation templates & configuration |
-| 5 | `item_functions.py` | 1,339 | Item usage, potions, scrolls, wands |
-| 6 | `components/fighter.py` | 1,195 | Combat system, damage calculation, resistances |
-| 7 | `config/entity_registry.py` | 1,076 | Entity configuration & data loading |
-| 8 | `components/auto_explore.py` | 988 | Auto-exploration AI algorithm |
-| 9 | `config/game_constants.py` | 977 | Game constants, dataclasses, settings |
-| 10 | `tests/test_event_system.py` | 856 | Event system tests |
-| 11 | `state_machine/core.py` | 766 | State machine implementation |
-| 12 | `menus.py` | 752 | Menu rendering & interactions |
-| 13 | `input/mapping.py` | 737 | Input key mapping configuration |
-| 14 | `components/status_effects.py` | 748 | Status effect system |
-| 15 | `performance/analyzer.py` | 718 | Performance analysis tools |
-| 16 | `components/equipment.py` | 715 | Equipment component & slot management |
-| 17 | `ui/sidebar_layout.py` | 687 | Sidebar UI rendering |
-| 18 | `components/ai.py` | 645 | Monster AI base behaviors |
-| 19 | `entity_dialogue.py` | 632 | Entity dialogue & interaction system |
-| 20 | `config/entity_factory.py` | 614 | Entity creation from configurations |
+| 1 | `map_objects/game_map.py` | 3,095 | Game map data structure & tile management |
+| 2 | `tests/test_bot_brain.py` | 2,983 | Bot behavior & integration tests |
+| 3 | `game_actions.py` | 2,933 | Action processing engine (movement, combat, items) |
+| 4 | `io_layer/bot_brain.py` | 2,295 | Bot orchestration and decision loop |
+| 5 | `config/level_template_registry.py` | 1,984 | Level generation templates & configuration |
+| 6 | `components/fighter.py` | 1,955 | Combat system, damage calculation, resistances |
+| 7 | `item_functions.py` | 1,936 | Item usage, potions, scrolls, wands |
+| 8 | `components/status_effects.py` | 1,776 | Status effect system |
+| 9 | `spells/spell_executor.py` | 1,571 | Spell casting & effect execution |
+| 10 | `engine_integration.py` | 1,323 | Engine integration and orchestration |
+| 11 | `components/auto_explore.py` | 1,297 | Auto-exploration AI algorithm |
+| 12 | `services/scenario_harness.py` | 1,249 | Scenario testing harness |
+| 13 | `config/entity_registry.py` | 1,241 | Entity configuration & data loading |
+| 14 | `components/ai/basic_monster.py` | 1,065 | Monster AI behaviors |
+| 15 | `engine/soak_harness.py` | 1,057 | Soak testing harness |
+| 16 | `config/game_constants.py` | 992 | Game constants, dataclasses, settings |
+| 17 | `io_layer/menu_renderer.py` | 935 | Menu rendering & layout |
+| 18 | `mouse_movement.py` | 906 | Mouse movement handling |
+| 19 | `tests/test_event_system.py` | 856 | Event system tests |
+| 20 | `balance/etp.py` | 844 | Balance evaluation tooling |
 
 ---
 
@@ -100,19 +96,19 @@ The "heavy lifters" that drive core gameplay:
 
 Based on code organization and functionality:
 
-### Core Gameplay (28,000+ lines)
+### Core Gameplay (30,000+ lines)
 - **Combat System** - Damage calculation, resistances, armor, status effects
 - **AI System** - Monster pathfinding, decision-making, targeting, avoidance
 - **Action Processing** - Movement validation, combat execution, item usage
 - **Turn Management** - Turn economy, initiative, phase management
 
-### Content Systems (18,000+ lines)
+### Content Systems (20,000+ lines)
 - **Item System** - 22 scrolls, 11 potions, 9 wands, 15 rings, 20+ equipment
 - **Spell System** - 30+ spells with targeting modes, effects, damage types
 - **Entity System** - Component-based architecture for all game entities
 - **Inventory System** - Stacking, equipping, dropping, item identification
 
-### Engine & Infrastructure (30,000+ lines)
+### Engine & Infrastructure (40,000+ lines)
 - **Game Engine** - ECS architecture with system registration & lifecycle
 - **Event System** - Event bus, listeners, pub-sub patterns
 - **State Machine** - Game state management with transitions
@@ -121,8 +117,8 @@ Based on code organization and functionality:
 - **Performance System** - Profiling, caching, entity sorting
 - **Input System** - Key mapping, mouse handling, input events
 
-### Data & Configuration (12,000+ lines)
-- **Configuration** - YAML-based entity/item definitions, 16 modules
+### Data & Configuration (15,000+ lines)
+- **Configuration** - YAML-based entity/item definitions, 22 modules
 - **Entity Registry** - Centralized entity configuration database
 - **Level Templates** - Procedural generation templates with biome system
 - **Asset Management** - Loading, caching, discovery system
@@ -133,7 +129,7 @@ Based on code organization and functionality:
 - **Logging System** - Centralized, configurable logging framework
 - **Performance Config** - Frame rate, logging, debug overlay settings
 
-### Testing (36,929 lines)
+### Testing (70,382 lines)
 - **Unit Tests** - Component, service, utility testing
 - **Integration Tests** - System interaction & workflow testing
 - **Regression Tests** - Bug fix verification (10 major areas)
@@ -144,24 +140,22 @@ Based on code organization and functionality:
 ## 📈 Development Metrics
 
 ### Code Quality
-- **Test/Production Ratio:** 0.47x (47% of production code in tests)
-- **Documentation:** 69 markdown files (consolidated)
+- **Test/Production Ratio:** 0.63x (63% of production code in tests)
+- **Documentation:** 215 markdown files
 - **Type Hints:** Throughout codebase (Python 3.9+)
-- **Configuration:** Data-driven design (21 YAML files)
+- **Configuration:** Data-driven design (74 YAML files)
 - **Architecture:** Clean ECS + service-oriented hybrid
 
 ### Complexity Analysis
-- **Largest File:** 2,235 lines (`game_actions.py`)
-- **Most Complex System:** Map generation (1,392 lines in templates)
+- **Largest File:** 3,095 lines (`map_objects/game_map.py`)
+- **Most Complex System:** Map generation (1,984 lines in templates)
 - **Most Tested:** AI system (multiple test suites)
 - **Cyclomatic Complexity:** Actively managed through refactoring
 
 ### Recent Refactoring Work
-- **Phase 1:** Configuration Management System ✅
-- **Phase B:** Logical organization of game_actions.py ✅
-- **Phase C:** Physical split of components/ai.py ✅
-- **Logging Consolidation:** 3-4 phases complete ✅
-- **Component Access:** Refactoring 95+ access points ✅
+- **Configuration Management:** Centralized registry and templates ✅
+- **AI & Action Systems:** Iterative test and harness improvements ✅
+- **Logging Consolidation:** Unified logger configuration ✅
 
 ### Organization
 - **Modular Design:** Clear separation into logical directories
@@ -188,7 +182,7 @@ Based on code organization and functionality:
 - **Event Patterns:** 8 different types
 - **Equipment Slots:** 7 (head, body, hands, legs, feet, ring1, ring2)
 - **Damage Types:** 6+ (physical, fire, cold, acid, lightning, etc.)
-- **Configuration Modules:** 16 (entity_factory, registry, constants, etc.)
+- **Configuration Modules:** 22 (entity_factory, registry, constants, etc.)
 
 ### Performance Characteristics
 - **Target Frame Rate:** Configurable (default 60 FPS)
@@ -201,25 +195,25 @@ Based on code organization and functionality:
 
 ## 💡 Fun Facts
 
-1. **Nearly 1M Lines Per Month:** From 113K to 116K+ lines of substantial, tested code in recent sessions.
+1. **Substantial Codebase:** 181K+ lines of Python with strong test coverage.
 
-2. **Configuration-Driven:** 21 YAML files + 5,480 lines of config code means content iteration without recompiling.
+2. **Configuration-Driven:** 74 YAML files + 8,327 lines of config code enable rapid content iteration.
 
-3. **Refactoring At Scale:** Recent phases tackled 95+ access points across multiple modules - professional-grade maintenance.
+3. **Bot Infrastructure:** Dedicated io_layer and engine harnesses for soak testing and scenario runs.
 
-4. **Logging Architecture:** Consolidated to single logger configuration across 30+ modules - unified observability.
+4. **Logging Architecture:** Consolidated logger configuration across the codebase.
 
-5. **Test Suite Depth:** 142 test files covering integration, regression, unit, and performance - catching regressions early.
+5. **Test Suite Depth:** 258 test files covering integration, regression, unit, and performance scenarios.
 
-6. **State Machine:** 4,502 lines dedicated to game state management - complex state transitions handled cleanly.
+6. **State Machine:** 4,514 lines dedicated to game state management.
 
-7. **Component Architecture:** 35 component files totaling 10,380 lines - true ECS without bloat.
+7. **Component Architecture:** 53 component files totaling 18,422 lines.
 
-8. **Memory Optimization:** 9 dedicated performance modules (4,737 lines) - serious about long-session stability.
+8. **Performance Focus:** 9 dedicated performance modules (4,737 lines).
 
-9. **UI System:** 13 files (4,506 lines) for a polished user experience - screens, sidebars, tooltips.
+9. **UI System:** 14 files (4,529 lines) for screens, sidebars, tooltips, and menus.
 
-10. **Service Layer:** 11 service modules (3,203 lines) - business logic cleanly separated from presentation.
+10. **Service Layer:** 22 service modules (7,513 lines) cleanly separated from presentation.
 
 ---
 
@@ -232,17 +226,12 @@ Based on code organization and functionality:
 - ✅ **Portal System:** Full AI integration + visual feedback
 - ✅ **Configuration Management:** Comprehensive system refactoring
 
-### Recent Work (Nov 2025)
+### Recent Work (per repository artifacts)
 - ✅ Comprehensive level generation system
 - ✅ Difficulty balancing framework
 - ✅ Telemetry & analytics systems
-- ✅ Configuration management Phase 1
+- ✅ Configuration management refactors
 - ✅ Performance config layer (frame rate, logging, debug settings)
-- ✅ Bot run metrics finalization (Phase 1.5)
-- ✅ Bot death handling and summary logging
-- ✅ AutoExplore oscillation fix and alignment
-- ✅ Major documentation cleanup and consolidation
-- ✅ GitHub release v4.3.1
 
 ### Architecture & DevOps
 - ✅ ECS-based game engine
@@ -262,7 +251,7 @@ For context, here's how Yarl stacks up:
 
 | Game | Lines of Code | Language | Approach | Timeline |
 |------|---------------|----------|----------|----------|
-| **Yarl** | **116,322** | **Python 3.12** | **Modern ECS + Events** | **Active** |
+| **Yarl** | **181,525** | **Python 3.12** | **Modern ECS + Events** | **Active** |
 | Rogue (1980) | ~10,000 | C | Procedural | 45 years old |
 | Brogue | ~50,000 | C | Monolithic | 2000s-2010s |
 | NetHack | ~300,000+ | C | Monolithic | 35+ years |
@@ -270,8 +259,8 @@ For context, here's how Yarl stacks up:
 | Cogmind | ~80,000+ | Java | Hybrid | 2010s-present |
 
 **Yarl's Position:** 
-- 2.3x larger than Brogue (cleaner architecture though)
-- 1.45x larger than Cogmind (but more experimental)
+- 3.6x larger than Brogue (cleaner architecture though)
+- 2.3x larger than Cogmind (but more experimental)
 - Substantially smaller than NetHack/DCSS (but modern Python vs. old C)
 - **Sweet spot:** Manageable complexity with modern tooling
 
@@ -293,7 +282,7 @@ For context, here's how Yarl stacks up:
 ├─────────────────────────────────────┤
 │  Configuration + Entity Registry    │
 ├─────────────────────────────────────┤
-│  Components (79K lines)             │
+│  Components (18K lines)             │
 └─────────────────────────────────────┘
 ```
 
@@ -308,48 +297,23 @@ For context, here's how Yarl stacks up:
 
 ## 🌟 Recent Sessions' Accomplishments
 
-### Latest Session (Nov 2025 - Current)
-
-**1. Bot Metrics Finalization** - Centralized player death handling with `finalize_player_death()` helper
-   - Ensures run_metrics finalized regardless of death source (ActionProcessor, AISystem, EnvironmentSystem)
-   - Bot results summary logged exactly once
-   - All 70+ portal-related tests still passing ✅
-   
-**2. AutoExplore Oscillation Fix** - Fixed bot getting stuck moving back-and-forth
-   - Root cause: `start_auto_explore` treated as cancellation input when AutoExplore active
-   - Solution: Exclude `start_auto_explore` from cancellation checks
-   - Result: Aligned bot and player autoexplore behavior
-   - Verified with 10 consecutive bot runs ✅
-   
-**3. Documentation Consolidation** - Major cleanup and reorganization
-   - Deleted 35+ completed fix/analysis documents (no longer relevant)
-   - Consolidated 103 → 69 markdown files
-   - Kept 7 strategic root files per user specifications
-   - Reorganized docs/ into logical categories
-   - Updated README.md with modern GitHub best practices
-   
-**4. GitHub Release v4.3.1** - Tagged milestone and created release
-
-### Previous Session Highlights
-1. **Configuration Management** - Refactored 95+ access points
-2. **Logging Consolidation** - 4 phases, unified across 30+ modules
-3. **Component Refactoring** - Phase A, B, C organizational improvements
+### Recent Highlights (from repository artifacts)
+1. **Configuration Management** - Centralized registry and templates
+2. **Logging Consolidation** - Unified logging configuration
+3. **Component Refactoring** - Organizational improvements across components
 4. **Level Generation** - Comprehensive templating system
 5. **Performance Config** - Frame rate & logging configuration layer
 
-### Code Metrics Improvements
-- ↑ 3,000+ new lines of code (cumulative)
-- ↑ 41+ new test files (cumulative)
-- ↑ ~20+ refactoring sessions (cumulative)
-- ↓ 34 outdated/completed documents removed
-- ✅ Zero regressions in critical paths
-- ✅ Bot autoexplore verified working (10 consecutive runs)
+### Code Metrics Snapshot
+- **Total Lines:** 181,525
+- **Total Python Files:** 554
+- **Tests:** 258 files / 70,382 lines
 
 ---
 
 ## 🎯 Active Development Areas
 
-### Current Focus (Nov 2025)
+### Current Focus (2026)
 - Playtesting and gameplay balance tuning
 - Performance optimization & profiling
 - Diagnostic logging refinement (kept for monitoring autoexplore)
@@ -374,14 +338,14 @@ For context, here's how Yarl stacks up:
 
 | Metric | Value |
 |--------|-------|
-| **Current Version** | 4.3.1 |
-| **Total Lines** | 116,322 |
-| **Python Files** | 363 |
-| **Test Coverage** | 47% test-to-production ratio |
-| **Documentation** | 69 markdown files (consolidated) |
-| **Root Docs** | 7 strategic files |
-| **Configuration Files** | 21 YAML + 16 modules |
-| **Components** | 35 types, 10,380 lines |
+| **Current Version** | 3.12.0 |
+| **Total Lines** | 181,525 |
+| **Python Files** | 554 |
+| **Test Coverage** | 63% test-to-production ratio |
+| **Documentation** | 215 markdown files |
+| **Root Docs** | 39 markdown files |
+| **Configuration Files** | 74 YAML + 22 modules |
+| **Components** | 53 types, 18,422 lines |
 | **Content Items** | 100+ across all types |
 | **Monster Types** | 50+ unique types |
 | **Spells** | 30+ unique spells |
@@ -396,13 +360,13 @@ For context, here's how Yarl stacks up:
 | Category | Score | Notes |
 |----------|-------|-------|
 | **Code Organization** | A+ | Clear module separation |
-| **Test Coverage** | A | 47% ratio is professional-grade |
-| **Documentation** | A | 69 markdown files (consolidated) |
+| **Test Coverage** | A | 63% ratio is robust |
+| **Documentation** | A | 215 markdown files |
 | **Architecture** | A+ | Modern ECS + event-driven |
 | **Maintainability** | A | Consistent patterns, good naming |
 | **Performance** | A | Dedicated optimization systems |
 | **Content Depth** | A | 100+ items, 50+ monsters, 30+ spells |
-| **Bot Reliability** | A | Metrics finalization, oscillation fixed |
+| **Bot Reliability** | A | Dedicated bot brain and harness coverage |
 | **Overall Health** | **A+** | **Excellent trajectory** |
 
 ---
@@ -415,7 +379,7 @@ For context, here's how Yarl stacks up:
 ✅ **Exceeds modern standards** in code organization  
 ✅ **Maintains professional practices** (testing, documentation, logging)  
 ✅ **Uses modern architecture** (ECS, event-driven, configuration-driven)  
-✅ **Demonstrates serious engineering** (116K+ lines of clean code)  
+✅ **Demonstrates serious engineering** (181K+ lines of clean code)  
 ✅ **Reliable automation testing** (bot mode, soak testing, metrics tracking)
 
 **This is not just a game - it's a showcase of professional Python development.** 🏆
@@ -430,23 +394,22 @@ For context, here's how Yarl stacks up:
 - **Phase 5:** Victory condition & multiple endings
 - **Portal System:** Full integration & AI support
 - **Configuration Management:** System-wide refactoring
-- **Bot Metrics (Nov 2025):** Centralized death handling, metrics finalization, summary logging
-- **AutoExplore Fix (Nov 2025):** Bot oscillation resolved, behavior aligned with player
-- **Documentation (Nov 2025):** Consolidated 103 → 69 files, improved GitHub presence
-- **v4.3.1 Release (Nov 2025):** Tagged milestone after bot fixes and doc cleanup
+- **Bot Harnesses:** Soak and scenario testing harnesses expanded
+- **Documentation:** Expanded docs/ coverage across architecture, testing, and planning
+- **v3.12.0 Release (Oct 2025):** Latest changelog entry
 
 ---
 
 ## 🎯 Key Achievements This Session
 
-1. **Bot Reliability** - Fixed metrics finalization on enemy-turn death
-2. **AutoExplore Alignment** - Fixed oscillation, bot now behaves like player
-3. **Documentation Polish** - Cleaned up 35 outdated documents, improved README
-4. **GitHub Release** - Tagged v4.3.1 as milestone before pushing forward
+1. **Bot Reliability** - Dedicated bot brain and harness tooling
+2. **Scenario Testing** - Expanded scenario harness coverage
+3. **Documentation Depth** - Large, structured docs set across domains
+4. **Release Cadence** - v3.12.0 is the latest tagged changelog entry
 
 ---
 
-*Last comprehensive update: November 20, 2025*  
+*Last comprehensive update: January 04, 2026*  
 *Next update scheduled: As major milestones complete*
 
 **Status:** 🟢 **Active Development**  
