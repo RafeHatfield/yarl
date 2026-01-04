@@ -81,6 +81,12 @@ class RunMetrics:
     spent_corpses_created: int = 0
     raises_completed: int = 0
     spent_corpses_exploded: int = 0
+    # Phase 20A: Poison DOT metrics
+    poison_applications: int = 0
+    poison_damage_dealt: int = 0
+    poison_ticks_processed: int = 0
+    poison_kills: int = 0
+    deaths_with_active_poison: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -131,6 +137,17 @@ class RunMetrics:
             result['necro_corpse_seek_moves'] = self.necro_corpse_seek_moves
         if hasattr(self, 'necro_unsafe_move_blocks'):
             result['necro_unsafe_move_blocks'] = self.necro_unsafe_move_blocks
+        # Phase 20A: Poison metrics (optional)
+        if hasattr(self, 'poison_applications'):
+            result['poison_applications'] = self.poison_applications
+        if hasattr(self, 'poison_damage_dealt'):
+            result['poison_damage_dealt'] = self.poison_damage_dealt
+        if hasattr(self, 'poison_ticks_processed'):
+            result['poison_ticks_processed'] = self.poison_ticks_processed
+        if hasattr(self, 'poison_kills'):
+            result['poison_kills'] = self.poison_kills
+        if hasattr(self, 'deaths_with_active_poison'):
+            result['deaths_with_active_poison'] = self.deaths_with_active_poison
         return result
 
 
@@ -188,6 +205,12 @@ class AggregatedMetrics:
     total_lich_soul_bolt_casts: int = 0
     total_soul_ward_blocks: int = 0
     total_lich_death_siphon_heals: int = 0
+    # Phase 20A: Poison DOT metrics
+    total_poison_applications: int = 0
+    total_poison_damage_dealt: int = 0
+    total_poison_ticks_processed: int = 0
+    total_poison_kills: int = 0
+    total_deaths_with_active_poison: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -211,6 +234,12 @@ class AggregatedMetrics:
             'total_split_events': self.total_split_events,
             'total_split_children_spawned': self.total_split_children_spawned,
             'total_split_events_by_type': dict(self.total_split_events_by_type),
+            # Phase 20A: Poison metrics
+            'total_poison_applications': self.total_poison_applications,
+            'total_poison_damage_dealt': self.total_poison_damage_dealt,
+            'total_poison_ticks_processed': self.total_poison_ticks_processed,
+            'total_poison_kills': self.total_poison_kills,
+            'total_deaths_with_active_poison': self.total_deaths_with_active_poison,
         }
         return result
 
@@ -641,8 +670,48 @@ def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
     # Process pending reanimations (Phase 10: plague zombies)
     _process_pending_reanimations(game_state, metrics)
     
+    # Phase 20A: Process player status effects (DOT ticks, debuff durations, etc.)
+    _process_player_status_effects_harness(game_state)
+    
     # Return to player turn
     game_state.current_state = GameStates.PLAYERS_TURN
+
+
+def _process_player_status_effects_harness(game_state: Any) -> None:
+    """Process player status effects at end of enemy turn.
+    
+    Phase 20A: This handles DOT effects like poison, soul burn, etc.
+    The harness needs to tick status effects since it bypasses the full engine.
+    
+    Args:
+        game_state: Current game state
+    """
+    player = game_state.player
+    if not player or not hasattr(player, 'status_effects') or not player.status_effects:
+        return
+    
+    # Process status effects at turn start (this is when DOTs tick)
+    # Pass state_manager=None since harness doesn't have one - metrics will still be tracked
+    status_results = player.status_effects.process_turn_start(
+        entities=game_state.entities,
+        state_manager=None  # Harness doesn't have state_manager
+    )
+    
+    # Add any messages to the message log
+    message_log = game_state.message_log
+    for result in status_results:
+        if 'message' in result:
+            message_log.add_message(result['message'])
+        
+        # Check for player death from status effects
+        if result.get('dead'):
+            game_state.current_state = GameStates.PLAYER_DEAD
+    
+    # Process turn end (decrement durations)
+    end_results = player.status_effects.process_turn_end()
+    for result in end_results:
+        if 'message' in result:
+            message_log.add_message(result['message'])
 
 
 def _handle_entity_death_simple(game_state: Any, dead_entity: Any, message_log: Any) -> None:
@@ -941,6 +1010,19 @@ def run_scenario_many(
             for monster_type, count in run.split_events_by_type.items():
                 merged_split_by_type[monster_type] = merged_split_by_type.get(monster_type, 0) + count
     
+    # Phase 20A: Aggregate poison metrics
+    total_poison_applications = 0
+    total_poison_damage_dealt = 0
+    total_poison_ticks_processed = 0
+    total_poison_kills = 0
+    total_deaths_with_active_poison = 0
+    for run in all_runs:
+        total_poison_applications += getattr(run, "poison_applications", 0)
+        total_poison_damage_dealt += getattr(run, "poison_damage_dealt", 0)
+        total_poison_ticks_processed += getattr(run, "poison_ticks_processed", 0)
+        total_poison_kills += getattr(run, "poison_kills", 0)
+        total_deaths_with_active_poison += getattr(run, "deaths_with_active_poison", 0)
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -983,6 +1065,11 @@ def run_scenario_many(
         total_spent_corpses_created=total_spent_corpses_created,
         total_raises_completed=total_raises_completed,
         total_spent_corpses_exploded=total_spent_corpses_exploded,
+        total_poison_applications=total_poison_applications,
+        total_poison_damage_dealt=total_poison_damage_dealt,
+        total_poison_ticks_processed=total_poison_ticks_processed,
+        total_poison_kills=total_poison_kills,
+        total_deaths_with_active_poison=total_deaths_with_active_poison,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

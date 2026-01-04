@@ -42,7 +42,8 @@ class Equippable:
                  armor_type: Optional[str] = None, dex_cap: Optional[int] = None, damage_dice: Optional[str] = None,
                  two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None,
                  speed_bonus: float = 0.0,
-                 crit_threshold: int = 20, damage_type: Optional[str] = None, material: Optional[str] = None) -> None:
+                 crit_threshold: int = 20, damage_type: Optional[str] = None, material: Optional[str] = None,
+                 applies_poison_on_hit: bool = False) -> None:
         """Initialize an Equippable component.
 
         Args:
@@ -89,6 +90,8 @@ class Equippable:
         self.material: Optional[str] = material  # Material type for corrosion (metal/wood/bone/stone/organic/other)
         self.base_damage_min: int = damage_min  # Store original damage for corrosion floor (50% base)
         self.base_damage_max: int = damage_max  # Store original damage for corrosion floor (50% base)
+        # Phase 20A.1: Player-facing poison delivery via weapon property
+        self.applies_poison_on_hit: bool = bool(applies_poison_on_hit)
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
     
     def get_damage_range_text(self) -> str:

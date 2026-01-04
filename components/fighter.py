@@ -1200,6 +1200,14 @@ class Fighter:
             plague_results = self._apply_plague_spread(target)
             results.extend(plague_results)
             
+            # Phase 20A: Apply poison effect if attacker has poison_attack ability
+            poison_results = self._apply_poison_effect(target)
+            results.extend(poison_results)
+
+            # Phase 20A.1: Player-facing poison weapon delivery (successful hit only)
+            weapon_poison_results = self._apply_player_weapon_poison_on_hit(target)
+            results.extend(weapon_poison_results)
+            
             # IMPORTANT: Set attacker's in_combat flag when attacking the PLAYER
             # This keeps monsters engaged even if they leave FOV
             # But DON'T set it for monster-vs-monster combat (taunt scenarios)
@@ -1645,6 +1653,130 @@ class Fighter:
             self.owner.tags and 
             isinstance(self.owner.tags, (list, tuple, set)) and
             'plague_carrier' in self.owner.tags):
+            return True
+        
+        return False
+    
+    def _apply_poison_effect(self, target):
+        """Apply poison effect if attacker has poison_attack ability.
+        
+        Phase 20A: Venomous creatures (spiders, etc.) can poison targets on hit.
+        Poison is applied on every successful hit if not already poisoned.
+        If already poisoned, the duration is refreshed (non-stacking).
+        
+        Args:
+            target: The entity that was attacked
+            
+        Returns:
+            list: List of result dictionaries with poison application messages
+        """
+        results = []
+        
+        # Check if attacker has poison_attack ability
+        if not self._has_poison_attack_ability():
+            return results
+        
+        # Get metrics collector for tracking
+        collector = _get_metrics_collector()
+        
+        # Apply poison effect to target
+        from components.status_effects import PoisonEffect, StatusEffectManager
+        
+        # Ensure target has status_effects component
+        if not target.components.has(ComponentType.STATUS_EFFECTS):
+            target.status_effects = StatusEffectManager(target)
+            target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+        
+        # Check if target already has poison (will be refreshed by add_effect)
+        already_poisoned = target.status_effects.has_effect('poison')
+        
+        # Create and apply poison effect
+        poison = PoisonEffect(owner=target)
+        poison_results = target.status_effects.add_effect(poison)
+        results.extend(poison_results)
+        
+        # Record metrics
+        if collector:
+            collector.increment('poison_applications')
+        
+        # Register poison trait with monster knowledge system
+        if hasattr(target, 'has_status_effect') and target.has_status_effect('poison'):
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                knowledge = get_monster_knowledge_system()
+                # Register that this attacker type applies poison
+                knowledge.register_trait(self.owner, 'poison_attack')
+            except ImportError:
+                pass  # Knowledge system not available
+        
+        return results
+
+    def _apply_player_weapon_poison_on_hit(self, target):
+        """Phase 20A.1: Apply poison to target if PLAYER is using a poisoned weapon.
+        
+        Hard constraints:
+        - Player-facing only (do NOT allow monsters to poison via weapon flag in this phase)
+        - Apply only on successful hit (caller is inside hit branch)
+        - Reuse canonical PoisonEffect unchanged (duration/damage/refresh/resistance)
+        - Use existing StatusEffectManager.add_effect() semantics (non-stacking refresh)
+        """
+        results = []
+        
+        # Player-only gate:
+        # - Primary: faction == PLAYER (canonical identity for actual player entity today)
+        # - Secondary: must NOT have AI (defense-in-depth against future friendly AI companions)
+        from components.faction import Faction
+        if getattr(self.owner, 'faction', None) != Faction.PLAYER:
+            return results
+        if (self.owner.get_component_optional(ComponentType.AI) if self.owner else None) is not None:
+            return results
+        
+        equipment = self._get_equipment(self.owner)
+        if not equipment or not equipment.main_hand or not getattr(equipment.main_hand, 'equippable', None):
+            return results
+        
+        equippable = equipment.main_hand.equippable
+        if not getattr(equippable, 'applies_poison_on_hit', False):
+            return results
+        
+        from components.status_effects import PoisonEffect, StatusEffectManager
+        
+        # Ensure target has status_effects component
+        if not target.components.has(ComponentType.STATUS_EFFECTS):
+            target.status_effects = StatusEffectManager(target)
+            target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+        
+        # Apply (or refresh) poison
+        poison = PoisonEffect(owner=target)
+        results.extend(target.status_effects.add_effect(poison))
+        
+        # Metrics: poison_applications counts add_effect() calls (including refreshes)
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('poison_applications')
+        
+        return results
+    
+    def _has_poison_attack_ability(self):
+        """Check if this entity has poison_attack ability.
+        
+        Phase 20A: Venomous creatures can apply poison on melee hits.
+        
+        Returns:
+            bool: True if entity can apply poison on attacks
+        """
+        # Check if entity has special_abilities with poison_attack
+        if (hasattr(self.owner, 'special_abilities') and 
+            self.owner.special_abilities and 
+            isinstance(self.owner.special_abilities, (list, tuple)) and
+            'poison_attack' in self.owner.special_abilities):
+            return True
+        
+        # Also check tags for venomous
+        if (hasattr(self.owner, 'tags') and 
+            self.owner.tags and 
+            isinstance(self.owner.tags, (list, tuple, set)) and
+            'venomous' in self.owner.tags):
             return True
         
         return False
