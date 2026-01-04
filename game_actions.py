@@ -2880,28 +2880,26 @@ class ActionProcessor:
                     self.state_manager.set_extra_data("auto_explore_suppress_cancel_once", True)
     
     def _process_player_status_effects(self) -> None:
-        """Process status effects at the end of the player's turn."""
+        """Process status effects at the END of the player's action.
+        
+        CRITICAL: This method is called at the end of each player action to decrement
+        status effect durations. It does NOT call process_turn_start() because that
+        would double-tick DOT damage. DOT damage ticks exactly once per turn in
+        AISystem._process_player_status_effects() at the START of the player's turn.
+        
+        This ensures player status effects match monster semantics:
+        - process_turn_start() called once per turn (in AISystem) - DOT ticks here
+        - process_turn_end() called at action end (here) - durations decrement here
+        """
         player = self.state_manager.state.player
         message_log = self.state_manager.state.message_log
         
         if not player or not message_log:
             return
         
-        # Get current turn number from TurnManager (if available)
-        turn_number = None
-        if self.turn_manager:
-            turn_number = self.turn_manager.turn_number
-        
-        # Process status effects at turn START (for Ring of Regeneration, etc.)
-        # This happens BEFORE the turn ends to apply regeneration
-        if hasattr(player, 'status_effects') and player.status_effects:
-            start_results = player.status_effects.process_turn_start(turn_number=turn_number)
-            for result in start_results:
-                message = result.get("message")
-                if message:
-                    message_log.add_message(message)
-        
         # Process status effects turn end (duration decrements, etc.)
+        # NOTE: Do NOT call process_turn_start() here - that would cause double-tick
+        # of DOT damage. DOT damage ticks in AISystem._process_player_status_effects()
         effect_results = player.process_status_effects_turn_end()
         
         # Add any messages from status effects
