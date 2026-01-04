@@ -1,8 +1,8 @@
 # Catacombs of Yarl - Project Statistics
 
 **Last Updated:** January 04, 2026
-**Status:** Active Development - v3.12.0 (Latest Changelog Entry)
-**Latest Release:** v3.12.0 - Balance tooling, AI/event updates, documentation refresh ✅
+**Status:** Active Development - v4.11.0 (Latest Release)
+**Latest Release:** v4.11.0 - Phase 20 Corpse Explosion, Fire Potion, Lich fixes ✅
 
 ---
 
@@ -338,7 +338,7 @@ For context, here's how Yarl stacks up:
 
 | Metric | Value |
 |--------|-------|
-| **Current Version** | 3.12.0 |
+| **Current Version** | 4.11.0 |
 | **Total Lines** | 181,525 |
 | **Python Files** | 554 |
 | **Test Coverage** | 63% test-to-production ratio |

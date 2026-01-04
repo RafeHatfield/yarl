@@ -1,0 +1,189 @@
+# Scenario: Exploder Necromancer Lifecycle (Phase 20)
+# Purpose: Regression anchor for Phase 20 corpse explosion lifecycle:
+#   - FRESH corpses: Created on death, raisable, NOT explodable
+#   - SPENT corpses: Created on re-death of raised entity, explodable, NOT raisable
+#   - CONSUMED corpses: Post-explosion, inert
+#   - Full lifecycle: Kill monster → FRESH → Raise → Re-kill → SPENT → Explode → CONSUMED
+#
+# This scenario validates:
+# 1. Regular Necromancer raises FRESH corpses
+# 2. Raised entities die again, creating SPENT corpses
+# 3. Exploder Necromancer targets ONLY SPENT corpses
+# 4. Explosions consume SPENT corpses (→ CONSUMED)
+# 5. No illegal double-use (raise+explode on same corpse)
+#
+# Deterministic and suitable for ongoing regression validation.
+
+metadata:
+  scenario_id: exploder_necromancer_lifecycle
+  family: ability_tests
+  depth: 4
+
+scenario_id: exploder_necromancer_lifecycle
+name: "Exploder Necromancer Lifecycle (Phase 20)"
+description: "Validate Phase 20 corpse lifecycle: FRESH → raise → SPENT → explode → CONSUMED"
+
+depth: 4
+
+defaults:
+  turn_limit: 300
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 8  # Both necromancers + enemies per run × 30 runs
+  min_player_deaths: 3  # Should be dangerous (explosions are lethal)
+  max_player_deaths: 25  # But not overwhelming
+  # BALANCE PHILOSOPHY:
+  # - 3-25 deaths validates explosions are BOTH threatening AND beatable
+  # - < 3 deaths = too easy (explosions ineffective, needs buff)
+  # - > 25 deaths = too hard (overwhelming, needs nerf)
+  # - Current tuning targets ~12 deaths (40% death rate = moderate-high threat)
+
+rooms:
+  - id: "necromancer_crypt"
+    type: "arena"
+    width: 23
+    height: 17
+    description: "Large crypt for corpse lifecycle testing"
+    walls: "enclosed"
+
+monsters:
+  # Regular Necromancer - raises FRESH corpses
+  - type: "necromancer"
+    count: 1
+    position: [18, 8]
+    facing: "west"
+    state: "aware"
+  
+  # Exploder Necromancer - explodes SPENT corpses
+  - type: "exploder_necromancer"
+    count: 1
+    position: [19, 10]
+    facing: "west"
+    state: "aware"
+  
+  # Skeletons - corpse sources (with bone piles)
+  - type: "skeleton"
+    count: 1
+    position: [14, 5]
+    facing: "west"
+    state: "aware"
+  - type: "skeleton"
+    count: 1
+    position: [14, 7]
+    facing: "west"
+    state: "aware"
+  - type: "skeleton"
+    count: 1
+    position: [14, 9]
+    facing: "west"
+    state: "aware"
+  - type: "skeleton"
+    count: 1
+    position: [14, 11]
+    facing: "west"
+    state: "aware"
+  
+  # Orcs - additional corpse sources
+  - type: "orc"
+    count: 1
+    position: [11, 6]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 8]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 10]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 12]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Ranged weapon: helps player create distant corpses safely
+  - type: "shortbow"
+    count: 1
+    position: [3, 8]
+  
+  # Thrown weapons: alternative ranged option
+  - type: "dagger"
+    count: 5
+    position: [3, 9]
+  
+  # Melee weapon: for close combat
+  - type: "longsword"
+    count: 1
+    position: [3, 6]
+  
+  # Healing potions: extended combat to observe full lifecycle
+  - type: "healing_potion"
+    count: 8
+    position: [2, 5]
+  - type: "healing_potion"
+    count: 8
+    position: [2, 11]
+  - type: "healing_potion"
+    count: 6
+    position: [3, 7]
+
+player:
+  position: [2, 8]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "shortsword"
+    armor: "leather_armor"
+
+# Scenario design notes (Phase 20 - Exploder Necromancer):
+# - Player starts with shortsword + leather armor (moderate survivability)
+# - Shortbow + daggers available (ranged combat for safety)
+# - 1 Regular Necromancer + 1 Exploder Necromancer + 4 skeletons + 4 orcs
+# - Arena layout: 23x17 with room for lifecycle progression
+# - Healing potions: 22 total (generous supply for extended combat)
+#
+# Expected lifecycle flow:
+# 1. Player kills orcs/skeletons → FRESH corpses created
+# 2. Regular Necromancer raises FRESH corpses → zombies
+# 3. Player kills zombies → SPENT corpses created (lineage tracking)
+# 4. Exploder Necromancer targets SPENT corpses → explosions
+# 5. Explosions consume SPENT corpses → CONSUMED (removed from map)
+#
+# Necromancer behavior:
+# - Regular Necromancer: Raise dead on 4-turn cooldown, seeks FRESH corpses
+# - Exploder Necromancer: Explode on 4-turn cooldown, seeks SPENT corpses
+# - Both respect 2-tile safety radius from player
+# - Both hang back to distance 4-7 from player
+#
+# Corpse lifecycle invariants:
+# - FRESH corpses: can_raise() = True, can_explode() = False
+# - SPENT corpses: can_raise() = False, can_explode() = True
+# - CONSUMED corpses: removed from map (inert)
+# - No corpse can be both raised AND exploded (illegal_double_use_attempts = 0)
+#
+# Expected metrics (30 runs):
+# - fresh_corpses_created: >= 180 (6 enemies × 30 runs)
+# - spent_corpses_created: >= 30 (at least 1 raise+re-kill per run)
+# - raises_completed: >= 30 (regular necromancer should raise frequently)
+# - spent_corpses_exploded: >= 15 (exploder should detonate SPENT corpses)
+# - illegal_double_use_attempts: 0 (CRITICAL: no violations)
+# - raises_blocked_due_to_state: >= 0 (tracks SPENT corpse raise attempts)
+# - explosions_blocked_due_to_state: >= 0 (tracks FRESH corpse explosion attempts)
+#
+# Validation:
+# - Regular Necromancer raises ONLY FRESH corpses
+# - Exploder Necromancer explodes ONLY SPENT corpses
+# - Re-deaths create SPENT corpses deterministically
+# - Explosions route damage through damage_service
+# - Explosions consume corpses (SPENT → CONSUMED)
+# - No illegal double-use (raise+explode on same corpse)
+# - Lineage tracking preserves corpse_id through raise cycle
+

@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v4.11.0] - 2026-01-04
+
+### Added
+- **Phase 20: Corpse Explosion & Lifecycle** - Complete necromancer expansion
+  - Corpse Explosion spell with multi-hit mechanics
+  - Corpse consumption and lifecycle management
+  - Exploder Necromancer variant with corpse detonation
+  - Full integration with damage service and metrics
+- **Fire Potion** - New consumable item with Burning DoT effect
+- **Comprehensive Phase 20 Tests** - Lifecycle scenario testing and metrics
+- **Scenario Testing** - Exploder Necromancer lifecycle scenarios
+
+### Fixed
+- Lich ability config propagation
+- Soul Bolt charge duration and status effect cleanup
+- Death Siphon faction check
+- FOV precompute regression from optimization attempt
+- Monster factory AI type scoping bug
+- Critical death finalization and aura safety issues
+
+### Changed
+- Soul Bolt tuned to dangerous-but-beatable identity
+- Enhanced baseline metrics for boss encounters
+
+### Technical
+- Corpse lifecycle fully routed through damage_service
+- Comprehensive instrumentation for Soul Bolt eligibility
+- Command the Dead safety improvements
+- Fire Potion & Burning DOT status effect implementation
+
+---
+
 ## [v3.12.0] - 2025-10-18
 
 ### Added
