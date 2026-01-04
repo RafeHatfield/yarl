@@ -1,0 +1,93 @@
+# Scenario: Fire Beetle Identity Kit (Phase 20B.1)
+# Purpose: Regression anchor for Phase 20B.1 Burning DOT mechanics:
+#   - Burning Application: Fire Beetle applies burning on successful melee hits
+#   - Burning DOT: 1 damage per tick for 4 turns (non-stacking, refresh only)
+#   - Fire Resistance: fire_resistance_pct reduces damage per tick
+#   - Death Finalization: Burning kills route through damage_service correctly
+#   - Metrics: burning_applications, burning_damage_dealt, burning_ticks_processed
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+
+metadata:
+  scenario_id: monster_fire_beetle_identity
+  family: ability_tests
+  depth: 2
+
+scenario_id: monster_fire_beetle_identity
+name: "Fire Beetle Identity Kit (Phase 20B.1)"
+description: "Validate Phase 20B.1 burning DOT mechanics: application, ticking, resistance, death."
+
+depth: 2
+
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # With 3 beetles per run × 30 runs = 90 beetles:
+  # - At least 30 burning applications expected (1+ per run)
+  min_player_kills: 45  # 90 beetles max, expect at least half killed
+  max_player_deaths: 15  # Beetles are fragile, player should win mostly
+
+rooms:
+  - id: "beetle_arena"
+    type: "arena"
+    width: 12
+    height: 10
+    description: "Simple arena for testing fire beetle burning mechanics"
+    walls: "enclosed"
+
+monsters:
+  # Three fire beetles - enough to test burning refresh mechanics
+  - type: "fire_beetle"
+    count: 1
+    position: [9, 4]
+    facing: "west"
+    state: "aware"
+  - type: "fire_beetle"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "aware"
+  - type: "fire_beetle"
+    count: 1
+    position: [9, 6]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Healing potions: Allow observation of burning pressure over time
+  - type: "healing_potion"
+    count: 3
+    position: [2, 4]
+  - type: "healing_potion"
+    count: 2
+    position: [2, 7]
+  
+  # Basic weapon
+  - type: "dagger"
+    count: 1
+    position: [3, 5]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+    armor: null
+
+# Scenario design notes (Phase 20B.1 - Burning DOT):
+# - Three fire beetles with burning_attack ability
+# - Beetle stats: 12 HP, 2-5 damage
+# - Burning mechanics:
+#   - Applied on successful melee hit (100% chance)
+#   - Duration: 4 turns
+#   - Damage: 1 per tick (4 total over full duration)
+#   - Non-stacking: Reapplication refreshes duration only
+# - Fire resistance:
+#   - Beetles have 100% resistance (immune to fire)
+#   - Player has 0% by default (takes full damage)
+

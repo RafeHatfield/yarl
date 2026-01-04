@@ -87,6 +87,11 @@ class RunMetrics:
     poison_ticks_processed: int = 0
     poison_kills: int = 0
     deaths_with_active_poison: int = 0
+    # Phase 20B.1: Burning DOT metrics
+    burning_applications: int = 0
+    burning_damage_dealt: int = 0
+    burning_ticks_processed: int = 0
+    burning_kills: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -148,6 +153,15 @@ class RunMetrics:
             result['poison_kills'] = self.poison_kills
         if hasattr(self, 'deaths_with_active_poison'):
             result['deaths_with_active_poison'] = self.deaths_with_active_poison
+        # Phase 20B.1: Burning metrics (optional)
+        if hasattr(self, 'burning_applications'):
+            result['burning_applications'] = self.burning_applications
+        if hasattr(self, 'burning_damage_dealt'):
+            result['burning_damage_dealt'] = self.burning_damage_dealt
+        if hasattr(self, 'burning_ticks_processed'):
+            result['burning_ticks_processed'] = self.burning_ticks_processed
+        if hasattr(self, 'burning_kills'):
+            result['burning_kills'] = self.burning_kills
         return result
 
 
@@ -211,6 +225,11 @@ class AggregatedMetrics:
     total_poison_ticks_processed: int = 0
     total_poison_kills: int = 0
     total_deaths_with_active_poison: int = 0
+    # Phase 20B.1: Burning DOT metrics
+    total_burning_applications: int = 0
+    total_burning_damage_dealt: int = 0
+    total_burning_ticks_processed: int = 0
+    total_burning_kills: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -240,6 +259,11 @@ class AggregatedMetrics:
             'total_poison_ticks_processed': self.total_poison_ticks_processed,
             'total_poison_kills': self.total_poison_kills,
             'total_deaths_with_active_poison': self.total_deaths_with_active_poison,
+            # Phase 20B.1: Burning metrics
+            'total_burning_applications': self.total_burning_applications,
+            'total_burning_damage_dealt': self.total_burning_damage_dealt,
+            'total_burning_ticks_processed': self.total_burning_ticks_processed,
+            'total_burning_kills': self.total_burning_kills,
         }
         return result
 
@@ -1022,6 +1046,17 @@ def run_scenario_many(
         total_poison_ticks_processed += getattr(run, "poison_ticks_processed", 0)
         total_poison_kills += getattr(run, "poison_kills", 0)
         total_deaths_with_active_poison += getattr(run, "deaths_with_active_poison", 0)
+
+    # Phase 20B.1: Aggregate burning metrics
+    total_burning_applications = 0
+    total_burning_damage_dealt = 0
+    total_burning_ticks_processed = 0
+    total_burning_kills = 0
+    for run in all_runs:
+        total_burning_applications += getattr(run, "burning_applications", 0)
+        total_burning_damage_dealt += getattr(run, "burning_damage_dealt", 0)
+        total_burning_ticks_processed += getattr(run, "burning_ticks_processed", 0)
+        total_burning_kills += getattr(run, "burning_kills", 0)
     
     aggregated = AggregatedMetrics(
         runs=runs,
@@ -1070,6 +1105,10 @@ def run_scenario_many(
         total_poison_ticks_processed=total_poison_ticks_processed,
         total_poison_kills=total_poison_kills,
         total_deaths_with_active_poison=total_deaths_with_active_poison,
+        total_burning_applications=total_burning_applications,
+        total_burning_damage_dealt=total_burning_damage_dealt,
+        total_burning_ticks_processed=total_burning_ticks_processed,
+        total_burning_kills=total_burning_kills,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "
