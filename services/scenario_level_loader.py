@@ -90,6 +90,9 @@ def build_scenario_map(scenario, rng: Optional[random.Random] = None) -> Scenari
 
     game_map = GameMap(width, height, dungeon_level=dungeon_level)
     _carve_open_floor(game_map)
+    
+    # Apply obstacles (walls/pillars) after carving floor
+    _apply_obstacles(scenario.rooms, game_map)
 
     player = _create_player_entity(scenario.player)
     _apply_player_position(player, scenario.player, game_map)
@@ -130,6 +133,50 @@ def _carve_open_floor(game_map: GameMap) -> None:
             if tile:
                 tile.blocked = False
                 tile.block_sight = False
+
+
+def _apply_obstacles(rooms: Optional[List[Dict[str, Any]]], game_map: GameMap) -> None:
+    """Apply obstacles (walls/pillars) from room definitions.
+    
+    Obstacles are defined in room config as:
+        obstacles:
+          - position: [x, y]  # Single tile wall/pillar
+          - position: [x, y]
+    
+    Each obstacle creates a tile that is both blocked and blocks sight,
+    enabling LOS breaks in otherwise open arenas.
+    """
+    if not rooms:
+        return
+    
+    for room in rooms:
+        if not isinstance(room, dict):
+            continue
+        
+        obstacles = room.get("obstacles", [])
+        if not obstacles:
+            continue
+        
+        for obstacle in obstacles:
+            if not isinstance(obstacle, dict):
+                continue
+            
+            pos = obstacle.get("position")
+            if not isinstance(pos, (list, tuple)) or len(pos) != 2:
+                continue
+            
+            x, y = int(pos[0]), int(pos[1])
+            
+            # Bounds check
+            if not game_map.is_in_bounds(x, y):
+                logger.warning(f"Obstacle position out of bounds: ({x}, {y})")
+                continue
+            
+            tile = game_map.get_tile(x, y)
+            if tile:
+                tile.blocked = True
+                tile.block_sight = True
+                logger.debug(f"Placed obstacle at ({x}, {y})")
 
 
 def _create_player_entity(player_cfg: Optional[Dict[str, Any]]) -> Entity:

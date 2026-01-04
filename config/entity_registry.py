@@ -155,6 +155,12 @@ class MonsterDefinition:
     danger_radius_from_player: int = 2  # Never approach within this distance of player
     preferred_distance_min: int = 4  # Minimum preferred distance from player
     preferred_distance_max: int = 7  # Maximum preferred distance from player
+    # Phase 19: Lich Soul Bolt ability
+    soul_bolt_range: int = 7  # Range to target player
+    soul_bolt_damage_pct: float = 0.35  # Percentage of target's max HP
+    soul_bolt_cooldown_turns: int = 4  # Cooldown after bolt resolves
+    # Phase 19: Lich Command the Dead passive aura
+    command_the_dead_radius: int = 6  # Radius for undead allies to get +1 to-hit
 
 
 @dataclass  
@@ -574,7 +580,13 @@ class EntityRegistry:
                     raise_dead_cooldown_turns=monster_data.get('raise_dead_cooldown_turns', 4),
                     danger_radius_from_player=monster_data.get('danger_radius_from_player', 2),
                     preferred_distance_min=monster_data.get('preferred_distance_min', 4),
-                    preferred_distance_max=monster_data.get('preferred_distance_max', 7)
+                    preferred_distance_max=monster_data.get('preferred_distance_max', 7),
+                    # Phase 19: Lich Soul Bolt ability
+                    soul_bolt_range=monster_data.get('soul_bolt_range', 7),
+                    soul_bolt_damage_pct=monster_data.get('soul_bolt_damage_pct', 0.35),
+                    soul_bolt_cooldown_turns=monster_data.get('soul_bolt_cooldown_turns', 4),
+                    # Phase 19: Lich Command the Dead passive aura
+                    command_the_dead_radius=monster_data.get('command_the_dead_radius', 6)
                 )
                 
                 self.monsters[monster_id] = monster_def

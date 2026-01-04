@@ -159,3 +159,48 @@ def map_is_in_fov(fov_map, x, y):
     else:
         # Fallback for numpy arrays
         return is_visible(fov_map, x, y)
+
+
+def has_line_of_sight(game_map, x1: int, y1: int, x2: int, y2: int) -> bool:
+    """Check if there's an unobstructed line of sight between two points.
+    
+    Uses Bresenham ray tracing to check if any tile along the line blocks sight.
+    This is a pure geometry check that does NOT require a pre-computed FOV map.
+    
+    Use this for on-demand LOS checks (e.g., Lich Soul Bolt) when:
+    - fov_map is None (headless/scenario mode)
+    - You need point-to-point visibility without caching
+    
+    Args:
+        game_map: GameMap with tiles that have block_sight attribute
+        x1 (int): X coordinate of origin
+        y1 (int): Y coordinate of origin
+        x2 (int): X coordinate of target
+        y2 (int): Y coordinate of target
+        
+    Returns:
+        bool: True if line of sight is clear, False if blocked
+    """
+    from tcod.los import bresenham
+    
+    # Same tile is always visible
+    if x1 == x2 and y1 == y2:
+        return True
+    
+    # Get ray path using Bresenham's line algorithm
+    path_array = bresenham((x1, y1), (x2, y2))
+    
+    # Check each tile along the path (excluding start and end points)
+    # We skip the first tile (origin) and last tile (target) - we only care about obstructions
+    for i in range(1, len(path_array) - 1):
+        px, py = int(path_array[i][0]), int(path_array[i][1])
+        
+        # Bounds check
+        if px < 0 or px >= game_map.width or py < 0 or py >= game_map.height:
+            return False  # Out of bounds blocks sight
+        
+        # Check if tile blocks sight
+        if game_map.tiles[px][py].block_sight:
+            return False
+    
+    return True

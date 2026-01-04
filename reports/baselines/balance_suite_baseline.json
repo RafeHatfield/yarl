@@ -222,12 +222,12 @@
   "monster_exploder_necromancer_identity": {
     "scenario_id": "monster_exploder_necromancer_identity",
     "runs": 30,
-    "deaths": 16,
-    "death_rate": 0.5333333333333333,
-    "player_hit_rate": 0.7331768388106417,
-    "monster_hit_rate": 0.3193588162762022,
-    "pressure_index": -15.566666666666666,
-    "bonus_attacks_per_run": 14.966666666666667
+    "deaths": 12,
+    "death_rate": 0.4,
+    "player_hit_rate": 0.7567917205692108,
+    "monster_hit_rate": 0.27309893704006544,
+    "pressure_index": -10.766666666666666,
+    "bonus_attacks_per_run": 18.166666666666668
   },
   "monster_wraith_identity": {
     "scenario_id": "monster_wraith_identity",
@@ -242,12 +242,12 @@
   "monster_lich_identity": {
     "scenario_id": "monster_lich_identity",
     "runs": 30,
-    "deaths": 0,
-    "death_rate": 0.0,
-    "player_hit_rate": 0.7018633540372671,
-    "monster_hit_rate": 0.5,
-    "pressure_index": -24.26666666666667,
-    "bonus_attacks_per_run": 11.0
+    "deaths": 11,
+    "death_rate": 0.36666666666666664,
+    "player_hit_rate": 0.6047430830039525,
+    "monster_hit_rate": 0.4796747967479675,
+    "pressure_index": -12.766666666666667,
+    "bonus_attacks_per_run": 5.966666666666667
   },
   "troll_identity": {
     "scenario_id": "troll_identity",

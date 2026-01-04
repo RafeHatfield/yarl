@@ -88,8 +88,14 @@ class LichAI(NecromancerBase):
         distance = self._distance_to(target)
         
         # Check LOS: Use player-centric FOV (if lich is visible to player, player is visible to lich)
+        # FALLBACK: If fov_map is None (headless/scenario mode), use on-demand geometric LOS
         from components.ai._helpers import map_is_in_fov
-        has_los = map_is_in_fov(fov_map, self.owner.x, self.owner.y) if fov_map else False
+        if fov_map is not None:
+            has_los = map_is_in_fov(fov_map, self.owner.x, self.owner.y)
+        else:
+            # On-demand LOS for headless/scenario mode
+            from fov_functions import has_line_of_sight
+            has_los = has_line_of_sight(game_map, self.owner.x, self.owner.y, target.x, target.y)
         
         if distance <= soul_bolt_range:
             self.ticks_player_in_range += 1
@@ -114,7 +120,7 @@ class LichAI(NecromancerBase):
         
         # Priority 1: If charging, try to resolve Soul Bolt
         if is_charging:
-            resolve_results = self._try_resolve_soul_bolt(target, fov_map)
+            resolve_results = self._try_resolve_soul_bolt(target, fov_map, game_map)
             if resolve_results:
                 results.extend(resolve_results)
                 # Soul Bolt consumed the turn - return early
@@ -131,7 +137,7 @@ class LichAI(NecromancerBase):
         
         # Priority 2: If Soul Bolt off cooldown + not charging, start charge
         if self.soul_bolt_cooldown_remaining <= 0 and not is_charging:
-            charge_results = self._try_start_soul_bolt_charge(target, fov_map)
+            charge_results = self._try_start_soul_bolt_charge(target, fov_map, game_map)
             if charge_results:
                 results.extend(charge_results)
                 # Charging consumed the turn - return early
@@ -146,12 +152,13 @@ class LichAI(NecromancerBase):
         
         return results
     
-    def _try_start_soul_bolt_charge(self, target, fov_map) -> Optional[List]:
+    def _try_start_soul_bolt_charge(self, target, fov_map, game_map) -> Optional[List]:
         """Try to start charging Soul Bolt if player is in range/LOS.
         
         Args:
             target: The player entity
-            fov_map: Field of view map
+            fov_map: Field of view map (may be None in headless/scenario mode)
+            game_map: Game map for on-demand LOS checks
             
         Returns:
             List of results if charging started, None otherwise
@@ -166,9 +173,16 @@ class LichAI(NecromancerBase):
         if distance > soul_bolt_range:
             return None
         
-        # Check if lich has LOS to player (mutual visibility via player's FOV)
+        # Check if lich has LOS to player
+        # Use FOV map if available, otherwise use on-demand geometric LOS
         from components.ai._helpers import map_is_in_fov
-        if not map_is_in_fov(fov_map, self.owner.x, self.owner.y):
+        if fov_map is not None:
+            has_los = map_is_in_fov(fov_map, self.owner.x, self.owner.y)
+        else:
+            from fov_functions import has_line_of_sight
+            has_los = has_line_of_sight(game_map, self.owner.x, self.owner.y, target.x, target.y)
+        
+        if not has_los:
             return None
         
         # Start charging
@@ -188,12 +202,13 @@ class LichAI(NecromancerBase):
         
         return results
     
-    def _try_resolve_soul_bolt(self, target, fov_map) -> Optional[List]:
+    def _try_resolve_soul_bolt(self, target, fov_map, game_map) -> Optional[List]:
         """Try to resolve Soul Bolt if player still in range/LOS.
         
         Args:
             target: The player entity
-            fov_map: Field of view map
+            fov_map: Field of view map (may be None in headless/scenario mode)
+            game_map: Game map for on-demand LOS checks
             
         Returns:
             List of results if Soul Bolt fired, None otherwise
@@ -213,9 +228,16 @@ class LichAI(NecromancerBase):
             logger.debug(f"[LICH] Soul Bolt fizzles - target out of range (distance={distance:.1f})")
             return None
         
-        # Check if lich still has LOS to player (mutual visibility via player's FOV)
+        # Check if lich still has LOS to player
+        # Use FOV map if available, otherwise use on-demand geometric LOS
         from components.ai._helpers import map_is_in_fov
-        if not map_is_in_fov(fov_map, self.owner.x, self.owner.y):
+        if fov_map is not None:
+            has_los = map_is_in_fov(fov_map, self.owner.x, self.owner.y)
+        else:
+            from fov_functions import has_line_of_sight
+            has_los = has_line_of_sight(game_map, self.owner.x, self.owner.y, target.x, target.y)
+        
+        if not has_los:
             self._increment_metric('lich_fizzle_los')
             logger.debug(f"[LICH] Soul Bolt fizzles - LOS broken")
             return None

@@ -193,6 +193,19 @@ class MonsterFactory(FactoryBase):
                 monster.preferred_distance_max = getattr(monster_def, 'preferred_distance_max', 7)
                 logger.debug(f"Added Raise Dead to {monster_def.name}: range={monster.raise_dead_range}, cooldown={monster.raise_dead_cooldown_turns}")
             
+            # Phase 19: Set Lich Soul Bolt config if defined
+            # Only apply to lich AI type to prevent cross-contamination
+            if hasattr(monster_def, 'soul_bolt_range') and ai_type == 'lich':
+                monster.soul_bolt_range = monster_def.soul_bolt_range
+                monster.soul_bolt_damage_pct = getattr(monster_def, 'soul_bolt_damage_pct', 0.35)
+                monster.soul_bolt_cooldown_turns = getattr(monster_def, 'soul_bolt_cooldown_turns', 4)
+                logger.debug(f"Added Soul Bolt to {monster_def.name}: range={monster.soul_bolt_range}, damage={monster.soul_bolt_damage_pct*100:.0f}%, cooldown={monster.soul_bolt_cooldown_turns}")
+            
+            # Phase 19: Set Lich Command the Dead config if defined
+            if hasattr(monster_def, 'command_the_dead_radius') and ai_type == 'lich':
+                monster.command_the_dead_radius = monster_def.command_the_dead_radius
+                logger.debug(f"Added Command the Dead to {monster_def.name}: radius={monster.command_the_dead_radius}")
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai

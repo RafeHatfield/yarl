@@ -643,7 +643,7 @@ monsters:
   
   lich:
     stats:
-      hp: 80                  # Very durable for elite controller (survives to cast Soul Bolt)
+      hp: 60                  # Durable elite controller (tuned for ~40% death rate in scenario)
       power: 2                # Moderate physical power
       defense: 2              # Some arcane protection
       xp: 150                 # High XP for elite threat
@@ -669,8 +669,8 @@ monsters:
     inventory_size: 0
     # Phase 19: Soul Bolt ability (2-turn: charge + resolve)
     soul_bolt_range: 7              # Range to target player
-    soul_bolt_damage_pct: 0.35      # 35% of target's max HP
-    soul_bolt_cooldown_turns: 4     # Cooldown after bolt resolves
+    soul_bolt_damage_pct: 0.18      # 18% of target's max HP (10 damage per bolt)
+    soul_bolt_cooldown_turns: 8     # Cooldown after bolt resolves
     # Phase 19: Command the Dead passive aura
     command_the_dead_radius: 6      # Allied undead in this radius get +1 to-hit
     # Phase 19: Death Siphon passive heal
