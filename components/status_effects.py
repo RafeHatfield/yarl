@@ -1,9 +1,20 @@
 from typing import List, Dict, Any, TYPE_CHECKING, Optional
 from message_builder import MessageBuilder as MB
 from components.component_registry import ComponentType
+from logger_config import get_logger
 
 if TYPE_CHECKING:
     pass
+
+logger = get_logger(__name__)
+
+
+def _get_metrics_collector():
+    try:
+        from services.scenario_metrics import get_active_metrics_collector
+        return get_active_metrics_collector()
+    except Exception:
+        return None
 
 class StatusEffect:
     """Base class for all status effects."""
@@ -1364,6 +1375,99 @@ class SoulBurnEffect(StatusEffect):
                     results.extend(damage_results)
         
         self.ticks_remaining -= 1
+        
+        return results
+
+
+class BurningEffect(StatusEffect):
+    """Burning DOT from fire sources (e.g., thrown Fire Potion).
+    
+    Metrics (scenario harness, optional):
+    - burning_applications: count of applications (includes refreshes)
+    - burning_ticks_processed: count of ticks processed (includes 0-damage ticks)
+    - burning_damage_dealt: total damage dealt after resistance
+    - burning_kills: killing blows attributed to burning
+    """
+    def __init__(self, duration: int, owner: 'Entity', damage_per_turn: int = 1):
+        super().__init__(name='burning', duration=duration, owner=owner)
+        self.damage_per_turn = damage_per_turn
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('burning_applications')
+        results.append({'message': MB.status_effect(f"🔥 {self.owner.name} is burning!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"The flames on {self.owner.name} die down.")})
+        return results
+    
+    def process_turn_start(self, entities=None, state_manager=None) -> List[Dict[str, Any]]:
+        """Tick burning damage at start of turn.
+        
+        Args:
+            entities: Optional list of all game entities (not used by this effect)
+            state_manager: Optional state manager for death finalization (CRITICAL)
+        
+        Returns:
+            List of result dictionaries including death results if applicable
+        """
+        results = []
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('burning_ticks_processed')
+        
+        fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+        if not fighter:
+            return results
+        
+        damage_this_tick = self.damage_per_turn
+        reduced_damage = damage_this_tick
+        if damage_this_tick > 0:
+            reduced_damage, _ = fighter.apply_resistance(damage_this_tick, "fire")
+        
+        if reduced_damage > 0:
+            results.append({
+                'message': MB.combat(
+                    f"🔥 {self.owner.name} takes {reduced_damage} burning damage!"
+                )
+            })
+        
+        if state_manager:
+            from services.damage_service import apply_damage
+            
+            damage_results = apply_damage(
+                state_manager=state_manager,
+                target_entity=self.owner,
+                amount=damage_this_tick,
+                cause="burning_dot",
+                attacker_entity=None,
+                damage_type="fire",
+                allow_xp=False,
+            )
+            results.extend(damage_results)
+            
+            if collector and reduced_damage > 0:
+                collector.increment('burning_damage_dealt', reduced_damage)
+            
+            if collector and any(result.get('dead') for result in damage_results):
+                collector.increment('burning_kills')
+        else:
+            if reduced_damage >= fighter.hp:
+                logger.error(
+                    f"BURNING_LETHAL_CLAMP: Prevented burning from killing "
+                    f"{self.owner.name} without state_manager (hp={fighter.hp}, "
+                    f"damage={reduced_damage})."
+                )
+                reduced_damage = max(0, fighter.hp - 1)
+            
+            if reduced_damage > 0:
+                results.extend(fighter.take_damage(reduced_damage))
+                if collector:
+                    collector.increment('burning_damage_dealt', reduced_damage)
         
         return results
 

@@ -1567,6 +1567,13 @@ spells:
     duration: 10  # 10 turns of sluggishness
     speed_penalty: 0.25  # -25% speed bonus
 
+  # Phase 20B: Fire Potion - applies Burning DOT on hit when thrown
+  fire_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 90, 20]  # Fiery orange
+    effect_function: "apply_burning_potion"
+
   # Damage spell with range
   lightning_scroll:
     spell_type: "damage"

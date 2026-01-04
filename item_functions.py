@@ -1252,6 +1252,44 @@ def drink_tar_potion(*args, **kwargs):
 
 
 # ============================================================================
+# Phase 20B: Fire Potion (Burning DOT)
+# ============================================================================
+
+def apply_burning_potion(*args, **kwargs):
+    """Apply a burning effect to the target (from a thrown fire potion).
+    
+    Args:
+        *args: First argument should be the target entity
+        **kwargs: Optional parameters (duration, damage_per_turn)
+    
+    Returns:
+        list: List of result dictionaries with consumption and status effect info
+    """
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity to ignite!")}]
+    
+    duration = kwargs.get("duration", 4)
+    damage_per_turn = kwargs.get("damage_per_turn", 1)
+    results = []
+    
+    from components.status_effects import StatusEffectManager, BurningEffect
+    
+    if not hasattr(entity, 'status_effects') or entity.status_effects is None:
+        entity.status_effects = StatusEffectManager(entity)
+    
+    if hasattr(entity, 'components') and not entity.components.has(ComponentType.STATUS_EFFECTS):
+        entity.components.add(ComponentType.STATUS_EFFECTS, entity.status_effects)
+    
+    burning_effect = BurningEffect(duration=duration, owner=entity, damage_per_turn=damage_per_turn)
+    effect_results = entity.status_effects.add_effect(burning_effect)
+    results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    return results
+
+
+# ============================================================================
 # NEW POTION EFFECTS - Slice 3: Special Potion
 # ============================================================================
 
@@ -1896,4 +1934,3 @@ def use_soul_ward_scroll(*args, **kwargs):
     results.append({"consumed": True})
     
     return results
-

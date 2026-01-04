@@ -12,6 +12,8 @@ Used by game_actions.py when player throws an item (press 't').
 from typing import List, Dict, Any, Tuple
 from tcod.los import bresenham
 from message_builder import MessageBuilder as MB
+from components.component_registry import ComponentType
+from visual_effect_queue import get_effect_queue
 
 
 def calculate_throw_path(
@@ -211,7 +213,6 @@ def _throw_potion(
         potion.item.owner = target
         
         # Ensure target has status_effects component for status effect potions
-        from components.component_registry import ComponentType
         if not target.components.has(ComponentType.STATUS_EFFECTS):
             from components.status_effects import StatusEffectManager
             target.status_effects = StatusEffectManager(target)
@@ -329,4 +330,3 @@ def _throw_weapon(
     # (game_actions.py already has access to entities list)
     
     return results
-
