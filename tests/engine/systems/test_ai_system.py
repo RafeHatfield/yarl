@@ -297,11 +297,13 @@ class TestAISystemTurnProcessing:
         self.mock_ai_entity.fighter = Mock()
         self.mock_ai_entity.fighter.hp = 10
         self.mock_ai_entity.name = "Orc"
+        self.mock_ai_entity.get_component_optional = Mock(return_value=None)  # No status effects
 
         self.mock_dead_entity = Mock()
         self.mock_dead_entity.ai = Mock()
         self.mock_dead_entity.fighter = Mock()
         self.mock_dead_entity.fighter.hp = 0
+        self.mock_dead_entity.get_component_optional = Mock(return_value=None)  # No status effects
 
         self.mock_game_state = Mock()
         self.mock_game_state.entities = [

@@ -363,6 +363,28 @@ class AISystem(System):
         # Notify turn start callbacks
         self._notify_callbacks("turn_start", entity)
 
+        # CRITICAL: Process monster status effects at turn start with state_manager
+        # This matches the player pattern and ensures DOT effects can finalize deaths properly
+        from components.component_registry import ComponentType
+        status_effects = entity.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if status_effects:
+            status_results = status_effects.process_turn_start(
+                entities=game_state.entities,
+                state_manager=self.engine.state_manager if self.engine else None
+            )
+            # Process status effect results (death, messages, etc.)
+            for result in status_results:
+                if 'message' in result and game_state.message_log:
+                    game_state.message_log.add_message(result['message'])
+                # If entity died from DOT, death should already be finalized by damage_service
+                if result.get('dead') == entity:
+                    logger.info(f"Monster {entity.name} died from status effect before taking turn")
+                    return  # Skip the rest of the turn - entity is dead
+                # Check for skip_turn (e.g., from Slow effect, Engulf)
+                if result.get('skip_turn'):
+                    logger.debug(f"Monster {entity.name} skipping turn due to status effect")
+                    return  # Skip the rest of the turn
+
         try:
             # Get AI strategy for this entity
             ai_type = getattr(entity.ai, "ai_type", "basic")

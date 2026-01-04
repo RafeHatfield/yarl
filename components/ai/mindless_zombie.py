@@ -119,17 +119,9 @@ class MindlessZombieAI:
         
         results = []
         
-        # Process status effects at the start of turn (optional)
-        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
-        if status_effects:
-            effect_results = status_effects.process_turn_start()
-            for result in effect_results:
-                # Check if status effect wants to skip this turn (e.g., Slow effect)
-                if result.get('skip_turn'):
-                    from game_messages import Message
-                    results.append(result)
-                    return results  # Skip turn entirely
-                results.append(result)
+        # NOTE: Status effects are now processed at the AI system level (with state_manager)
+        # before take_turn is called. This ensures DOT effects can finalize deaths properly.
+        # Do NOT process them here again.
         
         # Check for paralysis - completely prevents all actions
         if (hasattr(self.owner, 'has_status_effect') and 

@@ -66,6 +66,7 @@ class TestAISystemRegressions:
         entity.fighter = Mock()
         entity.fighter.hp = 10
         entity.name = "Test Orc"
+        entity.get_component_optional = Mock(return_value=None)  # No status effects
 
         # Mock the AI's take_turn method to verify arguments
         with patch.object(
@@ -103,6 +104,7 @@ class TestAISystemRegressions:
         entity.fighter = Mock()
         entity.fighter.hp = 10
         entity.name = "Confused Orc"
+        entity.get_component_optional = Mock(return_value=None)  # No status effects
 
         # Mock the AI's take_turn method to verify arguments
         with patch.object(
@@ -163,6 +165,7 @@ class TestAISystemRegressions:
         entity.fighter = Mock()
         entity.fighter.hp = 10
         entity.name = "Test Entity"
+        entity.get_component_optional = Mock(return_value=None)  # No status effects
 
         # This should not raise an exception
         self.ai_system._process_entity_turn(entity, self.mock_game_state)
@@ -231,6 +234,7 @@ class TestAISystemInterfaceContract:
         entity.fighter = Mock()
         entity.fighter.hp = 10
         entity.name = "Test Entity"
+        entity.get_component_optional = Mock(return_value=None)  # No status effects
 
         # Process the turn
         ai_system._process_entity_turn(entity, mock_game_state)

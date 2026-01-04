@@ -41,6 +41,8 @@ class EntityStats:
     constitution: int = 10
     # Resistance system (v3.12.0)
     resistances: Optional[Dict[str, int]] = None
+    fire_resistance_pct: int = 0
+    poison_resistance_pct: int = 0
     # Phase 8: Accuracy and Evasion (hit/dodge system)
     accuracy: Optional[int] = None  # None = use default from hit_model
     evasion: Optional[int] = None   # None = use default from hit_model
@@ -69,6 +71,26 @@ class EntityStats:
                 raise ValueError(f"defense_min ({self.defense_min}) cannot be greater than defense_max ({self.defense_max})")
             if self.defense_min < 0:
                 raise ValueError(f"defense_min must be >= 0, got {self.defense_min}")
+        
+        if self.fire_resistance_pct < 0 or self.fire_resistance_pct > 100:
+            raise ValueError(
+                f"fire_resistance_pct must be between 0 and 100, got {self.fire_resistance_pct}"
+            )
+        
+        if self.fire_resistance_pct:
+            if self.resistances is None:
+                self.resistances = {}
+            self.resistances.setdefault("fire", self.fire_resistance_pct)
+        
+        if self.poison_resistance_pct < 0 or self.poison_resistance_pct > 100:
+            raise ValueError(
+                f"poison_resistance_pct must be between 0 and 100, got {self.poison_resistance_pct}"
+            )
+        
+        if self.poison_resistance_pct:
+            if self.resistances is None:
+                self.resistances = {}
+            self.resistances.setdefault("poison", self.poison_resistance_pct)
 
 
 @dataclass
