@@ -42,6 +42,7 @@ class EntityStats:
     # Resistance system (v3.12.0)
     resistances: Optional[Dict[str, int]] = None
     fire_resistance_pct: int = 0
+    poison_resistance_pct: int = 0
     # Phase 8: Accuracy and Evasion (hit/dodge system)
     accuracy: Optional[int] = None  # None = use default from hit_model
     evasion: Optional[int] = None   # None = use default from hit_model
@@ -80,6 +81,16 @@ class EntityStats:
             if self.resistances is None:
                 self.resistances = {}
             self.resistances.setdefault("fire", self.fire_resistance_pct)
+        
+        if self.poison_resistance_pct < 0 or self.poison_resistance_pct > 100:
+            raise ValueError(
+                f"poison_resistance_pct must be between 0 and 100, got {self.poison_resistance_pct}"
+            )
+        
+        if self.poison_resistance_pct:
+            if self.resistances is None:
+                self.resistances = {}
+            self.resistances.setdefault("poison", self.poison_resistance_pct)
 
 
 @dataclass

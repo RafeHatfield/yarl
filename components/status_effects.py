@@ -1518,6 +1518,9 @@ class PoisonEffect(StatusEffect):
     def apply(self) -> List[Dict[str, Any]]:
         """Apply poison effect with message."""
         results = super().apply()
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('poison_applications')
         results.append({'message': MB.status_effect(f"☠️ {self.owner.name} is poisoned!")})
         return results
     
@@ -1541,10 +1544,8 @@ class PoisonEffect(StatusEffect):
         to prevent limbo deaths. This is intentional - only unit tests should run
         without state_manager, and they shouldn't cause death finalization issues.
         """
-        from services.scenario_metrics import get_active_metrics_collector
-        
         results = []
-        collector = get_active_metrics_collector()
+        collector = _get_metrics_collector()
         
         # Calculate damage after resistance
         damage_this_tick = self._calculate_damage_after_resistance()
