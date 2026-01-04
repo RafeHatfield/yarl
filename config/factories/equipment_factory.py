@@ -64,7 +64,8 @@ class EquipmentFactory(FactoryBase):
                 speed_bonus=weapon_def.speed_bonus,  # Phase 5
                 crit_threshold=weapon_def.crit_threshold,  # Phase 18
                 damage_type=weapon_def.damage_type,  # Phase 18
-                material=weapon_def.material  # Phase 19
+                material=weapon_def.material,  # Phase 19
+                applies_poison_on_hit=getattr(weapon_def, 'applies_poison_on_hit', False),  # Phase 20A.1
             )
 
             # Create entity

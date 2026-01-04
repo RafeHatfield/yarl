@@ -191,6 +191,7 @@ class WeaponDefinition:
     crit_threshold: int = 20  # Phase 18: D20 roll for crit (Keen weapons = 19)
     damage_type: Optional[str] = None  # Phase 18: slashing, piercing, bludgeoning
     material: Optional[str] = None  # Phase 19: material type (metal/wood/bone/stone/organic/other)
+    applies_poison_on_hit: bool = False  # Phase 20A.1: player-facing poison weapon delivery
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -624,6 +625,7 @@ class EntityRegistry:
                     crit_threshold=weapon_data.get('crit_threshold', 20),  # Phase 18
                     damage_type=weapon_data.get('damage_type'),  # Phase 18
                     material=weapon_data.get('material'),  # Phase 19: corrosion
+                    applies_poison_on_hit=weapon_data.get('applies_poison_on_hit', False),  # Phase 20A.1
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),

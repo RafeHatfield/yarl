@@ -1368,6 +1368,193 @@ class SoulBurnEffect(StatusEffect):
         return results
 
 
+class PoisonEffect(StatusEffect):
+    """Phase 20A: Poison DOT - Damage over time from venomous attacks.
+    
+    Applied by monsters with poison_attack ability (e.g., cave_spider).
+    
+    Design decisions:
+    - Duration: 6 turns
+    - Damage: 1 per tick (6 total damage)
+    - Stacking: NON-STACKING (reapplication refreshes duration only)
+    - Resistance: poison_resistance_pct reduces damage per tick (rounds down)
+    
+    This is the canonical DOT model for future effects.
+    
+    Metrics semantics (IMPORTANT - reference for all DOTs):
+    - poison_applications: Count of add_effect() calls (including refreshes)
+    - poison_ticks_processed: Count of ALL ticks (including 0-damage ticks from resistance)
+    - poison_damage_dealt: Actual damage dealt (after resistance)
+    - poison_kills: Kills where poison dealt the killing blow
+    - Metrics track damage TO THE EFFECT OWNER (typically player for monster abilities)
+    
+    Death finalization:
+    - With state_manager: Routes through damage_service, proper finalization
+    - Without state_manager: CLAMPS TO NON-LETHAL (min 1 HP) to prevent limbo deaths
+    """
+    
+    # Class-level constants for easy tuning
+    DEFAULT_DURATION = 6
+    DEFAULT_DAMAGE_PER_TICK = 1
+    
+    def __init__(self, owner: 'Entity', duration: int = None, damage_per_tick: int = None):
+        """Initialize poison effect.
+        
+        Args:
+            owner: Entity afflicted by poison
+            duration: Duration in turns (default: 6)
+            damage_per_tick: Damage per tick before resistance (default: 1)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='poison', duration=actual_duration, owner=owner)
+        self.damage_per_tick = damage_per_tick if damage_per_tick is not None else self.DEFAULT_DAMAGE_PER_TICK
+        self.total_damage_dealt = 0
+        self.ticks_processed = 0
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply poison effect with message."""
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"☠️ {self.owner.name} is poisoned!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove poison effect with message."""
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"The poison affecting {self.owner.name} wears off.")})
+        return results
+    
+    def process_turn_start(self, entities=None, state_manager=None) -> List[Dict[str, Any]]:
+        """Tick poison damage at start of turn.
+        
+        Args:
+            entities: Optional list of all game entities (not used by this effect)
+            state_manager: Optional state manager for death finalization (CRITICAL)
+        
+        Returns:
+            List of result dictionaries including death results if applicable
+        
+        CRITICAL: Without state_manager, damage is CLAMPED TO NON-LETHAL (min 1 HP)
+        to prevent limbo deaths. This is intentional - only unit tests should run
+        without state_manager, and they shouldn't cause death finalization issues.
+        """
+        from services.scenario_metrics import get_active_metrics_collector
+        
+        results = []
+        collector = get_active_metrics_collector()
+        
+        # Calculate damage after resistance
+        damage_this_tick = self._calculate_damage_after_resistance()
+        
+        # ALWAYS track ticks (including 0-damage ticks from full resistance)
+        # This is semantic: "how many times did poison try to tick?"
+        self.ticks_processed += 1
+        if collector:
+            collector.increment('poison_ticks_processed')
+        
+        if damage_this_tick > 0:
+            # Add message about poison damage BEFORE applying damage
+            results.append({'message': MB.combat(f"☠️ {self.owner.name} takes {damage_this_tick} poison damage!")})
+            
+            # CRITICAL: Route through damage_service to ensure death finalization
+            if state_manager:
+                from services.damage_service import apply_damage
+                
+                damage_results = apply_damage(
+                    state_manager=state_manager,
+                    target_entity=self.owner,
+                    amount=damage_this_tick,
+                    cause="poison_dot",
+                    attacker_entity=None,  # DOT has no attacker
+                    damage_type="poison",
+                    allow_xp=False,  # DOT doesn't award XP
+                )
+                results.extend(damage_results)
+                
+                # Track damage metric
+                if collector:
+                    collector.increment('poison_damage_dealt', damage_this_tick)
+                    
+                    # Check if this tick killed the entity
+                    for result in damage_results:
+                        if result.get('dead'):
+                            collector.increment('poison_kills')
+            else:
+                # FALLBACK: state_manager not available (unit tests, edge cases)
+                # CLAMP TO NON-LETHAL to prevent death without finalization
+                from logger_config import get_logger
+                logger = get_logger(__name__)
+                
+                fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+                if fighter:
+                    current_hp = fighter.hp
+                    
+                    # Check if this damage would be lethal
+                    if current_hp - damage_this_tick <= 0:
+                        # CLAMP: Only deal damage down to 1 HP
+                        clamped_damage = max(0, current_hp - 1)
+                        
+                        logger.error(
+                            f"⚠️ POISON_LETHAL_CLAMP: Poison would kill {self.owner.name} "
+                            f"(HP={current_hp}, damage={damage_this_tick}) but state_manager=None. "
+                            f"CLAMPING to {clamped_damage} damage (leaving 1 HP). "
+                            f"This prevents DEATH_WITHOUT_FINALIZATION. "
+                            f"In production, state_manager MUST be provided for DOT effects."
+                        )
+                        
+                        if clamped_damage > 0:
+                            damage_results = fighter.take_damage(clamped_damage, damage_type="poison")
+                            results.extend(damage_results)
+                            if collector:
+                                collector.increment('poison_damage_dealt', clamped_damage)
+                        # else: No damage dealt, entity survives at 1 HP
+                    else:
+                        # Non-lethal damage - safe to apply
+                        damage_results = fighter.take_damage(damage_this_tick, damage_type="poison")
+                        results.extend(damage_results)
+                        if collector:
+                                collector.increment('poison_damage_dealt', damage_this_tick)
+            
+            # Track effect-level damage counter
+            self.total_damage_dealt += damage_this_tick
+        
+        return results
+    
+    def _calculate_damage_after_resistance(self) -> int:
+        """Calculate poison damage after applying resistance.
+        
+        Resistance reduces damage per tick (not duration).
+        Damage = base_damage * (1 - resistance_pct/100), rounded down.
+        Minimum 0 damage (complete immunity at 100% resistance).
+        
+        Returns:
+            Final damage after resistance
+        """
+        base_damage = self.damage_per_tick
+        
+        # Get poison resistance from entity
+        resistance_pct = getattr(self.owner, 'poison_resistance_pct', 0)
+        
+        # Also check fighter component for resistance
+        fighter = self.owner.get_component_optional(ComponentType.FIGHTER)
+        if fighter and hasattr(fighter, 'poison_resistance_pct'):
+            resistance_pct = max(resistance_pct, fighter.poison_resistance_pct)
+        
+        # Cap resistance at 100%
+        resistance_pct = min(resistance_pct, 100)
+        
+        # Calculate reduced damage
+        if resistance_pct >= 100:
+            return 0
+        
+        # Damage reduction: multiply by (1 - resistance/100)
+        damage = int(base_damage * (1 - resistance_pct / 100))
+        
+        return max(0, damage)
+    
+    def __repr__(self):
+        return f"PoisonEffect({self.duration} turns, {self.damage_per_tick}/tick)"
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     

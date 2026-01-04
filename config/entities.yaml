@@ -602,6 +602,43 @@ monsters:
     # ETP: DPS=5.5 × 6 × durability=1.54 × behavior=1.1 = 55
     etp_base: 40
 
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # PHASE 20A: CAVE SPIDER - Venomous ambush predator
+  # Introduces Poison DOT mechanic (canonical DOT model)
+  # ═══════════════════════════════════════════════════════════════════════════════
+  
+  # Cave Spider - Venomous arachnid with poison attack
+  cave_spider:
+    stats:
+      hp: 16                  # Fragile (spider)
+      power: 0                # No magical power
+      defense: 1              # Light chitin
+      xp: 25                  # Moderate threat
+      damage_min: 2           # Bite: 2-4 (low direct damage, poison adds pressure)
+      damage_max: 4
+      # D&D-style stats
+      strength: 8             # Weak (-1 damage modifier)
+      dexterity: 14           # Quick (+2 to-hit, +2 AC)
+      constitution: 8         # Fragile (-1 HP modifier)
+      # Phase 8: Fast and sneaky
+      accuracy: 3             # Precise strikes
+      evasion: 2              # Hard to hit
+    char: "s"                 # Lowercase 's' for spider
+    color: [80, 60, 40]       # Dark brown
+    ai_type: "basic"          # Standard AI
+    faction: "beast"          # Natural creature faction
+    render_order: "actor"
+    blocks: true
+    tags: ["corporeal_flesh", "beast", "living", "venomous"]
+    special_abilities: ["poison_attack"]  # Phase 20A: Applies poison on hit
+    can_seek_items: false     # Animals don't seek items
+    inventory_size: 0
+    speed_bonus: 0.0          # Normal speed
+    # Poison resistance: Spiders are naturally resistant to their own venom
+    poison_resistance_pct: 75
+    # ETP: DPS=3 × 6 × durability=0.8 × behavior=1.1 (poison pressure) = 16
+    etp_base: 16
+
   # Wraith - Fast ethereal undead
   wraith:
     stats:
@@ -1009,6 +1046,12 @@ weapons:
     slot: "main_hand"
     char: "-"
     color: [139, 69, 19]    # Brown
+
+  # Phase 20A.1: Player-facing poison delivery weapon (reuses canonical PoisonEffect)
+  poisoned_dagger:
+    extends: dagger
+    applies_poison_on_hit: true
+    color: [80, 170, 80]    # Green-tinted to hint at venom
 
   # Phase 5: Speed-boosting weapon
   quickfang_dagger:
