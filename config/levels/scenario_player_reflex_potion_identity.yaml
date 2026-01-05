@@ -1,0 +1,65 @@
+# Scenario: Player Reflex Potion Identity (Phase 20C.1)
+# Purpose: Validate LightningReflexesEffect from adrenaline_potion:
+#   - Potion Use: Player drinks adrenaline_potion from starting inventory
+#   - Reflex Effect: +50% bonus attack chance
+#   - Metrics: reflex_potions_used, bonus_attacks_while_reflexes_active
+#
+# Phase 20C.1 Cleanup: Player starts with potion in inventory for determinism.
+
+metadata:
+  scenario_id: player_reflex_potion_identity
+  family: item_tests
+  depth: 2
+
+scenario_id: player_reflex_potion_identity
+name: "Player Reflex Potion Identity (Phase 20C.1)"
+description: "Validate Phase 20C.1 reflex potion: use, bonus attacks, metrics."
+
+depth: 2
+
+defaults:
+  turn_limit: 100
+  player_bot: "reflex_potion_user"  # Simple scripted bot that uses potion turn 1
+  allow_player_death: false
+  runs: 30
+
+expected:
+  # With 1 potion per run × 30 runs:
+  min_reflex_potions_used: 25  # Conservative (some runs may end quickly)
+  min_bonus_attacks_while_reflexes_active: 20  # Conservative
+
+rooms:
+  - id: "arena"
+    type: "arena"
+    width: 10
+    height: 10
+    walls: "enclosed"
+
+monsters:
+  # Reduced from 3 to 2 orcs to lower lethality
+  - type: "orc"
+    count: 1
+    position: [8, 5]
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    state: "aware"
+
+items: []
+
+player:
+  position: [2, 5]
+  stats:
+    hp: 500  # Ensure player survives to use potion
+  inventory:
+    - "adrenaline_potion"  # Player starts with potion
+  equipment:
+    weapon: "longsword"  # Upgraded from shortsword for better damage
+    armor: "leather_armor"
+
+# Scenario design notes:
+# - Player starts with adrenaline_potion in inventory
+# - Simple bot uses potion on turn 1, then fights
+# - Verify bonus attacks are triggered while effect is active
+

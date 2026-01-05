@@ -66,13 +66,15 @@ from services.scenario_harness import (
     RunMetrics,
     AggregatedMetrics,
     BotPolicy,
-    ObserveOnlyPolicy,
-    TacticalFighterPolicy,
     make_bot_policy,
     run_scenario_once,
     run_scenario_many,
     evaluate_expected_invariants,
     ExpectedCheckResult,
+)
+from services.scenario_policies import (
+    ObserveOnlyPolicy,
+    TacticalFighterPolicy,
 )
 from config.level_template_registry import (
     ScenarioDefinition,
@@ -271,7 +273,7 @@ class TestBotPolicy:
         with pytest.raises(ValueError) as exc_info:
             make_bot_policy("nonexistent_policy")
         
-        assert "Unknown bot policy" in str(exc_info.value)
+        assert "Unknown" in str(exc_info.value) and "bot policy" in str(exc_info.value)
 
 
 class TestScenarioDefinitionForHarness:

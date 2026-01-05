@@ -268,6 +268,15 @@ class SlowedEffect(StatusEffect):
         
         # Skip every other turn (odd turns)
         if self.turn_counter % 2 == 1:
+            # Phase 20C.1: Track skipped turns for metrics
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                metrics = get_active_metrics_collector()
+                if metrics:
+                    metrics.increment('slow_turns_skipped')
+            except ImportError:
+                pass
+
             from game_messages import Message
             results.append({
                 'message': MB.status_effect(
@@ -1693,6 +1702,16 @@ class StatusEffectManager:
             results.append({'message': MB.status_effect(f"{self.owner.name}'s {effect.name} effect is refreshed.")})
             self.active_effects[effect.name].remove() # Remove old effect
         
+        # Phase 20C.1: Track slow applications for metrics
+        if effect.name == 'slowed':
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                metrics = get_active_metrics_collector()
+                if metrics:
+                    metrics.increment('slow_applications')
+            except ImportError:
+                pass
+
         self.active_effects[effect.name] = effect
         results.extend(effect.apply())
         return results

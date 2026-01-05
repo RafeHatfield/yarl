@@ -310,6 +310,17 @@ class SpeedBonusTracker:
                 f"SpeedBonusTracker: Guaranteed bonus! "
                 f"Resetting counter from {self.attack_counter}"
             )
+            
+            # Phase 20C.1: Track bonus attacks while lightning reflexes active
+            if self.has_temporary_bonus():
+                try:
+                    from services.scenario_metrics import get_active_metrics_collector
+                    metrics = get_active_metrics_collector()
+                    if metrics:
+                        metrics.increment('bonus_attacks_while_reflexes_active')
+                except ImportError:
+                    pass
+            
             self.attack_counter = 0
             return True
         
@@ -320,6 +331,17 @@ class SpeedBonusTracker:
                 f"SpeedBonusTracker: Early bonus! "
                 f"Roll {roll:.3f} < {chance:.3f}. Counter stays at {self.attack_counter}"
             )
+            
+            # Phase 20C.1: Track bonus attacks while lightning reflexes active
+            if self.has_temporary_bonus():
+                try:
+                    from services.scenario_metrics import get_active_metrics_collector
+                    metrics = get_active_metrics_collector()
+                    if metrics:
+                        metrics.increment('bonus_attacks_while_reflexes_active')
+                except ImportError:
+                    pass
+            
             return True
         
         logger.debug(

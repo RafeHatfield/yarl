@@ -639,6 +639,17 @@ monsters:
     # ETP: DPS=3 × 6 × durability=0.8 × behavior=1.1 (poison pressure) = 16
     etp_base: 16
 
+  # Phase 20C.1: Web Spider - Applies SlowedEffect on hit
+  web_spider:
+    extends: cave_spider
+    stats:
+      hp: 20                  # Slightly tougher than cave spider
+      xp: 40                  # Higher threat due to slow
+    char: "S"                 # Capital S for specialty spider
+    color: [200, 200, 200]    # Pale/webby color
+    special_abilities: ["web_spit"] # Applies slow on hit
+    etp_base: 22              # Higher ETP than cave spider due to slow pressure
+
   # Fire Beetle - Small insect that ignites on contact
   fire_beetle:
     stats:
@@ -1565,6 +1576,11 @@ spells:
     char: "!"
     color: [255, 255, 0]  # Bright yellow (lightning)
     effect_function: "drink_lightning_reflexes_potion"
+  
+  # Phase 20C.1: Adrenaline Potion (Reflexes)
+  adrenaline_potion:
+    extends: lightning_reflexes_potion
+    color: [255, 100, 100] # Bright red (adrenaline)
   
   regeneration_potion:
     spell_type: "potion"

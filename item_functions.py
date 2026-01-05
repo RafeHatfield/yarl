@@ -911,6 +911,15 @@ def drink_lightning_reflexes_potion(*args, **kwargs):
     effect_results = entity.status_effects.add_effect(reflexes_effect)
     results.extend(effect_results)
     
+    # Phase 20C.1: Track reflex potion usage for metrics
+    try:
+        from services.scenario_metrics import get_active_metrics_collector
+        metrics = get_active_metrics_collector()
+        if metrics:
+            metrics.increment('reflex_potions_used')
+    except ImportError:
+        pass
+
     results.append({"consumed": True})
     return results
 

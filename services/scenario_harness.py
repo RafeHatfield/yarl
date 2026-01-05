@@ -92,6 +92,12 @@ class RunMetrics:
     burning_damage_dealt: int = 0
     burning_ticks_processed: int = 0
     burning_kills: int = 0
+    # Phase 20C.1: Slow metrics
+    slow_applications: int = 0
+    slow_turns_skipped: int = 0
+    # Phase 20C.1: Reflex metrics
+    reflex_potions_used: int = 0
+    bonus_attacks_while_reflexes_active: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -162,6 +168,16 @@ class RunMetrics:
             result['burning_ticks_processed'] = self.burning_ticks_processed
         if hasattr(self, 'burning_kills'):
             result['burning_kills'] = self.burning_kills
+        # Phase 20C.1: Slow metrics
+        if hasattr(self, 'slow_applications'):
+            result['slow_applications'] = self.slow_applications
+        if hasattr(self, 'slow_turns_skipped'):
+            result['slow_turns_skipped'] = self.slow_turns_skipped
+        # Phase 20C.1: Reflex metrics
+        if hasattr(self, 'reflex_potions_used'):
+            result['reflex_potions_used'] = self.reflex_potions_used
+        if hasattr(self, 'bonus_attacks_while_reflexes_active'):
+            result['bonus_attacks_while_reflexes_active'] = self.bonus_attacks_while_reflexes_active
         return result
 
 
@@ -230,6 +246,12 @@ class AggregatedMetrics:
     total_burning_damage_dealt: int = 0
     total_burning_ticks_processed: int = 0
     total_burning_kills: int = 0
+    # Phase 20C.1: Slow metrics
+    total_slow_applications: int = 0
+    total_slow_turns_skipped: int = 0
+    # Phase 20C.1: Reflex metrics
+    total_reflex_potions_used: int = 0
+    total_bonus_attacks_while_reflexes_active: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -264,6 +286,10 @@ class AggregatedMetrics:
             'total_burning_damage_dealt': self.total_burning_damage_dealt,
             'total_burning_ticks_processed': self.total_burning_ticks_processed,
             'total_burning_kills': self.total_burning_kills,
+            'total_slow_applications': self.total_slow_applications,
+            'total_slow_turns_skipped': self.total_slow_turns_skipped,
+            'total_reflex_potions_used': self.total_reflex_potions_used,
+            'total_bonus_attacks_while_reflexes_active': self.total_bonus_attacks_while_reflexes_active,
         }
         return result
 
@@ -303,31 +329,14 @@ class BotPolicy(Protocol):
         ...
 
 
-class ObserveOnlyPolicy:
-    """Bot policy that always waits/does nothing.
-    
-    This policy is useful for testing game mechanics where we want to
-    observe AI/environment behavior without player intervention.
-    """
-    
-    def choose_action(self, game_state: Any) -> Optional[Dict[str, Any]]:
-        """Always return a wait action.
-        
-        Args:
-            game_state: Current game state (unused)
-            
-        Returns:
-            Wait action dict
-        """
-        return {'wait': True}
-
-
 def make_bot_policy(name: str) -> BotPolicy:
     """Factory function to create bot policies by name.
     
+    DEPRECATED: Use services.scenario_policies.make_scenario_bot_policy() directly.
+    This wrapper exists for backwards compatibility with existing scenarios.
+    
     Args:
-        name: Policy name. Supported:
-            - "observe_only": Passive policy that always waits
+        name: Policy name (see scenario_policies module for supported names)
             
     Returns:
         BotPolicy instance
@@ -335,58 +344,8 @@ def make_bot_policy(name: str) -> BotPolicy:
     Raises:
         ValueError: If policy name is not recognized
     """
-    name_lower = name.lower().replace("-", "_").replace(" ", "_")
-    
-    if name_lower == "observe_only":
-        return ObserveOnlyPolicy()
-    if name_lower == "tactical_fighter":
-        return TacticalFighterPolicy()
-    
-    raise ValueError(f"Unknown bot policy: {name}")
-
-
-class TacticalFighterPolicy:
-    """Simple deterministic fighter bot for combat scenarios."""
-    
-    def choose_action(self, game_state: Any) -> Optional[Dict[str, Any]]:
-        player = game_state.player
-        entities = game_state.entities or []
-        game_map = game_state.game_map
-        
-        # Identify enemies (any living fighter with AI, not the player)
-        enemies = [
-            e for e in entities
-            if e != player
-            and getattr(e, 'fighter', None)
-            and getattr(e.fighter, 'hp', 0) > 0
-            and getattr(e, 'ai', None) is not None
-        ]
-        if not enemies:
-            return {'wait': True}
-        
-        # Find nearest enemy by manhattan distance
-        def manhattan(e):
-            return abs(e.x - player.x) + abs(e.y - player.y)
-        enemies.sort(key=manhattan)
-        target = enemies[0]
-        
-        dx = target.x - player.x
-        dy = target.y - player.y
-        if abs(dx) <= 1 and abs(dy) <= 1:
-            return {'attack': target}
-        
-        # Move one step toward target if not blocked
-        step_x = 0 if dx == 0 else (1 if dx > 0 else -1)
-        step_y = 0 if dy == 0 else (1 if dy > 0 else -1)
-        
-        dest_x, dest_y = player.x + step_x, player.y + step_y
-        if (0 <= dest_x < game_map.width and 0 <= dest_y < game_map.height
-            and not game_map.is_blocked(dest_x, dest_y)):
-            blocking = next((e for e in entities if e.blocks and e.x == dest_x and e.y == dest_y), None)
-            if blocking is None:
-                return {'move': (step_x, step_y)}
-        
-        return {'wait': True}
+    from services.scenario_policies import make_scenario_bot_policy
+    return make_scenario_bot_policy(name)
 
 
 # =============================================================================
@@ -567,6 +526,52 @@ def _process_player_action(
         
         game_state.current_state = GameStates.ENEMY_TURN
         return
+
+    # Phase 20C.1: Simple pickup action
+    if 'pickup' in action:
+        item = action['pickup']
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        if inventory:
+            inventory.add_item(item)
+            if item in entities:
+                entities.remove(item)
+            from game_messages import Message
+            message_log.add_message(Message(f"You pick up {item.name}."))
+        game_state.current_state = GameStates.ENEMY_TURN
+        return
+
+    # Phase 20C.1: Simple use item action
+    if 'use_item' in action:
+        item_index = action['use_item']
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        if inventory and 0 <= item_index < len(inventory.items):
+            item_entity = inventory.items.pop(item_index)
+            item_comp = item_entity.get_component_optional(ComponentType.ITEM)
+            if item_comp and item_comp.use_function:
+                # Prepare kwargs for the use function
+                use_kwargs = {
+                    'entities': entities,
+                    'game_map': game_map,
+                    'fov_map': game_state.fov_map
+                }
+                # Call use function
+                # Note: most potion functions use item.owner if it exists
+                if hasattr(item_comp, 'owner'):
+                    item_comp.owner = player
+                
+                results = item_comp.use_function(player, **use_kwargs)
+                # Handle results (mostly just messages)
+                from game_messages import Message
+                for res in results:
+                    msg = res.get('message')
+                    if msg:
+                        if isinstance(msg, str):
+                            message_log.add_message(Message(msg))
+                        else:
+                            message_log.add_message(msg)
+                    
+        game_state.current_state = GameStates.ENEMY_TURN
+        return
     
     # Simple melee attack action
     if 'attack' in action:
@@ -686,8 +691,26 @@ def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
                 game_map = game_state.game_map
                 entities = game_state.entities
                 
-                # Process AI turn (note: message_log is not used by BasicMonster.take_turn)
-                entity.ai.take_turn(target, fov_map, game_map, entities)
+                # Process AI turn
+                ai_results = entity.ai.take_turn(target, fov_map, game_map, entities)
+                
+                # Phase 20C.1: Handle AI results (combat, messages, etc.)
+                if ai_results:
+                    # Use the shared combat result handler if possible, or handle simply
+                    for result in ai_results:
+                        if 'message' in result:
+                            msg = result['message']
+                            if isinstance(msg, str):
+                                from game_messages import Message
+                                game_state.message_log.add_message(Message(msg))
+                            else:
+                                game_state.message_log.add_message(msg)
+                        
+                        # Handle player death detection from monster attack
+                        dead_entity = result.get('dead')
+                        if dead_entity == game_state.player:
+                            game_state.current_state = GameStates.PLAYER_DEAD
+
         except Exception as e:
             logger.debug(f"AI turn error for {entity.name}: {e}")
     
@@ -849,9 +872,11 @@ def run_scenario_once(
 
                 if game_state.current_state == GameStates.PLAYERS_TURN:
                     action = bot_policy.choose_action(game_state)
+                    # logger.info(f"Turn {turn}: Player action: {action}")
                     _process_player_action(game_state, action, metrics)
 
                 elif game_state.current_state == GameStates.ENEMY_TURN:
+                    # logger.info(f"Turn {turn}: Enemy turn")
                     _process_enemy_turn(game_state, metrics)
                     metrics.turns_taken += 1
                     game_state.turn_number += 1  # Increment turn for reanimation timing
@@ -1058,6 +1083,20 @@ def run_scenario_many(
         total_burning_ticks_processed += getattr(run, "burning_ticks_processed", 0)
         total_burning_kills += getattr(run, "burning_kills", 0)
     
+    # Phase 20C.1: Aggregate slow metrics
+    total_slow_applications = 0
+    total_slow_turns_skipped = 0
+    for run in all_runs:
+        total_slow_applications += getattr(run, "slow_applications", 0)
+        total_slow_turns_skipped += getattr(run, "slow_turns_skipped", 0)
+
+    # Phase 20C.1: Aggregate reflex metrics
+    total_reflex_potions_used = 0
+    total_bonus_attacks_while_reflexes_active = 0
+    for run in all_runs:
+        total_reflex_potions_used += getattr(run, "reflex_potions_used", 0)
+        total_bonus_attacks_while_reflexes_active += getattr(run, "bonus_attacks_while_reflexes_active", 0)
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1109,6 +1148,10 @@ def run_scenario_many(
         total_burning_damage_dealt=total_burning_damage_dealt,
         total_burning_ticks_processed=total_burning_ticks_processed,
         total_burning_kills=total_burning_kills,
+        total_slow_applications=total_slow_applications,
+        total_slow_turns_skipped=total_slow_turns_skipped,
+        total_reflex_potions_used=total_reflex_potions_used,
+        total_bonus_attacks_while_reflexes_active=total_bonus_attacks_while_reflexes_active,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "
@@ -1276,9 +1319,7 @@ __all__ = [
     'RunMetrics',
     'AggregatedMetrics',
     'BotPolicy',
-    'ObserveOnlyPolicy',
-    'TacticalFighterPolicy',
-    'make_bot_policy',
+    'make_bot_policy',  # Deprecated wrapper, use scenario_policies directly
     'ExpectationResult',
     'ExpectedCheckResult',
     'evaluate_expectations',

@@ -264,6 +264,7 @@ eco-report: \
 	eco-duel-slow-zombie-full-json \
 	eco-depth1-orc-json eco-depth2-orc-json eco-depth3-orc-json \
 	eco-depth4-plague-json eco-depth5-zombie-json \
+	eco-fire-beetle-json \
 	eco-orc-gauntlet-json eco-orc-wave3-json eco-tight-funnel-json eco-plague-gauntlet-json
 
 # --------------------
@@ -449,6 +450,27 @@ eco-depth5-zombie-json:
 	  --player-bot tactical_fighter \
 	  --fail-on-expected \
 	  --export-json depth5_zombie_50runs.json
+
+# --------------------
+# Fire Beetle Identity
+# --------------------
+
+eco-fire-beetle:
+	python3 ecosystem_sanity.py \
+	  --scenario monster_fire_beetle_identity \
+	  --runs 30 \
+	  --turn-limit 150 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected
+
+eco-fire-beetle-json:
+	python3 ecosystem_sanity.py \
+	  --scenario monster_fire_beetle_identity \
+	  --runs 30 \
+	  --turn-limit 150 \
+	  --player-bot tactical_fighter \
+	  --fail-on-expected \
+	  --export-json monster_fire_beetle_identity_30runs.json
 
 # --------------------
 # Orc Swarm Scenarios
@@ -650,6 +672,7 @@ eco-balance-report:
 	    orc_swarm_baseline_50runs.json orc_swarm_speed_full_50runs.json orc_swarm_brutal_baseline_50runs.json orc_swarm_brutal_speed_full_50runs.json \
 	    orc_swarm_tight_50runs.json zombie_horde_50runs.json \
 	    plague_arena_100runs.json backstab_training_100runs.json \
+	    monster_fire_beetle_identity_30runs.json \
 	  --worldgen-json worldgen_depth3_20runs.json \
 	  --output-markdown reports/eco_balance_report.md
 
