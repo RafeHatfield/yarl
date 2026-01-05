@@ -268,5 +268,45 @@
     "monster_hit_rate": 0.3333333333333333,
     "pressure_index": -7.133333333333333,
     "bonus_attacks_per_run": 3.0
+  },
+  "monster_cave_spider_identity": {
+    "scenario_id": "monster_cave_spider_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.68,
+    "monster_hit_rate": 0.52,
+    "pressure_index": -5.0,
+    "bonus_attacks_per_run": 2.6666666666666665
+  },
+  "monster_web_spider_identity": {
+    "scenario_id": "monster_web_spider_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.7062706270627063,
+    "monster_hit_rate": 0.44525547445255476,
+    "pressure_index": -5.533333333333333,
+    "bonus_attacks_per_run": 3.2
+  },
+  "player_reflex_potion_identity": {
+    "scenario_id": "player_reflex_potion_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.6755852842809364,
+    "monster_hit_rate": 0.31654676258992803,
+    "pressure_index": -5.333333333333333,
+    "bonus_attacks_per_run": 3.1
+  },
+  "root_potion_entangle_identity": {
+    "scenario_id": "root_potion_entangle_identity",
+    "runs": 30,
+    "deaths": 30,
+    "death_rate": 1.0,
+    "player_hit_rate": 0.6494565217391305,
+    "monster_hit_rate": 0.4787234042553192,
+    "pressure_index": 6.533333333333333,
+    "bonus_attacks_per_run": 4.5
   }
 }
