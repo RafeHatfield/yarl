@@ -1204,6 +1204,14 @@ class Fighter:
             poison_results = self._apply_poison_effect(target)
             results.extend(poison_results)
 
+            # Phase 20B.1: Apply burning effect if attacker has burning_attack ability
+            burning_results = self._apply_burning_effect(target)
+            results.extend(burning_results)
+
+            # Phase 20C.1: Apply slow effect if attacker has web_spit ability
+            slow_results = self._apply_slow_effect(target)
+            results.extend(slow_results)
+
             # Phase 20A.1: Player-facing poison weapon delivery (successful hit only)
             weapon_poison_results = self._apply_player_weapon_poison_on_hit(target)
             results.extend(weapon_poison_results)
@@ -1695,10 +1703,6 @@ class Fighter:
         poison_results = target.status_effects.add_effect(poison)
         results.extend(poison_results)
         
-        # Record metrics
-        if collector:
-            collector.increment('poison_applications')
-        
         # Register poison trait with monster knowledge system
         if hasattr(target, 'has_status_effect') and target.has_status_effect('poison'):
             try:
@@ -1710,6 +1714,110 @@ class Fighter:
                 pass  # Knowledge system not available
         
         return results
+
+    def _apply_burning_effect(self, target):
+        """Apply burning effect if attacker has burning_attack ability.
+        
+        Phase 20B.1: Fire Beetles and other fire creatures can ignite targets on hit.
+        Burning is applied on every successful hit if not already burning.
+        If already burning, the duration is refreshed (non-stacking).
+        
+        Args:
+            target: The entity that was attacked
+            
+        Returns:
+            list: List of result dictionaries with burning application messages
+        """
+        results = []
+        
+        # Check if attacker has burning_attack ability
+        if not self._has_burning_attack_ability():
+            return results
+        
+        # Apply burning effect to target
+        from components.status_effects import BurningEffect, StatusEffectManager
+        
+        # Ensure target has status_effects component
+        if not target.components.has(ComponentType.STATUS_EFFECTS):
+            target.status_effects = StatusEffectManager(target)
+            target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+        
+        # Create and apply burning effect
+        # Standard fire beetle burning: duration 4, damage 1
+        burning = BurningEffect(duration=4, owner=target, damage_per_turn=1)
+        burning_results = target.status_effects.add_effect(burning)
+        results.extend(burning_results)
+        
+        # Record metrics (burning_applications is handled in BurningEffect.apply())
+        
+        # Register burning trait with monster knowledge system
+        if hasattr(target, 'has_status_effect') and target.has_status_effect('burning'):
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                knowledge = get_monster_knowledge_system()
+                # Register that this attacker type applies burning
+                knowledge.register_trait(self.owner, 'burning_attack')
+            except ImportError:
+                pass  # Knowledge system not available
+        
+        return results
+
+    def _apply_slow_effect(self, target):
+        """Apply slow effect if attacker has web_spit ability.
+        
+        Phase 20C.1: Web Spiders and other creatures can slow targets on hit.
+        Slow is applied on every successful hit if not already slowed.
+        If already slowed, the duration is refreshed (non-stacking).
+        
+        Args:
+            target: The entity that was attacked
+            
+        Returns:
+            list: List of result dictionaries with slow application messages
+        """
+        results = []
+        
+        # Check if attacker has web_spit or slow_attack ability
+        if not self._has_web_spit_ability():
+            return results
+        
+        # Apply slow effect to target
+        from components.status_effects import SlowedEffect, StatusEffectManager
+        
+        # Ensure target has status_effects component
+        if not target.components.has(ComponentType.STATUS_EFFECTS):
+            target.status_effects = StatusEffectManager(target)
+            target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+        
+        # Create and apply slow effect
+        # Standard web spider slow: duration 6
+        slow = SlowedEffect(duration=6, owner=target)
+        slow_results = target.status_effects.add_effect(slow)
+        results.extend(slow_results)
+        
+        # Register web_spit trait with monster knowledge system
+        if hasattr(target, 'has_status_effect') and target.has_status_effect('slowed'):
+            try:
+                from services.monster_knowledge import get_monster_knowledge_system
+                knowledge = get_monster_knowledge_system()
+                # Register that this attacker type applies web_spit
+                knowledge.register_trait(self.owner, 'web_spit')
+            except ImportError:
+                pass  # Knowledge system not available
+        
+        return results
+
+    def _has_web_spit_ability(self):
+        """Check if this entity has web_spit ability."""
+        if not self.owner:
+            return False
+        
+        # Check special_abilities list if it exists
+        if hasattr(self.owner, 'special_abilities') and self.owner.special_abilities:
+            return ('web_spit' in self.owner.special_abilities or 
+                    'slow_attack' in self.owner.special_abilities)
+            
+        return False
 
     def _apply_player_weapon_poison_on_hit(self, target):
         """Phase 20A.1: Apply poison to target if PLAYER is using a poisoned weapon.
@@ -1750,11 +1858,6 @@ class Fighter:
         poison = PoisonEffect(owner=target)
         results.extend(target.status_effects.add_effect(poison))
         
-        # Metrics: poison_applications counts add_effect() calls (including refreshes)
-        collector = _get_metrics_collector()
-        if collector:
-            collector.increment('poison_applications')
-        
         return results
     
     def _has_poison_attack_ability(self):
@@ -1777,6 +1880,23 @@ class Fighter:
             self.owner.tags and 
             isinstance(self.owner.tags, (list, tuple, set)) and
             'venomous' in self.owner.tags):
+            return True
+        
+        return False
+    
+    def _has_burning_attack_ability(self):
+        """Check if this entity has burning_attack ability.
+        
+        Phase 20B.1: Fire creatures can apply burning on melee hits.
+        
+        Returns:
+            bool: True if entity can apply burning on attacks
+        """
+        # Check if entity has special_abilities with burning_attack
+        if (hasattr(self.owner, 'special_abilities') and 
+            self.owner.special_abilities and 
+            isinstance(self.owner.special_abilities, (list, tuple)) and
+            'burning_attack' in self.owner.special_abilities):
             return True
         
         return False

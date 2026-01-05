@@ -639,6 +639,46 @@ monsters:
     # ETP: DPS=3 × 6 × durability=0.8 × behavior=1.1 (poison pressure) = 16
     etp_base: 16
 
+  # Phase 20C.1: Web Spider - Applies SlowedEffect on hit
+  web_spider:
+    extends: cave_spider
+    stats:
+      hp: 20                  # Slightly tougher than cave spider
+      xp: 40                  # Higher threat due to slow
+    char: "S"                 # Capital S for specialty spider
+    color: [200, 200, 200]    # Pale/webby color
+    special_abilities: ["web_spit"] # Applies slow on hit
+    etp_base: 22              # Higher ETP than cave spider due to slow pressure
+
+  # Fire Beetle - Small insect that ignites on contact
+  fire_beetle:
+    stats:
+      hp: 12
+      power: 3
+      defense: 2
+      xp: 45
+      damage_min: 2
+      damage_max: 5
+      strength: 10
+      dexterity: 14
+      constitution: 10
+      accuracy: 1
+      evasion: 1
+    char: "b"
+    color: [255, 100, 0]    # Bright orange/red
+    ai_type: "basic"
+    faction: "monsters"
+    render_order: "actor"
+    blocks: true
+    tags: ["corporeal_flesh", "beast", "living"]
+    special_abilities: ["burning_attack"]
+    can_seek_items: false
+    inventory_size: 0
+    speed_bonus: 0.0
+    fire_resistance_pct: 100 # Fire beetles are immune to fire
+    # ETP: DPS=3.5 × 6 × durability=0.8 × behavior=1.1 (burning pressure) = 18
+    etp_base: 18
+
   # Wraith - Fast ethereal undead
   wraith:
     stats:
@@ -1537,6 +1577,11 @@ spells:
     color: [255, 255, 0]  # Bright yellow (lightning)
     effect_function: "drink_lightning_reflexes_potion"
   
+  # Phase 20C.1: Adrenaline Potion (Reflexes)
+  adrenaline_potion:
+    extends: lightning_reflexes_potion
+    color: [255, 100, 100] # Bright red (adrenaline)
+  
   regeneration_potion:
     spell_type: "potion"
     char: "!"
@@ -1616,6 +1661,15 @@ spells:
     char: "!"
     color: [255, 90, 20]  # Fiery orange
     effect_function: "apply_burning_potion"
+
+  # Phase 20D.1: Root Potion - dual-mode consumable
+  # THROWN: Apply EntangledEffect (roots bind target, 3 turns)
+  # CONSUMED: Apply BarkskinEffect (defensive buff, +3 AC, 10 turns)
+  root_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [34, 139, 34]  # Forest green
+    effect_function: "use_root_potion"
 
   # Damage spell with range
   lightning_scroll:

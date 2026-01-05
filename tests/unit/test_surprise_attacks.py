@@ -174,6 +174,7 @@ class TestSurpriseAttackEffects:
         mock_owner.y = 0
         mock_owner.equipment = None
         mock_owner.status_effects = None
+        mock_owner.special_abilities = None  # Phase 20C.1: mock web_spit check
         mock_owner.get_component_optional.return_value = None
         fighter.owner = mock_owner
         
@@ -208,6 +209,7 @@ class TestSurpriseAttackEffects:
         mock_owner.y = 0
         mock_owner.equipment = None
         mock_owner.status_effects = None
+        mock_owner.special_abilities = None  # Phase 20C.1: mock web_spit check
         mock_owner.get_component_optional.return_value = None
         fighter.owner = mock_owner
         
@@ -241,6 +243,7 @@ class TestSurpriseAttackEffects:
         mock_owner.y = 0
         mock_owner.equipment = None
         mock_owner.status_effects = None
+        mock_owner.special_abilities = None  # Phase 20C.1: mock web_spit check
         mock_owner.get_component_optional.return_value = None
         fighter.owner = mock_owner
         
@@ -446,6 +449,7 @@ class TestSurpriseAttackDamage:
         mock_owner.y = 0
         mock_owner.equipment = None
         mock_owner.status_effects = None
+        mock_owner.special_abilities = None  # Phase 20C.1: mock web_spit check
         mock_owner.get_component_optional.return_value = None
         fighter.owner = mock_owner
         
@@ -492,6 +496,7 @@ class TestFighterSurpriseParameter:
         mock_owner.y = 0
         mock_owner.equipment = None
         mock_owner.status_effects = None
+        mock_owner.special_abilities = None  # Phase 20C.1: mock web_spit check
         mock_owner.get_component_optional.return_value = None
         fighter.owner = mock_owner
         
@@ -520,6 +525,7 @@ class TestFighterSurpriseParameter:
         mock_owner.y = 0
         mock_owner.equipment = None
         mock_owner.status_effects = None
+        mock_owner.special_abilities = None  # Phase 20C.1: mock web_spit check
         mock_owner.get_component_optional.return_value = None
         fighter.owner = mock_owner
         

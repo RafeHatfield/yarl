@@ -342,15 +342,33 @@ class Entity:
             **components
         )
 
-    def move(self, dx: int, dy: int) -> None:
+    def move(self, dx: int, dy: int) -> bool:
         """Move the entity by a given amount.
+        
+        Phase 20D.1: Movement blocked if entity has 'entangled' status effect.
+        Enforcement happens here at the execution point, not in AI logic.
 
         Args:
             dx: Change in x coordinate
             dy: Change in y coordinate
+            
+        Returns:
+            True if movement succeeded, False if blocked by status effect
         """
+        # Phase 20D.1: Check for entangled status - movement blocked at execution point
+        from components.component_registry import ComponentType
+        if self.components.has(ComponentType.STATUS_EFFECTS):
+            status_effects = self.get_component_optional(ComponentType.STATUS_EFFECTS)
+            if status_effects and status_effects.has_effect('entangled'):
+                # Movement blocked - increment metrics
+                entangled = status_effects.get_effect('entangled')
+                if entangled and hasattr(entangled, 'on_move_blocked'):
+                    entangled.on_move_blocked()
+                return False  # Movement blocked
+        
         self.x += dx
         self.y += dy
+        return True  # Movement succeeded
 
     def move_towards(self, target_x: int, target_y: int, game_map: 'GameMap', entities: List['Entity']) -> None:
         """Move towards a target position, avoiding obstacles.
@@ -543,8 +561,10 @@ class Entity:
             
             # Only move if destination is clear
             if not destination_blocked:
-                self.x = x
-                self.y = y
+                # Use move() to respect status effects like entangle
+                dx = x - self.x
+                dy = y - self.y
+                self.move(dx, dy)  # May return False if blocked by status effect
             # If blocked, don't move this turn (path will be recalculated next turn)
         else:
             # Keep the old move function as a backup so that if there are no

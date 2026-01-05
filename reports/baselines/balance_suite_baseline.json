@@ -174,20 +174,20 @@
     "runs": 30,
     "deaths": 13,
     "death_rate": 0.43333333333333335,
-    "player_hit_rate": 0.6809421841541756,
-    "monster_hit_rate": 0.4565619223659889,
-    "pressure_index": -13.099999999999998,
+    "player_hit_rate": 0.6831364124597207,
+    "monster_hit_rate": 0.45724907063197023,
+    "pressure_index": -13.100000000000001,
     "bonus_attacks_per_run": 8.266666666666667
   },
   "monster_orc_shaman_identity": {
     "scenario_id": "monster_orc_shaman_identity",
     "runs": 30,
-    "deaths": 8,
-    "death_rate": 0.26666666666666666,
-    "player_hit_rate": 0.6221985058697972,
-    "monster_hit_rate": 0.5164556962025316,
-    "pressure_index": -18.06666666666667,
-    "bonus_attacks_per_run": 10.7
+    "deaths": 4,
+    "death_rate": 0.13333333333333333,
+    "player_hit_rate": 0.6463675213675214,
+    "monster_hit_rate": 0.4728682170542636,
+    "pressure_index": -18.299999999999997,
+    "bonus_attacks_per_run": 10.8
   },
   "monster_necromancer_identity": {
     "scenario_id": "monster_necromancer_identity",
@@ -248,6 +248,16 @@
     "monster_hit_rate": 0.4796747967479675,
     "pressure_index": -12.766666666666667,
     "bonus_attacks_per_run": 5.966666666666667
+  },
+  "monster_fire_beetle_identity": {
+    "scenario_id": "monster_fire_beetle_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.8130841121495327,
+    "monster_hit_rate": 0.6904761904761905,
+    "pressure_index": -5.733333333333334,
+    "bonus_attacks_per_run": 2.2
   },
   "troll_identity": {
     "scenario_id": "troll_identity",

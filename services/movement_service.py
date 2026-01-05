@@ -101,7 +101,7 @@ class MovementService:
         
         logger.debug(f"Movement attempt: ({player.x}, {player.y}) -> ({dest_x}, {dest_y}) via {source}")
 
-        # Check for immobilized status effect
+        # Check for movement-blocking status effects
         from components.component_registry import ComponentType
         
         # Track whether we should flip chant toggle after successful movement
@@ -109,10 +109,28 @@ class MovementService:
         
         if player.components.has(ComponentType.STATUS_EFFECTS):
             status_effects = player.status_effects
+            
+            # Check for immobilized (Glue spell)
             if status_effects and status_effects.has_effect("immobilized"):
                 result.blocked_by_status = True
                 result.messages.append(MB.warning("You are stuck in place and cannot move!"))
                 logger.debug("Movement blocked by immobilized status effect")
+                return result
+            
+            # Phase 20D.1: Check for entangled (Root Potion)
+            # Movement is blocked but TURN IS CONSUMED
+            if status_effects and status_effects.has_effect("entangled"):
+                result.blocked_by_status = True
+                # Get the entangled effect and call on_move_blocked for metrics
+                entangled_effect = status_effects.get_effect("entangled")
+                if entangled_effect and hasattr(entangled_effect, 'on_move_blocked'):
+                    block_results = entangled_effect.on_move_blocked()
+                    for br in block_results:
+                        if 'message' in br:
+                            result.messages.append(br['message'])
+                else:
+                    result.messages.append(MB.warning("Roots bind you! You struggle but cannot move!"))
+                logger.debug("Movement blocked by entangled status effect")
                 return result
             
             # Phase 19: Check for Dissonant Chant movement tax (alternating block)

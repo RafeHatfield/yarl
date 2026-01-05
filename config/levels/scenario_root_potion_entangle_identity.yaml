@@ -1,0 +1,95 @@
+# Scenario: Root Potion Entangle Identity Kit (Phase 20D.1)
+# Purpose: Regression anchor for Phase 20D.1 Root Potion mechanics:
+#   - Entangle Application: Root Potion thrown applies EntangledEffect
+#   - Movement Blocking: Entangled entities cannot move (but turn consumed)
+#   - Attacks Allowed: Entangled entities can still attack
+#   - Duration: 3 turns, refresh-not-stack
+#   - Metrics: entangle_applications, entangle_moves_blocked
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+# Design: Player has root_potions, throws them at orcs who try to approach.
+
+metadata:
+  scenario_id: root_potion_entangle_identity
+  family: ability_tests
+  depth: 2
+
+scenario_id: root_potion_entangle_identity
+name: "Root Potion Entangle Identity Kit (Phase 20D.1)"
+description: "Validate Phase 20D.1 entangle mechanics: application, movement blocking, turn consumption."
+
+depth: 2
+
+defaults:
+  turn_limit: 100
+  player_bot: "root_potion_thrower"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # With 3 orcs per run × 30 runs = 90 orcs:
+  # - Player should throw potions early
+  # - Entangle should block orc movement for 3 turns each
+  min_player_kills: 45  # 90 orcs max, expect at least half killed
+  max_player_deaths: 12  # Orcs are standard, player should win mostly
+
+rooms:
+  - id: "root_arena"
+    type: "arena"
+    width: 14
+    height: 10
+    description: "Simple arena for testing root potion entangle mechanics"
+    walls: "enclosed"
+
+monsters:
+  # Three orcs - they'll try to approach, getting entangled by root potions
+  # state: "in_combat" ensures they move toward player even without FOV
+  - type: "orc"
+    count: 1
+    position: [11, 4]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc"
+    count: 1
+    position: [11, 5]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc"
+    count: 1
+    position: [11, 6]
+    facing: "west"
+    state: "in_combat"
+
+items:
+  # Root potions - placed near player but not on spawn
+  - type: "root_potion"
+    count: 3
+    position: [3, 5]
+  
+  # Healing potions for survival
+  - type: "healing_potion"
+    count: 2
+    position: [2, 7]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory:
+    - type: "root_potion"
+      count: 2
+  equipment: null
+
+# Scenario design notes (Phase 20D.1 - Root Potion):
+# - Three orcs that will attempt to approach the player
+# - Player starts with 2 root_potions in inventory + 3 on ground
+# - Root Potion mechanics:
+#   - THROWN: Apply EntangledEffect (3 turns, refresh-not-stack)
+#   - Entangled: Movement blocked, turn consumed, attacks allowed
+# - Expected behavior:
+#   - Player throws root_potion at approaching orc
+#   - Orc becomes entangled, cannot move for 3 turns
+#   - Orc can still attack if player is adjacent
+#   - entangle_applications metric incremented on each application
+#   - entangle_moves_blocked incremented when orc tries to move
+
+

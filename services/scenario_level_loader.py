@@ -326,6 +326,15 @@ def _spawn_monsters(monster_entries, entities: List[Entity], game_map: GameMap, 
                 raise ScenarioBuildError(f"Unknown monster type '{monster_type}'")
             if getattr(monster, "faction", None) is None:
                 monster.faction = Faction.NEUTRAL
+            
+            # Phase 20D.1: Apply special monster combat state from YAML
+            # state: "in_combat" sets in_combat=True so monster chases player without FOV
+            # Note: state: "aware" is NOT processed to preserve existing baseline behavior
+            monster_state = entry.get("state", "unaware")
+            if monster_state == "in_combat" and hasattr(monster, 'ai') and monster.ai:
+                if hasattr(monster.ai, 'in_combat'):
+                    monster.ai.in_combat = True
+            
             entities.append(monster)
 
 
