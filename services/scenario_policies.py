@@ -128,6 +128,52 @@ class ReflexPotionUserPolicy:
         return TacticalFighterPolicy().choose_action(game_state)
 
 
+class RootPotionThrowerPolicy:
+    """Specialized bot for root potion entangle scenario.
+    
+    Phase 20D.1: This bot throws root potions at approaching enemies
+    to test the entangle mechanic, then fights in melee.
+    
+    Behavior:
+    - If enemy is at distance 3-6 tiles and we have root potion: throw at enemy
+    - Otherwise: delegate to TacticalFighterPolicy for melee combat
+    
+    Usage: root_potion_entangle_identity scenario
+    """
+    
+    def choose_action(self, game_state: Any) -> Optional[Dict[str, Any]]:
+        player = game_state.player
+        entities = game_state.entities or []
+        
+        # Check inventory for root potion
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        root_potion_index = None
+        if inventory:
+            for i, item in enumerate(inventory.items):
+                if 'root' in item.name.lower() and 'potion' in item.name.lower():
+                    root_potion_index = i
+                    break
+        
+        # If we have a root potion, look for a target at throw range (3-6 tiles)
+        if root_potion_index is not None:
+            enemies = [
+                e for e in entities
+                if e != player
+                and getattr(e, 'fighter', None)
+                and getattr(e.fighter, 'hp', 0) > 0
+                and getattr(e, 'ai', None) is not None
+            ]
+            
+            for enemy in enemies:
+                dist = abs(enemy.x - player.x) + abs(enemy.y - player.y)
+                # Throw at enemies 3-6 tiles away (good throw range)
+                if 3 <= dist <= 6:
+                    return {'throw_item': root_potion_index, 'target': enemy}
+        
+        # No potion or no good target - fight normally
+        return TacticalFighterPolicy().choose_action(game_state)
+
+
 # =============================================================================
 # Policy Factory
 # =============================================================================
@@ -142,6 +188,7 @@ def make_scenario_bot_policy(name: str):
             - "observe_only": Passive policy that always waits
             - "tactical_fighter": Simple melee fighter
             - "reflex_potion_user": Uses adrenaline potion turn 1, then fights
+            - "root_potion_thrower": Throws root potions at enemies
             
     Returns:
         Bot policy instance
@@ -157,6 +204,8 @@ def make_scenario_bot_policy(name: str):
         return TacticalFighterPolicy()
     if name_lower == "reflex_potion_user":
         return ReflexPotionUserPolicy()
+    if name_lower == "root_potion_thrower":
+        return RootPotionThrowerPolicy()
     
     raise ValueError(f"Unknown scenario bot policy: {name}")
 
@@ -165,6 +214,7 @@ __all__ = [
     'ObserveOnlyPolicy',
     'TacticalFighterPolicy',
     'ReflexPotionUserPolicy',
+    'RootPotionThrowerPolicy',
     'make_scenario_bot_policy',
 ]
 

@@ -504,6 +504,102 @@ class EnragedEffect(StatusEffect):
         return results
 
 
+class EntangledEffect(StatusEffect):
+    """Phase 20D.1: Entangled by roots/vines - movement is blocked but turn is consumed.
+    
+    Applied by Root Potion when thrown at a target.
+    
+    Mechanics:
+    - Duration: 3 turns (refresh-not-stack)
+    - Movement attempts FAIL but CONSUME the turn
+    - Attacks, items, spells are allowed
+    - Themed as roots/vines (nature magic)
+    
+    Metrics:
+    - entangle_applications: Count of applications (includes refreshes)
+    - entangle_moves_blocked: Count of movement attempts blocked
+    """
+    DEFAULT_DURATION = 3
+    
+    def __init__(self, owner: 'Entity', duration: int = None):
+        """Initialize entangled effect.
+        
+        Args:
+            owner: Entity afflicted by roots
+            duration: Duration in turns (default: 3)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='entangled', duration=actual_duration, owner=owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('entangle_applications')
+        results.append({'message': MB.status_effect(f"🌿 {self.owner.name} is entangled by roots!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"The roots binding {self.owner.name} wither away.")})
+        return results
+    
+    def on_move_blocked(self) -> List[Dict[str, Any]]:
+        """Called when movement is blocked by this effect.
+        
+        Returns:
+            List of result dictionaries with messages
+        """
+        results = []
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('entangle_moves_blocked')
+        results.append({'message': MB.warning(f"Roots bind {self.owner.name}! Movement blocked.")})
+        return results
+    
+    def __repr__(self):
+        return f"EntangledEffect({self.duration} turns)"
+
+
+class BarkskinEffect(StatusEffect):
+    """Phase 20D.1: Barkskin defensive buff - temporary AC bonus.
+    
+    Applied by Root Potion when consumed/drunk.
+    
+    Mechanics:
+    - Duration: 10 turns (refresh-not-stack)
+    - Effect: +3 AC (armor class bonus)
+    - Themed as bark-like skin (nature magic)
+    """
+    DEFAULT_DURATION = 10
+    DEFAULT_AC_BONUS = 3
+    
+    def __init__(self, owner: 'Entity', duration: int = None, ac_bonus: int = None):
+        """Initialize barkskin effect.
+        
+        Args:
+            owner: Entity receiving the buff
+            duration: Duration in turns (default: 10)
+            ac_bonus: AC bonus to apply (default: 3)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='barkskin', duration=actual_duration, owner=owner)
+        self.ac_bonus = ac_bonus if ac_bonus is not None else self.DEFAULT_AC_BONUS
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"🌲 {self.owner.name}'s skin hardens like bark! (+{self.ac_bonus} AC)")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name}'s barkskin fades, leaving normal skin.")})
+        return results
+    
+    def __repr__(self):
+        return f"BarkskinEffect({self.duration} turns, +{self.ac_bonus} AC)"
+
+
 class SpeedEffect(StatusEffect):
     """Doubles the owner's movement speed."""
     def __init__(self, duration: int, owner: 'Entity'):

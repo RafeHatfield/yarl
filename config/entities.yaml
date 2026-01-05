@@ -1662,6 +1662,15 @@ spells:
     color: [255, 90, 20]  # Fiery orange
     effect_function: "apply_burning_potion"
 
+  # Phase 20D.1: Root Potion - dual-mode consumable
+  # THROWN: Apply EntangledEffect (roots bind target, 3 turns)
+  # CONSUMED: Apply BarkskinEffect (defensive buff, +3 AC, 10 turns)
+  root_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [34, 139, 34]  # Forest green
+    effect_function: "use_root_potion"
+
   # Damage spell with range
   lightning_scroll:
     spell_type: "damage"

@@ -20,8 +20,10 @@ from components.ai import ConfusedMonster
 from components.component_registry import ComponentType
 from components.ground_hazard import GroundHazard, HazardType
 from components.status_effects import (
+    BarkskinEffect,  # Phase 20D.1: Root Potion defensive buff
     BlindnessEffect,
     DisorientationEffect,
+    EntangledEffect,  # Phase 20D.1: Root Potion thrown effect
     EnragedEffect,
     HeroismEffect,
     IdentifyModeEffect,
@@ -1293,6 +1295,134 @@ def apply_burning_potion(*args, **kwargs):
     burning_effect = BurningEffect(duration=duration, owner=entity, damage_per_turn=damage_per_turn)
     effect_results = entity.status_effects.add_effect(burning_effect)
     results.extend(effect_results)
+    
+    results.append({"consumed": True})
+    return results
+
+
+# ============================================================================
+# Phase 20D.1: Root Potion (Dual-Mode: Entangle when thrown, Barkskin when drunk)
+# ============================================================================
+
+# Effect specifications for Root Potion - single source of truth
+ROOT_POTION_THROW_SPEC = {
+    'type': 'status_effect',
+    'effect_class': 'EntangledEffect',
+    'duration': 3,  # 3 turns of entangle
+}
+
+ROOT_POTION_CONSUME_SPEC = {
+    'type': 'status_effect',
+    'effect_class': 'BarkskinEffect',
+    'duration': 10,  # 10 turns of barkskin
+    'ac_bonus': 3,   # +3 AC
+}
+
+
+def use_root_potion(*args, **kwargs):
+    """Use Root Potion - dual-mode consumable via dispatcher.
+    
+    Phase 20D.1: Root Potion with different effects based on mode:
+    - When THROWN at a target: Apply EntangledEffect (roots bind them)
+    - When CONSUMED (drunk): Apply BarkskinEffect (skin hardens like bark)
+    
+    This function is a thin wrapper that delegates to the consumable effects
+    dispatcher, making the next dual-mode potion almost pure YAML + test.
+    
+    Mode detection:
+    - Check 'throw_mode' kwarg (explicitly set by throwing code)
+    - Check for target_x/target_y (thrown potions have these)
+    - Default to CONSUMED mode (safe, defensive buff)
+    
+    Args:
+        *args: First argument is the entity receiving the effect
+        **kwargs: throw_mode, target_x, target_y for mode detection
+    
+    Returns:
+        list: List of result dictionaries with consumption and effect info
+    """
+    from services.consumable_effects import apply_consumable_effect, EffectMode
+    
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity for root potion effect!")}]
+    
+    # Mode detection
+    throw_mode = kwargs.get('throw_mode', False)
+    if not throw_mode and ('target_x' in kwargs or 'target_y' in kwargs):
+        throw_mode = True
+    
+    # Delegate to dispatcher
+    mode = EffectMode.THROWN if throw_mode else EffectMode.CONSUMED
+    spec = ROOT_POTION_THROW_SPEC if throw_mode else ROOT_POTION_CONSUME_SPEC
+    
+    results = apply_consumable_effect(
+        mode=mode,
+        effect_spec=spec,
+        user=entity,  # For consumed mode
+        target=entity,  # For thrown mode (already set to the target by throwing.py)
+    )
+    
+    results.append({"consumed": True})
+    return results
+
+
+def apply_root_potion_throw(*args, **kwargs):
+    """Apply entangle effect when Root Potion is thrown at a target.
+    
+    Phase 20D.1: Thin wrapper for explicit throw-mode.
+    Delegates to the consumable effects dispatcher.
+    
+    Args:
+        *args: First argument should be the target entity
+        **kwargs: Optional parameters (ignored, uses spec defaults)
+    
+    Returns:
+        list: List of result dictionaries with consumption and status effect info
+    """
+    from services.consumable_effects import apply_consumable_effect, EffectMode
+    
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity to entangle!")}]
+    
+    results = apply_consumable_effect(
+        mode=EffectMode.THROWN,
+        effect_spec=ROOT_POTION_THROW_SPEC,
+        user=entity,
+        target=entity,
+    )
+    
+    results.append({"consumed": True})
+    return results
+
+
+def drink_root_potion(*args, **kwargs):
+    """Drink a Root Potion to gain Barkskin defensive buff.
+    
+    Phase 20D.1: Thin wrapper for explicit consume-mode.
+    Delegates to the consumable effects dispatcher.
+    Drinking an unidentified potion is never harmful (by design).
+    
+    Args:
+        *args: First argument should be the entity drinking the potion
+        **kwargs: Optional parameters (ignored, uses spec defaults)
+    
+    Returns:
+        list: List of result dictionaries with consumption and buff info
+    """
+    from services.consumable_effects import apply_consumable_effect, EffectMode
+    
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity to apply barkskin!")}]
+    
+    results = apply_consumable_effect(
+        mode=EffectMode.CONSUMED,
+        effect_spec=ROOT_POTION_CONSUME_SPEC,
+        user=entity,
+        target=entity,
+    )
     
     results.append({"consumed": True})
     return results

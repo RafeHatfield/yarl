@@ -98,6 +98,9 @@ class RunMetrics:
     # Phase 20C.1: Reflex metrics
     reflex_potions_used: int = 0
     bonus_attacks_while_reflexes_active: int = 0
+    # Phase 20D.1: Entangle metrics (Root Potion)
+    entangle_applications: int = 0
+    entangle_moves_blocked: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -178,6 +181,11 @@ class RunMetrics:
             result['reflex_potions_used'] = self.reflex_potions_used
         if hasattr(self, 'bonus_attacks_while_reflexes_active'):
             result['bonus_attacks_while_reflexes_active'] = self.bonus_attacks_while_reflexes_active
+        # Phase 20D.1: Entangle metrics
+        if hasattr(self, 'entangle_applications'):
+            result['entangle_applications'] = self.entangle_applications
+        if hasattr(self, 'entangle_moves_blocked'):
+            result['entangle_moves_blocked'] = self.entangle_moves_blocked
         return result
 
 
@@ -252,6 +260,9 @@ class AggregatedMetrics:
     # Phase 20C.1: Reflex metrics
     total_reflex_potions_used: int = 0
     total_bonus_attacks_while_reflexes_active: int = 0
+    # Phase 20D.1: Entangle metrics (Root Potion)
+    total_entangle_applications: int = 0
+    total_entangle_moves_blocked: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -290,6 +301,9 @@ class AggregatedMetrics:
             'total_slow_turns_skipped': self.total_slow_turns_skipped,
             'total_reflex_potions_used': self.total_reflex_potions_used,
             'total_bonus_attacks_while_reflexes_active': self.total_bonus_attacks_while_reflexes_active,
+            # Phase 20D.1: Entangle metrics
+            'total_entangle_applications': self.total_entangle_applications,
+            'total_entangle_moves_blocked': self.total_entangle_moves_blocked,
         }
         return result
 
@@ -378,6 +392,7 @@ def _create_game_state_from_map(result: ScenarioMapResult, constants: Dict[str, 
             self.current_state = GameStates.PLAYERS_TURN
             self.constants = constants
             self.fov_recompute = True
+            
             self.fov_map = None
 
     return SimpleGameState(
@@ -561,6 +576,39 @@ def _process_player_action(
                 
                 results = item_comp.use_function(player, **use_kwargs)
                 # Handle results (mostly just messages)
+                from game_messages import Message
+                for res in results:
+                    msg = res.get('message')
+                    if msg:
+                        if isinstance(msg, str):
+                            message_log.add_message(Message(msg))
+                        else:
+                            message_log.add_message(msg)
+                    
+        game_state.current_state = GameStates.ENEMY_TURN
+        return
+    
+    # Phase 20D.1: Throw item action (for root potion entangle scenario)
+    if 'throw_item' in action:
+        item_index = action['throw_item']
+        target = action.get('target')
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        if inventory and 0 <= item_index < len(inventory.items) and target:
+            item_entity = inventory.items.pop(item_index)
+            item_comp = item_entity.get_component_optional(ComponentType.ITEM)
+            if item_comp and item_comp.use_function:
+                # Prepare kwargs - include target coordinates to signal throw mode
+                use_kwargs = {
+                    'entities': entities,
+                    'game_map': game_map,
+                    'fov_map': game_state.fov_map,
+                    'target_x': target.x,
+                    'target_y': target.y,
+                    'throw_mode': True,  # Explicit throw mode flag
+                }
+                # Apply effect to target (not player)
+                results = item_comp.use_function(target, **use_kwargs)
+                # Handle results
                 from game_messages import Message
                 for res in results:
                     msg = res.get('message')
@@ -1097,6 +1145,13 @@ def run_scenario_many(
         total_reflex_potions_used += getattr(run, "reflex_potions_used", 0)
         total_bonus_attacks_while_reflexes_active += getattr(run, "bonus_attacks_while_reflexes_active", 0)
     
+    # Phase 20D.1: Aggregate entangle metrics
+    total_entangle_applications = 0
+    total_entangle_moves_blocked = 0
+    for run in all_runs:
+        total_entangle_applications += getattr(run, "entangle_applications", 0)
+        total_entangle_moves_blocked += getattr(run, "entangle_moves_blocked", 0)
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1152,6 +1207,8 @@ def run_scenario_many(
         total_slow_turns_skipped=total_slow_turns_skipped,
         total_reflex_potions_used=total_reflex_potions_used,
         total_bonus_attacks_while_reflexes_active=total_bonus_attacks_while_reflexes_active,
+        total_entangle_applications=total_entangle_applications,
+        total_entangle_moves_blocked=total_entangle_moves_blocked,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "
