@@ -2045,6 +2045,75 @@ class DisarmedEffect(StatusEffect):
         return f"DisarmedEffect({self.duration} turns)"
 
 
+class StaggeredEffect(StatusEffect):
+    """Weapon Knockback: Staggered micro-stun from wall impact.
+    
+    Applied when knockback is blocked early by a hard obstacle (wall/solid/occupied).
+    
+    Mechanics:
+    - Duration: 1 turn (refresh-not-stack)
+    - Effect: Skip next action/turn (micro-stun)
+    - Only applied when knockback blocked by hard obstacle
+    - No damage-on-impact in this phase
+    
+    Metrics:
+    - stagger_applications: Count of applications (includes refreshes)
+    - stagger_turns_skipped: Count of turns skipped due to stagger
+    """
+    DEFAULT_DURATION = 1
+    
+    def __init__(self, owner: 'Entity', duration: int = None):
+        """Initialize staggered effect.
+        
+        Args:
+            owner: Entity afflicted by stagger
+            duration: Duration in turns (default: 1)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='staggered', duration=actual_duration, owner=owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply staggered effect with message and metrics."""
+        results = super().apply()
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('stagger_applications')
+        results.append({'message': MB.warning(f"💥 {self.owner.name} is staggered!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove staggered effect with message."""
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name} recovers from the stagger.")})
+        return results
+    
+    def process_turn_start(self, entities=None) -> List[Dict[str, Any]]:
+        """Skip turn due to stagger.
+        
+        Args:
+            entities: Optional list of all game entities (not used by this effect)
+        
+        Returns:
+            List of result dictionaries with skip_turn flag
+        """
+        results = []
+        
+        # Track skipped turn for metrics
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('stagger_turns_skipped')
+        
+        results.append({
+            'message': MB.warning(f"{self.owner.name} is too staggered to act!"),
+            'skip_turn': True  # Signal to AI/player that this turn is skipped
+        })
+        
+        return results
+    
+    def __repr__(self):
+        return f"StaggeredEffect({self.duration} turns)"
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     

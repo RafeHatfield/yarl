@@ -281,6 +281,12 @@ class AggregatedMetrics:
     # Phase 20F: Silence metrics (Silence Scroll)
     total_silence_applications: int = 0
     total_silenced_casts_blocked: int = 0
+    # Weapon Knockback metrics
+    total_knockback_applications: int = 0
+    total_knockback_tiles_moved: int = 0
+    total_knockback_blocked_events: int = 0
+    total_stagger_applications: int = 0
+    total_stagger_turns_skipped: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -333,6 +339,12 @@ class AggregatedMetrics:
             # Phase 20F: Silence metrics
             'total_silence_applications': self.total_silence_applications,
             'total_silenced_casts_blocked': self.total_silenced_casts_blocked,
+            # Weapon Knockback metrics
+            'knockback_applications': self.total_knockback_applications,
+            'knockback_tiles_moved': self.total_knockback_tiles_moved,
+            'knockback_blocked_events': self.total_knockback_blocked_events,
+            'stagger_applications': self.total_stagger_applications,
+            'stagger_turns_skipped': self.total_stagger_turns_skipped,
         }
         return result
 
@@ -497,8 +509,8 @@ def _handle_combat_results(
             if spawned_children:
                 game_state.entities.extend(spawned_children)
             
-            # Treat split like death for combat purposes
-            if split_data['original_entity'] == target:
+            # Check if split caused death (for combat tracking)
+            if split_data.get('original_entity') == target:
                 target_died = True
                 if collector:
                     collector.record_kill(attacker, split_data['original_entity'])
@@ -694,8 +706,13 @@ def _process_player_action(
             except Exception as e:
                 logger.debug(f"Surprise check error: {e}")
             
-            # Perform attack (with surprise flag if applicable)
-            attack_results = player_fighter.attack_d20(target, is_surprise=is_surprise)
+            # Perform attack (with surprise flag if applicable, plus game_map/entities for knockback)
+            attack_results = player_fighter.attack_d20(
+                target, 
+                is_surprise=is_surprise,
+                game_map=game_state.game_map,
+                entities=game_state.entities
+            )
             
             # Handle all combat results (centralized for future-proofing)
             target_died = _handle_combat_results(
@@ -717,8 +734,13 @@ def _process_player_action(
                         if speed_tracker.roll_for_bonus_attack():
                             if collector:
                                 collector.record_bonus_attack(player, target)
-                            # Execute bonus attack immediately
-                            bonus_attack_results = player_fighter.attack_d20(target, is_surprise=False)
+                            # Execute bonus attack immediately (with game_map/entities for knockback)
+                            bonus_attack_results = player_fighter.attack_d20(
+                                target, 
+                                is_surprise=False,
+                                game_map=game_state.game_map,
+                                entities=game_state.entities
+                            )
                             
                             # Handle all combat results (centralized for future-proofing)
                             _handle_combat_results(
@@ -1229,6 +1251,19 @@ def run_scenario_many(
         total_silence_applications += getattr(run, "silence_applications", 0)
         total_silenced_casts_blocked += getattr(run, "silenced_casts_blocked", 0)
     
+    # Weapon Knockback metrics aggregation
+    total_knockback_applications = 0
+    total_knockback_tiles_moved = 0
+    total_knockback_blocked_events = 0
+    total_stagger_applications = 0
+    total_stagger_turns_skipped = 0
+    for run in all_runs:
+        total_knockback_applications += getattr(run, "knockback_applications", 0)
+        total_knockback_tiles_moved += getattr(run, "knockback_tiles_moved", 0)
+        total_knockback_blocked_events += getattr(run, "knockback_blocked_events", 0)
+        total_stagger_applications += getattr(run, "stagger_applications", 0)
+        total_stagger_turns_skipped += getattr(run, "stagger_turns_skipped", 0)
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1294,6 +1329,12 @@ def run_scenario_many(
         total_disarmed_weapon_attacks_prevented=total_disarmed_weapon_attacks_prevented,
         total_silence_applications=total_silence_applications,
         total_silenced_casts_blocked=total_silenced_casts_blocked,
+        # Weapon Knockback metrics
+        total_knockback_applications=total_knockback_applications,
+        total_knockback_tiles_moved=total_knockback_tiles_moved,
+        total_knockback_blocked_events=total_knockback_blocked_events,
+        total_stagger_applications=total_stagger_applications,
+        total_stagger_turns_skipped=total_stagger_turns_skipped,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

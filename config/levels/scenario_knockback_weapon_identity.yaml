@@ -1,0 +1,91 @@
+# Scenario: Knockback Weapon Identity Kit
+# Purpose: Regression anchor for weapon-based knockback mechanics:
+#   - Distance based on power delta (cap 4 tiles)
+#   - Staggered micro-stun when blocked early by hard obstacle (wall/solid/occupied)
+#   - Uses canonical movement execution (respects entangle/root/etc)
+#   - Works for both player and monsters
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+
+metadata:
+  scenario_id: knockback_weapon_identity
+  family: ability_tests
+  depth: 2
+
+scenario_id: knockback_weapon_identity
+name: "Knockback Weapon Identity Kit"
+description: "Validate weapon-based knockback: power-delta distance, wall-impact stagger, movement execution."
+
+depth: 2
+
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 3  # 3 weak orcs per run × 30 runs = 90 minimum
+  max_player_deaths: 10  # Moderate scenario
+
+rooms:
+  - id: "knockback_arena"
+    type: "arena"
+    width: 15
+    height: 11
+    description: "Arena with walls for knockback impact testing"
+    walls: "enclosed"
+
+monsters:
+  # Weak orcs - lower power than player (delta <= -1 → 1-2 tile knockback)
+  - type: "orc"
+    count: 1
+    position: [7, 3]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 3]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [6, 3]
+    facing: "south"
+    state: "aware"
+
+items:
+  # Healing potions - allow extended combat
+  - type: "healing_potion"
+    count: 5
+    position: [2, 2]
+  - type: "healing_potion"
+    count: 5
+    position: [12, 8]
+
+player:
+  position: [7, 5]
+  facing: "north"
+  inventory: []
+  equipment:
+    weapon: "knockback_mace"  # Start with knockback mace equipped
+    armor: null  # No armor - allows observation of knockback mechanics
+
+# Scenario design notes (Knockback Weapon):
+# - Player starts at [7, 5] facing north with knockback_mace equipped
+# - 1 weak orc at [7, 3] (lower power → 1-2 tile knockback)
+# - 1 orc_brute at [7, 8] (higher power → 3-4 tile knockback)
+# - 1 troll near wall at [3, 5] (for wall-impact stagger testing)
+# - Arena layout: 15x11 with enclosed walls
+# - Healing potions: 10 total (5 at each corner) for extended combat
+# - Expected metrics:
+#   - knockback_applications >= 20 (player hits with knockback mace)
+#   - knockback_tiles_moved >= 20 (sum of tiles moved)
+#   - knockback_blocked_events >= 5 (wall impacts + entity collisions)
+#   - stagger_applications >= 5 (wall-impact + entity-collision stuns)
+#   - stagger_turns_skipped >= 5 (turns lost to stagger)
+# - Stagger mechanics:
+#   - Only the shoved entity is staggered (not the blocker)
+#   - Wall impact: "X slams into the wall and is staggered!"
+#   - Entity collision: "X collides with Y and is staggered!"
+

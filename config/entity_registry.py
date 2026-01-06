@@ -199,6 +199,7 @@ class WeaponDefinition:
     - speed_bonus: Combat speed bonus ratio (Phase 5, e.g., 0.25 = +25%)
     - crit_threshold: D20 roll needed for crit (Phase 18, default 20, Keen 19)
     - damage_type: slashing/piercing/bludgeoning (Phase 18)
+    - applies_knockback_on_hit: Weapon knockback delivery (player + monsters)
     """
     name: str
     power_bonus: int = 0
@@ -214,6 +215,7 @@ class WeaponDefinition:
     damage_type: Optional[str] = None  # Phase 18: slashing, piercing, bludgeoning
     material: Optional[str] = None  # Phase 19: material type (metal/wood/bone/stone/organic/other)
     applies_poison_on_hit: bool = False  # Phase 20A.1: player-facing poison weapon delivery
+    applies_knockback_on_hit: bool = False  # Weapon knockback delivery (player + monsters)
     slot: str = "main_hand"
     char: str = "/"
     color: Tuple[int, int, int] = (139, 69, 19)  # Brown
@@ -648,6 +650,7 @@ class EntityRegistry:
                     damage_type=weapon_data.get('damage_type'),  # Phase 18
                     material=weapon_data.get('material'),  # Phase 19: corrosion
                     applies_poison_on_hit=weapon_data.get('applies_poison_on_hit', False),  # Phase 20A.1
+                    applies_knockback_on_hit=weapon_data.get('applies_knockback_on_hit', False),  # Weapon knockback
                     slot=weapon_data.get('slot', 'main_hand'),
                     char=weapon_data.get('char', '/'),
                     color=tuple(weapon_data.get('color', [139, 69, 19])),

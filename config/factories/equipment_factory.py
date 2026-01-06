@@ -66,6 +66,7 @@ class EquipmentFactory(FactoryBase):
                 damage_type=weapon_def.damage_type,  # Phase 18
                 material=weapon_def.material,  # Phase 19
                 applies_poison_on_hit=getattr(weapon_def, 'applies_poison_on_hit', False),  # Phase 20A.1
+                applies_knockback_on_hit=getattr(weapon_def, 'applies_knockback_on_hit', False),  # Weapon knockback
             )
 
             # Create entity

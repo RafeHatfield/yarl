@@ -1136,6 +1136,18 @@ weapons:
     slot: "main_hand"
     char: ")"
     color: [128, 128, 128]  # Gray
+  
+  # Knockback mace - weapon knockback identity weapon
+  knockback_mace:
+    extends: "mace"
+    damage_dice: "1d6"      # Same damage as mace
+    to_hit_bonus: 0
+    damage_type: "bludgeoning"
+    material: "metal"
+    applies_knockback_on_hit: true  # Knockback weapon flag
+    slot: "main_hand"
+    char: ")"
+    color: [150, 100, 50]  # Bronze/copper color
 
   # ═══════════════════════════════════════════════════════════
   # ONE-HANDED WEAPONS (1d8) - Better Damage

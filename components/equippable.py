@@ -43,7 +43,7 @@ class Equippable:
                  two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None,
                  speed_bonus: float = 0.0,
                  crit_threshold: int = 20, damage_type: Optional[str] = None, material: Optional[str] = None,
-                 applies_poison_on_hit: bool = False) -> None:
+                 applies_poison_on_hit: bool = False, applies_knockback_on_hit: bool = False) -> None:
         """Initialize an Equippable component.
 
         Args:
@@ -92,6 +92,8 @@ class Equippable:
         self.base_damage_max: int = damage_max  # Store original damage for corrosion floor (50% base)
         # Phase 20A.1: Player-facing poison delivery via weapon property
         self.applies_poison_on_hit: bool = bool(applies_poison_on_hit)
+        # Weapon knockback delivery (player + monsters)
+        self.applies_knockback_on_hit: bool = bool(applies_knockback_on_hit)
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
     
     def get_damage_range_text(self) -> str:

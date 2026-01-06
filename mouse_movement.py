@@ -95,7 +95,7 @@ def handle_mouse_click(click_x: int, click_y: int, player: 'Entity',
     
     if target_entity and target_entity.fighter:
         # Clicked on an entity with a fighter component (enemy)
-        return _handle_enemy_click(player, target_entity, results)
+        return _handle_enemy_click(player, target_entity, results, game_map, entities)
     else:
         # Clicked on empty space - attempt movement
         return _handle_movement_click(click_x, click_y, player, entities, game_map, results, fov_map)
@@ -118,13 +118,15 @@ def _get_weapon_reach(entity: 'Entity') -> int:
     return 1  # Default reach for unarmed/no weapon
 
 
-def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> dict:
+def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list, game_map: 'GameMap', entities: List['Entity']) -> dict:
     """Handle clicking on an enemy entity.
     
     Args:
         player (Entity): The player entity
         target (Entity): The target enemy entity
         results (list): List to append results to
+        game_map (GameMap): Game map for knockback terrain checks
+        entities (List[Entity]): All entities for knockback blocking checks
         
     Returns:
         dict: Dictionary containing action results
@@ -139,7 +141,7 @@ def _handle_enemy_click(player: 'Entity', target: 'Entity', results: list) -> di
     if distance <= max_attack_distance:
         # Within reach - attack the target
         if player.fighter:
-            attack_results = player.fighter.attack_d20(target)
+            attack_results = player.fighter.attack_d20(target, game_map=game_map, entities=entities)
             results.extend(attack_results)
             results.append({
                 "enemy_turn": True,  # Trigger enemy turn after attack

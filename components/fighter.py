@@ -934,7 +934,7 @@ class Fighter:
             frame_duration=0.03  # Fast! 30ms per tile
         )
     
-    def attack_d20(self, target, is_surprise: bool = False):
+    def attack_d20(self, target, is_surprise: bool = False, game_map=None, entities=None):
         """Perform a d20-based attack against a target entity.
         
         New combat system:
@@ -949,6 +949,8 @@ class Fighter:
         Args:
             target (Entity): The target entity to attack
             is_surprise (bool): If True, this is a surprise attack (forced crit, already auto-hit)
+            game_map (GameMap, optional): Game map for knockback terrain checks
+            entities (List[Entity], optional): All entities for knockback blocking checks
             
         Returns:
             list: List of result dictionaries with combat messages and effects
@@ -1250,6 +1252,12 @@ class Fighter:
             # Phase 20A.1: Player-facing poison weapon delivery (successful hit only)
             weapon_poison_results = self._apply_player_weapon_poison_on_hit(target)
             results.extend(weapon_poison_results)
+            
+            # Weapon knockback delivery (successful hit only, player + monsters)
+            # Execute directly if game_map/entities available (canonical path)
+            if game_map and entities:
+                knockback_results = self._apply_weapon_knockback_on_hit(target, game_map, entities)
+                results.extend(knockback_results)
             
             # IMPORTANT: Set attacker's in_combat flag when attacking the PLAYER
             # This keeps monsters engaged even if they leave FOV
@@ -1941,6 +1949,46 @@ class Fighter:
             return True
         
         return False
+    
+    def _apply_weapon_knockback_on_hit(self, target, game_map, entities):
+        """Apply knockback to target if attacker is using a knockback weapon.
+        
+        Weapon knockback delivery (player + monsters):
+        - Apply only on successful hit (caller is inside hit branch)
+        - Execute knockback via knockback_service (canonical movement execution)
+        - Works for both player and monsters (no faction gating)
+        
+        Args:
+            target: Entity that was hit
+            game_map: Game map for terrain checks
+            entities: List of all entities for blocking checks
+        
+        Returns:
+            List of result dictionaries with knockback messages and effects
+        """
+        results = []
+        
+        equipment = self._get_equipment(self.owner)
+        if not equipment or not equipment.main_hand or not getattr(equipment.main_hand, 'equippable', None):
+            return results
+        
+        equippable = equipment.main_hand.equippable
+        has_knockback = getattr(equippable, 'applies_knockback_on_hit', False)
+        
+        if not has_knockback:
+            return results
+        
+        # Execute knockback directly
+        from services.knockback_service import apply_knockback
+        knockback_results = apply_knockback(
+            attacker=self.owner,
+            defender=target,
+            game_map=game_map,
+            entities=entities
+        )
+        results.extend(knockback_results)
+        
+        return results
     
     def _has_engulf_ability(self):
         """Check if this entity has engulf ability.

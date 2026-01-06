@@ -76,6 +76,9 @@ SCENARIO_MATRIX = [
     # Phase 20F Silence Scroll Identity Scenarios
     {"id": "scenario_silence_orc_shaman_identity", "runs": 30, "turn_limit": 150},
     {"id": "scenario_silence_lich_identity", "runs": 30, "turn_limit": 200},
+    
+    # Weapon Knockback Identity Scenario
+    {"id": "knockback_weapon_identity", "runs": 30, "turn_limit": 100},
 ]
 
 # Drift thresholds for WARN/FAIL classification

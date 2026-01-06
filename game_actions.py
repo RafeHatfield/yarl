@@ -926,8 +926,13 @@ class ActionProcessor:
             set_monster_aware(target)
         
         # Use new d20-based attack system (this handles damage, crits, etc.)
-        # Pass is_surprise flag to force critical hit
-        attack_results = attacker_fighter.attack_d20(target, is_surprise=is_surprise_attack)
+        # Pass is_surprise flag to force critical hit, plus game_map/entities for knockback
+        attack_results = attacker_fighter.attack_d20(
+            target, 
+            is_surprise=is_surprise_attack,
+            game_map=self.state_manager.state.game_map,
+            entities=self.state_manager.state.entities
+        )
         
         # Track if target died or split (for bonus attack eligibility)
         target_died = False
