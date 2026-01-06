@@ -101,6 +101,10 @@ class RunMetrics:
     # Phase 20D.1: Entangle metrics (Root Potion)
     entangle_applications: int = 0
     entangle_moves_blocked: int = 0
+    # Phase 20E.2: Disarm metrics (Disarm Scroll)
+    disarm_applications: int = 0
+    disarmed_attacks_attempted: int = 0
+    disarmed_weapon_attacks_prevented: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -267,6 +271,10 @@ class AggregatedMetrics:
     total_blind_applications: int = 0
     total_blind_attacks_attempted: int = 0
     total_blind_attacks_missed: int = 0
+    # Phase 20E.2: Disarm metrics (Disarm Scroll)
+    total_disarm_applications: int = 0
+    total_disarmed_attacks_attempted: int = 0
+    total_disarmed_weapon_attacks_prevented: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -1169,6 +1177,15 @@ def run_scenario_many(
         total_blind_attacks_attempted += getattr(run, "blind_attacks_attempted", 0)
         total_blind_attacks_missed += getattr(run, "blind_attacks_missed", 0)
     
+    # Phase 20E.2: Aggregate disarm metrics
+    total_disarm_applications = 0
+    total_disarmed_attacks_attempted = 0
+    total_disarmed_weapon_attacks_prevented = 0
+    for run in all_runs:
+        total_disarm_applications += getattr(run, "disarm_applications", 0)
+        total_disarmed_attacks_attempted += getattr(run, "disarmed_attacks_attempted", 0)
+        total_disarmed_weapon_attacks_prevented += getattr(run, "disarmed_weapon_attacks_prevented", 0)
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1229,6 +1246,9 @@ def run_scenario_many(
         total_blind_applications=total_blind_applications,
         total_blind_attacks_attempted=total_blind_attacks_attempted,
         total_blind_attacks_missed=total_blind_attacks_missed,
+        total_disarm_applications=total_disarm_applications,
+        total_disarmed_attacks_attempted=total_disarmed_attacks_attempted,
+        total_disarmed_weapon_attacks_prevented=total_disarmed_weapon_attacks_prevented,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

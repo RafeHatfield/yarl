@@ -71,6 +71,7 @@ SCENARIO_MATRIX = [
     {"id": "player_reflex_potion_identity", "runs": 30, "turn_limit": 100},
     {"id": "root_potion_entangle_identity", "runs": 30, "turn_limit": 100},
     {"id": "sunburst_potion_blind_identity", "runs": 30, "turn_limit": 100},
+    {"id": "scenario_disarm_scroll_identity", "runs": 30, "turn_limit": 100},
 ]
 
 # Drift thresholds for WARN/FAIL classification

@@ -2163,6 +2163,47 @@ def use_ward_scroll(*args, **kwargs):
     return results
 
 
+def use_disarm_scroll(*args, **kwargs):
+    """Use a Scroll of Disarm to prevent target from using weapon damage.
+    
+    Phase 20E.2: Applies DisarmedEffect to the target, forcing unarmed damage
+    for 3 turns. Works on both player and monsters.
+    
+    Args:
+        *args: First argument should be the target entity
+        **kwargs: duration (optional, defaults to 3)
+    
+    Returns:
+        list: List of result dictionaries with status effect application
+    """
+    target = args[0] if args else None
+    if not target:
+        return [{"consumed": False, "message": MB.failure("No target!")}]
+    
+    results = []
+    duration = kwargs.get('duration', 3)
+    
+    # Apply DisarmedEffect to the target
+    from components.status_effects import DisarmedEffect
+    from components.component_registry import ComponentType
+    
+    # Ensure target has status effect manager
+    if not target.status_effects:
+        from components.status_effects import StatusEffectManager
+        target.status_effects = StatusEffectManager(target)
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+    
+    # Create and apply the disarm effect
+    disarm_effect = DisarmedEffect(owner=target, duration=duration)
+    effect_results = target.status_effects.add_effect(disarm_effect)
+    results.extend(effect_results)
+    
+    # Scroll is consumed
+    results.append({"consumed": True})
+    
+    return results
+
+
 def use_soul_ward_scroll(*args, **kwargs):
     """Use a Soul Ward scroll to gain protection against Soul Bolt damage.
     

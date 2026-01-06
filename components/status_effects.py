@@ -1854,6 +1854,54 @@ class PoisonEffect(StatusEffect):
         return f"PoisonEffect({self.duration} turns, {self.damage_per_tick}/tick)"
 
 
+class DisarmedEffect(StatusEffect):
+    """Phase 20E.2: Disarm (narrow action denial: weapon damage only).
+    
+    Applied by Scroll of Disarm when used on a target.
+    
+    Mechanics:
+    - Duration: 3 turns (refresh-not-stack)
+    - Effect: While disarmed, entity cannot use main-hand weapon damage
+      - Attack still occurs, but weapon damage is replaced by unarmed damage
+      - Hit chance unchanged
+    - Works on both player and monsters
+    
+    Metrics:
+    - disarm_applications: Count of applications (includes refreshes)
+    - disarmed_attacks_attempted: Count of attacks attempted while disarmed
+    - disarmed_weapon_attacks_prevented: Count of times weapon was replaced by unarmed
+    """
+    DEFAULT_DURATION = 3
+    
+    def __init__(self, owner: 'Entity', duration: int = None):
+        """Initialize disarmed effect.
+        
+        Args:
+            owner: Entity afflicted by disarm
+            duration: Duration in turns (default: 3)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='disarmed', duration=actual_duration, owner=owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply disarmed effect with message and metrics."""
+        results = super().apply()
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('disarm_applications')
+        results.append({'message': MB.warning(f"⚔️ {self.owner.name} is disarmed!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove disarmed effect with message."""
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name} recovers their weapon grip.")})
+        return results
+    
+    def __repr__(self):
+        return f"DisarmedEffect({self.duration} turns)"
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     

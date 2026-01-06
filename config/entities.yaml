@@ -1887,6 +1887,18 @@ spells:
     duration: 10  # Turns of Soul Ward protection
   
   # ════════════════════════════════════════════════════════
+  # PHASE 20E.2: DISARM - Weapon damage denial
+  # ════════════════════════════════════════════════════════
+  # Scroll of Disarm - prevents target from using weapon damage for 3 turns
+  disarm_scroll:
+    spell_type: "offensive"
+    char: "~"
+    color: [220, 180, 100]  # Bronze/brass (weapon theme)
+    effect_function: "use_disarm_scroll"
+    duration: 3  # Turns of disarm
+    targeting: "aimed"  # Requires target selection
+  
+  # ════════════════════════════════════════════════════════
   # KEYS - Unlock vault doors and special chests
   # ════════════════════════════════════════════════════════
   # Keys are consumable items that unlock themed vaults.

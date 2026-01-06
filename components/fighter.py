@@ -1087,12 +1087,33 @@ class Fighter:
             # Calculate damage
             base_damage = 0
             
+            # Phase 20E.2: Check if attacker is disarmed
+            # If disarmed, force unarmed damage (weapon attack prevented)
+            is_disarmed = False
+            if status_effects and status_effects.has_effect('disarmed'):
+                is_disarmed = True
+                # Track disarmed attack attempt
+                collector = _get_metrics_collector()
+                if collector:
+                    collector.increment('disarmed_attacks_attempted')
+            
             # Get weapon damage or fist damage
+            # IMPORTANT: Only call _get_weapon_damage() once to avoid side-effect issues
             weapon_damage = self._get_weapon_damage()
-            if weapon_damage > 0:
+            
+            if is_disarmed and weapon_damage > 0:
+                # Weapon would have been used, but disarmed - force minimal unarmed fallback
+                collector = _get_metrics_collector()
+                if collector:
+                    collector.increment('disarmed_weapon_attacks_prevented')
+                # Phase 20E.2: Use fixed minimal unarmed damage (1-2) instead of natural attacks
+                # This prevents monsters with high natural damage from trivializing disarm
+                import random
+                base_damage = random.randint(1, 2)  # Minimal unarmed: punching/grappling
+            elif weapon_damage > 0:
                 base_damage = weapon_damage
             else:
-                # Unarmed: use base damage range
+                # Normal unarmed: use base damage range (player fists, monster natural attacks)
                 base_damage = self._get_base_variable_damage()
             
             # Add STR modifier to damage

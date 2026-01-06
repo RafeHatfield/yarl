@@ -231,6 +231,63 @@ class SunburstPotionUserPolicy:
         return TacticalFighterPolicy().choose_action(game_state)
 
 
+class DisarmScrollUserPolicy:
+    """Deterministic bot for disarm scroll identity scenario.
+    
+    Phase 20E.2: This bot uses disarm scroll on nearest enemy, then fights in melee.
+    
+    Behavior:
+    1. If player has disarm_scroll and any enemy is within range: use on nearest
+    2. Otherwise: delegate to TacticalFighterPolicy for melee combat
+    
+    Targeting: Nearest enemy by Manhattan distance, tie-break by entity id (deterministic)
+    
+    Usage: disarm_scroll_identity scenario
+    """
+    
+    def choose_action(self, game_state: Any) -> Optional[Dict[str, Any]]:
+        player = game_state.player
+        entities = game_state.entities or []
+        
+        # Check inventory for disarm scroll
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        disarm_scroll_index = None
+        if inventory:
+            for i, item in enumerate(inventory.items):
+                if 'disarm' in item.name.lower() and 'scroll' in item.name.lower():
+                    disarm_scroll_index = i
+                    break
+        
+        # If we have a disarm scroll, look for nearest enemy
+        if disarm_scroll_index is not None:
+            enemies = [
+                e for e in entities
+                if e != player
+                and getattr(e, 'fighter', None)
+                and getattr(e.fighter, 'hp', 0) > 0
+                and getattr(e, 'ai', None) is not None
+            ]
+            
+            # Find nearest enemy (any range for scroll use)
+            nearest_enemy = None
+            nearest_dist = 999
+            
+            for enemy in enemies:
+                dist = abs(enemy.x - player.x) + abs(enemy.y - player.y)
+                if dist < nearest_dist or (dist == nearest_dist and (nearest_enemy is None or id(enemy) < id(nearest_enemy))):
+                    nearest_enemy = enemy
+                    nearest_dist = dist
+            
+            # Use scroll on nearest enemy if found
+            # NOTE: Use 'throw_item' action (not 'use_item') because harness passes target as args[0] for throw
+            # This works for aimed scrolls even though we're not physically "throwing" them
+            if nearest_enemy:
+                return {'throw_item': disarm_scroll_index, 'target': nearest_enemy}
+        
+        # No scroll or no enemy - fight normally
+        return TacticalFighterPolicy().choose_action(game_state)
+
+
 # =============================================================================
 # Policy Factory
 # =============================================================================
@@ -266,6 +323,8 @@ def make_scenario_bot_policy(name: str):
         return RootPotionThrowerPolicy()
     if name_lower == "sunburst_potion_user":
         return SunburstPotionUserPolicy()
+    if name_lower == "disarm_scroll_user":
+        return DisarmScrollUserPolicy()
     
     raise ValueError(f"Unknown scenario bot policy: {name}")
 
@@ -276,6 +335,7 @@ __all__ = [
     'ReflexPotionUserPolicy',
     'RootPotionThrowerPolicy',
     'SunburstPotionUserPolicy',
+    'DisarmScrollUserPolicy',
     'make_scenario_bot_policy',
 ]
 
