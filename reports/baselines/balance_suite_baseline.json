@@ -328,5 +328,25 @@
     "monster_hit_rate": 0.3668032786885246,
     "pressure_index": 2.466666666666665,
     "bonus_attacks_per_run": 4.333333333333333
+  },
+  "scenario_silence_orc_shaman_identity": {
+    "scenario_id": "scenario_silence_orc_shaman_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.6280487804878049,
+    "monster_hit_rate": 0.3941908713692946,
+    "pressure_index": -13.833333333333334,
+    "bonus_attacks_per_run": 7.166666666666667
+  },
+  "scenario_silence_lich_identity": {
+    "scenario_id": "scenario_silence_lich_identity",
+    "runs": 30,
+    "deaths": 17,
+    "death_rate": 0.5666666666666667,
+    "player_hit_rate": 0.5932539682539683,
+    "monster_hit_rate": 0.4573643410852713,
+    "pressure_index": -12.5,
+    "bonus_attacks_per_run": 5.533333333333333
   }
 }

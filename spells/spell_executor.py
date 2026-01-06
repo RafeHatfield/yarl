@@ -54,6 +54,14 @@ class SpellExecutor:
         Returns:
             List of result dictionaries with consumption, messages, etc.
         """
+        # Phase 20F: Canonical silence gating at spell execution point
+        # This is the single gate for all spells going through SpellExecutor
+        from components.status_effects import check_and_gate_silenced_cast
+        spell_name = spell.name if hasattr(spell, 'name') else 'cast a spell'
+        blocked = check_and_gate_silenced_cast(caster, f"cast {spell_name}")
+        if blocked:
+            return blocked
+        
         results = []
         
         # Handle entities/fov_map from kwargs for backward compatibility

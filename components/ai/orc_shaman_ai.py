@@ -164,6 +164,12 @@ class OrcShamanAI(BasicMonster):
         from components.component_registry import ComponentType
         from message_builder import MessageBuilder as MB
         
+        # Phase 20F: Canonical silence gating at execution point
+        from components.status_effects import check_and_gate_silenced_cast
+        blocked = check_and_gate_silenced_cast(self.owner, "cast a hex")
+        if blocked:
+            return blocked
+        
         # Check if hex is enabled and available
         # Config is stored directly on entity (not in monster_def)
         hex_enabled = getattr(self.owner, 'hex_enabled', False)
@@ -236,6 +242,12 @@ class OrcShamanAI(BasicMonster):
         """
         from components.component_registry import ComponentType
         from message_builder import MessageBuilder as MB
+        
+        # Phase 20F: Canonical silence gating at execution point
+        from components.status_effects import check_and_gate_silenced_cast
+        blocked = check_and_gate_silenced_cast(self.owner, "begin a chant")
+        if blocked:
+            return blocked
         
         # Check if chant is enabled and available
         # Config is stored directly on entity (not in monster_def)

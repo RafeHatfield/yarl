@@ -72,6 +72,10 @@ SCENARIO_MATRIX = [
     {"id": "root_potion_entangle_identity", "runs": 30, "turn_limit": 100},
     {"id": "sunburst_potion_blind_identity", "runs": 30, "turn_limit": 100},
     {"id": "scenario_disarm_scroll_identity", "runs": 30, "turn_limit": 100},
+    
+    # Phase 20F Silence Scroll Identity Scenarios
+    {"id": "scenario_silence_orc_shaman_identity", "runs": 30, "turn_limit": 150},
+    {"id": "scenario_silence_lich_identity", "runs": 30, "turn_limit": 200},
 ]
 
 # Drift thresholds for WARN/FAIL classification

@@ -105,6 +105,9 @@ class RunMetrics:
     disarm_applications: int = 0
     disarmed_attacks_attempted: int = 0
     disarmed_weapon_attacks_prevented: int = 0
+    # Phase 20F: Silence metrics (Silence Scroll)
+    silence_applications: int = 0
+    silenced_casts_blocked: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -275,6 +278,9 @@ class AggregatedMetrics:
     total_disarm_applications: int = 0
     total_disarmed_attacks_attempted: int = 0
     total_disarmed_weapon_attacks_prevented: int = 0
+    # Phase 20F: Silence metrics (Silence Scroll)
+    total_silence_applications: int = 0
+    total_silenced_casts_blocked: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -320,6 +326,13 @@ class AggregatedMetrics:
             'total_blind_applications': self.total_blind_applications,
             'total_blind_attacks_attempted': self.total_blind_attacks_attempted,
             'total_blind_attacks_missed': self.total_blind_attacks_missed,
+            # Phase 20E.2: Disarm metrics
+            'total_disarm_applications': self.total_disarm_applications,
+            'total_disarmed_attacks_attempted': self.total_disarmed_attacks_attempted,
+            'total_disarmed_weapon_attacks_prevented': self.total_disarmed_weapon_attacks_prevented,
+            # Phase 20F: Silence metrics
+            'total_silence_applications': self.total_silence_applications,
+            'total_silenced_casts_blocked': self.total_silenced_casts_blocked,
         }
         return result
 
@@ -613,6 +626,29 @@ def _process_player_action(
             item_entity = inventory.items.pop(item_index)
             item_comp = item_entity.get_component_optional(ComponentType.ITEM)
             if item_comp and item_comp.use_function:
+                # Phase 20F: Canonical silence gating for scrolls (spell-like items)
+                # Scrolls are blocked by silence; potions are NOT blocked
+                item_name_lower = item_entity.name.lower() if hasattr(item_entity, 'name') else ''
+                is_scroll = 'scroll' in item_name_lower
+                
+                if is_scroll:
+                    from components.status_effects import check_and_gate_silenced_cast
+                    blocked = check_and_gate_silenced_cast(player, f"use the {item_entity.name}")
+                    if blocked:
+                        # Put item back in inventory (not consumed)
+                        inventory.items.insert(item_index, item_entity)
+                        # Handle blocked message
+                        from game_messages import Message
+                        for res in blocked:
+                            msg = res.get('message')
+                            if msg:
+                                if isinstance(msg, str):
+                                    message_log.add_message(Message(msg))
+                                else:
+                                    message_log.add_message(msg)
+                        game_state.current_state = GameStates.ENEMY_TURN
+                        return
+                
                 # Prepare kwargs - include target coordinates to signal throw mode
                 use_kwargs = {
                     'entities': entities,
@@ -1186,6 +1222,13 @@ def run_scenario_many(
         total_disarmed_attacks_attempted += getattr(run, "disarmed_attacks_attempted", 0)
         total_disarmed_weapon_attacks_prevented += getattr(run, "disarmed_weapon_attacks_prevented", 0)
     
+    # Phase 20F: Aggregate silence metrics
+    total_silence_applications = 0
+    total_silenced_casts_blocked = 0
+    for run in all_runs:
+        total_silence_applications += getattr(run, "silence_applications", 0)
+        total_silenced_casts_blocked += getattr(run, "silenced_casts_blocked", 0)
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1249,6 +1292,8 @@ def run_scenario_many(
         total_disarm_applications=total_disarm_applications,
         total_disarmed_attacks_attempted=total_disarmed_attacks_attempted,
         total_disarmed_weapon_attacks_prevented=total_disarmed_weapon_attacks_prevented,
+        total_silence_applications=total_silence_applications,
+        total_silenced_casts_blocked=total_silenced_casts_blocked,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

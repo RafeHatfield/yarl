@@ -1899,6 +1899,20 @@ spells:
     targeting: "aimed"  # Requires target selection
   
   # ════════════════════════════════════════════════════════
+  # PHASE 20F: SILENCE - Spell denial
+  # ════════════════════════════════════════════════════════
+  # Scroll of Silence - prevents target from casting spells for 3 turns
+  # v1 Scope: Blocks spellcasting, scroll usage, and "spell" monster abilities
+  #           (hex, chant, soul bolt). Does NOT block potions, melee, or movement.
+  silence_scroll:
+    spell_type: "offensive"
+    char: "~"
+    color: [100, 100, 160]  # Muted purple/gray (silence theme)
+    effect_function: "use_silence_scroll"
+    duration: 3  # Turns of silence
+    targeting: "aimed"  # Requires target selection
+  
+  # ════════════════════════════════════════════════════════
   # KEYS - Unlock vault doors and special chests
   # ════════════════════════════════════════════════════════
   # Keys are consumable items that unlock themed vaults.

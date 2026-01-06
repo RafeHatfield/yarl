@@ -1854,6 +1854,149 @@ class PoisonEffect(StatusEffect):
         return f"PoisonEffect({self.duration} turns, {self.damage_per_tick}/tick)"
 
 
+class SilencedEffect(StatusEffect):
+    """Phase 20F: Silence (spell denial - blocks spellcasting and spell-tagged abilities).
+    
+    Applied by Scroll of Silence when used on a target.
+    
+    v1 Scope Decision (explicit):
+    - Silence blocks: spellcasting, scroll usage, "spell" monster abilities (hex, chant, soul bolt)
+    - Silence does NOT block: potions, melee, movement
+    
+    Mechanics:
+    - Duration: 3 turns (refresh-not-stack)
+    - While silenced, entity cannot cast spells or execute spell-tagged abilities
+    - When cast is blocked: turn is consumed (entity tried to cast), clear message emitted
+    - Blocking occurs at execution point (not in AI decision-making)
+    - Works on both player and monsters
+    
+    Metrics:
+    - silence_applications: Count of applications (includes refreshes)
+    - silenced_casts_blocked: Count of casts blocked by silence (incremented at execution point)
+    """
+    DEFAULT_DURATION = 3
+    
+    def __init__(self, owner: 'Entity', duration: int = None):
+        """Initialize silenced effect.
+        
+        Args:
+            owner: Entity afflicted by silence
+            duration: Duration in turns (default: 3)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='silenced', duration=actual_duration, owner=owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply silenced effect with message and metrics."""
+        results = super().apply()
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('silence_applications')
+        results.append({'message': MB.warning(f"🔇 {self.owner.name} is silenced!")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove silenced effect with message."""
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name} can cast spells again.")})
+        return results
+    
+    def __repr__(self):
+        return f"SilencedEffect({self.duration} turns)"
+
+
+def is_entity_silenced(entity: 'Entity') -> bool:
+    """Check if an entity is silenced (cannot cast spells/abilities).
+    
+    Phase 20F: Helper function for silence gating at execution points.
+    
+    This is the canonical check for silence. Use this in:
+    - OrcShamanAI._try_cast_hex()
+    - OrcShamanAI._try_start_chant()
+    - LichAI._try_start_soul_bolt_charge()
+    - SpellExecutor.cast() (for player scroll casting)
+    
+    Args:
+        entity: The entity to check
+        
+    Returns:
+        True if entity has SilencedEffect active, False otherwise
+    """
+    if not entity:
+        return False
+    
+    from components.component_registry import ComponentType
+    status_effects = entity.get_component_optional(ComponentType.STATUS_EFFECTS)
+    if not status_effects:
+        return False
+    
+    # Ensure status_effects is a real StatusEffectManager (not a Mock or other object)
+    # This handles edge cases in unit tests where Mocks auto-vivify attributes
+    if not hasattr(status_effects, 'has_effect') or not callable(getattr(status_effects, 'has_effect', None)):
+        return False
+    
+    result = status_effects.has_effect('silenced')
+    # Ensure result is actually a boolean (handles Mock objects returning Mocks)
+    return result is True
+
+
+def record_silenced_cast_blocked(entity_name: str = None) -> None:
+    """Record that a cast was blocked by silence.
+    
+    Phase 20F: Single-source-of-truth for silenced_casts_blocked metric.
+    
+    INTERNAL: Prefer using check_and_gate_silenced_cast() instead, which
+    combines the check and metric recording atomically.
+    
+    Args:
+        entity_name: Optional name of the silenced entity (for logging)
+    """
+    collector = _get_metrics_collector()
+    if collector:
+        collector.increment('silenced_casts_blocked')
+    
+    if entity_name:
+        logger.debug(f"Cast blocked by silence: {entity_name}")
+
+
+def check_and_gate_silenced_cast(entity: 'Entity', action_description: str) -> Optional[List[Dict[str, Any]]]:
+    """Check if entity is silenced and gate the cast attempt.
+    
+    Phase 20F: Unified execution-point gating for silence.
+    
+    This is the CANONICAL gate for all spell/ability execution. It:
+    1. Checks if entity has SilencedEffect
+    2. If silenced: records silenced_casts_blocked metric (single source of truth)
+    3. Returns result list with message (action consumed, spell not cast)
+    
+    Usage in AI/spell execution code:
+        blocked = check_and_gate_silenced_cast(self.owner, "cast a hex")
+        if blocked:
+            return blocked  # Action consumed, spell blocked
+        # ... normal spell execution ...
+    
+    Args:
+        entity: The entity attempting to cast
+        action_description: Human-readable description of the action (e.g., "cast a hex", 
+                           "begin channeling", "use a scroll"). Used in the blocked message.
+    
+    Returns:
+        If silenced: List[Dict] with message and consumed=True (action blocked)
+        If not silenced: None (proceed with cast)
+    """
+    if not is_entity_silenced(entity):
+        return None  # Not silenced - proceed with cast
+    
+    # Entity is silenced - record metric and return blocked result
+    entity_name = getattr(entity, 'name', 'Unknown')
+    record_silenced_cast_blocked(entity_name)
+    
+    # Build blocked message
+    message = MB.warning(f"🔇 {entity_name} tries to {action_description} but is silenced!")
+    
+    return [{'message': message, 'consumed': True}]
+
+
 class DisarmedEffect(StatusEffect):
     """Phase 20E.2: Disarm (narrow action denial: weapon damage only).
     

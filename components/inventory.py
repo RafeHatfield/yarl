@@ -274,6 +274,17 @@ class Inventory:
                     }
                 )
         else:
+            # Phase 20F: Canonical silence gating for scrolls (spell-like items)
+            # Scrolls are blocked by silence; potions are NOT blocked
+            item_name_lower = item_entity.name.lower() if hasattr(item_entity, 'name') else ''
+            is_scroll = 'scroll' in item_name_lower
+            
+            if is_scroll:
+                from components.status_effects import check_and_gate_silenced_cast
+                blocked = check_and_gate_silenced_cast(self.owner, f"use the {item_entity.name}")
+                if blocked:
+                    return blocked
+            
             # Check if this is a wand FIRST (multi-use item)
             # Wands have special handling even if they have targeting=True
             wand_component = getattr(item_entity, 'wand', None)

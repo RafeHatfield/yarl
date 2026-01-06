@@ -165,6 +165,12 @@ class LichAI(NecromancerBase):
         """
         from components.status_effects import ChargingSoulBoltEffect
         
+        # Phase 20F: Canonical silence gating at execution point
+        from components.status_effects import check_and_gate_silenced_cast
+        blocked = check_and_gate_silenced_cast(self.owner, "channel dark energy")
+        if blocked:
+            return blocked
+        
         # Get Soul Bolt config
         soul_bolt_range = getattr(self.owner, 'soul_bolt_range', 7)
         
@@ -215,6 +221,14 @@ class LichAI(NecromancerBase):
         """
         from components.status_effects import SoulWardEffect, SoulBurnEffect
         from message_builder import MessageBuilder as MB
+        
+        # Phase 20F: Canonical silence gating at execution point
+        # If silenced during resolve, Soul Bolt fizzles (turn consumed)
+        from components.status_effects import check_and_gate_silenced_cast
+        blocked = check_and_gate_silenced_cast(self.owner, "release the Soul Bolt")
+        if blocked:
+            self._increment_metric('lich_fizzle_silenced')
+            return blocked
         
         # Get Soul Bolt config
         soul_bolt_range = getattr(self.owner, 'soul_bolt_range', 7)

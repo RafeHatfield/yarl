@@ -288,6 +288,73 @@ class DisarmScrollUserPolicy:
         return TacticalFighterPolicy().choose_action(game_state)
 
 
+class SilenceScrollUserPolicy:
+    """Deterministic bot for silence scroll identity scenario.
+    
+    Phase 20F: This bot uses silence scroll on nearest caster enemy, then fights in melee.
+    
+    Behavior:
+    1. If player has silence_scroll and any caster enemy is within range: use on nearest caster
+    2. If no caster, use on nearest enemy (still useful for testing)
+    3. Otherwise: delegate to TacticalFighterPolicy for melee combat
+    
+    Caster Detection: Entities with orc_shaman or lich in name (or has special_abilities with spell tags)
+    Targeting: Nearest caster by Manhattan distance, tie-break by entity id (deterministic)
+    
+    Usage: silence_scroll identity scenarios
+    """
+    
+    def choose_action(self, game_state: Any) -> Optional[Dict[str, Any]]:
+        player = game_state.player
+        entities = game_state.entities or []
+        
+        # Check inventory for silence scroll
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        silence_scroll_index = None
+        if inventory:
+            for i, item in enumerate(inventory.items):
+                if 'silence' in item.name.lower() and 'scroll' in item.name.lower():
+                    silence_scroll_index = i
+                    break
+        
+        # If we have a silence scroll, prioritize caster enemies
+        if silence_scroll_index is not None:
+            enemies = [
+                e for e in entities
+                if e != player
+                and getattr(e, 'fighter', None)
+                and getattr(e.fighter, 'hp', 0) > 0
+                and getattr(e, 'ai', None) is not None
+            ]
+            
+            # Identify casters (orc_shaman, lich, necromancer, etc.)
+            def is_caster(entity):
+                name_lower = entity.name.lower()
+                caster_names = ['shaman', 'lich', 'necromancer', 'mage', 'wizard', 'sorcerer']
+                return any(caster in name_lower for caster in caster_names)
+            
+            # Separate casters and non-casters
+            casters = [e for e in enemies if is_caster(e)]
+            
+            # Find nearest caster (or nearest enemy if no casters)
+            target_pool = casters if casters else enemies
+            nearest_enemy = None
+            nearest_dist = 999
+            
+            for enemy in target_pool:
+                dist = abs(enemy.x - player.x) + abs(enemy.y - player.y)
+                if dist < nearest_dist or (dist == nearest_dist and (nearest_enemy is None or id(enemy) < id(nearest_enemy))):
+                    nearest_enemy = enemy
+                    nearest_dist = dist
+            
+            # Use scroll on target if found
+            if nearest_enemy:
+                return {'throw_item': silence_scroll_index, 'target': nearest_enemy}
+        
+        # No scroll or no enemy - fight normally
+        return TacticalFighterPolicy().choose_action(game_state)
+
+
 # =============================================================================
 # Policy Factory
 # =============================================================================
@@ -304,6 +371,8 @@ def make_scenario_bot_policy(name: str):
             - "reflex_potion_user": Uses adrenaline potion turn 1, then fights
             - "root_potion_thrower": Throws root potions at enemies
             - "sunburst_potion_user": Throws sunburst potions deterministically
+            - "disarm_scroll_user": Uses disarm scroll on nearest enemy
+            - "silence_scroll_user": Uses silence scroll on nearest caster
             
     Returns:
         Bot policy instance
@@ -325,6 +394,8 @@ def make_scenario_bot_policy(name: str):
         return SunburstPotionUserPolicy()
     if name_lower == "disarm_scroll_user":
         return DisarmScrollUserPolicy()
+    if name_lower == "silence_scroll_user":
+        return SilenceScrollUserPolicy()
     
     raise ValueError(f"Unknown scenario bot policy: {name}")
 
@@ -336,6 +407,7 @@ __all__ = [
     'RootPotionThrowerPolicy',
     'SunburstPotionUserPolicy',
     'DisarmScrollUserPolicy',
+    'SilenceScrollUserPolicy',
     'make_scenario_bot_policy',
 ]
 

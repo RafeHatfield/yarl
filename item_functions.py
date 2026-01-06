@@ -2204,6 +2204,50 @@ def use_disarm_scroll(*args, **kwargs):
     return results
 
 
+def use_silence_scroll(*args, **kwargs):
+    """Use a Scroll of Silence to prevent target from casting spells.
+    
+    Phase 20F: Applies SilencedEffect to the target, blocking spellcasting
+    and spell-tagged abilities for 3 turns. Works on both player and monsters.
+    
+    v1 Scope: Silence blocks spellcasting, scroll usage, and "spell" monster
+    abilities (hex, chant, soul bolt). Does NOT block potions, melee, or movement.
+    
+    Args:
+        *args: First argument should be the target entity
+        **kwargs: duration (optional, defaults to 3)
+    
+    Returns:
+        list: List of result dictionaries with status effect application
+    """
+    target = args[0] if args else None
+    if not target:
+        return [{"consumed": False, "message": MB.failure("No target!")}]
+    
+    results = []
+    duration = kwargs.get('duration', 3)
+    
+    # Apply SilencedEffect to the target
+    from components.status_effects import SilencedEffect
+    from components.component_registry import ComponentType
+    
+    # Ensure target has status effect manager
+    if not target.status_effects:
+        from components.status_effects import StatusEffectManager
+        target.status_effects = StatusEffectManager(target)
+        target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+    
+    # Create and apply the silence effect
+    silence_effect = SilencedEffect(owner=target, duration=duration)
+    effect_results = target.status_effects.add_effect(silence_effect)
+    results.extend(effect_results)
+    
+    # Scroll is consumed
+    results.append({"consumed": True})
+    
+    return results
+
+
 def use_soul_ward_scroll(*args, **kwargs):
     """Use a Soul Ward scroll to gain protection against Soul Bolt damage.
     

@@ -1,0 +1,115 @@
+# Phase 20F: Silence Scroll vs Orc Shaman Identity Scenario
+# Tests the Scroll of Silence mechanic - spell denial against orc shaman
+#
+# Purpose: Prove that silence blocks orc shaman spellcasting:
+#   - Crippling Hex: Should be blocked when shaman is silenced
+#   - Chant of Dissonance: Should be blocked when shaman is silenced
+#   - Turn consumption: Shaman still spends turn when silenced
+#   - Metrics: silence_applications, silenced_casts_blocked
+#
+# v1 Scope: Silence blocks spellcasting and spell-tagged abilities.
+#           Does NOT block potions, melee, or movement.
+
+metadata:
+  scenario_id: scenario_silence_orc_shaman_identity
+  family: ability_tests
+  depth: 3
+
+scenario_id: scenario_silence_orc_shaman_identity
+name: "Silence Scroll vs Orc Shaman Identity (Phase 20F)"
+description: "Player uses silence scroll to block orc shaman hex/chant abilities"
+scenario_type: "combat_identity"
+bot_policy: "silence_scroll_user"
+
+depth: 3
+
+defaults:
+  turn_limit: 150
+  player_bot: "silence_scroll_user"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 90  # ~4 enemies per run × 30 runs
+  max_player_deaths: 12  # Silencing shaman should improve survivability
+
+rooms:
+  - id: "silence_arena"
+    type: "arena"
+    width: 15
+    height: 11
+    description: "Compact arena for silence testing"
+    walls: "enclosed"
+
+monsters:
+  # Orc Shaman - primary target for silence
+  # Should attempt to cast hex/chant but be blocked by silence
+  - type: "orc_shaman"
+    count: 1
+    position: [12, 5]
+    facing: "west"
+    state: "aware"
+  
+  # Basic orcs - frontline enemies
+  # These are NOT silenced, combat proceeds normally
+  - type: "orc"
+    count: 1
+    position: [9, 4]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [9, 6]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Healing potions for extended combat
+  - type: "healing_potion"
+    count: 3
+    position: [3, 3]
+  - type: "healing_potion"
+    count: 3
+    position: [3, 7]
+  
+  # Better weapon for efficient kills
+  - type: "longsword"
+    count: 1
+    position: [3, 5]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory:
+    # 1 silence scroll - bot uses on nearest caster (shaman)
+    - type: "silence_scroll"
+      count: 1
+    # Starting healing potions
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    main_hand: "longsword"
+    chest: "leather_armor"
+
+# Scenario design notes (Phase 20F - Silence vs Orc Shaman):
+# - Player starts with 1 silence scroll in inventory
+# - Bot uses SilenceScrollUserPolicy: uses scroll on nearest caster (shaman)
+# - Shaman should attempt to cast hex/chant but be blocked
+# - Silence duration: 3 turns (refresh-not-stack)
+#
+# Expected metrics (30 runs, seed_base=1337):
+# - silence_applications >= 20 (bot uses scroll ~every run)
+# - silenced_casts_blocked >= 10 (shaman attempts casts while silenced)
+# - player_deaths <= 12 (silencing shaman improves survivability)
+#
+# Validation:
+# - Silence applies correctly (observable via message)
+# - Shaman hex/chant attempts are blocked (metrics prove it)
+# - Turn is consumed when cast is blocked (shaman doesn't get free action)
+# - After silence expires, shaman can cast again (observes effect duration)
+
