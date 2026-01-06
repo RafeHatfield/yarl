@@ -174,6 +174,63 @@ class RootPotionThrowerPolicy:
         return TacticalFighterPolicy().choose_action(game_state)
 
 
+class SunburstPotionUserPolicy:
+    """Deterministic bot for sunburst potion blind identity scenario.
+    
+    Phase 20E.1: This bot throws sunburst potions at enemies within throw range,
+    using deterministic targeting to ensure reproducible blind metrics.
+    
+    Behavior:
+    1. If player has sunburst_potion and any enemy is within 5 tiles: throw at nearest
+    2. Otherwise: delegate to TacticalFighterPolicy for melee combat
+    
+    Targeting: Nearest enemy by Manhattan distance, tie-break by entity id (deterministic)
+    
+    Usage: sunburst_potion_blind_identity scenario
+    """
+    
+    def choose_action(self, game_state: Any) -> Optional[Dict[str, Any]]:
+        player = game_state.player
+        entities = game_state.entities or []
+        
+        # Check inventory for sunburst potion
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        sunburst_potion_index = None
+        if inventory:
+            for i, item in enumerate(inventory.items):
+                if 'sunburst' in item.name.lower() and 'potion' in item.name.lower():
+                    sunburst_potion_index = i
+                    break
+        
+        # If we have a sunburst potion, look for nearest enemy within throw range
+        if sunburst_potion_index is not None:
+            enemies = [
+                e for e in entities
+                if e != player
+                and getattr(e, 'fighter', None)
+                and getattr(e.fighter, 'hp', 0) > 0
+                and getattr(e, 'ai', None) is not None
+            ]
+            
+            # Find nearest enemy within throw range (<=5 tiles)
+            nearest_enemy = None
+            nearest_dist = 999
+            
+            for enemy in enemies:
+                dist = abs(enemy.x - player.x) + abs(enemy.y - player.y)
+                if dist <= 5:  # Within throw range
+                    if dist < nearest_dist or (dist == nearest_dist and (nearest_enemy is None or id(enemy) < id(nearest_enemy))):
+                        nearest_enemy = enemy
+                        nearest_dist = dist
+            
+            # Throw at nearest enemy if found
+            if nearest_enemy:
+                return {'throw_item': sunburst_potion_index, 'target': nearest_enemy}
+        
+        # No potion or no enemy in range - fight normally
+        return TacticalFighterPolicy().choose_action(game_state)
+
+
 # =============================================================================
 # Policy Factory
 # =============================================================================
@@ -189,6 +246,7 @@ def make_scenario_bot_policy(name: str):
             - "tactical_fighter": Simple melee fighter
             - "reflex_potion_user": Uses adrenaline potion turn 1, then fights
             - "root_potion_thrower": Throws root potions at enemies
+            - "sunburst_potion_user": Throws sunburst potions deterministically
             
     Returns:
         Bot policy instance
@@ -206,6 +264,8 @@ def make_scenario_bot_policy(name: str):
         return ReflexPotionUserPolicy()
     if name_lower == "root_potion_thrower":
         return RootPotionThrowerPolicy()
+    if name_lower == "sunburst_potion_user":
+        return SunburstPotionUserPolicy()
     
     raise ValueError(f"Unknown scenario bot policy: {name}")
 
@@ -215,6 +275,7 @@ __all__ = [
     'TacticalFighterPolicy',
     'ReflexPotionUserPolicy',
     'RootPotionThrowerPolicy',
+    'SunburstPotionUserPolicy',
     'make_scenario_bot_policy',
 ]
 

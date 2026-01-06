@@ -263,6 +263,10 @@ class AggregatedMetrics:
     # Phase 20D.1: Entangle metrics (Root Potion)
     total_entangle_applications: int = 0
     total_entangle_moves_blocked: int = 0
+    # Phase 20E.1: Blind metrics (Sunburst Potion)
+    total_blind_applications: int = 0
+    total_blind_attacks_attempted: int = 0
+    total_blind_attacks_missed: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -304,6 +308,10 @@ class AggregatedMetrics:
             # Phase 20D.1: Entangle metrics
             'total_entangle_applications': self.total_entangle_applications,
             'total_entangle_moves_blocked': self.total_entangle_moves_blocked,
+            # Phase 20E.1: Blind metrics
+            'total_blind_applications': self.total_blind_applications,
+            'total_blind_attacks_attempted': self.total_blind_attacks_attempted,
+            'total_blind_attacks_missed': self.total_blind_attacks_missed,
         }
         return result
 
@@ -1152,6 +1160,15 @@ def run_scenario_many(
         total_entangle_applications += getattr(run, "entangle_applications", 0)
         total_entangle_moves_blocked += getattr(run, "entangle_moves_blocked", 0)
     
+    # Phase 20E.1: Aggregate blind metrics
+    total_blind_applications = 0
+    total_blind_attacks_attempted = 0
+    total_blind_attacks_missed = 0
+    for run in all_runs:
+        total_blind_applications += getattr(run, "blind_applications", 0)
+        total_blind_attacks_attempted += getattr(run, "blind_attacks_attempted", 0)
+        total_blind_attacks_missed += getattr(run, "blind_attacks_missed", 0)
+    
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1209,6 +1226,9 @@ def run_scenario_many(
         total_bonus_attacks_while_reflexes_active=total_bonus_attacks_while_reflexes_active,
         total_entangle_applications=total_entangle_applications,
         total_entangle_moves_blocked=total_entangle_moves_blocked,
+        total_blind_applications=total_blind_applications,
+        total_blind_attacks_attempted=total_blind_attacks_attempted,
+        total_blind_attacks_missed=total_blind_attacks_missed,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

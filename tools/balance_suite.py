@@ -67,9 +67,10 @@ SCENARIO_MATRIX = [
     {"id": "monster_cave_spider_identity", "runs": 30, "turn_limit": 150},
     {"id": "monster_web_spider_identity", "runs": 30, "turn_limit": 150},
     
-    # Phase 20C/D Ability Identity Scenarios
+    # Phase 20C/D/E Ability Identity Scenarios
     {"id": "player_reflex_potion_identity", "runs": 30, "turn_limit": 100},
     {"id": "root_potion_entangle_identity", "runs": 30, "turn_limit": 100},
+    {"id": "sunburst_potion_blind_identity", "runs": 30, "turn_limit": 100},
 ]
 
 # Drift thresholds for WARN/FAIL classification

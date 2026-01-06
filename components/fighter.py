@@ -1014,6 +1014,20 @@ class Fighter:
             blindness = status_effects.get_effect('blindness')
             if blindness:
                 status_effect_to_hit_bonus -= 5  # Blindness is a major penalty
+            
+            # Phase 20E.1: Blinded effect: -to-hit penalty
+            blinded = status_effects.get_effect('blinded')
+            if blinded and hasattr(blinded, 'to_hit_penalty'):
+                status_effect_to_hit_bonus -= blinded.to_hit_penalty
+                # Track blind attack attempts
+                collector = _get_metrics_collector()
+                if collector:
+                    collector.increment('blind_attacks_attempted')
+            
+            # Phase 20E.1: Focused effect: +to-hit bonus
+            focused = status_effects.get_effect('focused')
+            if focused and hasattr(focused, 'to_hit_bonus'):
+                status_effect_to_hit_bonus += focused.to_hit_bonus
         
         # Phase 19: Command the Dead - Lich aura bonus for undead allies
         command_the_dead_bonus = self._check_command_the_dead_aura()
@@ -1239,6 +1253,12 @@ class Fighter:
             statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
             if statistics:
                 statistics.record_attack(hit=False, fumble=is_fumble)
+            
+            # Phase 20E.1: Track blind_attacks_missed
+            if status_effects and status_effects.has_effect('blinded'):
+                collector = _get_metrics_collector()
+                if collector:
+                    collector.increment('blind_attacks_missed')
             
             # Miss
             if is_fumble:

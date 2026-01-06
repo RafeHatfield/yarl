@@ -21,10 +21,12 @@ from components.component_registry import ComponentType
 from components.ground_hazard import GroundHazard, HazardType
 from components.status_effects import (
     BarkskinEffect,  # Phase 20D.1: Root Potion defensive buff
+    BlindedEffect,  # Phase 20E.1: Sunburst Potion blind debuff
     BlindnessEffect,
     DisorientationEffect,
     EntangledEffect,  # Phase 20D.1: Root Potion thrown effect
     EnragedEffect,
+    FocusedEffect,  # Phase 20E.1: Sunburst Potion focus buff
     HeroismEffect,
     IdentifyModeEffect,
     ImmobilizedEffect,
@@ -1420,6 +1422,133 @@ def drink_root_potion(*args, **kwargs):
     results = apply_consumable_effect(
         mode=EffectMode.CONSUMED,
         effect_spec=ROOT_POTION_CONSUME_SPEC,
+        user=entity,
+        target=entity,
+    )
+    
+    results.append({"consumed": True})
+    return results
+
+
+# ============================================================================
+# SUNBURST POTION (Phase 20E.1) - Dual-mode consumable using dispatcher
+# ============================================================================
+
+# Effect specifications for Sunburst Potion dual modes
+SUNBURST_POTION_THROW_SPEC = {
+    'type': 'status_effect',
+    'effect_class': 'BlindedEffect',
+    'duration': 3
+}
+
+SUNBURST_POTION_CONSUME_SPEC = {
+    'type': 'status_effect',
+    'effect_class': 'FocusedEffect',
+    'duration': 8
+}
+
+
+def use_sunburst_potion(*args, **kwargs):
+    """Use Sunburst Potion - dual-mode consumable via dispatcher.
+    
+    Phase 20E.1: Sunburst Potion with different effects based on mode:
+    - When THROWN at a target: Apply BlindedEffect (-4 to-hit penalty)
+    - When CONSUMED (drunk): Apply FocusedEffect (+2 to-hit bonus)
+    
+    This function is a thin wrapper that delegates to the consumable effects
+    dispatcher, following the root_potion pattern.
+    
+    Mode detection:
+    - Check 'throw_mode' kwarg (explicitly set by throwing code)
+    - Check for target_x/target_y (thrown potions have these)
+    - Default to CONSUMED mode (safe, helpful buff)
+    
+    Args:
+        *args: First argument is the entity receiving the effect
+        **kwargs: throw_mode, target_x, target_y for mode detection
+    
+    Returns:
+        list: List of result dictionaries with consumption and status effect info
+    """
+    from services.consumable_effects import apply_consumable_effect, EffectMode
+    
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity for sunburst potion effect!")}]
+    
+    # Mode detection
+    throw_mode = kwargs.get('throw_mode', False)
+    if not throw_mode and ('target_x' in kwargs or 'target_y' in kwargs):
+        throw_mode = True
+    
+    # Delegate to dispatcher
+    mode = EffectMode.THROWN if throw_mode else EffectMode.CONSUMED
+    spec = SUNBURST_POTION_THROW_SPEC if throw_mode else SUNBURST_POTION_CONSUME_SPEC
+    
+    results = apply_consumable_effect(
+        mode=mode,
+        effect_spec=spec,
+        user=entity,  # For consumed mode
+        target=entity,  # For thrown mode (already set to the target by scenario harness)
+    )
+    
+    results.append({"consumed": True})
+    return results
+
+
+def apply_sunburst_potion_throw(*args, **kwargs):
+    """Apply blind effect when Sunburst Potion is thrown at a target.
+    
+    Phase 20E.1: Thin wrapper for explicit throw-mode.
+    Delegates to the consumable effects dispatcher.
+    
+    Args:
+        *args: First argument should be the target entity
+        **kwargs: Optional parameters (ignored, uses spec defaults)
+    
+    Returns:
+        list: List of result dictionaries with consumption and status effect info
+    """
+    from services.consumable_effects import apply_consumable_effect, EffectMode
+    
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No target for sunburst potion!")}]
+    
+    results = apply_consumable_effect(
+        mode=EffectMode.THROWN,
+        effect_spec=SUNBURST_POTION_THROW_SPEC,
+        user=entity,
+        target=entity,
+    )
+    
+    results.append({"consumed": True})
+    return results
+
+
+def drink_sunburst_potion(*args, **kwargs):
+    """Drink a Sunburst Potion to gain Focused combat buff.
+    
+    Phase 20E.1: Thin wrapper for explicit consume-mode.
+    Delegates to the consumable effects dispatcher.
+    Drinking an unidentified potion is never harmful (by design).
+    
+    Args:
+        *args: First argument should be the entity drinking the potion
+        **kwargs: Optional parameters (ignored, uses spec defaults)
+    
+    Returns:
+        list: List of result dictionaries with consumption and buff info
+    """
+    from services.consumable_effects import apply_consumable_effect, EffectMode
+    
+    entity = args[0] if args else None
+    if not entity:
+        return [{"consumed": False, "message": MB.failure("No entity to apply focus!")}]
+    
+    results = apply_consumable_effect(
+        mode=EffectMode.CONSUMED,
+        effect_spec=SUNBURST_POTION_CONSUME_SPEC,
         user=entity,
         target=entity,
     )

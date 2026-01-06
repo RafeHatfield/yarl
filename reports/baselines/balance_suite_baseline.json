@@ -308,5 +308,15 @@
     "monster_hit_rate": 0.4787234042553192,
     "pressure_index": 6.533333333333333,
     "bonus_attacks_per_run": 4.5
+  },
+  "sunburst_potion_blind_identity": {
+    "scenario_id": "sunburst_potion_blind_identity",
+    "runs": 30,
+    "deaths": 14,
+    "death_rate": 0.4666666666666667,
+    "player_hit_rate": 0.626641651031895,
+    "monster_hit_rate": 0.449438202247191,
+    "pressure_index": 0.03333333333333499,
+    "bonus_attacks_per_run": 6.4
   }
 }

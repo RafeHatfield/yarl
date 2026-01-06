@@ -1671,6 +1671,12 @@ spells:
     color: [34, 139, 34]  # Forest green
     effect_function: "use_root_potion"
 
+  sunburst_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 215, 0]  # Golden/sunburst yellow
+    effect_function: "use_sunburst_potion"
+
   # Damage spell with range
   lightning_scroll:
     spell_type: "damage"

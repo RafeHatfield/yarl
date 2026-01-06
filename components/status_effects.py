@@ -600,6 +600,95 @@ class BarkskinEffect(StatusEffect):
         return f"BarkskinEffect({self.duration} turns, +{self.ac_bonus} AC)"
 
 
+class BlindedEffect(StatusEffect):
+    """Phase 20E.1: Blinded combat debuff - to-hit penalty.
+    
+    Applied by Sunburst Potion when thrown at a target.
+    
+    Mechanics:
+    - Duration: 3 turns (refresh-not-stack)
+    - Effect: -4 to-hit penalty on d20 attack rolls
+    - Does NOT affect FOV/awareness (combat-math-only in v1)
+    - Metrics: blind_applications, blind_attacks_attempted, blind_attacks_missed
+    """
+    DEFAULT_DURATION = 3
+    DEFAULT_TO_HIT_PENALTY = 4
+    
+    def __init__(self, owner: 'Entity', duration: int = None, to_hit_penalty: int = None):
+        """Initialize blinded effect.
+        
+        Args:
+            owner: Entity suffering the debuff
+            duration: Duration in turns (default: 3)
+            to_hit_penalty: To-hit penalty to apply (default: 4)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='blinded', duration=actual_duration, owner=owner)
+        self.to_hit_penalty = to_hit_penalty if to_hit_penalty is not None else self.DEFAULT_TO_HIT_PENALTY
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        
+        # Metrics: increment blind_applications
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('blind_applications')
+        except ImportError:
+            pass
+        
+        results.append({'message': MB.warning(f"☀️ {self.owner.name} is blinded! (-{self.to_hit_penalty} to-hit)")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name}'s vision clears.")})
+        return results
+    
+    def __repr__(self):
+        return f"BlindedEffect({self.duration} turns, -{self.to_hit_penalty} to-hit)"
+
+
+class FocusedEffect(StatusEffect):
+    """Phase 20E.1: Focused combat buff - to-hit bonus.
+    
+    Applied by Sunburst Potion when consumed/drunk.
+    
+    Mechanics:
+    - Duration: 8 turns (refresh-not-stack)
+    - Effect: +2 to-hit bonus on d20 attack rolls
+    - Represents heightened awareness and precision
+    """
+    DEFAULT_DURATION = 8
+    DEFAULT_TO_HIT_BONUS = 2
+    
+    def __init__(self, owner: 'Entity', duration: int = None, to_hit_bonus: int = None):
+        """Initialize focused effect.
+        
+        Args:
+            owner: Entity receiving the buff
+            duration: Duration in turns (default: 8)
+            to_hit_bonus: To-hit bonus to apply (default: 2)
+        """
+        actual_duration = duration if duration is not None else self.DEFAULT_DURATION
+        super().__init__(name='focused', duration=actual_duration, owner=owner)
+        self.to_hit_bonus = to_hit_bonus if to_hit_bonus is not None else self.DEFAULT_TO_HIT_BONUS
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        results = super().apply()
+        results.append({'message': MB.status_effect(f"✨ {self.owner.name} focuses intently! (+{self.to_hit_bonus} to-hit)")})
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        results = super().remove()
+        results.append({'message': MB.status_effect(f"{self.owner.name}'s focus fades.")})
+        return results
+    
+    def __repr__(self):
+        return f"FocusedEffect({self.duration} turns, +{self.to_hit_bonus} to-hit)"
+
+
 class SpeedEffect(StatusEffect):
     """Doubles the owner's movement speed."""
     def __init__(self, duration: int, owner: 'Entity'):
