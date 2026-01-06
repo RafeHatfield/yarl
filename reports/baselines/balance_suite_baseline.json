@@ -318,5 +318,15 @@
     "monster_hit_rate": 0.449438202247191,
     "pressure_index": 0.03333333333333499,
     "bonus_attacks_per_run": 6.4
+  },
+  "scenario_disarm_scroll_identity": {
+    "scenario_id": "scenario_disarm_scroll_identity",
+    "runs": 30,
+    "deaths": 6,
+    "death_rate": 0.2,
+    "player_hit_rate": 0.7101449275362319,
+    "monster_hit_rate": 0.3668032786885246,
+    "pressure_index": 2.466666666666665,
+    "bonus_attacks_per_run": 4.333333333333333
   }
 }
