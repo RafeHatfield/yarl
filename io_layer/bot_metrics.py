@@ -131,4 +131,3 @@ class BotMetricsRecorder:
     def decisions_as_dicts(self) -> list[dict]:
         """Return recorded decisions as serializable dicts."""
         return [asdict(decision) for decision in self._decisions]
-
