@@ -1,0 +1,101 @@
+# Scenario: Dragon Fart Scroll Identity (Phase 20 Scroll Modernization)
+# Purpose: Regression anchor for Dragon Fart scroll modernization:
+#   - SleepEffect Application: Dragon Fart applies sleep status to monsters in cone
+#   - Poison Gas Hazard: Creates POISON_GAS hazards in cone area
+#   - Poison DOT: Hazards apply PoisonEffect (via EnvironmentSystem)
+#   - Silence Gating: Scroll blocked by SilencedEffect (via SpellExecutor)
+#   - Metrics: dragon_fart_casts, dragon_fart_tiles_created, sleep_applications
+#
+# This scenario validates the Phase 20 modernization of Dragon Fart from bespoke
+# item_functions.cast_dragon_fart() to SpellExecutor-routed execution.
+
+metadata:
+  scenario_id: scroll_dragon_fart_identity
+  family: scroll_tests
+  depth: 1
+
+scenario_id: scroll_dragon_fart_identity
+name: "Dragon Fart Scroll Identity (Phase 20)"
+description: "Validate Dragon Fart spell modernization: SleepEffect, hazards, metrics."
+
+depth: 1
+
+defaults:
+  turn_limit: 30
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # With 2 goblins in cone × 30 runs = 60 potential sleep targets:
+  # Conservative thresholds for scroll identity validation
+  min_player_kills: 30  # Should kill most goblins
+  max_player_deaths: 10  # Goblins are weak
+
+rooms:
+  - id: "gas_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Simple arena for testing dragon fart cone mechanics"
+    walls: "enclosed"
+
+monsters:
+  # Two orcs positioned in cone direction (east of player)
+  - type: "orc"
+    count: 1
+    position: [6, 4]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [7, 5]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Dragon Fart scroll for player to pick up
+  - type: "dragon_fart_scroll"
+    count: 1
+    position: [2, 5]
+  
+  # Additional scroll for potential second use
+  - type: "dragon_fart_scroll"
+    count: 1
+    position: [2, 4]
+  
+  # Basic weapon for follow-up
+  - type: "dagger"
+    count: 1
+    position: [2, 3]
+  
+  # Healing potions for survivability
+  - type: "healing_potion"
+    count: 2
+    position: [2, 6]
+
+player:
+  position: [3, 4]
+  facing: "east"
+  inventory:
+    - "dragon_fart_scroll"
+  equipment:
+    weapon: "dagger"
+    armor: null
+
+# Scenario design notes (Phase 20 Scroll Modernization):
+# - Two orcs positioned in cone direction from player
+# - Player starts with Dragon Fart scroll in inventory
+# - Cone targets east direction (toward orcs)
+# - Expected behavior:
+#   1. Player uses scroll targeting east
+#   2. SleepEffect applied to orcs in cone (3 turn duration)
+#   3. Poison gas hazards created in cone area (5 turns, 6 damage decay)
+#   4. Sleeping orcs take poison DOT when standing on hazards
+#   5. All damage routes through damage_service for proper finalization
+# - Metrics tracked:
+#   - dragon_fart_casts: Should be >= 1 per run
+#   - dragon_fart_tiles_created: Should be >= 3 per cast (cone shape)
+#   - sleep_applications: Should be >= 1 per run (at least one orc hit)
+#   - poison_applications: May occur if monsters stand on hazards
+

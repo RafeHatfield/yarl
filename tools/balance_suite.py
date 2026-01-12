@@ -79,6 +79,10 @@ SCENARIO_MATRIX = [
     
     # Weapon Knockback Identity Scenario
     {"id": "knockback_weapon_identity", "runs": 30, "turn_limit": 100},
+    
+    # Phase 20 Scroll Modernization Identity Scenarios
+    {"id": "scroll_dragon_fart_identity", "runs": 30, "turn_limit": 30},
+    {"id": "scroll_fireball_identity", "runs": 30, "turn_limit": 30},
 ]
 
 # Drift thresholds for WARN/FAIL classification

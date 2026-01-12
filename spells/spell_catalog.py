@@ -55,18 +55,20 @@ DRAGON_FART = SpellDefinition(
     name="Dragon Fart",
     category=SpellCategory.OFFENSIVE,
     targeting=TargetingType.CONE,
-    damage="2d8",  # ~9 average
+    damage=None,  # Phase 20: No direct damage, applies SleepEffect instead
     damage_type=DamageType.POISON,
     cone_range=8,
     cone_width=45,
     max_range=8,
     requires_los=True,
     requires_target=False,
+    effect_type=EffectType.SLEEP,  # Phase 20: Replaces ConfusedMonster AI swap
+    duration=3,  # Phase 20: Short sleep, not paralysis (2-4 turns is reasonable)
     cast_message="💨 The dragon farts a noxious cloud of poison gas!",
     creates_hazard=True,
     hazard_type="poison",
     hazard_duration=5,
-    hazard_damage=3,
+    hazard_damage=6,  # Phase 20: Match original base_damage=6
     visual_effect=show_dragon_fart,
     consumable=True
 )

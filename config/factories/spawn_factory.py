@@ -588,6 +588,17 @@ class SpawnFactory(FactoryBase):
                     alarm_radius=alarm_radius
                 )
             
+            elif trap_type == "root_trap":
+                # Phase 21.1: Root trap applies EntangledEffect
+                entangle_duration = trap_def.get('entangle_duration', 3)
+                
+                trap_component = Trap(
+                    trap_type=trap_type,
+                    detectable=is_detectable,
+                    passive_detect_chance=passive_detect_chance,
+                    entangle_duration=entangle_duration
+                )
+            
             else:
                 # Generic trap for unknown types
                 trap_component = Trap(

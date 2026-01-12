@@ -47,4 +47,5 @@ class EffectType(Enum):
     INVISIBLE = auto()
     FEAR = auto()  # Causes enemies to flee
     IDENTIFY_MODE = auto()  # Can identify 1 item per turn
+    SLEEP = auto()  # Phase 20 Scroll Modernization: Dragon Fart sleep
 

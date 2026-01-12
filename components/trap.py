@@ -29,6 +29,11 @@ class TrapType(Enum):
     SPIKE_TRAP = "spike_trap"      # Damage + bleed
     WEB_TRAP = "web_trap"          # Slow + snare
     ALARM_PLATE = "alarm_plate"    # Alert nearby mobs
+    ROOT_TRAP = "root_trap"        # Phase 21.1: Apply EntangledEffect
+    TELEPORT_TRAP = "teleport_trap"  # Phase 21.3: Random teleport on same level
+    GAS_TRAP = "gas_trap"          # Phase 21.4: Apply PoisonEffect (no direct damage)
+    FIRE_TRAP = "fire_trap"        # Phase 21.4: Apply BurningEffect (no direct damage)
+    HOLE_TRAP = "hole_trap"        # Phase 21.5: Request level transition via TransitionRequest
 
 
 class Trap:
@@ -77,12 +82,14 @@ class Trap:
         web_duration: int = 5,
         # Alarm attributes
         alarm_faction: str = "orc",
-        alarm_radius: int = 8
+        alarm_radius: int = 8,
+        # Root trap attributes (Phase 21.1)
+        entangle_duration: int = 3
     ):
         """Initialize a Trap component.
         
         Args:
-            trap_type: Type of trap ("spike_trap", "web_trap", "alarm_plate")
+            trap_type: Type of trap ("spike_trap", "web_trap", "alarm_plate", "root_trap")
             detectable: If False, trap cannot be detected by any means
             passive_detect_chance: Base chance to detect when stepping (0.0-1.0)
             reveal_tags: List of item/condition tags that auto-reveal
@@ -93,6 +100,7 @@ class Trap:
             web_duration: Slow duration in turns
             alarm_faction: Faction to alert
             alarm_radius: Radius to search for faction mobs
+            entangle_duration: Duration of entangle effect for root_trap (turns)
         """
         self.owner: Optional['Entity'] = None
         
@@ -116,6 +124,9 @@ class Trap:
         # Alarm trap config
         self.alarm_faction: str = alarm_faction
         self.alarm_radius: int = alarm_radius
+        
+        # Root trap config (Phase 21.1)
+        self.entangle_duration: int = entangle_duration
     
     def can_be_detected(self) -> bool:
         """Check if this trap can be detected.
@@ -203,6 +214,16 @@ class Trap:
             return 'w'
         elif self.trap_type == "alarm_plate":
             return '@'
+        elif self.trap_type == "root_trap":
+            return '~'  # Phase 21.1: Root/vine visual
+        elif self.trap_type == "teleport_trap":
+            return 'T'  # Phase 21.3: Teleport visual
+        elif self.trap_type == "gas_trap":
+            return 'G'  # Phase 21.4: Gas visual
+        elif self.trap_type == "fire_trap":
+            return 'F'  # Phase 21.4: Fire visual
+        elif self.trap_type == "hole_trap":
+            return 'O'  # Phase 21.5: Hole/pit visual
         
         return '?'  # Unknown trap type
     
@@ -224,6 +245,16 @@ class Trap:
             return f"a web trap ({self.web_slow_severity} slow, {self.web_duration} turns)"
         elif self.trap_type == "alarm_plate":
             return f"an alarm plate (alerts {self.alarm_faction})"
+        elif self.trap_type == "root_trap":
+            return f"a root trap (entangle {self.entangle_duration} turns)"
+        elif self.trap_type == "teleport_trap":
+            return f"a teleport trap (random teleport)"
+        elif self.trap_type == "gas_trap":
+            return f"a gas trap (poison)"
+        elif self.trap_type == "fire_trap":
+            return f"a fire trap (burning)"
+        elif self.trap_type == "hole_trap":
+            return f"a hole trap (sudden drop)"
         
         return f"a {self.trap_type}"
     

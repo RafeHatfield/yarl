@@ -35,6 +35,7 @@ from components.status_effects import (
     ParalysisEffect,
     ProtectionEffect,
     RegenerationEffect,
+    SleepEffect,  # Phase 20 Scroll Modernization: Dragon Fart sleep
     SlowedEffect,
     SluggishEffect,  # Phase 7: Speed debuff effect
     SpeedEffect,
@@ -484,107 +485,23 @@ def get_cone_tiles(origin_x, origin_y, target_x, target_y, max_range=8, cone_wid
 def cast_dragon_fart(*args, **kwargs):
     """Unleash a cone of noxious gas that puts enemies to sleep!
     
-    Creates a directional cone of gas that spreads from the caster.
-    All entities in the cone fall asleep for 20 turns (or become confused
-    since we're reusing that AI). Additionally leaves toxic gas hazards that
-    persist for 4 turns and deal damage to entities standing in them.
+    Phase 20 Scroll Modernization: This function now delegates to the spell registry
+    system. The spell executor handles:
+    - Applying SleepEffect (replaces old ConfusedMonster AI swap)
+    - Creating poison gas hazards
+    - Silence gating
+    - Visual effects
     
     Args:
         *args: First argument is the caster entity (self.owner from inventory)
-        **kwargs: Contains entities, fov_map, game_map, target_x, target_y, duration
+        **kwargs: Contains entities, fov_map, game_map, target_x, target_y
         
     Returns:
         list: List of result dictionaries with consumption and message info
     """
-    entity = args[0]
-    entities = kwargs.get("entities", [])
-    game_map = kwargs.get("game_map")
-    target_x = kwargs.get("target_x")
-    target_y = kwargs.get("target_y")
-    sleep_duration = kwargs.get("duration", 20)
-    
-    results = []
-    
-    if not target_x or not target_y:
-        results.append({
-            "consumed": False,
-            "message": MB.warning(
-                "You must select a direction for the dragon fart!"
-            )
-        })
-        return results
-    
-    # Get all tiles in the cone
-    cone_tiles = get_cone_tiles(
-        entity.x, entity.y,
-        target_x, target_y,
-        max_range=8,
-        cone_width=45
-    )
-    
-    # VISUAL EFFECT: Show the noxious cone! 💨
-    show_dragon_fart(list(cone_tiles))
-    
-    # Create persistent poison gas hazards on all cone tiles
-    if game_map and hasattr(game_map, 'hazard_manager') and game_map.hazard_manager:
-        for tile_x, tile_y in cone_tiles:
-            # Create a poison gas hazard with damage decay over 5 turns
-            gas_hazard = GroundHazard(
-                hazard_type=HazardType.POISON_GAS,
-                x=tile_x,
-                y=tile_y,
-                base_damage=6,  # 6 → 4 → 2 damage over 5 turns (lower than fire)
-                remaining_turns=5,
-                max_duration=5,
-                source_name="Dragon Fart"
-            )
-            game_map.hazard_manager.add_hazard(gas_hazard)
-    
-    # Track affected entities
-    affected_entities = []
-    
-    # Find all entities in the cone
-    for other_entity in entities:
-        if other_entity == entity:
-            continue  # Don't affect self
-            
-        if (other_entity.x, other_entity.y) in cone_tiles:
-            # Check if entity has AI (is a monster)
-            if other_entity.components.has(ComponentType.AI):
-                affected_entities.append(other_entity)
-    
-    if not affected_entities:
-        results.append({
-            "consumed": False,
-            "message": MB.spell_fail(
-                "The noxious gas dissipates harmlessly..."
-            )
-        })
-        return results
-    
-    # Epic dragon fart message FIRST! 💨
-    results.append({
-        "consumed": True,
-        "message": MB.custom(
-            f"💨 {entity.name} unleashes a MIGHTY DRAGON FART! A cone of noxious gas spreads outward!",
-            (150, 255, 100)  # Bright green
-        )
-    })
-    
-    # Apply confusion/sleep to all affected entities
-    for target_entity in affected_entities:
-        # Apply confusion AI (acts like sleep - random wandering)
-        confused_ai = ConfusedMonster(target_entity.get_component_optional(ComponentType.AI), sleep_duration)
-        confused_ai.owner = target_entity
-        target_entity.components.add(ComponentType.AI, confused_ai)
-        
-        results.append({
-            "message": MB.spell_effect(
-                f"{target_entity.name} is overwhelmed by the noxious fumes and passes out!"
-            )
-        })
-    
-    return results
+    # Delegate to new spell system
+    caster = args[0] if args else None
+    return cast_spell_by_id("dragon_fart", caster, **kwargs)
 
 
 def cast_raise_dead(*args, **kwargs):

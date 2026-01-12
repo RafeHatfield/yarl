@@ -108,6 +108,34 @@ class RunMetrics:
     # Phase 20F: Silence metrics (Silence Scroll)
     silence_applications: int = 0
     silenced_casts_blocked: int = 0
+    # Phase 21.1: Trap metrics
+    traps_triggered_total: int = 0
+    trap_root_triggered: int = 0
+    trap_root_effects_applied: int = 0
+    # Phase 21.2: Spike trap metrics
+    trap_spike_triggered: int = 0
+    trap_spike_damage_total: int = 0
+    # Phase 21.3: Teleport trap metrics
+    trap_teleport_triggered: int = 0
+    trap_teleport_success: int = 0
+    trap_teleport_failed_no_valid_tile: int = 0
+    # Phase 21.4: Gas trap metrics
+    trap_gas_triggered: int = 0
+    trap_gas_effects_applied: int = 0
+    # Phase 21.4: Fire trap metrics
+    trap_fire_triggered: int = 0
+    trap_fire_effects_applied: int = 0
+    # Phase 21.5: Hole trap metrics
+    trap_hole_triggered: int = 0
+    trap_hole_transition_requested: int = 0
+    # Phase 21.6: Trapped chest metrics
+    chest_traps_triggered_total: int = 0
+    chest_trap_spike_triggered: int = 0
+    chest_trap_spike_damage_total: int = 0
+    # Phase 21.7: Trap detection and disarm metrics
+    traps_detected_total: int = 0
+    trap_disarms_attempted: int = 0
+    trap_disarms_succeeded: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -193,6 +221,13 @@ class RunMetrics:
             result['entangle_applications'] = self.entangle_applications
         if hasattr(self, 'entangle_moves_blocked'):
             result['entangle_moves_blocked'] = self.entangle_moves_blocked
+        # Phase 21.1: Trap metrics
+        if hasattr(self, 'traps_triggered_total'):
+            result['traps_triggered_total'] = self.traps_triggered_total
+        if hasattr(self, 'trap_root_triggered'):
+            result['trap_root_triggered'] = self.trap_root_triggered
+        if hasattr(self, 'trap_root_effects_applied'):
+            result['trap_root_effects_applied'] = self.trap_root_effects_applied
         return result
 
 
@@ -287,6 +322,15 @@ class AggregatedMetrics:
     total_knockback_blocked_events: int = 0
     total_stagger_applications: int = 0
     total_stagger_turns_skipped: int = 0
+    # Phase 20 Scroll Modernization: Dragon Fart metrics
+    total_dragon_fart_casts: int = 0
+    total_dragon_fart_tiles_created: int = 0
+    total_sleep_applications: int = 0
+    total_sleep_turns_prevented: int = 0
+    # Phase 20 Scroll Modernization: Fireball metrics
+    total_fireball_casts: int = 0
+    total_fireball_tiles_created: int = 0
+    total_fireball_direct_damage: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -345,6 +389,15 @@ class AggregatedMetrics:
             'knockback_blocked_events': self.total_knockback_blocked_events,
             'stagger_applications': self.total_stagger_applications,
             'stagger_turns_skipped': self.total_stagger_turns_skipped,
+            # Phase 20 Scroll Modernization: Dragon Fart metrics
+            'total_dragon_fart_casts': self.total_dragon_fart_casts,
+            'total_dragon_fart_tiles_created': self.total_dragon_fart_tiles_created,
+            'total_sleep_applications': self.total_sleep_applications,
+            'total_sleep_turns_prevented': self.total_sleep_turns_prevented,
+            # Phase 20 Scroll Modernization: Fireball metrics
+            'total_fireball_casts': self.total_fireball_casts,
+            'total_fireball_tiles_created': self.total_fireball_tiles_created,
+            'total_fireball_direct_damage': self.total_fireball_direct_damage,
         }
         return result
 
@@ -1263,7 +1316,27 @@ def run_scenario_many(
         total_knockback_blocked_events += getattr(run, "knockback_blocked_events", 0)
         total_stagger_applications += getattr(run, "stagger_applications", 0)
         total_stagger_turns_skipped += getattr(run, "stagger_turns_skipped", 0)
-    
+
+    # Phase 20 Scroll Modernization: Aggregate Dragon Fart metrics
+    total_dragon_fart_casts = 0
+    total_dragon_fart_tiles_created = 0
+    total_sleep_applications = 0
+    total_sleep_turns_prevented = 0
+    for run in all_runs:
+        total_dragon_fart_casts += getattr(run, "dragon_fart_casts", 0)
+        total_dragon_fart_tiles_created += getattr(run, "dragon_fart_tiles_created", 0)
+        total_sleep_applications += getattr(run, "sleep_applications", 0)
+        total_sleep_turns_prevented += getattr(run, "sleep_turns_prevented", 0)
+
+    # Phase 20 Scroll Modernization: Aggregate Fireball metrics
+    total_fireball_casts = 0
+    total_fireball_tiles_created = 0
+    total_fireball_direct_damage = 0
+    for run in all_runs:
+        total_fireball_casts += getattr(run, "fireball_casts", 0)
+        total_fireball_tiles_created += getattr(run, "fireball_tiles_created", 0)
+        total_fireball_direct_damage += getattr(run, "fireball_direct_damage", 0)
+
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1335,6 +1408,15 @@ def run_scenario_many(
         total_knockback_blocked_events=total_knockback_blocked_events,
         total_stagger_applications=total_stagger_applications,
         total_stagger_turns_skipped=total_stagger_turns_skipped,
+        # Phase 20 Scroll Modernization: Dragon Fart metrics
+        total_dragon_fart_casts=total_dragon_fart_casts,
+        total_dragon_fart_tiles_created=total_dragon_fart_tiles_created,
+        total_sleep_applications=total_sleep_applications,
+        total_sleep_turns_prevented=total_sleep_turns_prevented,
+        # Phase 20 Scroll Modernization: Fireball metrics
+        total_fireball_casts=total_fireball_casts,
+        total_fireball_tiles_created=total_fireball_tiles_created,
+        total_fireball_direct_damage=total_fireball_direct_damage,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

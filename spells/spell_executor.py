@@ -268,6 +268,15 @@ class SpellExecutor:
             }
         )
         
+        # Phase 20 Scroll Modernization: Track metrics for AoE spells
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector and spell.spell_id == "fireball":
+                collector.increment('fireball_casts')
+        except ImportError:
+            collector = None
+        
         # Show visual effect
         if spell.visual_effect:
             explosion_tiles = []
@@ -289,6 +298,9 @@ class SpellExecutor:
         from services.damage_service import apply_damage
         state_manager = kwargs.get('state_manager')
         damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
+        
+        # Phase 20 Scroll Modernization: Track direct damage for metrics
+        total_direct_damage = 0
         
         for entity in entities:
             entity_fighter = entity.get_component_optional(ComponentType.FIGHTER)
@@ -314,8 +326,20 @@ class SpellExecutor:
                         damage_type=damage_type_str
                     )
                     results.extend(damage_results)
+                    total_direct_damage += damage
+        
+        # Phase 20 Scroll Modernization: Track direct damage metric
+        if total_direct_damage > 0:
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                collector = get_active_metrics_collector()
+                if collector and spell.spell_id == "fireball":
+                    collector.increment('fireball_direct_damage', total_direct_damage)
+            except ImportError:
+                pass
         
         # Create ground hazards if defined
+        tiles_created = 0
         if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager'):
             from components.ground_hazard import HazardType
             
@@ -342,6 +366,17 @@ class SpellExecutor:
                                 source_name=spell.name
                             )
                             game_map.hazard_manager.add_hazard(hazard)
+                            tiles_created += 1
+        
+        # Phase 20 Scroll Modernization: Track tiles created metric
+        if tiles_created > 0:
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                collector = get_active_metrics_collector()
+                if collector and spell.spell_id == "fireball":
+                    collector.increment('fireball_tiles_created', tiles_created)
+            except ImportError:
+                pass
         
         return results
     
@@ -353,7 +388,8 @@ class SpellExecutor:
         fov_map,
         game_map,
         target_x: int,
-        target_y: int
+        target_y: int,
+        **kwargs
     ) -> List[Dict[str, Any]]:
         """Cast a cone-shaped spell (e.g., dragon fart).
         
@@ -392,39 +428,79 @@ class SpellExecutor:
             }
         )
         
+        # Phase 20 Scroll Modernization: Track metrics for cone spells
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector and spell.spell_id == "dragon_fart":
+                collector.increment('dragon_fart_casts')
+        except ImportError:
+            collector = None
+        
         # Show visual effect
         if spell.visual_effect:
-            spell.visual_effect(cone_tiles)
+            spell.visual_effect(list(cone_tiles))  # Convert set to list for visual effect
         
-        # Deal damage to entities in cone using centralized damage service
-        from services.damage_service import apply_damage
+        # Phase 20 Scroll Modernization: Check for sleep effect type
+        from spells.spell_types import EffectType
         
-        damage = self._calculate_damage(spell.damage) if spell.damage else 0
-        state_manager = kwargs.get('state_manager')
-        damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
-        
-        for entity in entities:
-            if entity.fighter and (entity.x, entity.y) in cone_tiles:
-                results.append(
-                    {
-                        "message": MB.spell_effect(
-                            f"The {entity.name} is caught in the blast for {damage} hit points!"
-                        )
-                    }
-                )
-                # Apply damage using centralized service (handles death automatically)
-                damage_results = apply_damage(
-                    state_manager,
-                    entity,
-                    damage,
-                    cause=f"spell:{spell.name}",
-                    attacker_entity=caster,
-                    damage_type=damage_type_str
-                )
-                results.extend(damage_results)
+        if spell.effect_type == EffectType.SLEEP:
+            # Apply SleepEffect to entities in cone (replaces old ConfusedMonster AI swap)
+            from components.status_effects import SleepEffect, StatusEffectManager
+            
+            affected_count = 0
+            for entity in entities:
+                if entity == caster:
+                    continue  # Don't affect self
+                    
+                fighter = entity.get_component_optional(ComponentType.FIGHTER)
+                if fighter and (entity.x, entity.y) in cone_tiles:
+                    # Ensure entity has status_effects component
+                    if not entity.components.has(ComponentType.STATUS_EFFECTS):
+                        entity.status_effects = StatusEffectManager(entity)
+                        entity.components.add(ComponentType.STATUS_EFFECTS, entity.status_effects)
+                    
+                    # Apply sleep effect
+                    sleep_effect = SleepEffect(duration=spell.duration, owner=entity)
+                    effect_results = entity.status_effects.add_effect(sleep_effect)
+                    results.extend(effect_results)
+                    affected_count += 1
+            
+            if affected_count == 0:
+                results.append({
+                    "message": MB.spell_fail("The noxious gas dissipates harmlessly...")
+                })
+        else:
+            # Original damage logic for other cone spells
+            from services.damage_service import apply_damage
+            
+            damage = self._calculate_damage(spell.damage) if spell.damage else 0
+            state_manager = kwargs.get('state_manager')
+            damage_type_str = spell.damage_type.name.lower() if hasattr(spell, 'damage_type') and spell.damage_type else None
+            
+            for entity in entities:
+                if entity.fighter and (entity.x, entity.y) in cone_tiles:
+                    results.append(
+                        {
+                            "message": MB.spell_effect(
+                                f"The {entity.name} is caught in the blast for {damage} hit points!"
+                            )
+                        }
+                    )
+                    # Apply damage using centralized service (handles death automatically)
+                    damage_results = apply_damage(
+                        state_manager,
+                        entity,
+                        damage,
+                        cause=f"spell:{spell.name}",
+                        attacker_entity=caster,
+                        damage_type=damage_type_str
+                    )
+                    results.extend(damage_results)
         
         # Create ground hazards if defined
-        if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager'):
+        tiles_created = 0
+        if spell.creates_hazard and game_map and hasattr(game_map, 'hazard_manager') and game_map.hazard_manager:
             from components.ground_hazard import HazardType
             
             hazard_type_map = {
@@ -446,6 +522,17 @@ class SpellExecutor:
                         source_name=spell.name
                     )
                     game_map.hazard_manager.add_hazard(hazard)
+                    tiles_created += 1
+        
+        # Phase 20 Scroll Modernization: Track tiles created metric
+        if tiles_created > 0:
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                collector = get_active_metrics_collector()
+                if collector and spell.spell_id == "dragon_fart":
+                    collector.increment('dragon_fart_tiles_created', tiles_created)
+            except ImportError:
+                pass
         
         return results
     

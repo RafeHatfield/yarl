@@ -171,6 +171,8 @@ def handle_player_turn_keys(key):
         return {"start_auto_explore": True}
     elif key_char == "s":
         return {"search": True}
+    elif key_char == "x":
+        return {"disarm_trap": True}  # Phase 21.7: Disarm adjacent trap
     
     # Tier 2: Wizard Mode - Use @ (Shift+2) or F12
     if key_char == "@" or key.vk == libtcod.KEY_F12:

@@ -2205,6 +2205,7 @@ map_features:
     color: [139, 69, 19]  # Brown/wooden
     blocks: false
     render_order: "item"
+    feature_type: "chest"
     chest_state: "closed"
     loot_quality: "common"
   
@@ -2214,17 +2215,30 @@ map_features:
     color: [255, 215, 0]  # Gold
     blocks: false
     render_order: "item"
+    feature_type: "chest"
     chest_state: "closed"
     loot_quality: "rare"
   
-  # Trapped chest variant
+  # Trapped chest variant (legacy - generic damage)
   trapped_chest:
     char: "C"
     color: [150, 75, 25]  # Dark brown
     blocks: false
     render_order: "item"
+    feature_type: "chest"
     chest_state: "trapped"
-    trap_type: "damage"  # Or: poison, monster_spawn
+    trap_type: "damage"  # Legacy trap type
+    loot_quality: "uncommon"
+  
+  # Phase 21.6: Trapped chest with spike payload
+  trapped_chest_spike:
+    char: "C"
+    color: [150, 75, 25]  # Dark brown
+    blocks: false
+    render_order: "item"
+    feature_type: "chest"
+    chest_state: "trapped"
+    trap_type: "spike"  # Phase 21.6: Reuses spike trap payload
     loot_quality: "uncommon"
   
   # Locked chest variant
@@ -2233,6 +2247,7 @@ map_features:
     color: [150, 150, 180]  # Shiny silver/steel (clearly distinct from grey)
     blocks: false
     render_order: "item"
+    feature_type: "chest"
     chest_state: "locked"
     key_id: "silver_key"  # Requires Silver Key to open
     loot_quality: "rare"
@@ -2398,6 +2413,63 @@ map_traps:
     # Alarm trap effects
     alarm_faction: "orc"
     alarm_radius: 8
+  
+  # Phase 21.1: Root Trap - applies EntangledEffect
+  root_trap:
+    char: "~"
+    color: [34, 139, 34]  # Forest green (nature/roots)
+    blocks: false
+    render_order: "item"
+    description: "Gnarled roots lie dormant beneath the surface, ready to ensnare the unwary."
+    trap_type: "root_trap"
+    is_detectable: true
+    passive_detect_chance: 0.1
+    # Root trap effects
+    entangle_duration: 3
+  
+  # Phase 21.3: Teleport Trap - randomly teleports entity
+  teleport_trap:
+    char: "T"
+    color: [138, 43, 226]  # Blue-violet (magical/arcane)
+    blocks: false
+    render_order: "item"
+    description: "A shimmering arcane sigil. Reality seems unstable here."
+    trap_type: "teleport_trap"
+    is_detectable: true
+    passive_detect_chance: 0.15
+  
+  # Phase 21.4: Gas Trap - applies PoisonEffect
+  gas_trap:
+    char: "G"
+    color: [144, 238, 144]  # Light green (toxic gas)
+    blocks: false
+    render_order: "item"
+    description: "Vents in the floor release noxious fumes when disturbed."
+    trap_type: "gas_trap"
+    is_detectable: true
+    passive_detect_chance: 0.12
+  
+  # Phase 21.4: Fire Trap - applies BurningEffect
+  fire_trap:
+    char: "F"
+    color: [255, 69, 0]  # Orange-red (fire)
+    blocks: false
+    render_order: "item"
+    description: "Runes glow with barely-contained heat. The air shimmers above them."
+    trap_type: "fire_trap"
+    is_detectable: true
+    passive_detect_chance: 0.12
+  
+  # Phase 21.5: Hole Trap - requests level transition to next floor
+  hole_trap:
+    char: "O"
+    color: [64, 64, 64]  # Dark gray (pit/void)
+    blocks: false
+    render_order: "item"
+    description: "A concealed pit. The floor here seems unstable."
+    trap_type: "hole_trap"
+    is_detectable: true
+    passive_detect_chance: 0.08  # Harder to detect (rare, dangerous)
 
 # Unique Quest Items
 # Special items that trigger victory conditions and story events

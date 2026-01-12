@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260112_110204",
+  "fast_mode": true,
+  "seed_base": 1337,
+  "total_scenarios": 5,
+  "success_count": 5,
+  "fail_count": 0,
+  "scenarios": [
+    "trap_root_identity",
+    "trap_spike_identity",
+    "trap_teleport_identity",
+    "trap_gas_identity",
+    "trap_fire_identity"
+  ]
+}

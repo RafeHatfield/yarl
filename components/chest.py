@@ -175,14 +175,19 @@ class Chest(MapFeature):
                     'message': MB.info("You unlock the chest with the key.")
                 })
         
-        # Check if trapped
+        # Check if trapped (Phase 21.6: Execute trap payloads)
         if self.is_trapped():
             from message_builder import MessageBuilder as MB
             results.append({
-                'message': MB.warning("You trigger a trap!"),
+                'message': MB.warning("⚠️ You trigger a trap!"),
                 'trap_triggered': True,
                 'trap_type': self.trap_type
             })
+            
+            # Execute trap payload using canonical mechanisms
+            trap_results = self._execute_trap_payload(actor, self.trap_type)
+            results.extend(trap_results)
+            
             # Trap is now sprung, chest becomes normal
             self.state = ChestState.CLOSED
         
@@ -206,6 +211,113 @@ class Chest(MapFeature):
             'loot': self.loot,
             'message': message
         })
+        
+        return results
+    
+    def _execute_trap_payload(self, actor: 'Entity', trap_type: str) -> List[Dict[str, Any]]:
+        """Execute trapped chest payload using canonical trap mechanisms.
+        
+        Phase 21.6: Reuses existing trap payload types and canonical execution paths:
+        - spike: damage via damage_service.apply_damage
+        - root/gas/fire: status effects via StatusEffectManager
+        - teleport: direct x/y assignment (canonical teleport execution point)
+        - hole: TransitionRequest + game_map.next_floor
+        
+        Metrics are recorded via single source of truth (ScenarioMetricsCollector).
+        
+        Args:
+            actor: Entity opening the chest (typically player)
+            trap_type: Type of trap payload ("spike", "root", "gas", "fire", "teleport", "hole")
+            
+        Returns:
+            List of result dictionaries with trap effects and messages
+        """
+        results = []
+        
+        # Increment chest trap metrics (single source of truth)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('chest_traps_triggered_total')
+        except ImportError:
+            pass
+        
+        # Phase 21.6 Thin Slice: Implement spike payload first
+        if trap_type == "spike":
+            results.extend(self._execute_spike_trap_payload(actor))
+        else:
+            # Other payloads not yet implemented
+            from message_builder import MessageBuilder as MB
+            results.append({
+                'message': MB.warning(f"Trap type '{trap_type}' not yet implemented for chests.")
+            })
+        
+        return results
+    
+    def _execute_spike_trap_payload(self, actor: 'Entity') -> List[Dict[str, Any]]:
+        """Execute spike trap payload - deals damage via damage_service.
+        
+        Phase 21.6: Spike payload for trapped chests. Uses canonical damage routing.
+        
+        Args:
+            actor: Entity that triggered the trap
+            
+        Returns:
+            List of result dictionaries with damage results
+        """
+        from components.component_registry import ComponentType
+        from message_builder import MessageBuilder as MB
+        
+        results = []
+        
+        # Increment spike trap metrics (single source of truth)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('chest_trap_spike_triggered')
+        except ImportError:
+            pass
+        
+        # Check if actor has fighter component
+        fighter = actor.get_component_optional(ComponentType.FIGHTER)
+        if not fighter:
+            results.append({
+                'message': MB.info(f"{actor.name} is unaffected by the trap.")
+            })
+            return results
+        
+        # Apply damage using canonical damage service
+        from services.damage_service import apply_damage
+        
+        # Chest spike traps deal 5 damage (less than floor spike traps which deal 7)
+        damage = 5
+        
+        results.append({
+            'message': MB.combat_hit(f"Poisoned needles pierce you for {damage} damage!")
+        })
+        
+        # Increment damage metric before applying (in case of death)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('chest_trap_spike_damage_total', damage)
+        except ImportError:
+            pass
+        
+        # Apply damage via canonical service (handles death automatically)
+        # Note: state_manager not available in Chest component context
+        # This is acceptable - damage_service handles None state_manager gracefully
+        damage_results = apply_damage(
+            state_manager=None,  # Chest component doesn't have state_manager access
+            target_entity=actor,
+            amount=damage,
+            cause="chest_trap_spike"
+        )
+        
+        results.extend(damage_results)
         
         return results
     

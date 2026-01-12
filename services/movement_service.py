@@ -264,6 +264,9 @@ class MovementService:
         # Check for traps on the new tile
         self._check_trap_trigger(player, entities, game_map, result)
         
+        # Phase 21.7: Check for passive trap detection in adjacent tiles
+        self._check_passive_trap_detection(player, entities, result)
+        
         return result
     
     # NOTE: _check_portal_entry() moved to PortalManager.check_victory_portal_collision()
@@ -331,7 +334,7 @@ class MovementService:
         
         # If trap was not detected, it triggers!
         if trap.is_triggered():
-            result.messages.append({"message": MB.danger(f"You stepped on the {trap_entity.name}!")})
+            result.messages.append({"message": MB.warning(f"⚠️ You stepped on the {trap_entity.name}!")})
             self._apply_trap_effects(player, trap_entity, trap, result)
     
     def _apply_trap_effects(self, player: 'Entity', trap_entity: 'Entity', trap, result) -> None:
@@ -354,7 +357,18 @@ class MovementService:
                 from services.damage_service import apply_damage
                 
                 damage = trap.spike_damage
-                result.messages.append({"message": MB.player_hit(f"Spikes pierce you for {damage} damage!")})
+                result.messages.append({"message": MB.combat_hit(f"Spikes pierce you for {damage} damage!")})
+                
+                # Phase 21.2: Increment spike trap metrics (single source of truth)
+                try:
+                    from services.scenario_metrics import get_active_metrics_collector
+                    collector = get_active_metrics_collector()
+                    if collector:
+                        collector.increment('traps_triggered_total')
+                        collector.increment('trap_spike_triggered')
+                        collector.increment('trap_spike_damage_total', damage)
+                except ImportError:
+                    pass
                 
                 # Apply damage using centralized service (handles death automatically)
                 damage_results = apply_damage(
@@ -394,6 +408,26 @@ class MovementService:
             # Alarm trap: alert nearby mobs in faction
             result.messages.append({"message": MB.danger(f"ALARM! The pressure plate triggers a loud gong!")})
             self._alert_nearby_mobs(player, trap)
+        
+        elif trap.trap_type == "root_trap":
+            # Phase 21.1: Root trap applies EntangledEffect
+            self._apply_root_trap_effect(player, trap, result)
+        
+        elif trap.trap_type == "teleport_trap":
+            # Phase 21.3: Teleport trap randomly teleports entity
+            self._apply_teleport_trap_effect(player, trap, result)
+        
+        elif trap.trap_type == "gas_trap":
+            # Phase 21.4: Gas trap applies PoisonEffect
+            self._apply_gas_trap_effect(player, trap, result)
+        
+        elif trap.trap_type == "fire_trap":
+            # Phase 21.4: Fire trap applies BurningEffect
+            self._apply_fire_trap_effect(player, trap, result)
+        
+        elif trap.trap_type == "hole_trap":
+            # Phase 21.5: Hole trap requests level transition
+            self._apply_hole_trap_effect(player, trap, result)
     
     def _alert_nearby_mobs(self, player: 'Entity', trap) -> None:
         """Alert nearby monsters of the same faction as configured in trap.
@@ -438,6 +472,378 @@ class MovementService:
         
         if alerted_count > 0:
             logger.info(f"Alarm trap: alerted {alerted_count} {faction_to_alert}(s)")
+    
+    def _apply_root_trap_effect(self, player: 'Entity', trap, result) -> None:
+        """Apply root trap effect (EntangledEffect) to the player.
+        
+        Phase 21.1: Root traps apply the same entangle effect as Root Potion.
+        Metrics are recorded via the single source of truth (ScenarioMetricsCollector).
+        
+        Args:
+            player: Player entity
+            trap: Trap component with entangle_duration
+            result: MovementResult to append messages to
+        """
+        from components.component_registry import ComponentType
+        from components.status_effects import EntangledEffect, StatusEffectManager
+        from message_builder import MessageBuilder as MB
+        
+        # Increment trap metrics (single source of truth)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('traps_triggered_total')
+                collector.increment('trap_root_triggered')
+        except ImportError:
+            pass
+        
+        result.messages.append({"message": MB.warning("🌿 Roots burst from the ground and ensnare you!")})
+        
+        # Get or create status effects manager
+        status_effects = player.components.get(ComponentType.STATUS_EFFECTS)
+        if not status_effects:
+            # Create status effects manager if player doesn't have one
+            status_effects = StatusEffectManager(player)
+            player.status_effects = status_effects
+            player.components.add(ComponentType.STATUS_EFFECTS, status_effects)
+        
+        # Apply entangled effect
+        duration = getattr(trap, 'entangle_duration', 3)
+        entangled_effect = EntangledEffect(owner=player, duration=duration)
+        apply_results = status_effects.add_effect(entangled_effect)
+        
+        # Record effect application metric
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('trap_root_effects_applied')
+        except ImportError:
+            pass
+        
+        # Add any messages from the effect application
+        for effect_result in apply_results:
+            if 'message' in effect_result:
+                result.messages.append(effect_result)
+        
+        logger.info(f"Root trap applied EntangledEffect ({duration} turns) to {player.name}")
+    
+    def _apply_teleport_trap_effect(self, entity: 'Entity', trap, result) -> None:
+        """Apply teleport trap effect - randomly teleport entity to valid tile.
+        
+        Phase 21.3: Canonical teleport execution point for trap-based teleportation.
+        Uses deterministic RNG (respects set_global_seed) for reproducible teleports.
+        
+        Selection rules:
+        - Choose uniformly from all valid tiles on the same dungeon level
+        - Valid tile: walkable (not blocked) + not occupied by another entity
+        - Teleport does NOT trigger destination tile entry effects (no chain triggers)
+        
+        Metrics are recorded via the single source of truth (ScenarioMetricsCollector).
+        
+        Args:
+            entity: Entity being teleported (player or monster)
+            trap: Trap component
+            result: MovementResult to append messages to
+        """
+        from message_builder import MessageBuilder as MB
+        from random import choice
+        
+        # Increment trap metrics (single source of truth)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('traps_triggered_total')
+                collector.increment('trap_teleport_triggered')
+        except ImportError:
+            pass
+        
+        result.messages.append({"message": MB.spell_effect("⚡ Reality warps around you!")})
+        
+        # Get game map and entities from state
+        state = self.state_manager.state
+        game_map = state.game_map
+        entities = state.entities
+        
+        # Find all valid teleport destinations
+        # Valid = walkable + not occupied + in bounds
+        valid_tiles = []
+        for x in range(game_map.width):
+            for y in range(game_map.height):
+                tile = game_map.get_tile(x, y)
+                if not tile or tile.blocked:
+                    continue
+                
+                # Check if tile is occupied by a blocking entity
+                occupied = False
+                for other in entities:
+                    if other.blocks and other.x == x and other.y == y:
+                        occupied = True
+                        break
+                
+                if not occupied:
+                    valid_tiles.append((x, y))
+        
+        # Check if we have valid destinations
+        if not valid_tiles:
+            # No valid tiles - trap fails (should be extremely rare on normal maps)
+            result.messages.append({"message": MB.warning("The teleport fizzles - nowhere to go!")})
+            
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                collector = get_active_metrics_collector()
+                if collector:
+                    collector.increment('trap_teleport_failed_no_valid_tile')
+            except ImportError:
+                pass
+            
+            logger.warning(f"Teleport trap failed - no valid tiles available")
+            return
+        
+        # Store old position for logging
+        old_x, old_y = entity.x, entity.y
+        
+        # Select random destination (deterministic via canonical RNG)
+        # Uses Python's random module which respects set_global_seed()
+        dest_x, dest_y = choice(valid_tiles)
+        
+        # CANONICAL TELEPORT EXECUTION POINT
+        # This is the only acceptable place to set x/y directly for teleport trap
+        entity.x = dest_x
+        entity.y = dest_y
+        
+        # Invalidate entity sorting cache
+        from entity_sorting_cache import invalidate_entity_cache
+        invalidate_entity_cache("teleport_trap")
+        
+        # Record success metric
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('trap_teleport_success')
+        except ImportError:
+            pass
+        
+        result.messages.append({"message": MB.spell_effect(f"You are teleported to ({dest_x}, {dest_y})!")})
+        
+        # FOV needs recompute after teleportation
+        result.fov_recompute = True
+        
+        logger.info(f"Teleport trap: {entity.name} teleported from ({old_x}, {old_y}) to ({dest_x}, {dest_y})")
+        
+        # IMPORTANT: Teleport consumes the remainder of the turn
+        # Destination tile entry effects do NOT trigger this turn (no chain triggers)
+        # This is enforced by returning early from execute_movement after trap processing
+    
+    def _apply_gas_trap_effect(self, entity: 'Entity', trap, result) -> None:
+        """Apply gas trap effect - applies PoisonEffect (no direct damage from trap).
+        
+        Phase 21.4: Gas traps apply poison status effect. The effect itself handles
+        damage ticking via its process_turn_start() method, which routes through
+        damage_service.apply_damage for canonical damage handling.
+        
+        Metrics are recorded via the single source of truth (ScenarioMetricsCollector).
+        
+        Args:
+            entity: Entity triggering the trap
+            trap: Trap component
+            result: MovementResult to append messages to
+        """
+        from components.component_registry import ComponentType
+        from components.status_effects import PoisonEffect, StatusEffectManager
+        from message_builder import MessageBuilder as MB
+        
+        # Increment trap metrics (single source of truth)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('traps_triggered_total')
+                collector.increment('trap_gas_triggered')
+        except ImportError:
+            pass
+        
+        result.messages.append({"message": MB.warning("☠️ Poisonous gas erupts from the floor!")})
+        
+        # Ensure entity has status_effects component
+        if not entity.components.has(ComponentType.STATUS_EFFECTS):
+            entity.status_effects = StatusEffectManager(entity)
+            entity.components.add(ComponentType.STATUS_EFFECTS, entity.status_effects)
+        
+        # Apply poison effect (uses PoisonEffect defaults: duration=6, damage=1)
+        poison_effect = PoisonEffect(owner=entity)
+        effect_results = entity.status_effects.add_effect(poison_effect)
+        
+        # Record effect application metric
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('trap_gas_effects_applied')
+        except ImportError:
+            pass
+        
+        # Add any messages from the effect application
+        for effect_result in effect_results:
+            if 'message' in effect_result:
+                result.messages.append(effect_result)
+        
+        logger.info(f"Gas trap applied PoisonEffect to {entity.name}")
+    
+    def _apply_fire_trap_effect(self, entity: 'Entity', trap, result) -> None:
+        """Apply fire trap effect - applies BurningEffect (no direct damage from trap).
+        
+        Phase 21.4: Fire traps apply burning status effect. The effect itself handles
+        damage ticking via its process_turn_start() method, which routes through
+        damage_service.apply_damage for canonical damage handling.
+        
+        Metrics are recorded via the single source of truth (ScenarioMetricsCollector).
+        
+        Args:
+            entity: Entity triggering the trap
+            trap: Trap component
+            result: MovementResult to append messages to
+        """
+        from components.component_registry import ComponentType
+        from components.status_effects import BurningEffect, StatusEffectManager
+        from message_builder import MessageBuilder as MB
+        
+        # Increment trap metrics (single source of truth)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('traps_triggered_total')
+                collector.increment('trap_fire_triggered')
+        except ImportError:
+            pass
+        
+        result.messages.append({"message": MB.warning("🔥 Flames burst from the floor!")})
+        
+        # Ensure entity has status_effects component
+        if not entity.components.has(ComponentType.STATUS_EFFECTS):
+            entity.status_effects = StatusEffectManager(entity)
+            entity.components.add(ComponentType.STATUS_EFFECTS, entity.status_effects)
+        
+        # Apply burning effect (duration=4, damage=1 per turn)
+        burning_effect = BurningEffect(duration=4, owner=entity, damage_per_turn=1)
+        effect_results = entity.status_effects.add_effect(burning_effect)
+        
+        # Record effect application metric
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('trap_fire_effects_applied')
+        except ImportError:
+            pass
+        
+        # Add any messages from the effect application
+        for effect_result in effect_results:
+            if 'message' in effect_result:
+                result.messages.append(effect_result)
+        
+        logger.info(f"Fire trap applied BurningEffect to {entity.name}")
+    
+    def _apply_hole_trap_effect(self, entity: 'Entity', trap, result) -> None:
+        """Apply hole trap effect - requests level transition to next floor.
+        
+        Phase 21.5: Hole traps create a TransitionRequest for level transition.
+        The actual transition is executed by the gameplay loop via game_map.next_floor().
+        
+        In scenario/harness runs, the TransitionRequest is created but not executed
+        (scenarios don't support multi-level). Tests verify the request exists.
+        
+        In real gameplay, the transition is resolved in the gameplay loop near
+        stairs handling, which calls game_map.next_floor() canonically.
+        
+        Metrics are recorded via the single source of truth (ScenarioMetricsCollector).
+        
+        Args:
+            entity: Entity triggering the trap (typically player)
+            trap: Trap component
+            result: MovementResult to append messages to
+        """
+        from message_builder import MessageBuilder as MB
+        from services.transition_service import get_transition_service
+        
+        # Increment trap metrics (single source of truth)
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('traps_triggered_total')
+                collector.increment('trap_hole_triggered')
+                collector.increment('trap_hole_transition_requested')
+        except ImportError:
+            pass
+        
+        result.messages.append({"message": MB.warning("💀 The floor gives way beneath you!")})
+        result.messages.append({"message": MB.warning("You fall into darkness...")})
+        
+        # Create transition request (canonical mechanism)
+        transition_service = get_transition_service()
+        transition_service.request_transition(
+            transition_type="next_floor",
+            cause="hole_trap",
+            entity=entity
+        )
+        
+        logger.info(f"Hole trap triggered: TransitionRequest created for {entity.name}")
+        
+        # IMPORTANT: Hole trap consumes the remainder of the turn
+        # No chain triggers occur (transition happens between turns)
+        # This is enforced by the gameplay loop handling the transition
+    
+    def _check_passive_trap_detection(self, player: 'Entity', entities: list, result) -> None:
+        """Check for passive trap detection in adjacent tiles.
+        
+        Phase 21.7: After movement, player has a chance to passively notice nearby traps.
+        Checks adjacent 8 tiles for hidden traps and rolls detection chance.
+        
+        Args:
+            player: Player entity
+            entities: List of all entities
+            result: MovementResult to append messages to
+        """
+        from components.component_registry import ComponentType
+        from random import random
+        from message_builder import MessageBuilder as MB
+        
+        # Check adjacent 8 tiles
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue  # Skip player's own tile (already checked in _check_trap_trigger)
+                
+                check_x = player.x + dx
+                check_y = player.y + dy
+                
+                # Find trap at this position
+                for entity in entities:
+                    if (entity.x == check_x and entity.y == check_y and 
+                        entity.components.has(ComponentType.TRAP)):
+                        
+                        trap = entity.components.get(ComponentType.TRAP)
+                        if not trap or trap.is_detected or trap.is_disarmed:
+                            continue
+                        
+                        # Check for passive detection
+                        if trap.can_be_detected() and random() < trap.passive_detect_chance:
+                            trap.detect("passive_adjacent")
+                            result.messages.append({"message": MB.success(f"You notice a {entity.name} nearby!")})
+                            
+                            # Increment detection metric
+                            try:
+                                from services.scenario_metrics import get_active_metrics_collector
+                                collector = get_active_metrics_collector()
+                                if collector:
+                                    collector.increment('traps_detected_total')
+                            except ImportError:
+                                pass
     
     def _find_door_at_location(self, entities: List['Entity'], x: int, y: int) -> Optional['Entity']:
         """Find a door entity at the given location.

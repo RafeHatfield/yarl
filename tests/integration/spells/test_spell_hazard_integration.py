@@ -163,30 +163,40 @@ class TestFireballHazardCreation(unittest.TestCase):
 
 
 class TestDragonFartHazardCreation(unittest.TestCase):
-    """Test that casting Dragon Fart creates poison gas hazards."""
+    """Test that casting Dragon Fart creates poison gas hazards.
+    
+    Phase 20 Scroll Modernization: Dragon Fart now routes through SpellExecutor
+    via cast_spell_by_id. This requires proper fov_map setup.
+    """
     
     def setUp(self):
         """Set up test fixtures."""
         self.game_map = GameMap(width=40, height=40, dungeon_level=1)
         
-        # Create caster entity
-        self.caster = Mock()
-        self.caster.x = 20
-        self.caster.y = 20
-        self.caster.name = "Player"
+        # Create caster entity with proper components
+        self.caster = Entity(
+            x=20, y=20, char='@', color=(255, 255, 255), name="Player",
+            blocks=True, render_order=5
+        )
         
         self.entities = [self.caster]
+        
+        # Mock FOV map for spell system
+        self.fov_map = Mock()
     
-    @patch('item_functions.show_dragon_fart')
-    def test_dragon_fart_creates_poison_gas_hazards(self, mock_show):
+    @patch('spells.spell_catalog.show_dragon_fart')
+    @patch('spells.spell_executor.map_is_in_fov')
+    def test_dragon_fart_creates_poison_gas_hazards(self, mock_fov, mock_show):
         """Test that casting dragon fart creates poison gas hazards."""
+        mock_fov.return_value = True
+        
         results = cast_dragon_fart(
             self.caster,
             entities=self.entities,
+            fov_map=self.fov_map,
             game_map=self.game_map,
             target_x=25,
-            target_y=20,
-            duration=20
+            target_y=20
         )
         
         # Should have created hazards
@@ -197,37 +207,43 @@ class TestDragonFartHazardCreation(unittest.TestCase):
         has_poison = any(h.hazard_type == HazardType.POISON_GAS for h in all_hazards)
         self.assertTrue(has_poison)
     
-    @patch('item_functions.show_dragon_fart')
-    def test_poison_gas_hazard_properties(self, mock_show):
+    @patch('spells.spell_catalog.show_dragon_fart')
+    @patch('spells.spell_executor.map_is_in_fov')
+    def test_poison_gas_hazard_properties(self, mock_fov, mock_show):
         """Test that poison gas hazards have correct properties."""
+        mock_fov.return_value = True
+        
         cast_dragon_fart(
             self.caster,
             entities=self.entities,
+            fov_map=self.fov_map,
             game_map=self.game_map,
             target_x=25,
-            target_y=20,
-            duration=20
+            target_y=20
         )
         
         # Get any poison gas hazard
         all_hazards = self.game_map.hazard_manager.get_all_hazards()
         gas_hazard = next(h for h in all_hazards if h.hazard_type == HazardType.POISON_GAS)
         
-        self.assertEqual(gas_hazard.base_damage, 6)  # Lower than fire
-        self.assertEqual(gas_hazard.remaining_turns, 5)  # Lasts 5 turns
+        self.assertEqual(gas_hazard.base_damage, 6)  # DRAGON_FART.hazard_damage
+        self.assertEqual(gas_hazard.remaining_turns, 5)  # DRAGON_FART.hazard_duration
         self.assertEqual(gas_hazard.max_duration, 5)
         self.assertEqual(gas_hazard.source_name, "Dragon Fart")
     
-    @patch('item_functions.show_dragon_fart')
-    def test_dragon_fart_cone_shape(self, mock_show):
+    @patch('spells.spell_catalog.show_dragon_fart')
+    @patch('spells.spell_executor.map_is_in_fov')
+    def test_dragon_fart_cone_shape(self, mock_fov, mock_show):
         """Test that dragon fart creates hazards in a cone pattern."""
+        mock_fov.return_value = True
+        
         cast_dragon_fart(
             self.caster,
             entities=self.entities,
+            fov_map=self.fov_map,
             game_map=self.game_map,
             target_x=28,
-            target_y=20,
-            duration=20
+            target_y=20
         )
         
         # Should have multiple hazards in cone
@@ -240,9 +256,12 @@ class TestDragonFartHazardCreation(unittest.TestCase):
         hazards_east = sum(1 for h in all_hazards if h.x > self.caster.x)
         self.assertGreater(hazards_east, len(all_hazards) * 0.7)  # At least 70% east
     
-    @patch('item_functions.show_dragon_fart')
-    def test_dragon_fart_without_game_map(self, mock_show):
+    @patch('spells.spell_catalog.show_dragon_fart')
+    @patch('spells.spell_executor.map_is_in_fov')
+    def test_dragon_fart_without_game_map(self, mock_fov, mock_show):
         """Test that dragon fart works even if game_map is not provided."""
+        mock_fov.return_value = True
+        
         # Should not crash when game_map doesn't have hazard_manager
         game_map_no_manager = Mock()
         game_map_no_manager.hazard_manager = None
@@ -250,10 +269,10 @@ class TestDragonFartHazardCreation(unittest.TestCase):
         results = cast_dragon_fart(
             self.caster,
             entities=self.entities,
+            fov_map=self.fov_map,
             game_map=game_map_no_manager,
             target_x=25,
-            target_y=20,
-            duration=20
+            target_y=20
         )
         
         # Should still return results (just no hazards created)

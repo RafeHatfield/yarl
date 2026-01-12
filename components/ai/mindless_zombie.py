@@ -124,12 +124,14 @@ class MindlessZombieAI:
         # Do NOT process them here again.
         
         # Check for paralysis - completely prevents all actions
-        if (hasattr(self.owner, 'has_status_effect') and 
-            callable(self.owner.has_status_effect) and 
+        if (hasattr(self.owner, 'has_status_effect') and
+            callable(self.owner.has_status_effect) and
             self.owner.has_status_effect('paralysis')):
             results.append({'message': MB.custom(f"{self.owner.name} is paralyzed and cannot act!", (150, 75, 200))})
             return results
-        
+
+        # NOTE: Sleep is handled via skip_turn in SleepEffect.process_turn_start()
+
         # Check if there's a taunted target (Yo Mama spell effect)
         # Even mindless zombies are drawn to the insult!
         taunted_target = find_taunted_target(entities)

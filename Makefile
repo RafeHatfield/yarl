@@ -33,6 +33,8 @@ help:
 	@echo "  make balance-suite-fast         - Run balance suite (fast compare mode)"
 	@echo "  make balance-suite-update-baseline      - Update baseline (full)"
 	@echo "  make balance-suite-update-baseline-fast - Update baseline (fast)"
+	@echo "  make hazards-suite              - Run hazards suite (traps/environmental)"
+	@echo "  make hazards-suite-fast         - Run hazards suite (fast mode)"
 	@echo ""
 	@echo "Bot Testing:"
 	@echo "  make bot         - Single bot run (watch the bot play)"
@@ -716,3 +718,10 @@ balance-suite-update-baseline:
 
 balance-suite-update-baseline-fast:
 	python3 tools/balance_suite.py --update-baseline --fast
+
+# Hazards suite targets - environmental hazards and trap scenarios
+hazards-suite:
+	python3 tools/hazards_suite.py
+
+hazards-suite-fast:
+	python3 tools/hazards_suite.py --fast

@@ -954,6 +954,74 @@ class ParalysisEffect(StatusEffect):
         return results
 
 
+class SleepEffect(StatusEffect):
+    """Puts the owner to sleep - completely prevents all actions until woken or duration ends.
+    
+    Phase 20 Scroll Modernization: Replaces ConfusedMonster AI swap for Dragon Fart.
+    
+    Sleep is a proper status effect that:
+    - Prevents all actions (like paralysis)
+    - Ticks duration properly
+    - Can be checked via has_status_effect('sleep')
+    - Tracks metrics for balance analysis
+    
+    Unlike ConfusedMonster AI, this:
+    - Works on any entity (not just AI-having monsters)
+    - Integrates with the status effect system
+    - Is silence-gated when used via scrolls (through SpellExecutor)
+    
+    Metrics tracked:
+    - sleep_applications: Count of effect applications
+    - sleep_turns_prevented: Count of turns monsters skipped due to sleep
+    """
+    
+    def __init__(self, duration: int, owner: 'Entity'):
+        super().__init__("sleep", duration, owner)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply sleep effect with message."""
+        results = super().apply()
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('sleep_applications')
+        results.append({
+            'message': MB.status_effect(f"💤 {self.owner.name} falls asleep!")
+        })
+        return results
+    
+    def remove(self) -> List[Dict[str, Any]]:
+        """Remove sleep effect with message."""
+        results = super().remove()
+        results.append({
+            'message': MB.status_effect(f"{self.owner.name} wakes up!")
+        })
+        return results
+    
+    def process_turn_start(self, entities=None, state_manager=None) -> List[Dict[str, Any]]:
+        """Process sleep at turn start - skip the entity's turn.
+        
+        Returns skip_turn: True to signal AISystem to skip this entity's action.
+        This is the canonical way to block actions - no per-AI special casing needed.
+        
+        Args:
+            entities: Optional list of all game entities (not used)
+            state_manager: Optional state manager (not used - sleep doesn't deal damage)
+            
+        Returns:
+            List of result dictionaries with skip_turn flag
+        """
+        results = []
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('sleep_turns_prevented')
+        
+        results.append({
+            'message': MB.custom(f"💤 {self.owner.name} is asleep...", (100, 100, 200)),
+            'skip_turn': True  # Signal to AISystem that this turn is skipped
+        })
+        return results
+
+
 class IdentifyModeEffect(StatusEffect):
     """Automatically identifies 1 random item per turn for the duration.
     

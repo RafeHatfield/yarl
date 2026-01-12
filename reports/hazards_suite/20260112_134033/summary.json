@@ -1,0 +1,19 @@
+{
+  "timestamp": "20260112_134033",
+  "fast_mode": true,
+  "seed_base": 1337,
+  "total_scenarios": 9,
+  "success_count": 9,
+  "fail_count": 0,
+  "scenarios": [
+    "trap_root_identity",
+    "trap_spike_identity",
+    "trap_teleport_identity",
+    "trap_gas_identity",
+    "trap_fire_identity",
+    "trap_hole_identity",
+    "trapped_chest_spike_identity",
+    "trap_detect_identity",
+    "trap_disarm_identity"
+  ]
+}

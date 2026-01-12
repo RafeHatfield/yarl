@@ -64,6 +64,7 @@ def _validate_item_types(scenario) -> None:
         getattr(registry, "armor", {}),
         getattr(registry, "rings", {}),
         getattr(registry, "unique_items", {}),
+        getattr(registry, "map_features", {}),  # Phase 21.6: Include chests
     ]
     for idx, entry in enumerate(scenario.items or []):
         item_type = entry.get("type")

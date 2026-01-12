@@ -1,0 +1,69 @@
+# Scenario: Trap Disarm Identity Test
+# Phase 21.7: Trap disarm action (deterministic success)
+#
+# Purpose: Verify that player can disarm revealed traps, and that
+# disarmed traps do not trigger when stepped on.
+#
+# Layout: Simple 10x10 arena with spike trap at (5,5)
+# Player starts at (4,5) adjacent to trap
+# Trap starts revealed (for testing disarm directly)
+#
+# Expected outcome (deterministic under seed_base=1337):
+# - trap_disarms_attempted: 1
+# - trap_disarms_succeeded: 1
+# - Trap becomes disarmed (is_disarmed=True)
+# - Walking onto disarmed trap does NOT trigger it
+
+scenario_id: trap_disarm_identity
+name: "Trap Disarm Identity Test"
+description: "Deterministic test: disarm revealed trap, walk safely onto it."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 20
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  trap_disarms_attempted: 1
+  trap_disarms_succeeded: 1
+  notes:
+    - Player disarms revealed trap
+    - Trap becomes inert
+    - Walking onto trap does NOT trigger it
+    - Metrics increment correctly
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - single 10x10 arena
+rooms:
+  - id: "disarm_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Simple arena for trap disarm test"
+    walls: "enclosed"
+
+# No monsters
+monsters: []
+
+# No items
+items: []
+
+# Trap placements - spike trap (will be revealed via search first)
+traps:
+  - type: "spike_trap"
+    position: [5, 5]
+
+# Player spawn configuration - starts adjacent to trap
+player:
+  position: [4, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

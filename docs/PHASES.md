@@ -295,62 +295,127 @@ Monster-specific abilities and tactical patterns to differentiate enemy types be
 
 ### Phase 20: Status Effects & Combat Depth
 
-**Status:** 🚧 IN PROGRESS
+**Status:** ✅ COMPLETE
 
 **Intent:**
 Introduce persistent combat effects and corpse explosion mechanics to create tactical depth.
 
-**Completed Features (v4.11.0):**
-- **Corpse Explosion Lifecycle:**
-  - FRESH corpses: Created on death, raisable, NOT explodable
-  - SPENT corpses: Created on re-death of raised entities, explodable, NOT raisable
-  - CONSUMED corpses: Post-explosion, inert
-  - Lineage tracking: Raised entities carry corpse_id for deterministic SPENT creation
-  - Exploder Necromancer: Targets ONLY SPENT corpses
-  - State machine prevents illegal double-use (raise+explode same corpse)
+**Completed Systems:**
 
-**Planned Features:**
-- Damage-over-time effects (poison, bleed, burning)
-- Movement penalties (slow, root, knockback)
-- Action denial (stun, silence, disarm)
-- Buff/debuff duration tracking
-- Status effect resistance system
+**Corpse Explosion Lifecycle:**
+- FRESH corpses: Created on death, raisable, NOT explodable
+- SPENT corpses: Created on re-death of raised entities, explodable, NOT raisable
+- CONSUMED corpses: Post-explosion, inert
+- Lineage tracking: Raised entities carry corpse_id for deterministic SPENT creation
+- Exploder Necromancer: Targets ONLY SPENT corpses
+- State machine prevents illegal double-use (raise+explode same corpse)
 
-**Dependencies:**
-- Status effect component framework (partially exists)
-- Turn-based duration tracking (exists)
-- Visual indicators for active effects (partial)
+**Status Effects Maturity:**
+- **PoisonEffect:** Damage-over-time (6 turns, 1/tick), resistance-aware, canonical DOT model
+- **BurningEffect:** Fire damage-over-time, applied by fire creatures and hazards
+- **SilencedEffect:** Spell denial (blocks spellcasting, scrolls, spell-tagged abilities), 3-turn duration
+- **SlowedEffect:** Turn-skip movement penalty, refresh-not-stack semantics
+- **EntangledEffect:** Root/vine movement blocker, turn-consuming, 3-turn duration
+- **StaggeredEffect:** Micro-stun from wall-impact knockback, 1-turn skip
 
-**Risks:**
-- Status stacking may create degenerate strategies
-- Bot AI needs sophisticated status handling
-- Combat feel may become cluttered without careful UI work
+**Hazards Modernization:**
+- Fire hazards apply BurningEffect via canonical status system
+- Poison gas hazards apply PoisonEffect via canonical status system
+- Environmental damage routes through status effects framework
+
+**Knockback System:**
+- Weapon-based knockback (power-delta scaled distance, cap 4 tiles)
+- Wall-impact stagger (micro-stun on collision)
+- Canonical movement execution, respects entangle/root
+- Deterministic under scenario harness seeding
+
+**Silence Canonicalization:**
+- Scroll of Silence applies SilencedEffect
+- Execution-point blocking (not AI decision logic)
+- Works on both player and monsters
+- Clear scope: blocks spells/scrolls/spell-tagged abilities, not potions/melee/movement
+
+**Deliverables:**
+- Complete status effect framework with duration tracking
+- Corpse lifecycle state machine (FRESH/SPENT/CONSUMED)
+- Weapon knockback with stagger mechanics
+- Hazards integrated with status effects
+- Deterministic, metriced, baselined systems
+
+**What it unlocked:**
+- Tactical depth through persistent effects
+- Environmental hazards as meaningful gameplay elements
+- Foundation for Phase 21 traps (status effect routing)
+- Combat variety beyond raw damage numbers
 
 ---
 
-### Phase 21: Environmental Hazards & Level Features
+### Phase 21: Traps & Environmental Control
 
 **Status:** PLANNED
 
 **Intent:**
-Make dungeon layouts mechanically meaningful beyond monster placement. Add traps, terrain effects, and interactive level features.
+Make dungeon layouts mechanically meaningful beyond monster placement. Introduce traps that trigger on tile entry and route effects through canonical systems.
 
-**Potential features:**
-- Traps (spike, arrow, alarm, pit)
-- Terrain types (water, fire, ice, darkness)
-- Interactive objects (levers, pressure plates, portals)
-- Line-of-sight obstacles (pillars, fog)
-- Destructible walls
+**Trap Types:**
+
+**Spike Trap:**
+- Direct damage routed through damage_service
+- Applies bleed status effect
+- Common trap type
+
+**Root Trap:**
+- Applies EntangleEffect (movement blocked, turn consumed)
+- Uses canonical status effect system
+- Tactical positioning disruption
+
+**Gas Trap:**
+- Applies PoisonEffect (damage-over-time)
+- Routes through status effects framework
+- Environmental hazard integration
+
+**Fire Trap:**
+- Applies BurningEffect (fire damage-over-time)
+- Uses canonical status effect system
+- Synergy with fire resistance mechanics
+
+**Teleport Trap:**
+- Teleports entity to random valid tile on same dungeon level
+- Deterministic under seed (no RNG surprises)
+- Tactical repositioning, not death sentence
+
+**Hole Trap (RARE):**
+- Forces descent to next dungeon level
+- Uses canonical level-transition logic
+- Intentionally high-impact, rare occurrence
+- No instant death — player survives fall
+
+**Design Principles:**
+- Traps trigger on tile entry (post-successful movement)
+- Traps execute at canonical execution points, not AI/decision logic
+- Effects/damage route through existing canonical systems (damage_service, status effects)
+- Introduction sequence: identity scenarios → controlled arenas → worldgen integration
+- Knockback synergy: knockback into traps is a valid interaction, but knockback is NOT a trap type
+
+**Phase 21 Goals:**
+- Implement six trap types with canonical effect routing
+- Create identity scenarios validating each trap type
+- Integrate traps into controlled arena scenarios
+- Add trap placement to worldgen (YAML-driven)
+- Ensure deterministic behavior under scenario harness seeding
+- Maintain balance suite stability
 
 **Dependencies:**
-- Tile property system expansion
-- Trap trigger/detection framework
-- Environmental damage system
+- Phase 20 status effects framework (complete)
+- Trap component system (exists)
+- Movement service integration (exists)
+- Damage service routing (exists)
 
 **Risks:**
 - Worldgen complexity increases significantly
-- Bot pathfinding needs trap avoidance
+- Bot pathfinding needs trap awareness
 - May require renderer updates for visual clarity
+- Trap density must balance challenge without frustration
 
 ---
 

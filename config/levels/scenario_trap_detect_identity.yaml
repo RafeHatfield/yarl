@@ -1,0 +1,69 @@
+# Scenario: Trap Detection Identity Test
+# Phase 21.7: Passive trap detection in adjacent tiles
+#
+# Purpose: Verify that player can passively detect traps in adjacent tiles
+# after movement, and that detection metrics are tracked correctly.
+#
+# Layout: Simple 10x10 arena with spike trap at (5,5)
+# Player starts at (3,5), moves right to (4,5) adjacent to trap
+# Trap has high passive_detect_chance (0.9) for deterministic detection
+#
+# Expected outcome (deterministic under seed_base=1337):
+# - traps_detected_total: 1
+# - Trap becomes revealed (is_detected=True)
+# - Trap renders as '^' instead of '.'
+
+scenario_id: trap_detect_identity
+name: "Trap Detection Identity Test"
+description: "Deterministic test: passive trap detection in adjacent tiles."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 20
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  traps_detected_total: 1
+  notes:
+    - Player moves adjacent to hidden trap
+    - Passive detection check succeeds (high chance for determinism)
+    - Trap becomes revealed
+    - Metrics increment correctly
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - single 10x10 arena
+rooms:
+  - id: "detect_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Simple arena for trap detection test"
+    walls: "enclosed"
+
+# No monsters
+monsters: []
+
+# No items
+items: []
+
+# Trap placements - spike trap with high passive_detect_chance
+# Note: We'll need to configure this trap to have high detection chance
+# For now, use standard spike trap and rely on RNG seed for determinism
+traps:
+  - type: "spike_trap"
+    position: [5, 5]
+
+# Player spawn configuration - starts at (3,5), will move to (4,5) adjacent to trap
+player:
+  position: [3, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

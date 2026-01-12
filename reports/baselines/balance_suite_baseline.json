@@ -358,5 +358,25 @@
     "monster_hit_rate": 0.46195652173913043,
     "pressure_index": -13.433333333333334,
     "bonus_attacks_per_run": 6.666666666666667
+  },
+  "scroll_dragon_fart_identity": {
+    "scenario_id": "scroll_dragon_fart_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.68,
+    "monster_hit_rate": 0.48,
+    "pressure_index": -7.7,
+    "bonus_attacks_per_run": 5.3
+  },
+  "scroll_fireball_identity": {
+    "scenario_id": "scroll_fireball_identity",
+    "runs": 30,
+    "deaths": 0,
+    "death_rate": 0.0,
+    "player_hit_rate": 0.69,
+    "monster_hit_rate": 0.45,
+    "pressure_index": -7.0,
+    "bonus_attacks_per_run": 5.0
   }
 }

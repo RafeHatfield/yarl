@@ -1,0 +1,75 @@
+# Scenario: Teleport Trap Identity Test
+# Phase 21.3: Teleport trap with deterministic RNG and canonical teleport execution
+#
+# Purpose: Verify that teleport traps trigger on tile entry, teleport entity to a
+# deterministic destination using canonical RNG, and track metrics correctly.
+#
+# Layout: Simple 10x10 arena with teleport trap at (5,5)
+# Player starts at (4,5), moves right to trigger trap
+#
+# Expected outcome (deterministic under seed_base=1337):
+# - traps_triggered_total: 1
+# - trap_teleport_triggered: 1
+# - trap_teleport_success: 1
+# - trap_teleport_failed_no_valid_tile: 0
+# - Player teleported to deterministic coordinates (exact x,y)
+# - Destination tile is walkable and unoccupied
+# - Player remains on same dungeon level
+# - No chain trigger (destination tile effects don't trigger same turn)
+
+scenario_id: trap_teleport_identity
+name: "Teleport Trap Identity Test"
+description: "Deterministic test: teleport trap uses canonical RNG, teleports to valid tile, metrics tracked correctly."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 20
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  traps_triggered_total: 1
+  trap_teleport_triggered: 1
+  trap_teleport_success: 1
+  trap_teleport_failed_no_valid_tile: 0
+  notes:
+    - Player steps on teleport trap at (5,5)
+    - Teleported to deterministic destination using canonical RNG
+    - Destination is walkable and unoccupied
+    - No chain trigger (destination tile doesn't trigger same turn)
+    - Metrics single-sourced via ScenarioMetricsCollector
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - single 10x10 arena
+rooms:
+  - id: "teleport_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Simple arena for teleport trap identity test"
+    walls: "enclosed"
+
+# No monsters - pure trap test
+monsters: []
+
+# No items
+items: []
+
+# Trap placements - single teleport trap at (5,5)
+traps:
+  - type: "teleport_trap"
+    position: [5, 5]
+
+# Player spawn configuration - starts at (4,5), will move right to trigger trap
+player:
+  position: [4, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

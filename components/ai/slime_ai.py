@@ -113,12 +113,14 @@ class SlimeAI:
         # Do NOT process them here again.
         
         # Check for paralysis - completely prevents all actions
-        if (hasattr(monster, 'has_status_effect') and 
-            callable(monster.has_status_effect) and 
+        if (hasattr(monster, 'has_status_effect') and
+            callable(monster.has_status_effect) and
             monster.has_status_effect('paralysis')):
             results.append({'message': MB.custom(f"{monster.name} is paralyzed and cannot act!", (150, 75, 200))})
             return results
-        
+
+        # NOTE: Sleep is handled via skip_turn in SleepEffect.process_turn_start()
+
         # Check if there's a taunted target (Yo Mama spell effect)
         taunted_target = find_taunted_target(entities)
         is_pursuing_taunt = False

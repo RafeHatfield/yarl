@@ -1,0 +1,70 @@
+# Scenario: Root Trap Identity Test
+# Phase 21.1: Trap Framework thin slice identity scenario
+#
+# Purpose: Verify that root traps trigger ONLY on tile entry, apply EntangledEffect,
+# and that entangle blocks the next attempted move.
+#
+# Layout: Minimal 5x5 arena with player at (1,1) and root trap at (2,1)
+# Player moves right (to 2,1) and triggers trap, becomes entangled.
+# Next move attempt is blocked by entangle.
+#
+# Expected outcome:
+# - traps_triggered_total: 1
+# - trap_root_triggered: 1
+# - trap_root_effects_applied: 1
+# - entangle_moves_blocked: 1 (from the blocked move after trigger)
+# - Player position ends at (2,1) - they reached the trap tile but couldn't leave
+
+scenario_id: trap_root_identity
+name: "Root Trap Identity Test"
+description: "Deterministic test: player steps on root trap, becomes entangled, next move blocked."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 10
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  traps_triggered_total: 1
+  trap_root_triggered: 1
+  trap_root_effects_applied: 1
+  notes:
+    - Player steps on trap at (2,1)
+    - Becomes entangled for 3 turns
+    - Next move attempt is blocked
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - minimal 5x5 arena
+rooms:
+  - id: "trap_test_arena"
+    type: "arena"
+    width: 5
+    height: 5
+    description: "Minimal arena for root trap identity test"
+    walls: "enclosed"
+
+# No monsters - pure trap test
+monsters: []
+
+# No items
+items: []
+
+# Trap placements - single root trap at (2,1)
+traps:
+  - type: "root_trap"
+    position: [2, 1]
+
+# Player spawn configuration - starts at (1,1), will move right to trigger trap
+player:
+  position: [1, 1]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

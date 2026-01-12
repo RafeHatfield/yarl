@@ -1669,10 +1669,12 @@ class ScenarioDefinition:
     monsters: List[Dict[str, Any]] = field(default_factory=list)
     items: List[Dict[str, Any]] = field(default_factory=list)
     portals: List[Dict[str, Any]] = field(default_factory=list)
+    traps: List[Dict[str, Any]] = field(default_factory=list)  # Phase 21.1
     player: Optional[Dict[str, Any]] = None
     hazards: List[Dict[str, Any]] = field(default_factory=list)
     victory_conditions: List[Dict[str, Any]] = field(default_factory=list)
     defeat_conditions: List[Dict[str, Any]] = field(default_factory=list)
+    suites: List[str] = field(default_factory=list)  # Phase 21.4: Suite tags (e.g., ["hazards"])
     source_file: str = ""
     
     def get_default(self, key: str, fallback: Any = None) -> Any:
@@ -1841,10 +1843,12 @@ class ScenarioRegistry:
             monsters=data.get('monsters', []),
             items=data.get('items', []),
             portals=data.get('portals', []),
+            traps=data.get('traps', []),  # Phase 21.1
             player=data.get('player'),
             hazards=data.get('hazards', []),
             victory_conditions=data.get('victory_conditions', []),
             defeat_conditions=data.get('defeat_conditions', []),
+            suites=data.get('suites', []),  # Phase 21.4: Suite tags
             source_file=filepath
         )
         

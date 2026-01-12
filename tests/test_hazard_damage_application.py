@@ -1,48 +1,55 @@
-"""Tests for hazard damage application to entities.
+"""Tests for hazard status effect application to entities.
 
-This module tests that ground hazards properly damage entities at the start
-of each turn, including:
-- Damage applied to entities standing on hazards
-- Damage decays over time as hazards age
+Phase 20 Scroll Modernization: Hazards now apply status effects (BurningEffect,
+PoisonEffect) instead of direct damage. Damage is dealt when the effect ticks
+at the entity's turn start, routing through damage_service.
+
+This module tests that ground hazards properly apply effects at turn start:
+- Status effects applied to entities standing on hazards
 - Hazards age and expire correctly
-- Entities can die from hazard damage
-- Messages are generated for hazard damage
+- Levitating entities are immune to ground hazards
+- Messages are generated for status application
 """
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from engine import GameEngine, TurnPhase
 from engine.systems.environment_system import EnvironmentSystem
 from map_objects.game_map import GameMap
 from components.ground_hazard import GroundHazard, HazardType
 from components.fighter import Fighter
+from components.status_effects import StatusEffectManager, BurningEffect, PoisonEffect
 from entity import Entity
 from game_messages import MessageLog
 from components.component_registry import ComponentType
 
 
-class TestHazardDamageApplication(unittest.TestCase):
-    """Test that hazards damage entities at turn start."""
+class TestHazardStatusEffectApplication(unittest.TestCase):
+    """Test that hazards apply status effects at turn start."""
     
     def setUp(self):
         """Set up test fixtures."""
         self.game_map = GameMap(width=40, height=40, dungeon_level=1)
         self.message_log = MessageLog(x=0, width=40, height=5)
         
-        # Create player entity with fighter component
+        # Create player entity with fighter and status_effects components
         player_fighter = Fighter(hp=100, defense=5, power=10)
         self.player = Entity(
             10, 10, '@', (255, 255, 255), 'Player',
             blocks=True, render_order=5, fighter=player_fighter
         )
+        self.player.status_effects = StatusEffectManager(self.player)
+        self.player.components.add(ComponentType.STATUS_EFFECTS, self.player.status_effects)
         
-        # Create monster entity with fighter component
+        # Create monster entity with fighter and status_effects components
         monster_fighter = Fighter(hp=30, defense=2, power=5)
         self.monster = Entity(
             15, 15, 'g', (0, 255, 0), 'Goblin',
             blocks=True, render_order=4, fighter=monster_fighter
         )
+        self.monster.status_effects = StatusEffectManager(self.monster)
+        self.monster.components.add(ComponentType.STATUS_EFFECTS, self.monster.status_effects)
         
         self.entities = [self.player, self.monster]
 
@@ -66,8 +73,8 @@ class TestHazardDamageApplication(unittest.TestCase):
         self.turn_manager.advance_turn(to_phase=TurnPhase.ENVIRONMENT)
         self.turn_manager.advance_turn(to_phase=TurnPhase.PLAYER)
     
-    def test_entity_takes_damage_from_hazard(self):
-        """Test that an entity takes damage when standing on a hazard."""
+    def test_fire_hazard_applies_burning_effect(self):
+        """Test that standing on fire applies BurningEffect."""
         # Place fire hazard under player
         fire = GroundHazard(
             hazard_type=HazardType.FIRE,
@@ -79,47 +86,35 @@ class TestHazardDamageApplication(unittest.TestCase):
         )
         self.game_map.hazard_manager.add_hazard(fire)
         
-        initial_hp = self.player.fighter.hp
+        # Verify no burning effect initially
+        self.assertFalse(self.player.has_status_effect('burning'))
         
         # Process hazard turn
         self._run_environment_phase()
         
-        # Player should have taken damage
-        self.assertLess(self.player.fighter.hp, initial_hp)
-        self.assertEqual(self.player.fighter.hp, initial_hp - 10)
+        # Player should now have burning effect
+        self.assertTrue(self.player.has_status_effect('burning'))
     
-    def test_hazard_damage_decays_over_time(self):
-        """Test that hazard damage decreases as it ages."""
-        # Place fire hazard
-        fire = GroundHazard(
-            hazard_type=HazardType.FIRE,
+    def test_poison_hazard_applies_poison_effect(self):
+        """Test that standing on poison gas applies PoisonEffect."""
+        gas = GroundHazard(
+            hazard_type=HazardType.POISON_GAS,
             x=10, y=10,
-            base_damage=12,  # Divisible by 3 for clean testing
-            remaining_turns=3,
-            max_duration=3,
-            source_name="Test Fire"
+            base_damage=5,
+            remaining_turns=4,
+            max_duration=4,
+            source_name="Test Gas"
         )
-        self.game_map.hazard_manager.add_hazard(fire)
+        self.game_map.hazard_manager.add_hazard(gas)
         
-        # Turn 1: Full damage (12)
-        initial_hp = self.player.fighter.hp
-        self._run_environment_phase()
-        damage_turn1 = initial_hp - self.player.fighter.hp
-        self.assertEqual(damage_turn1, 12)  # 100% damage
+        # Verify no poison effect initially
+        self.assertFalse(self.player.has_status_effect('poison'))
         
-        # Turn 2: Reduced damage (8)
-        hp_turn2 = self.player.fighter.hp
+        # Process hazard turn
         self._run_environment_phase()
-        damage_turn2 = hp_turn2 - self.player.fighter.hp
-        self.assertLess(damage_turn2, damage_turn1)  # Less than turn 1
-        self.assertEqual(damage_turn2, 8)  # 66% damage
         
-        # Turn 3: Further reduced damage (4)
-        hp_turn3 = self.player.fighter.hp
-        self._run_environment_phase()
-        damage_turn3 = hp_turn3 - self.player.fighter.hp
-        self.assertLess(damage_turn3, damage_turn2)  # Less than turn 2
-        self.assertEqual(damage_turn3, 4)  # 33% damage
+        # Player should now have poison effect
+        self.assertTrue(self.player.has_status_effect('poison'))
     
     def test_hazard_expires_after_duration(self):
         """Test that hazards disappear after their duration expires."""
@@ -140,8 +135,8 @@ class TestHazardDamageApplication(unittest.TestCase):
         self._run_environment_phase()  # Turn 2
         self.assertFalse(self.game_map.hazard_manager.has_hazard_at(10, 10))
     
-    def test_multiple_entities_take_damage(self):
-        """Test that multiple entities on hazards all take damage."""
+    def test_multiple_entities_get_effects(self):
+        """Test that multiple entities on hazards all receive effects."""
         # Place hazards under both entities
         fire1 = GroundHazard(
             hazard_type=HazardType.FIRE,
@@ -151,29 +146,26 @@ class TestHazardDamageApplication(unittest.TestCase):
             max_duration=3,
             source_name="Fire 1"
         )
-        fire2 = GroundHazard(
-            hazard_type=HazardType.FIRE,
+        gas2 = GroundHazard(
+            hazard_type=HazardType.POISON_GAS,
             x=15, y=15,
             base_damage=8,
             remaining_turns=3,
             max_duration=3,
-            source_name="Fire 2"
+            source_name="Gas 2"
         )
         self.game_map.hazard_manager.add_hazard(fire1)
-        self.game_map.hazard_manager.add_hazard(fire2)
-        
-        player_initial_hp = self.player.fighter.hp
-        monster_initial_hp = self.monster.fighter.hp
+        self.game_map.hazard_manager.add_hazard(gas2)
         
         # Process hazard turn
         self._run_environment_phase()
         
-        # Both entities should have taken damage
-        self.assertEqual(self.player.fighter.hp, player_initial_hp - 10)
-        self.assertEqual(self.monster.fighter.hp, monster_initial_hp - 8)
+        # Both entities should have received effects
+        self.assertTrue(self.player.has_status_effect('burning'))
+        self.assertTrue(self.monster.has_status_effect('poison'))
     
-    def test_entity_off_hazard_takes_no_damage(self):
-        """Test that entities not on hazards don't take damage."""
+    def test_entity_off_hazard_gets_no_effect(self):
+        """Test that entities not on hazards don't get effects."""
         # Place hazard away from entities
         fire = GroundHazard(
             hazard_type=HazardType.FIRE,
@@ -185,18 +177,15 @@ class TestHazardDamageApplication(unittest.TestCase):
         )
         self.game_map.hazard_manager.add_hazard(fire)
         
-        player_initial_hp = self.player.fighter.hp
-        monster_initial_hp = self.monster.fighter.hp
-        
         # Process hazard turn
         self._run_environment_phase()
         
-        # No entities should have taken damage
-        self.assertEqual(self.player.fighter.hp, player_initial_hp)
-        self.assertEqual(self.monster.fighter.hp, monster_initial_hp)
+        # No entities should have effects
+        self.assertFalse(self.player.has_status_effect('burning'))
+        self.assertFalse(self.monster.has_status_effect('burning'))
     
-    def test_dead_entity_takes_no_damage(self):
-        """Test that dead entities don't take hazard damage."""
+    def test_dead_entity_gets_no_effect(self):
+        """Test that dead entities don't receive hazard effects."""
         # Kill the monster
         self.monster.fighter.hp = 0
         
@@ -214,39 +203,18 @@ class TestHazardDamageApplication(unittest.TestCase):
         # Process hazard turn (should not crash)
         self._run_environment_phase()
         
-        # Dead monster HP stays at 0
-        self.assertEqual(self.monster.fighter.hp, 0)
+        # Dead monster should not have effect
+        self.assertFalse(self.monster.has_status_effect('burning'))
     
-    def test_entity_dies_from_hazard_damage(self):
-        """Test that hazard damage can reduce entity HP to zero."""
-        # Reduce monster to low HP
-        self.monster.fighter.hp = 5
+    def test_levitating_entity_immune_to_hazard(self):
+        """Test that levitating entities are immune to ground hazards."""
+        from components.status_effects import LevitationEffect
         
-        # Place lethal hazard
-        fire = GroundHazard(
-            hazard_type=HazardType.FIRE,
-            x=15, y=15,
-            base_damage=10,
-            remaining_turns=3,
-            max_duration=3,
-            source_name="Test Fire"
-        )
-        self.game_map.hazard_manager.add_hazard(fire)
+        # Give player levitation
+        lev_effect = LevitationEffect(duration=10, owner=self.player)
+        self.player.status_effects.add_effect(lev_effect)
         
-        # Mock death function and entity cache invalidation to avoid side effects
-        from game_messages import Message
-        mock_death_message = Message("Monster died!", (255, 0, 0))
-        with patch('death_functions.kill_monster', return_value=mock_death_message), \
-             patch('engine.systems.environment_system.invalidate_entity_cache'):
-            
-            # Process hazard turn
-            self._run_environment_phase()
-            
-            # Monster should have died (HP <= 0)
-            self.assertLessEqual(self.monster.fighter.hp, 0)
-    
-    def test_damage_message_generated(self):
-        """Test that damage messages are added to message log."""
+        # Place hazard under player
         fire = GroundHazard(
             hazard_type=HazardType.FIRE,
             x=10, y=10,
@@ -257,67 +225,11 @@ class TestHazardDamageApplication(unittest.TestCase):
         )
         self.game_map.hazard_manager.add_hazard(fire)
         
-        initial_message_count = len(self.message_log.messages)
-        
         # Process hazard turn
         self._run_environment_phase()
         
-        # Message should have been added
-        self.assertGreater(len(self.message_log.messages), initial_message_count)
-        
-        # Check message content
-        last_message = self.message_log.messages[-1].text
-        self.assertIn("Fire", last_message)
-        self.assertIn("10", last_message)  # Damage amount
-    
-    def test_poison_gas_damage(self):
-        """Test that poison gas hazards work correctly."""
-        gas = GroundHazard(
-            hazard_type=HazardType.POISON_GAS,
-            x=10, y=10,
-            base_damage=5,
-            remaining_turns=4,
-            max_duration=4,
-            source_name="Test Gas"
-        )
-        self.game_map.hazard_manager.add_hazard(gas)
-        
-        initial_hp = self.player.fighter.hp
-        
-        # Process hazard turn
-        self._run_environment_phase()
-        
-        # Player should have taken damage
-        self.assertEqual(self.player.fighter.hp, initial_hp - 5)
-        
-        # Check message mentions poison gas
-        last_message = self.message_log.messages[-1].text
-        self.assertIn("Poison Gas", last_message)
-    
-    def test_player_death_from_hazard(self):
-        """Test that hazard damage can reduce player HP to zero."""
-        # Reduce player to low HP
-        self.player.fighter.hp = 5
-        
-        # Place lethal hazard
-        fire = GroundHazard(
-            hazard_type=HazardType.FIRE,
-            x=10, y=10,
-            base_damage=10,
-            remaining_turns=3,
-            max_duration=3,
-            source_name="Test Fire"
-        )
-        self.game_map.hazard_manager.add_hazard(fire)
-        
-        initial_hp = self.player.fighter.hp
-        
-        # Process hazard turn
-        self._run_environment_phase()
-        
-        # Player should have taken lethal damage (HP <= 0)
-        self.assertLessEqual(self.player.fighter.hp, 0)
-        self.assertLess(self.player.fighter.hp, initial_hp)
+        # Levitating player should not get burning effect
+        self.assertFalse(self.player.has_status_effect('burning'))
 
 
 class TestHazardAgingWithoutEntities(unittest.TestCase):

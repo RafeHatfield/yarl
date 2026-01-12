@@ -102,6 +102,7 @@ def build_scenario_map(scenario, rng: Optional[random.Random] = None) -> Scenari
     _spawn_monsters(scenario.monsters or [], entities, game_map, rng)
     _spawn_items(scenario.items or [], entities, game_map, rng, dungeon_level)
     _spawn_portals(scenario.portals or [], entities, game_map)
+    _spawn_traps(scenario.traps if hasattr(scenario, 'traps') and scenario.traps else [], entities, game_map)
 
     return ScenarioMapResult(game_map=game_map, player=player, entities=entities)
 
@@ -354,8 +355,15 @@ def _spawn_items(
         for _ in range(count):
             x, y = _resolve_position(entry, game_map, entities, rng)
             
+            item_entity = None
+            
+            # Phase 21.6: Support chest spawning in scenarios (for trapped chest tests)
+            if "chest" in item_type:
+                item_entity = factory.create_chest(item_type, x, y)
+                if item_entity is None:
+                    raise ScenarioBuildError(f"Unknown chest type '{item_type}'")
             # Special case: Wand of Portals (legendary item)
-            if item_type == "wand_of_portals":
+            elif item_type == "wand_of_portals":
                 item_entity = factory.create_wand_of_portals(x, y)
             else:
                 # Standard item creation fallback chain
@@ -442,6 +450,50 @@ def _spawn_portals(
             raise ScenarioBuildError(f"Link target '{link_id}' not found for portal")
         portal_component.linked_portal = target_entity.portal
         target_entity.portal.linked_portal = portal_component
+
+
+def _spawn_traps(
+    trap_entries: List[Dict[str, Any]],
+    entities: List[Entity],
+    game_map: GameMap,
+) -> None:
+    """Spawn traps defined in a scenario.
+    
+    Phase 21.1: Supports explicit positions for trap placement.
+    Traps trigger when an entity successfully enters the tile.
+    
+    Args:
+        trap_entries: List of trap definitions from scenario YAML
+        entities: List of entities to append traps to
+        game_map: Game map for bounds checking
+    """
+    if not trap_entries:
+        return
+    
+    factory = get_entity_factory()
+    
+    for entry in trap_entries:
+        trap_type = entry.get("type")
+        pos = entry.get("position")
+        
+        if not trap_type:
+            raise ScenarioBuildError(f"Trap entry missing type: {entry}")
+        if not (isinstance(pos, (list, tuple)) and len(pos) == 2):
+            raise ScenarioBuildError(f"Trap entry missing valid position: {entry}")
+        
+        x, y = int(pos[0]), int(pos[1])
+        
+        if not game_map.is_in_bounds(x, y):
+            raise ScenarioBuildError(f"Trap position out of bounds: ({x}, {y})")
+        if game_map.get_tile(x, y) is None or game_map.get_tile(x, y).blocked:
+            raise ScenarioBuildError(f"Trap position blocked: ({x}, {y})")
+        
+        trap_entity = factory.create_trap(trap_type, x, y)
+        if trap_entity is None:
+            raise ScenarioBuildError(f"Unknown trap type '{trap_type}'")
+        
+        entities.append(trap_entity)
+        logger.debug(f"Spawned trap {trap_type} at ({x}, {y})")
 
 
 def _resolve_position(entry: Dict[str, Any], game_map: GameMap, entities: List[Entity], rng: random.Random) -> Tuple[int, int]:

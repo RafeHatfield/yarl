@@ -127,6 +127,7 @@ class ActionProcessor:
             'start_auto_explore': self._handle_start_auto_explore,
             'throw': self._handle_throw_action,
             'search': self._handle_search,
+            'disarm_trap': self._handle_disarm_trap,  # Phase 21.7
             'bot_abort_run': self._handle_bot_abort_run,  # Phase 1.6: End bot run in soak mode
             'faction_index': self._handle_faction_selection,  # Phase 10.1: Aggravation scroll
         }
@@ -694,6 +695,40 @@ class ActionProcessor:
                 # Transition to confrontation state
                 self.state_manager.set_game_state(GameStates.CONFRONTATION)
                 return  # Don't process turn end, go straight to confrontation
+            
+            # Phase 21.5: Check for pending transition requests (e.g., from hole trap)
+            # This runs after every successful movement, ensuring immediate resolution
+            from services.transition_service import get_transition_service
+            transition_service = get_transition_service()
+            
+            if transition_service.has_pending_transition():
+                request = transition_service.consume_transition()
+                if request and request.transition_type == "next_floor":
+                    logger.info(f"=== PROCESSING TRANSITION REQUEST: {request.cause} ===")
+                    
+                    # Execute canonical level transition
+                    message_log.add_message(MB.system(f"You descend to the next level..."))
+                    
+                    # Phase 1.5b: End telemetry for current floor
+                    from services.telemetry_service import get_telemetry_service
+                    telemetry_service = get_telemetry_service()
+                    telemetry_service.end_floor()
+                    
+                    # Canonical transition via game_map.next_floor()
+                    entities = game_map.next_floor(player, message_log, self.constants)
+                    self.state_manager.state.entities = entities
+                    
+                    # Update mural manager
+                    from services.mural_manager import get_mural_manager
+                    mural_mgr = get_mural_manager()
+                    mural_mgr.set_current_floor(game_map.dungeon_level)
+                    
+                    # Start telemetry for new floor
+                    telemetry_service.start_floor(game_map.dungeon_level)
+                    
+                    # End turn after transition
+                    self.turn_controller.end_player_action(turn_consumed=True)
+                    return
             
             # Process status effects at end of player turn
             self._process_player_status_effects()
@@ -1446,6 +1481,83 @@ class ActionProcessor:
         self._process_player_status_effects()
         self.turn_controller.end_player_action(turn_consumed=True)
     
+    def _handle_disarm_trap(self, _) -> None:
+        """Handle disarm trap action. TAKES 1 TURN.
+        
+        Phase 21.7: Disarm a revealed trap in an adjacent tile.
+        For thin slice: if revealed, disarm succeeds deterministically (no roll).
+        """
+        current_state = self.state_manager.state.current_state
+        if current_state != GameStates.PLAYERS_TURN:
+            return
+        
+        player = self.state_manager.state.player
+        entities = self.state_manager.state.entities
+        message_log = self.state_manager.state.message_log
+        
+        if not all([player, entities, message_log]):
+            return
+        
+        from components.component_registry import ComponentType
+        from message_builder import MessageBuilder as MB
+        
+        # Find revealed traps in adjacent tiles
+        adjacent_traps = []
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue
+                
+                check_x = player.x + dx
+                check_y = player.y + dy
+                
+                for entity in entities:
+                    if (entity.x == check_x and entity.y == check_y and 
+                        entity.components.has(ComponentType.TRAP)):
+                        trap = entity.components.get(ComponentType.TRAP)
+                        if trap and trap.is_detected and not trap.is_disarmed:
+                            adjacent_traps.append((entity, trap))
+        
+        # Increment disarm attempt metric
+        try:
+            from services.scenario_metrics import get_active_metrics_collector
+            collector = get_active_metrics_collector()
+            if collector:
+                collector.increment('trap_disarms_attempted')
+        except ImportError:
+            pass
+        
+        if not adjacent_traps:
+            message_log.add_message(MB.info("There are no revealed traps nearby to disarm."))
+            # Still consumes a turn
+            self._process_player_status_effects()
+            self.turn_controller.end_player_action(turn_consumed=True)
+            return
+        
+        # For thin slice: disarm the first trap found (deterministic)
+        trap_entity, trap = adjacent_traps[0]
+        
+        # Disarm the trap (deterministic success for thin slice)
+        success = trap.disarm()
+        
+        if success:
+            message_log.add_message(MB.success(f"You carefully disarm the {trap_entity.name}."))
+            
+            # Increment success metric
+            try:
+                from services.scenario_metrics import get_active_metrics_collector
+                collector = get_active_metrics_collector()
+                if collector:
+                    collector.increment('trap_disarms_succeeded')
+            except ImportError:
+                pass
+        else:
+            message_log.add_message(MB.info(f"The {trap_entity.name} is already disarmed."))
+        
+        # Consume turn
+        self._process_player_status_effects()
+        self.turn_controller.end_player_action(turn_consumed=True)
+    
     def _handle_inventory_action(self, inventory_index: int) -> None:
         """Handle inventory item usage or dropping.
         
@@ -1860,7 +1972,10 @@ class ActionProcessor:
                 self.state_manager.state.message_log.add_message(message)
     
     def _handle_stairs(self, _) -> None:
-        """Handle taking stairs (up or down) to different level."""
+        """Handle taking stairs (up or down) to different level.
+        
+        Phase 21.5: Also handles TransitionRequests from hole traps.
+        """
         logger.debug("=== _handle_stairs() called ===")
         
         current_state = self.state_manager.state.current_state

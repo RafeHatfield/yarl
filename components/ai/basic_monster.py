@@ -184,6 +184,10 @@ class BasicMonster:
             MonsterActionLogger.log_turn_summary(self.owner, ["paralyzed"])
             return results
         
+        # NOTE: Sleep is now handled via skip_turn in SleepEffect.process_turn_start()
+        # The AISystem checks for skip_turn and skips the entity's action automatically.
+        # No per-AI special casing needed.
+        
         # Phase 19: Check for rally directive - prioritize chieftain's target
         rally_target = None
         if hasattr(self, 'rally_directive_target_id') and self.rally_directive_target_id:

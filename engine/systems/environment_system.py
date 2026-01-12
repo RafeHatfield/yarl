@@ -133,8 +133,13 @@ class EnvironmentSystem(System):
     def _process_hazards(self, game_state) -> None:
         """Process ground hazards for the current turn.
         
-        Ages all active hazards, applies damage to entities standing on hazards,
-        and removes expired hazards.
+        Phase 20 Scroll Modernization: Hazards now apply status effects instead of
+        direct damage. This routes all damage through the canonical damage_service
+        via status effect ticking, ensuring proper death handling and metrics.
+        
+        - FIRE hazards apply BurningEffect
+        - POISON_GAS hazards apply PoisonEffect
+        - Levitating entities are immune to ground hazards
         
         Args:
             game_state: Current game state containing map and entities
@@ -149,55 +154,67 @@ class EnvironmentSystem(System):
         if not hazard_manager:
             return
         
-        from game_states import GameStates
+        from components.ground_hazard import HazardType
+        from components.status_effects import BurningEffect, PoisonEffect, StatusEffectManager
         
-        # Apply damage to entities standing on hazards BEFORE aging
-        # This ensures entities take damage for the full current turn
+        # Apply status effects to entities standing on hazards BEFORE aging
         for entity in game_state.entities:
             fighter = entity.get_component_optional(ComponentType.FIGHTER)
             if not fighter:
                 continue
                 
             if fighter.hp <= 0:
-                continue  # Don't damage dead entities
+                continue  # Don't affect dead entities
+            
+            # Check for levitation - levitating entities are immune to ground hazards
+            if (hasattr(entity, 'has_status_effect') and 
+                callable(entity.has_status_effect) and 
+                entity.has_status_effect('levitation')):
+                continue
             
             hazard = hazard_manager.get_hazard_at(entity.x, entity.y)
             if hazard:
                 damage = hazard.get_current_damage()
                 if damage > 0:
-                    # Create hazard type name for message
-                    hazard_name = hazard.hazard_type.name.replace('_', ' ').title()
+                    # Ensure entity has status_effects component
+                    if not entity.components.has(ComponentType.STATUS_EFFECTS):
+                        entity.status_effects = StatusEffectManager(entity)
+                        entity.components.add(ComponentType.STATUS_EFFECTS, entity.status_effects)
                     
-                    # Add message for damage
-                    if game_state.message_log:
-                        if entity == game_state.player:
-                            message = MB.custom(
-                                f"The {hazard_name} burns you for {damage} damage!",
-                                MB.ORANGE
-                            )
-                        else:
-                            message = MB.custom(
-                                f"The {entity.name} takes {damage} damage from the {hazard_name}!",
-                                (255, 200, 150)
-                            )
-                        game_state.message_log.add_message(message)
-                    
-                    # Apply damage
-                    damage_results = entity.fighter.take_damage(damage)
-                    
-                    # Process death if entity died from hazard damage
-                    for result in damage_results:
-                        dead_entity = result.get('dead')
-                        if dead_entity:
-                            self._handle_hazard_death(dead_entity, hazard_name, game_state)
+                    # Apply appropriate status effect based on hazard type
+                    # Status effects handle damage ticking, death, and metrics
+                    if hazard.hazard_type == HazardType.FIRE:
+                        # Apply BurningEffect - refreshes if already burning
+                        effect = BurningEffect(
+                            duration=max(2, hazard.remaining_turns),  # At least 2 turns
+                            owner=entity,
+                            damage_per_turn=damage
+                        )
+                        entity.status_effects.add_effect(effect)
+                        logger.debug(f"Applied BurningEffect to {entity.name} from fire hazard")
+                        
+                    elif hazard.hazard_type == HazardType.POISON_GAS:
+                        # Apply PoisonEffect - refreshes if already poisoned
+                        effect = PoisonEffect(
+                            owner=entity,
+                            duration=max(2, hazard.remaining_turns),  # At least 2 turns
+                            damage_per_tick=damage
+                        )
+                        entity.status_effects.add_effect(effect)
+                        logger.debug(f"Applied PoisonEffect to {entity.name} from poison hazard")
         
-        # Age all hazards after damage application
+        # Age all hazards after effect application
         # This removes expired hazards and decrements remaining_turns
         hazard_manager.age_all_hazards()
         logger.debug("Hazard processing complete for turn")
     
     def _handle_hazard_death(self, entity: Any, hazard_name: str, game_state) -> None:
         """Handle entity death from environmental hazard.
+        
+        DEPRECATED (Phase 20 Scroll Modernization): This method is no longer called
+        from _process_hazards(). Hazards now apply status effects (BurningEffect,
+        PoisonEffect) which handle death through damage_service. This method is
+        retained for backward compatibility with existing tests.
         
         Args:
             entity: The entity that died

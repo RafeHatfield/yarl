@@ -118,12 +118,14 @@ class BossAI:
         print(f">>> BossAI: {monster.name} taking turn at ({monster.x}, {monster.y}), target at ({target.x}, {target.y})")
         
         # Check for paralysis - completely prevents all actions
-        if (hasattr(monster, 'has_status_effect') and 
-            callable(monster.has_status_effect) and 
+        if (hasattr(monster, 'has_status_effect') and
+            callable(monster.has_status_effect) and
             monster.has_status_effect('paralysis')):
             results.append({'message': MB.custom(f"{monster.name} is paralyzed and cannot act!", (150, 75, 200))})
             return results
-        
+
+        # NOTE: Sleep is handled via skip_turn in SleepEffect.process_turn_start()
+
         # Check for fear - causes monster to flee
         if (hasattr(monster, 'has_status_effect') and 
             callable(monster.has_status_effect) and 
