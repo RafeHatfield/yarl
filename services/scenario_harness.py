@@ -56,6 +56,9 @@ class RunMetrics:
     plague_infections: int = 0
     reanimations: int = 0
     surprise_attacks: int = 0
+    # Phase 21: Invisibility attack metrics
+    invis_attacks: int = 0
+    invis_broken_by_attack: int = 0
     bonus_attacks_triggered: int = 0
     player_attacks: int = 0
     player_hits: int = 0
@@ -147,6 +150,8 @@ class RunMetrics:
             'plague_infections': self.plague_infections,
             'reanimations': self.reanimations,
             'surprise_attacks': self.surprise_attacks,
+            'invis_attacks': self.invis_attacks,
+            'invis_broken_by_attack': self.invis_broken_by_attack,
             'bonus_attacks_triggered': self.bonus_attacks_triggered,
             'player_attacks': self.player_attacks,
             'player_hits': self.player_hits,
@@ -247,6 +252,9 @@ class AggregatedMetrics:
     total_plague_infections: int = 0
     total_reanimations: int = 0
     total_surprise_attacks: int = 0
+    # Phase 21: Invisibility attack metrics
+    total_invis_attacks: int = 0
+    total_invis_broken_by_attack: int = 0
     total_bonus_attacks_triggered: int = 0
     total_player_attacks: int = 0
     total_player_hits: int = 0
@@ -344,6 +352,8 @@ class AggregatedMetrics:
             'total_plague_infections': self.total_plague_infections,
             'total_reanimations': self.total_reanimations,
             'total_surprise_attacks': self.total_surprise_attacks,
+            'total_invis_attacks': self.total_invis_attacks,
+            'total_invis_broken_by_attack': self.total_invis_broken_by_attack,
             'total_bonus_attacks_triggered': self.total_bonus_attacks_triggered,
             'total_player_attacks': self.total_player_attacks,
             'total_player_hits': self.total_player_hits,
@@ -835,12 +845,13 @@ def _process_pending_reanimations(game_state: Any, metrics: RunMetrics) -> None:
             logger.debug(f"Plague reanimation: {new_entity.name} spawned")
 
 
-def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
+def _process_enemy_turn(game_state: Any, metrics: RunMetrics, state_manager=None) -> None:
     """Process the enemy turn phase.
     
     Args:
         game_state: Current game state
         metrics: RunMetrics to update (kills_by_faction)
+        state_manager: Optional StateManager for death finalization
     """
     # Get all AI entities
     ai_entities = [
@@ -893,13 +904,13 @@ def _process_enemy_turn(game_state: Any, metrics: RunMetrics) -> None:
     _process_pending_reanimations(game_state, metrics)
     
     # Phase 20A: Process player status effects (DOT ticks, debuff durations, etc.)
-    _process_player_status_effects_harness(game_state)
+    _process_player_status_effects_harness(game_state, state_manager=state_manager)
     
     # Return to player turn
     game_state.current_state = GameStates.PLAYERS_TURN
 
 
-def _process_player_status_effects_harness(game_state: Any) -> None:
+def _process_player_status_effects_harness(game_state: Any, state_manager=None) -> None:
     """Process player status effects at end of enemy turn.
     
     Phase 20A: This handles DOT effects like poison, soul burn, etc.
@@ -907,16 +918,17 @@ def _process_player_status_effects_harness(game_state: Any) -> None:
     
     Args:
         game_state: Current game state
+        state_manager: Optional StateManager for death finalization (CRITICAL for DOT deaths)
     """
     player = game_state.player
     if not player or not hasattr(player, 'status_effects') or not player.status_effects:
         return
     
     # Process status effects at turn start (this is when DOTs tick)
-    # Pass state_manager=None since harness doesn't have one - metrics will still be tracked
+    # Pass state_manager to ensure DOT effects can properly finalize player death
     status_results = player.status_effects.process_turn_start(
         entities=game_state.entities,
-        state_manager=None  # Harness doesn't have state_manager
+        state_manager=state_manager  # CRITICAL: Enables proper death finalization
     )
     
     # Add any messages to the message log
@@ -1038,6 +1050,12 @@ def run_scenario_once(
             game_state = _create_game_state_from_map(map_result, constants)
             game_state.turn_number = 0  # Track turn number for reanimations
 
+            # Create a minimal StateManager for death finalization
+            # This ensures DOT effects can properly finalize player death
+            from state_management.state_config import StateManager
+            state_manager = StateManager()
+            state_manager.state = game_state
+
             # Main loop
             for turn in range(turn_limit):
                 if _check_player_death(game_state):
@@ -1052,7 +1070,7 @@ def run_scenario_once(
 
                 elif game_state.current_state == GameStates.ENEMY_TURN:
                     # logger.info(f"Turn {turn}: Enemy turn")
-                    _process_enemy_turn(game_state, metrics)
+                    _process_enemy_turn(game_state, metrics, state_manager=state_manager)
                     metrics.turns_taken += 1
                     game_state.turn_number += 1  # Increment turn for reanimation timing
 
@@ -1140,6 +1158,8 @@ def run_scenario_many(
     total_plague_infections = 0
     total_reanimations = 0
     total_surprise_attacks = 0
+    total_invis_attacks = 0
+    total_invis_broken_by_attack = 0
     total_bonus_attacks = 0
     total_player_attacks = 0
     total_player_hits = 0
@@ -1155,6 +1175,8 @@ def run_scenario_many(
         total_plague_infections += run.plague_infections
         total_reanimations += run.reanimations
         total_surprise_attacks += run.surprise_attacks
+        total_invis_attacks += getattr(run, 'invis_attacks', 0)
+        total_invis_broken_by_attack += getattr(run, 'invis_broken_by_attack', 0)
         total_bonus_attacks += run.bonus_attacks_triggered
         total_player_attacks += run.player_attacks
         total_player_hits += run.player_hits
@@ -1347,6 +1369,8 @@ def run_scenario_many(
         total_plague_infections=total_plague_infections,
         total_reanimations=total_reanimations,
         total_surprise_attacks=total_surprise_attacks,
+        total_invis_attacks=total_invis_attacks,
+        total_invis_broken_by_attack=total_invis_broken_by_attack,
         total_bonus_attacks_triggered=total_bonus_attacks,
         total_player_attacks=total_player_attacks,
         total_player_hits=total_player_hits,
