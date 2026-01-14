@@ -19,8 +19,9 @@ from ui.tooltip import (
 )
 
 # Tooltip offset from cursor to prevent obscuring the hovered element
-TOOLTIP_OFFSET_X = 12
-TOOLTIP_OFFSET_Y = 12
+# These are in console character coordinates, so small values = significant visual offset
+TOOLTIP_OFFSET_X = 2
+TOOLTIP_OFFSET_Y = 1
 
 
 def _draw_tooltip_box(
