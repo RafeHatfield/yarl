@@ -225,6 +225,12 @@ class AISystem(System):
             from systems.turn_controller import get_turn_controller
             turn_controller = get_turn_controller()
             
+            # CRITICAL: Don't transition state if player died during enemy turn
+            # This prevents overwriting PLAYER_DEAD with PLAYERS_TURN
+            if state_manager.state.current_state == GameStates.PLAYER_DEAD:
+                logger.info("AISystem: Player died during enemy turn, keeping PLAYER_DEAD state")
+                return
+            
             if turn_controller and turn_controller.is_state_preserved():
                 restored_state = turn_controller.get_preserved_state()
                 state_manager.set_game_state(restored_state)
