@@ -18,6 +18,10 @@ from ui.tooltip import (
     _build_multi_entity_lines,
 )
 
+# Tooltip offset from cursor to prevent obscuring the hovered element
+TOOLTIP_OFFSET_X = 12
+TOOLTIP_OFFSET_Y = 12
+
 
 def _draw_tooltip_box(
     console,
@@ -30,13 +34,20 @@ def _draw_tooltip_box(
     tooltip_width = max(len(line) for line in tooltip_lines) + 4
     tooltip_height = len(tooltip_lines) + 2
 
-    # Positioning adjustments to keep tooltip on-screen
-    if tooltip_x + tooltip_width >= bounds_width:
-        tooltip_x = bounds_width - tooltip_width
-    if tooltip_y + tooltip_height >= bounds_height:
-        tooltip_y = bounds_height - tooltip_height
+    # Apply offset to prevent tooltip from obscuring the hovered element
+    tooltip_x += TOOLTIP_OFFSET_X
+    tooltip_y += TOOLTIP_OFFSET_Y
 
-    # Ensure we don't go negative (can happen near origin)
+    # Positioning adjustments to keep tooltip on-screen
+    # If offset pushes tooltip off right edge, flip it to the left of cursor
+    if tooltip_x + tooltip_width >= bounds_width:
+        tooltip_x = max(0, tooltip_x - TOOLTIP_OFFSET_X - tooltip_width - TOOLTIP_OFFSET_X)
+    
+    # If offset pushes tooltip off bottom edge, flip it above cursor
+    if tooltip_y + tooltip_height >= bounds_height:
+        tooltip_y = max(0, tooltip_y - TOOLTIP_OFFSET_Y - tooltip_height - TOOLTIP_OFFSET_Y)
+
+    # Final clamp to ensure we don't go negative
     tooltip_x = max(0, tooltip_x)
     tooltip_y = max(0, tooltip_y)
 
