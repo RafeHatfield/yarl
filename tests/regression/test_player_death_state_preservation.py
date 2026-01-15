@@ -148,6 +148,68 @@ class TestPlayerDeathStatePreservation:
         assert StateConfig.is_terminal_state(GameStates.ENEMY_TURN) is False
         assert StateConfig.is_terminal_state(GameStates.TARGETING) is False
         assert StateConfig.is_terminal_state(GameStates.LEVEL_UP) is False
+    
+    def test_terminal_overwrite_warning_is_rate_limited(self):
+        """Test that terminal state overwrite warnings are rate-limited.
+        
+        This prevents log spam if there's a runaway caller in a tight loop
+        trying to overwrite terminal states every frame.
+        """
+        import logging
+        from unittest.mock import patch
+        
+        state_manager = StateManager()
+        
+        # Set to terminal state
+        state_manager.set_game_state(GameStates.PLAYER_DEAD)
+        
+        # Capture warnings
+        with patch('logging.getLogger') as mock_get_logger:
+            mock_logger = Mock()
+            mock_get_logger.return_value = mock_logger
+            
+            # Attempt to overwrite 100 times (simulating a tight loop bug)
+            for _ in range(100):
+                state_manager.set_game_state(GameStates.PLAYERS_TURN)
+            
+            # Warning should only be logged ONCE, not 100 times
+            assert mock_logger.warning.call_count == 1, \
+                f"Warning should be logged once, got {mock_logger.warning.call_count} calls"
+        
+        # State should still be PLAYER_DEAD
+        assert state_manager.state.current_state == GameStates.PLAYER_DEAD
+    
+    def test_different_overwrites_each_get_one_warning(self):
+        """Test that different overwrite attempts each get one warning.
+        
+        If code tries to overwrite PLAYER_DEAD with both PLAYERS_TURN and ENEMY_TURN,
+        each unique pair should get exactly one warning.
+        """
+        import logging
+        from unittest.mock import patch
+        
+        state_manager = StateManager()
+        state_manager.set_game_state(GameStates.PLAYER_DEAD)
+        
+        with patch('logging.getLogger') as mock_get_logger:
+            mock_logger = Mock()
+            mock_get_logger.return_value = mock_logger
+            
+            # Try to overwrite with PLAYERS_TURN (10 times)
+            for _ in range(10):
+                state_manager.set_game_state(GameStates.PLAYERS_TURN)
+            
+            # Try to overwrite with ENEMY_TURN (10 times)
+            for _ in range(10):
+                state_manager.set_game_state(GameStates.ENEMY_TURN)
+            
+            # Try to overwrite with TARGETING (10 times)
+            for _ in range(10):
+                state_manager.set_game_state(GameStates.TARGETING)
+            
+            # Should have exactly 3 warnings (one per unique pair)
+            assert mock_logger.warning.call_count == 3, \
+                f"Should have 3 warnings (one per state pair), got {mock_logger.warning.call_count}"
 
 
 class TestDeathStateScenario:

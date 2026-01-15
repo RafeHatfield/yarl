@@ -95,12 +95,17 @@ class GameStateManager:
     Attributes:
         _state (GameState): Current game state data
         _state_change_callbacks: List of callbacks for state changes
+        _terminal_overwrite_warnings: Set of (current_state, attempted_state) pairs
+                                     that have already been warned about this run
     """
 
     def __init__(self):
         """Initialize the GameStateManager."""
         self._state = GameState()
         self._state_change_callbacks = []
+        # Rate limiting: Track which terminal state overwrites we've already warned about
+        # to prevent log spam if there's a runaway caller
+        self._terminal_overwrite_warnings = set()
 
     @property
     def state(self) -> GameState:
@@ -162,12 +167,18 @@ class GameStateManager:
         from state_management.state_config import StateManager as StateConfig
         if StateConfig.is_terminal_state(self._state.current_state):
             if new_state != self._state.current_state:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.warning(
-                    f"Attempted to overwrite terminal state {self._state.current_state} "
-                    f"with {new_state}. Terminal states cannot be changed. Ignoring."
-                )
+                # Rate-limited warning: Only log once per (current_state, new_state) pair
+                # This prevents log spam if there's a runaway caller in a tight loop
+                warning_key = (self._state.current_state, new_state)
+                if warning_key not in self._terminal_overwrite_warnings:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        f"Attempted to overwrite terminal state {self._state.current_state} "
+                        f"with {new_state}. Terminal states cannot be changed. Ignoring. "
+                        f"(This warning will only appear once per state pair)"
+                    )
+                    self._terminal_overwrite_warnings.add(warning_key)
                 return
         
         if new_state != self._state.current_state:
