@@ -147,10 +147,29 @@ class GameStateManager:
 
     def set_game_state(self, new_state: GameStates) -> None:
         """Set the current game state.
+        
+        CRITICAL: Terminal states (PLAYER_DEAD, VICTORY, FAILURE) cannot be
+        overwritten. Once the game enters a terminal state, it must stay there
+        until the player explicitly restarts or exits. This prevents bugs where
+        turn management logic accidentally overwrites death/victory states.
 
         Args:
             new_state (GameStates): The new game state
         """
+        # GUARD: Prevent overwriting terminal states
+        # This is a critical safety check to prevent bugs like accidentally
+        # resetting PLAYER_DEAD to PLAYERS_TURN after enemy turns
+        from state_management.state_config import StateManager as StateConfig
+        if StateConfig.is_terminal_state(self._state.current_state):
+            if new_state != self._state.current_state:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"Attempted to overwrite terminal state {self._state.current_state} "
+                    f"with {new_state}. Terminal states cannot be changed. Ignoring."
+                )
+                return
+        
         if new_state != self._state.current_state:
             self._state.previous_game_state = self._state.current_state
             self._state.current_state = new_state

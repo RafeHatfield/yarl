@@ -402,6 +402,27 @@ class StateManager:
         return StateManager.get_config(state).description
     
     @staticmethod
+    def is_terminal_state(state: GameStates) -> bool:
+        """Check if a state is terminal (game over, cannot transition away from it).
+        
+        Terminal states should never be overwritten by turn management logic.
+        Once the game enters a terminal state, it should stay there until
+        the player explicitly restarts or exits.
+        
+        Args:
+            state: The game state to check
+            
+        Returns:
+            True if state is terminal (PLAYER_DEAD, VICTORY, FAILURE)
+        """
+        terminal_states = {
+            GameStates.PLAYER_DEAD,
+            GameStates.VICTORY,
+            GameStates.FAILURE,
+        }
+        return state in terminal_states
+    
+    @staticmethod
     def validate_all_states():
         """Validate that all GameStates have configurations.
         
