@@ -541,7 +541,10 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
     # Get next move
     next_pos = pathfinding.get_next_move()
     if next_pos is None:
-        # Movement completed
+        # Movement completed - check for queued auto-interactions
+        # (This is the last step, path is now inactive)
+        _check_auto_interactions(player, entities, game_map, pathfinding, results)
+        
         results.append({
             "message": MB.info("Arrived at destination.")
         })
@@ -857,6 +860,145 @@ def _check_for_enemy_in_weapon_range(player: 'Entity', entities: List['Entity'],
         return enemies_in_range[0][0]
     
     return None
+
+
+def _check_auto_interactions(player: 'Entity', entities: List['Entity'], game_map: 'GameMap', 
+                            pathfinding, results: list) -> None:
+    """Check and execute queued auto-interactions (pickup, open, read, talk).
+    
+    This function checks if the player has arrived at a location where they
+    intended to interact with something (chest, sign, mural, NPC, item) and
+    automatically performs the interaction.
+    
+    Args:
+        player: Player entity
+        entities: List of all entities
+        game_map: Game map
+        pathfinding: Player pathfinding component
+        results: Results list to append messages to
+    """
+    from message_builder import MessageBuilder as MB
+    
+    # Check if we were pathfinding to pick up an item
+    if hasattr(pathfinding, 'auto_pickup_target') and pathfinding.auto_pickup_target:
+        target_item = pathfinding.auto_pickup_target
+        
+        # Check if item is at player's location
+        if target_item in entities and target_item.x == player.x and target_item.y == player.y:
+            # Item is here - pickup will be handled by PickupService
+            # Just add a message and clear the target
+            display_name = target_item.name
+            if hasattr(target_item, 'item') and target_item.item:
+                display_name = target_item.item.get_display_name(show_quantity=False)
+            
+            results.append({
+                "message": MB.item_pickup(f"Auto-picking up {display_name}...")
+            })
+        
+        # Clear the auto-pickup target
+        pathfinding.auto_pickup_target = None
+    
+    # Check if we were pathfinding to talk to an NPC
+    if hasattr(pathfinding, 'auto_talk_target') and pathfinding.auto_talk_target:
+        target_npc = pathfinding.auto_talk_target
+        
+        # Check if NPC is adjacent
+        distance = player.distance_to(target_npc)
+        if target_npc in entities and distance <= 1.5:
+            # Adjacent - talk to them
+            if (hasattr(target_npc, 'is_npc') and target_npc.is_npc and
+                hasattr(target_npc, 'npc_dialogue') and target_npc.npc_dialogue):
+                
+                # Get dungeon level
+                dungeon_level = 1
+                if game_map and hasattr(game_map, 'dungeon_level'):
+                    dungeon_level = game_map.dungeon_level
+                
+                if target_npc.npc_dialogue.start_encounter(dungeon_level):
+                    results.append({
+                        "message": MB.info(f"You approach {target_npc.name}...")
+                    })
+                    results.append({
+                        "npc_dialogue": target_npc
+                    })
+                else:
+                    results.append({
+                        "message": MB.info(f"{target_npc.name} has nothing to say right now.")
+                    })
+        
+        # Clear the auto-talk target
+        pathfinding.auto_talk_target = None
+    
+    # Check if we were pathfinding to open a chest
+    if hasattr(pathfinding, 'auto_open_target') and pathfinding.auto_open_target:
+        target_chest = pathfinding.auto_open_target
+        
+        # Check if chest is adjacent
+        distance = player.distance_to(target_chest)
+        if target_chest in entities and distance <= 1.0:
+            # Adjacent! Open the chest
+            if (hasattr(target_chest, 'chest') and target_chest.chest):
+                chest = target_chest.chest
+                
+                # Verify chest can still be interacted with
+                if chest.can_interact():
+                    # Open the chest
+                    open_results = chest.open(player, has_key=False)
+                    
+                    # Collect loot items
+                    loot_items = []
+                    for result in open_results:
+                        if result.get('loot'):
+                            loot_items.extend(result['loot'])
+                    
+                    # Build composite message
+                    if loot_items:
+                        display_names = []
+                        for item in loot_items:
+                            if hasattr(item, 'item') and item.item:
+                                display_names.append(item.item.get_display_name(show_quantity=False))
+                            else:
+                                display_names.append(item.name)
+                        
+                        loot_desc = ", ".join(display_names)
+                        composite_message = MB.success(f"You open the chest! It contains: {loot_desc}")
+                    else:
+                        composite_message = MB.info("You open the chest, but it's empty.")
+                    
+                    results.append({"message": composite_message})
+                    
+                    # Add loot to entities
+                    if loot_items:
+                        entities.extend(loot_items)
+                        from entity_sorting_cache import invalidate_entity_cache
+                        invalidate_entity_cache("entity_added_chest_loot_auto_open")
+                else:
+                    results.append({
+                        "message": MB.info(f"{target_chest.name} is already open.")
+                    })
+        
+        # Clear the auto-open target
+        pathfinding.auto_open_target = None
+    
+    # Check if we were pathfinding to read a mural or signpost
+    if hasattr(pathfinding, 'auto_read_target') and pathfinding.auto_read_target:
+        target_readable = pathfinding.auto_read_target
+        
+        # Check if entity is adjacent
+        distance = player.distance_to(target_readable)
+        if target_readable in entities and distance <= 1.0:
+            # Adjacent! Read it
+            if hasattr(target_readable, 'signpost') and target_readable.signpost:
+                results.append({
+                    "message": MB.custom(target_readable.signpost.message, (200, 200, 200))
+                })
+            elif hasattr(target_readable, 'mural') and target_readable.mural:
+                results.append({
+                    "message": MB.custom(target_readable.mural.text, (220, 20, 60))
+                })
+        
+        # Clear the auto-read target
+        pathfinding.auto_read_target = None
 
 
 def _check_for_close_enemies(player: 'Entity', entities: List['Entity'], fov_map, weapon_reach: int) -> bool:
