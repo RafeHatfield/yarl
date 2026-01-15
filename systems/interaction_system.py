@@ -471,8 +471,8 @@ class SignpostInteractionStrategy(InteractionStrategy):
                 )
             
             # Find a walkable adjacent tile to the signpost (since signposts block movement)
-            adjacent_tile = PathfindingHelper._find_adjacent_walkable_tile(
-                entity.x, entity.y, game_map, entities
+            adjacent_tile = pathfinder._find_adjacent_walkable_tile(
+                entity.x, entity.y, player, game_map, entities
             )
             
             if not adjacent_tile:
@@ -551,8 +551,8 @@ class MuralInteractionStrategy(InteractionStrategy):
                 )
             
             # Find a walkable adjacent tile to the mural (since murals block movement)
-            adjacent_tile = PathfindingHelper._find_adjacent_walkable_tile(
-                entity.x, entity.y, game_map, entities
+            adjacent_tile = pathfinder._find_adjacent_walkable_tile(
+                entity.x, entity.y, player, game_map, entities
             )
             
             if not adjacent_tile:
@@ -681,7 +681,7 @@ class PathfindingHelper:
         
         # Find a walkable adjacent tile to the chest (since chest blocks movement)
         adjacent_tile = self._find_adjacent_walkable_tile(
-            chest_entity.x, chest_entity.y, game_map, entities
+            chest_entity.x, chest_entity.y, player, game_map, entities
         )
         
         if not adjacent_tile:
@@ -713,23 +713,31 @@ class PathfindingHelper:
             message=MB.info(f"Moving to open {chest_entity.name}...")
         )
     
-    @staticmethod
-    def _find_adjacent_walkable_tile(center_x: int, center_y: int, 
+    def _find_adjacent_walkable_tile(self, center_x: int, center_y: int, 
+                                     player: 'Entity',
                                      game_map: 'GameMap', 
                                      entities: List['Entity']) -> Optional[Tuple[int, int]]:
-        """Find a walkable adjacent tile to the given center position.
+        """Find the best walkable adjacent tile to the given center position.
+        
+        Chooses the adjacent tile with the shortest path distance from the player.
+        This prevents always choosing NW (northwest) tile and provides natural
+        pathfinding behavior.
         
         Args:
-            center_x, center_y: Center position
+            center_x, center_y: Center position (target object)
+            player: Player entity (to calculate path distances)
             game_map: Game map to check walkability
             entities: Entity list to check for blocking entities
             
         Returns:
-            Tuple of (x, y) for adjacent walkable tile, or None if none found
+            Tuple of (x, y) for best adjacent walkable tile, or None if none found
         """
-        # Check all 8 adjacent tiles
-        for dx in [-1, 0, 1]:
-            for dy in [-1, 0, 1]:
+        # Collect all valid adjacent tiles
+        candidates = []
+        
+        # Check all 8 adjacent tiles in reading order (for deterministic tie-breaking)
+        for dy in [-1, 0, 1]:
+            for dx in [-1, 0, 1]:
                 if dx == 0 and dy == 0:
                     continue  # Skip center
                 
@@ -752,9 +760,30 @@ class PathfindingHelper:
                         break
                 
                 if not blocked_by_entity:
-                    return (adj_x, adj_y)
+                    candidates.append((adj_x, adj_y))
         
-        return None
+        if not candidates:
+            return None
+        
+        # If only one candidate, return it
+        if len(candidates) == 1:
+            return candidates[0]
+        
+        # Multiple candidates - choose the one with shortest path distance from player
+        # Use Manhattan distance as a fast heuristic (avoids running A* 8 times)
+        def manhattan_distance(x1, y1, x2, y2):
+            return abs(x1 - x2) + abs(y1 - y2)
+        
+        best_tile = min(
+            candidates,
+            key=lambda tile: (
+                manhattan_distance(player.x, player.y, tile[0], tile[1]),
+                tile[1],  # Tie-breaker: y coordinate (reading order)
+                tile[0]   # Tie-breaker: x coordinate (reading order)
+            )
+        )
+        
+        return best_tile
 
 
 class InteractionSystem:
