@@ -139,6 +139,9 @@ class RunMetrics:
     traps_detected_total: int = 0
     trap_disarms_attempted: int = 0
     trap_disarms_succeeded: int = 0
+    # Terminal state overwrite attempts (diagnostic metric for harness observability)
+    terminal_overwrite_attempts: int = 0
+    terminal_overwrite_by_target: Dict[str, int] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -233,6 +236,11 @@ class RunMetrics:
             result['trap_root_triggered'] = self.trap_root_triggered
         if hasattr(self, 'trap_root_effects_applied'):
             result['trap_root_effects_applied'] = self.trap_root_effects_applied
+        # Terminal state overwrite metrics (diagnostic)
+        if hasattr(self, 'terminal_overwrite_attempts'):
+            result['terminal_overwrite_attempts'] = self.terminal_overwrite_attempts
+        if hasattr(self, 'terminal_overwrite_by_target'):
+            result['terminal_overwrite_by_target'] = dict(self.terminal_overwrite_by_target)
         return result
 
 
@@ -339,6 +347,9 @@ class AggregatedMetrics:
     total_fireball_casts: int = 0
     total_fireball_tiles_created: int = 0
     total_fireball_direct_damage: int = 0
+    # Terminal state overwrite attempts (diagnostic metric for harness observability)
+    total_terminal_overwrite_attempts: int = 0
+    total_terminal_overwrite_by_target: Dict[str, int] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -408,6 +419,9 @@ class AggregatedMetrics:
             'total_fireball_casts': self.total_fireball_casts,
             'total_fireball_tiles_created': self.total_fireball_tiles_created,
             'total_fireball_direct_damage': self.total_fireball_direct_damage,
+            # Terminal state overwrite metrics (diagnostic)
+            'total_terminal_overwrite_attempts': self.total_terminal_overwrite_attempts,
+            'total_terminal_overwrite_by_target': dict(self.total_terminal_overwrite_by_target),
         }
         return result
 
@@ -1361,6 +1375,16 @@ def run_scenario_many(
         total_fireball_tiles_created += getattr(run, "fireball_tiles_created", 0)
         total_fireball_direct_damage += getattr(run, "fireball_direct_damage", 0)
 
+    # Terminal state overwrite metrics (diagnostic)
+    total_terminal_overwrite_attempts = 0
+    merged_terminal_overwrite_by_target: Dict[str, int] = {}
+    for run in all_runs:
+        total_terminal_overwrite_attempts += getattr(run, "terminal_overwrite_attempts", 0)
+        run_by_target = getattr(run, "terminal_overwrite_by_target", {})
+        for target, count in run_by_target.items():
+            merged_terminal_overwrite_by_target[target] = \
+                merged_terminal_overwrite_by_target.get(target, 0) + count
+
     aggregated = AggregatedMetrics(
         runs=runs,
         average_turns=total_turns / runs if runs > 0 else 0.0,
@@ -1443,6 +1467,9 @@ def run_scenario_many(
         total_fireball_casts=total_fireball_casts,
         total_fireball_tiles_created=total_fireball_tiles_created,
         total_fireball_direct_damage=total_fireball_direct_damage,
+        # Terminal state overwrite metrics (diagnostic)
+        total_terminal_overwrite_attempts=total_terminal_overwrite_attempts,
+        total_terminal_overwrite_by_target=merged_terminal_overwrite_by_target,
     )
     
     logger.info(f"Scenario runs complete: {runs} runs, "

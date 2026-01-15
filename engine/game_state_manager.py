@@ -106,6 +106,9 @@ class GameStateManager:
         # Rate limiting: Track which terminal state overwrites we've already warned about
         # to prevent log spam if there's a runaway caller
         self._terminal_overwrite_warnings = set()
+        # Metric: Count terminal state overwrite attempts (for harness observability)
+        self._terminal_overwrite_attempts = 0
+        self._terminal_overwrite_by_target = {}  # {target_state: count}
 
     @property
     def state(self) -> GameState:
@@ -167,6 +170,12 @@ class GameStateManager:
         from state_management.state_config import StateManager as StateConfig
         if StateConfig.is_terminal_state(self._state.current_state):
             if new_state != self._state.current_state:
+                # Track metric for harness observability (always increments, even if rate-limited)
+                self._terminal_overwrite_attempts += 1
+                target_name = new_state.name if hasattr(new_state, 'name') else str(new_state)
+                self._terminal_overwrite_by_target[target_name] = \
+                    self._terminal_overwrite_by_target.get(target_name, 0) + 1
+                
                 # Rate-limited warning: Only log once per (current_state, new_state) pair
                 # This prevents log spam if there's a runaway caller in a tight loop
                 warning_key = (self._state.current_state, new_state)
@@ -318,3 +327,26 @@ class GameStateManager:
             value: The value to store
         """
         self._state.extra_data[key] = value
+
+    def get_terminal_overwrite_metrics(self) -> Dict[str, Any]:
+        """Get terminal state overwrite attempt metrics.
+        
+        This is a diagnostic tool for harness/testing scenarios.
+        If something repeatedly tries to clobber terminal state, this
+        metric acts as a "smoke alarm" without log spam.
+        
+        Returns:
+            Dict with:
+                - terminal_overwrite_attempts: Total count
+                - terminal_overwrite_by_target: {target_state: count}
+        """
+        return {
+            'terminal_overwrite_attempts': self._terminal_overwrite_attempts,
+            'terminal_overwrite_by_target': dict(self._terminal_overwrite_by_target),
+        }
+
+    def reset_terminal_overwrite_metrics(self) -> None:
+        """Reset terminal overwrite metrics (for fresh test runs)."""
+        self._terminal_overwrite_attempts = 0
+        self._terminal_overwrite_by_target = {}
+        self._terminal_overwrite_warnings = set()
