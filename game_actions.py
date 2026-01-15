@@ -849,9 +849,11 @@ class ActionProcessor:
         if not (attacker_fighter and target_fighter):
             return
         
-        # Break invisibility if the attacker is attacking
-        if hasattr(attacker, 'invisible') and attacker.invisible:
-            self._break_invisibility(attacker)
+        # PHASE 21: Capture invisibility state BEFORE breaking it
+        # This allows the attack to benefit from invisibility bonus
+        # Invisibility is broken AFTER attack resolution in attack_d20().
+        # Note: Use `is True` to handle Mock objects in tests correctly.
+        attacker_was_invisible = getattr(attacker, 'invisible', None) is True
         
         # Log bonus attack distinctly with VFX
         if is_bonus_attack:
@@ -864,31 +866,33 @@ class ActionProcessor:
             show_hit(attacker.x, attacker.y, entity=attacker, is_critical=True)
         
         # ═══════════════════════════════════════════════════════════════════════
-        # PHASE 9: SURPRISE ATTACK CHECK
+        # PHASE 9/21: SURPRISE ATTACK CHECK
         # ═══════════════════════════════════════════════════════════════════════
-        # Surprise attacks apply when:
-        # - Attacker is player (only players can surprise attack)
-        # - Target is a monster (has AI component)
-        # - Target is unaware (aware_of_player == False)
-        # - This is NOT a bonus attack (monster becomes aware after first hit)
-        #
-        # Surprise attack effects:
-        # - Auto-hit (skip accuracy roll)
-        # - 2× damage
-        # - Forced critical hit
+        # Phase 21: Invisibility-based surprise is now handled canonically in
+        # Fighter.attack_d20() - that's the single point of truth for invis bonus.
+        # Here we only check for "unaware monster" surprise (Phase 9 original).
+        # This allows _handle_combat() to show VFX and mark monster aware.
         from components.ai.basic_monster import is_monster_aware, set_monster_aware
         from visual_effects import show_surprise_effect
         
         player = self.state_manager.state.player
         is_surprise_attack = False
+        is_invis_surprise = attacker_was_invisible  # Track for message/VFX display
         
         if attacker == player and not is_bonus_attack:
             target_ai = target.get_component_optional(ComponentType.AI)
-            if target_ai and not is_monster_aware(target):
-                is_surprise_attack = True
-                logger.info(f"[SURPRISE ATTACK] {attacker.name} strikes {target.name} from the shadows!")
-                if collector:
-                    collector.record_surprise_attack(attacker, target)
+            if target_ai:
+                # Phase 21: Invisibility grants surprise (handled in attack_d20, but flag for VFX)
+                if attacker_was_invisible:
+                    is_surprise_attack = True
+                    logger.info(f"[INVIS ATTACK] {attacker.name} strikes {target.name} from invisibility!")
+                    # Note: Metrics now tracked in attack_d20() for canonical convergence
+                # Phase 9: Unaware monster = surprise attack  
+                elif not is_monster_aware(target):
+                    is_surprise_attack = True
+                    logger.info(f"[SURPRISE ATTACK] {attacker.name} strikes {target.name} from the shadows!")
+                    if collector:
+                        collector.record_surprise_attack(attacker, target)
         
         # ═══════════════════════════════════════════════════════════════════════
         # PHASE 8: Hit/Miss Roll (accuracy vs evasion)
@@ -949,8 +953,11 @@ class ActionProcessor:
         
         # Handle surprise attack VFX and messaging before damage
         if is_surprise_attack:
-            # Show surprise attack message
-            surprise_msg = MB.combat_critical("🥷 You strike from the shadows! (Surprise attack!)")
+            # Show surprise attack message (different for invis vs stealth)
+            if is_invis_surprise:
+                surprise_msg = MB.combat_critical("👻 You strike from invisibility! (Backstab!)")
+            else:
+                surprise_msg = MB.combat_critical("🥷 You strike from the shadows! (Surprise attack!)")
             self.state_manager.state.message_log.add_message(surprise_msg)
             
             # Show surprise VFX on target
@@ -1031,6 +1038,9 @@ class ActionProcessor:
                 if dead_entity == target:
                     target_died = True
 
+        # NOTE: Invisibility break moved to Fighter.attack_d20() (Phase 21 canonical execution).
+        # attack_d20() handles both the surprise bonus AND breaking invisibility after attack.
+        
         # Player attacks should consume the turn (even if target survived)
         if attacker == player:
             # Check for speed bonus attack (only for main attacks, not bonus attacks)
@@ -3039,15 +3049,15 @@ class ActionProcessor:
         if not entity or not message_log:
             return
         
-        # Get the invisibility effect and break it
+        # Get the invisibility effect and remove it from the manager
+        # (using remove_effect ensures both the effect's remove() is called
+        # AND the effect is removed from active_effects dict)
         status_manager = entity.get_status_effect_manager()
         if status_manager and status_manager.has_effect("invisibility"):
-            invisibility_effect = status_manager.get_effect("invisibility")
-            if invisibility_effect:
-                break_results = invisibility_effect.break_invisibility()
-                
-                # Add any messages from breaking invisibility
-                for result in break_results:
-                    message = result.get("message")
-                    if message:
-                        message_log.add_message(message)
+            break_results = status_manager.remove_effect("invisibility")
+            
+            # Add any messages from breaking invisibility
+            for result in break_results:
+                message = result.get("message")
+                if message:
+                    message_log.add_message(message)

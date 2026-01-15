@@ -29,6 +29,17 @@ class ScenarioMetricsCollector:
     def record_surprise_attack(self, attacker: Any, defender: Any) -> None:
         self.metrics.surprise_attacks += 1
     
+    def record_invis_attack(self, attacker: Any, defender: Any) -> None:
+        """Record an attack from invisibility (Phase 21: Backstab mechanic).
+        
+        Args:
+            attacker: The invisible attacker
+            defender: The target being attacked
+        """
+        if not hasattr(self.metrics, 'invis_attacks'):
+            self.metrics.invis_attacks = 0
+        self.metrics.invis_attacks += 1
+    
     def record_bonus_attack(self, attacker: Any, defender: Any) -> None:
         self.metrics.bonus_attacks_triggered += 1
     

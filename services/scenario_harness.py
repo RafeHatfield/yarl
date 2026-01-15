@@ -755,7 +755,9 @@ def _process_player_action(
         target_fighter = target.get_component_optional(ComponentType.FIGHTER) if target else None
         
         if player_fighter and target_fighter and target_fighter.hp > 0:
-            # Check for surprise attack (Phase 9: backstab/stealth mechanics)
+            # Phase 9: Check for surprise attack (unaware monster)
+            # Phase 21: Invisibility-based surprise is now handled canonically in
+            # Fighter.attack_d20() - all callers converge there for invis bonus + break.
             is_surprise = False
             try:
                 from components.ai.basic_monster import is_monster_aware, set_monster_aware

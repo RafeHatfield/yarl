@@ -945,10 +945,12 @@ class Fighter:
         - On hit: Roll weapon damage + STR modifier
         
         Phase 9: Surprise attacks force critical hit for 2× damage.
+        Phase 21: Invisibility grants surprise attack (canonical execution point).
         
         Args:
             target (Entity): The target entity to attack
-            is_surprise (bool): If True, this is a surprise attack (forced crit, already auto-hit)
+            is_surprise (bool): If True, this is a surprise attack (forced crit, already auto-hit).
+                               Can also be triggered internally if attacker is invisible.
             game_map (GameMap, optional): Game map for knockback terrain checks
             entities (List[Entity], optional): All entities for knockback blocking checks
             
@@ -959,6 +961,34 @@ class Fighter:
         from game_messages import Message
         
         results = []
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # PHASE 21: CANONICAL INVISIBILITY CHECK
+        # ═══════════════════════════════════════════════════════════════════════
+        # Check if attacker is invisible at moment of attack.
+        # This is the single point of truth for invisibility-based surprise attacks.
+        # All callers (keyboard, mouse, bot, harness) converge here.
+        # Note: Use `is True` to handle Mock objects in tests correctly.
+        attacker_was_invisible = getattr(self.owner, 'invisible', None) is True
+        invis_surprise = False
+        
+        if attacker_was_invisible and not is_surprise:
+            # Attacker is invisible - this grants surprise attack bonus
+            # (unless caller already computed is_surprise=True for other reasons)
+            target_ai = target.get_component_optional(ComponentType.AI) if target else None
+            attacker_ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
+            
+            # Only player attacks (no AI = player) against monsters (has AI) get invis bonus
+            if not attacker_ai and target_ai:
+                is_surprise = True
+                invis_surprise = True
+                logger.info(f"[INVIS ATTACK] {self.owner.name} strikes {target.name} from invisibility!")
+                
+                # Track metrics
+                collector = _get_metrics_collector()
+                if collector:
+                    collector.increment('invis_attacks')
+                    collector.increment('surprise_attacks')
         
         # Phase 11: Register combat engagement for monster knowledge
         try:
@@ -1316,6 +1346,22 @@ class Fighter:
             if is_testing_mode():
                 self._log_d20_combat(d20_roll, to_hit_bonus, weapon_bonus, attack_roll,
                                     target_ac, hit, is_fumble, 0, 0)
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # PHASE 21: BREAK INVISIBILITY AFTER ATTACK
+        # ═══════════════════════════════════════════════════════════════════════
+        # Invisibility breaks after attack resolution (whether hit or miss).
+        # This is the canonical execution point - all callers converge here.
+        if attacker_was_invisible:
+            status_manager = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS)
+            if status_manager and status_manager.has_effect("invisibility"):
+                break_results = status_manager.remove_effect("invisibility")
+                results.extend(break_results)
+                
+                # Track metrics
+                collector = _get_metrics_collector()
+                if collector:
+                    collector.increment('invis_broken_by_attack')
         
         return results
     
