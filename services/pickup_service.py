@@ -86,20 +86,45 @@ class PickupService:
         
         logger.debug(f"Pickup attempt at ({player.x}, {player.y}) via {source}")
         
-        # Find items at player's location
-        items_at_location = [
-            entity for entity in entities
-            if entity.x == player.x and entity.y == player.y and hasattr(entity, 'item') and entity.item
-        ]
+        # Find items at player's location OR adjacent (8-neighbor pickup)
+        # This allows picking up items next to chests, on blocked tiles, etc.
+        items_in_range = []
+        for entity in entities:
+            if not (hasattr(entity, 'item') and entity.item):
+                continue
+            
+            # Check if item is at player location or adjacent (Chebyshev distance <= 1)
+            dx = abs(entity.x - player.x)
+            dy = abs(entity.y - player.y)
+            chebyshev_dist = max(dx, dy)
+            
+            if chebyshev_dist <= 1:
+                items_in_range.append(entity)
         
-        if not items_at_location:
+        if not items_in_range:
             result.no_items = True
             result.messages.append({"message": MB.info("There is nothing here to pick up.")})
-            logger.debug("No items at player location")
+            logger.debug("No items in pickup range")
             return result
         
-        # Pick up the first item (TODO: implement item selection menu if multiple items)
-        item = items_at_location[0]
+        # Pick up items in deterministic order:
+        # 1. Prioritize items at player's exact location
+        # 2. Then items adjacent, sorted by distance then reading order (y, x)
+        items_on_tile = [i for i in items_in_range if i.x == player.x and i.y == player.y]
+        items_adjacent = [i for i in items_in_range if not (i.x == player.x and i.y == player.y)]
+        
+        # Sort adjacent items by distance then reading order for determinism
+        items_adjacent.sort(key=lambda i: (
+            max(abs(i.x - player.x), abs(i.y - player.y)),  # Chebyshev distance
+            i.y,  # Reading order: y first
+            i.x   # Then x
+        ))
+        
+        # Combine: items on tile first, then adjacent
+        sorted_items = items_on_tile + items_adjacent
+        
+        # Pick up the first item
+        item = sorted_items[0]
         result.item_name = item.name
         
         logger.info(f"Attempting to pick up: {item.name} via {source}")

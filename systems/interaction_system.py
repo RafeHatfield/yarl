@@ -181,10 +181,11 @@ class ItemInteractionStrategy(InteractionStrategy):
         pathfinder: 'PathfindingHelper'
     ) -> InteractionResult:
         """Pick up item or pathfind to it."""
-        distance = player.distance_to(entity)
+        # Use Chebyshev distance for 8-neighbor adjacency
+        distance = player.chebyshev_distance_to(entity)
         
         if distance <= 1:
-            # Adjacent - pick up immediately
+            # Adjacent or on same tile - pick up immediately
             return self._pickup_item(entity, player, entities)
         else:
             # Too far - pathfind
