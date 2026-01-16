@@ -215,6 +215,7 @@ class Entity:
             'equippable': ComponentType.EQUIPPABLE,
             'wand': ComponentType.WAND,
             'portal': ComponentType.PORTAL,
+            'chest': ComponentType.CHEST,
             'signpost': ComponentType.SIGNPOST,
             'mural': ComponentType.MURAL,
             'item_seeking_ai': ComponentType.ITEM_SEEKING_AI,
