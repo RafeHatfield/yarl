@@ -217,6 +217,8 @@ class Entity:
             'portal': ComponentType.PORTAL,
             'signpost': ComponentType.SIGNPOST,
             'mural': ComponentType.MURAL,
+            'item_seeking_ai': ComponentType.ITEM_SEEKING_AI,
+            'item_usage': ComponentType.ITEM_USAGE,
         }
         
         # Set the attribute normally
