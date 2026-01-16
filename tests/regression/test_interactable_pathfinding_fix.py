@@ -27,6 +27,50 @@ from systems.interaction_system import PathfindingHelper
 class TestAdjacentTileSelection:
     """Test that _find_adjacent_walkable_tile chooses the best tile."""
     
+    def test_open_chest_from_distance_defers_state_check(self):
+        """Test that clicking an already-open chest from distance defers the state check.
+        
+        Bug: Previously, clicking an open chest would check can_interact() at click
+        time and immediately return \"already empty\" without pathfinding.
+        
+        Correct behavior: Distance check happens FIRST. If not adjacent, should
+        attempt to pathfind regardless of chest state. The \"already empty\" message
+        should only appear ON ARRIVAL when the player is adjacent.
+        """
+        from components.chest import Chest, ChestState
+        from systems.interaction_system import ChestInteractionStrategy
+        
+        game_map = GameMap(10, 10)
+        game_map.initialize_tiles()
+        
+        for x in range(10):
+            for y in range(10):
+                game_map.tiles[x][y].blocked = False
+                game_map.tiles[x][y].block_sight = False
+        
+        # Player at (8, 3) - 2 tiles away (not adjacent)
+        player = Entity(8, 3, '@', (255, 255, 255), 'Player', blocks=True,
+                       render_order=RenderOrder.ACTOR)
+        
+        # OPEN chest at (8, 5)
+        chest_entity = Entity(8, 5, '&', (139, 69, 19), 'Wooden Chest', blocks=True,
+                             render_order=RenderOrder.ITEM)
+        chest_entity.tags.add('openable')
+        chest_entity.chest = Chest(state=ChestState.OPEN, loot=[], loot_quality='common')
+        chest_entity.chest.owner = chest_entity
+        
+        # Verify chest is NOT adjacent
+        distance = player.distance_to(chest_entity)
+        assert distance > 1, f"Player should not be adjacent, distance={distance}"
+        
+        # Verify chest cannot be interacted with (it's already open)
+        assert chest_entity.chest.can_interact() is False, "Chest should be already open"
+        
+        # Call can_interact - should return True even for open chests
+        strategy = ChestInteractionStrategy()
+        assert strategy.can_interact(chest_entity, player) is True, \
+            "can_interact() should return True for chests regardless of state"
+    
     def test_find_adjacent_tile_from_west_chooses_west_not_nw(self):
         """Test that adjacent tile selection chooses closest tile from west.
         

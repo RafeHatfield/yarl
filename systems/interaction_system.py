@@ -334,34 +334,42 @@ class ChestInteractionStrategy(InteractionStrategy):
         chest = entity.chest
         distance = player.distance_to(entity)
         
-        # Check if chest is already open
-        if not chest.can_interact():
-            # If already open, try to pick up any loot on this tile first.
-            loot_on_ground = [
-                e for e in entities
-                if e is not entity
-                and e.x == entity.x
-                and e.y == entity.y
-                and e.components.has(ComponentType.ITEM)
-            ]
-            
-            if loot_on_ground:
-                item_strategy = ItemInteractionStrategy()
-                return item_strategy.interact(
-                    loot_on_ground[0], player, game_map, entities, fov_map, pathfinder
-                )
-            
-            return InteractionResult(
-                action_taken=True,
-                message=MB.info("This chest is already empty."),
-                consume_turn=False  # No turn consumed for just looking at open chest
-            )
+        # CRITICAL: Check distance FIRST, before checking chest state
+        # This ensures we path to already-open chests and show the "already open"
+        # message ON ARRIVAL, not at click time
         
         if distance <= 1:
-            # Adjacent - open immediately
+            # Adjacent - handle interaction immediately
+            
+            # Check if chest is already open
+            if not chest.can_interact():
+                # If already open, try to pick up any loot on this tile first
+                loot_on_ground = [
+                    e for e in entities
+                    if e is not entity
+                    and e.x == entity.x
+                    and e.y == entity.y
+                    and e.components.has(ComponentType.ITEM)
+                ]
+                
+                if loot_on_ground:
+                    item_strategy = ItemInteractionStrategy()
+                    return item_strategy.interact(
+                        loot_on_ground[0], player, game_map, entities, fov_map, pathfinder
+                    )
+                
+                return InteractionResult(
+                    action_taken=True,
+                    message=MB.info("This chest is already empty."),
+                    consume_turn=False
+                )
+            
+            # Chest can be opened
             return self._open_chest_immediate(entity, player)
         else:
             # Too far - pathfind to adjacent tile
+            # Do NOT check chest state here - defer until arrival
+            # This ensures we path to already-open chests and show message on arrival
             return pathfinder.pathfind_to_chest(entity, player, game_map, entities, fov_map)
     
     def _open_chest_immediate(self, chest_entity: 'Entity', player: 'Entity') -> InteractionResult:
