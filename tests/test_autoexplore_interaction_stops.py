@@ -31,7 +31,7 @@ class TestChestInteractionStopsAutoExplore:
         player = Mock()
         player.x = 10
         player.y = 10
-        player.distance_to = Mock(return_value=1)  # Adjacent
+        player.chebyshev_distance_to = Mock(return_value=1)  # Adjacent
         
         # Create mock chest entity
         chest_entity = Mock()
@@ -67,7 +67,7 @@ class TestChestInteractionStopsAutoExplore:
         player = Mock()
         player.x = 10
         player.y = 10
-        player.distance_to = Mock(return_value=1)  # Adjacent
+        player.chebyshev_distance_to = Mock(return_value=1)  # Adjacent
         
         # Create mock chest entity (already open)
         chest_entity = Mock()
@@ -104,7 +104,7 @@ class TestSignpostInteractionStopsAutoExplore:
         player = Mock()
         player.x = 10
         player.y = 10
-        player.distance_to = Mock(return_value=1)  # Adjacent
+        player.chebyshev_distance_to = Mock(return_value=1)  # Adjacent
         
         # Create mock signpost entity
         signpost_entity = Mock()
@@ -139,7 +139,7 @@ class TestMuralInteractionStopsAutoExplore:
         player = Mock()
         player.x = 10
         player.y = 10
-        player.distance_to = Mock(return_value=1)  # Adjacent
+        player.chebyshev_distance_to = Mock(return_value=1)  # Adjacent
         
         # Create mock mural entity
         mural_entity = Mock()

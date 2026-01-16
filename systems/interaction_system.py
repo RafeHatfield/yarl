@@ -332,7 +332,9 @@ class ChestInteractionStrategy(InteractionStrategy):
         from message_builder import MessageBuilder as MB
         
         chest = entity.chest
-        distance = player.distance_to(entity)
+        # Use Chebyshev distance (chessboard) to correctly handle diagonal adjacency
+        # Euclidean distance_to() returns ~1.414 for diagonals, which fails distance <= 1 check
+        distance = player.chebyshev_distance_to(entity)
         
         # CRITICAL: Check distance FIRST, before checking chest state
         # This ensures we path to already-open chests and show the "already open"
@@ -458,7 +460,8 @@ class SignpostInteractionStrategy(InteractionStrategy):
         """
         from message_builder import MessageBuilder as MB
         
-        distance = player.distance_to(entity)
+        # Use Chebyshev distance to correctly handle diagonal adjacency
+        distance = player.chebyshev_distance_to(entity)
         signpost = entity.signpost
         
         if distance <= 1:
@@ -538,7 +541,8 @@ class MuralInteractionStrategy(InteractionStrategy):
         """
         from message_builder import MessageBuilder as MB
         
-        distance = player.distance_to(entity)
+        # Use Chebyshev distance to correctly handle diagonal adjacency
+        distance = player.chebyshev_distance_to(entity)
         mural = entity.mural
         
         if distance <= 1:

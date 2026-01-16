@@ -27,6 +27,41 @@ from systems.interaction_system import PathfindingHelper
 class TestAdjacentTileSelection:
     """Test that _find_adjacent_walkable_tile chooses the best tile."""
     
+    def test_diagonal_adjacency_recognized(self):
+        """Test that diagonal adjacency is correctly recognized.
+        
+        Bug: Using Euclidean distance_to() with threshold <= 1.0 excludes diagonals
+        (sqrt(2) ≈ 1.414 > 1.0). This caused the system to think diagonally
+        adjacent players were not adjacent, triggering unnecessary pathfinding.
+        
+        Fix: Use Chebyshev distance (max of dx, dy) which treats all 8 neighbors
+        as distance 1.
+        """
+        # Player at (5, 5)
+        player = Entity(5, 5, '@', (255, 255, 255), 'Player', blocks=True,
+                       render_order=RenderOrder.ACTOR)
+        
+        # Target at (6, 6) - diagonal (SE)
+        target = Entity(6, 6, 'T', (255, 255, 255), 'Target', blocks=True,
+                       render_order=RenderOrder.ITEM)
+        
+        # Euclidean distance (OLD, WRONG for adjacency)
+        euclidean = player.distance_to(target)
+        assert euclidean > 1.0, f"Euclidean distance should be > 1.0 for diagonal, got {euclidean}"
+        
+        # Chebyshev distance (NEW, CORRECT for adjacency)
+        chebyshev = player.chebyshev_distance_to(target)
+        assert chebyshev == 1, f"Chebyshev distance should be 1 for diagonal, got {chebyshev}"
+        
+        # Verify all 8 neighbors have Chebyshev distance 1
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue
+                neighbor = Entity(5 + dx, 5 + dy, 'N', (255, 255, 255), 'Neighbor')
+                assert player.chebyshev_distance_to(neighbor) == 1, \
+                    f"Neighbor at ({5+dx}, {5+dy}) should have Chebyshev distance 1"
+    
     def test_open_chest_from_distance_defers_state_check(self):
         """Test that clicking an already-open chest from distance defers the state check.
         

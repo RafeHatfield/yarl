@@ -710,9 +710,9 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             target_npc = pathfinding.auto_talk_target
             
             # Check if NPC is adjacent or at player's location
-            # Use Euclidean distance (same as interaction system) to handle diagonals correctly
-            distance = player.distance_to(target_npc)
-            if target_npc in entities and distance <= 1.5:
+            # Use Chebyshev distance for correct 8-neighbor adjacency
+            distance = player.chebyshev_distance_to(target_npc)
+            if target_npc in entities and distance <= 1:
                 # Talk to them!
                 if (hasattr(target_npc, 'is_npc') and target_npc.is_npc and
                     hasattr(target_npc, 'npc_dialogue') and target_npc.npc_dialogue):
@@ -746,8 +746,8 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             target_chest = pathfinding.auto_open_target
             
             # Check if chest is adjacent
-            distance = player.distance_to(target_chest)
-            if target_chest in entities and distance <= 1.0:
+            distance = player.chebyshev_distance_to(target_chest)
+            if target_chest in entities and distance <= 1:
                 # Adjacent! Open the chest
                 if (hasattr(target_chest, 'chest') and target_chest.chest):
                     chest = target_chest.chest
@@ -807,8 +807,8 @@ def process_pathfinding_movement(player: 'Entity', entities: List['Entity'],
             target_readable = pathfinding.auto_read_target
             
             # Check if entity is adjacent
-            distance = player.distance_to(target_readable)
-            if target_readable in entities and distance <= 1.0:
+            distance = player.chebyshev_distance_to(target_readable)
+            if target_readable in entities and distance <= 1:
                 # Adjacent! Read the mural or signpost
                 if hasattr(target_readable, 'mural') and target_readable.mural:
                     mural = target_readable.mural
@@ -902,9 +902,9 @@ def _check_auto_interactions(player: 'Entity', entities: List['Entity'], game_ma
     if hasattr(pathfinding, 'auto_talk_target') and pathfinding.auto_talk_target:
         target_npc = pathfinding.auto_talk_target
         
-        # Check if NPC is adjacent
-        distance = player.distance_to(target_npc)
-        if target_npc in entities and distance <= 1.5:
+        # Check if NPC is adjacent (use Chebyshev for 8-neighbor adjacency)
+        distance = player.chebyshev_distance_to(target_npc)
+        if target_npc in entities and distance <= 1:
             # Adjacent - talk to them
             if (hasattr(target_npc, 'is_npc') and target_npc.is_npc and
                 hasattr(target_npc, 'npc_dialogue') and target_npc.npc_dialogue):
@@ -933,9 +933,9 @@ def _check_auto_interactions(player: 'Entity', entities: List['Entity'], game_ma
     if hasattr(pathfinding, 'auto_open_target') and pathfinding.auto_open_target:
         target_chest = pathfinding.auto_open_target
         
-        # Check if chest is adjacent
-        distance = player.distance_to(target_chest)
-        if target_chest in entities and distance <= 1.0:
+        # Check if chest is adjacent (use Chebyshev for 8-neighbor adjacency)
+        distance = player.chebyshev_distance_to(target_chest)
+        if target_chest in entities and distance <= 1:
             # Adjacent! Open the chest
             if (hasattr(target_chest, 'chest') and target_chest.chest):
                 chest = target_chest.chest
@@ -984,9 +984,9 @@ def _check_auto_interactions(player: 'Entity', entities: List['Entity'], game_ma
     if hasattr(pathfinding, 'auto_read_target') and pathfinding.auto_read_target:
         target_readable = pathfinding.auto_read_target
         
-        # Check if entity is adjacent
-        distance = player.distance_to(target_readable)
-        if target_readable in entities and distance <= 1.0:
+        # Check if entity is adjacent (use Chebyshev for 8-neighbor adjacency)
+        distance = player.chebyshev_distance_to(target_readable)
+        if target_readable in entities and distance <= 1:
             # Adjacent! Read it
             if hasattr(target_readable, 'signpost') and target_readable.signpost:
                 results.append({
