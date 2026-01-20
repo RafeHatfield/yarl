@@ -999,6 +999,20 @@ def _check_auto_interactions(player: 'Entity', entities: List['Entity'], game_ma
         
         # Clear the auto-read target
         pathfinding.auto_read_target = None
+    
+    # Check if we were pathfinding to use stairs
+    if hasattr(pathfinding, 'auto_stairs_target') and pathfinding.auto_stairs_target:
+        target_stairs = pathfinding.auto_stairs_target
+        
+        # Check if player is standing on stairs
+        if target_stairs in entities and target_stairs.x == player.x and target_stairs.y == player.y:
+            # On stairs! Trigger the stairs action
+            results.append({
+                "take_stairs": True
+            })
+        
+        # Clear the auto-stairs target
+        pathfinding.auto_stairs_target = None
 
 
 def _check_for_close_enemies(player: 'Entity', entities: List['Entity'], fov_map, weapon_reach: int) -> bool:

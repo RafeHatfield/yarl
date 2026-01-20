@@ -2962,6 +2962,11 @@ class ActionProcessor:
                         logger.error("=== RIGHT-CLICK: Victory sequence FAILED ===")
                         print(">>> RIGHT-CLICK: Portal spawn FAILED!")
                 
+                # Handle stairs usage
+                if result.use_stairs:
+                    self._handle_stairs(None)
+                    return
+                
                 # Start pathfinding if needed
                 if result.start_pathfinding:
                     self._process_pathfinding_movement_action(None)

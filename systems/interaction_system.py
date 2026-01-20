@@ -39,6 +39,7 @@ class InteractionResult:
         victory_triggered: Whether picking up a victory item (Ruby Heart)
         loot_items: Items dropped by interaction (e.g., from chest)
         auto_explore_stop_reason: If set, stop AutoExplore with this reason
+        use_stairs: Whether to trigger stairs action (descend/ascend)
     """
     
     def __init__(
@@ -51,7 +52,8 @@ class InteractionResult:
         start_pathfinding: bool = False,
         victory_triggered: bool = False,
         loot_items: Optional[List['Entity']] = None,
-        auto_explore_stop_reason: Optional[str] = None
+        auto_explore_stop_reason: Optional[str] = None,
+        use_stairs: bool = False
     ):
         self.action_taken = action_taken
         self.state_change = state_change
@@ -62,6 +64,7 @@ class InteractionResult:
         self.victory_triggered = victory_triggered
         self.loot_items = loot_items or []
         self.auto_explore_stop_reason = auto_explore_stop_reason
+        self.use_stairs = use_stairs
 
 
 class InteractionStrategy(ABC):
@@ -595,6 +598,85 @@ class MuralInteractionStrategy(InteractionStrategy):
             )
 
 
+class StairsInteractionStrategy(InteractionStrategy):
+    """Strategy for interacting with stairs (descend/ascend)."""
+    
+    def can_interact(self, entity: 'Entity', player: 'Entity') -> bool:
+        """Check if entity is stairs."""
+        return entity.components.has(ComponentType.STAIRS)
+    
+    def get_priority(self) -> int:
+        """Stairs have low priority (you interact with them when ready to leave)."""
+        return 1.5  # Between items (1) and NPCs (2)
+    
+    def interact(
+        self,
+        entity: 'Entity',
+        player: 'Entity',
+        game_map: 'GameMap',
+        entities: List['Entity'],
+        fov_map,
+        pathfinder: 'PathfindingHelper'
+    ) -> InteractionResult:
+        """Use stairs or pathfind to stairs tile and use.
+        
+        Strategy:
+        1. If on stairs tile: use immediately (trigger take_stairs action)
+        2. If not on stairs: pathfind to stairs tile, then auto-use on arrival
+        
+        Note: Unlike chests/signs/murals which require adjacency, stairs require
+        the player to be standing ON the stairs tile (matching Enter key behavior).
+        """
+        from message_builder import MessageBuilder as MB
+        
+        # Check if player is already on stairs
+        if player.x == entity.x and player.y == entity.y:
+            # On stairs - use immediately
+            # We return a special result that signals to trigger stairs action
+            return InteractionResult(
+                action_taken=True,
+                message=None,  # Let _handle_stairs show the transition message
+                consume_turn=False,  # Will be handled by stairs action
+                use_stairs=True,  # Signal to trigger stairs action
+                auto_explore_stop_reason="Using Stairs"
+            )
+        else:
+            # Not on stairs - pathfind TO the stairs tile
+            pathfinding = player.get_component_optional(ComponentType.PATHFINDING)
+            if not pathfinding:
+                return InteractionResult(
+                    action_taken=True,
+                    message=MB.warning("Cannot path to that location.")
+                )
+            
+            # Check if stairs tile is walkable (should be, but verify)
+            if not game_map.is_walkable(entity.x, entity.y):
+                return InteractionResult(
+                    action_taken=True,
+                    message=MB.warning("Cannot reach those stairs.")
+                )
+            
+            # Pathfind directly to stairs tile
+            success = pathfinding.set_destination(
+                entity.x, entity.y, game_map, entities, fov_map
+            )
+            
+            if not success:
+                return InteractionResult(
+                    action_taken=True,
+                    message=MB.warning("Cannot reach those stairs.")
+                )
+            
+            # Store stairs entity for auto-use on arrival
+            pathfinding.auto_stairs_target = entity
+            
+            return InteractionResult(
+                action_taken=True,
+                start_pathfinding=True,
+                message=MB.info("Moving to stairs...")
+            )
+
+
 class PathfindingHelper:
     """Helper class for pathfinding operations."""
     
@@ -809,6 +891,7 @@ class InteractionSystem:
             ChestInteractionStrategy(),
             SignpostInteractionStrategy(),
             MuralInteractionStrategy(),
+            StairsInteractionStrategy(),
             ItemInteractionStrategy(),
             NPCInteractionStrategy(),
         ]

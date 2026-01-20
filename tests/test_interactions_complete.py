@@ -289,11 +289,12 @@ class TestInteractionPriority:
         assert 'ChestInteractionStrategy' in strategy_names
         assert 'SignpostInteractionStrategy' in strategy_names
         assert 'MuralInteractionStrategy' in strategy_names
+        assert 'StairsInteractionStrategy' in strategy_names
         assert 'ItemInteractionStrategy' in strategy_names
         assert 'NPCInteractionStrategy' in strategy_names
         
-        # Total should be 6
-        assert len(strategy_names) == 6
+        # Total should be 7 (added stairs in stairs right-click feature)
+        assert len(strategy_names) == 7
 
 
 class TestFeatureFlags:
