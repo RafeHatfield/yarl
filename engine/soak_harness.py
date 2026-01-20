@@ -41,6 +41,7 @@ import json
 import tcod.libtcodpy as libtcod
 
 from io_layer.bot_metrics import BotMetricsRecorder, BotRunSummary
+from utils.resource_paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -603,7 +604,7 @@ def _initialize_libtcod_for_soak(constants: Dict[str, Any]) -> None:
     
     # Set up font (required before init_root)
     libtcod.console_set_custom_font(
-        "arial10x10.png", 
+        get_resource_path("arial10x10.png"), 
         libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD
     )
     

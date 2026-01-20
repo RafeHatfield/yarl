@@ -6,11 +6,18 @@ This module provides a unified logging system with:
 - Separate error tracking
 - Module-based logger hierarchy
 - Consistent message formatting
+
+Logs are written to the user data directory:
+- Windows: %APPDATA%/CatacombsOfYARL/logs/
+- macOS: ~/Library/Application Support/CatacombsOfYARL/logs/
+- Linux: ~/.local/share/catacombs-of-yarl/logs/
 """
 
 import logging
 import logging.handlers
 import os
+
+from utils.resource_paths import get_log_dir
 
 
 def setup_logging(log_level=logging.WARNING):
@@ -23,8 +30,8 @@ def setup_logging(log_level=logging.WARNING):
         logging.Logger: Configured root logger for 'rlike' namespace
     """
     
-    # Create logs directory if needed
-    os.makedirs('logs', exist_ok=True)
+    # Get the log directory in user data dir (creates if needed)
+    log_dir = get_log_dir(create=True)
     
     # Main application logger
     app_logger = logging.getLogger('rlike')
@@ -42,7 +49,7 @@ def setup_logging(log_level=logging.WARNING):
     
     # Main file handler with rotation (10 MB max, keep 5 backups)
     file_handler = logging.handlers.RotatingFileHandler(
-        'logs/rlike.log',
+        str(log_dir / 'rlike.log'),
         maxBytes=10_000_000,  # 10 MB
         backupCount=5
     )
@@ -52,7 +59,7 @@ def setup_logging(log_level=logging.WARNING):
     
     # Separate error log (5 MB max, keep 3 backups)
     error_handler = logging.handlers.RotatingFileHandler(
-        'logs/rlike_errors.log',
+        str(log_dir / 'rlike_errors.log'),
         maxBytes=5_000_000,  # 5 MB
         backupCount=3
     )

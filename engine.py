@@ -65,6 +65,7 @@ from config.testing_config import set_testing_mode, get_testing_config, is_testi
 from config.ui_layout import get_ui_layout
 from debug_logging import setup_debug_logging
 from entity_dialogue import EntityDialogue
+from utils.resource_paths import get_resource_path, migrate_legacy_save_if_needed
 from rendering.camera import Camera, CameraMode
 from engine.systems import (
     RenderSystem,
@@ -269,6 +270,11 @@ def main():
     Initializes the game window, loads or creates a new game,
     and runs the main game loop until the player quits.
     """
+    # Check for and migrate legacy save files from CWD to user data dir
+    migration_msg = migrate_legacy_save_if_needed()
+    if migration_msg:
+        print(f"📦 {migration_msg}")
+    
     # Initialize debug logging FIRST (before anything else)
     debug_log = setup_debug_logging("debug.log", console_level="WARNING")
     print(f"🔍 Debug logging enabled: {debug_log}")
@@ -422,7 +428,7 @@ def main():
     ui_layout = get_ui_layout()
 
     libtcod.console_set_custom_font(
-        "arial10x10.png", libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD
+        get_resource_path("arial10x10.png"), libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD
     )
 
     # Initialize root console with new layout dimensions
@@ -479,7 +485,7 @@ def main():
     
     show_load_error_message = False
 
-    main_menu_background_image = libtcod.image_load("menu_background1.png")
+    main_menu_background_image = libtcod.image_load(get_resource_path("menu_background1.png"))
     
     # Generate Entity quote ONCE to prevent flickering (Phase 1 feature)
     entity_menu_quote = EntityDialogue.get_main_menu_quote()

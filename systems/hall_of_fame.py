@@ -2,6 +2,11 @@
 
 This module manages the Hall of Fame, which records all successful
 game completions with relevant statistics and endings achieved.
+
+Hall of Fame data is stored in the user data directory:
+- Windows: %APPDATA%/CatacombsOfYARL/data/hall_of_fame.yaml
+- macOS: ~/Library/Application Support/CatacombsOfYARL/data/hall_of_fame.yaml
+- Linux: ~/.local/share/catacombs-of-yarl/data/hall_of_fame.yaml
 """
 
 import os
@@ -9,8 +14,7 @@ import yaml
 from datetime import datetime
 from typing import List, Dict, Any
 
-
-HALL_OF_FAME_FILE = "data/hall_of_fame.yaml"
+from utils.resource_paths import get_hall_of_fame_path
 
 
 class HallOfFame:
@@ -19,16 +23,17 @@ class HallOfFame:
     def __init__(self):
         """Initialize Hall of Fame manager."""
         self.entries: List[Dict[str, Any]] = []
+        self._file_path = get_hall_of_fame_path(create_dir=True)
         self.load()
     
     def load(self):
         """Load Hall of Fame from file."""
-        if not os.path.exists(HALL_OF_FAME_FILE):
+        if not self._file_path.exists():
             self.entries = []
             return
         
         try:
-            with open(HALL_OF_FAME_FILE, 'r') as f:
+            with open(self._file_path, 'r') as f:
                 data = yaml.safe_load(f)
                 self.entries = data.get('victories', []) if data else []
         except Exception as e:
@@ -37,11 +42,11 @@ class HallOfFame:
     
     def save(self):
         """Save Hall of Fame to file."""
-        # Ensure data directory exists
-        os.makedirs(os.path.dirname(HALL_OF_FAME_FILE), exist_ok=True)
+        # Ensure parent directory exists
+        self._file_path.parent.mkdir(parents=True, exist_ok=True)
         
         try:
-            with open(HALL_OF_FAME_FILE, 'w') as f:
+            with open(self._file_path, 'w') as f:
                 yaml.dump({'victories': self.entries}, f, default_flow_style=False)
         except Exception as e:
             print(f"Warning: Could not save Hall of Fame: {e}")

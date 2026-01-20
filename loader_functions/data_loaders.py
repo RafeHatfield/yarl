@@ -3,6 +3,8 @@ import json
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
+from utils.resource_paths import get_save_dir
+
 # Import game objects for type checking and reconstruction
 from entity import Entity
 from components.fighter import Fighter
@@ -63,11 +65,12 @@ def save_game(player, entities, game_map, message_log, game_state):
             "game_state": game_state.name if hasattr(game_state, 'name') else str(game_state)
         }
         
-        # Write to JSON file
-        with open("savegame.json", "w", encoding="utf-8") as f:
+        # Write to JSON file in user data directory
+        save_path = get_save_dir() / "savegame.json"
+        with open(save_path, "w", encoding="utf-8") as f:
             json.dump(save_data, f, indent=2, ensure_ascii=False)
 
-        logging.info("Game saved successfully")
+        logging.info(f"Game saved successfully to {save_path}")
 
     except Exception as e:
         logging.error(f"Failed to save game: {e}")
@@ -92,23 +95,33 @@ def load_game():
     load_entity_config()
     
     try:
+        save_dir = get_save_dir()
+        json_path = save_dir / "savegame.json"
+        shelve_path = save_dir / "savegame.dat.db"
+        
         # Try JSON format first
-        if os.path.isfile("savegame.json"):
-            return _load_json_save()
+        if json_path.is_file():
+            return _load_json_save(json_path)
         # Fallback to legacy shelve format
-        elif os.path.isfile("savegame.dat.db"):
-            return _load_legacy_save()
+        elif shelve_path.is_file():
+            return _load_legacy_save(shelve_path)
         else:
-            raise FileNotFoundError("No save file found (savegame.json or savegame.dat.db)")
+            raise FileNotFoundError(f"No save file found in {save_dir} (savegame.json or savegame.dat.db)")
 
     except Exception as e:
         logging.error(f"Failed to load game: {e}")
         raise
 
 
-def _load_json_save():
-    """Load game from JSON format."""
-    with open("savegame.json", "r", encoding="utf-8") as f:
+def _load_json_save(json_path=None):
+    """Load game from JSON format.
+    
+    Args:
+        json_path: Path to the JSON save file (uses default if None)
+    """
+    if json_path is None:
+        json_path = get_save_dir() / "savegame.json"
+    with open(json_path, "r", encoding="utf-8") as f:
         save_data = json.load(f)
     
     # Validate required keys
@@ -145,10 +158,19 @@ def _load_json_save():
     return player, entities, game_map, message_log, game_state
 
 
-def _load_legacy_save():
-    """Load game from legacy shelve format."""
+def _load_legacy_save(shelve_path=None):
+    """Load game from legacy shelve format.
     
-    with shelve.open("savegame.dat", "r") as data_file:
+    Args:
+        shelve_path: Path to the shelve save file (uses default if None)
+    """
+    if shelve_path is None:
+        shelve_path = get_save_dir() / "savegame.dat.db"
+    # shelve.open expects path without extension
+    shelve_base = str(shelve_path).replace('.db', '')
+    
+    import shelve
+    with shelve.open(shelve_base, "r") as data_file:
         # Validate that all required keys exist
         required_keys = ["player_index", "entities", "game_map", "message_log", "game_state"]
         missing_keys = [key for key in required_keys if key not in data_file]
@@ -182,7 +204,10 @@ def save_file_exists():
     Returns:
         bool: True if save file exists, False otherwise
     """
-    return os.path.isfile("savegame.json") or os.path.isfile("savegame.dat.db")
+    save_dir = get_save_dir(create=False)
+    if not save_dir.exists():
+        return False
+    return (save_dir / "savegame.json").is_file() or (save_dir / "savegame.dat.db").is_file()
 
 
 def delete_save_file():
@@ -197,11 +222,18 @@ def delete_save_file():
     """
     try:
         deleted = False
-        if os.path.isfile("savegame.json"):
-            os.remove("savegame.json")
+        save_dir = get_save_dir(create=False)
+        if not save_dir.exists():
+            return False
+        
+        json_path = save_dir / "savegame.json"
+        shelve_path = save_dir / "savegame.dat.db"
+        
+        if json_path.is_file():
+            json_path.unlink()
             deleted = True
-        if os.path.isfile("savegame.dat.db"):
-            os.remove("savegame.dat.db")
+        if shelve_path.is_file():
+            shelve_path.unlink()
             deleted = True
         
         if deleted:
