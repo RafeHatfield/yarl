@@ -34,6 +34,7 @@ telemetry/*.jsonl
 # ONLY reports/baselines/ should be tracked (contains balance_suite_baseline.json)
 reports/balance_suite/*/
 reports/balance_suite/latest.txt
+reports/hazards_suite/
 reports/metrics/
 reports/graphs/
 reports/soak/
