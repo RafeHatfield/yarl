@@ -17,6 +17,8 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
+from utils.resource_paths import get_resource_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,8 +68,7 @@ class MuralsRegistry:
             return
         
         if config_path is None:
-            config_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(config_dir, 'murals_inscriptions.yaml')
+            config_path = get_resource_path("config/murals_inscriptions.yaml")
         
         if not os.path.exists(config_path):
             logger.warning(f"Murals file not found at {config_path}. Using fallback murals.")

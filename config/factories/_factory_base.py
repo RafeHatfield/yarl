@@ -23,6 +23,7 @@ from render_functions import RenderOrder
 from config.entity_registry import get_entity_registry, load_entity_config
 from config.game_constants import GameConstants
 from config.item_appearances import get_appearance_generator
+from utils.resource_paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ class FactoryBase:
             GameConstants: The game constants instance
         """
         if not self._game_constants_loaded:
-            self._game_constants = GameConstants.load_from_file("config/game_constants.yaml")
+            self._game_constants = GameConstants.load_from_file(get_resource_path("config/game_constants.yaml"))
             self._game_constants_loaded = True
         return self._game_constants
 

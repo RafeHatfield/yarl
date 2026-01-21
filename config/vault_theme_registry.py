@@ -14,7 +14,8 @@ import yaml
 import logging
 import os
 from typing import Dict, Optional, List, Any
-from pathlib import Path
+
+from utils.resource_paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +46,8 @@ class VaultThemeRegistry:
             return  # Already loaded
         
         if config_path is None:
-            # Default path relative to this file
-            current_dir = Path(__file__).parent
-            config_path = current_dir / "vault_themes.yaml"
+            # Default path using resource path helper
+            config_path = get_resource_path("config/vault_themes.yaml")
         
         try:
             with open(config_path, 'r') as f:

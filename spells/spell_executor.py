@@ -1525,6 +1525,7 @@ class SpellExecutor:
         import random
         import os
         from components.status_effects import TauntedTargetEffect, StatusEffectManager
+        from utils.resource_paths import get_resource_path
         
         results = []
         
@@ -1549,7 +1550,7 @@ class SpellExecutor:
             }]
         
         # Load jokes from YAML
-        jokes_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "yo_mama_jokes.yaml")
+        jokes_path = get_resource_path("config/yo_mama_jokes.yaml")
         try:
             with open(jokes_path, 'r') as f:
                 jokes_data = yaml.safe_load(f)

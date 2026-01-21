@@ -12,7 +12,6 @@ import os
 import logging
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Tuple
-from pathlib import Path
 
 try:
     import yaml
@@ -20,6 +19,8 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
     yaml = None
+
+from utils.resource_paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -1234,8 +1235,7 @@ def load_entity_config(config_path: str = None) -> None:
         
         # Make path relative to project root if it's not absolute
         if not os.path.isabs(config_path):
-            config_dir = Path(__file__).parent.parent  # Go up to project root
-            config_path = config_dir / config_path
+            config_path = get_resource_path(config_path)
     
     _entity_registry.load_from_file(str(config_path))
     

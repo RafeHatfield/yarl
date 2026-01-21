@@ -9,8 +9,9 @@ internationalization.
 
 import tcod
 import yaml
-from pathlib import Path
 from typing import Dict, Any
+
+from utils.resource_paths import get_resource_path
 
 
 def _load_endings():
@@ -19,7 +20,7 @@ def _load_endings():
     Returns:
         dict: All ending data
     """
-    endings_file = Path("config/endings.yaml")
+    endings_file = get_resource_path("config/endings.yaml")
     with open(endings_file, 'r') as f:
         data = yaml.safe_load(f)
     return data['endings']

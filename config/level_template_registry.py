@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 import yaml
 
 from config.testing_config import is_testing_mode
+from utils.resource_paths import get_resource_path
 
 
 logger = logging.getLogger(__name__)
@@ -604,9 +605,7 @@ class LevelTemplateRegistry:
             config_dir: Directory containing template files. If None, uses default.
         """
         if config_dir is None:
-            config_dir = os.path.join(
-                os.path.dirname(os.path.abspath(__file__))
-            )
+            config_dir = get_resource_path("config")
         
         # Load normal templates first
         normal_template_path = os.path.join(config_dir, 'level_templates.yaml')
@@ -1758,10 +1757,7 @@ class ScenarioRegistry:
             config_dir: Directory containing scenario files. If None, uses default.
         """
         if config_dir is None:
-            config_dir = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'levels'
-            )
+            config_dir = get_resource_path("config/levels")
         
         # Create directory if it doesn't exist (for fresh installs)
         if not os.path.exists(config_dir):

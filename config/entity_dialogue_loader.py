@@ -9,9 +9,11 @@ Phase 2 implementation - simple depth-based triggers.
 
 import yaml
 import logging
-from pathlib import Path
+import os
 from typing import Dict, Optional, Any
 from dataclasses import dataclass
+
+from utils.resource_paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +34,10 @@ class EntityDialogueLoader:
         """Initialize the dialogue loader.
         
         Args:
-            dialogue_file: Path to dialogue YAML file
+            dialogue_file: Relative path to dialogue YAML file (will be resolved via get_resource_path)
         """
-        self.dialogue_file = dialogue_file
+        # Resolve path for both dev and packaged builds
+        self.dialogue_file = get_resource_path(dialogue_file)
         self.depth_dialogue: Dict[int, EntityDialogue] = {}
         self.config: Dict[str, Any] = {}
         self.last_triggered_level: Optional[int] = None
@@ -45,12 +48,11 @@ class EntityDialogueLoader:
     def _load_dialogue(self) -> None:
         """Load dialogue from YAML file."""
         try:
-            path = Path(self.dialogue_file)
-            if not path.exists():
+            if not os.path.exists(self.dialogue_file):
                 logger.warning(f"Entity dialogue file not found: {self.dialogue_file}")
                 return
                 
-            with open(path, 'r') as f:
+            with open(self.dialogue_file, 'r') as f:
                 data = yaml.safe_load(f)
                 
             if not data:

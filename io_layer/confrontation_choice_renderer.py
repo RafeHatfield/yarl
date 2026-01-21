@@ -21,10 +21,10 @@ Dialogue is loaded from config/endings.yaml for easy editing.
 
 import tcod
 import yaml
-from pathlib import Path
 from typing import Optional, Tuple, List, Dict, Any
 
 from game_states import GameStates
+from utils.resource_paths import get_resource_path
 
 
 def _load_confrontation_dialogue() -> Dict[str, Any]:
@@ -33,7 +33,7 @@ def _load_confrontation_dialogue() -> Dict[str, Any]:
     Returns:
         dict: Confrontation dialogue data
     """
-    endings_file = Path("config/endings.yaml")
+    endings_file = get_resource_path("config/endings.yaml")
     with open(endings_file, 'r') as f:
         data = yaml.safe_load(f)
     return data['confrontation']

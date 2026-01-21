@@ -17,10 +17,12 @@ Key concepts:
 
 import yaml
 import logging
+import os
 from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass, field
-from pathlib import Path
 from collections import defaultdict
+
+from utils.resource_paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -163,9 +165,9 @@ class LootController:
         """Initialize loot controller.
         
         Args:
-            policy_path: Path to loot policy YAML file
+            policy_path: Relative path to loot policy YAML file (resolved via get_resource_path)
         """
-        self.policy_path = Path(policy_path)
+        self.policy_path = get_resource_path(policy_path)
         self.bands: Dict[str, BandEVTargets] = {}
         self.pity_settings: PitySettings = PitySettings()
         self.band_states: Dict[str, BandLootState] = {}
@@ -176,7 +178,7 @@ class LootController:
     
     def load_policy(self) -> None:
         """Load loot policy from YAML file."""
-        if not self.policy_path.exists():
+        if not os.path.exists(self.policy_path):
             logger.warning(f"Loot policy not found at {self.policy_path}, using defaults")
             self._create_default_policy()
             return

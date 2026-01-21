@@ -447,11 +447,12 @@ class SpawnFactory(FactoryBase):
             
             # Load dialogue from YAML
             import yaml
-            from pathlib import Path
+            import os
             from components.npc_dialogue import create_dialogue_from_yaml
+            from utils.resource_paths import get_resource_path
             
-            dialogue_file = Path(f"config/{dialogue_source}.yaml")
-            if dialogue_file.exists():
+            dialogue_file = get_resource_path(f"config/{dialogue_source}.yaml")
+            if os.path.exists(dialogue_file):
                 with open(dialogue_file, 'r') as f:
                     dialogue_data = yaml.safe_load(f)
                 

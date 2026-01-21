@@ -17,11 +17,13 @@ Where:
 """
 
 import logging
+import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, Optional, Tuple, Any
 
 import yaml
+
+from utils.resource_paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +110,9 @@ _etp_config: Optional[ETPConfig] = None
 
 def _load_etp_config() -> ETPConfig:
     """Load ETP configuration from YAML file."""
-    config_path = Path(__file__).parent.parent / "config" / "etp_config.yaml"
+    config_path = get_resource_path("config/etp_config.yaml")
     
-    if not config_path.exists():
+    if not os.path.exists(config_path):
         logger.warning(f"ETP config not found at {config_path}, using defaults")
         return _get_default_config()
     
@@ -560,9 +562,9 @@ def _load_monster_data(monster_type: str) -> Optional[Dict[str, Any]]:
     Returns:
         Monster data dict or None if not found
     """
-    config_path = Path(__file__).parent.parent / "config" / "entities.yaml"
+    config_path = get_resource_path("config/entities.yaml")
     
-    if not config_path.exists():
+    if not os.path.exists(config_path):
         logger.warning(f"Entities config not found at {config_path}")
         return None
     
@@ -693,9 +695,9 @@ def initialize_encounter_budget_engine() -> None:
     from services.encounter_budget_engine import get_encounter_budget_engine
     
     engine = get_encounter_budget_engine()
-    config_path = Path(__file__).parent.parent / "config" / "entities.yaml"
+    config_path = get_resource_path("config/entities.yaml")
     
-    if not config_path.exists():
+    if not os.path.exists(config_path):
         logger.warning(f"Entities config not found at {config_path}, skipping ETP init")
         return
     

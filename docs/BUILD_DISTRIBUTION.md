@@ -2,6 +2,33 @@
 
 This guide covers building a distributable version of Catacombs of YARL using PyInstaller.
 
+---
+
+## 🗂️ Where Are My Saves / Logs?
+
+The game stores all user data (saves, logs, hall of fame) in your system's standard
+application data folder — **not** in the game installation directory:
+
+| Platform | Location |
+|----------|----------|
+| **macOS** | `~/Library/Application Support/CatacombsOfYARL/` |
+| **Windows** | `%APPDATA%\CatacombsOfYARL\` |
+| **Linux** | `~/.local/share/catacombs-of-yarl/` |
+
+**Quick access:**
+```bash
+# macOS
+open ~/Library/Application\ Support/CatacombsOfYARL/
+
+# Windows (in Explorer address bar or Run dialog)
+%APPDATA%\CatacombsOfYARL
+
+# Linux
+xdg-open ~/.local/share/catacombs-of-yarl/
+```
+
+---
+
 ## Prerequisites
 
 1. **Python 3.9+** with the game's dependencies installed:
@@ -19,11 +46,23 @@ This guide covers building a distributable version of Catacombs of YARL using Py
 From the repository root:
 
 ```bash
-# Build for your current platform
+# Using Makefile (recommended)
+make dist-build
+
+# Or directly with PyInstaller
 pyinstaller build/pyinstaller/CatacombsOfYARL.spec
 ```
 
 The output will be in `dist/CatacombsOfYARL/`.
+
+### Makefile Targets
+
+| Target | Description |
+|--------|-------------|
+| `make dist-build` | Build the distributable package (checks for PyInstaller first) |
+| `make dist-clean` | Remove build artifacts (`build/CatacombsOfYARL/`, `dist/CatacombsOfYARL/`) |
+| `make dist-rebuild` | Clean then build from scratch |
+| `make dist-run` | Run the built executable from `dist/` |
 
 ## Platform-Specific Instructions
 

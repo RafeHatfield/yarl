@@ -4,7 +4,8 @@
         eco-swarm-tight eco-swarm-tight-json eco-zombie-horde eco-zombie-horde-json \
         eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report \
         difficulty-collect difficulty-graphs difficulty-dashboard difficulty-all \
-        balance-suite balance-suite-fast balance-suite-update-baseline balance-suite-update-baseline-fast
+        balance-suite balance-suite-fast balance-suite-update-baseline balance-suite-update-baseline-fast \
+        dist-build dist-clean dist-rebuild dist-run dist-check
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -40,6 +41,12 @@ help:
 	@echo "  make bot         - Single bot run (watch the bot play)"
 	@echo "  make bot-smoke   - Quick smoke test (10 runs, 500 turns, 3 floors)"
 	@echo "  make soak        - Extended soak test (200 runs, 5000 turns, 10 floors)"
+	@echo ""
+	@echo "Distribution:"
+	@echo "  make dist-build   - Build distributable package (requires PyInstaller)"
+	@echo "  make dist-clean   - Remove PyInstaller build artifacts"
+	@echo "  make dist-rebuild - Clean + build from scratch"
+	@echo "  make dist-run     - Run the built executable from dist/"
 	@echo ""
 	@echo "IMPORTANT: Always run 'make clean' if game behaves unexpectedly!"
 	@echo "NOTE: Activate virtualenv first if using one: source ~/.virtualenvs/rlike/bin/activate"
@@ -725,3 +732,68 @@ hazards-suite:
 
 hazards-suite-fast:
 	python3 tools/hazards_suite.py --fast
+
+# --------------------------------------------------------------------
+# Distribution / Packaging (PyInstaller)
+# --------------------------------------------------------------------
+
+# Configuration
+PYINSTALLER   ?= pyinstaller
+SPEC_FILE     := build/pyinstaller/CatacombsOfYARL.spec
+DIST_DIR      := dist/CatacombsOfYARL
+BUILD_DIR     := build/CatacombsOfYARL
+
+# Check that PyInstaller is available
+dist-check:
+	@command -v $(PYINSTALLER) >/dev/null 2>&1 || { \
+		echo ""; \
+		echo "❌ PyInstaller not found in PATH."; \
+		echo ""; \
+		echo "   Install with:  pip install pyinstaller"; \
+		echo ""; \
+		exit 1; \
+	}
+	@echo "✅ PyInstaller found: $$(command -v $(PYINSTALLER))"
+
+# Build the distributable package
+dist-build: dist-check
+	@echo ""
+	@echo "📦 Building distributable package..."
+	@echo "   Spec file: $(SPEC_FILE)"
+	@echo "   Output:    $(DIST_DIR)/"
+	@echo ""
+	@$(PYINSTALLER) --clean -y $(SPEC_FILE)
+	@echo ""
+	@echo "✅ Build complete!"
+	@echo "   Output: $(DIST_DIR)/"
+	@echo ""
+	@echo "   To test: make dist-run"
+	@echo "   To package: zip -r CatacombsOfYARL.zip $(DIST_DIR)"
+
+# Clean PyInstaller build artifacts (careful not to remove other build/ contents)
+dist-clean:
+	@echo "🧹 Removing PyInstaller build artifacts..."
+	@rm -rf $(BUILD_DIR) 2>/dev/null || true
+	@rm -rf $(DIST_DIR) 2>/dev/null || true
+	@rm -f *.spec 2>/dev/null || true
+	@echo "✅ Distribution artifacts cleaned"
+
+# Full rebuild from scratch
+dist-rebuild: dist-clean dist-build
+
+# Run the built executable (best-effort cross-platform)
+dist-run:
+	@if [ ! -d "$(DIST_DIR)" ]; then \
+		echo "❌ Distribution not found at $(DIST_DIR)"; \
+		echo "   Run 'make dist-build' first."; \
+		exit 1; \
+	fi
+	@echo "🎮 Running built executable..."
+	@if [ -f "$(DIST_DIR)/CatacombsOfYARL" ]; then \
+		./$(DIST_DIR)/CatacombsOfYARL; \
+	elif [ -f "$(DIST_DIR)/CatacombsOfYARL.exe" ]; then \
+		echo "   (Windows: run dist\\CatacombsOfYARL\\CatacombsOfYARL.exe manually)"; \
+	else \
+		echo "❌ Executable not found in $(DIST_DIR)"; \
+		exit 1; \
+	fi
