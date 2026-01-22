@@ -1,0 +1,88 @@
+# Scenario: Oath of Embers Identity
+# Purpose: Verify that Oath of Embers measurably changes combat outcomes
+# Phase 22.1: Run Identity via Oaths
+#
+# This scenario demonstrates:
+#   - Oath of Embers selection and application
+#   - 33% chance to apply burning on successful hits
+#   - Burning damage contribution to total damage output
+#   - Deterministic execution under seed_base=1337
+
+scenario_id: oath_embers_identity
+name: "Oath of Embers - Fire Identity"
+description: "Player with Oath of Embers fights multiple enemies, demonstrating burning proc rate and damage."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+# Phase 22.1.2: Increased enemy count (5 orcs) for higher signal
+# With Oath of Embers, player should apply burning to multiple enemies
+# Adjacency risk (self-burn) should be measurable
+expected:
+  min_player_kills: 3            # Should kill at least 3/5 enemies
+  max_player_deaths: 1           # May die occasionally (5 enemies is pressure)
+
+# Dungeon depth (affects monster stats)
+depth: 5
+
+# Room definitions - simple arena
+rooms:
+  - id: "oath_arena"
+    type: "arena"
+    width: 15
+    height: 15
+    description: "Arena for testing Oath of Embers identity"
+    walls: "enclosed"
+
+# Monster placements - multiple weak enemies for burning demonstration
+# Phase 22.1.2: Increased enemy count for higher signal (5 orcs vs 3)
+# Bernoulli proc (33%) needs sufficient hit opportunities for stable metrics
+monsters:
+  # Five orcs spaced for sequential combat (higher signal)
+  - type: "orc"
+    count: 1
+    position: [7, 5]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [10, 5]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [7, 9]
+    facing: "north"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [10, 9]
+    facing: "north"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [13, 7]
+    facing: "west"
+    state: "aware"
+
+# Items - healing for sustained combat
+items:
+  - type: "healing_potion"
+    count: 2
+    position: [4, 7]
+
+# Player spawn configuration with Oath of Embers
+player:
+  oath: "embers"  # Phase 22.1: Apply Oath of Embers
+  position: [3, 7]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"

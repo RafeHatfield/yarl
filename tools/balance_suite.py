@@ -83,6 +83,13 @@ SCENARIO_MATRIX = [
     # Phase 20 Scroll Modernization Identity Scenarios
     {"id": "scroll_dragon_fart_identity", "runs": 30, "turn_limit": 30},
     {"id": "scroll_fireball_identity", "runs": 30, "turn_limit": 30},
+    
+    # Phase 22.1: Oath Identity Scenarios (Run Identity)
+    # Lower run count (20 vs 30) due to Bernoulli proc variance + high signal design
+    # Shorter turn limit (120 vs 150) - identity scenarios should be focused and fast
+    {"id": "oath_embers_identity", "runs": 20, "turn_limit": 120},
+    {"id": "oath_venom_identity", "runs": 20, "turn_limit": 120},
+    {"id": "oath_chains_identity", "runs": 20, "turn_limit": 120},
 ]
 
 # Drift thresholds for WARN/FAIL classification

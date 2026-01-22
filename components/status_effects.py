@@ -2182,6 +2182,158 @@ class StaggeredEffect(StatusEffect):
         return f"StaggeredEffect({self.duration} turns)"
 
 
+# =============================================================================
+# Phase 22.1: Oath Status Effects (Permanent Run Identity)
+# =============================================================================
+
+class OathEffect(StatusEffect):
+    """Base class for permanent Oath effects (Run Identity).
+    
+    Oaths are chosen at run start and persist for the entire run.
+    They provide small, explicit modifiers that bias playstyle.
+    
+    Design:
+    - Duration: -1 (infinite/permanent, never expires)
+    - Non-stacking: Only one Oath per run
+    - Enforcement: At canonical execution points (combat, damage, movement)
+    """
+    
+    def __init__(self, name: str, owner: 'Entity'):
+        # Duration = -1 means infinite/permanent (never decrements)
+        super().__init__(name=name, duration=-1, owner=owner)
+    
+    def process_turn_end(self) -> List[Dict[str, Any]]:
+        """Oaths never expire, so duration never decrements."""
+        # Override parent to prevent duration decrement
+        return []
+
+
+class OathOfEmbersEffect(OathEffect):
+    """Oath of Embers: Fire-focused playstyle with risk/reward.
+    
+    Effect: 
+    - On successful melee attack, 33% chance to apply burning (1 damage/turn, 3 turns)
+    - Risk: If adjacent to target after knockback, apply 1-turn self-burn (1 damage)
+    - Enforcement: Fighter.attack_d20() (canonical combat execution point)
+    
+    Design: Rewards aggression but punishes staying in contact. Creates decision:
+    "Do I take the adjacency tax to chase kills?"
+    
+    Metrics:
+    - oath_embers_chosen: incremented when Oath is applied
+    - oath_embers_procs: times burning was applied to target
+    - oath_embers_self_burn_procs: times self-burn was applied
+    """
+    
+    def __init__(self, owner: 'Entity'):
+        super().__init__(name='oath_of_embers', owner=owner)
+        self.burn_chance = 0.33  # 33% chance to apply burning
+        self.burn_duration = 3
+        self.burn_damage_per_turn = 1
+        self.self_burn_duration = 1  # Self-burn lasts 1 turn
+        self.self_burn_damage = 1  # 1 damage (integer, not fractional)
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply Oath of Embers with metrics tracking."""
+        results = super().apply()
+        
+        # Track oath selection
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('oath_embers_chosen')
+        
+        results.append({
+            'message': MB.status_effect(f"🔥 {self.owner.name} swears the Oath of Embers!")
+        })
+        return results
+    
+    def __repr__(self):
+        return "OathOfEmbersEffect(permanent)"
+
+
+class OathOfVenomEffect(OathEffect):
+    """Oath of Venom: Poison-focused playstyle with focus-fire reward.
+    
+    Effect:
+    - On successful melee attack, 25% chance to apply poison (1 damage/turn, 4 turns)
+    - If target already poisoned, extend duration by +1 turn (still refresh, not stack)
+    - Enforcement: Fighter.attack_d20() (canonical combat execution point)
+    
+    Design: Rewards focus-fire on single target over spreading hits. Creates decision:
+    "Do I commit to one target for value or spread for flexibility?"
+    
+    Metrics:
+    - oath_venom_chosen: incremented when Oath is applied
+    - oath_venom_procs: times poison was applied
+    - oath_venom_duration_extensions: times duration was extended
+    """
+    
+    def __init__(self, owner: 'Entity'):
+        super().__init__(name='oath_of_venom', owner=owner)
+        self.poison_chance = 0.25  # 25% chance to apply poison
+        self.poison_duration = 4
+        self.poison_damage_per_turn = 1
+        self.duration_extension = 1  # +1 turn when re-proccing on poisoned target
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply Oath of Venom with metrics tracking."""
+        results = super().apply()
+        
+        # Track oath selection
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('oath_venom_chosen')
+        
+        results.append({
+            'message': MB.status_effect(f"☠️ {self.owner.name} swears the Oath of Venom!")
+        })
+        return results
+    
+    def __repr__(self):
+        return "OathOfVenomEffect(permanent)"
+
+
+class OathOfChainsEffect(OathEffect):
+    """Oath of Chains: Knockback-focused playstyle with positioning constraint.
+    
+    Effect:
+    - Knockback effects get +1 tile bonus distance
+    - Conditional: Only applies if player didn't move last turn
+    - Enforcement: knockback_service.calculate_knockback_distance() (canonical knockback point)
+    
+    Design: Rewards positioning/planning over mobility. Creates decision:
+    "Do I move for safety or stand still for knockback bonus?"
+    
+    Metrics:
+    - oath_chains_chosen: incremented when Oath is applied
+    - oath_chains_bonus_applied: times bonus was active
+    - oath_chains_bonus_denied: times bonus was denied due to movement
+    - knockback_tiles_moved_by_player: tracked when player causes knockback
+    """
+    
+    def __init__(self, owner: 'Entity'):
+        super().__init__(name='oath_of_chains', owner=owner)
+        self.knockback_bonus = 1  # +1 tile to knockback
+        # Movement tracking is done via Entity.moved_last_turn flag
+    
+    def apply(self) -> List[Dict[str, Any]]:
+        """Apply Oath of Chains with metrics tracking."""
+        results = super().apply()
+        
+        # Track oath selection
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('oath_chains_chosen')
+        
+        results.append({
+            'message': MB.status_effect(f"⛓️ {self.owner.name} swears the Oath of Chains!")
+        })
+        return results
+    
+    def __repr__(self):
+        return "OathOfChainsEffect(permanent)"
+
+
 class StatusEffectManager:
     """Manages status effects for an entity."""
     

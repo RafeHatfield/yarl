@@ -23,7 +23,7 @@ def _get_metrics_collector():
         return None
 
 
-def calculate_knockback_distance(attacker_power: int, defender_power: int) -> int:
+def calculate_knockback_distance(attacker_power: int, defender_power: int, attacker_entity: 'Entity' = None) -> int:
     """Calculate knockback distance based on power delta.
     
     Distance mapping (cap 4):
@@ -32,23 +32,56 @@ def calculate_knockback_distance(attacker_power: int, defender_power: int) -> in
     - delta in [2, 3] → 3 tiles
     - delta >= 4 → 4 tiles
     
+    Phase 22.1: Oath of Chains adds +1 to knockback distance.
+    
     Args:
         attacker_power: Attacker's power stat
         defender_power: Defender's power stat
+        attacker_entity: Optional attacker entity (for Oath of Chains check)
     
     Returns:
-        Knockback distance in tiles (1-4)
+        Knockback distance in tiles (1-4, or 2-5 with Oath of Chains)
     """
     delta = attacker_power - defender_power
     
     if delta <= -1:
-        return 1
+        distance = 1
     elif delta <= 1:  # 0 or 1
-        return 2
+        distance = 2
     elif delta <= 3:  # 2 or 3
-        return 3
+        distance = 3
     else:  # >= 4
-        return 4
+        distance = 4
+    
+    # Phase 22.1.1: Check for Oath of Chains (Run Identity with positioning constraint)
+    if attacker_entity:
+        from components.component_registry import ComponentType
+        status_effects = attacker_entity.get_component_optional(ComponentType.STATUS_EFFECTS)
+        if status_effects and hasattr(status_effects, 'get_effect'):
+            try:
+                oath_chains = status_effects.get_effect('oath_of_chains')
+                if oath_chains and hasattr(oath_chains, 'knockback_bonus'):
+                    bonus = oath_chains.knockback_bonus
+                    # Ensure bonus is an integer (not a mock or other object)
+                    if isinstance(bonus, int):
+                        # Phase 22.1.1: Conditional bonus - only if didn't move last turn
+                        moved = getattr(attacker_entity, 'moved_last_turn', True)  # Default True for safety
+                        
+                        collector = _get_metrics_collector()
+                        if not moved:
+                            # Player stood still - apply bonus
+                            distance += bonus
+                            if collector:
+                                collector.increment('oath_chains_bonus_applied')
+                        else:
+                            # Player moved - bonus denied
+                            if collector:
+                                collector.increment('oath_chains_bonus_denied')
+            except (AttributeError, TypeError):
+                # If status_effects doesn't have get_effect or other issues, ignore
+                pass
+    
+    return distance
 
 
 def apply_knockback(
@@ -90,8 +123,8 @@ def apply_knockback(
     if not attacker_fighter or not defender_fighter:
         return results  # Can't apply knockback without fighter components
     
-    # Calculate knockback distance
-    distance = calculate_knockback_distance(attacker_fighter.power, defender_fighter.power)
+    # Calculate knockback distance (pass attacker for Oath of Chains check)
+    distance = calculate_knockback_distance(attacker_fighter.power, defender_fighter.power, attacker)
     
     # Record knockback application
     if collector:
@@ -131,6 +164,12 @@ def apply_knockback(
             tiles_moved += 1
             if collector:
                 collector.increment('knockback_tiles_moved')
+                
+                # Phase 22.1: Track knockback caused by player separately
+                attacker_ai = attacker.get_component_optional(ComponentType.AI)
+                if not attacker_ai:
+                    # No AI = player is the attacker
+                    collector.increment('knockback_tiles_moved_by_player')
         else:
             # Movement blocked by effect (entangle/root/etc)
             # This is NOT a "hard block" - don't apply stagger
@@ -253,4 +292,66 @@ def _execute_move(entity: 'Entity', target_x: int, target_y: int) -> bool:
     
     # Check if position actually changed
     return entity.x != old_x or entity.y != old_y
+
+
+def apply_knockback_single_tile(
+    attacker: 'Entity',
+    defender: 'Entity',
+    game_map: 'GameMap',
+    entities: List['Entity']
+) -> Dict[str, Any]:
+    """Apply exactly 1-tile knockback (PUBLIC API for ranged combat).
+    
+    Pushes defender 1 tile directly away from attacker. Unlike the full
+    apply_knockback(), this doesn't calculate distance based on power delta
+    and doesn't apply stagger on block.
+    
+    Used by ranged combat service for the 10% knockback proc.
+    
+    Args:
+        attacker: Entity delivering the knockback
+        defender: Entity being knocked back
+        game_map: Game map for terrain checks
+        entities: List of all entities for blocking checks
+    
+    Returns:
+        dict with keys:
+            - tiles_moved: int (0 or 1)
+            - blocked: bool (True if movement was blocked)
+            - blocker: Entity or None (what blocked, if any)
+    """
+    # Safety checks
+    if not attacker or not defender:
+        return {"tiles_moved": 0, "blocked": False, "blocker": None}
+    if not game_map or not entities:
+        return {"tiles_moved": 0, "blocked": False, "blocker": None}
+    
+    # Calculate knockback direction (sign of dx, dy)
+    dx = defender.x - attacker.x
+    dy = defender.y - attacker.y
+    
+    # Normalize to direction (-1, 0, 1)
+    if dx != 0:
+        dx = 1 if dx > 0 else -1
+    if dy != 0:
+        dy = 1 if dy > 0 else -1
+    
+    # Target position for 1-tile knockback
+    target_x = defender.x + dx
+    target_y = defender.y + dy
+    
+    # Check if target position is valid
+    can_move, blocker = _can_move_to(defender, target_x, target_y, game_map, entities)
+    
+    if not can_move:
+        return {"tiles_moved": 0, "blocked": True, "blocker": blocker}
+    
+    # Execute the knockback move using canonical Entity.move()
+    move_success = _execute_move(defender, target_x, target_y)
+    
+    if move_success:
+        return {"tiles_moved": 1, "blocked": False, "blocker": None}
+    else:
+        # Blocked by status effect (entangle/root/etc)
+        return {"tiles_moved": 0, "blocked": True, "blocker": None}
 

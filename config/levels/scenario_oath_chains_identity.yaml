@@ -1,0 +1,89 @@
+# Scenario: Oath of Chains Identity
+# Purpose: Verify that Oath of Chains measurably changes knockback outcomes
+# Phase 22.1: Run Identity via Oaths
+#
+# This scenario demonstrates:
+#   - Oath of Chains selection and application
+#   - +1 tile bonus to all knockback effects
+#   - Increased knockback distance with knockback weapons
+#   - Deterministic execution under seed_base=1337
+
+scenario_id: oath_chains_identity
+name: "Oath of Chains - Knockback Identity"
+description: "Player with Oath of Chains uses knockback weapons, demonstrating increased knockback distance."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+# Phase 22.1.2: Increased enemy count (5 orcs) for higher signal
+# With Oath of Chains, positioning vs mobility creates measurable tradeoffs
+# Expect both bonus_applied AND bonus_denied to be > 0 (proves constraint)
+expected:
+  min_player_kills: 3            # Should kill at least 3/5 enemies
+  max_player_deaths: 1           # May die occasionally (5 enemies is pressure)
+
+# Dungeon depth (affects monster stats)
+depth: 5
+
+# Room definitions - larger arena for knockback demonstration
+rooms:
+  - id: "chains_arena"
+    type: "arena"
+    width: 20
+    height: 15
+    description: "Arena for testing Oath of Chains identity (needs space for knockback)"
+    walls: "enclosed"
+
+# Monster placements - enemies with space to be knocked back
+# Phase 22.1.2: Increased enemy count for higher signal (5 orcs vs 3)
+# Tests movement constraint (bonus denied when player moves)
+# Tests positioning reward (bonus applied when standing still)
+monsters:
+  # Five orcs with room for knockback, positioned to force movement decisions
+  - type: "orc"
+    count: 1
+    position: [8, 5]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [12, 5]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 9]
+    facing: "north"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [12, 9]
+    facing: "north"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [16, 7]
+    facing: "west"
+    state: "aware"
+
+# Items - healing for sustained combat
+items:
+  - type: "healing_potion"
+    count: 2
+    position: [4, 7]
+
+# Player spawn configuration with Oath of Chains
+player:
+  oath: "chains"  # Phase 22.1: Apply Oath of Chains
+  position: [3, 7]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    weapon: "mace"  # Knockback weapon to demonstrate Oath of Chains bonus
+    armor: "leather_armor"

@@ -132,6 +132,10 @@ class Entity:
         # Set by entity factory when creating from YAML templates
         self._species_id: Optional[str] = None
         
+        # Phase 22.1.1: Movement tracking for Oath of Chains
+        # Set to True when entity moves, reset at turn start
+        self.moved_last_turn: bool = False
+        
         # Initialize component registry (NEW: Type-safe component system)
         self.components = ComponentRegistry()
         
@@ -349,6 +353,8 @@ class Entity:
         """Move the entity by a given amount.
         
         Phase 20D.1: Movement blocked if entity has 'entangled' status effect.
+        Phase 22.1.1: Tracks movement for Oath of Chains conditional.
+        
         Enforcement happens here at the execution point, not in AI logic.
 
         Args:
@@ -368,6 +374,11 @@ class Entity:
                 if entangled and hasattr(entangled, 'on_move_blocked'):
                     entangled.on_move_blocked()
                 return False  # Movement blocked
+        
+        # Phase 22.1.1: Track that this entity moved this turn (for Oath of Chains)
+        # Only track actual movement (dx or dy != 0)
+        if dx != 0 or dy != 0:
+            self.moved_last_turn = True
         
         self.x += dx
         self.y += dy
@@ -636,6 +647,62 @@ class Entity:
         """
         self._species_id = value
 
+    @property
+    def render_key(self) -> str:
+        """Get the canonical render key for visual lookup.
+        
+        The render_key provides a stable visual identity for this entity,
+        used by the visual registry to look up char/color/sprite information.
+        
+        Priority:
+        1. Explicit _render_key attribute (set from config or manually)
+        2. State-aware derivation for stateful components (trap, chest)
+        3. Fallback to species_id (which derives from name if not set)
+        
+        Returns:
+            str: Canonical render key (e.g., "orc", "trap_spike_detected", "chest_open")
+        """
+        # 1. Explicit render_key takes priority
+        if hasattr(self, '_render_key') and self._render_key:
+            return self._render_key
+        
+        # 2. State-aware derivation for traps
+        if self.components.has(ComponentType.TRAP):
+            trap = self.components.get(ComponentType.TRAP)
+            if trap:
+                trap_type = getattr(trap, 'trap_type', 'unknown')
+                if trap.is_disarmed:
+                    return f"trap_{trap_type}_disarmed"
+                elif trap.is_detected:
+                    return f"trap_{trap_type}_detected"
+                else:
+                    return f"trap_{trap_type}_hidden"
+        
+        # 3. State-aware derivation for chests
+        if self.components.has(ComponentType.CHEST):
+            chest = self.components.get(ComponentType.CHEST)
+            if chest:
+                from components.chest import ChestState
+                state_map = {
+                    ChestState.CLOSED: "chest_closed",
+                    ChestState.OPEN: "chest_open",
+                    ChestState.TRAPPED: "chest_trapped",
+                    ChestState.LOCKED: "chest_locked",
+                }
+                return state_map.get(chest.state, "chest_closed")
+        
+        # 4. Fallback to species_id (which derives from name if not set)
+        return self.species_id
+
+    @render_key.setter
+    def render_key(self, value: str) -> None:
+        """Set an explicit render key for this entity.
+        
+        Args:
+            value: The render key to use for visual lookup
+        """
+        self._render_key = value
+
     def get_display_name(self, compact: bool = False) -> str:
         """Get the display name with damage/defense ranges if applicable.
         
@@ -716,9 +783,15 @@ class Entity:
     def process_status_effects_turn_start(self) -> List[Dict[str, Any]]:
         """Process status effects at the start of this entity's turn.
         
+        Phase 22.1.1: Also resets movement tracking for Oath of Chains.
+        
         Returns:
             List of result dictionaries from effect processing
         """
+        # Phase 22.1.1: Reset movement flag at turn start
+        # This allows Oath of Chains to check if player moved THIS turn
+        self.moved_last_turn = False
+        
         if self.status_effects is None:
             return []
         return self.status_effects.process_turn_start()

@@ -139,6 +139,24 @@ class RunMetrics:
     traps_detected_total: int = 0
     trap_disarms_attempted: int = 0
     trap_disarms_succeeded: int = 0
+    # Phase 22.1.1: Oath metrics (Run Identity - refined)
+    oath_embers_chosen: int = 0
+    oath_venom_chosen: int = 0
+    oath_chains_chosen: int = 0
+    oath_embers_procs: int = 0
+    oath_embers_self_burn_procs: int = 0  # Phase 22.1.1: risk/reward tracking
+    oath_venom_procs: int = 0
+    oath_venom_duration_extensions: int = 0  # Phase 22.1.1: focus-fire tracking
+    oath_chains_bonus_applied: int = 0  # Phase 22.1.1: conditional bonus tracking
+    oath_chains_bonus_denied: int = 0  # Phase 22.1.1: proves constraint works
+    knockback_tiles_moved_by_player: int = 0
+    # Phase 22.2: Ranged combat metrics
+    ranged_attacks_made_by_player: int = 0
+    ranged_attacks_denied_out_of_range: int = 0
+    ranged_damage_dealt_by_player: int = 0
+    ranged_damage_penalty_total: int = 0
+    ranged_adjacent_retaliations_triggered: int = 0
+    ranged_knockback_procs: int = 0
     # Terminal state overwrite attempts (diagnostic metric for harness observability)
     terminal_overwrite_attempts: int = 0
     terminal_overwrite_by_target: Dict[str, int] = field(default_factory=dict)
@@ -236,6 +254,40 @@ class RunMetrics:
             result['trap_root_triggered'] = self.trap_root_triggered
         if hasattr(self, 'trap_root_effects_applied'):
             result['trap_root_effects_applied'] = self.trap_root_effects_applied
+        # Phase 22.1.1: Oath metrics (Run Identity - refined)
+        if hasattr(self, 'oath_embers_chosen'):
+            result['oath_embers_chosen'] = self.oath_embers_chosen
+        if hasattr(self, 'oath_venom_chosen'):
+            result['oath_venom_chosen'] = self.oath_venom_chosen
+        if hasattr(self, 'oath_chains_chosen'):
+            result['oath_chains_chosen'] = self.oath_chains_chosen
+        if hasattr(self, 'oath_embers_procs'):
+            result['oath_embers_procs'] = self.oath_embers_procs
+        if hasattr(self, 'oath_embers_self_burn_procs'):
+            result['oath_embers_self_burn_procs'] = self.oath_embers_self_burn_procs
+        if hasattr(self, 'oath_venom_procs'):
+            result['oath_venom_procs'] = self.oath_venom_procs
+        if hasattr(self, 'oath_venom_duration_extensions'):
+            result['oath_venom_duration_extensions'] = self.oath_venom_duration_extensions
+        if hasattr(self, 'oath_chains_bonus_applied'):
+            result['oath_chains_bonus_applied'] = self.oath_chains_bonus_applied
+        if hasattr(self, 'oath_chains_bonus_denied'):
+            result['oath_chains_bonus_denied'] = self.oath_chains_bonus_denied
+        if hasattr(self, 'knockback_tiles_moved_by_player'):
+            result['knockback_tiles_moved_by_player'] = self.knockback_tiles_moved_by_player
+        # Phase 22.2: Ranged combat metrics
+        if hasattr(self, 'ranged_attacks_made_by_player'):
+            result['ranged_attacks_made_by_player'] = self.ranged_attacks_made_by_player
+        if hasattr(self, 'ranged_attacks_denied_out_of_range'):
+            result['ranged_attacks_denied_out_of_range'] = self.ranged_attacks_denied_out_of_range
+        if hasattr(self, 'ranged_damage_dealt_by_player'):
+            result['ranged_damage_dealt_by_player'] = self.ranged_damage_dealt_by_player
+        if hasattr(self, 'ranged_damage_penalty_total'):
+            result['ranged_damage_penalty_total'] = self.ranged_damage_penalty_total
+        if hasattr(self, 'ranged_adjacent_retaliations_triggered'):
+            result['ranged_adjacent_retaliations_triggered'] = self.ranged_adjacent_retaliations_triggered
+        if hasattr(self, 'ranged_knockback_procs'):
+            result['ranged_knockback_procs'] = self.ranged_knockback_procs
         # Terminal state overwrite metrics (diagnostic)
         if hasattr(self, 'terminal_overwrite_attempts'):
             result['terminal_overwrite_attempts'] = self.terminal_overwrite_attempts
@@ -347,9 +399,77 @@ class AggregatedMetrics:
     total_fireball_casts: int = 0
     total_fireball_tiles_created: int = 0
     total_fireball_direct_damage: int = 0
+    # Phase 22.1.1: Oath metrics (Run Identity - refined)
+    total_oath_embers_chosen: int = 0
+    total_oath_venom_chosen: int = 0
+    total_oath_chains_chosen: int = 0
+    total_oath_embers_procs: int = 0
+    total_oath_embers_self_burn_procs: int = 0
+    total_oath_venom_procs: int = 0
+    total_oath_venom_duration_extensions: int = 0
+    total_oath_chains_bonus_applied: int = 0
+    total_oath_chains_bonus_denied: int = 0
+    total_knockback_tiles_moved_by_player: int = 0
+    # Phase 22.2: Ranged combat metrics
+    total_ranged_attacks_made_by_player: int = 0
+    total_ranged_attacks_denied_out_of_range: int = 0
+    total_ranged_damage_dealt_by_player: int = 0
+    total_ranged_damage_penalty_total: int = 0
+    total_ranged_adjacent_retaliations_triggered: int = 0
+    total_ranged_knockback_procs: int = 0
     # Terminal state overwrite attempts (diagnostic metric for harness observability)
     total_terminal_overwrite_attempts: int = 0
     total_terminal_overwrite_by_target: Dict[str, int] = field(default_factory=dict)
+    
+    def get_oath_summary(self) -> Dict[str, Any]:
+        """Get Oath Identity summary for reporting.
+        
+        Phase 22.1.2: Convenience view for Oath metrics that shows:
+        - Which Oath was chosen (if any)
+        - Proc counts (how often effects triggered)
+        - Decision-lever metrics (risk/reward, focus-fire, positioning)
+        
+        Returns:
+            Dictionary with Oath summary or empty if no Oath chosen
+        """
+        # Determine which Oath was chosen
+        chosen_oath = None
+        if self.total_oath_embers_chosen > 0:
+            chosen_oath = "embers"
+        elif self.total_oath_venom_chosen > 0:
+            chosen_oath = "venom"
+        elif self.total_oath_chains_chosen > 0:
+            chosen_oath = "chains"
+        
+        if not chosen_oath:
+            return {}  # No Oath active
+        
+        summary = {
+            'oath': chosen_oath,
+            'runs': self.runs,
+        }
+        
+        if chosen_oath == "embers":
+            summary.update({
+                'procs': self.total_oath_embers_procs,
+                'self_burn_procs': self.total_oath_embers_self_burn_procs,
+                'risk_ratio': f"{self.total_oath_embers_self_burn_procs}/{self.total_oath_embers_procs}" if self.total_oath_embers_procs > 0 else "0/0",
+            })
+        elif chosen_oath == "venom":
+            summary.update({
+                'procs': self.total_oath_venom_procs,
+                'duration_extensions': self.total_oath_venom_duration_extensions,
+                'extension_ratio': f"{self.total_oath_venom_duration_extensions}/{self.total_oath_venom_procs}" if self.total_oath_venom_procs > 0 else "0/0",
+            })
+        elif chosen_oath == "chains":
+            summary.update({
+                'bonus_applied': self.total_oath_chains_bonus_applied,
+                'bonus_denied': self.total_oath_chains_bonus_denied,
+                'total_knockback_attempts': self.total_oath_chains_bonus_applied + self.total_oath_chains_bonus_denied,
+                'mobility_cost_pct': round(100 * self.total_oath_chains_bonus_denied / (self.total_oath_chains_bonus_applied + self.total_oath_chains_bonus_denied), 1) if (self.total_oath_chains_bonus_applied + self.total_oath_chains_bonus_denied) > 0 else 0,
+            })
+        
+        return summary
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -419,10 +539,34 @@ class AggregatedMetrics:
             'total_fireball_casts': self.total_fireball_casts,
             'total_fireball_tiles_created': self.total_fireball_tiles_created,
             'total_fireball_direct_damage': self.total_fireball_direct_damage,
+            # Phase 22.1.1: Oath metrics (Run Identity - refined)
+            'total_oath_embers_chosen': self.total_oath_embers_chosen,
+            'total_oath_venom_chosen': self.total_oath_venom_chosen,
+            'total_oath_chains_chosen': self.total_oath_chains_chosen,
+            'total_oath_embers_procs': self.total_oath_embers_procs,
+            'total_oath_embers_self_burn_procs': self.total_oath_embers_self_burn_procs,
+            'total_oath_venom_procs': self.total_oath_venom_procs,
+            'total_oath_venom_duration_extensions': self.total_oath_venom_duration_extensions,
+            'total_oath_chains_bonus_applied': self.total_oath_chains_bonus_applied,
+            'total_oath_chains_bonus_denied': self.total_oath_chains_bonus_denied,
+            'total_knockback_tiles_moved_by_player': self.total_knockback_tiles_moved_by_player,
+            # Phase 22.2: Ranged combat metrics
+            'total_ranged_attacks_made_by_player': self.total_ranged_attacks_made_by_player,
+            'total_ranged_attacks_denied_out_of_range': self.total_ranged_attacks_denied_out_of_range,
+            'total_ranged_damage_dealt_by_player': self.total_ranged_damage_dealt_by_player,
+            'total_ranged_damage_penalty_total': self.total_ranged_damage_penalty_total,
+            'total_ranged_adjacent_retaliations_triggered': self.total_ranged_adjacent_retaliations_triggered,
+            'total_ranged_knockback_procs': self.total_ranged_knockback_procs,
             # Terminal state overwrite metrics (diagnostic)
             'total_terminal_overwrite_attempts': self.total_terminal_overwrite_attempts,
             'total_terminal_overwrite_by_target': dict(self.total_terminal_overwrite_by_target),
         }
+        
+        # Phase 22.1.2: Add Oath summary if present
+        oath_summary = self.get_oath_summary()
+        if oath_summary:
+            result['oath_summary'] = oath_summary
+        
         return result
 
 
@@ -1375,6 +1519,44 @@ def run_scenario_many(
         total_fireball_tiles_created += getattr(run, "fireball_tiles_created", 0)
         total_fireball_direct_damage += getattr(run, "fireball_direct_damage", 0)
 
+    # Phase 22.1.1: Aggregate Oath metrics (Run Identity - refined)
+    total_oath_embers_chosen = 0
+    total_oath_venom_chosen = 0
+    total_oath_chains_chosen = 0
+    total_oath_embers_procs = 0
+    total_oath_embers_self_burn_procs = 0
+    total_oath_venom_procs = 0
+    total_oath_venom_duration_extensions = 0
+    total_oath_chains_bonus_applied = 0
+    total_oath_chains_bonus_denied = 0
+    total_knockback_tiles_moved_by_player = 0
+    for run in all_runs:
+        total_oath_embers_chosen += getattr(run, "oath_embers_chosen", 0)
+        total_oath_venom_chosen += getattr(run, "oath_venom_chosen", 0)
+        total_oath_chains_chosen += getattr(run, "oath_chains_chosen", 0)
+        total_oath_embers_procs += getattr(run, "oath_embers_procs", 0)
+        total_oath_embers_self_burn_procs += getattr(run, "oath_embers_self_burn_procs", 0)
+        total_oath_venom_procs += getattr(run, "oath_venom_procs", 0)
+        total_oath_venom_duration_extensions += getattr(run, "oath_venom_duration_extensions", 0)
+        total_oath_chains_bonus_applied += getattr(run, "oath_chains_bonus_applied", 0)
+        total_oath_chains_bonus_denied += getattr(run, "oath_chains_bonus_denied", 0)
+        total_knockback_tiles_moved_by_player += getattr(run, "knockback_tiles_moved_by_player", 0)
+
+    # Phase 22.2: Aggregate ranged combat metrics
+    total_ranged_attacks_made_by_player = 0
+    total_ranged_attacks_denied_out_of_range = 0
+    total_ranged_damage_dealt_by_player = 0
+    total_ranged_damage_penalty_total = 0
+    total_ranged_adjacent_retaliations_triggered = 0
+    total_ranged_knockback_procs = 0
+    for run in all_runs:
+        total_ranged_attacks_made_by_player += getattr(run, "ranged_attacks_made_by_player", 0)
+        total_ranged_attacks_denied_out_of_range += getattr(run, "ranged_attacks_denied_out_of_range", 0)
+        total_ranged_damage_dealt_by_player += getattr(run, "ranged_damage_dealt_by_player", 0)
+        total_ranged_damage_penalty_total += getattr(run, "ranged_damage_penalty_total", 0)
+        total_ranged_adjacent_retaliations_triggered += getattr(run, "ranged_adjacent_retaliations_triggered", 0)
+        total_ranged_knockback_procs += getattr(run, "ranged_knockback_procs", 0)
+
     # Terminal state overwrite metrics (diagnostic)
     total_terminal_overwrite_attempts = 0
     merged_terminal_overwrite_by_target: Dict[str, int] = {}
@@ -1467,6 +1649,24 @@ def run_scenario_many(
         total_fireball_casts=total_fireball_casts,
         total_fireball_tiles_created=total_fireball_tiles_created,
         total_fireball_direct_damage=total_fireball_direct_damage,
+        # Phase 22.1.1: Oath metrics (Run Identity - refined)
+        total_oath_embers_chosen=total_oath_embers_chosen,
+        total_oath_venom_chosen=total_oath_venom_chosen,
+        total_oath_chains_chosen=total_oath_chains_chosen,
+        total_oath_embers_procs=total_oath_embers_procs,
+        total_oath_embers_self_burn_procs=total_oath_embers_self_burn_procs,
+        total_oath_venom_procs=total_oath_venom_procs,
+        total_oath_venom_duration_extensions=total_oath_venom_duration_extensions,
+        total_oath_chains_bonus_applied=total_oath_chains_bonus_applied,
+        total_oath_chains_bonus_denied=total_oath_chains_bonus_denied,
+        total_knockback_tiles_moved_by_player=total_knockback_tiles_moved_by_player,
+        # Phase 22.2: Ranged combat metrics
+        total_ranged_attacks_made_by_player=total_ranged_attacks_made_by_player,
+        total_ranged_attacks_denied_out_of_range=total_ranged_attacks_denied_out_of_range,
+        total_ranged_damage_dealt_by_player=total_ranged_damage_dealt_by_player,
+        total_ranged_damage_penalty_total=total_ranged_damage_penalty_total,
+        total_ranged_adjacent_retaliations_triggered=total_ranged_adjacent_retaliations_triggered,
+        total_ranged_knockback_procs=total_ranged_knockback_procs,
         # Terminal state overwrite metrics (diagnostic)
         total_terminal_overwrite_attempts=total_terminal_overwrite_attempts,
         total_terminal_overwrite_by_target=merged_terminal_overwrite_by_target,
@@ -1475,6 +1675,31 @@ def run_scenario_many(
     logger.info(f"Scenario runs complete: {runs} runs, "
                 f"avg_turns={aggregated.average_turns:.1f}, "
                 f"deaths={aggregated.player_deaths}")
+    
+    # Phase 22.1.2: Print Oath summary if present
+    oath_summary = aggregated.get_oath_summary()
+    if oath_summary:
+        logger.info("=" * 60)
+        logger.info("OATH IDENTITY SUMMARY")
+        logger.info("=" * 60)
+        logger.info(f"Oath: {oath_summary['oath'].upper()}")
+        logger.info(f"Runs: {oath_summary['runs']}")
+        
+        if oath_summary['oath'] == 'embers':
+            logger.info(f"  Burn Procs: {oath_summary['procs']}")
+            logger.info(f"  Self-Burn Procs: {oath_summary['self_burn_procs']}")
+            logger.info(f"  Risk Ratio: {oath_summary['risk_ratio']} (self-burns per proc)")
+        elif oath_summary['oath'] == 'venom':
+            logger.info(f"  Poison Procs: {oath_summary['procs']}")
+            logger.info(f"  Duration Extensions: {oath_summary['duration_extensions']}")
+            logger.info(f"  Extension Ratio: {oath_summary['extension_ratio']} (extensions per proc)")
+        elif oath_summary['oath'] == 'chains':
+            logger.info(f"  Bonus Applied: {oath_summary['bonus_applied']}")
+            logger.info(f"  Bonus Denied: {oath_summary['bonus_denied']}")
+            logger.info(f"  Total Attempts: {oath_summary['total_knockback_attempts']}")
+            logger.info(f"  Mobility Cost: {oath_summary['mobility_cost_pct']}% (times bonus denied)")
+        
+        logger.info("=" * 60)
     
     return aggregated
 

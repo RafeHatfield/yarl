@@ -218,6 +218,11 @@ def get_game_variables(constants):
     speed_bonus_component.owner = player
     player.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_bonus_component)
     
+    # Phase 22.1: Apply Oath (Run Identity)
+    # For now, no Oath is applied by default (Oaths are scenario-specific)
+    # Scenarios can apply Oaths via player config in scenario YAML
+    # Future: Add UI selection at run start for non-scenario games
+    
     entities = [player]
 
     # Create starting equipment using EntityFactory

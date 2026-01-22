@@ -233,11 +233,63 @@ def _create_player_entity(player_cfg: Optional[Dict[str, Any]]) -> Entity:
     player.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_bonus_component)
 
     _apply_player_loadout(player, player_cfg or {})
+    
+    # Phase 22.1: Apply Oath if specified in scenario config
+    _apply_player_oath(player, player_cfg or {})
+    
     # Ensure HP starts at max after equipment adjustments
     if hasattr(player, "fighter"):
         player.fighter.hp = player.fighter.max_hp
 
     return player
+
+
+def _apply_player_oath(player: Entity, player_cfg: Dict[str, Any]) -> None:
+    """Apply Oath (Run Identity) from scenario config.
+    
+    Phase 22.1: Oaths are permanent status effects that bias playstyle.
+    
+    Valid oath values:
+    - "embers": Oath of Embers (33% chance to apply burning on hit)
+    - "venom": Oath of Venom (25% chance to apply poison on hit)
+    - "chains": Oath of Chains (+1 tile to knockback distance)
+    
+    Example scenario YAML:
+        player:
+          oath: "embers"
+          position: [3, 6]
+    """
+    oath_type = player_cfg.get("oath") if isinstance(player_cfg, dict) else None
+    if not oath_type:
+        return
+    
+    # Import Oath effects
+    from components.status_effects import (
+        OathOfEmbersEffect, 
+        OathOfVenomEffect, 
+        OathOfChainsEffect,
+        StatusEffectManager
+    )
+    
+    # Ensure player has status_effects component
+    if not player.components.has(ComponentType.STATUS_EFFECTS):
+        player.status_effects = StatusEffectManager(player)
+        player.components.add(ComponentType.STATUS_EFFECTS, player.status_effects)
+    
+    # Apply appropriate Oath based on config
+    oath_map = {
+        "embers": OathOfEmbersEffect,
+        "venom": OathOfVenomEffect,
+        "chains": OathOfChainsEffect,
+    }
+    
+    oath_class = oath_map.get(oath_type.lower())
+    if oath_class:
+        oath = oath_class(owner=player)
+        player.status_effects.add_effect(oath)
+        logger.info(f"Applied {oath.name} to player for scenario")
+    else:
+        logger.warning(f"Unknown oath type '{oath_type}' in scenario config")
 
 
 def _apply_player_position(player: Entity, player_cfg: Optional[Dict[str, Any]], game_map: GameMap) -> None:

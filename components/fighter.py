@@ -963,6 +963,28 @@ class Fighter:
         results = []
         
         # ═══════════════════════════════════════════════════════════════════════
+        # PHASE 22.2: RANGED COMBAT RANGE VALIDATION
+        # ═══════════════════════════════════════════════════════════════════════
+        # If wielding a ranged weapon, check range bands BEFORE hit roll.
+        # Out-of-range attacks are denied (no damage roll).
+        from services.ranged_combat_service import is_ranged_weapon, check_ranged_attack_validity
+        
+        is_ranged_attack = is_ranged_weapon(self.owner)
+        ranged_band_info = None
+        
+        if is_ranged_attack:
+            ranged_validity = check_ranged_attack_validity(self.owner, target)
+            if not ranged_validity["valid"]:
+                # Attack denied - out of range
+                results.append({
+                    "message": MB.warning(ranged_validity["reason"])
+                })
+                return results
+            ranged_band_info = ranged_validity["band"]
+            logger.info(f"[RANGED ATTACK] {self.owner.name} → {target.name}, "
+                       f"distance={ranged_validity['distance']}, band={ranged_band_info['band_name']}")
+        
+        # ═══════════════════════════════════════════════════════════════════════
         # PHASE 21: CANONICAL INVISIBILITY CHECK
         # ═══════════════════════════════════════════════════════════════════════
         # Check if attacker is invisible at moment of attack.
@@ -1116,6 +1138,23 @@ class Fighter:
             # Visual feedback: Flash target red (or yellow for crits)!
             show_hit(target.x, target.y, entity=target, is_critical=is_critical)
             
+            # ═══════════════════════════════════════════════════════════════════════
+            # PHASE 22.2: RANGED CLOSE-RANGE RETALIATION (d==1 only)
+            # ═══════════════════════════════════════════════════════════════════════
+            # If ranged attack at adjacent range, target gets free melee strike BEFORE
+            # ranged damage is applied. For this strike only, player armor is halved.
+            # Retaliation uses context manager for armor penalty (scoped, exception-safe).
+            if is_ranged_attack and ranged_band_info and ranged_band_info.get("retaliation_triggered"):
+                from services.ranged_combat_service import process_retaliation
+                retaliation_damage, retaliation_results = process_retaliation(self.owner, target)
+                results.extend(retaliation_results)
+                
+                # Check if attacker died from retaliation
+                if self.owner and hasattr(self.owner, 'fighter') and self.owner.fighter:
+                    if self.owner.fighter.hp <= 0:
+                        logger.info(f"[RANGED RETALIATION] {self.owner.name} killed by retaliation before ranged shot!")
+                        return results  # Attacker died, can't complete ranged attack
+            
             # Calculate damage
             base_damage = 0
             
@@ -1206,6 +1245,24 @@ class Fighter:
                     elif target_vulnerability == weapon_damage_type:
                         damage = damage + 1  # Vulnerable: +1 damage
             
+            # ═══════════════════════════════════════════════════════════════════════
+            # PHASE 22.2: RANGED DAMAGE RANGE BAND MODIFIER
+            # ═══════════════════════════════════════════════════════════════════════
+            # Apply range band damage multiplier (before crit doubling).
+            # Service owns the multiplier calculation; we just call it.
+            ranged_damage_penalty = 0
+            if is_ranged_attack and ranged_band_info:
+                from services.ranged_combat_service import apply_damage_modifier
+                damage, ranged_damage_penalty = apply_damage_modifier(damage, ranged_band_info)
+                
+                # Log range penalty if any
+                if ranged_damage_penalty > 0:
+                    multiplier = ranged_band_info.get("damage_multiplier", 1.0)
+                    penalty_pct = int((1.0 - multiplier) * 100)
+                    results.append({
+                        "message": MB.combat(f"📏 Range penalty: {penalty_pct}% damage reduction")
+                    })
+            
             # Record statistics (only for player)
             statistics = self.owner.get_component_optional(ComponentType.STATISTICS) if self.owner else None
             if statistics:
@@ -1251,6 +1308,11 @@ class Fighter:
             # Apply damage (pass damage type for regeneration suppression)
             results.extend(target.require_component(ComponentType.FIGHTER).take_damage(damage, damage_type=weapon_damage_type))
             
+            # Phase 22.2: Track ranged damage metrics (service owns metric recording)
+            if is_ranged_attack:
+                from services.ranged_combat_service import record_ranged_damage_metrics
+                record_ranged_damage_metrics(damage, ranged_damage_penalty)
+            
             # Apply corrosion effects if applicable
             corrosion_results = self._apply_corrosion_effects(target, damage)
             results.extend(corrosion_results)
@@ -1283,11 +1345,29 @@ class Fighter:
             weapon_poison_results = self._apply_player_weapon_poison_on_hit(target)
             results.extend(weapon_poison_results)
             
+            # ═══════════════════════════════════════════════════════════════════════
+            # PHASE 22.2: RANGED KNOCKBACK (10% chance for 1-tile knockback)
+            # ═══════════════════════════════════════════════════════════════════════
+            # Ranged attacks have a 10% chance to knock target back 1 tile.
+            # Service owns the roll and execution; Fighter just orchestrates.
+            if is_ranged_attack and game_map and entities:
+                from services.ranged_combat_service import roll_ranged_knockback, apply_ranged_knockback
+                if roll_ranged_knockback():
+                    kb_result = apply_ranged_knockback(self.owner, target, game_map, entities)
+                    if kb_result["applied"]:
+                        results.extend(kb_result["results"])
+                    # Note: Metrics are recorded by the service
+            
             # Weapon knockback delivery (successful hit only, player + monsters)
             # Execute directly if game_map/entities available (canonical path)
-            if game_map and entities:
+            # Note: This is for melee knockback weapons, not ranged knockback
+            if game_map and entities and not is_ranged_attack:
                 knockback_results = self._apply_weapon_knockback_on_hit(target, game_map, entities)
                 results.extend(knockback_results)
+            
+            # Phase 22.1: Apply Oath effects (Run Identity) if player has an Oath
+            oath_results = self._apply_oath_effects(target)
+            results.extend(oath_results)
             
             # IMPORTANT: Set attacker's in_combat flag when attacking the PLAYER
             # This keeps monsters engaged even if they leave FOV
@@ -1899,6 +1979,139 @@ class Fighter:
                 knowledge.register_trait(self.owner, 'web_spit')
             except ImportError:
                 pass  # Knowledge system not available
+        
+        return results
+
+    def _apply_oath_effects(self, target):
+        """Apply Oath effects if attacker (player) has an active Oath.
+        
+        Phase 22.1.1: Run Identity via Oaths (refined).
+        Oaths are permanent status effects chosen at run start that bias playstyle.
+        
+        - Oath of Embers: 33% burning proc + self-burn if adjacent (risk/reward)
+        - Oath of Venom: 25% poison proc + duration extension if already poisoned (focus-fire)
+        - Oath of Chains: Handled in knockback_service (positioning constraint)
+        
+        Enforcement happens at canonical execution point (Fighter.attack_d20).
+        Called AFTER knockback resolution (tactical feature for Embers).
+        
+        Args:
+            target: The entity that was attacked
+            
+        Returns:
+            list: List of result dictionaries with Oath effect messages
+        """
+        results = []
+        
+        # Only apply Oaths if attacker is player (no AI component)
+        attacker_ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
+        if attacker_ai:
+            # Attacker is a monster, not player - no Oath effects
+            return results
+        
+        # Check for status effects component
+        status_effects = self.owner.get_component_optional(ComponentType.STATUS_EFFECTS) if self.owner else None
+        if not status_effects:
+            return results
+        
+        # Get metrics collector
+        collector = _get_metrics_collector()
+        
+        # =====================================================================
+        # Oath of Embers: Burning proc + self-burn risk
+        # =====================================================================
+        oath_embers = status_effects.get_effect('oath_of_embers')
+        if oath_embers:
+            import random
+            # 33% chance to apply burning to target
+            if random.random() < oath_embers.burn_chance:
+                from components.status_effects import BurningEffect, StatusEffectManager
+                
+                # Ensure target has status_effects component
+                if not target.components.has(ComponentType.STATUS_EFFECTS):
+                    target.status_effects = StatusEffectManager(target)
+                    target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+                
+                # Create and apply burning effect to target
+                burning = BurningEffect(
+                    duration=oath_embers.burn_duration, 
+                    owner=target, 
+                    damage_per_turn=oath_embers.burn_damage_per_turn
+                )
+                burning_results = target.status_effects.add_effect(burning)
+                results.extend(burning_results)
+                
+                # Track proc
+                if collector:
+                    collector.increment('oath_embers_procs')
+                
+                # Phase 22.1.1: Check if player is adjacent after knockback (risk/reward)
+                # This is called AFTER knockback resolution, so adjacency check is tactical
+                import math
+                distance = math.sqrt((self.owner.x - target.x)**2 + (self.owner.y - target.y)**2)
+                if distance <= 1.5:  # Adjacent (including diagonals)
+                    # Apply self-burn (1 dmg, 1 turn)
+                    if not self.owner.components.has(ComponentType.STATUS_EFFECTS):
+                        self.owner.status_effects = StatusEffectManager(self.owner)
+                        self.owner.components.add(ComponentType.STATUS_EFFECTS, self.owner.status_effects)
+                    
+                    self_burn = BurningEffect(
+                        duration=oath_embers.self_burn_duration,
+                        owner=self.owner,
+                        damage_per_turn=oath_embers.self_burn_damage
+                    )
+                    self_burn_results = self.owner.status_effects.add_effect(self_burn)
+                    results.extend(self_burn_results)
+                    
+                    # Track self-burn proc
+                    if collector:
+                        collector.increment('oath_embers_self_burn_procs')
+        
+        # =====================================================================
+        # Oath of Venom: Poison proc + duration extension on re-proc
+        # =====================================================================
+        oath_venom = status_effects.get_effect('oath_of_venom')
+        if oath_venom:
+            import random
+            # 25% chance to apply/extend poison
+            if random.random() < oath_venom.poison_chance:
+                from components.status_effects import PoisonEffect, StatusEffectManager
+                
+                # Ensure target has status_effects component
+                if not target.components.has(ComponentType.STATUS_EFFECTS):
+                    target.status_effects = StatusEffectManager(target)
+                    target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+                
+                # Check if target already has poison (focus-fire reward)
+                target_status_effects = target.get_component_optional(ComponentType.STATUS_EFFECTS)
+                already_poisoned = target_status_effects and target_status_effects.has_effect('poison')
+                
+                if already_poisoned:
+                    # Extend existing poison duration (refresh + bonus)
+                    existing_poison = target_status_effects.get_effect('poison')
+                    if existing_poison:
+                        # Refresh to base duration + extension bonus
+                        existing_poison.duration = oath_venom.poison_duration + oath_venom.duration_extension
+                        results.append({
+                            'message': MB.status_effect(f"{target.name}'s poison is extended!")
+                        })
+                        
+                        # Track extension
+                        if collector:
+                            collector.increment('oath_venom_duration_extensions')
+                else:
+                    # Apply fresh poison
+                    poison = PoisonEffect(
+                        owner=target,
+                        duration=oath_venom.poison_duration,
+                        damage_per_tick=oath_venom.poison_damage_per_turn
+                    )
+                    poison_results = target.status_effects.add_effect(poison)
+                    results.extend(poison_results)
+                
+                # Track proc (both fresh and extensions)
+                if collector:
+                    collector.increment('oath_venom_procs')
         
         return results
 
