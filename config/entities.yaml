@@ -1324,6 +1324,7 @@ weapons:
     to_hit_bonus: 0
     reach: 8                # Can attack up to 8 tiles away!
     two_handed: true        # Requires both hands
+    is_ranged_weapon: true  # Phase 22.2.2: Explicit ranged weapon tag
     slot: "main_hand"
     char: "}"
     color: [139, 69, 19]    # Brown wood
@@ -1334,6 +1335,7 @@ weapons:
     to_hit_bonus: 0
     reach: 10               # Longest range! 10 tiles!
     two_handed: true        # Requires both hands
+    is_ranged_weapon: true  # Phase 22.2.2: Explicit ranged weapon tag
     slot: "main_hand"
     char: "}"
     color: [160, 82, 45]    # Sienna brown
@@ -1344,9 +1346,41 @@ weapons:
     to_hit_bonus: 0
     reach: 8                # Medium range
     two_handed: true        # Requires both hands
+    is_ranged_weapon: true  # Phase 22.2.2: Explicit ranged weapon tag
     slot: "main_hand"
     char: "}"
     color: [105, 105, 105]  # Dim gray (metal + wood)
+
+# ═══════════════════════════════════════════════════════════
+# SPECIAL AMMO - Phase 22.2.2: Quiver System
+# ═══════════════════════════════════════════════════════════
+# Special ammo is loaded into the quiver slot.
+# - Empty quiver = infinite basic ammo (no special effects)
+# - Loaded quiver = consume 1 ammo per ranged attack (hit OR miss)
+# - On hit: Apply ammo-specific rider effect
+# - Explicit player control: must load/unload via inventory
+special_ammo:
+  fire_arrow:
+    slot: "quiver"
+    stackable: true
+    quantity: 10            # Comes in stacks of 10
+    char: "{"               # Arrow-like character
+    color: [255, 69, 0]     # Orange-red (fire)
+    # On-hit effect: Apply burning (1d4 fire damage per turn, 3 turns)
+    effect_type: "burning"
+    effect_duration: 3
+    effect_damage_dice: "1d4"
+  
+  net_arrow:
+    slot: "quiver"
+    stackable: true
+    quantity: 8             # Comes in stacks of 8
+    char: "{"               # Arrow-like character
+    color: [139, 90, 43]    # Brown (rope/net)
+    # On-hit effect: 50% chance to entangle target for 1 turn
+    effect_type: "entangled"
+    effect_duration: 1
+    effect_chance: 0.5      # 50% chance to apply effect on hit
 
 # Armor definitions
 #

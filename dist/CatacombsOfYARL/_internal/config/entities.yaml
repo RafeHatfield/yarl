@@ -1,0 +1,2575 @@
+# Entity Configuration for Catacombs of Yarl
+# This file defines all entities in the game including monsters, weapons, armor, and spells.
+#
+# Format:
+#   - All entities support inheritance via 'extends' keyword
+#   - Colors are RGB tuples [r, g, b] where values are 0-255
+#   - Stats include hp, power, defense, xp, and optional damage/defense ranges
+#   - Characters are single ASCII characters for rendering
+#
+# Inheritance System:
+#   - Use 'extends: parent_name' to inherit all properties from parent entity
+#   - Child entities can override any parent property by specifying it
+#   - Nested objects (like 'stats') are deep-merged (child overrides specific fields)
+#   - Multi-level inheritance supported (A extends B extends C)
+#   - Circular dependencies are detected and prevented
+#   - Examples: orc_chieftain extends orc, orc_veteran extends orc, etc.
+#
+# Monster AI Capabilities:
+#   - can_seek_items: Enables item-seeking behavior (monsters pursue dropped loot)
+#   - inventory_size: Maximum items monster can carry (requires can_seek_items: true)
+#   - seek_distance: Maximum range for item detection and pursuit
+#   - Item usage: Monsters with inventories can use scrolls (potions disabled for balance)
+#   - Equipment: All monsters can spawn with and equip weapons/armor
+#   - Failure mechanics: 50% scroll failure rate with interesting failure modes
+
+version: "1.0"
+
+# Player starting statistics
+player:
+  hp: 54  # 16B tuning: small HP reduction to raise swarm risk (was 60)
+  power: 0       # No base magical power (reserved for enhancements)
+  defense: 1
+  xp: 0
+  damage_min: 1  # Fist damage range: 1d2 (very weak unarmed)
+  damage_max: 2  # Total unarmed: 1-2 + STR modifier
+  # D&D-style stats (standard fighter build)
+  strength: 14      # Good melee (+2 damage modifier)
+  dexterity: 14     # Good (+2 to-hit, +2 AC) [Phase 13F: buffed from 12]
+  constitution: 14  # Survivable (+2 HP modifier = +2 max HP)
+  # Phase 8: Accuracy & Evasion (hit/dodge system)
+  accuracy: 3       # Trained combatant # 16A tuning: +1 to reduce whiff-feel (60.9%→68-72% target)
+  evasion: 0        # 16B tuning: slight evasion drop to raise incoming hit rates
+
+# Monster definitions
+# Each monster has an etp_base value for encounter budgeting (see balance/etp.py)
+# ETP = (DPS × 6) × Durability × Behavior × Synergy (B1 baseline values)
+monsters:
+  # Basic orc enemy
+  orc:
+    stats:
+      hp: 28  # 16B tuning: modest durability to lift brutal death rate while keeping baseline in band
+      power: 0  # No base magical power (reserved for enhancements)
+      defense: 0
+      xp: 35
+      damage_min: 4  # 16B tuning: modestly above 16A floor to keep pressure without overshooting deaths
+      damage_max: 6  # 16B tuning: trim ceiling to ease baseline deaths (was 7)
+      # D&D-style stats
+      strength: 14      # Strong (+2 damage modifier)
+      dexterity: 10     # Average (0 to-hit, 0 AC)
+      constitution: 12  # Tough (+1 HP modifier)
+      # Phase 8: Accuracy & Evasion
+      accuracy: 4       # 16B tuning: +1 to sustain monster hit rate without overkilling via HP/damage
+      evasion: 1        # Some dodge ability
+    char: "o"
+    color: [63, 127, 63]  # Dark green
+    ai_type: "basic"
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Faction system - orcs assist each other
+    faction: "orc"
+    tags: ["corporeal_flesh", "humanoid", "living"]
+    # ETP: DPS=5 × 6 × durability=1.0 × behavior=0.9 = 27
+    etp_base: 27
+    # Item-seeking behavior configuration
+    can_seek_items: true      # Whether monster actively seeks items on the ground
+    inventory_size: 5         # Maximum items monster can carry (0 = no inventory)
+    seek_distance: 5          # Maximum distance to detect and pursue items
+    # Equipment system - orcs spawn with basic weapons/armor
+    equipment:
+      spawn_chances:
+        main_hand: 0.75  # 75% chance of weapon
+        chest: 0.50      # 50% chance of armor
+      equipment_pool:
+        main_hand:
+          - item: "club"
+            weight: 40
+          - item: "dagger"
+            weight: 30
+          - item: "shortsword"
+            weight: 30
+        chest:
+          - item: "leather_armor"
+            weight: 100
+
+  # Elite orc variant using inheritance system
+  # Phase 19: Orc Chieftain - Leader with Rally Cry and Sonic Bellow abilities
+  orc_chieftain:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 35                  # Override: more health than basic orc
+      power: 2                # Override: leadership/training bonus (+2 to all attacks)
+      xp: 75                  # Override: more XP reward for tougher enemy
+    char: "O"                 # Override: capital letter to distinguish from basic orc
+    color: [127, 63, 63]      # Override: reddish color (leadership/authority)
+    inventory_size: 8         # Override: larger inventory (smarter, more organized)
+    seek_distance: 7          # Override: better awareness and leadership
+    speed_bonus: 0.25         # Phase 4: +25% bonus attack chance (trained warrior)
+    ai_type: "orc_chieftain"  # Phase 19: Custom AI with hang-back and ability triggers
+    # Inherits: damage_min: 4, damage_max: 6, defense: 0, etc.
+    # Total damage: 2 power + 4-6 natural = 6-8 (stronger than basic orc's 4-6)
+    # ETP: DPS=7 × 6 × durability=1.33 × behavior=1.1 = 57 (leader buff)
+    etp_base: 57
+    # Phase 19: Rally Cry ability (ONE-TIME, very impactful)
+    rally_radius: 5                      # Radius to affect orc allies
+    rally_min_allies: 2                  # Minimum allies needed to trigger rally
+    rally_hit_bonus: 1                   # +1 to-hit for rallied orcs
+    rally_damage_bonus: 1                # +1 damage for rallied orcs
+    rally_cleanses_tags: ["fear", "morale_debuff"]  # Cleanse these debuff types
+    # Rally ends when chieftain is damaged (first time after rally)
+    rally_end_on_chieftain_damaged: true
+    # Phase 19: Sonic Bellow ability (ONE-TIME at <50% HP)
+    bellow_hp_threshold: 0.5             # Trigger when HP < 50% of max
+    bellow_to_hit_penalty: 1             # -1 to-hit for player
+    bellow_duration: 2                   # Duration in turns
+
+  # Veteran orc variant - experienced fighter
+  orc_veteran:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 25                  # Override: slightly more health
+      power: 1                # Override: some combat experience (+1 to all attacks)
+      xp: 50                  # Override: moderate XP reward
+    char: "v"                 # Override: different character
+    color: [100, 150, 100]    # Override: slightly different green (experienced)
+    inventory_size: 6         # Override: slightly larger inventory
+    speed_bonus: 0.15         # Phase 4: +15% bonus attack chance (experienced fighter)
+    # Inherits: damage_min: 4, damage_max: 6, defense: 0, etc.
+    # Total damage: 1 power + 4-6 natural = 5-7 (between basic orc and chieftain)
+    # ETP: DPS=6 × 6 × durability=1.17 × behavior=1.05 = 41 (experienced)
+    etp_base: 41
+
+  # Weaker orc variant - scout/skirmisher
+  orc_scout:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 15                  # Override: less health (scout, not warrior)
+      defense: 0              # Same as base orc
+      xp: 25                  # Override: less XP (weaker enemy)
+    char: "s"                 # Override: scout character
+    color: [80, 100, 80]      # Override: darker green (stealthy)
+    inventory_size: 3         # Override: smaller inventory (travels light)
+    seek_distance: 8          # Override: better awareness (scout training)
+    # Inherits: power: 0, damage_min: 4, damage_max: 6, ai_type: "basic", etc.
+    # Total damage: 0 power + 4-6 natural = 4-6 (same as basic orc, but less HP)
+    # ETP: DPS=5 × 6 × durability=0.77 × behavior=0.9 = 21 (fragile)
+    etp_base: 21
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # PHASE 19: ORC SHAMAN - BATTLEFIELD CONTROLLER
+  # Hang-back support enemy with deterministic debuff abilities
+  # ═══════════════════════════════════════════════════════════════════════════════
+  
+  # Orc Shaman - Battlefield controller with hex and channeled chant
+  orc_shaman:
+    extends: orc              # Inherit all orc properties
+    stats:
+      hp: 24                  # Override: less health than basic orc (support, not frontline)
+      power: 1                # Override: minor magical power
+      defense: 0              # Same as base orc (not tanky)
+      xp: 60                  # Override: good XP for tactical threat
+      damage_min: 3           # Override: weak melee (prefers range/abilities)
+      damage_max: 5
+      # D&D-style stats
+      strength: 10            # Average (0 modifier) - not a melee fighter
+      dexterity: 12           # Slightly agile (+1 to-hit, +1 AC)
+      constitution: 10        # Average
+      # Phase 8: Accuracy & Evasion
+      accuracy: 3             # Decent accuracy for a caster
+      evasion: 1              # Some dodge ability
+    char: "S"                 # Override: capital S for Shaman
+    color: [100, 80, 120]     # Override: purple-ish (magical orc)
+    ai_type: "orc_shaman"     # Phase 19: Custom AI with hang-back and ability triggers
+    inventory_size: 6         # Override: moderate inventory
+    seek_distance: 6          # Override: good awareness
+    # Inherits: faction: "orc", tags, etc.
+    # Total damage: 1 power + 3-5 natural = 4-6 (weak melee, relies on abilities)
+    # ETP: DPS=5 × 6 × durability=1.0 × behavior=1.15 (controller) = 34
+    etp_base: 34
+    
+    # Phase 19: Crippling Hex ability (cooldown-based debuff)
+    hex_enabled: true
+    hex_radius: 6             # Range to apply hex to player
+    hex_duration_turns: 5     # Duration of hex effect
+    hex_cooldown_turns: 10    # Cooldown before can hex again
+    hex_to_hit_delta: -1      # Player's to-hit penalty
+    hex_ac_delta: -1          # Player's AC penalty
+    
+    # Phase 19: Chant of Dissonance (channeled movement tax, interruptible)
+    chant_enabled: true
+    chant_radius: 5           # Range to apply chant to player
+    chant_duration_turns: 3   # Duration of channeling
+    chant_cooldown_turns: 15  # Cooldown before can chant again
+    chant_move_energy_tax: 1  # Additional energy cost per move (+1)
+    chant_is_channeled: true  # Chant requires channeling (interruptible by damage)
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: NECROMANCER - Corpse economy controller
+  # Necromancer raises dead on cooldown and seeks corpses
+  # ═══════════════════════════════════════════════════════════
+  
+  necromancer:
+    stats:
+      hp: 28                  # Moderate health (support/controller, not tank)
+      power: 1                # Low physical power (relies on summons)
+      defense: 0              # Not armored
+      xp: 80                  # Good XP for tactical threat
+      damage_min: 2           # Very weak melee (avoid combat)
+      damage_max: 4
+      # D&D-style stats
+      strength: 8             # Below average (-1 modifier) - weak fighter
+      dexterity: 14           # Agile (+2 to-hit, +2 AC)
+      constitution: 12        # Slightly resilient (+1)
+      # Phase 8: Accuracy & Evasion
+      accuracy: 4             # Good accuracy for ranged abilities
+      evasion: 2              # Decent evasion
+    char: "N"                 # Capital N for Necromancer
+    color: [80, 40, 120]      # Dark purple (necromantic)
+    ai_type: "necromancer"    # Phase 19: Custom AI with raise dead + corpse seeking
+    faction: "cultist"        # Cultist faction
+    render_order: "actor"
+    blocks: true
+    tags: ["caster", "controller"]
+    inventory_size: 4
+    seek_distance: 7          # Good awareness for corpse spotting
+    # Phase 19: Raise Dead ability (cooldown-based resurrection)
+    raise_dead_enabled: true
+    raise_dead_range: 5       # Range to raise corpses
+    raise_dead_cooldown_turns: 4  # Short cooldown (frequent raising)
+    # Phase 19: Hang-back behavior (maintain safe distance)
+    preferred_distance_min: 4 # Minimum preferred distance from player
+    preferred_distance_max: 7 # Maximum preferred distance from player
+    danger_radius_from_player: 2  # Never approach within 2 tiles of player
+    # Total damage: 1 power + 2-4 natural = 3-5 (very weak, relies on zombies)
+    # ETP: DPS=4 × 7 × durability=1.2 × behavior=1.3 (summons) = 44
+    etp_base: 44
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: BONE NECROMANCER - Bone pile variant
+  # Targets bone piles only, summons weak bone thralls
+  # ═══════════════════════════════════════════════════════════
+  
+  bone_necromancer:
+    extends: necromancer          # Inherit base necromancer properties
+    char: "N"
+    color: [120, 120, 100]        # Override: bone-grey (different from regular necro)
+    ai_type: "bone_necromancer"   # Phase 19: Custom AI targeting bone piles
+    # Override action config for bone pile targeting
+    action_enabled: true
+    action_type: "bone_raise"
+    action_range: 5               # Range to raise bone piles
+    action_cooldown_turns: 4      # Same cooldown as regular necro
+    summon_monster_id: "bone_thrall"  # Summons bone thralls instead of zombies
+    # Inherits: stats, hang-back behavior, danger_radius, etc.
+    # ETP: Same as base necromancer (44) - summons are weaker but more frequent
+    etp_base: 44
+
+  # Bone Thrall - Weak undead summon from bone piles
+  bone_thrall:
+    stats:
+      hp: 12                      # Very fragile
+      power: 0
+      defense: 0
+      xp: 15                      # Low XP (summon, not main threat)
+      damage_min: 2               # Weak attacks: 2-3
+      damage_max: 3
+      # D&D-style stats
+      strength: 8                 # Weak (-1 modifier)
+      dexterity: 10               # Average
+      constitution: 8             # Fragile (-1)
+      # Phase 8: Accuracy & Evasion
+      accuracy: 1                 # Poor accuracy
+      evasion: 0                  # No dodge
+    char: "t"                     # Lowercase t for thrall
+    color: [140, 140, 120]        # Bone grey (matches bone necro)
+    ai_type: "basic"              # Simple aggressive AI
+    faction: "cultist"            # Cultist faction (same as necromancer)
+    render_order: "actor"
+    blocks: true
+    tags: ["undead", "summon", "no_flesh"]
+    can_seek_items: false
+    inventory_size: 0
+    # ETP: DPS=2.5 × 6 × durability=0.67 × behavior=0.9 = 9 (very weak summon)
+    etp_base: 9
+  
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: PLAGUE NECROMANCER - Raises plague zombies
+  # Creates plague zombies that spread infection
+  # ═══════════════════════════════════════════════════════════
+  
+  plague_necromancer:
+    extends: necromancer          # Inherit base necromancer properties
+    char: "N"
+    color: [100, 180, 80]         # Override: sickly green (plague theme)
+    ai_type: "plague_necromancer" # Phase 19: Custom AI raising plague zombies
+    # Override action config for plague zombie raising
+    action_enabled: true
+    action_type: "plague_raise"
+    action_range: 5               # Range to raise corpses
+    action_cooldown_turns: 4      # Same cooldown as regular necro
+    summon_monster_id: "plague_zombie"  # Raises plague zombies instead of regular zombies
+    # Inherits: stats, hang-back behavior, danger_radius, etc.
+    # ETP: Same as base necromancer (44) - zombies are stronger and spread plague
+    etp_base: 44
+  
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: EXPLODER NECROMANCER - Corpse explosion specialist
+  # Consumes spent corpses for deterministic AoE damage
+  # ═══════════════════════════════════════════════════════════
+  
+  exploder_necromancer:
+    extends: necromancer          # Inherit base necromancer properties
+    char: "N"
+    color: [180, 40, 40]          # Override: blood red (explosion theme)
+    ai_type: "exploder_necromancer" # Phase 19: Custom AI with corpse explosion
+    # Override action config for corpse explosion
+    action_enabled: true
+    action_type: "corpse_explosion"
+    action_range: 5               # Range to target spent corpses
+    action_cooldown_turns: 3      # Faster cooldown (explosions are flashy but less sustainable)
+    explosion_radius: 2           # AoE blast radius
+    explosion_damage_min: 4       # Deterministic damage range
+    explosion_damage_max: 8
+    explosion_damage_type: "necrotic"
+    # Inherits: stats, hang-back behavior, danger_radius, etc.
+    # ETP: Same as base necromancer (44) - burst AoE damage
+    etp_base: 44
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: SKELETON SHIELD WALL ENEMY
+  # Skeletons form defensive walls and have damage type identity
+  # ═══════════════════════════════════════════════════════════
+  
+  # Skeleton - Shield wall enemy with damage type identity
+  skeleton:
+    stats:
+      hp: 20
+      power: 0
+      defense: 0
+      xp: 30
+      damage_min: 3           # Weak individual attacks: 3-5
+      damage_max: 5
+      # D&D-style stats
+      strength: 10            # Average (0 modifier)
+      dexterity: 12           # Slightly agile (+1 to-hit, +1 AC)
+      constitution: 10        # Average
+      # Phase 8: Accuracy & Evasion
+      accuracy: 2             # Basic accuracy
+      evasion: 1              # Some dodge ability
+    char: "s"
+    color: [200, 200, 200]    # Bone white
+    ai_type: "skeleton"       # Phase 19: Custom skeleton AI for formation
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Skeletons are undead with no flesh
+    tags: ["undead", "no_flesh", "low_undead"]
+    # Phase 19: Shield Wall ability - +1 AC per adjacent skeleton (NO CAP)
+    shieldwall_ac_per_adjacent: 1  # Bonus AC per adjacent skeleton ally
+    # Phase 19: Damage type modifiers (50% resist piercing, 50% vuln bludgeoning)
+    damage_type_modifiers:
+      piercing: 0.5           # Takes 50% damage from piercing
+      bludgeoning: 1.5        # Takes 150% damage from bludgeoning
+    # Phase 19: Bone pile on death (future necromancer hook)
+    death_spawns: "bone_pile"
+    # Skeletons don't seek items - mindless undead
+    can_seek_items: false
+    inventory_size: 0
+    # ETP: DPS=4 × 6 × durability=1.03 × behavior=1.1 (formation bonus) = 27
+    etp_base: 27
+
+  # Stronger troll enemy  
+  troll:
+    stats:
+      hp: 30
+      power: 0  # No base magical power (reserved for enhancements)
+      defense: 2
+      xp: 100
+      damage_min: 8   # Natural attack range: 8-12 (was 6+2-6)
+      damage_max: 12  # Total attack: 0 power + 8-12 natural = 8-12
+      # D&D-style stats
+      strength: 16      # Very strong (+3 damage modifier)
+      dexterity: 8      # Clumsy (-1 to-hit, -1 AC)
+      constitution: 16  # Very tough (+3 HP modifier)
+    char: "T"
+    color: [0, 127, 0]  # Green
+    ai_type: "basic"
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Trolls are part of the orc faction (allies with orcs/goblins)
+    faction: "orc"
+    tags: ["corporeal_flesh", "humanoid", "living", "regenerating"]
+    # Phase 19: Troll regeneration ability
+    regeneration_amount: 2    # Heals 2 HP at end of turn
+    # Item-seeking behavior (trolls are smarter and seek further)
+    can_seek_items: true      # Trolls actively seek items
+    inventory_size: 8         # Larger inventory than orcs (smarter)
+    seek_distance: 7          # Longer detection range than orcs
+    # ETP: DPS=10 × 6 × durability=1.33 × behavior=1.05 = 50 (brute)
+    etp_base: 50
+
+  # Elite troll variant - ancient and powerful
+  troll_ancient:
+    extends: troll            # Inherit all troll properties
+    stats:
+      hp: 50                  # Override: much more health (ancient wisdom)
+      power: 3                # Override: magical/ancient power (+3 to all attacks)
+      defense: 3              # Override: tougher hide/experience
+      xp: 200                 # Override: massive XP reward
+    char: "A"                 # Override: Ancient troll
+    color: [0, 200, 0]        # Override: brighter green (ancient power)
+    inventory_size: 12        # Override: even larger inventory (ancient hoard)
+    seek_distance: 10         # Override: ancient senses
+    speed_bonus: 0.15         # Phase 4: +15% bonus attack chance (ancient reflexes)
+    regeneration_amount: 3    # Override: faster regeneration (ancient vitality)
+    # Inherits: damage_min: 8, damage_max: 12, ai_type: "basic", etc.
+    # Total damage: 3 power + 8-12 natural = 11-15 (very powerful!)
+    # ETP: DPS=13 × 6 × durability=2.22 × behavior=1.1 = 95 (elite brute)
+    etp_base: 95
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: SLIME SYSTEM - SPLIT UNDER PRESSURE
+  # Tiered slimes with low-HP splitting (not split-on-death)
+  # ═══════════════════════════════════════════════════════════
+  
+  # Slime (minor) - hostile to all factions (independent predator)
+  # Does NOT split - base tier
+  slime:
+    stats:
+      hp: 15
+      power: 0  # No magical power
+      defense: 0
+      xp: 25
+      damage_min: 1  # Weak individual attacks: 1-3
+      damage_max: 3  # But dangerous in groups and with corrosion
+      # D&D-style stats
+      strength: 8       # Weak (-1 damage modifier)
+      dexterity: 6      # Very slow (-2 to-hit, -2 AC)
+      constitution: 10  # Average
+    char: "s"
+    color: [0, 255, 0]  # Bright green
+    ai_type: "slime"
+    faction: "hostile_all"  # Attacks everyone including other monsters
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Slimes have no flesh (not affected by plague)
+    tags: ["no_flesh", "amorphous", "acidic"]
+    # Phase 19: Natural attack damage type (for regeneration suppression, etc.)
+    natural_damage_type: "acid"  # Acidic touch
+    # Slimes don't seek items - they're simple creatures
+    can_seek_items: false
+    inventory_size: 0
+    special_abilities: ["corrosion", "engulf"]  # Phase 19: Corrode metal + engulf on hit
+    corrosion_chance: 0.05  # Phase 19: 5% corrosion chance (minor/small tier)
+    # Phase 19: Minor slimes do NOT split
+    # ETP: DPS=2 × 6 × durability=0.77 × behavior=1.1 = 10 (zone/attrition)
+    # Note: Higher effective threat in groups due to corrosion + slow tiles
+    etp_base: 10
+
+  # Large slime (normal tier) - splits under pressure into minor slimes
+  large_slime:
+    extends: slime            # Inherit all slime properties
+    stats:
+      hp: 40                  # Override: much more health
+      power: 0                # Same as regular slime
+      defense: 1              # Override: slightly tougher
+      xp: 75                  # Override: more XP reward
+      damage_min: 2           # Override: stronger attacks: 2-5
+      damage_max: 5
+      # D&D-style stats
+      strength: 12            # Override: stronger (+1 damage modifier)
+      dexterity: 6            # Same as regular slime (-2 to-hit, -2 AC)
+      constitution: 14        # Override: tougher (+2 HP modifier)
+    char: "S"                 # Override: capital S for Large Slime
+    color: [0, 200, 0]        # Override: darker green (more mature)
+    special_abilities: ["corrosion"]  # Phase 19: removed "splitting" - now config-driven
+    corrosion_chance: 0.10  # Phase 19: 10% corrosion chance (normal/large tier)
+    # Phase 19: Split Under Pressure config (tuned to 40% for ~40% split rate)
+    split_trigger_hp_pct: 0.40        # Split when HP < 40% of max
+    split_child_type: "slime"         # Spawns minor slimes
+    split_min_children: 2             # Minimum 2 children
+    split_max_children: 3             # Maximum 3 children
+    # Weighted outcomes for number of children:
+    # 2 children: 40% | 3 children: 60%
+    split_weights: [40, 60]
+    # Inherits: ai_type: "slime", faction: "hostile_all", can_seek_items: false, etc.
+    # ETP: DPS=3.5 × 6 × durability=2.05 × behavior=1.15 = 50 (splits into 2-3 small)
+    # Effective ETP higher due to splitting mechanic
+    etp_base: 35
+
+  # Greater slime - elite tier, splits into normal slimes
+  greater_slime:
+    extends: large_slime      # Inherit from large slime
+    stats:
+      hp: 80                  # Override: elite health pool
+      power: 0                # Same as other slimes
+      defense: 2              # Override: tougher hide
+      xp: 150                 # Override: high XP reward
+      damage_min: 3           # Override: strong attacks: 3-7
+      damage_max: 7
+      # D&D-style stats
+      strength: 14            # Override: very strong (+2 damage modifier)
+      dexterity: 6            # Same as other slimes (-2 to-hit, -2 AC)
+      constitution: 16        # Override: elite resilience (+3 HP modifier)
+    char: "S"                 # Capital S (same as large, but different color)
+    color: [0, 150, 0]        # Override: dark forest green (elder slime)
+    special_abilities: ["corrosion"]  # Same as other slimes
+    corrosion_chance: 0.15  # Phase 19: 15% corrosion chance (greater/elite tier)
+    # Phase 19: Split Under Pressure config (tuned to 35% for ~40% split rate)
+    split_trigger_hp_pct: 0.35        # Split when HP < 35% of max
+    split_child_type: "large_slime"   # Spawns normal (large) slimes
+    split_min_children: 2             # Minimum 2 children
+    split_max_children: 2             # Maximum 2 children (fixed for elite)
+    split_weights: [100]              # Always 2 children (100% weight for max)
+    # ETP: DPS=5 × 6 × durability=4.00 × behavior=1.2 = 144 (elite threat)
+    etp_base: 75
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 6: SPEED-AWARE MONSTERS
+  # Monsters with varying speed ratios for bonus attack mechanics
+  # ═══════════════════════════════════════════════════════════
+
+  # Orc Brute - Slow, heavy hitter from the orc faction
+  # Lower speed ratio means player can build momentum against it
+  orc_brute:
+    extends: orc              # Inherit orc properties
+    stats:
+      hp: 40                  # Very tanky
+      power: 2                # Hits hard
+      defense: 2              # Some natural armor
+      xp: 60                  # Good XP for the threat
+      damage_min: 6           # Strong melee: 6-10
+      damage_max: 10
+      strength: 16            # Very strong (+3 modifier)
+      dexterity: 8            # Slow (-1 to-hit)
+      constitution: 16        # Very tough (+3 HP)
+      # Phase 8: Override - strong but clumsy
+      accuracy: 2             # Strong swings, decent aim
+      evasion: 0              # Too slow to dodge
+    char: "B"                 # B for Brute
+    color: [80, 160, 80]      # Darker green (hulking)
+    faction: "orc"            # Orc faction
+    speed_bonus: 0.75         # Phase 6: Below average - player can counter
+    # ETP: DPS=10 × 6 × durability=2.05 × behavior=0.9 × speed=1.0 = 111
+    etp_base: 55              # Base before speed multiplier
+
+  # Zombie - Slow undead creature
+  zombie:
+    stats:
+      hp: 24  # 16A tuning: -14% HP since speed penalty (0.5) already disadvantages them (was 28)
+      power: 0
+      defense: 0
+      xp: 30
+      damage_min: 3           # Weak but persistent: 3-6
+      damage_max: 6
+      strength: 12            # Moderate (+1 modifier)
+      dexterity: 6            # Very slow (-2 to-hit)
+      constitution: 14        # Undead resilience (+2 HP)
+      # Phase 8: Shambling corpse - poor accuracy, no dodge
+      accuracy: 1             # Slow, clumsy attacks
+      evasion: 0              # Cannot dodge at all
+    char: "z"
+    color: [128, 128, 96]     # Sickly gray-green
+    ai_type: "basic"
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Zombies have rotting flesh but are already undead
+    tags: ["corporeal_flesh", "undead", "mindless", "low_undead"]
+    # Phase 18: Damage type interactions - undead flesh
+    damage_resistance: "piercing"     # Rotting flesh resists stabs (-1 damage)
+    damage_vulnerability: "bludgeoning"  # Crushing destroys undead (+1 damage)
+    special_abilities: ["swarm"]  # Phase 10: Zombie swarm behavior
+    can_seek_items: false     # Mindless - doesn't seek items
+    inventory_size: 0
+    speed_bonus: 0.5          # Phase 6: Slow - player has advantage
+    # ETP: DPS=4.5 × 6 × durability=1.28 × behavior=0.9 × speed=1.0 = 31
+    etp_base: 31
+  
+  # Phase 10: Plague Zombie - spreads Plague of Restless Death
+  plague_zombie:
+    extends: zombie           # Inherit from basic zombie
+    stats:
+      hp: 30                  # Slightly tougher
+      damage_min: 4           # Stronger: 4-7
+      damage_max: 7
+      xp: 45                  # More XP
+    char: "Z"                 # Capital Z for plague zombie
+    color: [100, 180, 80]     # Sickly green (plague-infected)
+    # Plague zombie can spread the plague on melee hit
+    tags: ["corporeal_flesh", "undead", "mindless", "low_undead", "plague_carrier"]
+    special_abilities: ["swarm", "plague_attack"]  # Can spread plague
+    # ETP: DPS=5.5 × 6 × durability=1.54 × behavior=1.1 = 55
+    etp_base: 40
+
+  # ═══════════════════════════════════════════════════════════════════════════════
+  # PHASE 20A: CAVE SPIDER - Venomous ambush predator
+  # Introduces Poison DOT mechanic (canonical DOT model)
+  # ═══════════════════════════════════════════════════════════════════════════════
+  
+  # Cave Spider - Venomous arachnid with poison attack
+  cave_spider:
+    stats:
+      hp: 16                  # Fragile (spider)
+      power: 0                # No magical power
+      defense: 1              # Light chitin
+      xp: 25                  # Moderate threat
+      damage_min: 2           # Bite: 2-4 (low direct damage, poison adds pressure)
+      damage_max: 4
+      # D&D-style stats
+      strength: 8             # Weak (-1 damage modifier)
+      dexterity: 14           # Quick (+2 to-hit, +2 AC)
+      constitution: 8         # Fragile (-1 HP modifier)
+      # Phase 8: Fast and sneaky
+      accuracy: 3             # Precise strikes
+      evasion: 2              # Hard to hit
+    char: "s"                 # Lowercase 's' for spider
+    color: [80, 60, 40]       # Dark brown
+    ai_type: "basic"          # Standard AI
+    faction: "beast"          # Natural creature faction
+    render_order: "actor"
+    blocks: true
+    tags: ["corporeal_flesh", "beast", "living", "venomous"]
+    special_abilities: ["poison_attack"]  # Phase 20A: Applies poison on hit
+    can_seek_items: false     # Animals don't seek items
+    inventory_size: 0
+    speed_bonus: 0.0          # Normal speed
+    # Poison resistance: Spiders are naturally resistant to their own venom
+    poison_resistance_pct: 75
+    # ETP: DPS=3 × 6 × durability=0.8 × behavior=1.1 (poison pressure) = 16
+    etp_base: 16
+
+  # Phase 20C.1: Web Spider - Applies SlowedEffect on hit
+  web_spider:
+    extends: cave_spider
+    stats:
+      hp: 20                  # Slightly tougher than cave spider
+      xp: 40                  # Higher threat due to slow
+    char: "S"                 # Capital S for specialty spider
+    color: [200, 200, 200]    # Pale/webby color
+    special_abilities: ["web_spit"] # Applies slow on hit
+    etp_base: 22              # Higher ETP than cave spider due to slow pressure
+
+  # Fire Beetle - Small insect that ignites on contact
+  fire_beetle:
+    stats:
+      hp: 12
+      power: 3
+      defense: 2
+      xp: 45
+      damage_min: 2
+      damage_max: 5
+      strength: 10
+      dexterity: 14
+      constitution: 10
+      accuracy: 1
+      evasion: 1
+    char: "b"
+    color: [255, 100, 0]    # Bright orange/red
+    ai_type: "basic"
+    faction: "monsters"
+    render_order: "actor"
+    blocks: true
+    tags: ["corporeal_flesh", "beast", "living"]
+    special_abilities: ["burning_attack"]
+    can_seek_items: false
+    inventory_size: 0
+    speed_bonus: 0.0
+    fire_resistance_pct: 100 # Fire beetles are immune to fire
+    # ETP: DPS=3.5 × 6 × durability=0.8 × behavior=1.1 (burning pressure) = 18
+    etp_base: 18
+
+  # Wraith - Fast ethereal undead
+  wraith:
+    stats:
+      hp: 20
+      power: 3                # Draining touch
+      defense: 4              # Partially incorporeal
+      xp: 100
+      damage_min: 5           # Cold touch: 5-9
+      damage_max: 9
+      strength: 10            # Average
+      dexterity: 18           # Extremely fast (+4 to-hit, +4 AC)
+      constitution: 10        # Average
+      # Phase 8: Ethereal predator - precise and hard to hit
+      accuracy: 3             # Unerring attacks
+      evasion: 4              # Phases through attacks
+      resistances:
+        cold: 100             # Immune to cold
+        poison: 100           # Immune to poison (undead)
+    char: "W"
+    color: [180, 180, 220]    # Ghostly pale blue
+    ai_type: "basic"
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Wraiths are incorporeal - not affected by plague
+    tags: ["incorporeal", "undead", "high_undead", "no_flesh"]
+    can_seek_items: false     # Incorporeal - can't interact with items
+    inventory_size: 0
+    speed_bonus: 2.0          # Phase 6: VERY fast - bonus attack every hit!
+    # Phase 19: Life Drain - heals wraith for % of damage dealt
+    life_drain_pct: 0.50      # Heals 50% of damage dealt (deterministic, capped at missing HP)
+    # ETP: DPS=10 × 6 × durability=1.03 × behavior=1.05 × speed=2.0 = 130
+    etp_base: 65              # Base before speed multiplier (65 × 2.0 = 130)
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 19: LICH (ARCH-NECROMANCER) - Elite undead controller
+  # Powerful personal abilities + necromancer corpse economy
+  # ═══════════════════════════════════════════════════════════
+  
+  lich:
+    stats:
+      hp: 60                  # Durable elite controller (tuned for ~40% death rate in scenario)
+      power: 2                # Moderate physical power
+      defense: 2              # Some arcane protection
+      xp: 150                 # High XP for elite threat
+      damage_min: 3           # Weak melee (prefers Soul Bolt)
+      damage_max: 6
+      strength: 10            # Average
+      dexterity: 14           # Agile (+2 to-hit, +2 AC)
+      constitution: 14        # Resilient (+2)
+      # Phase 8: Powerful undead spellcaster
+      accuracy: 5             # Excellent accuracy for Soul Bolt
+      evasion: 3              # Decent evasion
+      resistances:
+        cold: 100             # Immune to cold (undead)
+        poison: 100           # Immune to poison (undead)
+    char: "L"
+    color: [140, 80, 180]     # Dark purple (necromantic)
+    ai_type: "lich"           # Phase 19: Custom AI with Soul Bolt + raise dead
+    faction: "undead"         # Undead faction
+    render_order: "actor"
+    blocks: true
+    tags: ["undead", "high_undead", "caster", "no_flesh"]
+    can_seek_items: false     # Focused on soul magic and corpse economy
+    inventory_size: 0
+    # Phase 19: Soul Bolt ability (2-turn: charge + resolve)
+    soul_bolt_range: 7              # Range to target player
+    soul_bolt_damage_pct: 0.18      # 18% of target's max HP (10 damage per bolt)
+    soul_bolt_cooldown_turns: 8     # Cooldown after bolt resolves
+    # Phase 19: Command the Dead passive aura
+    command_the_dead_radius: 6      # Allied undead in this radius get +1 to-hit
+    # Phase 19: Death Siphon passive heal
+    death_siphon_radius: 6          # Heals 2 HP when allied undead dies in radius
+    # Necromancer base config (raise dead when off Soul Bolt cooldown)
+    action_enabled: true
+    action_type: "raise"
+    action_range: 5                 # Range to raise corpses
+    action_cooldown_turns: 4        # Same as Soul Bolt cooldown
+    summon_monster_id: "zombie"     # Raises standard zombies
+    danger_radius_from_player: 2    # Safety distance
+    preferred_distance_min: 4       # Hang-back behavior
+    preferred_distance_max: 7
+    # ETP: DPS=7 × 6 × durability=2.0 × behavior=1.2 × synergy=1.3 = 131 (elite controller)
+    etp_base: 131
+
+  # Giant Spider - Fast predatory creature
+  giant_spider:
+    stats:
+      hp: 18
+      power: 0
+      defense: 1
+      xp: 45
+      damage_min: 4           # Venomous bite: 4-8
+      damage_max: 8
+      strength: 12            # Moderate (+1 modifier)
+      dexterity: 16           # Fast (+3 to-hit, +3 AC)
+      constitution: 10        # Average
+      # Phase 8: Fast and agile predator
+      accuracy: 3             # Precise strikes
+      evasion: 3              # Very nimble
+    char: "S"
+    color: [60, 60, 60]       # Dark gray
+    ai_type: "basic"
+    faction: "independent"    # Independent - hostile to all
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Beasts are corporeal flesh
+    tags: ["corporeal_flesh", "beast", "venomous", "living"]
+    can_seek_items: false     # Animal intelligence
+    inventory_size: 0
+    speed_bonus: 1.5          # Phase 6: Fast - multiple strike capability
+    special_abilities: ["web"]  # Can create web traps
+    # ETP: DPS=6 × 6 × durability=0.92 × behavior=1.0 × speed=1.5 = 50
+    etp_base: 33              # Base before speed multiplier (33 × 1.5 = 50)
+
+  # Cultist Blademaster - Skilled fighter from the cultist faction
+  cultist_blademaster:
+    stats:
+      hp: 30
+      power: 1
+      defense: 2
+      xp: 80
+      damage_min: 6           # Twin blades: 6-10
+      damage_max: 10
+      strength: 14            # Strong (+2 modifier)
+      dexterity: 16           # Very agile (+3 to-hit, +3 AC)
+      constitution: 12        # Tough (+1 HP)
+      # Phase 8: Elite trained fighter
+      accuracy: 4             # Master swordsman
+      evasion: 3              # Combat trained dodging
+    char: "c"
+    color: [180, 50, 50]      # Dark red (cultist robes)
+    ai_type: "basic"
+    faction: "cultist"        # Cultist faction - defensive/territorial
+    render_order: "actor"
+    blocks: true
+    # Phase 10: Cultists are living humanoids
+    tags: ["corporeal_flesh", "humanoid", "living", "cultist"]
+    can_seek_items: true      # Intelligent - seeks items
+    inventory_size: 4
+    seek_distance: 5
+    speed_bonus: 1.25         # Phase 6: Trained fighter - moderate bonus
+    # ETP: DPS=9 × 6 × durability=1.54 × behavior=1.0 × speed=1.25 = 104
+    etp_base: 83              # Base before speed multiplier (83 × 1.25 = 104)
+
+  # ═══════════════════════════════════════════════════════════
+  # BOSS MONSTERS - Unique powerful encounters
+  # ═══════════════════════════════════════════════════════════
+
+  # Dragon Lord - Ancient fire dragon, master of flames
+  dragon_lord:
+    stats:
+      hp: 100                  # Boss-tier health
+      power: 5                 # Magical power for breath attacks
+      defense: 5               # Heavily armored scales
+      xp: 500                  # Massive XP reward
+      damage_min: 10           # Devastating melee: 10-15 + STR modifier
+      damage_max: 15
+      # D&D-style stats - Legendary dragon
+      strength: 20             # Crushing strength (+5 damage modifier)
+      dexterity: 14            # Surprisingly agile (+2 to-hit, +2 AC)
+      constitution: 18         # Ancient endurance (+4 HP modifier)
+      # Resistances: Dragons are immune to their element
+      resistances:
+        fire: 100              # Immune to fire damage (fire-breathing dragon)
+        cold: 50               # Resistant to cold (thick scales)
+        poison: 30             # Partial poison resistance (ancient creature)
+    char: "D"                  # Capital D for Dragon
+    color: [255, 50, 0]        # Burning red
+    ai_type: "boss"            # Boss AI for enhanced combat behavior
+    render_order: "actor"
+    blocks: true
+    is_boss: true              # Flag for boss-specific behavior
+    boss_name: "Dragon Lord"   # Display name for messages
+    # Bosses don't seek items - they're above such things
+    can_seek_items: false
+    inventory_size: 0
+    # Special abilities handled by boss ability system (Slice 7)
+    special_abilities: ["fire_breath", "wing_buffet", "summon_minions"]
+    # No equipment spawning - bosses have natural power
+    equipment: null
+    # ETP: DPS=17.5 × 6 × durability=5.13 × behavior=1.3 = 700 (boss tier)
+    etp_base: 700
+
+  # Demon King - Cursed monarch of the underworld
+  demon_king:
+    stats:
+      hp: 80                   # Boss-tier health (less tanky, more tactical)
+      power: 8                 # High magical power for curses
+      defense: 3               # Moderate defense (relies on magic)
+      xp: 500                  # Massive XP reward
+      damage_min: 8            # Strong melee: 8-12 + STR modifier
+      damage_max: 12
+      # D&D-style stats - Demon lord
+      strength: 16             # Strong (+3 damage modifier)
+      dexterity: 16            # Agile (+3 to-hit, +3 AC)
+      constitution: 16         # Demonic vitality (+3 HP modifier)
+      # Resistances: Demons are creatures of fire and darkness
+      resistances:
+        fire: 75               # Highly resistant to fire (creature of hell)
+        poison: 100            # Immune to poison (demonic nature)
+        lightning: 50          # Resistant to lightning (magical nature)
+    char: "K"                  # Capital K for King
+    color: [160, 32, 240]      # Dark purple
+    ai_type: "boss"            # Boss AI for enhanced combat behavior
+    render_order: "actor"
+    blocks: true
+    is_boss: true              # Flag for boss-specific behavior
+    boss_name: "Demon King"    # Display name for messages
+    # Bosses don't seek items - they command minions for that
+    can_seek_items: false
+    inventory_size: 0
+    # Special abilities handled by boss ability system (Slice 7)
+    special_abilities: ["curse", "life_drain", "teleport"]
+    # No equipment spawning - demonic power is innate
+    equipment: null
+    # ETP: DPS=18 × 6 × durability=4.1 × behavior=1.3 = 575 (boss tier)
+    etp_base: 575
+
+  # =========================================================================
+  # PHASE 5: ZHYRAXION BOSS VARIANTS
+  # Three forms of the bound dragon for different endings
+  # =========================================================================
+
+  # Human Zhyraxion - Ending 1a: Escape Through Battle
+  # Medium-Hard difficulty, technical Dark Souls-inspired fight
+  zhyraxion_human:
+    stats:
+      hp: 70                   # Medium-Hard boss health
+      power: 6                 # Moderate magical power (bound form)
+      defense: 6               # Good defense (dragon in human shell)
+      xp: 1000                 # Epic victory reward
+      damage_min: 12           # Fast strikes: 12-18 + STR
+      damage_max: 18
+      # D&D-style stats - Bound dragon in human form
+      strength: 18             # Dragon strength (+4 damage modifier)
+      dexterity: 16            # Fast, technical (+3 to-hit, +3 AC)
+      constitution: 16         # Dragon endurance (+3 HP modifier)
+      # Resistances: Partial dragon nature
+      resistances:
+        fire: 50               # Partial fire resistance (bound dragon)
+        cold: 25               # Some cold resistance
+    char: "Z"                  # Z for Zhyraxion
+    color: [200, 50, 50]       # Dark crimson
+    name: "Zhyraxion, the Bound"  # Display name
+    ai_type: "boss"            # Boss AI
+    render_order: "actor"
+    blocks: true
+    is_boss: true
+    boss_name: "Zhyraxion, the Bound"
+    can_seek_items: false
+    inventory_size: 0
+    # ETP: DPS=21 × 6 × durability=3.59 × behavior=1.3 = 590 (story boss)
+    etp_base: 590
+    boss:
+      boss_type: "dragon_human"
+      enrage_threshold: 0.5    # Enrages at 50% HP
+      enrage_damage_multiplier: 1.5
+      dialogue:
+        spawn: ["So... you would deny me? After everything?"]
+        hit: ["Impressive. But futile.", "You dare strike ME?!"]
+        enrage: ["ENOUGH! I've waited TOO LONG!"]
+        low_hp: ["This... this cannot... not after everything..."]
+        death: ["Aurelyn... I tried... I'm sorry..."]
+      status_immunities: ["confusion", "slow", "fear"]
+
+  # Full Dragon Zhyraxion - Ending 3: Fool's Freedom
+  # EXTREME difficulty, designed to kill player (0.1% win rate)
+  zhyraxion_full_dragon:
+    stats:
+      hp: 200                  # MASSIVE health pool
+      power: 12                # Devastating magical power
+      defense: 15              # Extremely high defense
+      xp: 5000                 # Legendary achievement reward
+      damage_min: 25           # Crushing damage: 25-40 + STR
+      damage_max: 40
+      # D&D-style stats - Ancient dragon unleashed
+      strength: 24             # Legendary strength (+7 damage modifier)
+      dexterity: 18            # Overwhelming accuracy (+4 to-hit, ~80% hit chance)
+      constitution: 22         # Ancient endurance (+6 HP modifier)
+      # Resistances: Full dragon immunity
+      resistances:
+        fire: 100              # Immune to fire (dragon)
+        cold: 75               # Highly resistant to cold
+        poison: 100            # Immune to poison
+        lightning: 50          # Resistant to lightning
+    char: "D"                  # D for Dragon (capital)
+    color: [220, 20, 20]       # Bright crimson
+    name: "Zhyraxion the Unbound"  # Display name
+    ai_type: "boss"            # Boss AI
+    render_order: "actor"
+    blocks: true
+    is_boss: true
+    boss_name: "Zhyraxion the Unbound"
+    can_seek_items: false
+    inventory_size: 0
+    # ETP: DPS=44.5 × 6 × durability=10.26 × behavior=1.3 = 3560 (EXTREME boss)
+    etp_base: 3500
+    boss:
+      boss_type: "full_dragon"
+      enrage_threshold: 0.7    # Enrages early at 70%
+      enrage_damage_multiplier: 2.0   # Doubles damage when enraged
+      dialogue:
+        spawn: ["AT LAST! TRUE FORM! TRUE POWER!"]
+        hit: ["Pitiful.", "You INSECTS!"]
+        enrage: ["WITNESS MY FURY!"]
+        low_hp: ["Impossible... HOW?!"]
+        death: ["Aurelyn... I'm... coming..."]
+      status_immunities: ["confusion", "slow", "fear", "poison", "bleed"]
+
+  # Grief-Corrupted Dragon - Ending 4: Mercy & Corruption
+  # Hard difficulty, erratic berserker with unpredictable patterns
+  zhyraxion_grief_dragon:
+    stats:
+      hp: 100                  # Hard boss health
+      power: 8                 # Moderate magical power (corrupted)
+      defense: 8               # Moderate defense (damaged form)
+      xp: 2000                 # Tragic victory reward
+      damage_min: 15           # Wild strikes: 15-25 + STR
+      damage_max: 25
+      # D&D-style stats - Grief-mad incomplete transformation
+      strength: 20             # Dragon strength (+5 damage modifier)
+      dexterity: 12            # Erratic, uncontrolled (+1 to-hit, +1 AC)
+      constitution: 18         # Dragon endurance (+4 HP modifier)
+      # Resistances: Corrupted dragon (unstable)
+      resistances:
+        fire: 50               # Partial fire resistance (incomplete)
+        cold: 25               # Some cold resistance
+    char: "D"                  # D for Dragon
+    color: [100, 20, 100]      # Dark purple (corrupted)
+    name: "Grief-Mad Zhyraxion"  # Display name
+    ai_type: "boss"            # Boss AI
+    render_order: "actor"
+    blocks: true
+    is_boss: true
+    boss_name: "Grief-Mad Zhyraxion"
+    can_seek_items: false
+    inventory_size: 0
+    # ETP: DPS=28 × 6 × durability=5.13 × behavior=1.3 = 1120 (hard boss)
+    etp_base: 1100
+    boss:
+      boss_type: "grief_dragon"
+      enrage_threshold: 0.3    # Enrages late at 30% (already mad)
+      enrage_damage_multiplier: 1.8   # High damage when enraged
+      dialogue:
+        spawn: ["AURELYN! NO! WHAT HAVE YOU—"]
+        hit: ["PAIN! MORE PAIN!", "WHY?! WHY DID YOU—"]
+        enrage: ["I'LL TEAR YOU APART!"]
+        low_hp: ["The heart... you destroyed... her heart..."]
+        death: ["The only... thing I had left... of her..."]
+      status_immunities: ["confusion", "fear"]  # Already mad, can't be feared
+
+  # Corrupted Ritualist - Guards the Crimson Ritual Codex
+  # Remnants of the Crimson Order, corrupted by Aurelyn's absorbed power
+  # Found in secret room on Level 25
+  corrupted_ritualist:
+    stats:
+      hp: 60                   # Tough elite enemy
+      power: 7                 # Strong magical power (corrupted)
+      defense: 8               # Good defense (ritual armor)
+      xp: 400                  # Good XP reward
+      damage_min: 12           # Strong attacks: 12-18 + STR
+      damage_max: 18
+      # D&D-style stats - Corrupted cultist
+      strength: 16             # Strong (+3 damage modifier)
+      dexterity: 14            # Agile (+2 to-hit, +2 AC)
+      constitution: 16         # Corrupted vitality (+3 HP modifier)
+      # Resistances: Corrupted by dragon power
+      resistances:
+        fire: 50               # Absorbed dragon fire resistance
+        poison: 25             # Some poison resistance
+    char: "R"                  # R for Ritualist
+    color: [150, 0, 150]       # Dark purple (corrupted)
+    ai_type: "basic_monster"   # Standard aggressive AI
+    render_order: "actor"
+    blocks: true
+    name: "Corrupted Ritualist"
+    description: "A mad remnant of the Crimson Order, corrupted by Aurelyn's absorbed power. Flesh rotting, eyes glowing crimson, mumbling about 'the completion'."
+    # ETP: DPS=22 × 6 × durability=3.08 × behavior=1.1 = 448 (elite guardian)
+    etp_base: 450
+
+# Weapon definitions
+#
+# Weapon Properties (D&D-style):
+# - damage_dice: Dice notation for damage (e.g., "1d4", "1d6", "1d8")
+# - to_hit_bonus: Bonus to attack rolls (finesse weapons get +1)
+# - Damage is: dice roll + STR modifier + to_hit_bonus
+#
+# Weapon Categories:
+# - Light weapons (1d4): Fast, finesse-based
+# - One-handed (1d6-1d8): Balanced weapons
+# - Heavy (1d10-1d12): Slow but powerful
+#
+weapons:
+  # ═══════════════════════════════════════════════════════════
+  # LIGHT WEAPONS (1d4) - Fast, Finesse
+  # ═══════════════════════════════════════════════════════════
+  
+  # Starting weapon - weak but fast
+  dagger:
+    damage_dice: "1d4"      # 1-4 damage (avg 2.5)
+    to_hit_bonus: 1         # Finesse weapon: easier to hit
+    damage_type: "piercing" # Phase 18: Damage type
+    material: "metal"       # Phase 19: Corrosion affects metal only
+    slot: "main_hand"
+    char: "-"
+    color: [139, 69, 19]    # Brown
+
+  # Phase 20A.1: Player-facing poison delivery weapon (reuses canonical PoisonEffect)
+  poisoned_dagger:
+    extends: dagger
+    applies_poison_on_hit: true
+    color: [80, 170, 80]    # Green-tinted to hint at venom
+
+  # Phase 5: Speed-boosting weapon
+  quickfang_dagger:
+    damage_dice: "1d4"      # 1-4 damage (same as regular dagger)
+    to_hit_bonus: 2         # +2 to-hit (magical finesse)
+    material: "metal"       # Phase 19: Magical metal weapon
+    slot: "main_hand"
+    char: "-"
+    color: [255, 215, 0]    # Gold (magical weapon)
+    speed_bonus: 0.18       # 16B tuning: trim speed stack dominance (was 0.20)
+
+  # ═══════════════════════════════════════════════════════════
+  # ONE-HANDED WEAPONS (1d6) - Balanced
+  # ═══════════════════════════════════════════════════════════
+  
+  # Common bludgeoning weapon
+  club:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 0
+    damage_type: "bludgeoning" # Phase 18
+    material: "wood"        # Phase 19: Wood weapons immune to acid
+    slot: "main_hand"
+    char: ")"
+    color: [101, 67, 33]    # Dark brown
+  
+  # Piercing finesse weapon
+  shortsword:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 1         # Finesse: better to-hit
+    damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel blade
+    slot: "main_hand"
+    char: "/"
+    color: [192, 192, 192]  # Silver
+  
+  # Bludgeoning weapon, good vs armor
+  mace:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 0
+    damage_type: "bludgeoning" # Phase 18
+    material: "metal"       # Phase 19: Iron/steel mace
+    slot: "main_hand"
+    char: ")"
+    color: [128, 128, 128]  # Gray
+  
+  # Knockback mace - weapon knockback identity weapon
+  knockback_mace:
+    extends: "mace"
+    damage_dice: "1d6"      # Same damage as mace
+    to_hit_bonus: 0
+    damage_type: "bludgeoning"
+    material: "metal"
+    applies_knockback_on_hit: true  # Knockback weapon flag
+    slot: "main_hand"
+    char: ")"
+    color: [150, 100, 50]  # Bronze/copper color
+
+  # ═══════════════════════════════════════════════════════════
+  # ONE-HANDED WEAPONS (1d8) - Better Damage
+  # ═══════════════════════════════════════════════════════════
+  
+  # Standard sword - well-balanced
+  longsword:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel sword
+    slot: "main_hand"
+    char: "/"
+    color: [192, 192, 192]  # Silver
+  
+  # Elegant finesse weapon
+  rapier:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 1         # Finesse: precision strikes
+    material: "metal"       # Phase 19: Fine steel blade
+    slot: "main_hand"
+    char: "/"
+    color: [220, 220, 220]  # Bright silver
+  
+  # Versatile piercing weapon
+  spear:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    reach: 2                # Can attack from 2 tiles away!
+    material: "wood"        # Phase 19: Wooden shaft (immune to acid)
+    slot: "main_hand"
+    char: "/"
+    color: [160, 82, 45]    # Brown/wood
+
+  # ═══════════════════════════════════════════════════════════
+  # HEAVY WEAPONS (1d10) - High Damage, No Finesse
+  # ═══════════════════════════════════════════════════════════
+  
+  # Heavy chopping weapon
+  battleaxe:
+    damage_dice: "1d10"     # 1-10 damage (avg 5.5)
+    to_hit_bonus: 0
+    damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel axe head
+    slot: "main_hand"
+    char: "/"
+    color: [169, 169, 169]  # Dark gray
+  
+  # Heavy bludgeoning weapon
+  warhammer:
+    damage_dice: "1d10"     # 1-10 damage (avg 5.5)
+    to_hit_bonus: 0
+    damage_type: "bludgeoning" # Phase 18
+    material: "metal"       # Phase 19: Heavy iron/steel
+    slot: "main_hand"
+    char: ")"
+    color: [105, 105, 105]  # Dim gray
+
+  # ═══════════════════════════════════════════════════════════
+  # TWO-HANDED WEAPONS (1d12) - Maximum Damage
+  # ═══════════════════════════════════════════════════════════
+  
+  # Massive two-handed axe
+  greataxe:
+    damage_dice: "1d12"     # 1-12 damage (avg 6.5) - HIGHEST!
+    to_hit_bonus: -1        # Unwieldy: harder to hit
+    two_handed: true        # Requires both hands, prevents shield use
+    material: "metal"       # Phase 19: Large steel blade
+    slot: "main_hand"
+    char: "/"
+    color: [110, 110, 110]  # Dark gray
+  
+  # Large two-handed sword
+  greatsword:
+    damage_dice: "2d6"      # 2-12 damage (avg 7.0) - MOST CONSISTENT!
+    to_hit_bonus: 0
+    two_handed: true        # Requires both hands, prevents shield use
+    material: "metal"       # Phase 19: Large steel blade
+    slot: "main_hand"
+    char: "/"
+    color: [140, 140, 160]  # Steel gray (darker)
+  
+  # Legacy weapon (for backward compatibility)
+  sword:
+    damage_dice: "1d8"      # Same as longsword
+    to_hit_bonus: 0
+    damage_type: "slashing" # Phase 18
+    material: "metal"       # Phase 19: Steel sword
+    slot: "main_hand"
+    char: "/"
+    color: [150, 150, 170]  # Silver (darker)
+
+  # ═══════════════════════════════════════════════════════════
+  # PHASE 18: AFFIXED WEAPONS - Explicit Mechanical Identity
+  # ═══════════════════════════════════════════════════════════
+  
+  # KEEN WEAPONS - Expanded crit range (19-20, 10% crit chance)
+  keen_dagger:
+    damage_dice: "1d4"
+    to_hit_bonus: 1         # Still finesse
+    crit_threshold: 19      # Phase 18: Crit on 19-20 (10% chance)
+    damage_type: "piercing"
+    material: "metal"       # Phase 19: Steel blade
+    slot: "main_hand"
+    char: "-"
+    color: [200, 200, 255]  # Pale blue (magical sheen)
+  
+  keen_rapier:
+    damage_dice: "1d8"
+    to_hit_bonus: 1         # Finesse
+    crit_threshold: 19      # Phase 18: Crit on 19-20 (10% chance)
+    damage_type: "piercing"
+    material: "metal"       # Phase 19: Steel blade
+    slot: "main_hand"
+    char: "/"
+    color: [240, 240, 255]  # Bright pale blue
+  
+  # VICIOUS WEAPONS - Bonus damage (+1)
+  vicious_battleaxe:
+    damage_dice: "1d10+1"   # Phase 18: Extra damage die bonus
+    to_hit_bonus: 0
+    damage_type: "slashing"
+    material: "metal"       # Phase 19: Steel weapon
+    slot: "main_hand"
+    char: "/"
+    color: [200, 50, 50]    # Blood red
+  
+  vicious_warhammer:
+    damage_dice: "1d10+1"   # Phase 18: Extra damage die bonus
+    to_hit_bonus: 0
+    damage_type: "bludgeoning"
+    material: "metal"       # Phase 19: Steel weapon
+    slot: "main_hand"
+    char: ")"
+    color: [200, 50, 50]    # Blood red
+  
+  # FINE WEAPONS - Improved accuracy (+1 to-hit beyond base)
+  fine_longsword:
+    damage_dice: "1d8"
+    to_hit_bonus: 1         # Phase 18: Fine quality (+1 to-hit)
+    damage_type: "slashing"
+    material: "metal"       # Phase 19: Quality steel
+    slot: "main_hand"
+    char: "/"
+    color: [220, 220, 220]  # Bright silver
+  
+  fine_mace:
+    damage_dice: "1d6"
+    to_hit_bonus: 1         # Phase 18: Fine quality (+1 to-hit)
+    damage_type: "bludgeoning"
+    material: "metal"       # Phase 19: Quality steel
+    slot: "main_hand"
+    char: ")"
+    color: [150, 150, 150]  # Polished gray
+  
+  # MASTERWORK WEAPONS - Combined bonuses (+1 hit, +1 damage)
+  masterwork_greatsword:
+    damage_dice: "2d6+1"    # Phase 18: Masterwork damage bonus
+    to_hit_bonus: 1         # Phase 18: Masterwork accuracy bonus
+    two_handed: true
+    damage_type: "slashing"
+    material: "metal"       # Phase 19: Master-crafted steel
+    slot: "main_hand"
+    char: "/"
+    color: [255, 215, 0]    # Gold (legendary quality)
+
+  # ═══════════════════════════════════════════════════════════
+  # RANGED WEAPONS - Bows & Crossbows
+  # ═══════════════════════════════════════════════════════════
+  
+  # Light ranged weapon
+  shortbow:
+    damage_dice: "1d6"      # 1-6 damage (avg 3.5)
+    to_hit_bonus: 0
+    reach: 8                # Can attack up to 8 tiles away!
+    two_handed: true        # Requires both hands
+    slot: "main_hand"
+    char: "}"
+    color: [139, 69, 19]    # Brown wood
+  
+  # Powerful ranged weapon
+  longbow:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    reach: 10               # Longest range! 10 tiles!
+    two_handed: true        # Requires both hands
+    slot: "main_hand"
+    char: "}"
+    color: [160, 82, 45]    # Sienna brown
+  
+  # Mechanical ranged weapon
+  crossbow:
+    damage_dice: "1d8"      # 1-8 damage (avg 4.5)
+    to_hit_bonus: 0
+    reach: 8                # Medium range
+    two_handed: true        # Requires both hands
+    slot: "main_hand"
+    char: "}"
+    color: [105, 105, 105]  # Dim gray (metal + wood)
+
+# Armor definitions
+#
+# Armor Types & DEX Caps:
+# - Light Armor: +2-3 AC, no DEX cap (full DEX bonus applies)
+# - Medium Armor: +4-5 AC, DEX cap +2 (max +2 DEX bonus to AC)
+# - Heavy Armor: +6-8 AC, DEX cap 0 (no DEX bonus to AC)
+#
+# This creates meaningful trade-offs: high DEX characters prefer light armor,
+# while low DEX characters benefit from heavy armor protection.
+armor:
+  # ═══════════════════════════════════════════════════════════
+  # SHIELDS (Off-Hand Slot)
+  # ═══════════════════════════════════════════════════════════
+  shield:
+    defense_bonus: 0
+    defense_min: 1
+    defense_max: 3
+    armor_class_bonus: 2  # +2 AC for shields
+    armor_type: "shield"  # Shields don't affect DEX cap
+    slot: "off_hand"
+    char: "["
+    color: [139, 69, 19]  # Brown
+
+  # ═══════════════════════════════════════════════════════════
+  # LIGHT ARMOR (No DEX Cap)
+  # ═══════════════════════════════════════════════════════════
+  
+  # HEAD SLOT - Light
+  leather_helmet:
+    armor_class_bonus: 1  # +1 AC
+    armor_type: "light"
+    slot: "head"
+    char: "^"
+    color: [160, 82, 45]  # Sienna brown
+
+  # CHEST SLOT - Light
+  leather_armor:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "light"
+    slot: "chest"
+    char: "["
+    color: [139, 69, 19]  # Saddle brown
+  
+  studded_leather_armor:
+    armor_class_bonus: 3  # +3 AC (better light armor)
+    armor_type: "light"
+    slot: "chest"
+    char: "["
+    color: [101, 67, 33]  # Dark brown with studs
+
+  # FEET SLOT - Light
+  leather_boots:
+    armor_class_bonus: 1  # +1 AC
+    armor_type: "light"
+    slot: "feet"
+    char: "]"
+    color: [101, 67, 33]  # Dark brown
+
+  # Phase 5: Speed-boosting boots
+  boots_of_swiftness:
+    armor_class_bonus: 1  # +1 AC (same as leather)
+    armor_type: "light"
+    slot: "feet"
+    char: "]"
+    color: [100, 200, 255]  # Light blue (magical)
+    speed_bonus: 0.18       # 16B tuning: trim speed stack dominance (was 0.20)
+
+  # ═══════════════════════════════════════════════════════════
+  # MEDIUM ARMOR (DEX Cap +2)
+  # ═══════════════════════════════════════════════════════════
+  
+  # HEAD SLOT - Medium
+  chain_coif:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "head"
+    char: "^"
+    color: [140, 140, 150]  # Steel (darker)
+
+  # CHEST SLOT - Medium
+  chain_mail:
+    armor_class_bonus: 4  # +4 AC
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "chest"
+    char: "["
+    color: [169, 169, 169]  # Dark gray
+  
+  scale_mail:
+    armor_class_bonus: 5  # +5 AC (better medium armor)
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "chest"
+    char: "["
+    color: [128, 128, 128]  # Gray
+  
+  # Special: Dragon Scale Mail (medium armor with fire resistance)
+  dragon_scale_mail:
+    armor_class_bonus: 5  # +5 AC (same as scale mail)
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    resistances:
+      fire: 30  # +30% fire resistance
+    slot: "chest"
+    char: "["
+    color: [220, 20, 60]  # Crimson (dragon scales)
+  
+  # Special: Frost Mail (medium armor with cold resistance)
+  frost_mail:
+    armor_class_bonus: 5  # +5 AC (same as scale mail)
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    resistances:
+      cold: 30  # +30% cold resistance
+    slot: "chest"
+    char: "["
+    color: [135, 206, 250]  # Light sky blue (icy)
+
+  # FEET SLOT - Medium
+  chain_boots:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2  # Max +2 DEX bonus
+    slot: "feet"
+    char: "]"
+    color: [140, 140, 150]  # Steel (darker)
+
+  # ═══════════════════════════════════════════════════════════
+  # HEAVY ARMOR (DEX Cap 0 - No DEX Bonus!)
+  # ═══════════════════════════════════════════════════════════
+  
+  # HEAD SLOT - Heavy
+  plate_helmet:
+    armor_class_bonus: 3  # +3 AC
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "head"
+    char: "^"
+    color: [160, 160, 180]  # Polished steel (darker)
+
+  # CHEST SLOT - Heavy
+  plate_mail:
+    armor_class_bonus: 6  # +6 AC
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "chest"
+    char: "["
+    color: [155, 155, 175]  # Steel (darker)
+  
+  full_plate:
+    armor_class_bonus: 8  # +8 AC (best armor in game!)
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "chest"
+    char: "["
+    color: [170, 170, 190]  # Shining steel (darker)
+
+  # FEET SLOT - Heavy
+  plate_boots:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "heavy"
+    dex_cap: 0  # No DEX bonus to AC
+    slot: "feet"
+    char: "]"
+    color: [155, 155, 175]  # Steel
+  
+  # ═══════════════════════════════════════════════════════════
+  # SPECIAL ARMOR WITH RESISTANCES
+  # ═══════════════════════════════════════════════════════════
+  
+  # Helmet of Fire Resistance
+  helmet_of_fire_resistance:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2
+    resistances:
+      fire: 20  # +20% fire resistance
+    slot: "head"
+    char: "^"
+    color: [255, 69, 0]  # Orange-red (fire)
+  
+  # Helmet of Frost
+  helmet_of_frost:
+    armor_class_bonus: 2  # +2 AC
+    armor_type: "medium"
+    dex_cap: 2
+    resistances:
+      cold: 20  # +20% cold resistance
+    slot: "head"
+    char: "^"
+    color: [176, 224, 230]  # Powder blue (frost)
+  
+  # Boots of Acid Resistance
+  acid_resistant_boots:
+    armor_class_bonus: 1  # +1 AC
+    armor_type: "light"
+    resistances:
+      acid: 25  # +25% acid resistance
+    slot: "feet"
+    char: "]"
+    color: [154, 205, 50]  # Yellow-green (acid)
+  
+  # Shield of Resistance (uncommon)
+  shield_of_resistance:
+    armor_class_bonus: 3  # +3 AC (better than normal shield)
+    armor_type: "shield"
+    resistances:
+      fire: 15
+      cold: 15
+      poison: 15
+      lightning: 15
+      acid: 15  # +15% to all resistances
+    slot: "off_hand"
+    char: "["
+    color: [147, 112, 219]  # Medium purple (magical)
+
+# Spell and consumable definitions
+spells:
+  # Healing item
+  healing_potion:
+    spell_type: "heal"
+    heal_amount: 40
+    char: "!"
+    color: [127, 0, 255]  # Purple
+
+  # === NEW POTIONS - Buff Potions ===
+  
+  speed_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 200, 0]  # Golden yellow
+    effect_function: "drink_speed_potion"
+  
+  # Phase 5: Combat speed boost potion
+  lightning_reflexes_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 255, 0]  # Bright yellow (lightning)
+    effect_function: "drink_lightning_reflexes_potion"
+  
+  # Phase 20C.1: Adrenaline Potion (Reflexes)
+  adrenaline_potion:
+    extends: lightning_reflexes_potion
+    color: [255, 100, 100] # Bright red (adrenaline)
+  
+  regeneration_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [0, 255, 100]  # Bright green
+    effect_function: "drink_regeneration_potion"
+  
+  invisibility_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [150, 150, 255]  # Light blue
+    effect_function: "drink_invisibility_potion"
+  
+  levitation_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [200, 220, 255]  # Sky blue
+    effect_function: "drink_levitation_potion"
+  
+  protection_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [100, 150, 255]  # Blue
+    effect_function: "drink_protection_potion"
+  
+  heroism_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 215, 0]  # Gold
+    effect_function: "drink_heroism_potion"
+  
+  # === NEW POTIONS - Debuff Potions ===
+  
+  weakness_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [100, 100, 100]  # Dark gray
+    effect_function: "drink_weakness_potion"
+  
+  slowness_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [139, 90, 43]  # Brown
+    effect_function: "drink_slowness_potion"
+  
+  blindness_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [50, 50, 50]  # Very dark gray
+    effect_function: "drink_blindness_potion"
+  
+  paralysis_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [80, 80, 120]  # Dark blue-gray
+    effect_function: "drink_paralysis_potion"
+  
+  # === NEW POTIONS - Special ===
+  
+  experience_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 100, 255]  # Bright magenta
+    effect_function: "drink_experience_potion"
+  
+  # Phase 7: Potion of Tar - applies SluggishEffect (speed debuff)
+  tar_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [50, 30, 10]  # Dark brown/tar color
+    effect_function: "drink_tar_potion"
+    duration: 10  # 10 turns of sluggishness
+    speed_penalty: 0.25  # -25% speed bonus
+
+  # Phase 20B: Fire Potion - applies Burning DOT on hit when thrown
+  fire_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 90, 20]  # Fiery orange
+    effect_function: "apply_burning_potion"
+
+  # Phase 20D.1: Root Potion - dual-mode consumable
+  # THROWN: Apply EntangledEffect (roots bind target, 3 turns)
+  # CONSUMED: Apply BarkskinEffect (defensive buff, +3 AC, 10 turns)
+  root_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [34, 139, 34]  # Forest green
+    effect_function: "use_root_potion"
+
+  sunburst_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [255, 215, 0]  # Golden/sunburst yellow
+    effect_function: "use_sunburst_potion"
+
+  # Damage spell with range
+  lightning_scroll:
+    spell_type: "damage"
+    damage: 40
+    maximum_range: 5
+    char: "~"
+    color: [255, 255, 0]  # Yellow
+
+  # Area damage spell
+  fireball_scroll:
+    spell_type: "damage"
+    damage: 25
+    radius: 3
+    char: "~"
+    color: [255, 0, 0]  # Red
+
+  # Confusion utility spell
+  confusion_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [207, 63, 255]  # Pink
+
+  # Equipment enhancement scrolls
+  enhance_weapon_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 127, 0]  # Orange
+
+  enhance_armor_scroll:
+    spell_type: "utility" 
+    char: "~"
+    color: [0, 255, 127]  # Cyan
+
+  # Invisibility scroll - makes player invisible to most monsters
+  invisibility_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [100, 120, 200]  # Medium blue (darker)
+    duration: 30  # Turns of invisibility
+
+  # Teleport scroll - teleport to target location (10% misfire chance)
+  teleport_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [80, 160, 200]  # Cyan (darker)
+
+  # Shield scroll - temporary defense boost (monsters have 10% backfire chance)
+  shield_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [60, 140, 200]  # Blue (darker)
+    duration: 10  # Turns of shield protection
+    defense_bonus: 4  # +4 defense
+
+  # Dragon Fart scroll - cone of noxious gas that puts enemies to sleep
+  dragon_fart_scroll:
+    spell_type: "offensive"
+    char: "~"
+    color: [150, 255, 120]  # Bright lime green - more visible
+    duration: 20  # Turns enemies are knocked out
+    range: 8  # Maximum cone distance
+    cone_width: 45  # Cone width in degrees
+
+  # Raise Dead scroll - resurrect corpse as mindless zombie (attacks everything!)
+  raise_dead_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [100, 255, 100]  # Necromantic green
+    range: 5  # Maximum distance to corpse
+
+  # Yo Mama scroll - target yells insult, ALL hostiles attack them!
+  yo_mama_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [160, 100, 220]  # Purple (darker)
+    duration: 1000  # Effectively permanent
+    range: 10  # Can target from distance
+
+  # Slow scroll - target moves every 2nd turn
+  slow_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [100, 100, 200]  # Blue (darker)
+    duration: 10  # Turns of slow
+    range: 8  # Targeting range
+
+  # Glue scroll - target cannot move (but can attack)
+  glue_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [139, 69, 19]  # Brown glue
+    duration: 5  # Turns stuck
+    range: 8  # Targeting range
+
+  # Rage scroll - target attacks ANYONE with 2x dmg, 0.5x accuracy
+  rage_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 50, 50]  # Bright red
+    duration: 8  # Turns enraged
+    range: 8  # Targeting range
+
+  # NEW SCROLLS (v3.11.0+)
+  
+  # Haste scroll - grants increased movement speed
+  haste_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 200, 0]  # Golden yellow
+    duration: 30  # Turns of haste
+  
+  # Blink scroll - short-range tactical teleport
+  blink_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [150, 150, 255]  # Light blue
+    maximum_range: 5  # Max blink distance
+  
+  # Light scroll - reveals all tiles in FOV
+  light_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 255, 200]  # Bright yellow-white
+  
+  # Magic Mapping scroll - reveals entire dungeon level
+  magic_mapping_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [200, 200, 255]  # Light purple
+  
+  # Earthquake scroll - AOE damage to all creatures
+  earthquake_scroll:
+    spell_type: "damage"
+    char: "~"
+    color: [139, 69, 19]  # Brown
+    damage: 20  # Base damage (3d6 in spell def)
+    radius: 3  # AOE radius
+  
+  # Identify scroll - auto-identifies 1 random item per turn
+  identify_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 215, 0]  # Gold
+    duration: 5  # Turns of identify mode (identifies 5 random items)
+  
+  # Fear scroll - causes enemies to flee in terror
+  fear_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [139, 69, 19]  # Brown (terror)
+    duration: 15  # How long enemies flee
+    radius: 10  # Large AOE around caster
+  
+  # Detect Monster scroll - reveals all monster locations
+  detect_monster_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 0, 255]  # Magenta (psychic sense)
+    duration: 20  # Turns of monster detection
+  
+  # ════════════════════════════════════════════════════════
+  # PHASE 10: FACTION MANIPULATION ITEMS
+  # ════════════════════════════════════════════════════════
+  
+  # Scroll of Unreasonable Aggravation - incites monster to attack a faction
+  aggravation_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [255, 100, 50]  # Orange-red (anger)
+    effect_function: "use_aggravation_scroll"
+    targeting: true  # Requires target selection
+    range: 10  # Maximum targeting range
+  
+  # Scroll of Restless Death - infects target with plague
+  plague_scroll:
+    spell_type: "utility"
+    char: "~"
+    color: [150, 200, 50]  # Sickly yellow-green
+    effect_function: "apply_plague_effect"
+    targeting: true
+    range: 8
+    duration: 20  # Plague duration
+  
+  # Antidote Potion - cures Plague of Restless Death
+  antidote_potion:
+    spell_type: "potion"
+    char: "!"
+    color: [50, 255, 150]  # Bright cyan-green (cleansing)
+    effect_function: "drink_antidote_potion"
+  
+  # ════════════════════════════════════════════════════════
+  # PHASE 19: WARD AGAINST DRAIN - Counter to Wraith life drain
+  # ════════════════════════════════════════════════════════
+  # Ward Against Drain scroll - blocks wraith life drain for 10 turns
+  scroll_ward_against_drain:
+    spell_type: "utility"
+    char: "~"
+    color: [200, 220, 255]  # Pale silvery-blue (protective ward)
+    effect_function: "use_ward_scroll"
+    duration: 10  # Turns of drain immunity
+  
+  # Phase 19: Soul Ward - Reshapes Soul Bolt damage into DOT
+  scroll_soul_ward:
+    spell_type: "utility"
+    char: "~"
+    color: [180, 160, 255]  # Soft violet-blue (soul protection)
+    effect_function: "use_soul_ward_scroll"
+    duration: 10  # Turns of Soul Ward protection
+  
+  # ════════════════════════════════════════════════════════
+  # PHASE 20E.2: DISARM - Weapon damage denial
+  # ════════════════════════════════════════════════════════
+  # Scroll of Disarm - prevents target from using weapon damage for 3 turns
+  disarm_scroll:
+    spell_type: "offensive"
+    char: "~"
+    color: [220, 180, 100]  # Bronze/brass (weapon theme)
+    effect_function: "use_disarm_scroll"
+    duration: 3  # Turns of disarm
+    targeting: "aimed"  # Requires target selection
+  
+  # ════════════════════════════════════════════════════════
+  # PHASE 20F: SILENCE - Spell denial
+  # ════════════════════════════════════════════════════════
+  # Scroll of Silence - prevents target from casting spells for 3 turns
+  # v1 Scope: Blocks spellcasting, scroll usage, and "spell" monster abilities
+  #           (hex, chant, soul bolt). Does NOT block potions, melee, or movement.
+  silence_scroll:
+    spell_type: "offensive"
+    char: "~"
+    color: [100, 100, 160]  # Muted purple/gray (silence theme)
+    effect_function: "use_silence_scroll"
+    duration: 3  # Turns of silence
+    targeting: "aimed"  # Requires target selection
+  
+  # ════════════════════════════════════════════════════════
+  # KEYS - Unlock vault doors and special chests
+  # ════════════════════════════════════════════════════════
+  # Keys are consumable items that unlock themed vaults.
+  # Each key type corresponds to specific vault themes.
+  # Keys are consumed when used to unlock doors/chests.
+  
+  bronze_key:
+    spell_type: "key"
+    char: "k"
+    color: [205, 127, 50]  # Bronze
+    key_type: "bronze"
+  
+  silver_key:
+    spell_type: "key"
+    char: "k"
+    color: [192, 192, 192]  # Silver
+    key_type: "silver"
+  
+  gold_key:
+    spell_type: "key"
+    char: "k"
+    color: [255, 215, 0]  # Gold
+    key_type: "gold"
+  
+  dragon_scale:
+    spell_type: "key"
+    char: "k"
+    color: [220, 20, 60]  # Crimson
+    key_type: "dragon_scale"
+
+# ═══════════════════════════════════════════════════════════
+# WANDS - Multi-charge reusable magic items
+# ═══════════════════════════════════════════════════════════
+# Wands work like scrolls but have charges. They can be recharged
+# by picking up matching scrolls. Wands spawn with random charges:
+# - Level 1: 2-4 charges
+# - Higher levels: 2-4 + (level-1) charges, max 10 starting charges
+#
+# Note: Wands have INFINITE max capacity (no charge limit)
+wands:
+  # Damage wands
+  wand_of_fireball:
+    spell_type: "damage"
+    spell_name: "fireball_scroll"  # Matches scroll for recharging
+    damage: 25
+    radius: 3
+    char: "/"
+    color: [255, 100, 0]  # Bright orange (wand)
+  
+  wand_of_lightning:
+    spell_type: "damage"
+    spell_name: "lightning_scroll"
+    damage: 40
+    maximum_range: 5
+    char: "/"
+    color: [255, 255, 100]  # Bright yellow (wand)
+  
+  # Utility wands
+  wand_of_confusion:
+    spell_type: "utility"
+    spell_name: "confusion_scroll"
+    char: "/"
+    color: [207, 100, 255]  # Bright pink (wand)
+  
+  wand_of_teleportation:
+    spell_type: "utility"
+    spell_name: "teleport_scroll"
+    char: "/"
+    color: [150, 220, 255]  # Bright cyan (wand)
+  
+  wand_of_dragon_farts:
+    spell_type: "offensive"
+    spell_name: "dragon_fart_scroll"
+    char: "/"
+    color: [150, 255, 120]  # Bright lime green - more visible
+    duration: 20
+    range: 8
+    cone_width: 45
+  
+  wand_of_yo_mama:
+    spell_type: "utility"
+    spell_name: "yo_mama_scroll"
+    char: "/"
+    color: [180, 120, 220]  # Purple (darker)
+    duration: 1000
+    range: 10
+  
+  wand_of_slow:
+    spell_type: "utility"
+    spell_name: "slow_scroll"
+    char: "/"
+    color: [120, 120, 200]  # Blue (darker)
+    duration: 10
+    range: 8
+  
+  wand_of_glue:
+    spell_type: "utility"
+    spell_name: "glue_scroll"
+    char: "/"
+    color: [180, 100, 50]  # Bright brown (wand)
+    duration: 5
+    range: 8
+  
+  wand_of_rage:
+    spell_type: "utility"
+    spell_name: "rage_scroll"
+    char: "/"
+    color: [255, 100, 100]  # Bright red (wand)
+    duration: 8
+    range: 8
+
+# ═══════════════════════════════════════════════════════════
+# RINGS - Passive effect jewelry
+# ═══════════════════════════════════════════════════════════
+# Rings provide continuous bonuses while equipped in left or right ring slots.
+# All rings start unidentified and must be identified to reveal their effects.
+# Players can wear 2 rings simultaneously.
+
+rings:
+  # ──────────────────────────────────────────────────────────
+  # DEFENSIVE RINGS - Protection and survival
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_protection:
+    char: "="
+    color: [180, 180, 180]  # Silver
+    ring_effect: "protection"
+    effect_strength: 2  # +2 AC
+  
+  ring_of_regeneration:
+    char: "="
+    color: [100, 255, 100]  # Bright green
+    ring_effect: "regeneration"
+    effect_strength: 5  # Heal 1 HP every 5 turns
+  
+  ring_of_resistance:
+    char: "="
+    color: [200, 150, 255]  # Purple
+    ring_effect: "resistance"
+    effect_strength: 10  # +10% all resistances
+    # Note: Ring component provides resistance bonuses, but we also add to equippable
+    # so it works via equipment aggregation
+    resistances:
+      fire: 10
+      cold: 10
+      poison: 10
+      lightning: 10
+      acid: 10
+  
+  # ──────────────────────────────────────────────────────────
+  # OFFENSIVE RINGS - Combat bonuses
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_strength:
+    char: "="
+    color: [255, 100, 100]  # Red
+    ring_effect: "strength"
+    effect_strength: 2  # +2 STR
+  
+  ring_of_dexterity:
+    char: "="
+    color: [100, 200, 255]  # Light blue
+    ring_effect: "dexterity"
+    effect_strength: 2  # +2 DEX
+  
+  ring_of_might:
+    char: "="
+    color: [255, 150, 0]  # Orange
+    ring_effect: "might"
+    effect_strength: 4  # +1d4 damage
+  
+  # Phase 5: Speed-boosting ring
+  ring_of_hummingbird:
+    char: "="
+    color: [0, 255, 150]  # Cyan-green (rapid movement)
+    ring_effect: "speed"
+    effect_strength: 25  # +25% bonus attack chance
+    speed_bonus: 0.25    # Used by equipment system (Phase 5)
+  
+  # ──────────────────────────────────────────────────────────
+  # UTILITY RINGS - Special abilities
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_teleportation:
+    char: "="
+    color: [255, 255, 100]  # Yellow
+    ring_effect: "teleportation"
+    effect_strength: 20  # 20% chance on hit
+  
+  ring_of_invisibility:
+    char: "="
+    color: [150, 150, 200]  # Faint blue
+    ring_effect: "invisibility"
+    effect_strength: 5  # 5 turns invisible per level
+  
+  ring_of_searching:
+    char: "="
+    color: [255, 215, 0]  # Gold
+    ring_effect: "searching"
+    effect_strength: 3  # 3 tile radius
+  
+  ring_of_free_action:
+    char: "="
+    color: [200, 255, 200]  # Light green
+    ring_effect: "free_action"
+    effect_strength: 1  # Immune to paralysis/slow
+  
+  # ──────────────────────────────────────────────────────────
+  # MAGIC RINGS - Spell enhancement
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_wizardry:
+    char: "="
+    color: [150, 100, 255]  # Deep purple
+    ring_effect: "wizardry"
+    effect_strength: 1  # +1 to spell effects
+  
+  ring_of_clarity:
+    char: "="
+    color: [200, 200, 255]  # Pale blue
+    ring_effect: "clarity"
+    effect_strength: 1  # Immune to confusion
+  
+  ring_of_speed:
+    char: "="
+    color: [255, 255, 255]  # White/bright
+    ring_effect: "speed"
+    effect_strength: 10  # +10% speed
+  
+  # ──────────────────────────────────────────────────────────
+  # SPECIAL RINGS - Unique effects
+  # ──────────────────────────────────────────────────────────
+  
+  ring_of_constitution:
+    char: "="
+    color: [100, 255, 200]  # Cyan
+    ring_effect: "constitution"
+    effect_strength: 2  # +2 CON (+20 max HP)
+  
+  ring_of_luck:
+    char: "="
+    color: [255, 215, 180]  # Rose gold
+    ring_effect: "luck"
+    effect_strength: 5  # +5% crit chance, better loot
+
+# ==============================================================================
+# MAP FEATURES - Interactive environmental objects
+# ==============================================================================
+# Map features are interactive entities on the game map that provide
+# discovery moments, loot, information, or access to new areas.
+#
+# Feature Types:
+#   - Chests: Loot containers (can be trapped, locked, or mimics)
+#   - Signposts: Readable signs with messages (lore, warnings, hints)
+#   - Secret Doors: Hidden passages (75% passive reveal when adjacent)
+#   - Vaults: Special treasure rooms with tougher enemies
+#
+# Chests can be in various states:
+#   - closed: Normal chest, ready to open
+#   - trapped: Triggers trap on open (damage, status effect, monster spawn)
+#   - locked: Requires key to open
+#   - mimic: Actually a monster in disguise!
+#
+# Signpost types:
+#   - lore: Backstory about the dungeon
+#   - warning: Alerts about nearby dangers
+#   - humor: Easter eggs and jokes
+#   - hint: Clues about nearby secrets
+#   - directional: Navigation help
+
+map_features:
+  # ============================================================================
+  # CHESTS - Loot containers
+  # ============================================================================
+  
+  chest:
+    char: "C"
+    color: [139, 69, 19]  # Brown/wooden
+    blocks: false
+    render_order: "item"
+    feature_type: "chest"
+    chest_state: "closed"
+    loot_quality: "common"
+  
+  # Rare/valuable chest variant
+  golden_chest:
+    char: "C"
+    color: [255, 215, 0]  # Gold
+    blocks: false
+    render_order: "item"
+    feature_type: "chest"
+    chest_state: "closed"
+    loot_quality: "rare"
+  
+  # Trapped chest variant (legacy - generic damage)
+  trapped_chest:
+    char: "C"
+    color: [150, 75, 25]  # Dark brown
+    blocks: false
+    render_order: "item"
+    feature_type: "chest"
+    chest_state: "trapped"
+    trap_type: "damage"  # Legacy trap type
+    loot_quality: "uncommon"
+  
+  # Phase 21.6: Trapped chest with spike payload
+  trapped_chest_spike:
+    char: "C"
+    color: [150, 75, 25]  # Dark brown
+    blocks: false
+    render_order: "item"
+    feature_type: "chest"
+    chest_state: "trapped"
+    trap_type: "spike"  # Phase 21.6: Reuses spike trap payload
+    loot_quality: "uncommon"
+  
+  # Locked chest variant
+  locked_chest:
+    char: "C"
+    color: [150, 150, 180]  # Shiny silver/steel (clearly distinct from grey)
+    blocks: false
+    render_order: "item"
+    feature_type: "chest"
+    chest_state: "locked"
+    key_id: "silver_key"  # Requires Silver Key to open
+    loot_quality: "rare"
+  
+  # ============================================================================
+  # SIGNPOSTS - Readable messages
+  # ============================================================================
+  
+  signpost:
+    char: "|"
+    color: [139, 69, 19]  # Brown wood
+    blocks: false
+    render_order: "item"
+    sign_type: "lore"
+    # message will be set dynamically or from templates
+  
+  warning_sign:
+    char: "|"
+    color: [255, 69, 0]  # Red/orange for warnings
+    blocks: false
+    render_order: "item"
+    sign_type: "warning"
+  
+  humor_sign:
+    char: "|"
+    color: [100, 200, 255]  # Cyan for humor
+    blocks: false
+    render_order: "item"
+    sign_type: "humor"
+  
+  hint_sign:
+    char: "|"
+    color: [255, 215, 0]  # Gold for hints
+    blocks: false
+    render_order: "item"
+    sign_type: "hint"
+  
+  # ============================================================================
+  # PHASE 19: BONE PILE - Skeleton death remnant (future necromancer hook)
+  # ============================================================================
+  
+  bone_pile:
+    char: "%"
+    color: [180, 180, 180]    # Light gray (bones)
+    blocks: false
+    render_order: "item"
+    description: "A pile of bones from a fallen skeleton. Perhaps a necromancer could make use of these..."
+    # Future: Can be used with "Raise Dead" spell or necromancer abilities
+    # For now: Cosmetic/lore hook
+    is_bone_pile: true
+
+  # ============================================================================
+  # CORRIDOR DOORS - Basic doors placed during corridor connections
+  # ============================================================================
+  # These doors are placed dynamically during level generation when door_rules
+  # are configured. They block passage but can be unlocked or searched.
+  
+  wooden_door:
+    char: "+"
+    color: [139, 69, 19]  # Brown/wooden
+    blocks: true
+    render_order: "item"
+    door_type: "corridor"
+    description: "A sturdy wooden door blocking the passage."
+  
+  iron_door:
+    char: "+"
+    color: [128, 128, 128]  # Gray/metallic
+    blocks: true
+    render_order: "item"
+    door_type: "corridor"
+    description: "A heavy iron door blocking the passage."
+  
+  stone_door:
+    char: "+"
+    color: [169, 169, 169]  # Light gray
+    blocks: true
+    render_order: "item"
+    door_type: "corridor"
+    description: "A thick stone door blocking the passage."
+  
+  # ============================================================================
+  # LOCKED DOORS - Vault entrances and special areas
+  # ============================================================================
+  # Locked doors block passage until unlocked with the matching key.
+  # Each door type corresponds to a specific key type and vault theme.
+  
+  bronze_door:
+    char: "+"
+    color: [205, 127, 50]  # Bronze
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "bronze_key"
+  
+  silver_door:
+    char: "+"
+    color: [192, 192, 192]  # Silver
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "silver_key"
+  
+  gold_door:
+    char: "+"
+    color: [255, 215, 0]  # Gold
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "gold_key"
+  
+  crimson_door:
+    char: "+"
+    color: [220, 20, 60]  # Crimson
+    blocks: true
+    render_order: "item"
+    door_type: "locked"
+    required_key: "dragon_scale"
+
+# ============================================================================
+# TRAPS - Hazardous map features
+# ============================================================================
+# Traps spawn on the map and trigger effects when stepped on.
+# They can be detected via search or passive checks, and disarmed safely.
+
+map_traps:
+  spike_trap:
+    char: "^"
+    color: [192, 32, 32]  # Dark red (dangerous)
+    blocks: false
+    render_order: "item"
+    description: "A series of sharp metal spikes jutting from the ground."
+    trap_type: "spike_trap"
+    is_detectable: true
+    passive_detect_chance: 0.1
+    # Spike trap effects
+    spike_damage: 7
+    spike_bleed_severity: 1
+    spike_bleed_duration: 3
+  
+  web_trap:
+    char: "w"
+    color: [220, 220, 220]  # Silvery white (web-like)
+    blocks: false
+    render_order: "item"
+    description: "A thick mass of sticky spider web. It glows faintly in the darkness."
+    trap_type: "web_trap"
+    is_detectable: true
+    passive_detect_chance: 0.15
+    # Web trap effects
+    web_slow_severity: 1
+    web_duration: 5
+  
+  alarm_plate:
+    char: "@"
+    color: [255, 192, 0]  # Orange/gold (warning)
+    blocks: false
+    render_order: "item"
+    description: "An ornate pressure plate attached to bells and gongs."
+    trap_type: "alarm_plate"
+    is_detectable: true
+    passive_detect_chance: 0.2
+    # Alarm trap effects
+    alarm_faction: "orc"
+    alarm_radius: 8
+  
+  # Phase 21.1: Root Trap - applies EntangledEffect
+  root_trap:
+    char: "~"
+    color: [34, 139, 34]  # Forest green (nature/roots)
+    blocks: false
+    render_order: "item"
+    description: "Gnarled roots lie dormant beneath the surface, ready to ensnare the unwary."
+    trap_type: "root_trap"
+    is_detectable: true
+    passive_detect_chance: 0.1
+    # Root trap effects
+    entangle_duration: 3
+  
+  # Phase 21.3: Teleport Trap - randomly teleports entity
+  teleport_trap:
+    char: "T"
+    color: [138, 43, 226]  # Blue-violet (magical/arcane)
+    blocks: false
+    render_order: "item"
+    description: "A shimmering arcane sigil. Reality seems unstable here."
+    trap_type: "teleport_trap"
+    is_detectable: true
+    passive_detect_chance: 0.15
+  
+  # Phase 21.4: Gas Trap - applies PoisonEffect
+  gas_trap:
+    char: "G"
+    color: [144, 238, 144]  # Light green (toxic gas)
+    blocks: false
+    render_order: "item"
+    description: "Vents in the floor release noxious fumes when disturbed."
+    trap_type: "gas_trap"
+    is_detectable: true
+    passive_detect_chance: 0.12
+  
+  # Phase 21.4: Fire Trap - applies BurningEffect
+  fire_trap:
+    char: "F"
+    color: [255, 69, 0]  # Orange-red (fire)
+    blocks: false
+    render_order: "item"
+    description: "Runes glow with barely-contained heat. The air shimmers above them."
+    trap_type: "fire_trap"
+    is_detectable: true
+    passive_detect_chance: 0.12
+  
+  # Phase 21.5: Hole Trap - requests level transition to next floor
+  hole_trap:
+    char: "O"
+    color: [64, 64, 64]  # Dark gray (pit/void)
+    blocks: false
+    render_order: "item"
+    description: "A concealed pit. The floor here seems unstable."
+    trap_type: "hole_trap"
+    is_detectable: true
+    passive_detect_chance: 0.08  # Harder to detect (rare, dangerous)
+
+# Unique Quest Items
+# Special items that trigger victory conditions and story events
+unique_items:
+  # Aurelyn's Ruby Heart - The dragon heart
+  # The extracted heart of Aurelyn, Zhyraxion's partner
+  # Finding it triggers the final confrontation and victory condition
+  ruby_heart:
+    char: "*"  # Pulsing heart symbol
+    color: [220, 20, 60]  # Crimson red
+    render_order: "item"
+    blocks: false
+    description: "A dragon's heart, crystallized into ruby. It pulses with inner fire, warm to the touch, beating with a rhythm that isn't quite alive but isn't quite dead either. You can feel immense power thrumming through it. This was once part of a living being."
+    is_quest_item: true
+    triggers_victory: true
+    cannot_drop: true  # Cannot be dropped once picked up
+  
+  # Crimson Ritual Codex - Unlocks secret Ending 1b
+  # Found in hidden room on Level 25, guarded by Corrupted Ritualists
+  crimson_ritual_codex:
+    char: "?"  # Book symbol
+    color: [139, 0, 0]  # Dark red
+    render_order: "item"
+    blocks: false
+    description: "An ancient journal detailing the dragon-binding ritual. The final entry reads: 'The ritual succeeded beyond measure. One heart extracted, one dragon bound. If only there were two...'"
+    is_quest_item: true
+    cannot_drop: true  # Cannot be dropped once picked up
+    use_function: "unlock_crimson_ritual"  # Special function to unlock knowledge
+  
+  # Entity's Portal - Gateway to the final confrontation
+  # Appears when player obtains the Ruby Heart
+  # Stepping through leads to the Confrontation Chamber
+  entity_portal:
+    char: "O"  # Portal symbol
+    color: [255, 0, 255]  # Bright magenta (otherworldly)
+    render_order: "item"
+    blocks: false
+    description: "A shimmering portal wreathed in temporal distortions. The Entity's voice echoes from within."
+    is_portal: true  # Pickupable! (Future: Portal system mechanics, easter eggs, tactical gameplay)
+
+  # Wand of Portals - Legendary item for tactical portal placement
+  wand_of_portals:
+    char: "/"  # Wand symbol
+    color: [100, 255, 200]  # Cyan-green magical aura
+    render_order: "item"
+    blocks: false
+    description: "A legendary wand that allows you to create pairs of teleportation portals. Use it to place an entrance, then an exit. Using it again cancels the active portals."
+    is_quest_item: false
+    cannot_drop: false
+
+  # Portal entities created by Wand of Portals
+  portal_entrance:
+    char: "["  # Portal entrance symbol
+    color: [0, 255, 255]  # Pure bright cyan (max brightness)
+    render_order: "item"
+    blocks: false
+    description: "A shimmering portal entrance, pulsing with cyan light. Step through to teleport."
+    is_portal: true  # Mark as portal for detection
+
+  portal_exit:
+    char: "]"  # Portal exit symbol
+    color: [255, 255, 0]  # Pure bright yellow (max brightness)
+    render_order: "item"
+    blocks: false
+    description: "A shimmering portal exit, glowing with yellow light. This is your destination."
+    is_portal: true  # Mark as portal for detection
+
+# Unique NPCs
+# Special entities that provide story, dialogue, or quests
+unique_npcs:
+  # The Ghost Guide - Grumpy mentor who warns about the Entity
+  # Appears at camps on levels 5, 10, 15, 20 (Phase 3)
+  # Personality: Sarcastic, cranky, "Crabby Old Luke" vibes
+  ghost_guide:
+    char: "@"  # Humanoid symbol (like player)
+    color: [150, 220, 255]  # Light cyan (ghostly/ethereal)
+    render_order: "actor"
+    blocks: false  # Can walk through (it's a ghost!)
+    name: "Ghostly Guide"
+    
+    # Ghost has no combat stats - it's intangible
+    # If attacked, give sarcastic response instead of damage
+    is_intangible: true
+    
+    # Dialogue component (Phase 3)
+    # Loaded from guide_dialogue.yaml
+    has_dialogue: true
+    dialogue_source: "guide_dialogue"
+    
+    # Visual effects
+    description: "A translucent figure with weary eyes. The ghost of a failed adventurer."
+    flavor_text: "The ghost regards you with a mixture of pity and irritation."
+    
+    # Behavior
+    # Guide doesn't move or attack - just stands in camp waiting
+    ai_type: "stationary"  # Doesn't move
+    faction: "neutral"  # Won't attack player, can't be attacked meaningfully
+    
+    # Special properties
+    is_npc: true
+    is_guide: true  # Flag for special Guide logic
+    appears_at_levels: [5, 10, 15, 20]  # Which levels to spawn
+    spawn_location: "camp"  # Spawns in camp/safe rooms only

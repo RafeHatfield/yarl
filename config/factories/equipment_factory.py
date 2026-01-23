@@ -60,6 +60,7 @@ class EquipmentFactory(FactoryBase):
                 to_hit_bonus=weapon_def.to_hit_bonus,
                 two_handed=weapon_def.two_handed,
                 reach=weapon_def.reach,
+                is_ranged_weapon=weapon_def.is_ranged_weapon,  # Phase 22.2.2
                 resistances=resistances_dict,
                 speed_bonus=weapon_def.speed_bonus,  # Phase 5
                 crit_threshold=weapon_def.crit_threshold,  # Phase 18
@@ -239,5 +240,57 @@ class EquipmentFactory(FactoryBase):
 
         except Exception as e:
             logger.error(f"Error creating ring {ring_type}: {e}")
+            return None
+    
+    def create_special_ammo(self, ammo_type: str, x: int, y: int) -> Optional[Entity]:
+        """Create a special ammo entity from configuration (Phase 22.2.2).
+        
+        Args:
+            ammo_type: The type of ammo to create (e.g., "fire_arrow")
+            x: X coordinate for the ammo
+            y: Y coordinate for the ammo
+            
+        Returns:
+            Entity instance if ammo type exists, None otherwise
+        """
+        ammo_def = self.registry.get_special_ammo(ammo_type)
+        if not ammo_def:
+            return None
+        
+        try:
+            # Create equippable component for quiver slot
+            equippable_component = Equippable(
+                slot=self._get_equipment_slot(ammo_def.slot)
+            )
+            
+            # Create item component (stackable)
+            item_component = Item(
+                stackable=ammo_def.stackable,
+                quantity=ammo_def.quantity
+            )
+            
+            # Create entity
+            ammo = Entity(
+                x=x,
+                y=y,
+                char=ammo_def.char,
+                color=ammo_def.color,
+                name=ammo_def.name,
+                equippable=equippable_component,
+                item=item_component
+            )
+            
+            # Store effect data on the entity for consumption logic
+            ammo.is_special_ammo = True  # Phase 22.2.2: Explicit type marker
+            ammo.ammo_effect_type = ammo_def.effect_type
+            ammo.ammo_effect_duration = ammo_def.effect_duration
+            ammo.ammo_effect_damage_dice = ammo_def.effect_damage_dice
+            ammo.ammo_effect_chance = ammo_def.effect_chance  # Phase 22.2.3
+            
+            logger.debug(f"Created special ammo: {ammo_def.name} x{ammo_def.quantity} at ({x}, {y})")
+            return ammo
+        
+        except Exception as e:
+            logger.error(f"Error creating special ammo {ammo_type}: {e}")
             return None
 

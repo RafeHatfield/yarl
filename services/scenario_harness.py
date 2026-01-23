@@ -100,6 +100,11 @@ class RunMetrics:
     slow_turns_skipped: int = 0
     # Phase 20C.1: Reflex metrics
     reflex_potions_used: int = 0
+    # Phase 22.2.2: Quiver metrics
+    special_ammo_loaded: int = 0
+    special_ammo_unloaded: int = 0
+    special_ammo_shots_fired: int = 0
+    special_ammo_effects_applied: int = 0
     bonus_attacks_while_reflexes_active: int = 0
     # Phase 20D.1: Entangle metrics (Root Potion)
     entangle_applications: int = 0
@@ -373,6 +378,11 @@ class AggregatedMetrics:
     # Phase 20D.1: Entangle metrics (Root Potion)
     total_entangle_applications: int = 0
     total_entangle_moves_blocked: int = 0
+    # Phase 22.2.2: Quiver metrics
+    total_special_ammo_loaded: int = 0
+    total_special_ammo_unloaded: int = 0
+    total_special_ammo_shots_fired: int = 0
+    total_special_ammo_effects_applied: int = 0
     # Phase 20E.1: Blind metrics (Sunburst Potion)
     total_blind_applications: int = 0
     total_blind_attacks_attempted: int = 0
@@ -1457,6 +1467,17 @@ def run_scenario_many(
     # Phase 20D.1: Aggregate entangle metrics
     total_entangle_applications = 0
     total_entangle_moves_blocked = 0
+    
+    # Phase 22.2.2: Aggregate quiver metrics
+    total_special_ammo_loaded = 0
+    total_special_ammo_unloaded = 0
+    total_special_ammo_shots_fired = 0
+    total_special_ammo_effects_applied = 0
+    for run in all_runs:
+        total_special_ammo_loaded += getattr(run, "special_ammo_loaded", 0)
+        total_special_ammo_unloaded += getattr(run, "special_ammo_unloaded", 0)
+        total_special_ammo_shots_fired += getattr(run, "special_ammo_shots_fired", 0)
+        total_special_ammo_effects_applied += getattr(run, "special_ammo_effects_applied", 0)
     for run in all_runs:
         total_entangle_applications += getattr(run, "entangle_applications", 0)
         total_entangle_moves_blocked += getattr(run, "entangle_moves_blocked", 0)
@@ -1628,6 +1649,10 @@ def run_scenario_many(
         total_entangle_moves_blocked=total_entangle_moves_blocked,
         total_blind_applications=total_blind_applications,
         total_blind_attacks_attempted=total_blind_attacks_attempted,
+        total_special_ammo_loaded=total_special_ammo_loaded,
+        total_special_ammo_unloaded=total_special_ammo_unloaded,
+        total_special_ammo_shots_fired=total_special_ammo_shots_fired,
+        total_special_ammo_effects_applied=total_special_ammo_effects_applied,
         total_blind_attacks_missed=total_blind_attacks_missed,
         total_disarm_applications=total_disarm_applications,
         total_disarmed_attacks_attempted=total_disarmed_attacks_attempted,

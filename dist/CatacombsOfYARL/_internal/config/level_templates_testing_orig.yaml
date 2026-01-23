@@ -1,0 +1,49 @@
+# Level Templates Testing Configuration
+# 
+# This file defines overrides and guaranteed spawns for testing mode.
+# Only loaded when YARL_TESTING_MODE=1 environment variable is set.
+# Takes precedence over level_templates.yaml.
+
+version: "1.0"
+
+level_overrides:
+  # Level 1 - Testing configuration for slime features
+  1:
+    guaranteed_spawns:
+      mode: "additional"  # Add to normal random spawns
+      monsters:
+        - type: "slime"
+          count: 3
+        - type: "large_slime"
+          count: 2
+        - type: "orc"  # For testing monster-vs-monster combat
+          count: 2
+      items:
+        - type: "invisibility_scroll"
+          count: 2  # Ensure we can test invisibility mechanics
+        - type: "healing_potion"
+          count: 3
+        - type: "lightning_scroll"
+          count: 1
+        - type: "fireball_scroll"
+          count: 1
+        - type: "confusion_scroll"
+          count: 1
+        - type: "teleport_scroll"
+          count: 1
+        - type: "dragon_fart_scroll"
+          count: 3
+        - type: "shield_scroll"
+          count: 1
+        - type: "raise_dead_scroll"
+          count: 5
+        - type: "enhance_weapon_scroll"
+          count: 1
+        - type: "enhance_armor_scroll"
+          count: 1
+      equipment:
+        - type: "dagger"
+          count: 1
+        - type: "shield"
+          count: 1
+

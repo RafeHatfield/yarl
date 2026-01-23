@@ -1,0 +1,231 @@
+# Level Templates Configuration
+# 
+# This file defines overrides and guaranteed spawns for specific dungeon levels
+# in normal gameplay mode.
+#
+# See level_templates_examples.yaml for more configuration examples.
+
+version: "1.0"
+
+level_overrides:
+  # Level 1 - Tutorial Level: Gentle Introduction
+  # Balance: Reduce difficulty for new players while teaching mechanics
+  1:
+    parameters:
+      max_monsters_per_room: 1  # First 2 rooms: max 1 monster (gradual difficulty)
+    
+    guaranteed_spawns:
+      mode: "additional"  # Add to normal random spawns
+      items:
+        - type: "healing_potion"
+          count: 2  # Guarantee 2 healing potions on level 1
+        - type: "invisibility_scroll"
+          count: 1  # One escape scroll for emergencies
+  
+  # Level 10 - Boss Level: Troll Throne Room
+  10:
+    parameters:
+      max_rooms: 12
+      min_room_size: 10
+      max_room_size: 15
+      max_monsters_per_room: 4
+      
+    special_rooms:
+      - type: "troll_throne_room"
+        count: 1
+        placement: "largest"  # Boss gets the biggest room!
+        min_room_size: 12
+        metadata:
+          role: "miniboss"
+          allow_spike: true
+        guaranteed_spawns:
+          monsters:
+            - type: "troll"
+              count: 1  # The boss
+            - type: "orc"
+              count: "2-4"  # Guards (random 2-4)
+          items:
+            - type: "healing_potion"
+              count: 2
+          equipment:
+            - type: "sword"
+              count: 1  # Boss drops a sword!
+
+  # Goal: confirm door placement ratios, locking, keys, secret discovery.
+  # How to test: spawn, try a few connections; confirm some need keys; run a search to reveal secret doors.
+  91:
+    parameters:
+      max_rooms: 8
+      min_room_size: 6
+      max_room_size: 10
+      max_monsters_per_room: 0
+      max_items_per_room: 0
+    guaranteed_spawns:
+      mode: "replace"
+      items:
+        - type: "iron_key"
+          count: 2
+    door_rules:
+      spawn_ratio: 1.0
+      styles:
+        - type: "wooden_door"  # Standard wooden door entity
+          weight: 100
+      locked:
+        chance: 0.5
+        key_tag: "iron_key"
+      secret:
+        chance: 0.25
+        search_dc: 10
+
+  # Goal: confirm secret room placement ratios, discovery mechanics.
+  # How to test: spawn, run a search to reveal secret rooms; confirm some are hidden.
+  92:
+    parameters:
+      max_rooms: 10
+      min_room_size: 6
+      max_room_size: 12
+    guaranteed_spawns:
+      mode: "replace"
+    secret_rooms:
+      target_per_floor: 2
+      min_room_size: 4
+      connection_bias: "dead_end"
+      discovery:
+        auto_on_map_item: null
+        search_action: true
+        ambient_hint: "misaligned_wall"
+
+  # Goal: confirm trap placement ratios, discovery mechanics, and no crashes.
+  # How to test: spawn, run a search to reveal traps; confirm some are hidden.
+  93:
+    parameters:
+      max_rooms: 10
+      max_monsters_per_room: 0
+    guaranteed_spawns:
+      mode: "replace"
+    trap_rules:
+      density: 0.10
+      whitelist_rooms: ["corridor", "smallest"]
+      trap_table:
+        - id: "spike_trap"   # dmg+bleed
+          weight: 40
+        - id: "web_trap"     # slow/snare
+          weight: 30
+        - id: "alarm_plate"  # call nearby mobs (none here; just ensure no crash)
+          weight: 30
+      detection:
+        passive_chance: 0.25
+        reveal_on: ["search"]
+
+  # Goal: go down→up→down with state persistence (opened doors, disarmed traps), and return-limit.
+  # How to test: start on 94, go to 95, return to 94, verify previous changes persisted; attempt to go beyond the return limit.
+  94:
+    parameters: { max_rooms: 8 }
+    guaranteed_spawns: { mode: "replace" }
+    stairs:
+      up: true
+      down: true
+      restrict_return_levels: 1
+      spawn_rules: { near_start_bias: 0.7 }
+
+  # Goal: map feel (MST vs extra loops), corridor style, door sprinkling.
+  95:
+    parameters:
+      max_rooms: 16
+    guaranteed_spawns:
+      mode: "replace"
+    connectivity:
+      min_connectivity: "mst_plus_loops"
+      loop_count: 3
+      corridor_style: "orthogonal"
+      door_every_n_tiles: 10
+
+  # Goal: ensure forced hostility in a tagged room regardless of global defaults.
+  # How to test: kite line-of-sight; confirm orcs fight undead without player provoking.
+  96:
+    parameters: { max_rooms: 6, max_monsters_per_room: 6 }
+    guaranteed_spawns:
+      mode: "replace"
+    special_rooms:
+      - type: "orc_clan_hall"
+        count: 1
+        placement: "largest"
+        guaranteed_spawns:
+          monsters:
+            - type: "orc"
+              count: 3
+            - type: "skeleton"
+              count: 3
+        faction:
+          room_tag: "orc_clan"
+          hostility_matrix:
+            vs: ["undead"]
+          behavior_mods:
+            troll:
+              door_priority: "high"
+
+  # Goal: verify the encounter budgeter respects bounds (you’ll need etp_base on monsters).
+  # How to test: verify spawn lists don’t overshoot; check your generator/log for “trimmed to fit budget”.
+  97:
+    parameters: { max_rooms: 6, max_monsters_per_room: 10 }
+    guaranteed_spawns:
+      mode: "replace"
+    encounter_budget:
+      etp_min: 6
+      etp_max: 10
+      allow_spike: false
+    special_rooms:
+      - type: "budget_probe"
+        count: 4
+        placement: "random"
+        encounter_budget:
+          etp_min: 4
+          etp_max: 8
+
+  # Goal: observe soft-bias and eventual injection when a category goes dry (you’ll need your loot_policy in place).
+  # How to test: play a few 98→99→98 loops; confirm pity biases or injection events in logs/telemetry.
+  98:
+    parameters: { max_rooms: 10, max_items_per_room: 1 }
+    guaranteed_spawns:
+      mode: "replace"
+      items: []   # start empty so policy must do work
+
+  # Goal: smoke test everything at once. Use "replace" so only this content appears (deterministic).
+  99:
+    parameters:
+      max_rooms: 12
+      min_room_size: 6
+      max_room_size: 12
+      max_monsters_per_room: 4
+      max_items_per_room: 3
+    guaranteed_spawns:
+      mode: "replace"
+      monsters:
+        - type: "orc"
+          count: 4
+        - type: "skeleton"
+          count: 4
+        - type: "slime"
+          count: 2
+      items:
+        - type: "healing_potion"
+          count: 3
+    door_rules:
+      spawn_ratio: 0.7
+      locked: { chance: 0.2, key_tag: "iron_key" }
+      secret: { chance: 0.1, search_dc: 10 }
+    secret_rooms:
+      target_per_floor: 1
+      min_room_size: 4
+      connection_bias: "dead_end"
+      discovery: { search_action: true, ambient_hint: "misaligned_wall" }
+    trap_rules:
+      density: 0.08
+      trap_table:
+        - { id: "spike_trap", weight: 50 }
+        - { id: "web_trap", weight: 50 }
+    stairs: { up: true, down: true, restrict_return_levels: 2 }
+    connectivity:
+      min_connectivity: "mst_plus_loops"
+      loop_count: 2
+      corridor_style: "orthogonal"

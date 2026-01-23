@@ -11,7 +11,7 @@ This design allows future extensions (e.g., sprite renderer, bot input) without
 changing the main game loop.
 """
 
-from typing import Protocol, Any, Dict, TypedDict, Tuple, Optional
+from typing import Protocol, Any, Dict, TypedDict, Tuple, Optional, runtime_checkable
 
 
 class ActionDict(TypedDict, total=False):
@@ -97,5 +97,73 @@ class InputSource(Protocol):
             An ActionDict (TypedDict) mapping action keys to values.
             Returns an empty dict if no action is available.
         """
+        ...
+
+
+@runtime_checkable
+class TileRenderer(Protocol):
+    """Protocol for tile-based rendering (future tileset support).
+    
+    This protocol defines the interface for rendering individual tiles
+    by their render_key. A tileset renderer would implement this to
+    draw sprites instead of ASCII characters.
+    
+    The current ConsoleRenderer could be adapted to implement this
+    protocol by delegating to the visual registry for char/color lookup.
+    
+    Example implementation for a sprite renderer:
+        class SpriteRenderer:
+            def __init__(self, sprite_atlas):
+                self.atlas = sprite_atlas
+            
+            def draw_tile(self, x, y, render_key, fg_color=None, bg_color=None):
+                sprite = self.atlas.get_sprite(render_key)
+                self.atlas.draw(sprite, x, y, tint=fg_color)
+    """
+    
+    def draw_tile(
+        self,
+        x: int,
+        y: int,
+        render_key: str,
+        fg_color: Optional[Tuple[int, int, int]] = None,
+        bg_color: Optional[Tuple[int, int, int]] = None,
+    ) -> None:
+        """Draw a tile at the specified position.
+        
+        Args:
+            x: X coordinate (viewport or world, depending on implementation)
+            y: Y coordinate (viewport or world, depending on implementation)
+            render_key: Canonical render key for visual lookup
+            fg_color: Optional foreground color override (for tinting)
+            bg_color: Optional background color override
+        """
+        ...
+    
+    def draw_text(
+        self,
+        x: int,
+        y: int,
+        text: str,
+        fg_color: Optional[Tuple[int, int, int]] = None,
+        bg_color: Optional[Tuple[int, int, int]] = None,
+    ) -> None:
+        """Draw text at the specified position.
+        
+        Args:
+            x: Starting X coordinate
+            y: Y coordinate
+            text: Text string to render
+            fg_color: Optional foreground color
+            bg_color: Optional background color
+        """
+        ...
+    
+    def clear(self) -> None:
+        """Clear the rendering surface."""
+        ...
+    
+    def present(self) -> None:
+        """Present the rendered frame to the display."""
         ...
 

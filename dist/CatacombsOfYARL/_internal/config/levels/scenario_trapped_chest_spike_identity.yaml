@@ -1,0 +1,72 @@
+# Scenario: Trapped Chest (Spike) Identity Test
+# Phase 21.6: Trapped chest with spike payload
+#
+# Purpose: Verify that trapped chests trigger spike payload on open,
+# deal damage via damage_service.apply_damage, and track metrics correctly.
+#
+# Layout: Simple 10x10 arena with trapped chest at (5,5)
+# Player starts at (4,5), will interact with chest
+#
+# Expected outcome (deterministic under seed_base=1337):
+# - chest_traps_triggered_total: 1
+# - chest_trap_spike_triggered: 1
+# - chest_trap_spike_damage_total: 5 (chest spike traps deal 5 damage)
+# - Chest opens successfully after trap triggers
+# - Opening again does NOT retrigger trap
+
+scenario_id: trapped_chest_spike_identity
+name: "Trapped Chest (Spike) Identity Test"
+description: "Deterministic test: trapped chest spike payload, damage via damage_service."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 20
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  chest_traps_triggered_total: 1
+  chest_trap_spike_triggered: 1
+  chest_trap_spike_damage_total: 5
+  notes:
+    - Player opens trapped chest at (5,5)
+    - Spike payload triggers exactly once
+    - Damage dealt via damage_service.apply_damage
+    - Chest becomes open/inert
+    - Opening again does NOT retrigger
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - single 10x10 arena
+rooms:
+  - id: "trapped_chest_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Simple arena for trapped chest identity test"
+    walls: "enclosed"
+
+# No monsters
+monsters: []
+
+# Items: trapped chest (will need to add chest spawning support)
+# For now, use items list with special chest type
+items:
+  - type: "trapped_chest_spike"
+    position: [5, 5]
+
+# No traps (chest has the trap)
+traps: []
+
+# Player spawn configuration
+player:
+  position: [4, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

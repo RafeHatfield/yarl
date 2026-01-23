@@ -1,0 +1,109 @@
+# Scenario: Plague Arena
+# Purpose: Test infection/plague mechanics and zombie swarm behavior
+# Phase 12A: Structure only - no harness integration yet
+#
+# TODO (Phase 12B):
+#   - Bot policy integration (tactical_fighter bot)
+#   - Metrics tracking for infection spread
+#   - Scenario harness runner
+#   - Victory condition checking
+
+scenario_id: plague_arena
+name: "Plague Arena"
+description: "Enclosed arena with plague zombies to test infection spread and swarm mechanics."
+
+# Defaults for harness runs (Phase 12B)
+defaults:
+  turn_limit: 500
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  track_infections: true
+
+# Expected outcomes for validation (Phase 12D+)
+# These are conservative thresholds calibrated from actual metrics.
+# Base data: 50 runs yielded ~118 kills, ~23 deaths, ~46 infections, ~717 bonus attacks
+# Thresholds set to catch regressions while allowing natural RNG variance.
+# Note: Thresholds scale linearly with run count (use ~40% of expected for kills/infections).
+expected:
+  min_player_kills: 20           # ~40% of expected kills for typical run count (scales linearly)
+  max_player_deaths: 100         # ~1 death per run max (conservative upper bound)
+  plague_infections_min: 5       # ~30% of expected infections (scales linearly with runs)
+  bonus_attacks_min: 50          # ~20% of expected bonus attacks (scales linearly with runs)
+
+# Dungeon depth (affects monster scaling)
+depth: 8
+
+# Room definitions
+rooms:
+  - id: "plague_arena_main"
+    type: "arena"
+    width: 25
+    height: 25
+    description: "Central arena for plague combat"
+    walls: "enclosed"
+    
+  - id: "safe_alcove"
+    type: "alcove"
+    width: 5
+    height: 5
+    description: "Small defensible position"
+    connected_to: "plague_arena_main"
+
+# Monster placements for scenario
+monsters:
+  # Initial plague zombies
+  - type: "plague_zombie"
+    count: 3
+    position: "scattered"
+    spawn_zone: "plague_arena_main"
+    
+  # Corpses that can be raised
+  - type: "corpse"
+    count: 5
+    position: "scattered"
+    spawn_zone: "plague_arena_main"
+    can_reanimate: true
+
+# Items available in scenario
+items:
+  - type: "healing_potion"
+    count: 5
+    position: "safe_alcove"
+    
+  - type: "antidote_potion"
+    count: 2
+    position: "safe_alcove"
+  - type: "lightning_scroll"
+    count: 1
+    position: "plague_arena_main"
+
+# Environmental hazards
+hazards:
+  - type: "plague_miasma"
+    coverage: 0.2
+    spawn_zone: "plague_arena_main"
+    damage_per_turn: 1
+    infection_chance: 0.1
+
+# Player spawn configuration
+player:
+  position: "safe_alcove"
+  facing: "south"
+  inventory:
+    - type: "antidote_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"
+  
+# Win/lose conditions (Phase 12B)
+victory_conditions:
+  - type: "kill_all"
+    target: "plague_zombie"
+  - type: "survive_turns"
+    turns: 100
+
+defeat_conditions:
+  - type: "player_death"
+  - type: "infection_threshold"
+    max_infections: 5

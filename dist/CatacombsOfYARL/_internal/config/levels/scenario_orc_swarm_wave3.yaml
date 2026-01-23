@@ -1,0 +1,138 @@
+# Scenario: Orc Swarm - Wave 3
+# Purpose: Three waves of increasing density - evaluates panic triggers and overwhelm response
+#
+# Layout: Open 24x24 arena with escalating waves
+# Wave 1: 2 orcs (close)
+# Wave 2: 4 orcs (surrounding)
+# Wave 3: 6 orcs (full surround)
+# Starting items: 3 healing potions
+#
+# Expected death rates:
+#   balanced: 25-35%
+#   aggressive: 40-55%
+#   cautious: 15-25%
+
+scenario_id: orc_swarm_wave3
+name: "Orc Swarm – Wave 3"
+description: "Three escalating waves (2→4→6 orcs) in open arena. Designed to trigger panic healing."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 250
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+expected:
+  min_player_kills: 200  # 12 orcs * 50 runs * 0.33 (accounting for deaths)
+  max_player_deaths: 30  # Target ~40% max death rate
+  target_death_rate: [0.25, 0.50]
+  target_bonus_attacks: [0.6, 1.0]
+  notes:
+    - Strong overwhelm scenario
+    - Designed to activate panic healing
+    - Tests multi-enemy pressure response
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - single open arena
+rooms:
+  - id: "wave_arena"
+    type: "arena"
+    width: 24
+    height: 24
+    description: "Open arena for wave-based combat testing"
+    walls: "enclosed"
+
+# Monster placements - 12 orcs in 3 waves
+monsters:
+  # Wave 1 - Initial contact (2 orcs, close range)
+  - type: "orc"
+    count: 1
+    position: [8, 12]
+    facing: "east"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [14, 12]
+    facing: "west"
+    state: "aware"
+  
+  # Wave 2 - Surrounding pressure (4 orcs, cardinal positions)
+  - type: "orc"
+    count: 1
+    position: [8, 10]
+    facing: "east"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [14, 10]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 14]
+    facing: "east"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [14, 14]
+    facing: "west"
+    state: "aware"
+  
+  # Wave 3 - Full overwhelm (6 orcs, tight surround)
+  - type: "orc"
+    count: 1
+    position: [11, 7]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [12, 7]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [10, 7]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 17]
+    facing: "north"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [12, 17]
+    facing: "north"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [10, 17]
+    facing: "north"
+    state: "aware"
+
+# Items - 3 healing potions at start (player spawns on them)
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [10, 12]
+  - type: "healing_potion"
+    count: 1
+    position: [12, 12]
+  - type: "healing_potion"
+    count: 1
+    position: [11, 13]
+
+# Player spawn - center of arena, baseline equipment
+# Phase 17B survivability: Start with 3 potions in inventory for wave pressure testing
+player:
+  position: [11, 12]
+  facing: "north"
+  inventory:
+    - type: "healing_potion"
+      count: 3
+  equipment:
+    weapon: "dagger"
+

@@ -1,0 +1,81 @@
+# Scenario: Dueling Pit - Slow Zombie (Full Speed)
+# Purpose: Measure bonus attack frequency with full speed stack vs slow opponent
+# Phase 13C: Testing speed gating and momentum mechanics
+#
+# This scenario tests combat vs a SLOW enemy (zombie, 0.5 speed_bonus).
+# Player has FULL speed stack: 0.25 (base) + 0.75 (equipment) = 1.0 total.
+# Expected: Player speed (1.0) > zombie speed (0.5), so BONUS ATTACKS SHOULD TRIGGER!
+#
+# This validates the speed gating condition and measures:
+#   - Bonus attack frequency with 1.0 speed vs 0.5 speed opponent
+#   - Impact of bonus attacks on combat pacing
+#   - Turns to kill with sustained momentum
+#
+# Equipment:
+#   - Quickfang Dagger (+0.25 speed)
+#   - Boots of Swiftness (+0.25 speed)
+#   - Ring of Hummingbird (+0.25 speed)
+#   - Player base speed: 0.25
+#   - Total: 1.0 speed_bonus
+#
+# Zombie stats:
+#   - speed_bonus: 0.5 (slow zombie)
+#   - HP: 25
+#   - Low accuracy (1), no evasion (0)
+
+scenario_id: dueling_pit_slow_zombie_speed_full
+name: "Dueling Pit - Slow Zombie (Full Speed)"
+description: "1v1 duels vs slow zombie with full speed stack to measure bonus attack frequency. Player speed (1.0) vs zombie (0.5) - bonus attacks expected!"
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+# Player with full speed stack vs slow zombie should dominate
+# Expect frequent bonus attacks and quick kills
+expected:
+  min_player_kills: 30            # Player should win most duels (60%+)
+  max_player_deaths: 25           # Allow some losses for RNG variance
+
+# Dungeon depth (same as baseline)
+depth: 5
+
+# Room definitions - identical to dueling_pit
+rooms:
+  - id: "dueling_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for 1v1 combat"
+    walls: "enclosed"
+
+# Monster placements - slow zombie
+monsters:
+  # Single zombie (speed_bonus: 0.5, slow)
+  - type: "zombie"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+
+# Items - minimal healing
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+# Player spawn configuration - FULL SPEED BUILD
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "quickfang_dagger"      # +25% speed bonus
+    armor: "leather_armor"
+    feet: "boots_of_swiftness"      # +25% speed bonus
+    left_ring: "ring_of_hummingbird"  # +25% speed bonus

@@ -1,0 +1,87 @@
+# Phase 22.2.3: Net Arrow Identity Scenario
+# Tests the net arrow special ammo mechanic - 50% chance to entangle on hit
+
+scenario_id: "scenario_net_arrow_identity"
+name: "Net Arrow Identity"
+description: "Player uses net arrows against melee enemies to test entanglement control mechanic"
+scenario_type: "ranged_combat_identity"
+bot_policy: "tactical_fighter"
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 80
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  seed_base: 1337  # Deterministic RNG for reproducibility
+
+# Expected outcomes for validation (20 runs)
+# With 8 net arrows per run at 50% chance on hit:
+# - Expect ~60-120 shots fired across 20 runs (3-6 per run on average)
+# - Expect ~15-60 effects applied (varies with hit rate and 50% chance)
+expected:
+  min_player_kills: 10  # Should win most fights with ranged control
+  max_player_deaths: 10  # Some losses expected if RNG is bad
+  special_ammo_shots_fired: 60  # Minimum shots fired across all runs
+  special_ammo_effects_applied: 15  # Minimum effects applied (conservative)
+  notes:
+    - Net arrows have 50% chance to entangle on hit
+    - Entangled effect blocks movement for 1 turn
+    - Deterministic under seed_base=1337
+
+# Dungeon depth
+depth: 3
+
+# Map size
+map_width: 20
+map_height: 15
+
+# Room definitions - medium ranged combat arena
+rooms:
+  - id: "net_arrow_arena"
+    type: "arena"
+    x: 5
+    y: 5
+    width: 10
+    height: 8
+    description: "Arena for testing net arrow control mechanics"
+    walls: "enclosed"
+    is_start: true
+
+# Player spawn configuration - shortbow + net arrows
+player:
+  position: [7, 9]
+  facing: "north"
+  inventory:
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    main_hand: "shortbow"
+    chest: "leather_armor"
+    quiver: "net_arrow"  # Pre-loaded net arrows
+
+# Monster placements - 2 melee orcs that will approach
+monsters:
+  # First orc - directly north
+  - type: "orc"
+    count: 1
+    position: [7, 6]
+    facing: "south"
+    state: "aware"
+  
+  # Second orc - flanking position
+  - type: "orc"
+    count: 1
+    position: [10, 7]
+    facing: "west"
+    state: "aware"
+
+# No additional items (rely on starting loadout)
+items: []
+
+# Victory/defeat conditions
+victory_conditions:
+  - type: "kill_all"
+    target: "orc"
+
+defeat_conditions:
+  - type: "player_death"

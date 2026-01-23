@@ -1,0 +1,119 @@
+# Scenario: Tight Brutal Funnel
+# Purpose: Forced choke → forced surround → forced panic healing test
+#
+# Layout: Narrow corridor leading to room full of orcs with backspawn trap
+# Design: Bot cannot retreat, must fight through 7 orcs with only 2 potions
+#
+# Expected death rates:
+#   balanced: 40-60%
+#   aggressive: 55-70%
+#   cautious: 25-40%
+#
+# This scenario is explicitly designed to kill the bot unless it heals early and optimally.
+
+scenario_id: tight_brutal_funnel
+name: "Tight Brutal Funnel"
+description: "Narrow corridor into orc-filled room with backspawn. Forces optimal heal timing or death."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 200
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+expected:
+  min_player_kills: 100  # 7 orcs * 50 runs * 0.3 (high death rate expected)
+  max_player_deaths: 40  # Target 50-70% death rate for aggressive
+  target_death_rate: [0.40, 0.70]
+  notes:
+    - Designed to produce genuine deaths for heal-tuning
+    - Evaluates "heal too late" patterns
+    - Tests panic logic under forced surround
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - corridor + kill room
+rooms:
+  - id: "approach_corridor"
+    type: "corridor"
+    x: 0
+    y: 4
+    width: 6
+    height: 3
+    description: "Narrow approach corridor - 1 tile wide effective path"
+    walls: "enclosed"
+  
+  - id: "orc_kill_room"
+    type: "arena"
+    x: 7
+    y: 0
+    width: 13
+    height: 11
+    description: "Orc-filled room - surrounded on entry"
+    walls: "enclosed"
+
+# Monster placements - 7 orcs total
+monsters:
+  # Frontline - room entrance (3 orcs)
+  - type: "orc"
+    count: 1
+    position: [9, 4]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [9, 6]
+    facing: "west"
+    state: "aware"
+  
+  # Deep room - surround formation (3 orcs)
+  - type: "orc"
+    count: 1
+    position: [11, 4]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 6]
+    facing: "west"
+    state: "aware"
+  
+  # Backspawn - prevents infinite retreat (1 orc)
+  - type: "orc"
+    count: 1
+    position: [1, 5]
+    facing: "east"
+    state: "aware"
+
+# Items - only 2 healing potions (resource scarcity)
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [3, 5]
+  - type: "healing_potion"
+    count: 1
+    position: [4, 5]
+
+# Player spawn - corridor start with baseline equipment
+# Phase 17B survivability: Start with 2 potions in inventory for heal-behavior testing
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    weapon: "dagger"
+

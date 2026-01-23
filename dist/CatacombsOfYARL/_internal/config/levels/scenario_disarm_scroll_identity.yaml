@@ -1,0 +1,61 @@
+# Phase 20E.2: Disarm Scroll Identity Scenario
+# Tests the Scroll of Disarm mechanic - weapon damage denial
+
+scenario_id: "scenario_disarm_scroll_identity"
+name: "Disarm Scroll Identity"
+description: "Player uses disarm scroll on orc enemies to deny weapon damage"
+scenario_type: "combat_identity"
+bot_policy: "disarm_scroll_user"
+
+map_width: 30
+map_height: 20
+
+rooms:
+  - id: "start_room"
+    x: 10
+    y: 8
+    width: 10
+    height: 8
+    is_start: true
+
+  - id: "enemy_room"
+    x: 10
+    y: 2
+    width: 10
+    height: 5
+
+player:
+  position: [15, 10]
+  inventory:
+    - type: "disarm_scroll"
+      count: 1
+  equipment:
+    main_hand: "longsword"  # Player has a weapon
+    chest: "leather_armor"
+
+monsters:
+  # Spawn 3 melee orcs with weapons, close enough to reach player quickly
+  # Position them 2-3 tiles away so they can attack within 3-turn disarm window
+  - type: "orc"
+    count: 1
+    position: [13, 10]
+    state: "in_combat"
+    equipment:
+      main_hand: "longsword"  # Ensure orcs have weapons to be disarmed
+  
+  - type: "orc"
+    count: 1
+    position: [15, 8]
+    state: "in_combat"
+    equipment:
+      main_hand: "shortsword"
+  
+  - type: "orc"
+    count: 1
+    position: [17, 10]
+    state: "in_combat"
+    equipment:
+      main_hand: "club"
+
+items: []
+

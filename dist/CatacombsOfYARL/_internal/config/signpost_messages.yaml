@@ -1,0 +1,365 @@
+# Signpost Messages Configuration
+#
+# This file defines all messages that can appear on signposts throughout the dungeon.
+# Messages are categorized by type and can be further filtered by dungeon depth.
+#
+# Message Types:
+#   - lore: Backstory and world-building
+#   - warning: Alerts about dangers
+#   - humor: Jokes and meta-commentary
+#   - hint: Clues about nearby features
+#   - directional: Navigation help
+#
+# Depth Filtering:
+#   Messages can optionally specify min_depth and/or max_depth to only appear
+#   on certain dungeon levels. If not specified, the message can appear anywhere.
+
+version: "1.0"
+
+messages:
+  # ==========================================================================
+  # LORE MESSAGES - Backstory and world-building
+  # ==========================================================================
+  lore:
+    - text: "These catacombs were once a sacred burial ground..."
+      min_depth: 1
+    
+    - text: "The Entity watches from the shadows, amused by your struggles."
+      min_depth: 1
+    
+    - text: "Long ago, these halls echoed with the chants of the faithful."
+      min_depth: 1
+    
+    - text: "The deeper you descend, the older the stones become."
+      min_depth: 3
+    
+    - text: "Many have sought the Amulet. Few have returned."
+      min_depth: 1
+    
+    - text: "The dungeon shifts and changes, but the Entity remains constant."
+      min_depth: 5
+    
+    - text: "Ancient runes mark this place as cursed ground."
+      min_depth: 4
+    
+    - text: "Treasure hunters came here seeking glory. They found only death."
+      min_depth: 1
+    
+    - text: "The air here tastes of ancient magic and forgotten prayers."
+      min_depth: 6
+    
+    - text: "This level was sealed for centuries. You are the first to breach it."
+      min_depth: 8
+    
+    - text: "The architects of this dungeon never meant for anyone to leave."
+      min_depth: 7
+    
+    - text: "Every stone here is stained with the blood of failed heroes."
+      min_depth: 5
+    
+    # ===== PHASE 4 ADDITIONS: TIER 1 - Early Mystery (Levels 1-10) =====
+    - text: "Something ancient dreams beneath these stones. We call it the Entity."
+      min_depth: 1
+      max_depth: 10
+    
+    - text: "The Crimson Order built these catacombs centuries ago. Few remember why."
+      min_depth: 2
+      max_depth: 10
+    
+    - text: "These halls grew silent long ago. Now only whispers remain."
+      min_depth: 1
+      max_depth: 8
+    
+    - text: "A prisoner lies at the heart of this place. Some say it was not always human."
+      min_depth: 3
+      max_depth: 10
+    
+    - text: "Someone left this armor behind. Not by choice, I suspect."
+      min_depth: 2
+      max_depth: 8
+    
+    - text: "How many adventurers have walked these halls? The Entity remembers every one."
+      min_depth: 5
+      max_depth: 10
+    
+    # ===== PHASE 4 ADDITIONS: TIER 2 - Ritual Awakening (Levels 11-20) =====
+    - text: "Two dragons came to these lands long ago. Only one remained imprisoned."
+      min_depth: 11
+      max_depth: 20
+    
+    - text: "A ritual was performed here. It succeeded and failed in equal measure."
+      min_depth: 12
+      max_depth: 20
+    
+    - text: "The Entity whispers of something precious, locked away far below. It sounds... desperate."
+      min_depth: 11
+      max_depth: 19
+    
+    - text: "Aurelyn was the name. Ruby was the color. The ritualists were thorough."
+      min_depth: 13
+      max_depth: 20
+    
+    - text: "How many souls has the Entity claimed? The walls refuse to count."
+      min_depth: 14
+      max_depth: 20
+    
+    - text: "The body fails. The cycle repeats. The soul endures. Is that a curse or a gift?"
+      min_depth: 11
+      max_depth: 18
+    
+    - text: "They say the Entity was not always cursed. Some say it still remembers freedom."
+      min_depth: 15
+      max_depth: 20
+    
+    - text: "A heart still beats in the deepest vault. Not metaphorically."
+      min_depth: 16
+      max_depth: 20
+    
+    - text: "Every corpse here was once a vessel. The Entity simply moved on to the next."
+      min_depth: 12
+      max_depth: 20
+    
+    - text: "This gold belonged to someone else. Someone who descended as far as you. We know how it ended."
+      min_depth: 14
+      max_depth: 20
+    
+    - text: "Zhyraxion waited. Zhyraxion raged. Zhyraxion was bound. Now Zhyraxion waits again."
+      min_depth: 17
+      max_depth: 20
+    
+    - text: "The Entity's collection grows. So does its stock of spare bodies."
+      min_depth: 13
+      max_depth: 20
+    
+    # ===== PHASE 4 ADDITIONS: TIER 3 - The Final Choice (Levels 21-25) =====
+    - text: "Zhyraxion's heart was taken. The dragon's heart remains locked here. Choose wisely what you do with it."
+      min_depth: 21
+    
+    - text: "The rituals can be completed or unmade. Power lies in both paths, though not the power you might seek."
+      min_depth: 22
+    
+    - text: "To name something is to have power over it. The Entity's true name is a key, not a weapon."
+      min_depth: 23
+    
+    - text: "One soul has tried for decades. Will you succeed where they failed? And what then?"
+      min_depth: 21
+    
+    - text: "The heart glows red—not with fire, but with centuries of grief."
+      min_depth: 24
+      max_depth: 25
+    
+    - text: "Breaking the cycle requires understanding the prisoner. Understanding requires naming what was lost."
+      min_depth: 23
+    
+    - text: "Three choices await: claim the power, share the burden, or set it free. Each leads somewhere different."
+      min_depth: 24
+    
+    - text: "Aurelyn fell first. Then came Zhyraxion, too late to save them. Neither could stop what came next."
+      min_depth: 21
+      max_depth: 25
+    
+    - text: "How many souls lie discarded below? How many will join them after you?"
+      min_depth: 22
+      max_depth: 25
+    
+    # ===== PHASE 4 ADDITIONS: Meta/Atmospheric (All Depths) =====
+    - text: "The Entity is patient. It has centuries. You have yourself. Choose wisely."
+      min_depth: 1
+    
+    - text: "Every adventurer who reads this sign is asking the same question: 'Can I actually win?'"
+      min_depth: 5
+    
+    - text: "The ghost of the last attempt watches from the shadows. Does it pity you? Or envy you?"
+      min_depth: 10
+    
+    - text: "One ritual trapped the Entity. Another might free it. Which would you choose?"
+      min_depth: 7
+
+  # ==========================================================================
+  # WARNING MESSAGES - Alerts about dangers
+  # ==========================================================================
+  warning:
+    - text: "Beware: Dangerous creatures ahead!"
+      min_depth: 1
+    
+    - text: "Warning: The path beyond is beyond treacherous."
+      min_depth: 1
+    
+    - text: "Caution: Traps have been reported in this area. Or have they..."
+      min_depth: 2
+    
+    - text: "Turn back now, or face certain doom! Or maybe not..."
+      min_depth: 1
+    
+    - text: "Those who proceed beyond this point rarely return. Or maybe they just forgot to report in when they returned?"
+      min_depth: 4
+    
+    - text: "The air grows thick with malice. Proceed with care."
+      min_depth: 5
+    
+    - text: "Strong monsters guard the treasure within. Minus a small percentage for services rendered, of course."
+      min_depth: 3
+    
+    - text: "Danger! Elite guardians patrol this area."
+      min_depth: 6
+    
+    - text: "Warning: Dragon territory ahead. And behind you too!"
+      min_depth: 10
+    
+    - text: "Beware of mimics disguised as treasure chests."
+      min_depth: 4
+    
+    - text: "The walls have teeth. Watch your step."
+      min_depth: 7
+
+  # ==========================================================================
+  # HUMOR MESSAGES - Jokes and meta-commentary
+  # ==========================================================================
+  humor:
+    - text: "Free treasure! (Just kidding. There's a troll.)"
+      min_depth: 1
+    
+    - text: "If you can read this, you're standing too close to danger."
+      min_depth: 1
+    
+    - text: "Achievement unlocked: Reading Signs"
+      min_depth: 1
+    
+    - text: "The Entity put this sign here just to mess with you."
+      min_depth: 1
+    
+    - text: "Beware of... actually, never mind. You'll find out."
+      min_depth: 2
+    
+    - text: "Welcome to the dungeon! Please die quietly."
+      min_depth: 1
+    
+    - text: "Exit: That way →  (Spoiler: There is no exit)"
+      min_depth: 1
+    
+    - text: "This sign was placed by the previous adventurer. RIP."
+      min_depth: 1
+    
+    - text: "You look tired. Have you tried using healing potions?"
+      min_depth: 3
+    
+    - text: "Congratulations! You're lost."
+      min_depth: 4
+    
+    - text: "Fun fact: 90% of adventurers don't make it past level 5!"
+      min_depth: 5
+    
+    - text: "If you die here, can I have your stuff?"
+      min_depth: 2
+    
+    - text: "Pro tip: Don't die."
+      min_depth: 1
+    
+    - text: "The Entity rates your performance: 2/10. Needs more dying."
+      min_depth: 6
+
+  # ==========================================================================
+  # HINT MESSAGES - Clues about nearby features
+  # ==========================================================================
+  hint:
+    - text: "Check the walls for hidden passages..."
+      min_depth: 2
+    
+    - text: "Not all chests are what they seem."
+      min_depth: 3
+    
+    - text: "The key lies with the guardian nearby."
+      min_depth: 4
+    
+    - text: "Some secrets reveal themselves to the patient."
+      min_depth: 2
+    
+    - text: "Look for cracks in the stonework."
+      min_depth: 3
+    
+    - text: "Rings of power can reveal hidden truths."
+      min_depth: 4
+    
+    - text: "The vault is protected, but not impenetrable."
+      min_depth: 4
+    
+    - text: "Golden walls often hide golden rewards."
+      min_depth: 4
+    
+    - text: "Press 'S' to search for secrets in this area."
+      min_depth: 1
+    
+    - text: "Trapped chests can be opened safely... if you're lucky."
+      min_depth: 3
+    
+    - text: "Elite monsters carry elite rewards."
+      min_depth: 5
+    
+    - text: "Some doors aren't really doors. Some walls aren't really walls."
+      min_depth: 5
+    
+    # VAULT HINTS - Themed vault clues
+    - text: "Through the bronze door lies ancient knowledge..."
+      min_depth: 5
+    
+    - text: "The armory awaits those with the silver key."
+      min_depth: 6
+    
+    - text: "Beware! A dragon guards legendary treasure beyond."
+      min_depth: 9
+    
+    - text: "Only the pure may enter the golden shrine."
+      min_depth: 6
+    
+    - text: "Treasures beyond measure... if you have the key."
+      min_depth: 7
+    
+    - text: "Bronze unlocks wisdom. Silver unlocks strength. Gold unlocks wealth."
+      min_depth: 5
+    
+    - text: "The library's secrets are protected by magical guardians."
+      min_depth: 5
+    
+    - text: "Warriors train in the armory. Wizards study in the library."
+      min_depth: 6
+    
+    - text: "The shrine glows with divine light, but darkness guards it."
+      min_depth: 7
+    
+    - text: "Crimson walls mark the dragon's domain. Enter at your peril."
+      min_depth: 9
+    
+    - text: "Keys are rare. Use them wisely."
+      min_depth: 4
+    
+    - text: "Golden walls mean golden loot... and golden danger."
+      min_depth: 5
+
+  # ==========================================================================
+  # DIRECTIONAL MESSAGES - Navigation help
+  # ==========================================================================
+  directional:
+    - text: "Stairs down this way →"
+      min_depth: 1
+    
+    - text: "Treasury: North"
+      min_depth: 3
+    
+    - text: "Exit: Probably not this way"
+      min_depth: 1
+    
+    - text: "Boss Room: Straight ahead (Good luck!)"
+      min_depth: 8
+    
+    - text: "Shops: One level down"
+      min_depth: 1
+    
+    - text: "Vault entrance: Behind the secret door"
+      min_depth: 4
+    
+    - text: "Safe room: Follow the light"
+      min_depth: 5
+    
+    - text: "Point of no return: Beyond this point"
+      min_depth: 10
+

@@ -1,0 +1,225 @@
+# ============================================================================
+# ETP (Effective Threat Points) Configuration
+# ============================================================================
+# Defines encounter budgeting system for balanced difficulty scaling.
+#
+# ETP Formula:
+#   ETP = (DPS × 6) × Durability × Behavior × Synergy
+#
+# Where:
+#   - DPS: Average damage per enemy turn vs baseline player AC
+#   - Durability: Expected player hits to kill / 3 (1.0 ≈ 3 hits to kill)
+#   - Behavior: 0.8-1.2 modifier based on AI role
+#   - Synergy: +0.1 per meaningful combo in the group (can add hooks later)
+#
+# Bands are fixed depth ranges that define difficulty progression.
+
+version: "1.0"
+
+# ============================================================================
+# BAND DEFINITIONS
+# ============================================================================
+# Each band spans 5 floors and has its own multipliers and budget targets.
+# Band names: B1 (early), B2 (early-mid), B3 (mid), B4 (mid-late), B5 (late)
+
+bands:
+  B1:
+    name: "Early Game"
+    description: "Teach systems; first portal trick. Guide beat at L5."
+    floor_min: 1
+    floor_max: 5
+    
+    # Stat multipliers applied to monsters at this band
+    hp_multiplier: 1.00
+    damage_multiplier: 1.00
+    
+    # ETP budget targets for room encounters
+    # Based on etp_base values: orc=27, slime=10, troll=50
+    # B1 rooms should have 0-2 monsters typically
+    room_etp:
+      min: 0        # Empty rooms are OK
+      max: 50       # 16A tuning: tightened from 60 to prevent dense early rooms with buffed orcs
+      
+    # ETP budget targets for entire floor
+    # ~5-8 rooms × 30 avg ETP per room
+    floor_etp:
+      min: 100
+      max: 250
+      
+    # Expected gameplay metrics
+    target_ttk_hits: 3      # Target hits to kill common enemies
+    target_ttd_hits: 5      # Target hits before player death (full HP)
+    
+  B2:
+    name: "Early-Mid Game"
+    description: "Add counters to player habits; first elite vault. Entity tone shifts."
+    floor_min: 6
+    floor_max: 10
+    
+    hp_multiplier: 1.10
+    damage_multiplier: 1.05
+    
+    # B2 rooms can have 1-3 monsters
+    room_etp:
+      min: 20       # At least 1 weak monster
+      max: 100      # ~3 orcs or 2 trolls
+      
+    floor_etp:
+      min: 150
+      max: 400
+      
+    target_ttk_hits: 4
+    target_ttd_hits: 4
+    
+  B3:
+    name: "Mid Game"
+    description: "Introduce resistances as hard gates; puzzle rooms. Guide shares true name."
+    floor_min: 11
+    floor_max: 15
+    
+    hp_multiplier: 1.20
+    damage_multiplier: 1.10
+    # Monsters gain +1 perk at B3
+    perk_unlock: true
+    
+    # B3 rooms can have 2-4 monsters
+    room_etp:
+      min: 30
+      max: 150      # ~4 orcs or 3 trolls
+      
+    floor_etp:
+      min: 250
+      max: 600
+      
+    target_ttk_hits: 5
+    target_ttd_hits: 4
+    
+  B4:
+    name: "Mid-Late Game"
+    description: "Multi-faction set-pieces; hazards + speed control. Final Guide beat."
+    floor_min: 16
+    floor_max: 20
+    
+    hp_multiplier: 1.35
+    damage_multiplier: 1.15
+    
+    # B4 rooms can have 2-5 monsters
+    room_etp:
+      min: 40
+      max: 200
+      
+    floor_etp:
+      min: 350
+      max: 800
+      
+    target_ttk_hits: 5
+    target_ttd_hits: 3
+    
+  B5:
+    name: "Late Game"
+    description: "Attrition pressure; boss preface rooms; final confrontation at L25."
+    floor_min: 21
+    floor_max: 25
+    
+    hp_multiplier: 1.50
+    damage_multiplier: 1.20
+    # Monsters gain +1 perk at B5
+    perk_unlock: true
+    
+    # B5 rooms can have 3-6 monsters or elite groups
+    room_etp:
+      min: 50
+      max: 300
+      
+    floor_etp:
+      min: 500
+      max: 1200
+      
+    target_ttk_hits: 6
+    target_ttd_hits: 3
+
+# ============================================================================
+# BEHAVIOR MODIFIERS
+# ============================================================================
+# AI role-based multipliers for ETP calculation.
+# These reflect how dangerous an AI pattern is beyond raw stats.
+
+behavior_modifiers:
+  # Passive/dumb AI - just walks toward player
+  passive: 0.80
+  
+  # Basic melee - standard approach and attack
+  basic_melee: 0.90
+  
+  # Basic ranged - attacks from distance
+  basic_ranged: 1.00
+  
+  # Gap closer - charges/leaps to close distance quickly
+  gap_closer: 1.05
+  
+  # Control - applies debuffs, slows, roots
+  control: 1.10
+  
+  # Kiter - maintains distance while attacking
+  kiter: 1.10
+  
+  # Area denial - creates hazards, zones
+  area_denial: 1.15
+  
+  # Summoner - spawns additional threats
+  summoner: 1.20
+  
+  # Boss - enhanced AI patterns
+  boss: 1.30
+
+# ============================================================================
+# SPIKE ALLOWANCE
+# ============================================================================
+# Settings for rooms that can exceed normal budgets.
+
+spike_settings:
+  # Maximum percentage over budget for spike rooms (e.g., vaults)
+  max_spike_percent: 50
+  
+  # Rooms with allow_spike=true can exceed budget up to this multiplier
+  spike_multiplier: 1.5
+  
+  # Compensations that should accompany spike rooms:
+  # - Line-of-sight blockers
+  # - One-use consumable on entry
+  # - Defensive terrain features
+
+# ============================================================================
+# TOLERANCE SETTINGS
+# ============================================================================
+# How strictly to enforce budgets during generation.
+
+tolerance:
+  # Percentage tolerance for room ETP (0.10 = ±10%)
+  room_tolerance: 0.10
+  
+  # Percentage tolerance for floor ETP (0.10 = ±10%)
+  floor_tolerance: 0.10
+  
+  # Log warning when this threshold exceeded
+  warning_threshold: 0.15
+  
+  # Error/reject when this threshold exceeded
+  error_threshold: 0.25
+
+# ============================================================================
+# DEBUG SETTINGS
+# ============================================================================
+debug:
+  # Log ETP values for each room during generation
+  log_room_etp: true
+  
+  # Log ETP totals for each floor
+  log_floor_etp: true
+  
+  # Log when rooms exceed budget
+  log_budget_violations: true
+  
+  # Log individual monster ETP calculations
+  log_monster_etp: false
+

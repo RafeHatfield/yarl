@@ -1,0 +1,70 @@
+# Scenario: Dueling Pit - Baseline Combat Feel
+# Purpose: Measure baseline combat feel (accuracy, evasion, momentum) in 1v1 duels
+# Phase 13A: Combat metrics scaffolding
+#
+# This scenario provides a clean measurement environment for:
+#   - Attack attempt rates
+#   - Hit/miss percentages (player vs monster)
+#   - Combat pacing (turns per kill)
+#   - Speed bonus effectiveness
+#
+# We're NOT tuning numbers here; we're building the measurement infrastructure
+# to inform future tuning decisions.
+
+scenario_id: dueling_pit
+name: "Dueling Pit - Baseline"
+description: "Repeated 1v1 duels to measure baseline combat feel (accuracy, evasion, momentum)."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation
+# These are conservative thresholds - we want to ensure the scenario runs,
+# not enforce strict combat balance (that comes later).
+# Base expectations: 5 test runs yielded 5 kills, 0 deaths (100% win rate at depth 5)
+# For 50 runs, we expect roughly even win/loss distribution as player/monster are similar strength
+# Thresholds set to catch regressions while allowing natural RNG variance
+expected:
+  min_player_kills: 15            # ~30% minimum win rate across runs (very conservative)
+  max_player_deaths: 40           # Allow up to 80% loss rate (very conservative)
+
+# Dungeon depth (affects monster stats)
+depth: 5
+
+# Room definitions - simple arena
+rooms:
+  - id: "dueling_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for 1v1 combat"
+    walls: "enclosed"
+
+# Monster placements - single opponent per run
+monsters:
+  # Single orc warrior for baseline dueling
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+
+# Items - minimal healing to keep duels fair
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [6, 6]
+
+# Player spawn configuration - baseline equipment
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"

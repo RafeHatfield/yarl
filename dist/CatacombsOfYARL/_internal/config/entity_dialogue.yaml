@@ -1,0 +1,104 @@
+# Entity Dialogue System
+# 
+# Progressive dialogue from the Entity as player descends deeper
+# Tone: Curious → Eager → Anxious → Desperate → Enraged
+#
+# The Entity (ancient dragon in human guise) is bound by the Amulet [PLACEHOLDER]
+# and grows increasingly desperate for freedom as player approaches level 25.
+
+# Dialogue triggers on specific dungeon levels
+depth_dialogue:
+  # Level 1 - Subtle Introduction
+  1:
+    message: "A faint whisper echoes in your mind... *'Deeper... come deeper...'*"
+    color: "light_purple"
+    style: "dramatic"  # Shows in message log as highlighted/important
+    
+  # Level 5 - Curious Observer
+  5:
+    message: "The voice returns, stronger now. *'You venture deeper... interesting.'*"
+    color: "light_purple"
+    style: "dramatic"
+    
+  # Level 10 - Growing Excitement
+  10:
+    message: "*'Yes, YES! Come closer to your destiny!'* The voice trembles with anticipation."
+    color: "purple"
+    style: "dramatic"
+    
+  # Level 12 - Impatience Building
+  12:
+    message: "*'Why do you hesitate? PRESS ON!'*"
+    color: "purple"
+    style: "dramatic"
+    
+  # Level 15 - Anxious Pleading
+  15:
+    message: "*'Don't stop now. You're so close... I can almost taste freedom...'*"
+    color: "violet"
+    style: "dramatic"
+    
+  # Level 18 - Desperation Setting In
+  18:
+    message: "*'Please... PLEASE! You must reach the bottom! I... I NEED you!'*"
+    color: "violet"
+    style: "dramatic"
+    
+  # Level 20 - Frantic Urgency
+  20:
+    message: "*'HURRY! Time grows short! The chains... they BURN!'*"
+    color: "red"
+    style: "dramatic"
+    
+  # Level 22 - Barely Contained Rage
+  22:
+    message: "*'DO NOT FAIL ME NOW! You are my ONLY HOPE!'*"
+    color: "red"
+    style: "dramatic"
+    
+  # Level 25 - Ultimate Desperation
+  25:
+    message: "*'The amulet is HERE! TAKE IT! FREE ME! I will reward you beyond measure!'*"
+    color: "light_red"
+    style: "dramatic"
+
+# Optional: Death taunts (Phase 8 - Future)
+# Commented out for now, will be activated in later phase
+# death_comments:
+#   1_to_5:
+#     - "Already? I expected... more."
+#     - "Disappointing. Try again."
+#   6_to_15:
+#     - "Come now, you were doing so well..."
+#     - "Don't give up! I believe in you!"
+#   16_to_24:
+#     - "NO! You were SO CLOSE!"
+#     - "Get up! You MUST reach the bottom!"
+#   25:
+#     - "The amulet is RIGHT THERE! How could you DIE?!"
+
+# Optional: Milestone reactions (Phase 8 - Future)
+# boss_defeated:
+#   - "Magnificent! You ARE worthy!"
+#   - "Yes! Nothing can stop you now!"
+# 
+# powerful_item_found:
+#   - "Excellent. You'll need that..."
+#   - "Ah, a fine weapon. Use it well."
+
+# Configuration
+config:
+  # Should dialogue show in message log?
+  show_in_log: true
+  
+  # Should dialogue interrupt player? (Opens dialog box)
+  # FALSE for Phase 2 - just use message log
+  # TRUE for Phase 8+ when we add dramatic pauses
+  interrupt_gameplay: false
+  
+  # Should dialogue be saved in Hall of Fame?
+  track_in_save: false
+  
+  # Minimum turns between same-level messages (prevent spam)
+  cooldown_turns: 50
+

@@ -196,6 +196,7 @@ class WeaponDefinition:
     Weapon Properties:
     - two_handed: Requires both hands, prevents shield use
     - reach: Attack range in tiles (default 1, spears have 2)
+    - is_ranged_weapon: Explicit ranged weapon tag (Phase 22.2.2: bows/crossbows)
     - resistances: Dict mapping resistance type string to percentage (e.g., {"fire": 30})
     - speed_bonus: Combat speed bonus ratio (Phase 5, e.g., 0.25 = +25%)
     - crit_threshold: D20 roll needed for crit (Phase 18, default 20, Keen 19)
@@ -210,6 +211,7 @@ class WeaponDefinition:
     to_hit_bonus: int = 0  # Bonus to attack rolls
     two_handed: bool = False  # Requires both hands, prevents shield use
     reach: int = 1  # Attack range in tiles (1 = adjacent, 2 = spear reach)
+    is_ranged_weapon: bool = False  # Phase 22.2.2: Explicit ranged weapon tag (bows/crossbows)
     resistances: Optional[dict] = None  # Dict mapping resistance type to percentage (e.g., {"fire": 30})
     speed_bonus: float = 0.0  # Combat speed bonus ratio (Phase 5)
     crit_threshold: int = 20  # Phase 18: D20 roll for crit (Keen weapons = 19)
@@ -234,6 +236,29 @@ class WeaponDefinition:
             raise ValueError(f"Weapon slot must be 'main_hand' or 'off_hand', got '{self.slot}'")
         if self.reach < 1:
             raise ValueError(f"Weapon reach must be >= 1, got {self.reach}")
+
+
+@dataclass
+class SpecialAmmoDefinition:
+    """Definition for special ammo (Phase 22.2.2).
+    
+    Special ammo is loaded into the quiver slot and consumed on ranged attacks.
+    - Consumed on hit OR miss (but not on denied out-of-range attacks)
+    - On hit: Apply effect_type rider (e.g., burning, poison)
+    - Stackable: Comes in quantities (e.g., 10 fire arrows)
+    """
+    name: str
+    is_special_ammo: bool = True  # Explicit type marker for quiver validation
+    slot: str = "quiver"
+    stackable: bool = True
+    quantity: int = 10
+    char: str = "{"
+    color: Tuple[int, int, int] = (255, 69, 0)  # Orange-red
+    effect_type: Optional[str] = None  # e.g., "burning", "poison", "entangled"
+    effect_duration: int = 0  # Duration in turns
+    effect_damage_dice: Optional[str] = None  # e.g., "1d4"
+    effect_chance: float = 1.0  # Phase 22.2.3: Chance to apply effect on hit (0.0-1.0)
+    extends: Optional[str] = None
 
 
 @dataclass
@@ -415,6 +440,7 @@ class EntityRegistry:
         self.spells: Dict[str, SpellDefinition] = {}
         self.wands: Dict[str, WandDefinition] = {}
         self.rings: Dict[str, RingDefinition] = {}
+        self.special_ammo: Dict[str, SpecialAmmoDefinition] = {}  # Phase 22.2.2
         self.map_features: Dict[str, MapFeatureDefinition] = {}
         self.player_stats: Optional[EntityStats] = None
         self.unique_items: Dict[str, dict] = {}  # Quest items, amulet, etc.
@@ -508,6 +534,10 @@ class EntityRegistry:
         # Load rings - process inheritance-aware
         if 'rings' in config_data:
             self._process_rings_with_inheritance(config_data['rings'])
+        
+        # Load special ammo - Phase 22.2.2
+        if 'special_ammo' in config_data:
+            self._process_special_ammo_with_inheritance(config_data['special_ammo'])
         
         # Load map features - process inheritance-aware
         if 'map_features' in config_data:
@@ -646,6 +676,7 @@ class EntityRegistry:
                     to_hit_bonus=weapon_data.get('to_hit_bonus', 0),
                     two_handed=weapon_data.get('two_handed', False),  # NEW!
                     reach=weapon_data.get('reach', 1),  # NEW!
+                    is_ranged_weapon=weapon_data.get('is_ranged_weapon', False),  # Phase 22.2.2
                     speed_bonus=weapon_data.get('speed_bonus', 0.0),  # Phase 5
                     crit_threshold=weapon_data.get('crit_threshold', 20),  # Phase 18
                     damage_type=weapon_data.get('damage_type'),  # Phase 18
@@ -767,6 +798,32 @@ class EntityRegistry:
             except Exception as e:
                 logger.error(f"Error creating resolved ring '{ring_id}': {e}")
                 raise ValueError(f"Invalid resolved ring configuration for '{ring_id}': {e}")
+    
+    def _process_special_ammo_with_inheritance(self, special_ammo_data: Dict[str, Any]) -> None:
+        """Process special ammo data with inheritance-aware creation (Phase 22.2.2)."""
+        resolved_ammo_data = self._resolve_raw_inheritance(special_ammo_data, 'special_ammo')
+        
+        for ammo_id, ammo_data in resolved_ammo_data.items():
+            try:
+                ammo_def = SpecialAmmoDefinition(
+                    name=ammo_id.replace('_', ' ').title(),
+                    slot=ammo_data.get('slot', 'quiver'),
+                    stackable=ammo_data.get('stackable', True),
+                    quantity=ammo_data.get('quantity', 10),
+                    char=ammo_data.get('char', '{'),
+                    color=tuple(ammo_data.get('color', [255, 69, 0])),
+                    effect_type=ammo_data.get('effect_type'),
+                    effect_duration=ammo_data.get('effect_duration', 0),
+                    effect_damage_dice=ammo_data.get('effect_damage_dice'),
+                    effect_chance=ammo_data.get('effect_chance', 1.0),  # Phase 22.2.3
+                    extends=None  # Clear extends after resolution
+                )
+                
+                self.special_ammo[ammo_id] = ammo_def
+                
+            except Exception as e:
+                logger.error(f"Error creating resolved special ammo '{ammo_id}': {e}")
+                raise ValueError(f"Invalid resolved special ammo configuration for '{ammo_id}': {e}")
 
     def _process_map_features_with_inheritance(self, map_features_data: Dict[str, Any]) -> None:
         """Process map feature data with inheritance-aware creation."""
@@ -1147,6 +1204,17 @@ class EntityRegistry:
             RingDefinition if found, None otherwise
         """
         return self.rings.get(ring_id)
+    
+    def get_special_ammo(self, ammo_id: str) -> Optional[SpecialAmmoDefinition]:
+        """Get a special ammo definition by ID (Phase 22.2.2).
+        
+        Args:
+            ammo_id: The ammo identifier (e.g., "fire_arrow")
+            
+        Returns:
+            SpecialAmmoDefinition if found, None otherwise
+        """
+        return self.special_ammo.get(ammo_id)
     
     def get_map_feature(self, feature_id: str) -> Optional[MapFeatureDefinition]:
         """Get a map feature definition by ID.

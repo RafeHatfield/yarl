@@ -1,0 +1,80 @@
+# Scenario: Web Spider Identity Kit (Phase 20C.1)
+# Purpose: Regression anchor for Phase 20C.1 Slow mechanics:
+#   - Slow Application: Web spider applies slow on successful hits
+#   - Slow Mechanic: Entity skips turns (acting every 2nd turn)
+#   - Metrics: slow_applications, slow_turns_skipped
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+
+metadata:
+  scenario_id: monster_web_spider_identity
+  family: ability_tests
+  depth: 2
+
+scenario_id: monster_web_spider_identity
+name: "Web Spider Identity Kit (Phase 20C.1)"
+description: "Validate Phase 20C.1 slow mechanics: application, turn skipping, metrics."
+
+depth: 2
+
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # With 2 spiders per run × 30 runs:
+  # - Expect at least 30 slow applications
+  # - Expect at least 60 skipped turns
+  min_slow_applications: 30
+  min_slow_turns_skipped: 60
+  max_player_deaths: 10
+
+rooms:
+  - id: "web_lair"
+    type: "arena"
+    width: 12
+    height: 10
+    description: "Simple arena for testing web spider slow mechanics"
+    walls: "enclosed"
+
+monsters:
+  - type: "web_spider"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "aware"
+    stats:
+      accuracy: 20  # Guaranteed hit!
+  - type: "web_spider"
+    count: 1
+    position: [9, 6]
+    facing: "west"
+    state: "aware"
+    stats:
+      accuracy: 20  # Guaranteed hit!
+
+items:
+  - type: "healing_potion"
+    count: 5
+    position: [2, 4]
+  - type: "dagger"
+    count: 1
+    position: [3, 5]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  stats:
+    hp: 500  # Ensure player survives to be slowed
+  inventory: []
+  equipment:
+    weapon: "dagger"
+    armor: null
+
+# Scenario design notes:
+# - Web spiders apply slow_attack which adds SlowedEffect
+# - SlowedEffect skips every 2nd turn
+# - Player should win but experience multiple slowed turns
+

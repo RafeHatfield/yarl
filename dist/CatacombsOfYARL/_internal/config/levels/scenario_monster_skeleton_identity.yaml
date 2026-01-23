@@ -1,0 +1,107 @@
+# Scenario: Skeleton Identity Kit (Phase 19)
+# Purpose: Regression anchor for Phase 19 skeleton identity mechanics:
+#   - Shield Wall: +1 AC per adjacent skeleton ally (4-way adjacency, NO CAP)
+#   - Damage Type Modifiers: 50% resist piercing, 50% vuln bludgeoning
+#   - Formation AI: Skeletons try to group up to maximize shield wall bonus
+#   - Bone Pile: Spawns on death as future necromancer hook
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+
+metadata:
+  scenario_id: monster_skeleton_identity
+  family: ability_tests
+  depth: 3
+
+scenario_id: monster_skeleton_identity
+name: "Skeleton Identity Kit (Phase 19)"
+description: "Validate Phase 19 skeleton mechanics: shield wall, damage types, formation AI."
+
+depth: 3
+
+defaults:
+  turn_limit: 200
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 4  # 4 skeletons per run × 30 runs = 120 minimum
+  max_player_deaths: 10  # Should win consistently with proper weapon choice
+
+rooms:
+  - id: "skeleton_arena"
+    type: "arena"
+    width: 15
+    height: 11
+    description: "Arena with hallway for testing skeleton shield wall and formation"
+    walls: "enclosed"
+
+monsters:
+  # Group of 4 skeletons starting in formation (2x2 square)
+  # This tests shield wall bonus immediately
+  - type: "skeleton"
+    count: 1
+    position: [10, 5]
+    facing: "west"
+    state: "aware"
+  - type: "skeleton"
+    count: 1
+    position: [11, 5]
+    facing: "west"
+    state: "aware"
+  - type: "skeleton"
+    count: 1
+    position: [10, 6]
+    facing: "west"
+    state: "aware"
+  - type: "skeleton"
+    count: 1
+    position: [11, 6]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Piercing weapon: resisted by skeletons (0.5x damage)
+  - type: "dagger"
+    count: 1
+    position: [3, 4]
+  
+  # Bludgeoning weapon: effective against skeletons (1.5x damage)
+  - type: "club"
+    count: 1
+    position: [3, 7]
+  
+  # Healing potions: allow extended combat to observe all mechanics
+  - type: "healing_potion"
+    count: 3
+    position: [2, 3]
+  - type: "healing_potion"
+    count: 2
+    position: [2, 8]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"  # Start with piercing weapon (resisted)
+    armor: null  # No armor - allows observation of skeleton damage output
+
+# Scenario design notes (Phase 19 - Skeleton Shield Wall):
+# - Player starts with dagger (piercing, resisted by skeletons)
+# - Club available on ground (bludgeoning, effective against skeletons)
+# - 4 skeletons start in 2x2 formation:
+#   - Each skeleton has 2 adjacent allies (4-way adjacency)
+#   - Shield wall bonus: +2 AC per skeleton
+#   - Base AC: 10 + 1 (DEX) = 11
+#   - With shield wall: 11 + 2 = 13 AC (harder to hit)
+# - As player breaks formation, AC drops:
+#   - 1 adjacent ally: 11 + 1 = 12 AC
+#   - 0 adjacent allies: 11 AC (base)
+# - Damage type demonstration:
+#   - Dagger (piercing): skeleton takes 50% damage (0.5x multiplier)
+#   - Club (bludgeoning): skeleton takes 150% damage (1.5x multiplier)
+# - Formation AI: Skeletons will try to regroup when separated
+# - Bone piles: Each skeleton death spawns a bone pile feature
+# - Arena layout: 15x11 with room to maneuver and break formation
+# - Hallway/choke: Can be used to funnel skeletons and break wall

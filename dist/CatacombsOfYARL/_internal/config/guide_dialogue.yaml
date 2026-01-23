@@ -1,0 +1,382 @@
+# Guide Dialogue System
+#
+# The Guide: The previous "champion" in the Entity's soul rotation
+# 
+# Backstory (The True Horror):
+#   - Entity has captured multiple souls over the centuries
+#   - Each soul gets put in a new body, sent down to retrieve the amulet
+#   - When you die, Entity resets you in a new body to try again
+#   - Guide was the LONGEST-LASTING attempt - survived many runs
+#   - Eventually Entity gave up on them, discarded their soul
+#   - Now stuck as a ghost, watching the new souls (like the player) try
+#   - Player is just the latest soul in the rotation
+#   
+# Key Revelations:
+#   - You're already trapped (your soul was captured long ago)
+#   - Death isn't real death - Entity just resets you
+#   - Guide lasted longest but still "failed" in Entity's eyes
+#   - Amulet is what Entity NEEDS (escape? healing? transformation?)
+#   - Purpose is deliberately vague - hints but no certainty
+#
+# Personality: Grumpy, sarcastic, "cranky mentor" vibes
+#   - Tired of watching new souls make the same mistakes
+#   - Not above slapping your hand (metaphorically) 
+#   - Somber and serious, but with biting wit
+#   - Bitter about being discarded after lasting so long
+#   - Respects player agency but thinks they're doomed too
+#
+# Phase 3: Progressive backstory reveals at camp encounters
+# Phase 5: Can be expanded with multiple endings integration
+
+# Guide encounters at specific levels (in camp rooms)
+encounters:
+  # Level 5 - First Warning
+  5:
+    greeting: "A translucent figure materializes in the firelight..."
+    introduction: >
+      *'Oh great. Another idiot following the voice. You DO hear it, don't you?
+      The whispering, the promises? Of course you do. They all do.'*
+    
+    dialogue_tree:
+      - id: "who_are_you"
+        player_option: "Who are you?"
+        npc_response: >
+          *'I'm the ghost of someone who was as stupid as you're about to be.
+          Came down here seeking glory. Found a lying snake instead. The Entity
+          talks real pretty, but here's a tip: it's full of it.'*
+        leads_to: ["what_happened", "leave"]
+        
+      - id: "what_happened"
+        player_option: "What happened to you?"
+        npc_response: >
+          *'What happened? I was YOU. Woke up in a strange place, heard the voice,
+          went down into the dungeon. Died. A lot. But I kept coming back. Different
+          body, same soul. Sound familiar?'*
+          
+          The ghost crosses its arms irritably.
+          
+          *'I lasted longer than most. Decades of runs. But eventually, the dragon
+          got bored waiting for me to succeed. Threw me away like a broken tool.
+          Now I'm stuck here watching the NEW guy.'*
+          
+          The figure gestures vaguely at the dungeon around you.
+          
+          *'Why do you think there's so much gear just lying around down here, anyway?
+          All those swords and armor? Those were MINE. And the souls before me. And
+          before them. Generations of failures, scattered across the floors.'*
+        leads_to: ["the_truth", "leave"]
+        
+      - id: "the_truth"
+        player_option: "What's the truth?"
+        npc_response: >
+          *'The truth? You're not some chosen hero. You're a TOOL. Your soul is
+          already trapped - has been for who knows how long. The dragon needs that
+          amulet [PLACEHOLDER] at the bottom. For what? Hell if I know. Escape,
+          maybe. Transformation. Healing. It's vague on the details.'*
+          
+          The figure snorts.
+          
+          *'But here's what I DO know: it'll keep throwing you at the problem until
+          you succeed or it gets bored. I tried for DECADES. Never made it. Eventually
+          it gave up on me and got someone new. That's you, by the way. Congratulations.'*
+        unlocks_knowledge: "guide_first_warning"
+        leads_to: ["tell_more", "leave"]
+      
+      - id: "tell_more"
+        player_option: "What more can you tell me about the Entity?"
+        npc_response: >
+          The ghost opens its mouth to answer, but the form suddenly wavers.
+          
+          *'I... it's... the voice...'*
+          
+          The figure flickers violently, struggling to maintain shape.
+          
+          *'Can't... hold... much longer...'*
+          
+          The ghost's voice becomes distant, fragmented.
+          
+          *'Just... don't... trust...'*
+        leads_to: ["leave"]
+      
+      - id: "leave"
+        player_option: "..."
+        npc_response: >
+          The ghost's form is barely visible now, fading rapidly.
+          
+          *'Takes too much... energy... to stay...'*
+          
+          The figure's edges dissolve into translucent mist.
+          
+          *'Good luck... you'll need it...'*
+        ends_conversation: true
+    
+    farewell: "The ghostly guide slowly fades away, leaving only a cold chill in the air."
+    
+  # Level 10 - Entity's True Nature
+  10:
+    greeting: "The ghost appears again, looking annoyed..."
+    introduction: >
+      *'Still here? Huh. Maybe you're not as dumb as you look. Or maybe you're
+      dumber and just lucky. Either way, we need to talk about what you're
+      walking into.'*
+    
+    dialogue_tree:
+      - id: "tell_more"
+        player_option: "Tell me about the Entity."
+        npc_response: >
+          *'Fine. History lesson time. The Entity? It's a DRAGON. Was a dragon.
+          Zhyraxion - fancy name for a fancy monster. Ancient, powerful, and
+          mean as hell. Got itself cursed and shoved into a human body as punishment.'*
+          
+          The ghost smirks.
+          
+          *'Turns out even dragons can screw up bad enough to get grounded.'*
+        leads_to: ["how_bound", "why_here"]
+        
+      - id: "how_bound"
+        player_option: "How was it bound?"
+        npc_response: >
+          *'Cursed into a mortal shell. Can't leave. Can't transform. Stuck in
+          human form, rotting away for centuries. That amulet [PLACEHOLDER] you're
+          hunting? That's the KEY. To what? Freedom? Power? Its old body back?'*
+          
+          The ghost shrugs.
+          
+          *'The dragon never told ME, and I was its favorite toy for decades. But
+          it NEEDS it. Desperately. That's why it keeps us running the dungeon like
+          rats in a maze.'*
+        leads_to: ["what_if_take", "why_here"]
+        
+      - id: "what_if_take"
+        player_option: "What happens if I take it?"
+        npc_response: >
+          *'Oh, THEN the fun starts. Zhyraxion will beg. Plead. Promise you ANYTHING.
+          "Give me the amulet and I'll free you! We'll BOTH escape!" It's very
+          convincing. Almost got me a few times.'*
+          
+          The ghost leans in.
+          
+          *'But think about it: if you give it what it wants, why would it still
+          need you? You're just a tool, remember? A disposable one.'*
+        unlocks_knowledge: "entity_is_bound_dragon"
+        leads_to: ["why_here"]
+        
+      - id: "why_here"
+        player_option: "Why are you stuck here?"
+        npc_response: >
+          *'Because I lasted TOO LONG without succeeding. Decades of attempts. The
+          dragon got impatient. "This one's not working," it decided. So it discarded
+          me - kept my soul but stopped giving me new bodies. Just... threw me aside.'*
+          
+          The ghost's voice turns bitter.
+          
+          *'Now I'm stuck here watching YOU try. And when you take too long? It'll
+          find someone else. There's always another soul in the collection. Always
+          another puppet to wind up and send down.'*
+          
+          The figure gestures at the dungeon around you.
+          
+          *'You'll recognize your predecessor when you trip over their sword. I know
+          I recognize mine. Level 18, rusty longsword, lying in a corner. That was
+          my LAST run. Still there. Probably always will be.'*
+        leads_to: ["leave"]
+        
+      - id: "leave"
+        player_option: "..."
+        npc_response: >
+          The ghost's form begins to waver, growing translucent.
+          
+          *'Getting harder to hold this shape each time. Drains what's left of me.'*
+          
+          The figure gives you a long, tired look.
+          
+          *'Just... don't trust it. No matter what it promises. I did, and look where
+          that got me.'*
+        ends_conversation: true
+    
+    farewell: "The ghost fades with a weary sigh, leaving silence behind."
+    
+  # Level 15 - The True Name
+  15:
+    greeting: "The ghost appears, more serious now, less sarcastic..."
+    introduction: >
+      *'Alright, listen up. You've made it this far without dying OR listening
+      to the dragon, which puts you ahead of most idiots who come through here.
+      So I'm going to tell you something important. Try not to screw it up.'*
+    
+    dialogue_tree:
+      - id: "what_is_it"
+        player_option: "What do you need to tell me?"
+        npc_response: >
+          *'The dragon's TRUE name. Not "the Entity" - that's what it calls itself
+          now because it's embarrassed. When it finally discarded me - when it decided
+          I'd failed for the last time - I caught a glimpse of its real self. Got the
+          name burned into my brain.'*
+        leads_to: ["the_name", "why_important"]
+        
+      - id: "the_name"
+        player_option: "What's the name?"
+        npc_response: >
+          *'Zhyraxion. Yeah, I know, sounds like someone tried too hard. But that's
+          what dragons are like. Zhyraxion the Corruptor, Zhyraxion the Endless,
+          blah blah blah. Lots of fancy titles for "giant angry lizard."'*
+          
+          The ghost's tone gets serious.
+          
+          *'But write this down, because it matters: ZHYRAXION. Say it when you
+          destroy the amulet, or you're just freeing a monster. Say it, and maybe...
+          maybe you fix what's broken.'*
+        unlocks_knowledge: "entity_true_name_zhyraxion"
+        grants_achievement: "learned_true_name"
+        leads_to: ["why_important", "what_should_do"]
+      
+      - id: "why_important"
+        player_option: "Why does the name matter?"
+        npc_response: >
+          *'Because true names have POWER. The dragon's name is ZHYRAXION. Remember it.
+          Whatever you do with that amulet - use it, destroy it, whatever - speaking
+          the true name changes EVERYTHING. Without it? You're just playing with forces
+          you don't understand. WITH it?'*
+          
+          The ghost's voice softens slightly.
+          
+          *'You might actually break the curse. Purify the corruption. Turn the monster
+          back into... whatever it was before it went bad. Maybe even free us. Both of us.'*
+        unlocks_knowledge: "entity_true_name_zhyraxion"
+        grants_achievement: "learned_true_name"
+        leads_to: ["the_name", "what_should_do"]
+        
+      - id: "what_should_do"
+        player_option: "So what should I do?"
+        npc_response: >
+          *'How should I know? You think I got this right? Look where I ended up!
+          But fine, here's what I've pieced together: Keep the amulet? You stay trapped
+          in the cycle forever, but the dragon stays weak. Give it the amulet? It gets
+          what it wants and discards you. Destroy it without the name...'*
+          
+          The ghost pauses.
+          
+          *'...probably unleashes something worse. But destroy it WITH the name? That
+          might break EVERYTHING. The curse, the cycle, all of it. Might. Don't quote me.'*
+          
+          The figure glances down at the dungeon floor.
+          
+          *'Just... when you're stepping over all those swords and shields down there?
+          Remember each one was someone who thought they had it figured out too. Don't
+          be another piece of junk on the floor.'*
+        leads_to: ["leave"]
+        
+      - id: "leave"
+        player_option: "..."
+        npc_response: >
+          The ghost's form begins to dim, struggling to maintain cohesion.
+          
+          *'Can't... stay much longer. Listen: ZHYRAXION. Say it. Remember it.
+          It's your only shot at the "good" ending, whatever that means.'*
+          
+          The figure's voice grows distant, fading.
+          
+          *'Try to be smarter than I was... which is a pretty low bar...'*
+        ends_conversation: true
+    
+    farewell: "The ghost fades, the name echoing in the air: *'Zhyraxion... don't forget...'*"
+    
+  # Level 20 - Final Warning
+  20:
+    greeting: "The ghost appears, barely holding itself together..."
+    introduction: >
+      *'So... you made it. Honestly didn't think you would. Most don't. But here
+      you are, almost at the bottom. Almost at the moment where everything goes
+      sideways. This is the last time I can help you, so... listen good.'*
+    
+    dialogue_tree:
+      - id: "what_now"
+        player_option: "What should I expect?"
+        npc_response: >
+          *'The voice is going to get LOUD. Desperate. Zhyraxion's been alone for
+          centuries, and it REALLY wants out. It'll promise you the world. Power,
+          riches, eternal glory, whatever you want to hear. All lies.'*
+          
+          The ghost's form flickers.
+          
+          *'But... and here's the thing... the desperation is real. It IS suffering.
+          Doesn't make it any less dangerous, but... it's not totally fake, either.'*
+        leads_to: ["your_advice", "will_see_again"]
+        
+      - id: "your_advice"
+        player_option: "So what do I do?"
+        npc_response: >
+          *'Hell if I know. I never made it this far. But you've got something I
+          didn't: you know ALL the options. Keep the amulet? You stay in the cycle,
+          but safe. Give it to the dragon? It gets what it wants and you become me.
+          Destroy it without the name? Probably worse. Destroy it WITH the name?'*
+          
+          The ghost actually looks hopeful for once.
+          
+          *'Maybe that works. Maybe you break the curse, free us both. Maybe I finally
+          get some peace. Maybe pigs fly. But it's your best shot at REAL freedom.'*
+          
+          The figure's voice drops to barely a whisper.
+          
+          *'And hey... if you fail? At least your sword will look good on the pile
+          with all the others. Twenty levels deep, that's prime real estate for corpse
+          loot. The next guy will appreciate the upgrade.'*
+        leads_to: ["will_see_again"]
+        
+      - id: "will_see_again"
+        player_option: "Will this free you too?"
+        npc_response: >
+          *'Who knows? If you do the name thing, if you actually redeem Zhyraxion...
+          maybe my curse lifts. Maybe I finally get to move on instead of being
+          stuck here playing tour guide to idiots like you.'*
+
+          The form is fading fast now.
+
+          *'Look, I've been calling you an idiot this whole time, but... you made
+          it here. You listened. That's more than I did. So maybe you're NOT an
+          idiot. Maybe you're exactly what this place needs.'*
+        unlocks_knowledge: ["guide_final_advice", "entity_true_name_zhyraxion"]
+        grants_achievement: "learned_true_name"
+        leads_to: ["farewell"]
+        
+      - id: "farewell"
+        player_option: "..."
+        npc_response: >
+          The ghost's form flickers, nearly transparent now, barely holding together.
+          
+          *'Yeah, yeah. Don't get sentimental on me now. Just... remember the name.
+          Zhyraxion. And whatever you choose down there - make it YOUR choice.
+          Not the dragon's, not mine. Yours.'*
+          
+          The ghost manages a wry smile, even as it fades.
+          
+          *'Now get out of here before I start actually caring what happens to you.'*
+        ends_conversation: true
+    
+    farewell: "The ghost fades completely. For just a moment, you could swear you heard: *'...good luck, kid.'*"
+
+# Configuration
+config:
+  # Should Guide dialogue be tracked in save?
+  track_in_save: true
+  
+  # Knowledge flags that can be unlocked
+  knowledge_flags:
+    - guide_first_warning
+    - entity_is_bound_dragon
+    - entity_true_name_zhyraxion
+    - guide_final_advice
+  
+  # Achievement for learning true name
+  achievements:
+    - learned_true_name
+  
+  # Should Guide encounters be mandatory?
+  # FALSE = Player can walk past Guide if they want
+  mandatory_encounters: false
+  
+  # Visual representation
+  guide_char: "@"
+  guide_color: "light_cyan"
+  guide_name: "Ghostly Guide"
+

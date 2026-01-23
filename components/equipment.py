@@ -27,12 +27,14 @@ class Equipment:
         feet (Entity): Item equipped in the feet slot (boots)
         left_ring (Entity): Item equipped in the left ring slot
         right_ring (Entity): Item equipped in the right ring slot
+        quiver (Entity): Special ammo equipped in the quiver slot (Phase 22.2.2)
         owner (Entity): The entity that owns this equipment component
     """
 
     def __init__(self, main_hand: Optional[Any] = None, off_hand: Optional[Any] = None, 
                  head: Optional[Any] = None, chest: Optional[Any] = None, feet: Optional[Any] = None,
-                 left_ring: Optional[Any] = None, right_ring: Optional[Any] = None) -> None:
+                 left_ring: Optional[Any] = None, right_ring: Optional[Any] = None,
+                 quiver: Optional[Any] = None) -> None:
         """Initialize the Equipment component.
 
         Args:
@@ -43,6 +45,7 @@ class Equipment:
             feet (Optional[Any], optional): Initial feet equipment (Entity type)
             left_ring (Optional[Any], optional): Initial left ring equipment (Entity type)
             right_ring (Optional[Any], optional): Initial right ring equipment (Entity type)
+            quiver (Optional[Any], optional): Initial quiver equipment (Entity type, Phase 22.2.2)
         """
         self.main_hand: Optional[Any] = main_hand
         self.off_hand: Optional[Any] = off_hand
@@ -51,6 +54,7 @@ class Equipment:
         self.feet: Optional[Any] = feet
         self.left_ring: Optional[Any] = left_ring
         self.right_ring: Optional[Any] = right_ring
+        self.quiver: Optional[Any] = quiver  # Phase 22.2.2: Special ammo slot
         self.owner: Optional[Any] = None  # Entity, Will be set when component is registered
 
     @property
@@ -175,12 +179,24 @@ class Equipment:
                 EquipmentSlots.CHEST: 'chest',
                 EquipmentSlots.FEET: 'feet',
                 EquipmentSlots.LEFT_RING: 'left_ring',
-                EquipmentSlots.RIGHT_RING: 'right_ring'
+                EquipmentSlots.RIGHT_RING: 'right_ring',
+                EquipmentSlots.QUIVER: 'quiver'  # Phase 22.2.2: Special ammo
             }
 
             slot_attr = slot_map.get(slot)
             if not slot_attr:
                 return results  # Unknown slot
+        
+        # Phase 22.2.2: QUIVER slot validation - only special ammo allowed
+        if slot == EquipmentSlots.QUIVER:
+            # Check if item is special ammo (explicit is_special_ammo flag)
+            if not getattr(equippable_entity, 'is_special_ammo', False):
+                from message_builder import MessageBuilder as MB
+                results.append({
+                    "message": MB.warning(f"⚠️ Only special ammo can be equipped in the quiver slot!"),
+                    "cannot_equip": True
+                })
+                return results
 
         current_item = getattr(self, slot_attr)
 

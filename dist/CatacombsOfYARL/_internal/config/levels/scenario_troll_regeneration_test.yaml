@@ -1,0 +1,64 @@
+# Scenario: Troll Regeneration Test
+# Purpose: Test Phase 19 troll regeneration mechanic in controlled combat.
+# Expected: Troll regenerates 2 HP per turn (3 HP for ancient troll).
+
+metadata:
+  scenario_id: troll_regeneration_test
+  family: ability_tests
+  depth: 2
+
+scenario_id: troll_regeneration_test
+name: "Troll Regeneration Test"
+description: "Validate Phase 19 troll regeneration ability in controlled combat."
+
+depth: 2
+
+defaults:
+  turn_limit: 60
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 20
+
+expected:
+  min_player_kills: 18  # Should win most fights despite regeneration
+  max_player_deaths: 5  # Some losses expected due to regeneration
+
+rooms:
+  - id: "troll_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Arena for testing troll regeneration"
+    walls: "enclosed"
+
+monsters:
+  - type: "troll"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+
+items:
+  - type: "healing_potion"
+    count: 2
+    position: [4, 6]
+  - type: "healing_potion"
+    count: 1
+    position: [5, 6]
+
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "shortsword"
+    armor: "leather_armor"
+
+
+
+
+
+
+
+
+

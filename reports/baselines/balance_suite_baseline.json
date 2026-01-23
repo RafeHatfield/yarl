@@ -364,9 +364,9 @@
     "runs": 30,
     "deaths": 0,
     "death_rate": 0.0,
-    "player_hit_rate": 0.68,
-    "monster_hit_rate": 0.48,
-    "pressure_index": -7.7,
+    "player_hit_rate": 0.6777041942604857,
+    "monster_hit_rate": 0.4751131221719457,
+    "pressure_index": -7.733333333333333,
     "bonus_attacks_per_run": 5.3
   },
   "scroll_fireball_identity": {
@@ -374,9 +374,39 @@
     "runs": 30,
     "deaths": 0,
     "death_rate": 0.0,
-    "player_hit_rate": 0.69,
-    "monster_hit_rate": 0.45,
-    "pressure_index": -7.0,
-    "bonus_attacks_per_run": 5.0
+    "player_hit_rate": 0.6917808219178082,
+    "monster_hit_rate": 0.44933920704845814,
+    "pressure_index": -7.033333333333333,
+    "bonus_attacks_per_run": 4.966666666666667
+  },
+  "oath_embers_identity": {
+    "scenario_id": "oath_embers_identity",
+    "runs": 20,
+    "deaths": 5,
+    "death_rate": 0.25,
+    "player_hit_rate": 0.6772908366533864,
+    "monster_hit_rate": 0.35772357723577236,
+    "pressure_index": -19.2,
+    "bonus_attacks_per_run": 13.65
+  },
+  "oath_venom_identity": {
+    "scenario_id": "oath_venom_identity",
+    "runs": 20,
+    "deaths": 5,
+    "death_rate": 0.25,
+    "player_hit_rate": 0.6788511749347258,
+    "monster_hit_rate": 0.3543307086614173,
+    "pressure_index": -19.249999999999996,
+    "bonus_attacks_per_run": 13.5
+  },
+  "oath_chains_identity": {
+    "scenario_id": "oath_chains_identity",
+    "runs": 20,
+    "deaths": 3,
+    "death_rate": 0.15,
+    "player_hit_rate": 0.6650943396226415,
+    "monster_hit_rate": 0.3475409836065574,
+    "pressure_index": -16.55,
+    "bonus_attacks_per_run": 10.9
   }
 }

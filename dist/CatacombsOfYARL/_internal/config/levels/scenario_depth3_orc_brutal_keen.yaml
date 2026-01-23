@@ -1,0 +1,66 @@
+# Scenario: Depth 3 Orc Brutal (Keen Dagger)
+# Purpose: Weapon variant test - keen dagger (expanded crit range)
+
+metadata:
+  scenario_id: depth3_orc_brutal_keen
+  family: orc_swarm
+  depth: 3
+
+scenario_id: depth3_orc_brutal_keen
+name: "Depth 3 – Orc Brutal (Keen)"
+description: "Tight brutal swarm with keen dagger (19-20 crit)."
+
+depth: 3
+
+defaults:
+  turn_limit: 110
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 50
+
+expected:
+  min_player_kills: 40
+  max_player_deaths: 35
+
+rooms:
+  - id: "orc_brutal_arena_depth3"
+    type: "arena"
+    width: 11
+    height: 11
+    description: "Tight brutal swarm arena"
+    walls: "enclosed"
+
+monsters:
+  - type: "orc"
+    count: 1
+    position: [7, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [7, 4]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 5]
+    facing: "north"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "north"
+    state: "aware"
+
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [4, 5]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "keen_dagger"
+    armor: "leather_armor"

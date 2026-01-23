@@ -1,0 +1,164 @@
+# Level Templates - Example Configurations
+#
+# This file contains example special room configurations for reference.
+# Copy configurations to level_templates.yaml (normal gameplay) or
+# level_templates_testing.yaml (testing mode) to use them.
+
+version: "1.0"
+
+# Example 1: Boss Level (Level 10) - Troll Throne Room
+level_10_boss:
+  parameters:
+    max_rooms: 12  # Fewer, larger rooms
+    min_room_size: 10  # Bigger minimum
+    max_room_size: 15  # Bigger maximum
+    max_monsters_per_room: 4  # More dangerous
+    
+  special_rooms:
+    - type: "troll_throne_room"
+      count: 1  # Exactly one throne room
+      placement: "largest"  # Use the biggest room
+      min_room_size: 12  # Must be at least 12x12
+      guaranteed_spawns:
+        monsters:
+          - type: "troll"
+            count: 1  # The boss
+          - type: "orc"
+            count: "2-4"  # Guards (random 2-4)
+        items:
+          - type: "healing_potion"
+            count: 2  # Loot!
+        equipment:
+          - type: "sword"
+            count: 1  # Boss drops a sword
+
+# Example 2: Slime Nest (Level 3) - Spawning Pool
+level_3_slime_nest:
+  special_rooms:
+    - type: "slime_spawning_pool"
+      count: 1
+      placement: "random"
+      guaranteed_spawns:
+        monsters:
+          - type: "large_slime"
+            count: 2
+          - type: "slime"
+            count: "5-8"  # Lots of little ones!
+        items:
+          - type: "healing_potion"
+            count: 3  # You'll need them!
+          - type: "invisibility_scroll"
+            count: 1  # Escape option
+
+# Example 3: Armory (Level 5) - Equipment Cache
+level_5_armory:
+  special_rooms:
+    - type: "abandoned_armory"
+      count: 1
+      placement: "random"
+      guaranteed_spawns:
+        monsters:
+          - type: "orc"
+            count: 1  # One guard
+        equipment:
+          - type: "sword"
+            count: "1-2"
+          - type: "shield"
+            count: "1-2"
+        items:
+          - type: "healing_potion"
+            count: 1
+
+# Example 4: Multiple Special Rooms (Level 7)
+level_7_variety:
+  parameters:
+    max_rooms: 20  # More rooms to fit multiple special rooms
+    
+  special_rooms:
+    - type: "orc_war_camp"
+      count: 1
+      placement: "largest"
+      min_room_size: 10
+      guaranteed_spawns:
+        monsters:
+          - type: "orc"
+            count: "4-6"
+        equipment:
+          - type: "sword"
+            count: "1-2"
+            
+    - type: "treasure_vault"
+      count: 1
+      placement: "smallest"  # Hidden in a small room
+      guaranteed_spawns:
+        monsters:
+          - type: "troll"
+            count: 1  # Treasure guardian
+        items:
+          - type: "healing_potion"
+            count: 3
+          - type: "fireball_scroll"
+            count: 1
+        equipment:
+          - type: "sword"
+            count: 1
+          - type: "shield"
+            count: 1
+
+# Example 5: Challenging Level (Level 15)
+level_15_gauntlet:
+  parameters:
+    max_rooms: 10
+    min_room_size: 12
+    max_monsters_per_room: 6  # Very dangerous!
+    max_items_per_room: 3  # But more loot
+    
+  special_rooms:
+    - type: "troll_lair"
+      count: 2  # TWO troll lairs!
+      placement: "largest"
+      min_room_size: 14
+      guaranteed_spawns:
+        monsters:
+          - type: "troll"
+            count: "1-2"
+          - type: "orc"
+            count: "3-5"
+        items:
+          - type: "healing_potion"
+            count: "2-3"
+          - type: "fireball_scroll"
+            count: 1
+
+# Example 6: Testing Level - All Monsters
+testing_showcase:
+  guaranteed_spawns:
+    mode: "replace"  # Only show these monsters
+    monsters:
+      - type: "orc"
+        count: 3
+      - type: "troll"
+        count: 2
+      - type: "slime"
+        count: 5
+      - type: "large_slime"
+        count: 2
+    items:
+      - type: "healing_potion"
+        count: 5
+      - type: "invisibility_scroll"
+        count: 2
+      - type: "lightning_scroll"
+        count: 2
+      - type: "fireball_scroll"
+        count: 2
+      - type: "confusion_scroll"
+        count: 2
+    equipment:
+      - type: "dagger"
+        count: 2
+      - type: "sword"
+        count: 2
+      - type: "shield"
+        count: 2
+

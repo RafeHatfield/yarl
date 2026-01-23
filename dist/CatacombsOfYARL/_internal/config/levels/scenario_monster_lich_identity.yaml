@@ -1,0 +1,124 @@
+# Scenario: Lich Identity Kit (Phase 19)
+# Purpose: Regression anchor for Phase 19 lich identity mechanics:
+#   - Soul Bolt: 2-turn telegraph + resolve (18% max HP = ~10 damage, 8-turn cooldown)
+#   - Soul Ward: Reduces Soul Bolt damage by 70%, converts to 3-turn Soul Burn DOT
+#   - Command the Dead: Allied undead within radius 6 get +1 to-hit
+#   - Death Siphon: Lich heals 2 HP when allied undead dies within radius 6
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+# Expected death rate: ~37% (11/30 runs with seed_base=1337)
+
+metadata:
+  scenario_id: monster_lich_identity
+  family: ability_tests
+  depth: 5
+
+scenario_id: monster_lich_identity
+name: "Lich Identity Kit (Phase 19)"
+description: "Validate Phase 19 lich Soul Bolt, Soul Ward, Command the Dead, and Death Siphon mechanics."
+
+depth: 5
+
+defaults:
+  turn_limit: 300
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 30  # 1 lich + 1 skeleton per run, player wins ~60% of runs
+  max_player_deaths: 15  # Lich dangerous with Soul Bolt (~37% death rate)
+
+rooms:
+  - id: "lich_arena"
+    type: "arena"
+    width: 17
+    height: 17
+    description: "Arena for testing lich Soul Bolt, Command the Dead, and Death Siphon"
+    walls: "enclosed"
+    # Cover pillars create LOS breaks - essential for Soul Bolt counterplay
+    # Pillars placed to allow some LOS but not constant 100%
+    # No obstacles - bot cannot pathfind around them
+    # LOS counterplay relies on player positioning and geometry
+    # obstacles:
+    #   - position: [9, 8]  # Would block bot movement
+
+monsters:
+  # 1 Lich (elite controller)
+  # Stats: HP=80, Soul Bolt=ceil(0.30 * player.max_hp), Command aura=+1 to-hit for undead
+  # Positioned at back to survive long enough to cast Soul Bolt
+  - type: "lich"
+    count: 1
+    position: [15, 8]
+    facing: "west"
+    state: "aware"
+  
+  # 1 Skeleton (reduced for balanced scenario)
+  - type: "skeleton"
+    count: 1
+    position: [11, 8]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Soul Ward scrolls: primary counter to Soul Bolt
+  # Player should use these when lich starts charging
+  - type: "scroll_soul_ward"
+    count: 2
+    position: [4, 8]
+  
+  # Healing potions: sustain combat for Soul Bolt + multiple enemies
+  - type: "healing_potion"
+    count: 5
+    position: [4, 9]
+  
+  # Better weapon for dealing with undead efficiently (player starts with longsword)
+  - type: "dagger"
+    count: 3
+    position: [4, 7]
+
+player:
+  position: [3, 8]
+  facing: "east"
+  inventory:
+    - "healing_potion"  # 2 potions for sustain
+    - "healing_potion"
+  equipment:
+    weapon: "longsword"  # Better weapon to kill lich faster
+    armor: "leather_armor"  # Reduces skeleton melee damage, makes scenario survivable
+
+# Scenario design notes (Phase 19 - Lich Identity):
+# - 1 lich + 1 skeleton in 17x17 open arena
+# - Lich positioned at back (15, 8), skeleton at (11, 8)
+# - Player starts with longsword + leather armor + 2 healing potions
+# - Uses on-demand geometric LOS (Bresenham ray trace) for Soul Bolt
+#
+# Expected behavior:
+#   A) Soul Bolt mechanics:
+#      - Lich charges (turn 1): "channeling dark energy" message
+#      - Lich resolves (turn 2): Soul Bolt deals ceil(0.18 * 54) = 10 damage
+#      - Cooldown: 8 turns after resolution
+#      - Uses on-demand LOS (Bresenham ray trace) - works in headless mode
+#   
+#   B) Soul Ward mechanics:
+#      - Player uses scroll_soul_ward (10 turn duration)
+#      - When Soul Bolt hits with ward active:
+#        - Upfront damage: ceil(10 * 0.30) = 3 damage
+#        - Soul Burn DOT: 7 damage over 3 turns
+#   
+#   C) Command the Dead:
+#      - Skeleton within radius 6 of lich gets +1 to-hit
+#   
+#   D) Death Siphon:
+#      - When skeleton dies within radius 6, lich heals 2 HP
+#      - Should trigger 1 time per run (one skeleton)
+#
+# Tuning from original (balancing Soul Bolt):
+# - Soul Bolt damage: 35% → 18% (10 damage instead of 19)
+# - Soul Bolt cooldown: 4 → 8 turns (fewer bolts per fight)
+# - Skeleton count: 4 → 1 (much less melee pressure)
+# - Player equipment: dagger → longsword + leather armor + starting potions
+# - Result: ~37% death rate (dangerous but beatable)
+
+
+

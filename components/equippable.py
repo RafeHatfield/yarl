@@ -28,6 +28,7 @@ class Equippable:
         dex_cap (int): Maximum DEX modifier that applies to AC (None = no cap)
         two_handed (bool): Requires both hands, prevents shield use
         reach (int): Attack range in tiles (1 = adjacent, 2 = spear reach)
+        is_ranged_weapon (bool): Explicit ranged weapon tag (Phase 22.2.2: bows/crossbows)
         resistances (dict): Dict mapping ResistanceType to percentage (0-100)
         speed_bonus (float): Combat speed bonus ratio (Phase 5, e.g., 0.25 = +25%)
         material (str): Material type (metal/wood/bone/stone/organic/other) for corrosion
@@ -40,7 +41,8 @@ class Equippable:
                  armor_class_bonus: int = 0, to_hit_bonus: int = 0,
                  damage_min: int = 0, damage_max: int = 0, defense_min: int = 0, defense_max: int = 0,
                  armor_type: Optional[str] = None, dex_cap: Optional[int] = None, damage_dice: Optional[str] = None,
-                 two_handed: bool = False, reach: int = 1, resistances: Optional[dict] = None,
+                 two_handed: bool = False, reach: int = 1, is_ranged_weapon: bool = False,
+                 resistances: Optional[dict] = None,
                  speed_bonus: float = 0.0,
                  crit_threshold: int = 20, damage_type: Optional[str] = None, material: Optional[str] = None,
                  applies_poison_on_hit: bool = False, applies_knockback_on_hit: bool = False) -> None:
@@ -81,6 +83,7 @@ class Equippable:
         self.damage_dice: Optional[str] = damage_dice  # Dice notation like "1d4", "1d6", "2d6"
         self.two_handed: bool = two_handed  # Requires both hands, prevents shield use
         self.reach: int = reach  # Attack range in tiles (1 = adjacent, 2 = spear reach)
+        self.is_ranged_weapon: bool = is_ranged_weapon  # Phase 22.2.2: Explicit ranged weapon tag
         self.resistances: dict = resistances if resistances is not None else {}  # Resistance bonuses (ResistanceType: percentage)
         self.speed_bonus: float = speed_bonus  # Combat speed bonus ratio (Phase 5)
         # Phase 18: Affix mechanics

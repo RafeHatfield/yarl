@@ -1,0 +1,86 @@
+# Scenario: Spike Trap Identity Test
+# Phase 21.2: Spike trap damage routing via damage_service
+#
+# Purpose: Verify that spike traps trigger on tile entry, deal damage via
+# damage_service.apply_damage (canonical damage routing), and track metrics correctly.
+#
+# Layout: Two test arenas side-by-side
+# Arena 1 (left): Lethal case - low HP orc steps on spike trap and dies
+# Arena 2 (right): Non-lethal case - high HP player steps on spike trap and survives
+#
+# Expected outcome:
+# - traps_triggered_total: 2 (one per trap)
+# - trap_spike_triggered: 2
+# - trap_spike_damage_total: 14 (7 damage per trap × 2)
+# - Orc dies from spike trap damage
+# - Player survives with reduced HP
+
+scenario_id: trap_spike_identity
+name: "Spike Trap Identity Test"
+description: "Deterministic test: spike traps deal damage via damage_service, metrics tracked correctly."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 20
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  traps_triggered_total: 2
+  trap_spike_triggered: 2
+  trap_spike_damage_total: 14
+  notes:
+    - Orc steps on spike trap at (2,2) and dies (lethal case)
+    - Player steps on spike trap at (7,2) and survives (non-lethal case)
+    - Damage routed through damage_service.apply_damage
+    - Metrics single-sourced via ScenarioMetricsCollector
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - two side-by-side 5x5 arenas
+rooms:
+  - id: "lethal_arena"
+    type: "arena"
+    width: 5
+    height: 5
+    description: "Lethal spike trap test arena"
+    walls: "enclosed"
+  
+  - id: "nonlethal_arena"
+    type: "arena"
+    width: 5
+    height: 5
+    description: "Non-lethal spike trap test arena"
+    walls: "enclosed"
+
+# Monsters - one low-HP orc for lethal test
+monsters:
+  - type: "orc_scout"  # Low HP (15) - will die from spike trap (7 damage)
+    position: [1, 2]
+    facing: "east"
+
+# No items
+items: []
+
+# Trap placements
+traps:
+  # Lethal case: spike trap at (2,2) - orc will step on it
+  - type: "spike_trap"
+    position: [2, 2]
+  
+  # Non-lethal case: spike trap at (7,2) - player will step on it
+  - type: "spike_trap"
+    position: [7, 2]
+
+# Player spawn configuration
+player:
+  position: [6, 2]  # Right arena, will move right to trigger trap at (7,2)
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

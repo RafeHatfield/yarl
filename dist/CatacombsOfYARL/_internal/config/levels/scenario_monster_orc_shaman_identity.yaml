@@ -1,0 +1,136 @@
+# Scenario: Orc Shaman Identity Kit (Phase 19)
+# Purpose: Regression anchor for Phase 19 orc shaman identity mechanics:
+#   - Crippling Hex: -1 to-hit AND -1 AC for player (cooldown-based)
+#   - Chant of Dissonance: +1 energy cost per move (channeled, interruptible by damage)
+#   - Hang-back AI: Shaman prefers distance 4-7 from player
+#   - Interruptible: Damaging shaman breaks chant immediately
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+
+metadata:
+  scenario_id: monster_orc_shaman_identity
+  family: ability_tests
+  depth: 3
+
+scenario_id: monster_orc_shaman_identity
+name: "Orc Shaman Identity Kit (Phase 19)"
+description: "Validate Phase 19 orc shaman mechanics: hex, chant, interrupt, hang-back AI."
+
+depth: 3
+
+defaults:
+  turn_limit: 200
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 4  # 1 shaman + 3 orcs per run × 30 runs = 120 minimum
+  max_player_deaths: 8  # Shaman is a controller, less direct threat than chieftain
+
+rooms:
+  - id: "shaman_arena"
+    type: "arena"
+    width: 19
+    height: 13
+    description: "Arena with space for shaman to hang back and cast"
+    walls: "enclosed"
+
+monsters:
+  # Orc Shaman - controller who hangs back and casts
+  - type: "orc_shaman"
+    count: 1
+    position: [15, 6]
+    facing: "west"
+    state: "aware"
+  
+  # Group of 3 basic orcs - provide frontline while shaman casts
+  # Positioned to allow shaman to hang back
+  - type: "orc"
+    count: 1
+    position: [11, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 6]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 7]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Ranged weapon: allows player to interrupt chant from distance
+  - type: "shortbow"
+    count: 1
+    position: [3, 4]
+  
+  # Thrown weapon: alternative ranged option for interrupt
+  - type: "dagger"
+    count: 3
+    position: [3, 8]
+  
+  # Melee weapon: for close combat
+  - type: "longsword"
+    count: 1
+    position: [3, 6]
+  
+  # Healing potions: allow extended combat to observe all mechanics
+  - type: "healing_potion"
+    count: 4
+    position: [2, 3]
+  - type: "healing_potion"
+    count: 3
+    position: [2, 9]
+
+player:
+  position: [2, 6]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"  # Start with basic weapon
+    armor: null  # No armor - allows observation of hex impact
+
+# Scenario design notes (Phase 19 - Orc Shaman):
+# - Player starts with dagger (weak weapon)
+# - Shortbow available on ground (ranged, can interrupt chant)
+# - Daggers available on ground (throwable, can interrupt chant)
+# - Longsword available on ground (stronger melee weapon)
+# - 1 Orc Shaman + 3 basic orcs
+# - Shaman starts at distance 15, orcs at distance 11
+# - Shaman will hang back while orcs engage (distance 4-7 from player)
+# - When player is within hex radius (6):
+#   - Hex triggers (cooldown: 10 turns)
+#   - Player gets: -1 to-hit, -1 AC for 5 turns
+#   - Hex can be recast after cooldown
+# - When player is within chant radius (5):
+#   - Chant triggers (cooldown: 15 turns)
+#   - Player gets: +1 energy cost per move (2 turns per move instead of 1)
+#   - Shaman channels for 3 turns
+#   - Chant is interruptible: any damage to shaman ends chant immediately
+# - Player can interrupt chant by:
+#   - Using shortbow to damage shaman from distance
+#   - Throwing daggers at shaman
+#   - Flanking to reach shaman with melee
+# - Hang-back demonstration:
+#   - Shaman stays at distance 4-7 while orcs engage
+#   - Only approaches when forced or abilities are on cooldown
+# - Arena layout: 19x13 with room to maneuver and use ranged
+# - Healing potions: allow extended combat to observe mechanics
+#
+# Expected metrics (30 runs):
+# - shaman_hex_casts: >= 30 (at least 1 per run)
+# - shaman_chant_starts: >= 15 (at least half of runs)
+# - shaman_chant_interrupts: >= 5 (proves counterplay is viable)
+# - shaman_chant_expiries: >= 5 (some chants complete naturally)
+#
+# Validation:
+# - Hex applies correctly (observable via -1 to-hit, -1 AC)
+# - Chant applies movement tax (observable via double turn cost)
+# - Chant is interruptible by ranged damage (metrics prove it)
+# - Hang-back AI keeps shaman at distance 4-7 most of the time
+# - Cooldowns prevent spam (hex=10 turns, chant=15 turns)
+

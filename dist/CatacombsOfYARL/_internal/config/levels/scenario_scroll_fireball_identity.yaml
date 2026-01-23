@@ -1,0 +1,106 @@
+# Scenario: Fireball Scroll Identity (Phase 20 Scroll Modernization)
+# Purpose: Regression anchor for Fireball scroll mechanics:
+#   - Immediate AoE Damage: Fireball deals direct damage via damage_service
+#   - Fire Hazard: Creates FIRE hazards in AoE radius
+#   - Burning DOT: Hazards apply BurningEffect (via EnvironmentSystem)
+#   - Silence Gating: Scroll blocked by SilencedEffect (via SpellExecutor)
+#   - Metrics: fireball_casts, fireball_tiles_created, fireball_direct_damage
+#
+# This scenario validates the Phase 20 modernization of hazard processing
+# from direct damage to status effect application.
+
+metadata:
+  scenario_id: scroll_fireball_identity
+  family: scroll_tests
+  depth: 1
+
+scenario_id: scroll_fireball_identity
+name: "Fireball Scroll Identity (Phase 20)"
+description: "Validate Fireball spell mechanics: AoE damage, fire hazards, burning DOT."
+
+depth: 1
+
+defaults:
+  turn_limit: 30
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # With 3 orcs per run × 30 runs = 90 potential targets:
+  # Conservative thresholds for scroll identity validation
+  min_player_kills: 60  # Fireball + melee should kill most orcs
+  max_player_deaths: 10  # Orcs are moderately dangerous
+
+rooms:
+  - id: "fire_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Open arena for testing fireball AoE mechanics"
+    walls: "enclosed"
+
+monsters:
+  # Three orcs clustered for AoE targeting (center of room)
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 5]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Fireball scroll for player to pick up
+  - type: "fireball_scroll"
+    count: 1
+    position: [2, 5]
+  
+  # Additional scroll for potential second use
+  - type: "fireball_scroll"
+    count: 1
+    position: [2, 4]
+  
+  # Basic weapon for follow-up
+  - type: "dagger"
+    count: 1
+    position: [2, 3]
+  
+  # Healing potions for survivability
+  - type: "healing_potion"
+    count: 3
+    position: [3, 6]
+
+player:
+  position: [2, 7]
+  facing: "east"
+  inventory:
+    - "fireball_scroll"
+  equipment:
+    weapon: "dagger"
+    armor: null
+
+# Scenario design notes (Phase 20 Scroll Modernization):
+# - Three orcs clustered in center of room
+# - Player starts with Fireball scroll in inventory, positioned at corner
+# - AoE radius 3 should hit all orcs when targeting cluster center
+# - Expected behavior:
+#   1. Player uses scroll targeting (8,5) - center of orc cluster
+#   2. Immediate AoE damage dealt to all orcs in radius (3d6 ~10.5 avg)
+#   3. Fire hazards created in radius (3 turns, 3 damage)
+#   4. Orcs standing on fire receive BurningEffect (via EnvironmentSystem)
+#   5. All damage routes through damage_service for proper finalization
+# - Metrics tracked:
+#   - fireball_casts: Should be >= 1 per run
+#   - fireball_tiles_created: Should be >= 7 per cast (radius 3 circle)
+#   - fireball_direct_damage: Should be >= 15 per cast (3 orcs hit)
+#   - burning_applications: May occur if orcs survive and stand on fire
+

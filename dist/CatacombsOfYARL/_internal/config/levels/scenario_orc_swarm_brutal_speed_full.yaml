@@ -1,0 +1,87 @@
+# Scenario: Orc Swarm - Brutal (Full Speed)
+# Purpose: Measure impact of full speed stack on survivability in a brutal 5-orc swarm.
+#
+# Uses the same brutal swarm layout as baseline but equips the player with the
+# full speed kit to observe how much speed/momentum improves survival in dire situations.
+
+scenario_id: orc_swarm_brutal_speed_full
+name: "Orc Swarm – Brutal (Full Speed)"
+description: "Brutal orc swarm with full speed stack to measure how much speed/momentum improves survival in dire situations."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+
+# Expected outcomes for validation (loose, should outperform baseline but still very loose)
+# For 50 runs we expect better performance than baseline but still allow many deaths.
+expected:
+  min_player_kills: 75
+  max_player_deaths: 40
+
+# Dungeon depth (matched to brutal baseline)
+depth: 5
+
+# Room definitions - identical to brutal baseline
+rooms:
+  - id: "brutal_swarm_arena"
+    type: "arena"
+    width: 12
+    height: 12
+    description: "Small enclosed arena for brutal multi-enemy combat"
+    walls: "enclosed"
+
+# Monster placements - identical to brutal baseline (only player gear differs)
+monsters:
+  # Front-line trio (immediate threat)
+  - type: "orc"
+    count: 1
+    position: [8, 6]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 4]
+    facing: "south"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [8, 8]
+    facing: "north"
+    state: "aware"
+  # Flanking support (slightly further, speed/positioning matters)
+  - type: "orc"
+    count: 1
+    position: [10, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [10, 7]
+    facing: "west"
+    state: "aware"
+
+# Items - same minimal healing support
+items:
+  - type: "healing_potion"
+    count: 2   # 16B mitigation: extra sustain to keep brutal death rate in band
+    position: [6, 6]
+
+# Player spawn configuration - full speed equipment
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "quickfang_dagger"       # +25% speed bonus
+    armor: "leather_armor"
+    feet: "boots_of_swiftness"       # +25% speed bonus
+    left_ring: "ring_of_hummingbird" # +25% speed bonus
+
+
+
+
+

@@ -1,0 +1,71 @@
+# Scenario: Hole Trap Identity Test
+# Phase 21.5: Hole trap requests level transition via TransitionRequest
+#
+# Purpose: Verify that hole traps trigger on tile entry and create a TransitionRequest
+# for level transition. The actual transition execution is tested in gameplay, not scenarios.
+#
+# Layout: Simple 10x10 arena with hole trap at (5,5)
+# Player starts at (4,5), moves right to trigger trap
+#
+# Expected outcome (deterministic under seed_base=1337):
+# - traps_triggered_total: 1
+# - trap_hole_triggered: 1
+# - trap_hole_transition_requested: 1
+# - TransitionRequest created with type="next_floor" and cause="hole_trap"
+# - Turn consumed after trap trigger (no additional actions)
+
+scenario_id: trap_hole_identity
+name: "Hole Trap Identity Test"
+description: "Deterministic test: hole trap creates TransitionRequest for level transition."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 20
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  traps_triggered_total: 1
+  trap_hole_triggered: 1
+  trap_hole_transition_requested: 1
+  notes:
+    - Player steps on hole trap at (5,5)
+    - TransitionRequest created (type=next_floor, cause=hole_trap)
+    - Trap consumes turn (no additional actions)
+    - Scenario doesn't execute transition (single-level only)
+    - Real gameplay executes transition via game_map.next_floor()
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - single 10x10 arena
+rooms:
+  - id: "hole_trap_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Simple arena for hole trap identity test"
+    walls: "enclosed"
+
+# No monsters - pure trap test
+monsters: []
+
+# No items
+items: []
+
+# Trap placements - single hole trap at (5,5)
+traps:
+  - type: "hole_trap"
+    position: [5, 5]
+
+# Player spawn configuration - starts at (4,5), will move right to trigger trap
+player:
+  position: [4, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

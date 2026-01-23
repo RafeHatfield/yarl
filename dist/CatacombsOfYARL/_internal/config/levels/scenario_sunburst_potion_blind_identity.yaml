@@ -1,0 +1,90 @@
+# Scenario: Sunburst Potion Blind Identity Kit (Phase 20E.1)
+# Purpose: Regression anchor for Phase 20E.1 Sunburst Potion mechanics:
+#   - Blind Application: Sunburst Potion thrown applies BlindedEffect
+#   - To-Hit Penalty: Blinded entities suffer -4 to-hit on d20 attack rolls
+#   - Attacks Allowed: Blinded entities can still attack (but miss more)
+#   - Duration: 3 turns, refresh-not-stack
+#   - Metrics: blind_applications, blind_attacks_attempted, blind_attacks_missed
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+# Design: Enemies start at throw range (3-5 tiles), player throws immediately.
+
+metadata:
+  scenario_id: sunburst_potion_blind_identity
+  family: ability_tests
+  depth: 2
+
+scenario_id: sunburst_potion_blind_identity
+name: "Sunburst Potion Blind Identity Kit (Phase 20E.1)"
+description: "Validate Phase 20E.1 blind mechanics: application, to-hit penalty, attack metrics."
+
+depth: 2
+
+defaults:
+  turn_limit: 100
+  player_bot: "sunburst_potion_user"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # With enemies at throw range, expect consistent blind applications
+  # Bot throws immediately, blinded enemies approach and attack (missing more)
+  min_player_kills: 30  # Should win most fights due to blind advantage
+  max_player_deaths: 10  # Conservative ceiling
+
+rooms:
+  - id: "sunburst_arena"
+    type: "arena"
+    width: 14
+    height: 10
+    description: "Simple arena for testing sunburst potion blind mechanics"
+    walls: "enclosed"
+
+monsters:
+  # Two orcs positioned at optimal throw range (distance 4-5 from player)
+  # Player at (2,5), orcs at (6,4) and (6,6) = distance 5
+  # state: "in_combat" ensures they move toward player
+  - type: "orc"
+    count: 1
+    position: [6, 4]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc"
+    count: 1
+    position: [6, 6]
+    facing: "west"
+    state: "in_combat"
+
+items:
+  # Extra sunburst potions on ground (if needed)
+  - type: "sunburst_potion"
+    count: 2
+    position: [3, 5]
+  
+  # Healing potions for survival
+  - type: "healing_potion"
+    count: 2
+    position: [2, 7]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory:
+    - type: "sunburst_potion"
+      count: 2
+  equipment: null
+
+# Scenario design notes (Phase 20E.1 - Sunburst Potion):
+# - Two orcs at throw range (distance 4-5)
+# - Player starts with 2 sunburst_potions in inventory
+# - SunburstPotionUserPolicy throws immediately at nearest enemy
+# - Sunburst Potion mechanics:
+#   - THROWN: Apply BlindedEffect (3 turns, -4 to-hit penalty, refresh-not-stack)
+#   - Blinded: Attack rolls suffer -4 penalty, can still attack but miss more
+# - Expected behavior:
+#   - Player throws sunburst_potion at nearest orc immediately (turn 1)
+#   - Orc becomes blinded, suffers -4 to-hit for 3 turns
+#   - Blinded orc approaches and attacks (misses more often)
+#   - blind_applications metric incremented on each application
+#   - blind_attacks_attempted incremented when blinded orc attacks
+#   - blind_attacks_missed incremented when blinded orc misses

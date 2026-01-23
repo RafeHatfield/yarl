@@ -1346,6 +1346,15 @@ class Fighter:
             results.extend(weapon_poison_results)
             
             # ═══════════════════════════════════════════════════════════════════════
+            # PHASE 22.2.2: SPECIAL AMMO EFFECTS (on hit only)
+            # ═══════════════════════════════════════════════════════════════════════
+            # If ranged attack with loaded quiver, apply ammo-specific rider effect.
+            # Consumption happens below (after hit/miss determination).
+            if is_ranged_attack:
+                ammo_effect_results = self._apply_special_ammo_effects(target)
+                results.extend(ammo_effect_results)
+            
+            # ═══════════════════════════════════════════════════════════════════════
             # PHASE 22.2: RANGED KNOCKBACK (10% chance for 1-tile knockback)
             # ═══════════════════════════════════════════════════════════════════════
             # Ranged attacks have a 10% chance to knock target back 1 tile.
@@ -1426,6 +1435,15 @@ class Fighter:
             if is_testing_mode():
                 self._log_d20_combat(d20_roll, to_hit_bonus, weapon_bonus, attack_roll,
                                     target_ac, hit, is_fumble, 0, 0)
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # PHASE 22.2.2: QUIVER CONSUMPTION (hit OR miss, but not denied)
+        # ═══════════════════════════════════════════════════════════════════════
+        # Consume 1 special ammo from quiver on ranged attack (hit or miss).
+        # Denied attacks (out of range) don't consume ammo (handled earlier).
+        if is_ranged_attack:
+            consumption_results = self._consume_special_ammo()
+            results.extend(consumption_results)
         
         # ═══════════════════════════════════════════════════════════════════════
         # PHASE 21: BREAK INVISIBILITY AFTER ATTACK
@@ -2421,3 +2439,157 @@ class Fighter:
                 return 1
         
         return 0  # No lich found in range
+    
+    def _apply_special_ammo_effects(self, target):
+        """Apply special ammo rider effects on successful ranged hit (Phase 22.2.2).
+        
+        If attacker has special ammo loaded in quiver, apply the ammo-specific
+        effect to the target (e.g., burning, poison).
+        
+        Only called on HIT (not miss). Consumption happens separately.
+        
+        Args:
+            target: The entity that was hit
+            
+        Returns:
+            list: List of result dictionaries with effect messages
+        """
+        results = []
+        
+        # Only apply if attacker has equipment component
+        equipment = self._get_equipment(self.owner)
+        if not equipment or not equipment.quiver:
+            return results
+        
+        # Get loaded ammo
+        ammo = equipment.quiver
+        effect_type = getattr(ammo, 'ammo_effect_type', None)
+        
+        if not effect_type:
+            return results  # No effect to apply
+        
+        # Get effect parameters
+        effect_duration = getattr(ammo, 'ammo_effect_duration', 0)
+        effect_damage_dice = getattr(ammo, 'ammo_effect_damage_dice', None)
+        effect_chance = getattr(ammo, 'ammo_effect_chance', 1.0)  # Phase 22.2.3
+        
+        # Phase 22.2.3: Roll for effect chance (deterministic via seeded RNG)
+        import random
+        if random.random() >= effect_chance:
+            # Effect didn't trigger
+            return results
+        
+        # Apply effect based on type
+        if effect_type == 'burning':
+            from components.status_effects import BurningEffect, StatusEffectManager
+            from message_builder import MessageBuilder as MB
+            
+            # Ensure target has status_effects component
+            if not target.components.has(ComponentType.STATUS_EFFECTS):
+                target.status_effects = StatusEffectManager(target)
+                target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+            
+            # Create burning effect (Phase 22.2.2: 1 dmg/turn for 3 turns)
+            burning = BurningEffect(
+                duration=effect_duration,
+                owner=target,
+                damage_per_turn=1  # Tuned to match existing burning norms
+            )
+            
+            # Apply to target
+            target.status_effects.add_effect(burning)
+            
+            results.append({
+                "message": MB.custom(f"🔥 {target.name} is set ablaze by the fire arrow!", MB.ORANGE)
+            })
+            
+            # Track metric
+            collector = _get_metrics_collector()
+            if collector:
+                collector.increment('special_ammo_effects_applied')
+        
+        elif effect_type == 'entangled':
+            # Phase 22.2.3: Net Arrow - apply entangled effect
+            from components.status_effects import EntangledEffect, StatusEffectManager
+            from message_builder import MessageBuilder as MB
+            
+            # Ensure target has status_effects component
+            if not target.components.has(ComponentType.STATUS_EFFECTS):
+                target.status_effects = StatusEffectManager(target)
+                target.components.add(ComponentType.STATUS_EFFECTS, target.status_effects)
+            
+            # Create entangled effect
+            entangled = EntangledEffect(
+                duration=effect_duration,
+                owner=target
+            )
+            
+            # Apply to target
+            target.status_effects.add_effect(entangled)
+            
+            results.append({
+                "message": MB.custom(f"🕸️ {target.name} is snared by the net arrow!", (139, 90, 43))
+            })
+            
+            # Track metric
+            collector = _get_metrics_collector()
+            if collector:
+                collector.increment('special_ammo_effects_applied')
+        
+        # TODO: Add other effect types (poison, etc.) as needed
+        
+        return results
+    
+    def _consume_special_ammo(self):
+        """Consume 1 special ammo from quiver on ranged attack (Phase 22.2.2).
+        
+        Called after hit/miss determination, consumes 1 ammo regardless of outcome.
+        If ammo quantity reaches 0, automatically unequip from quiver.
+        
+        Returns:
+            list: List of result dictionaries with consumption messages
+        """
+        results = []
+        
+        # Only consume if attacker has equipment component
+        equipment = self._get_equipment(self.owner)
+        if not equipment or not equipment.quiver:
+            return results  # No ammo loaded
+        
+        # Get loaded ammo
+        ammo = equipment.quiver
+        
+        # Check if ammo has item component with quantity
+        if not ammo.item or not hasattr(ammo.item, 'quantity'):
+            return results  # Not a stackable item
+        
+        # Consume 1 ammo
+        ammo.item.quantity -= 1
+        
+        # Track metric
+        collector = _get_metrics_collector()
+        if collector:
+            collector.increment('special_ammo_shots_fired')
+        
+        from message_builder import MessageBuilder as MB
+        
+        if ammo.item.quantity <= 0:
+            # Out of ammo - unequip from quiver
+            equipment.quiver = None
+            
+            # Remove from inventory if present
+            if self.owner and hasattr(self.owner, 'inventory'):
+                inventory = self.owner.get_component_optional(ComponentType.INVENTORY)
+                if inventory and ammo in inventory.items:
+                    inventory.items.remove(ammo)
+            
+            results.append({
+                "message": MB.warning(f"⚠️ Out of {ammo.name}!")
+            })
+        else:
+            # Still have ammo remaining
+            results.append({
+                "message": MB.info(f"({ammo.item.quantity} {ammo.name} remaining)")
+            })
+        
+        return results

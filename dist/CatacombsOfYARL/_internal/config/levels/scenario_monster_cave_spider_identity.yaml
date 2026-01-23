@@ -1,0 +1,106 @@
+# Scenario: Cave Spider Identity Kit (Phase 20A)
+# Purpose: Regression anchor for Phase 20A Poison DOT mechanics:
+#   - Poison Application: Spider applies poison on successful melee hits
+#   - Poison DOT: 1 damage per tick for 6 turns (non-stacking, refresh only)
+#   - Poison Resistance: poison_resistance_pct reduces damage per tick
+#   - Death Finalization: Poison kills route through damage_service correctly
+#   - Metrics: poison_applications, poison_damage_dealt, poison_ticks_processed
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+# It validates the canonical DOT model for all future status effects.
+
+metadata:
+  scenario_id: monster_cave_spider_identity
+  family: ability_tests
+  depth: 2
+
+scenario_id: monster_cave_spider_identity
+name: "Cave Spider Identity Kit (Phase 20A)"
+description: "Validate Phase 20A poison DOT mechanics: application, ticking, resistance, death."
+
+depth: 2
+
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # With 2 spiders per run × 30 runs:
+  # - Each spider should get at least 1-2 hits before dying
+  # - At least 30 poison applications expected (1+ per run)
+  # - Poison should tick for multiple turns
+  min_player_kills: 30  # 2 spiders × 30 runs = 60 max, expect at least 30
+  max_player_deaths: 10  # Spiders are fragile, player should win consistently
+
+rooms:
+  - id: "spider_lair"
+    type: "arena"
+    width: 12
+    height: 10
+    description: "Simple arena for testing spider poison mechanics"
+    walls: "enclosed"
+
+monsters:
+  # Two cave spiders - enough to test poison refresh mechanics
+  # (second spider can poison while first poison still active)
+  - type: "cave_spider"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "aware"
+  - type: "cave_spider"
+    count: 1
+    position: [9, 6]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Healing potions: Allow observation of poison pressure over time
+  # Player can sustain damage from poison + attacks with enough healing
+  - type: "healing_potion"
+    count: 3
+    position: [2, 4]
+  - type: "healing_potion"
+    count: 2
+    position: [2, 7]
+  
+  # Basic weapon - spiders are fragile so any weapon works
+  - type: "dagger"
+    count: 1
+    position: [3, 5]
+
+player:
+  position: [2, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+    armor: null  # No armor - allows observation of spider damage + poison
+
+# Scenario design notes (Phase 20A - Poison DOT):
+# - Two cave spiders with poison_attack ability
+# - Spider stats: 16 HP, 2-4 damage, fragile but quick
+# - Poison mechanics:
+#   - Applied on successful melee hit (100% chance)
+#   - Duration: 6 turns
+#   - Damage: 1 per tick (6 total over full duration)
+#   - Non-stacking: Reapplication refreshes duration only
+# - Poison resistance:
+#   - Spiders have 75% resistance (mostly immune to their own venom)
+#   - Player has 0% by default (takes full damage)
+# - Expected combat flow:
+#   1. Spiders engage player
+#   2. Spider hits apply poison
+#   3. Poison ticks each turn
+#   4. Player kills spiders (fragile)
+#   5. Remaining poison ticks expire
+# - Metrics validation:
+#   - poison_applications: At least 30 across 30 runs
+#   - poison_damage_dealt: At least 60 (30 applications × 2 avg ticks)
+#   - poison_ticks_processed: At least 60
+#   - poison_kills: Few (poison alone rarely kills)
+# - This establishes the canonical DOT pattern for future effects
+
+

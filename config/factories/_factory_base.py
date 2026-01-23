@@ -215,7 +215,8 @@ class FactoryBase:
             "off_hand": EquipmentSlots.OFF_HAND,
             "head": EquipmentSlots.HEAD,
             "chest": EquipmentSlots.CHEST,
-            "feet": EquipmentSlots.FEET
+            "feet": EquipmentSlots.FEET,
+            "quiver": EquipmentSlots.QUIVER  # Phase 22.2.2
         }
         
         slot = slot_map.get(slot_str)

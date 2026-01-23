@@ -1,0 +1,48 @@
+{
+  "pathfinding": {
+    "DIAGONAL_MOVE_COST": 1.41,
+    "MAX_PATH_LENGTH": 25,
+    "MAX_COORDINATE": 9999
+  },
+  "performance": {
+    "SPATIAL_GRID_SIZE": 8,
+    "FOV_CACHE_SIZE": 100,
+    "TARGET_FPS": 60,
+    "MAX_DIRTY_RECTANGLES": 50
+  },
+  "combat": {
+    "DEFAULT_DEFENSE": 0,
+    "DEFAULT_POWER": 1,
+    "DEFAULT_HP": 1,
+    "DEFAULT_XP": 0,
+    "MIN_DAMAGE": 0,
+    "DEFAULT_LEVEL_UP_BASE": 200,
+    "DEFAULT_LEVEL_UP_FACTOR": 150
+  },
+  "inventory": {
+    "DEFAULT_INVENTORY_CAPACITY": 26,
+    "MAX_INVENTORY_CAPACITY": 52,
+    "ITEM_STACK_SIZE": 1
+  },
+  "rendering": {
+    "SCREEN_WIDTH": 80,
+    "SCREEN_HEIGHT": 50,
+    "MAP_WIDTH": 80,
+    "MAP_HEIGHT": 43,
+    "PANEL_HEIGHT": 7,
+    "PANEL_Y": 43,
+    "MESSAGE_X": 21,
+    "MESSAGE_WIDTH": 40,
+    "MESSAGE_HEIGHT": 5,
+    "BAR_WIDTH": 20,
+    "ROOM_MAX_SIZE": 10,
+    "ROOM_MIN_SIZE": 6,
+    "MAX_ROOMS": 30,
+    "MAX_MONSTERS_PER_ROOM": 3,
+    "MAX_ITEMS_PER_ROOM": 2
+  },
+  "gameplay": {
+    "DUNGEON_LEVELS": 10,
+    "SAVE_GAME_FILENAME": "savegame.dat"
+  }
+}

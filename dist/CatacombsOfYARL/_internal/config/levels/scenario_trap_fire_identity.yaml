@@ -1,0 +1,71 @@
+# Scenario: Fire Trap Identity Test
+# Phase 21.4: Fire trap applies BurningEffect (no direct damage from trap)
+#
+# Purpose: Verify that fire traps trigger on tile entry, apply BurningEffect,
+# and that DOT damage routes through damage_service.apply_damage.
+#
+# Layout: Simple 10x10 arena with fire trap at (5,5)
+# Player starts at (4,5), moves right to trigger trap
+#
+# Expected outcome (deterministic under seed_base=1337):
+# - traps_triggered_total: 1
+# - trap_fire_triggered: 1
+# - trap_fire_effects_applied: 1
+# - Player has BurningEffect with correct duration
+# - Burning damage ticks via effect lifecycle (routes through damage_service)
+
+scenario_id: trap_fire_identity
+name: "Fire Trap Identity Test"
+description: "Deterministic test: fire trap applies BurningEffect, DOT damage via effect lifecycle."
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 20
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation
+expected:
+  traps_triggered_total: 1
+  trap_fire_triggered: 1
+  trap_fire_effects_applied: 1
+  notes:
+    - Player steps on fire trap at (5,5)
+    - BurningEffect applied with duration=4, damage=1
+    - Trap does NOT deal direct damage
+    - DOT damage handled by effect's process_turn_start()
+    - Damage routes through damage_service.apply_damage
+
+# Dungeon depth
+depth: 1
+
+# Room definitions - single 10x10 arena
+rooms:
+  - id: "fire_trap_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Simple arena for fire trap identity test"
+    walls: "enclosed"
+
+# No monsters - pure trap test
+monsters: []
+
+# No items
+items: []
+
+# Trap placements - single fire trap at (5,5)
+traps:
+  - type: "fire_trap"
+    position: [5, 5]
+
+# Player spawn configuration - starts at (4,5), will move right to trigger trap
+player:
+  position: [4, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "dagger"
+
+# Suite tags
+suites: ["hazards"]

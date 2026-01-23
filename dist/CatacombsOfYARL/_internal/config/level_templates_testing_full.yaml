@@ -1,0 +1,74 @@
+# Level Templates Testing Configuration
+# 
+# This file defines overrides and guaranteed spawns for testing mode.
+# Only loaded when YARL_TESTING_MODE=1 environment variable is set.
+# Takes precedence over level_templates.yaml.
+
+version: "1.0"
+
+level_overrides:
+  # Level 1 - Testing configuration for slime features + camera scrolling
+  1:
+    parameters:
+      # Larger map to demonstrate camera scrolling (viewport is 80x45)
+      map_width: 160
+      map_height: 100
+      # Keep default values for other parameters (max_monsters_per_room: 3, etc.)
+    
+    guaranteed_spawns:
+      mode: "additional"  # Add to normal random spawns
+      monsters:
+        - type: "slime"
+          count: 1
+        - type: "large_slime"
+          count: 1
+        # Phase 1 Equipment Testing: Spawn multiple orcs to see equipment variation
+        # Orcs have 75% weapon spawn, 50% armor spawn
+        # Expected: ~6 with weapons, ~4 with armor out of 8 orcs
+        - type: "orc"
+          count: 8  # Increased from 2 for better equipment testing
+      items:
+        - type: "invisibility_scroll"
+          count: 2  # Ensure we can test invisibility mechanics
+        - type: "healing_potion"
+          count: 3
+        - type: "lightning_scroll"
+          count: 1
+        - type: "fireball_scroll"
+          count: 1
+        - type: "confusion_scroll"
+          count: 1
+        - type: "teleport_scroll"
+          count: 1
+        - type: "dragon_fart_scroll"
+          count: 5
+        - type: "shield_scroll"
+          count: 1
+        - type: "raise_dead_scroll"
+          count: 2
+        - type: "enhance_weapon_scroll"
+          count: 1
+        - type: "enhance_armor_scroll"
+          count: 1
+        - type: "yo_mama_scroll"
+          count: 10
+        - type: "slow_scroll"
+          count: 1
+        - type: "glue_scroll"
+          count: 1
+      equipment:
+        - type: "dagger"
+          count: 1
+        - type: "shield"
+          count: 1
+        - type: "spear"
+          count: 1  # Test reach property (2 tiles)
+        - type: "greatsword"
+          count: 1  # Test two-handed property
+        - type: "shortbow"
+          count: 1  # Test ranged combat (8 tile reach)
+        - type: "longbow"
+          count: 9  # Test max range (10 tiles)
+        - type: "crossbow"
+          count: 1  # Test ranged combat (8 tiles)
+

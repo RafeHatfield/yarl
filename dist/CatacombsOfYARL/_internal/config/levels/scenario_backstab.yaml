@@ -1,0 +1,82 @@
+# Scenario: Backstab Training Grounds
+# Purpose: Test surprise attack mechanics with unaware enemies
+# Phase 12A: Structure only - no harness integration yet
+#
+# TODO (Phase 12B):
+#   - Bot policy integration (observe_only bot)
+#   - Metrics tracking for surprise attacks
+#   - Scenario harness runner
+
+scenario_id: backstab_training
+name: "Backstab Training Grounds"
+description: "Simple corridors with unaware enemies for testing surprise attacks and stealth mechanics."
+
+# Defaults for harness runs (Phase 12B)
+defaults:
+  turn_limit: 200
+  player_bot: "tactical_fighter"
+  allow_player_death: false
+
+# Expected outcomes for validation (Phase 12D+)
+# These are conservative thresholds calibrated from actual metrics.
+# Base data: 100 runs yielded ~195 kills, ~2 deaths, ~199 surprise attacks
+# Thresholds set to catch regressions while allowing natural RNG variance.
+# This scenario specifically tests surprise/backstab mechanics.
+# Note: Thresholds scale linearly with run count (~60% of expected for kills).
+expected:
+  min_player_kills: 60            # ~60% of expected kills for typical run count (scales linearly)
+  max_player_deaths: 10           # Allow up to 10 deaths per 100 runs
+  surprise_attacks_min: 50        # ~50% of expected surprise attacks (scales linearly with runs)
+
+# Dungeon depth (affects monster scaling if using standard generation)
+depth: 5
+
+# Room definitions (compatible with existing level_templates format)
+rooms:
+  - id: "training_corridor"
+    type: "corridor"
+    width: 20
+    height: 5
+    description: "Long narrow corridor for approach testing"
+
+  - id: "ambush_room"
+    type: "normal"
+    width: 10
+    height: 10
+    description: "Room with obstructed sightlines"
+
+# Monster placements for scenario
+monsters:
+  # Unaware orc facing away from entrance
+  - type: "orc"
+    count: 1
+    position: [5, 5]
+    facing: "north"
+    state: "unaware"
+    
+  # Second orc patrolling (for multi-target test)
+  - type: "orc"
+    count: 1
+    position: [10, 5]
+    facing: "east"
+    state: "patrolling"
+
+# Items available in scenario
+items:
+  - type: "healing_potion"
+    count: 2
+    position: "random"
+  - type: "invisibility_scroll"
+    count: 1
+    position: "start"
+
+# Player spawn configuration
+player:
+  position: [1, 5]
+  facing: "east"
+  stealth_bonus: 5  # Testing stealth mechanics
+  inventory:
+    - type: "healing_potion"
+      count: 1
+  equipment:
+    weapon: "dagger"

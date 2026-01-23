@@ -22,6 +22,7 @@ class EquipmentSlots(Enum):
         LEFT_RING: Left ring slot
         RIGHT_RING: Right ring slot
         RING: Generic ring slot (will auto-select left or right)
+        QUIVER: Special ammo slot for ranged weapons (Phase 22.2.2)
     """
 
     MAIN_HAND = 1
@@ -32,3 +33,4 @@ class EquipmentSlots(Enum):
     LEFT_RING = 6
     RIGHT_RING = 7
     RING = 8  # Auto-selects left or right slot
+    QUIVER = 9  # Phase 22.2.2: Special ammo for bows/crossbows

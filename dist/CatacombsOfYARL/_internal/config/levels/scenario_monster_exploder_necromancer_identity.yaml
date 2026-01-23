@@ -1,0 +1,86 @@
+# Scenario: Exploder Necromancer Identity Kit (Phase 19)
+# Purpose: Regression anchor for Phase 19 exploder necromancer + corpse explosion mechanics
+
+metadata:
+  scenario_id: monster_exploder_necromancer_identity
+  family: ability_tests
+  depth: 4
+
+scenario_id: monster_exploder_necromancer_identity
+name: "Exploder Necromancer Identity Kit (Phase 19)"
+description: "Validate Phase 19 exploder necromancer: corpse explosion, AoE damage."
+
+depth: 4
+
+defaults:
+  turn_limit: 250
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 5
+  min_player_deaths: 5
+  max_player_deaths: 20
+
+rooms:
+  - id: "exploder_crypt"
+    type: "arena"
+    width: 21
+    height: 15
+    description: "Crypt with corpses for explosion fuel"
+    walls: "enclosed"
+
+monsters:
+  - type: "exploder_necromancer"
+    count: 1
+    position: [17, 7]
+    facing: "west"
+    state: "aware"
+  - type: "necromancer"
+    count: 1
+    position: [15, 7]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 7]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 5]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [11, 9]
+    facing: "west"
+    state: "aware"
+  - type: "orc"
+    count: 1
+    position: [9, 7]
+    facing: "west"
+    state: "aware"
+
+items:
+  - type: "shortbow"
+    count: 1
+    position: [3, 7]
+  - type: "longsword"
+    count: 1
+    position: [3, 5]
+  - type: "healing_potion"
+    count: 10
+    position: [2, 4]
+  - type: "healing_potion"
+    count: 10
+    position: [2, 10]
+
+player:
+  position: [2, 7]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "shortsword"
+    armor: "leather_armor"

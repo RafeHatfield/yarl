@@ -1,0 +1,126 @@
+# Level Templates Testing Configuration - Boss Testing
+# 
+# This file defines overrides and guaranteed spawns for testing mode.
+# Only loaded when YARL_TESTING_MODE=1 environment variable is set.
+# Takes precedence over level_templates.yaml.
+#
+# NOTE: Boss/miniboss monsters can ONLY spawn in rooms with appropriate roles:
+#   - dragon_lord, demon_king: role must be "miniboss", "boss", or "end_boss"
+#   - zhyraxion variants: role must be "end_boss"
+
+version: "1.0"
+
+level_overrides:
+  # Level 1 - BOSS FIGHT TESTING + Equipment Testing
+  1:
+    parameters:
+      # Large map for boss arena + camera scrolling testing
+      map_width: 120
+      map_height: 80
+      # Boss room parameters
+      min_room_size: 12  # Ensure at least one large room for boss
+      max_room_size: 16
+      max_rooms: 8
+    
+    # Use special rooms for boss spawns (they need role metadata)
+    special_rooms:
+      - type: "dragon_lord_arena"
+        count: 1
+        placement: "largest"  # Boss gets the biggest room
+        min_room_size: 12
+        metadata:
+          role: "miniboss"
+          allow_spike: true
+        guaranteed_spawns:
+          monsters:
+            - type: "dragon_lord"
+              count: 1
+            - type: "orc"
+              count: 3
+            - type: "slime"
+              count: 1
+    
+    guaranteed_spawns:
+      mode: "additional"  # Add to normal random spawns
+      items:
+        - type: "invisibility_scroll"
+          count: 2  # Ensure we can test invisibility mechanics
+        - type: "healing_potion"
+          count: 3
+        - type: "lightning_scroll"
+          count: 1
+        - type: "fireball_scroll"
+          count: 1
+        - type: "confusion_scroll"
+          count: 1
+        - type: "teleport_scroll"
+          count: 1
+        - type: "dragon_fart_scroll"
+          count: 5
+        - type: "shield_scroll"
+          count: 1
+        - type: "raise_dead_scroll"
+          count: 2
+        - type: "enhance_weapon_scroll"
+          count: 1
+        - type: "enhance_armor_scroll"
+          count: 1
+        - type: "yo_mama_scroll"
+          count: 10
+        - type: "slow_scroll"
+          count: 1
+        - type: "glue_scroll"
+          count: 1
+      equipment:
+        - type: "dagger"
+          count: 1
+        - type: "shield"
+          count: 1
+        - type: "spear"
+          count: 1  # Test reach property (2 tiles)
+        - type: "greatsword"
+          count: 1  # Test two-handed property
+        - type: "shortbow"
+          count: 1  # Test ranged combat (8 tile reach)
+        - type: "longbow"
+          count: 9  # Test max range (10 tiles)
+        - type: "crossbow"
+          count: 1  # Test ranged combat (8 tiles)
+
+  # Level 2 - DEMON KING TESTING
+  2:
+    parameters:
+      map_width: 120
+      map_height: 80
+      min_room_size: 12
+      max_room_size: 16
+      max_rooms: 8
+    
+    # Use special rooms for boss spawns (they need role metadata)
+    special_rooms:
+      - type: "demon_king_lair"
+        count: 1
+        placement: "largest"  # Boss gets the biggest room
+        min_room_size: 12
+        metadata:
+          role: "miniboss"
+          allow_spike: true
+        guaranteed_spawns:
+          monsters:
+            - type: "demon_king"
+              count: 1
+            - type: "troll"
+              count: 2
+    
+    guaranteed_spawns:
+      mode: "additional"
+      items:
+        - type: "healing_potion"
+          count: 5
+        - type: "fireball_scroll"
+          count: 2
+        - type: "confusion_scroll"
+          count: 2
+        - type: "teleport_scroll"
+          count: 1
+

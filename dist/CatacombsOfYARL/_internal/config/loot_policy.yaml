@@ -1,0 +1,60 @@
+# Loot Policy Configuration
+# Defines item distribution targets and pity mechanics for different dungeon bands
+# Bands are depth ranges (B1=levels 1-5, B2=6-10, etc.)
+# EV (Expected Value) targets control how often each category appears
+
+version: "1.0"
+
+loot_policy:
+  # Bands: Dungeon depth ranges with EV targets for each category
+  # EV target = expected times this category should appear in a band
+  bands:
+    # B1: Levels 1-5 (Early game - focus on survival)
+    B1:
+      healing_ev: 2.5      # Expect ~2-3 healing items
+      escape_ev: 1.5       # Expect ~1-2 escape/utility items
+      identification_ev: 1.0  # Expect ~1 ID item
+      upgrade_ev: 0.5      # Expect ~0-1 equipment upgrade
+    
+    # B2: Levels 6-10 (Early-mid game - balanced)
+    B2:
+      healing_ev: 2.0
+      escape_ev: 2.0
+      identification_ev: 1.5
+      upgrade_ev: 1.0
+    
+    # B3: Levels 11-15 (Mid game - more diversity)
+    B3:
+      healing_ev: 1.5
+      escape_ev: 2.5
+      identification_ev: 2.0
+      upgrade_ev: 1.5
+    
+    # B4: Levels 16-20 (Mid-late game - tactical items)
+    B4:
+      healing_ev: 1.0
+      escape_ev: 2.0
+      identification_ev: 2.5
+      upgrade_ev: 2.0
+    
+    # B5: Levels 21-25 (Late game - rare powerful items)
+    B5:
+      healing_ev: 0.5
+      escape_ev: 1.5
+      identification_ev: 2.0
+      upgrade_ev: 3.0
+  
+  # Pity settings: Prevent long droughts of specific categories
+  pity:
+    # window_floors: How many floors to track for rolling window
+    # Example: window_floors=3 means track last 3 floors
+    window_floors: 3
+    
+    # soft_bias_factor: Multiply category weight when window empty
+    # Example: soft_bias_factor=2.0 means double the weight
+    soft_bias_factor: 2.0
+    
+    # hard_inject_at: If still empty after N floors, guarantee injection
+    # Example: hard_inject_at=5 means if not found in 5 floors, inject
+    hard_inject_at: 5
+

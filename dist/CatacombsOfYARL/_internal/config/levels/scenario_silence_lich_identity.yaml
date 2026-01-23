@@ -1,0 +1,106 @@
+# Phase 20F: Silence Scroll vs Lich Identity Scenario
+# Tests the Scroll of Silence mechanic - spell denial against lich
+#
+# Purpose: Prove that silence blocks lich spellcasting:
+#   - Soul Bolt (charge): Should be blocked when lich is silenced
+#   - Soul Bolt (resolve): Should fizzle when lich is silenced
+#   - Turn consumption: Lich still spends turn when silenced
+#   - Metrics: silence_applications, silenced_casts_blocked
+#
+# v1 Scope: Silence blocks spellcasting and spell-tagged abilities.
+#           Does NOT block potions, melee, or movement.
+
+metadata:
+  scenario_id: scenario_silence_lich_identity
+  family: ability_tests
+  depth: 5
+
+scenario_id: scenario_silence_lich_identity
+name: "Silence Scroll vs Lich Identity (Phase 20F)"
+description: "Player uses silence scroll to block lich Soul Bolt ability"
+scenario_type: "combat_identity"
+bot_policy: "silence_scroll_user"
+
+depth: 5
+
+defaults:
+  turn_limit: 200
+  player_bot: "silence_scroll_user"
+  allow_player_death: true
+  runs: 30
+
+expected:
+  min_player_kills: 45  # ~2 enemies per run × 30 runs
+  max_player_deaths: 12  # Silencing lich should improve survivability
+
+rooms:
+  - id: "silence_lich_arena"
+    type: "arena"
+    width: 15
+    height: 15
+    description: "Arena for silence vs lich testing"
+    walls: "enclosed"
+
+monsters:
+  # Lich - primary target for silence
+  # Should attempt to charge/resolve Soul Bolt but be blocked by silence
+  - type: "lich"
+    count: 1
+    position: [12, 7]
+    facing: "west"
+    state: "aware"
+  
+  # 1 skeleton - provides some combat pressure
+  - type: "skeleton"
+    count: 1
+    position: [9, 7]
+    facing: "west"
+    state: "aware"
+
+items:
+  # Healing potions for extended combat
+  - type: "healing_potion"
+    count: 4
+    position: [3, 5]
+  - type: "healing_potion"
+    count: 3
+    position: [3, 9]
+  
+  # Soul Ward scrolls (for comparison - not primary tool here)
+  - type: "scroll_soul_ward"
+    count: 1
+    position: [3, 7]
+
+player:
+  position: [2, 7]
+  facing: "east"
+  inventory:
+    # 1 silence scroll - bot uses on nearest caster (lich)
+    - type: "silence_scroll"
+      count: 1
+    # Starting healing potions
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    main_hand: "longsword"
+    chest: "leather_armor"
+
+# Scenario design notes (Phase 20F - Silence vs Lich):
+# - Player starts with 1 silence scroll in inventory
+# - Bot uses SilenceScrollUserPolicy: uses scroll on nearest caster (lich)
+# - Lich should attempt to charge/resolve Soul Bolt but be blocked
+# - Silence duration: 3 turns (refresh-not-stack)
+# - Uses on-demand geometric LOS (Bresenham ray trace) for Soul Bolt
+#
+# Expected metrics (30 runs, seed_base=1337):
+# - silence_applications >= 20 (bot uses scroll ~every run)
+# - silenced_casts_blocked >= 10 (lich attempts Soul Bolt while silenced)
+# - player_deaths <= 12 (silencing lich improves survivability)
+#
+# Validation:
+# - Silence applies correctly (observable via message)
+# - Lich Soul Bolt charge/resolve attempts are blocked (metrics prove it)
+# - Turn is consumed when cast is blocked (lich doesn't get free action)
+# - After silence expires, lich can cast again (observes effect duration)
+# - lich_fizzle_silenced metric should track fizzled Soul Bolts
+

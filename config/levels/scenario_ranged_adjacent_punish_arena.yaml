@@ -1,0 +1,87 @@
+# Scenario: Ranged Adjacent Punish Arena
+# Purpose: Phase 22.2 - Test close-range vulnerability and retaliation mechanic
+# 
+# This scenario places a melee enemy adjacent to the player with a ranged weapon to validate:
+#   - Retaliation triggers when player shoots at adjacent enemy
+#   - Player armor is halved for retaliation strike
+#   - Ranged damage is reduced to 25% at adjacent range
+#   - Metrics track ranged_adjacent_retaliations_triggered
+#
+# Deterministic under seed_base=1337
+
+metadata:
+  scenario_id: ranged_adjacent_punish_arena
+  family: ranged_tests
+  depth: 2
+
+scenario_id: ranged_adjacent_punish_arena
+name: "Ranged Adjacent Punish Arena"
+description: "Validate close-range retaliation: adjacent enemies strike back when shot."
+
+depth: 2
+
+defaults:
+  turn_limit: 30
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 10
+
+expected:
+  # IDENTITY ASSERTION: Retaliation MUST trigger when player shoots adjacent enemy
+  # This is the load-bearing metric for this scenario.
+  # If ranged_adjacent_retaliations_triggered == 0, the mechanic is broken.
+  min_ranged_adjacent_retaliations_triggered: 1
+  # Note: Bot may avoid shooting adjacent enemies (smart behavior), but if it
+  # does, retaliation must trigger. Manual testing confirms mechanic.
+
+suites:
+  - ranged_tests
+  - identity
+
+rooms:
+  - id: "punish_arena"
+    type: "arena"
+    width: 10
+    height: 10
+    description: "Small arena for close-quarters ranged combat testing"
+    walls: "enclosed"
+
+monsters:
+  # Adjacent melee enemy - will retaliate when shot
+  - type: "orc"
+    count: 1
+    position: [6, 5]   # Adjacent to player at [5, 5] - distance 1
+    facing: "west"
+    state: "aware"
+  # Second adjacent enemy for more retaliation testing
+  - type: "orc"
+    count: 1
+    position: [5, 4]   # Adjacent north - distance 1
+    facing: "south"
+    state: "aware"
+
+items:
+  # Many healing potions to survive retaliation
+  - type: "healing_potion"
+    count: 10
+    position: [2, 2]
+
+player:
+  position: [5, 5]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "shortbow"  # Ranged weapon - shooting adjacent = retaliation
+    armor: "plate_mail"  # Good armor (will be halved during retaliation)
+
+# Scenario design notes (Phase 22.2 - Adjacent Punish):
+# - Player starts at [5, 5] with shortbow equipped
+# - 2 orcs adjacent to player (distance 1)
+# - When player shoots adjacent orc:
+#   1. Orc gets free melee strike (with player armor halved)
+#   2. Then ranged damage applies at 25%
+# - Expected behavior:
+#   - ranged_adjacent_retaliations_triggered >= 1
+#   - Player takes retaliation damage before dealing ranged damage
+#   - Heavy armor helps survive the retaliation
+# - This scenario validates the "close-range punishment" mechanic
