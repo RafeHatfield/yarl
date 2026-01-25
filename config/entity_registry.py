@@ -184,6 +184,14 @@ class MonsterDefinition:
     soul_bolt_cooldown_turns: int = 4  # Cooldown after bolt resolves
     # Phase 19: Lich Command the Dead passive aura
     command_the_dead_radius: int = 6  # Radius for undead allies to get +1 to-hit
+    # Phase 22.3: Skirmisher Pouncing Leap ability
+    leap_cooldown_turns: int = 3  # Cooldown between leaps
+    leap_distance: int = 2  # Distance leaped toward target
+    leap_min_range: int = 3  # Minimum distance to trigger leap (Chebyshev)
+    leap_max_range: int = 6  # Maximum distance to trigger leap (Chebyshev)
+    # Phase 22.3: Skirmisher Fast Pressure ability
+    fast_pressure_chance: float = 0.20  # Chance for extra attack when adjacent
+    fast_pressure_damage_mult: float = 0.7  # Damage multiplier for fast attack
 
 
 @dataclass  

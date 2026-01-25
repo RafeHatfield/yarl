@@ -38,6 +38,9 @@ class FactoryBase:
     - Appearance generation
     """
     
+    # Class-level set to track appearance warnings (deduplicate per session)
+    _appearance_warnings_logged = set()
+    
     def __init__(self, entity_registry=None, game_constants=None, difficulty_level="medium"):
         """Initialize factory base.
         
@@ -133,7 +136,11 @@ class FactoryBase:
                 item.appearance = appearance
             else:
                 # Fallback if appearance not found
-                logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
+                # Deduplicate warning: only log once per item type per session
+                warning_key = f"{item_type}:{item_category}"
+                if warning_key not in FactoryBase._appearance_warnings_logged:
+                    logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
+                    FactoryBase._appearance_warnings_logged.add(warning_key)
                 item.identified = True
                 item.appearance = None
                 id_manager.identify_type(item_type)  # Register as identified
@@ -181,7 +188,11 @@ class FactoryBase:
                 logger.debug(f"Unidentified {item_type} (rolled {roll:.1f} >= {pre_id_percent})")
             else:
                 # Fallback if appearance not found
-                logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
+                # Deduplicate warning: only log once per item type per session
+                warning_key = f"{item_type}:{item_category}"
+                if warning_key not in FactoryBase._appearance_warnings_logged:
+                    logger.warning(f"No appearance found for {item_type} ({item_category}), defaulting to identified")
+                    FactoryBase._appearance_warnings_logged.add(warning_key)
                 item.identified = True
                 item.appearance = None
                 id_manager.identify_type(item_type)  # Register as identified

@@ -204,6 +204,48 @@ monsters:
     chant_is_channeled: true  # Chant requires channeling (interruptible by damage)
 
   # ═══════════════════════════════════════════════════════════
+  # PHASE 22.3: SKIRMISHER - Anti-kiting enemy with Pouncing Leap
+  # Fast-moving pressure fighter that punishes ranged kiting
+  # ═══════════════════════════════════════════════════════════
+  
+  # Skirmisher - Mobile threat with leap ability and fast attacks
+  skirmisher:
+    stats:
+      hp: 24                  # Moderate health (not a brute)
+      power: 0                # No magical power
+      defense: 0              # Light armor for mobility
+      xp: 45                  # Good XP for tactical threat
+      damage_min: 3           # Lower per-hit than brute (3-5)
+      damage_max: 5           # But faster tempo via fast pressure
+      # D&D-style stats
+      strength: 12            # Moderate (+1 damage modifier)
+      dexterity: 15           # Agile (+2 to-hit, +2 AC) - mobile fighter
+      constitution: 10        # Average
+      # Phase 8: Accuracy & Evasion
+      accuracy: 4             # Good accuracy (agile fighter)
+      evasion: 3              # Good evasion (mobile, hard to pin down)
+    char: "k"                 # 'k' for skirmisher
+    color: [180, 140, 100]    # Tan/brown (light armor, mobile)
+    ai_type: "skirmisher"     # Phase 22.3: Custom AI with leap + fast pressure
+    faction: "orc"            # Orc faction (agile raider, early-mid game ecology)
+    render_order: "actor"
+    blocks: true
+    tags: ["corporeal_flesh", "humanoid", "living", "mobile"]
+    can_seek_items: false     # Focused on combat, not looting
+    inventory_size: 0
+    # Phase 22.3: Pouncing Leap ability (anti-kiting)
+    leap_cooldown_turns: 3    # 3-turn cooldown after leap
+    leap_distance: 2          # Leaps 2 tiles toward target
+    leap_min_range: 3         # Only leaps if target is 3+ tiles away (Chebyshev)
+    leap_max_range: 6         # Only leaps if target is 6 or fewer tiles away (Chebyshev)
+    # Phase 22.3: Fast Pressure (occasional extra attacks when adjacent)
+    fast_pressure_chance: 0.20          # 20% chance for extra attack per turn
+    fast_pressure_damage_mult: 0.7      # Extra attack does 70% damage (light strike)
+    # Total damage: 0 power + 3-5 natural = 3-5 (lower than brute, but faster tempo)
+    # ETP: DPS=4 × 6 × durability=1.0 × behavior=1.15 (mobility) = 28
+    etp_base: 28
+
+  # ═══════════════════════════════════════════════════════════
   # PHASE 19: NECROMANCER - Corpse economy controller
   # Necromancer raises dead on cooldown and seeks corpses
   # ═══════════════════════════════════════════════════════════

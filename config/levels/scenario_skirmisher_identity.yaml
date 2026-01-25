@@ -1,0 +1,83 @@
+# Scenario: Skirmisher Identity Test (Phase 22.3)
+# Purpose: Regression anchor for skirmisher mechanics:
+#   - Pouncing Leap: Closes distance when player is 3-6 tiles away
+#   - Fast Pressure: Occasional extra attacks when adjacent
+#   - Leap Prevention: Root/entangle status effects block leap
+#   - Cooldown: 3-turn cooldown between leaps
+#
+# This scenario is deterministic and suitable for ongoing regression validation.
+# Design: Player with bow at distance ~6, skirmisher approaches via leap.
+
+metadata:
+  scenario_id: skirmisher_identity
+  family: ability_tests
+  depth: 2
+
+scenario_id: skirmisher_identity
+name: "Skirmisher Identity Test (Phase 22.3)"
+description: "Validate skirmisher leap and fast pressure mechanics"
+
+depth: 2
+
+defaults:
+  turn_limit: 100
+  player_bot: "tactical_fighter"  # Basic melee bot for simplicity
+  allow_player_death: true
+  runs: 30
+
+expected:
+  # Expected behavior:
+  # - Skirmisher starts at distance 6 from player
+  # - Leap should trigger when player at 3-6 tiles
+  # - Fast pressure should proc when adjacent (~20% chance)
+  # - Net arrow (if equipped) prevents leap via entangle
+  min_player_kills: 20  # Should win most fights
+  max_player_deaths: 15  # Conservative ceiling
+
+rooms:
+  - id: "skirmisher_arena"
+    type: "arena"
+    width: 16
+    height: 12
+    description: "Simple arena for testing skirmisher leap and pressure"
+    walls: "enclosed"
+
+monsters:
+  # Single skirmisher positioned at distance ~6 from player
+  # Player at (3,6), skirmisher at (9,6) = distance 6
+  # state: "in_combat" ensures skirmisher sees player
+  - type: "skirmisher"
+    count: 1
+    position: [9, 6]
+    facing: "west"
+    state: "in_combat"
+
+items:
+  # Healing potions for extended combat observation
+  - type: "healing_potion"
+    count: 3
+    position: [2, 2]
+
+# Optional: Add net arrows for testing leap prevention
+# Net arrows apply entangle, which should block leap
+# - type: "net_arrow"
+#   count: 5
+#   position: [3, 5]
+
+player:
+  position: [3, 6]
+  facing: "east"
+  inventory: []
+  equipment:
+    weapon: "longsword"  # Standard melee weapon
+    armor: "leather_armor"  # Light armor
+
+# Scenario design notes (Skirmisher):
+# - Player starts at (3,6) facing east with longsword equipped
+# - 1 skirmisher at (9,6) = Chebyshev distance 6 (leap trigger range)
+# - Skirmisher should leap to close distance, then engage in melee
+# - Fast pressure should trigger occasionally when adjacent (20% chance)
+# - Deterministic under seed_base=1337
+
+# Suite tags
+suites: ["enemy_abilities", "phase_22"]

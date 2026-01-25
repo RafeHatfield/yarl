@@ -206,6 +206,22 @@ class MonsterFactory(FactoryBase):
                 monster.command_the_dead_radius = monster_def.command_the_dead_radius
                 logger.debug(f"Added Command the Dead to {monster_def.name}: radius={monster.command_the_dead_radius}")
             
+            # Phase 22.3: Set Skirmisher Pouncing Leap config if defined
+            # Only apply to skirmisher AI type to prevent cross-contamination
+            if hasattr(monster_def, 'leap_cooldown_turns') and ai_type == 'skirmisher':
+                monster.leap_cooldown_turns = monster_def.leap_cooldown_turns
+                monster.leap_distance = getattr(monster_def, 'leap_distance', 2)
+                monster.leap_min_range = getattr(monster_def, 'leap_min_range', 3)
+                monster.leap_max_range = getattr(monster_def, 'leap_max_range', 6)
+                logger.debug(f"Added Pouncing Leap to {monster_def.name}: cooldown={monster.leap_cooldown_turns}, range={monster.leap_min_range}-{monster.leap_max_range}")
+            
+            # Phase 22.3: Set Skirmisher Fast Pressure config if defined
+            # Only apply to skirmisher AI type to prevent cross-contamination
+            if hasattr(monster_def, 'fast_pressure_chance') and ai_type == 'skirmisher':
+                monster.fast_pressure_chance = monster_def.fast_pressure_chance
+                monster.fast_pressure_damage_mult = getattr(monster_def, 'fast_pressure_damage_mult', 0.7)
+                logger.debug(f"Added Fast Pressure to {monster_def.name}: chance={monster.fast_pressure_chance*100:.0f}%")
+            
             # Create item-seeking AI if monster can seek items
             if monster_def.can_seek_items:
                 from components.item_seeking_ai import create_item_seeking_ai
@@ -295,6 +311,9 @@ class MonsterFactory(FactoryBase):
         elif ai_type == "lich":
             from components.ai.lich_ai import LichAI
             return LichAI()
+        elif ai_type == "skirmisher":
+            from components.ai.skirmisher_ai import SkirmisherAI
+            return SkirmisherAI()
         else:
             logger.warning(f"Unknown AI type: {ai_type}, using basic AI")
             return BasicMonster()

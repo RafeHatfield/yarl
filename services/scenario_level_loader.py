@@ -342,11 +342,17 @@ def _apply_player_loadout(player: Entity, player_cfg: Dict[str, Any]) -> None:
         for slot_key, equip_type in equipment_cfg.items():
             if not equip_type:
                 continue
-            equip_entity = (
-                entity_factory.create_weapon(equip_type, player.x, player.y)
-                or entity_factory.create_armor(equip_type, player.x, player.y)
-                or entity_factory.create_ring(equip_type, player.x, player.y)
-            )
+            
+            # Phase 22.3.1: Handle quiver slot (special ammo) separately
+            if slot_key == "quiver":
+                equip_entity = entity_factory.create_special_ammo(equip_type, player.x, player.y)
+            else:
+                equip_entity = (
+                    entity_factory.create_weapon(equip_type, player.x, player.y)
+                    or entity_factory.create_armor(equip_type, player.x, player.y)
+                    or entity_factory.create_ring(equip_type, player.x, player.y)
+                )
+            
             if equip_entity:
                 inv = player.require_component(ComponentType.INVENTORY)
                 inv.add_item(equip_entity)

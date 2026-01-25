@@ -9,6 +9,13 @@ scenario-based testing. These are NOT used in production gameplay.
 Bot policies control the player during automated scenario runs,
 implementing different behaviors for different test scenarios.
 
+⚠️  HARNESS-ONLY POLICIES
+==========================================
+Policies in this file are HARNESS-ONLY and SCENARIO-SCOPED.
+Gameplay AI must NOT depend on these policies.
+These are testing tools, not game systems.
+==========================================
+
 WARNING: Do not use these policies in production code. They are
 designed for deterministic testing scenarios only.
 """
@@ -288,6 +295,75 @@ class DisarmScrollUserPolicy:
         return TacticalFighterPolicy().choose_action(game_state)
 
 
+class HarnessRangedNetArrowPolicy:
+    """Deterministic ranged combat bot for skirmisher vs ranged interaction.
+    
+    Phase 22.3.1: This bot uses ranged weapons (bow) with net arrows loaded
+    to test skirmisher leap prevention via entangle.
+    
+    Behavior:
+    - If enemy is at distance 3-8 and we have ranged weapon: attack from range
+    - If enemy is adjacent (d=1): attack anyway (retaliation will trigger)
+    - If enemy is too far (d>8): move toward enemy
+    - Otherwise: wait
+    
+    Assumes: Player has bow equipped and net arrows loaded in quiver
+    
+    Usage: skirmisher_vs_ranged_net_identity scenario
+    """
+    
+    def choose_action(self, game_state: Any) -> Optional[Dict[str, Any]]:
+        player = game_state.player
+        entities = game_state.entities or []
+        game_map = game_state.game_map
+        
+        # Check if we have a ranged weapon equipped
+        from services.ranged_combat_service import is_ranged_weapon
+        if not is_ranged_weapon(player):
+            # No ranged weapon - fall back to melee
+            return TacticalFighterPolicy().choose_action(game_state)
+        
+        # Identify enemies
+        enemies = [
+            e for e in entities
+            if e != player
+            and getattr(e, 'fighter', None)
+            and getattr(e.fighter, 'hp', 0) > 0
+            and getattr(e, 'ai', None) is not None
+        ]
+        if not enemies:
+            return {'wait': True}
+        
+        # Find nearest enemy by Chebyshev distance (consistent with game mechanics)
+        def chebyshev(e):
+            return max(abs(e.x - player.x), abs(e.y - player.y))
+        
+        enemies.sort(key=chebyshev)
+        target = enemies[0]
+        distance = chebyshev(target)
+        
+        # Ranged attack range: 1-8 tiles (1 is adjacent with retaliation, 8 is max range)
+        # Optimal: 3-6, but we'll shoot at any valid range
+        if distance <= 8:
+            # Within ranged attack range - shoot!
+            return {'attack': target}
+        
+        # Too far - move toward target
+        dx = target.x - player.x
+        dy = target.y - player.y
+        step_x = 0 if dx == 0 else (1 if dx > 0 else -1)
+        step_y = 0 if dy == 0 else (1 if dy > 0 else -1)
+        
+        dest_x, dest_y = player.x + step_x, player.y + step_y
+        if (0 <= dest_x < game_map.width and 0 <= dest_y < game_map.height
+            and not game_map.is_blocked(dest_x, dest_y)):
+            blocking = next((e for e in entities if e.blocks and e.x == dest_x and e.y == dest_y), None)
+            if blocking is None:
+                return {'move': (step_x, step_y)}
+        
+        return {'wait': True}
+
+
 class SilenceScrollUserPolicy:
     """Deterministic bot for silence scroll identity scenario.
     
@@ -373,6 +449,7 @@ def make_scenario_bot_policy(name: str):
             - "sunburst_potion_user": Throws sunburst potions deterministically
             - "disarm_scroll_user": Uses disarm scroll on nearest enemy
             - "silence_scroll_user": Uses silence scroll on nearest caster
+            - "ranged_net_arrow": Uses ranged weapon with net arrows
             
     Returns:
         Bot policy instance
@@ -396,6 +473,8 @@ def make_scenario_bot_policy(name: str):
         return DisarmScrollUserPolicy()
     if name_lower == "silence_scroll_user":
         return SilenceScrollUserPolicy()
+    if name_lower == "ranged_net_arrow":
+        return HarnessRangedNetArrowPolicy()
     
     raise ValueError(f"Unknown scenario bot policy: {name}")
 
@@ -408,6 +487,7 @@ __all__ = [
     'SunburstPotionUserPolicy',
     'DisarmScrollUserPolicy',
     'SilenceScrollUserPolicy',
+    'HarnessRangedNetArrowPolicy',
     'make_scenario_bot_policy',
 ]
 

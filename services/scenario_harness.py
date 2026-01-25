@@ -106,6 +106,11 @@ class RunMetrics:
     special_ammo_shots_fired: int = 0
     special_ammo_effects_applied: int = 0
     bonus_attacks_while_reflexes_active: int = 0
+    # Phase 22.3: Skirmisher metrics
+    skirmisher_leaps_used: int = 0
+    skirmisher_adjacent_turns: int = 0
+    skirmisher_fast_attacks_triggered: int = 0
+    skirmisher_leap_denied_entangled: int = 0  # Phase 22.3.1: Explicit entangle prevention metric
     # Phase 20D.1: Entangle metrics (Root Potion)
     entangle_applications: int = 0
     entangle_moves_blocked: int = 0
@@ -427,6 +432,11 @@ class AggregatedMetrics:
     total_ranged_damage_penalty_total: int = 0
     total_ranged_adjacent_retaliations_triggered: int = 0
     total_ranged_knockback_procs: int = 0
+    # Phase 22.3: Skirmisher metrics (Leap + Fast Pressure)
+    total_skirmisher_leaps_used: int = 0
+    total_skirmisher_adjacent_turns: int = 0
+    total_skirmisher_fast_attacks_triggered: int = 0
+    total_skirmisher_leap_denied_entangled: int = 0  # Phase 22.3.1: Explicit entangle prevention
     # Terminal state overwrite attempts (diagnostic metric for harness observability)
     total_terminal_overwrite_attempts: int = 0
     total_terminal_overwrite_by_target: Dict[str, int] = field(default_factory=dict)
@@ -523,6 +533,11 @@ class AggregatedMetrics:
             # Phase 20D.1: Entangle metrics
             'total_entangle_applications': self.total_entangle_applications,
             'total_entangle_moves_blocked': self.total_entangle_moves_blocked,
+            # Phase 22.2.2: Special ammo (quiver) metrics
+            'total_special_ammo_loaded': self.total_special_ammo_loaded,
+            'total_special_ammo_unloaded': self.total_special_ammo_unloaded,
+            'total_special_ammo_shots_fired': self.total_special_ammo_shots_fired,
+            'total_special_ammo_effects_applied': self.total_special_ammo_effects_applied,
             # Phase 20E.1: Blind metrics
             'total_blind_applications': self.total_blind_applications,
             'total_blind_attacks_attempted': self.total_blind_attacks_attempted,
@@ -567,6 +582,11 @@ class AggregatedMetrics:
             'total_ranged_damage_penalty_total': self.total_ranged_damage_penalty_total,
             'total_ranged_adjacent_retaliations_triggered': self.total_ranged_adjacent_retaliations_triggered,
             'total_ranged_knockback_procs': self.total_ranged_knockback_procs,
+            # Phase 22.3: Skirmisher metrics
+            'total_skirmisher_leaps_used': self.total_skirmisher_leaps_used,
+            'total_skirmisher_adjacent_turns': self.total_skirmisher_adjacent_turns,
+            'total_skirmisher_fast_attacks_triggered': self.total_skirmisher_fast_attacks_triggered,
+            'total_skirmisher_leap_denied_entangled': self.total_skirmisher_leap_denied_entangled,
             # Terminal state overwrite metrics (diagnostic)
             'total_terminal_overwrite_attempts': self.total_terminal_overwrite_attempts,
             'total_terminal_overwrite_by_target': dict(self.total_terminal_overwrite_by_target),
@@ -1570,6 +1590,11 @@ def run_scenario_many(
     total_ranged_damage_penalty_total = 0
     total_ranged_adjacent_retaliations_triggered = 0
     total_ranged_knockback_procs = 0
+    # Phase 22.3: Aggregate skirmisher metrics
+    total_skirmisher_leaps_used = 0
+    total_skirmisher_adjacent_turns = 0
+    total_skirmisher_fast_attacks_triggered = 0
+    total_skirmisher_leap_denied_entangled = 0
     for run in all_runs:
         total_ranged_attacks_made_by_player += getattr(run, "ranged_attacks_made_by_player", 0)
         total_ranged_attacks_denied_out_of_range += getattr(run, "ranged_attacks_denied_out_of_range", 0)
@@ -1577,6 +1602,12 @@ def run_scenario_many(
         total_ranged_damage_penalty_total += getattr(run, "ranged_damage_penalty_total", 0)
         total_ranged_adjacent_retaliations_triggered += getattr(run, "ranged_adjacent_retaliations_triggered", 0)
         total_ranged_knockback_procs += getattr(run, "ranged_knockback_procs", 0)
+        
+        # Phase 22.3: Skirmisher metrics
+        total_skirmisher_leaps_used += getattr(run, "skirmisher_leaps_used", 0)
+        total_skirmisher_adjacent_turns += getattr(run, "skirmisher_adjacent_turns", 0)
+        total_skirmisher_fast_attacks_triggered += getattr(run, "skirmisher_fast_attacks_triggered", 0)
+        total_skirmisher_leap_denied_entangled += getattr(run, "skirmisher_leap_denied_entangled", 0)
 
     # Terminal state overwrite metrics (diagnostic)
     total_terminal_overwrite_attempts = 0
@@ -1692,6 +1723,11 @@ def run_scenario_many(
         total_ranged_damage_penalty_total=total_ranged_damage_penalty_total,
         total_ranged_adjacent_retaliations_triggered=total_ranged_adjacent_retaliations_triggered,
         total_ranged_knockback_procs=total_ranged_knockback_procs,
+        # Phase 22.3: Skirmisher metrics
+        total_skirmisher_leaps_used=total_skirmisher_leaps_used,
+        total_skirmisher_adjacent_turns=total_skirmisher_adjacent_turns,
+        total_skirmisher_fast_attacks_triggered=total_skirmisher_fast_attacks_triggered,
+        total_skirmisher_leap_denied_entangled=total_skirmisher_leap_denied_entangled,
         # Terminal state overwrite metrics (diagnostic)
         total_terminal_overwrite_attempts=total_terminal_overwrite_attempts,
         total_terminal_overwrite_by_target=merged_terminal_overwrite_by_target,
