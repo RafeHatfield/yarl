@@ -84,3 +84,6 @@ player:
   equipment:
     weapon: "shortsword"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["identity"]

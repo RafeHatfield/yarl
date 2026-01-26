@@ -89,3 +89,6 @@ player:
 #   - Wall impact: "X slams into the wall and is staggered!"
 #   - Entity collision: "X collides with Y and is staggered!"
 
+
+# Suite tags
+suites: ["identity"]

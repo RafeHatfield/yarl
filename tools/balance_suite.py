@@ -28,68 +28,36 @@ from typing import Any, Dict, List, Optional, Tuple
 # SCENARIO MATRIX CONFIGURATION
 # ============================================================================
 
-# Core scenarios to run (base + weapon variants)
+# Core scenarios to run (ecosystem drift / balance tracking)
+# NOTE: Identity scenarios have been moved to tools/identity_suite.py
+# This suite focuses on: win rate, attrition, pacing across depth/weapon variants
 SCENARIO_MATRIX = [
-    # Depth 3 Orc Brutal + variants
+    # =========================================================================
+    # Depth 3 Orc Brutal + weapon variants
+    # =========================================================================
     {"id": "depth3_orc_brutal", "runs": 50, "turn_limit": 110},
     {"id": "depth3_orc_brutal_keen", "runs": 50, "turn_limit": 110},
     {"id": "depth3_orc_brutal_vicious", "runs": 50, "turn_limit": 110},
     {"id": "depth3_orc_brutal_fine", "runs": 50, "turn_limit": 110},
     {"id": "depth3_orc_brutal_masterwork", "runs": 50, "turn_limit": 110},
-    
-    # Depth 5 Zombie + variants
+
+    # =========================================================================
+    # Depth 5 Zombie + weapon variants
+    # =========================================================================
     {"id": "depth5_zombie", "runs": 50, "turn_limit": 150},
     {"id": "depth5_zombie_keen", "runs": 50, "turn_limit": 150},
     {"id": "depth5_zombie_vicious", "runs": 50, "turn_limit": 150},
     {"id": "depth5_zombie_fine", "runs": 50, "turn_limit": 150},
     {"id": "depth5_zombie_masterwork", "runs": 50, "turn_limit": 150},
-    
-    # Depth 2 Orc Baseline + variants
+
+    # =========================================================================
+    # Depth 2 Orc Baseline + weapon variants
+    # =========================================================================
     {"id": "depth2_orc_baseline", "runs": 40, "turn_limit": 100},
     {"id": "depth2_orc_baseline_keen", "runs": 40, "turn_limit": 100},
     {"id": "depth2_orc_baseline_vicious", "runs": 40, "turn_limit": 100},
     {"id": "depth2_orc_baseline_fine", "runs": 40, "turn_limit": 100},
     {"id": "depth2_orc_baseline_masterwork", "runs": 40, "turn_limit": 100},
-    
-    # Phase 19 Monster Identity Scenarios
-    {"id": "monster_slime_identity", "runs": 30, "turn_limit": 80},
-    {"id": "monster_skeleton_identity", "runs": 30, "turn_limit": 200},
-    {"id": "monster_orc_chieftain_identity", "runs": 30, "turn_limit": 200},
-    {"id": "monster_orc_shaman_identity", "runs": 30, "turn_limit": 200},
-    {"id": "monster_necromancer_identity", "runs": 30, "turn_limit": 250},
-    {"id": "monster_bone_necromancer_identity", "runs": 30, "turn_limit": 250},
-    {"id": "monster_plague_necromancer_identity", "runs": 30, "turn_limit": 250},
-    {"id": "monster_exploder_necromancer_identity", "runs": 30, "turn_limit": 250},
-    {"id": "monster_wraith_identity", "runs": 30, "turn_limit": 200},
-    {"id": "monster_lich_identity", "runs": 30, "turn_limit": 300},
-    {"id": "monster_fire_beetle_identity", "runs": 30, "turn_limit": 150},
-    {"id": "troll_identity", "runs": 30, "turn_limit": 100},
-    {"id": "monster_cave_spider_identity", "runs": 30, "turn_limit": 150},
-    {"id": "monster_web_spider_identity", "runs": 30, "turn_limit": 150},
-    
-    # Phase 20C/D/E Ability Identity Scenarios
-    {"id": "player_reflex_potion_identity", "runs": 30, "turn_limit": 100},
-    {"id": "root_potion_entangle_identity", "runs": 30, "turn_limit": 100},
-    {"id": "sunburst_potion_blind_identity", "runs": 30, "turn_limit": 100},
-    {"id": "scenario_disarm_scroll_identity", "runs": 30, "turn_limit": 100},
-    
-    # Phase 20F Silence Scroll Identity Scenarios
-    {"id": "scenario_silence_orc_shaman_identity", "runs": 30, "turn_limit": 150},
-    {"id": "scenario_silence_lich_identity", "runs": 30, "turn_limit": 200},
-    
-    # Weapon Knockback Identity Scenario
-    {"id": "knockback_weapon_identity", "runs": 30, "turn_limit": 100},
-    
-    # Phase 20 Scroll Modernization Identity Scenarios
-    {"id": "scroll_dragon_fart_identity", "runs": 30, "turn_limit": 30},
-    {"id": "scroll_fireball_identity", "runs": 30, "turn_limit": 30},
-    
-    # Phase 22.1: Oath Identity Scenarios (Run Identity)
-    # Lower run count (20 vs 30) due to Bernoulli proc variance + high signal design
-    # Shorter turn limit (120 vs 150) - identity scenarios should be focused and fast
-    {"id": "oath_embers_identity", "runs": 20, "turn_limit": 120},
-    {"id": "oath_venom_identity", "runs": 20, "turn_limit": 120},
-    {"id": "oath_chains_identity", "runs": 20, "turn_limit": 120},
 ]
 
 # Drift thresholds for WARN/FAIL classification

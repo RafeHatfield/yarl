@@ -87,3 +87,6 @@ player:
   equipment:
     weapon: "vicious_warhammer"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["balance"]

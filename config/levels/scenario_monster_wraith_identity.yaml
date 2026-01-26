@@ -94,5 +94,5 @@ player:
 #   - blocked_attempts >= 5 (ward used in some runs)
 #   - heal_total > 0 (drain works without ward)
 
-
-
+# Suite tags
+suites: ["identity"]

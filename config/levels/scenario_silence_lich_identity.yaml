@@ -104,3 +104,6 @@ player:
 # - After silence expires, lich can cast again (observes effect duration)
 # - lich_fizzle_silenced metric should track fizzled Soul Bolts
 
+
+# Suite tags
+suites: ["identity"]

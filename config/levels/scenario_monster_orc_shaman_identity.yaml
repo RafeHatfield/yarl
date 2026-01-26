@@ -134,3 +134,6 @@ player:
 # - Hang-back AI keeps shaman at distance 4-7 most of the time
 # - Cooldowns prevent spam (hex=10 turns, chant=15 turns)
 
+
+# Suite tags
+suites: ["identity"]

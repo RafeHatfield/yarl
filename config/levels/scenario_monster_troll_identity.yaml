@@ -64,3 +64,6 @@ player:
 # - Player should learn to let slime attack troll, then finish it off
 # - Metrics track: troll_regen_attempts, troll_regen_successes, troll_regen_suppressed
 
+
+# Suite tags
+suites: ["identity"]

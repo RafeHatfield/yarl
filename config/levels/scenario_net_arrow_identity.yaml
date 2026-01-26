@@ -85,3 +85,6 @@ victory_conditions:
 
 defeat_conditions:
   - type: "player_death"
+
+# Suite tags
+suites: ["identity"]

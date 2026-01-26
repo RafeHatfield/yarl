@@ -104,3 +104,6 @@ player:
 #   - fireball_direct_damage: Should be >= 15 per cast (3 orcs hit)
 #   - burning_applications: May occur if orcs survive and stand on fire
 
+
+# Suite tags
+suites: ["identity"]

@@ -64,3 +64,6 @@ player:
   equipment:
     weapon: "fine_longsword"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["balance"]

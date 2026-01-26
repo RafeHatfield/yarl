@@ -155,4 +155,5 @@ player:
 # - After successful raises, consumed corpse entities should exist on map
 # - This enables future corpse explosion mechanics targeting spent corpses
 
-
+# Suite tags
+suites: ["identity"]

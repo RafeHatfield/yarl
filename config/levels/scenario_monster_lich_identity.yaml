@@ -120,5 +120,5 @@ player:
 # - Player equipment: dagger → longsword + leather armor + starting potions
 # - Result: ~37% death rate (dangerous but beatable)
 
-
-
+# Suite tags
+suites: ["identity"]

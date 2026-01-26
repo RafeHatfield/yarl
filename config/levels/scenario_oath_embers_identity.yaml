@@ -86,3 +86,6 @@ player:
   equipment:
     weapon: "dagger"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["identity"]

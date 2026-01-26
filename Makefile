@@ -5,6 +5,7 @@
         eco-swarm-all eco-swarm-report worldgen-quick worldgen-ci worldgen-report \
         difficulty-collect difficulty-graphs difficulty-dashboard difficulty-all \
         balance-suite balance-suite-fast balance-suite-update-baseline balance-suite-update-baseline-fast \
+        hazards-suite hazards-suite-fast identity-suite all-suites \
         dist-build dist-clean dist-rebuild dist-run dist-check
 
 # Use python3 (or whatever python is active if in virtualenv)
@@ -30,12 +31,16 @@ help:
 	@echo "CI / Balance:"
 	@echo "  make ci-quick              - Run quick CI checks (fast tests + ETP + loot)"
 	@echo "  make balance-ci-local      - Run full Balance CI locally (with coverage)"
+	@echo ""
+	@echo "Suites:"
+	@echo "  make identity-suite             - Run identity suite (mechanic invariants)"
+	@echo "  make hazards-suite              - Run hazards suite (traps/environmental)"
+	@echo "  make hazards-suite-fast         - Run hazards suite (fast mode)"
 	@echo "  make balance-suite              - Run full balance suite (compare mode)"
 	@echo "  make balance-suite-fast         - Run balance suite (fast compare mode)"
 	@echo "  make balance-suite-update-baseline      - Update baseline (full)"
 	@echo "  make balance-suite-update-baseline-fast - Update baseline (fast)"
-	@echo "  make hazards-suite              - Run hazards suite (traps/environmental)"
-	@echo "  make hazards-suite-fast         - Run hazards suite (fast mode)"
+	@echo "  make all-suites                 - Run all suites in sequence"
 	@echo ""
 	@echo "Bot Testing:"
 	@echo "  make bot         - Single bot run (watch the bot play)"
@@ -732,6 +737,14 @@ hazards-suite:
 
 hazards-suite-fast:
 	python3 tools/hazards_suite.py --fast
+
+# Identity suite targets - mechanic identity and invariant scenarios
+identity-suite:
+	python3 tools/identity_suite.py
+
+# All suites - runs identity, hazards, and balance suites in sequence
+all-suites:
+	python3 tools/all_suites.py
 
 # --------------------------------------------------------------------
 # Distribution / Packaging (PyInstaller)

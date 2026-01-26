@@ -64,3 +64,6 @@ player:
   equipment:
     weapon: "vicious_battleaxe"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["balance"]

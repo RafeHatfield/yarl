@@ -105,3 +105,6 @@ player:
 # - Bone piles: Each skeleton death spawns a bone pile feature
 # - Arena layout: 15x11 with room to maneuver and break formation
 # - Hallway/choke: Can be used to funnel skeletons and break wall
+
+# Suite tags
+suites: ["identity"]

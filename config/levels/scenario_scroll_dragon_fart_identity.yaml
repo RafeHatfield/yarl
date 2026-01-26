@@ -99,3 +99,6 @@ player:
 #   - sleep_applications: Should be >= 1 per run (at least one orc hit)
 #   - poison_applications: May occur if monsters stand on hazards
 
+
+# Suite tags
+suites: ["identity"]

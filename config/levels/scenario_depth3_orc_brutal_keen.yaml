@@ -64,3 +64,6 @@ player:
   equipment:
     weapon: "keen_dagger"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["balance"]

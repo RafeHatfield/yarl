@@ -114,7 +114,6 @@ player:
 # - Arena layout: 17x13 with room to maneuver
 # - Healing potions: allow extended combat to observe mechanics
 
-
-
-
+# Suite tags
+suites: ["identity"]
 

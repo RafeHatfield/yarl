@@ -148,6 +148,5 @@ player:
 # - Hang-back AI keeps necromancer at safe distance
 # - Cooldown prevents spam (action_cooldown=4 turns)
 
-
-
-
+# Suite tags
+suites: ["identity"]

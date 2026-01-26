@@ -92,4 +92,5 @@ player:
 #   - entangle_applications metric incremented on each application
 #   - entangle_moves_blocked incremented when orc tries to move
 
-
+# Suite tags
+suites: ["identity"]

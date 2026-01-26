@@ -104,4 +104,5 @@ player:
 # - Wooden club available as corrosion-immune alternative
 # - Split rate enforced via test_slime_identity_scenario_split_rate.py
 
-
+# Suite tags
+suites: ["identity"]

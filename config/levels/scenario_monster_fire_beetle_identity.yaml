@@ -91,3 +91,6 @@ player:
 #   - Beetles have 100% resistance (immune to fire)
 #   - Player has 0% by default (takes full damage)
 
+
+# Suite tags
+suites: ["identity"]

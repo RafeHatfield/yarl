@@ -87,3 +87,6 @@ player:
   equipment:
     weapon: "mace"  # Knockback weapon to demonstrate Oath of Chains bonus
     armor: "leather_armor"
+
+# Suite tags
+suites: ["identity"]

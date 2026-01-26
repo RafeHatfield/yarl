@@ -88,3 +88,6 @@ player:
 #   - blind_applications metric incremented on each application
 #   - blind_attacks_attempted incremented when blinded orc attacks
 #   - blind_attacks_missed incremented when blinded orc misses
+
+# Suite tags
+suites: ["identity"]

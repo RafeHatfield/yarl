@@ -112,4 +112,4 @@ player:
 # - Deterministic under seed_base=1337
 
 # Suite tags
-suites: ["enemy_abilities", "ranged_combat", "phase_22"]
+suites: ["identity", "enemy_abilities", "ranged_combat", "phase_22"]

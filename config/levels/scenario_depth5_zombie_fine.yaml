@@ -87,3 +87,6 @@ player:
   equipment:
     weapon: "fine_mace"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["balance"]

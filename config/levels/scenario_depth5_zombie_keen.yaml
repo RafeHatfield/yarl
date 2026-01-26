@@ -87,3 +87,6 @@ player:
   equipment:
     weapon: "keen_rapier"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["balance"]

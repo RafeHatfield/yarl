@@ -63,3 +63,6 @@ player:
 # - Simple bot uses potion on turn 1, then fights
 # - Verify bonus attacks are triggered while effect is active
 
+
+# Suite tags
+suites: ["identity"]

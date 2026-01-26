@@ -64,3 +64,6 @@ player:
   equipment:
     weapon: "masterwork_greatsword"
     armor: "leather_armor"
+
+# Suite tags
+suites: ["balance"]

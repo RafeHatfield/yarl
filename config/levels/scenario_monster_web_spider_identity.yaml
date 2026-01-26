@@ -78,3 +78,6 @@ player:
 # - SlowedEffect skips every 2nd turn
 # - Player should win but experience multiple slowed turns
 
+# Suite tags
+suites: ["identity"]
+
