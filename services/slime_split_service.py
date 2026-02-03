@@ -137,10 +137,16 @@ def execute_split(split_data: Dict[str, Any], game_map=None, entities=None) -> L
     
     # Spawn children at calculated positions
     actual_children = min(num_children, len(spawn_positions))
+    # Get depth for scaling (default to 1 if game_map not available or not an int)
+    depth = 1
+    if game_map:
+        dungeon_level = getattr(game_map, 'dungeon_level', None)
+        if isinstance(dungeon_level, int):
+            depth = dungeon_level
     for i in range(actual_children):
         x, y = spawn_positions[i]
         # Create child slime
-        child = entity_factory.create_monster(child_type, x, y)
+        child = entity_factory.create_monster(child_type, x, y, depth=depth)
         if child:
             spawned_children.append(child)
     

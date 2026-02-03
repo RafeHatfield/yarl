@@ -1097,7 +1097,7 @@ class GameMap:
                 
                 # Create monster using EntityFactory
                 entity_factory = get_entity_factory()
-                monster = entity_factory.create_monster(monster_choice, x, y)
+                monster = entity_factory.create_monster(monster_choice, x, y, depth=self.dungeon_level)
                 
                 if monster:
                     # Try to spawn equipment on the monster
@@ -1731,7 +1731,7 @@ class GameMap:
             if not any([e for e in entities if e.x == x and e.y == y]):
                 # Select monster type from theme's monster table
                 monster_choice = random_choice_from_dict(monster_chances)
-                monster = entity_factory.create_monster(monster_choice, x, y)
+                monster = entity_factory.create_monster(monster_choice, x, y, depth=self.dungeon_level)
                 
                 if monster and monster.get_component_optional(ComponentType.FIGHTER):
                     # Apply elite bonuses from theme
@@ -2200,7 +2200,7 @@ class GameMap:
                         failed_count += 1
                         break
                     
-                    monster = entity_factory.create_monster(spawn.entity_type, x, y)
+                    monster = entity_factory.create_monster(spawn.entity_type, x, y, depth=self.dungeon_level)
                     if monster:
                         from components.monster_equipment import spawn_equipment_on_monster
                         spawn_equipment_on_monster(monster, self.dungeon_level)
@@ -2232,7 +2232,7 @@ class GameMap:
                         failed_count += 1
                         break
                         
-                    monster = entity_factory.create_monster(spawn.entity_type, x, y)
+                    monster = entity_factory.create_monster(spawn.entity_type, x, y, depth=self.dungeon_level)
                     if monster:
                         # Try to spawn equipment on the monster
                         from components.monster_equipment import spawn_equipment_on_monster
@@ -2683,7 +2683,7 @@ class GameMap:
                     failed_count += 1
                     break
                     
-                monster = entity_factory.create_monster(spawn.entity_type, x, y)
+                monster = entity_factory.create_monster(spawn.entity_type, x, y, depth=self.dungeon_level)
                 if monster:
                     from components.monster_equipment import spawn_equipment_on_monster
                     spawn_equipment_on_monster(monster, self.dungeon_level)
@@ -2866,7 +2866,7 @@ class GameMap:
             # Make sure spawn point is valid
             if (secret_x < ritualist_x < secret_x + secret_w and
                 secret_y < ritualist_y < secret_y + secret_h):
-                ritualist = factory.create_monster('corrupted_ritualist', ritualist_x, ritualist_y)
+                ritualist = factory.create_monster('corrupted_ritualist', ritualist_x, ritualist_y, depth=self.dungeon_level)
                 if ritualist:
                     entities.append(ritualist)
                     logger.info(f"Spawned Corrupted Ritualist at ({ritualist_x}, {ritualist_y})")

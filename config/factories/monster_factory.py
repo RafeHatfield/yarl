@@ -28,13 +28,14 @@ logger = logging.getLogger(__name__)
 class MonsterFactory(FactoryBase):
     """Factory for creating monster entities."""
     
-    def create_monster(self, monster_type: str, x: int, y: int) -> Optional[Entity]:
+    def create_monster(self, monster_type: str, x: int, y: int, depth: int = 1) -> Optional[Entity]:
         """Create a monster entity from configuration.
         
         Args:
             monster_type: The type of monster to create (e.g., "orc", "troll")
             x: X coordinate for the monster
             y: Y coordinate for the monster
+            depth: Dungeon depth for stat scaling (default: 1, no scaling)
             
         Returns:
             Entity instance if monster type exists, None otherwise
@@ -45,20 +46,51 @@ class MonsterFactory(FactoryBase):
             return self._create_fallback_monster(monster_type, x, y)
 
         try:
-            # Create fighter component from stats
+            # Get base stats from definition
+            base_hp = monster_def.stats.hp
+            base_damage_min = monster_def.stats.damage_min or 0
+            base_damage_max = monster_def.stats.damage_max or 0
+            base_accuracy = getattr(monster_def.stats, 'accuracy', None)
+            
+            # Get tags for scaling curve selection (zombie archetype detection)
+            monster_tags = set(monster_def.tags) if hasattr(monster_def, 'tags') and monster_def.tags else set()
+            
+            # Apply depth-based scaling
+            from balance.depth_scaling import apply_scaling, record_scaling_metrics, ZOMBIE_ARCHETYPE_TAGS
+            
+            scaled = apply_scaling(
+                base_hp=base_hp,
+                base_damage_min=base_damage_min,
+                base_damage_max=base_damage_max,
+                base_accuracy=base_accuracy if base_accuracy is not None else 0,
+                depth=depth,
+                tags=monster_tags
+            )
+            
+            # Record metrics (optional, fails silently)
+            is_zombie_archetype = bool(monster_tags & ZOMBIE_ARCHETYPE_TAGS)
+            record_scaling_metrics(depth, is_zombie_archetype)
+            
+            logger.debug(
+                f"Depth scaling for {monster_type} at depth {depth}: "
+                f"HP {base_hp}->{scaled.hp}, dmg {base_damage_min}-{base_damage_max}->"
+                f"{scaled.damage_min}-{scaled.damage_max}, acc {base_accuracy}->{scaled.accuracy}"
+            )
+            
+            # Create fighter component with scaled stats
             fighter_component = Fighter(
-                hp=monster_def.stats.hp,
+                hp=scaled.hp,
                 defense=monster_def.stats.defense,
                 power=monster_def.stats.power,
                 xp=monster_def.stats.xp,
-                damage_min=monster_def.stats.damage_min or 0,
-                damage_max=monster_def.stats.damage_max or 0,
+                damage_min=scaled.damage_min,
+                damage_max=scaled.damage_max,
                 strength=getattr(monster_def.stats, 'strength', 10),
                 dexterity=getattr(monster_def.stats, 'dexterity', 10),
                 constitution=getattr(monster_def.stats, 'constitution', 10),
                 resistances=getattr(monster_def.stats, 'resistances', None),
-                # Phase 8: Accuracy and Evasion (defaults if not specified in YAML)
-                accuracy=getattr(monster_def.stats, 'accuracy', None),
+                # Phase 8: Accuracy and Evasion (scaled accuracy, original evasion)
+                accuracy=scaled.accuracy if base_accuracy is not None else None,
                 evasion=getattr(monster_def.stats, 'evasion', None)
             )
 

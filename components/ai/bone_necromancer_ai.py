@@ -67,8 +67,13 @@ class BoneNecromancerAI(NecromancerBase):
             from config.factories.entity_factory import get_entity_factory
             factory = get_entity_factory()
             
-            # Create bone thrall at bone pile location
-            bone_thrall = factory.create_monster(summon_monster_id, bone_pile.x, bone_pile.y)
+            # Create bone thrall at bone pile location (with depth scaling)
+            depth = 1
+            if game_map:
+                dungeon_level = getattr(game_map, 'dungeon_level', None)
+                if isinstance(dungeon_level, int):
+                    depth = dungeon_level
+            bone_thrall = factory.create_monster(summon_monster_id, bone_pile.x, bone_pile.y, depth=depth)
             if bone_thrall is None:
                 logger.warning(f"Failed to create {summon_monster_id} for {self.owner.name}")
                 return None

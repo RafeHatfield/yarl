@@ -969,7 +969,12 @@ def play_game_with_engine(
                     
                     # Create the appropriate boss (bosses are monsters, not items!)
                     from message_builder import MessageBuilder as MB
-                    boss = entity_factory.create_monster(boss_fights[choice], boss_x, boss_y)
+                    depth = 1
+                    if game_map:
+                        dungeon_level = getattr(game_map, 'dungeon_level', None)
+                        if isinstance(dungeon_level, int):
+                            depth = dungeon_level
+                    boss = entity_factory.create_monster(boss_fights[choice], boss_x, boss_y, depth=depth)
                     if boss:
                         entities.append(boss)
                         message_log.add_message(MB.warning(f"{boss.name} appears!"))

@@ -380,7 +380,7 @@ def _spawn_monsters(monster_entries, entities: List[Entity], game_map: GameMap, 
         
         for _ in range(count):
             x, y = _resolve_position(entry, game_map, entities, rng)
-            monster = factory.create_monster(monster_type, x, y)
+            monster = factory.create_monster(monster_type, x, y, depth=game_map.dungeon_level)
             if monster is None:
                 raise ScenarioBuildError(f"Unknown monster type '{monster_type}'")
             if getattr(monster, "faction", None) is None:

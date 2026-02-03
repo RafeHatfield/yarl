@@ -617,7 +617,7 @@ monsters:
     render_order: "actor"
     blocks: true
     # Phase 10: Zombies have rotting flesh but are already undead
-    tags: ["corporeal_flesh", "undead", "mindless", "low_undead"]
+    tags: ["corporeal_flesh", "undead", "mindless", "low_undead", "zombie"]
     # Phase 18: Damage type interactions - undead flesh
     damage_resistance: "piercing"     # Rotting flesh resists stabs (-1 damage)
     damage_vulnerability: "bludgeoning"  # Crushing destroys undead (+1 damage)
@@ -639,7 +639,7 @@ monsters:
     char: "Z"                 # Capital Z for plague zombie
     color: [100, 180, 80]     # Sickly green (plague-infected)
     # Plague zombie can spread the plague on melee hit
-    tags: ["corporeal_flesh", "undead", "mindless", "low_undead", "plague_carrier"]
+    tags: ["corporeal_flesh", "undead", "mindless", "low_undead", "plague_carrier", "zombie"]
     special_abilities: ["swarm", "plague_attack"]  # Can spread plague
     # ETP: DPS=5.5 × 6 × durability=1.54 × behavior=1.1 = 55
     etp_base: 40
