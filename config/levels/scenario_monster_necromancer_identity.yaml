@@ -70,12 +70,12 @@ monsters:
     state: "aware"
   
   # Orcs - additional corpse sources
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 8]
     facing: "west"

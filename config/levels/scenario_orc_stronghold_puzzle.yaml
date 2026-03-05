@@ -1,0 +1,251 @@
+# Scenario: Orc Stronghold Puzzle — Emergent Mastery Cultivation
+# Purpose: A manual-playtest-only puzzle room designed to reward creative system
+#   exploitation rather than raw melee strength. NOT part of identity suite.
+#   NOT a balance baseline. NOT a drift canary.
+#
+# Design Intent:
+#   This room is intentionally "impossible head-on." Six orcs at depth 5 in a
+#   fortified arena will overwhelm any player who charges straight in. The room
+#   is solvable — but only by exploiting YARL's systemic interactions:
+#
+#   - Wand of Portals: bypass chokepoints, teleport behind enemy lines, split
+#     groups, create escape routes.
+#   - Geometry manipulation: lure enemies through narrow gaps, isolate the brute,
+#     use pillars to break shaman LOS.
+#   - Status interactions: root potion to lock down the brute or skirmisher,
+#     blink scroll for emergency repositioning.
+#   - Chokepoint abuse: fight enemies 1-on-1 through narrow passages.
+#
+#   The wand is the keystone tool. Without it, the room is brutally unfair.
+#   With it, creative players can divide and conquer.
+#
+# Map Layout:
+#   22x18 enclosed arena with two horizontal dividing walls and a vertical
+#   partition, creating three distinct zones:
+#
+#   BACK CHAMBER (y=1–6): Divided into NW and NE sub-areas by a vertical
+#     partition at x=11 (y=3–5). The shaman hides in the NE sub-area, far
+#     from direct engagement. Gap at y=6 allows E-W movement.
+#
+#   MAIN HALL (y=8–11): Where the brute, grunts, and skirmisher are
+#     stationed. Accessible from approach zone via 1-tile choke at (11,12).
+#     Accessible from back chamber via 1-tile gap at (11,7).
+#
+#   APPROACH ZONE (y=13–16): Player staging area. Ground items here.
+#     Room to retreat and regroup.
+#
+#   Conceptual layout (W=wall, #=obstacle, .=floor, P=player):
+#     WWWWWWWWWWWWWWWWWWWWWW
+#     W....................W   Back chamber (NW)
+#     W....................W   |
+#     W..........#.........W   Vertical partition x=11
+#     W....#.....#.........W   Pillar (5,4) | partition
+#     W..........#.........W   |
+#     W....................W   Gap at y=6 (walk E-W)
+#     W##########.#########W   Divider wall, 1-tile gap at x=11
+#     W....................W   Main hall
+#     W....................W   |
+#     W....................W   |
+#     W............#.......W   Pillar (13,11)
+#     W##########.#########W   Choke wall, 1-tile gap at x=11
+#     W....................W   Approach zone
+#     W....................W   |
+#     W....................W   |
+#     W..P.................W   Player start (3,16)
+#     WWWWWWWWWWWWWWWWWWWWWW
+#
+# Portal Exploit Paths:
+#   1. Portal from approach zone → NE back chamber: bypass both walls,
+#      arrive next to the shaman for a quick kill.
+#   2. Portal from approach zone → main hall (behind enemies): flank the
+#      brute from behind without using the choke.
+#   3. Portal entrance at choke + exit in approach zone: enemies step on
+#      the entrance and teleport away from the fight.
+#   4. Escape portal: if overwhelmed inside, portal back to safety.
+#
+# This scenario is for MANUAL PLAYTESTING ONLY.
+# It is NOT deterministic, NOT part of identity suite, NOT a CI gate.
+
+scenario_id: orc_stronghold_puzzle
+name: "Orc Stronghold Puzzle — Emergent Mastery Cultivation"
+description: "Fortified orc stronghold that is impossible head-on; designed to reward portal exploitation, geometry manipulation, and systemic creativity"
+
+# Depth 5: enemies are significantly tougher than the depth-4 probe.
+# HP ~1.47x, ToHit ~1.34x at depth 5. Combined with 6 enemies, head-on
+# combat is near-guaranteed death. This is intentional.
+depth: 5
+
+# Defaults for harness runs (manual playtest, not suite)
+defaults:
+  turn_limit: 200
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 1
+
+# NO expected outcomes. This is not a regression gate.
+# expected: (intentionally omitted)
+
+# Room definition — single arena with internal fort geometry
+rooms:
+  - id: "orc_stronghold_puzzle"
+    type: "arena"
+    width: 22
+    height: 18
+    description: "Fortified orc stronghold with layered walls, choke points, and portal-exploitable geometry"
+    walls: "enclosed"
+    obstacles:
+      # ════════════════════════════════════════════════════════
+      # HORIZONTAL DIVIDER (y=7): separates back chamber from main hall
+      # 1-tile gap at x=11 — only direct passage to back chamber
+      # ════════════════════════════════════════════════════════
+      # West segment (x=1 through x=10)
+      - position: [1, 7]
+      - position: [2, 7]
+      - position: [3, 7]
+      - position: [4, 7]
+      - position: [5, 7]
+      - position: [6, 7]
+      - position: [7, 7]
+      - position: [8, 7]
+      - position: [9, 7]
+      - position: [10, 7]
+      # Gap at x=11 — 1-tile passage to back chamber
+      # East segment (x=12 through x=20)
+      - position: [12, 7]
+      - position: [13, 7]
+      - position: [14, 7]
+      - position: [15, 7]
+      - position: [16, 7]
+      - position: [17, 7]
+      - position: [18, 7]
+      - position: [19, 7]
+      - position: [20, 7]
+
+      # ════════════════════════════════════════════════════════
+      # CHOKE WALL (y=12): separates main hall from approach zone
+      # 1-tile gap at x=11 — the only entry into the fort
+      # ════════════════════════════════════════════════════════
+      # West segment (x=1 through x=10)
+      - position: [1, 12]
+      - position: [2, 12]
+      - position: [3, 12]
+      - position: [4, 12]
+      - position: [5, 12]
+      - position: [6, 12]
+      - position: [7, 12]
+      - position: [8, 12]
+      - position: [9, 12]
+      - position: [10, 12]
+      # Gap at x=11 — the entry choke point
+      # East segment (x=12 through x=20)
+      - position: [12, 12]
+      - position: [13, 12]
+      - position: [14, 12]
+      - position: [15, 12]
+      - position: [16, 12]
+      - position: [17, 12]
+      - position: [18, 12]
+      - position: [19, 12]
+      - position: [20, 12]
+
+      # ════════════════════════════════════════════════════════
+      # VERTICAL PARTITION (x=11, y=3–5): splits back chamber into NW and NE
+      # Creates a shaman hideout in the NE that requires walking around
+      # through the y=6 gap. Portal bypasses this entirely.
+      # ════════════════════════════════════════════════════════
+      - position: [11, 3]
+      - position: [11, 4]
+      - position: [11, 5]
+
+      # ════════════════════════════════════════════════════════
+      # PILLARS — LOS manipulation and partial cover
+      # ════════════════════════════════════════════════════════
+      # NW back chamber pillar: breaks shaman LOS if player enters NW side
+      - position: [5, 4]
+      # Main hall east pillar: partial cover for player entering the hall
+      - position: [17, 10]
+
+# Monster placements — explicit orc IDs (NOT generic "orc")
+# Composition: 3x grunt, 1x brute, 1x skirmisher, 1x shaman (6 total)
+# All in_combat: monsters are alert and engage immediately.
+#
+# Head-on engagement order (entering via choke at (11,12)):
+#   1. Brute at (11,10) — first major obstacle, 2 tiles north of choke
+#   2. Grunts at (7,9) and (15,9) — converge from flanks
+#   3. Grunt at (11,8) — guards passage to back chamber
+#   4. Skirmisher at (5,11) — leaps into engagement from west flank
+#   5. Shaman at (16,3) — casts from NE back chamber, requires full
+#      traversal of the fort to reach without portals
+monsters:
+  # ── Brute: center of main hall, blocks choke approach ──
+  - type: "orc_brute"
+    count: 1
+    position: [11, 10]
+    facing: "south"
+    state: "in_combat"
+
+  # ── Grunts: flanking positions in main hall ──
+  - type: "orc_grunt"
+    count: 1
+    position: [7, 9]
+    facing: "south"
+    state: "in_combat"
+  - type: "orc_grunt"
+    count: 1
+    position: [15, 9]
+    facing: "south"
+    state: "in_combat"
+  # ── Grunt: guards divider passage to back chamber ──
+  - type: "orc_grunt"
+    count: 1
+    position: [11, 8]
+    facing: "south"
+    state: "in_combat"
+
+  # ── Skirmisher: west main hall, near choke, ready to leap ──
+  - type: "orc_skirmisher"
+    count: 1
+    position: [5, 11]
+    facing: "south"
+    state: "in_combat"
+
+  # ── Shaman: NE back chamber, behind both divider and partition ──
+  # Reachable without portal: choke → main hall → divider gap (11,7) →
+  #   NW back → east through gap at y=6 → NE back. Very long route.
+  # Reachable with portal: portal from approach → NE back. Instant.
+  - type: "orc_shaman"
+    count: 1
+    position: [16, 3]
+    facing: "south"
+    state: "in_combat"
+
+# Items — wand of portals is the keystone tool
+# Placed on the ground near the player (scenario loader handles it as
+# a special item; inventory path does not support wand_of_portals).
+# Default 3 charges from PortalPlacer — enough for creative use,
+# not enough for waste.
+items:
+  - type: "wand_of_portals"
+    count: 1
+    position: [4, 16]
+  - type: "root_potion"
+    count: 1
+    position: [6, 15]
+  - type: "blink_scroll"
+    count: 1
+    position: [8, 15]
+
+# Player spawn — approach zone, facing north toward the choke.
+# Ground items are adjacent for quick pickup before entering the fort.
+player:
+  position: [3, 16]
+  facing: "north"
+  inventory:
+    - type: "healing_potion"
+      count: 3
+  equipment:
+    weapon: "longsword"
+    armor: "chain_mail"
+
+# NO suite tags — this is manual playtest only
+# suites: (intentionally omitted)

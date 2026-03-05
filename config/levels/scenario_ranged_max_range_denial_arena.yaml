@@ -51,13 +51,13 @@ rooms:
 
 monsters:
   # Enemy beyond max range (shortbow reach=8, so distance 9+ is denied)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [20, 6]  # distance 15 from player at [5, 6] - way beyond max range
     facing: "west"
     state: "aware"
   # In-range enemy for comparison
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 6]  # distance 5 from player - optimal range
     facing: "west"

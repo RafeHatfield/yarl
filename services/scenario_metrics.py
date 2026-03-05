@@ -88,6 +88,26 @@ class ScenarioMetricsCollector:
         if hit:
             self.metrics.monster_hits += 1
 
+    def record_player_damage(self, amount: int) -> None:
+        """Record damage dealt by the player (reporting-only, Phase 22.4).
+        
+        Args:
+            amount: Final damage dealt (post-crit, post-modifiers)
+        """
+        if not hasattr(self.metrics, 'player_damage_dealt'):
+            self.metrics.player_damage_dealt = 0
+        self.metrics.player_damage_dealt += amount
+
+    def record_monster_damage(self, amount: int) -> None:
+        """Record damage dealt by a monster (reporting-only, Phase 22.4).
+        
+        Args:
+            amount: Final damage dealt (post-crit, post-modifiers)
+        """
+        if not hasattr(self.metrics, 'monster_damage_dealt'):
+            self.metrics.monster_damage_dealt = 0
+        self.metrics.monster_damage_dealt += amount
+
     def record_portal_use(self) -> None:
         """Record a portal teleportation event."""
         if hasattr(self.metrics, "portals_used"):

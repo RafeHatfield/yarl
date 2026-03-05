@@ -48,14 +48,14 @@ rooms:
 # Monster placements for scenario
 monsters:
   # Unaware orc facing away from entrance
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [5, 5]
     facing: "north"
     state: "unaware"
     
   # Second orc patrolling (for multi-target test)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 5]
     facing: "east"

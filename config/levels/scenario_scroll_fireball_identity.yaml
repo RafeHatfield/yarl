@@ -42,17 +42,17 @@ rooms:
 
 monsters:
   # Three orcs clustered for AoE targeting (center of room)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 5]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 5]
     facing: "west"
@@ -103,7 +103,6 @@ player:
 #   - fireball_tiles_created: Should be >= 7 per cast (radius 3 circle)
 #   - fireball_direct_damage: Should be >= 15 per cast (3 orcs hit)
 #   - burning_applications: May occur if orcs survive and stand on fire
-
 
 # Suite tags
 suites: ["identity"]

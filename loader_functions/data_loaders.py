@@ -11,6 +11,7 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.equipment import Equipment
 from components.ai import BasicMonster, ConfusedMonster
+from components.component_registry import ComponentType
 from components.item import Item
 from components.equippable import Equippable
 from components.level import Level
@@ -275,12 +276,16 @@ def _serialize_entity(entity: Entity) -> Dict[str, Any]:
         data["level"] = _serialize_level(entity.level)
     if entity.get_component_optional(ComponentType.EQUIPMENT):
         data["equipment"] = _serialize_equipment(entity.get_component_optional(ComponentType.EQUIPMENT))
-    
+    # Phase 23: persist Statistics (visited_depths, boons_applied, etc.)
+    if hasattr(entity, 'statistics') and entity.statistics is not None:
+        data["statistics"] = entity.statistics.to_dict()
+
     return data
 
 
 def _serialize_fighter(fighter: Fighter) -> Dict[str, Any]:
     """Serialize a Fighter component."""
+    from balance.hit_model import DEFAULT_ACCURACY, DEFAULT_EVASION
     return {
         "base_max_hp": int(fighter.base_max_hp),
         "hp": int(fighter.hp),
@@ -292,7 +297,10 @@ def _serialize_fighter(fighter: Fighter) -> Dict[str, Any]:
         "damage_max": int(fighter.damage_max) if hasattr(fighter, 'damage_max') else 0,
         "strength": int(fighter.strength) if hasattr(fighter, 'strength') else 10,
         "dexterity": int(fighter.dexterity) if hasattr(fighter, 'dexterity') else 10,
-        "constitution": int(fighter.constitution) if hasattr(fighter, 'constitution') else 10
+        "constitution": int(fighter.constitution) if hasattr(fighter, 'constitution') else 10,
+        # Phase 23: accuracy and evasion must be serialized so boon mutations survive save/load
+        "accuracy": int(fighter.accuracy) if hasattr(fighter, 'accuracy') else DEFAULT_ACCURACY,
+        "evasion": int(fighter.evasion) if hasattr(fighter, 'evasion') else DEFAULT_EVASION,
     }
 
 
@@ -422,12 +430,18 @@ def _deserialize_entity(data: Dict[str, Any]) -> Entity:
         entity.level = _deserialize_level(data["level"])
     if "equipment" in data:
         entity.equipment = _deserialize_equipment(data["equipment"])
-    
+    # Phase 23: restore Statistics (visited_depths, boons_applied, etc.)
+    if "statistics" in data:
+        from components.statistics import Statistics
+        entity.statistics = Statistics.from_dict(data["statistics"], owner=entity)
+        entity.components.add(ComponentType.STATISTICS, entity.statistics)
+
     return entity
 
 
 def _deserialize_fighter(data: Dict[str, Any]) -> Fighter:
     """Deserialize a Fighter component."""
+    from balance.hit_model import DEFAULT_ACCURACY, DEFAULT_EVASION
     fighter = Fighter(
         hp=data["base_max_hp"],  # Constructor expects max HP
         defense=data["base_defense"],
@@ -438,7 +452,10 @@ def _deserialize_fighter(data: Dict[str, Any]) -> Fighter:
         damage_max=data.get("damage_max", 0),
         strength=data.get("strength", 10),
         dexterity=data.get("dexterity", 10),
-        constitution=data.get("constitution", 10)
+        constitution=data.get("constitution", 10),
+        # Phase 23: restore accuracy/evasion so boon mutations survive save/load
+        accuracy=data.get("accuracy", DEFAULT_ACCURACY),
+        evasion=data.get("evasion", DEFAULT_EVASION),
     )
     # Set current HP separately
     fighter.hp = data["hp"]

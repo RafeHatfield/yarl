@@ -44,27 +44,27 @@ rooms:
 # Tests positioning reward (bonus applied when standing still)
 monsters:
   # Five orcs with room for knockback, positioned to force movement decisions
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 5]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [12, 5]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 9]
     facing: "north"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [12, 9]
     facing: "north"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [16, 7]
     facing: "west"

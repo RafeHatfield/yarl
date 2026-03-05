@@ -1,0 +1,189 @@
+# Scenario: Orc Stronghold Probe — Emergent Mastery Diagnostic
+# Purpose: Detect whether the game supports emergent solutions (positioning,
+#   choke exploitation, consumable use) rather than pure stat-checking.
+#
+# Design Intent:
+#   This is intentionally "too strong unless clever." A head-on rush is punished.
+#   A human player could exploit: the 2-tile choke point (force 1-on-1), pillar
+#   cover (break shaman LOS), blink scroll (reposition past the wall), root
+#   potion (lock down the brute/skirmisher). The bot fights with basic tactics,
+#   so high death rate is expected and acceptable.
+#
+#   This is NOT a balance baseline. It is a canary for:
+#     - Whether 5-orc ecology composition creates genuine tactical problems
+#     - Whether geometry + consumables create emergent counterplay options
+#     - Whether scaling creep makes the encounter 100% hopeless over time
+#
+# Map Layout:
+#   20x14 enclosed arena with a dividing wall at x=8.
+#   Wall runs y=1-6 and y=8-12, leaving a single-tile choke at y=7.
+#   Left half = approach zone (player starts here).
+#   Right half = fortified stronghold (enemies positioned here).
+#   Two pillars at (12,3) and (12,10) provide partial cover in the chamber.
+#
+#   Conceptual layout (W=wall, .=floor, #=obstacle, P=player):
+#     WWWWWWWWWWWWWWWWWWWW
+#     W......#............W
+#     W......#....#.......W
+#     W......#....#.......W
+#     W......#............W
+#     W......#............W
+#     W......#............W
+#     W..P................W   <- single-tile choke at y=7
+#     W......#............W
+#     W......#............W
+#     W......#....#.......W
+#     W......#....#.......W
+#     W......#............W
+#     WWWWWWWWWWWWWWWWWWWW
+#
+# Scenario is deterministic under seed_base=1337.
+
+scenario_id: orc_stronghold_probe
+name: "Orc Stronghold Probe — Emergent Mastery Diagnostic"
+description: "Fortified orc stronghold with choke point; tests whether game supports emergent tactical solutions"
+
+# Depth 4: same band as midgame_pressure_probe_orcs.
+# Scaling: HP 1.08x, ToHit 1.06x, DMG 1.00x.
+# With 5 enemies (vs 4 in midgame probe), observed ~70% death rate for the bot.
+# A human exploiting the choke + consumables should do significantly better.
+depth: 4
+
+# Defaults for harness runs
+defaults:
+  turn_limit: 140
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 20
+
+# Expected outcomes — LOOSE guardrails, not tuning targets.
+# Supported keys: min_player_kills, max_player_deaths,
+#   plague_infections_min, reanimations_min, surprise_attacks_min, bonus_attacks_min
+#
+# min_player_kills: 20
+#   Rationale: 5 enemies per run * 20 runs = 100 max possible kills.
+#   Observed baseline: 47 kills. Threshold at 20 is very loose.
+#   Trips only if encounters become so lethal that the player can barely
+#   scratch the enemy before dying (fewer than 1 kill per run average).
+#
+# max_player_deaths: 18
+#   Rationale: Allow up to 90% death rate (18/20 runs). Observed baseline: 70%.
+#   Trips only if the scenario becomes 95-100% hopeless, indicating that
+#   scaling or composition changes have made emergent play irrelevant.
+expected:
+  min_player_kills: 20
+  max_player_deaths: 18
+
+# Room definition — single arena with internal obstacles
+rooms:
+  - id: "orc_stronghold"
+    type: "arena"
+    width: 20
+    height: 14
+    description: "Fortified orc stronghold with dividing wall and 2-tile choke"
+    walls: "enclosed"
+    obstacles:
+      # ── Dividing wall: upper segment (x=8, y=1 through y=6) ──
+      # Creates northern barrier between approach zone and stronghold
+      - position: [8, 1]
+      - position: [8, 2]
+      - position: [8, 3]
+      - position: [8, 4]
+      - position: [8, 5]
+      - position: [8, 6]
+      # Gap at y=7 only — single-tile choke point (force 1-on-1 engagement)
+      # ── Dividing wall: lower segment (x=8, y=8 through y=12) ──
+      # Creates southern barrier
+      - position: [8, 8]
+      - position: [8, 9]
+      - position: [8, 10]
+      - position: [8, 11]
+      - position: [8, 12]
+      # ── Pillars inside the stronghold (partial cover) ──
+      # Northern pillar: breaks shaman LOS from back corner
+      - position: [12, 3]
+      # Southern pillar: partial cover near skirmisher zone
+      - position: [12, 10]
+
+# Monster placements — explicit orc IDs (NOT generic "orc")
+# Composition: 2x grunt, 1x brute, 1x shaman, 1x skirmisher (5 total)
+# All in_combat: monsters are aware and engage immediately.
+#
+# Tuning history:
+#   v1: 6 enemies (3 grunts), leather armor, 2-tile choke → 100% deaths.
+#   v2: 5 enemies (2 grunts), leather armor, 1-tile choke → still 100% deaths.
+#   v3: 5 enemies, chain_mail armor (+4 AC), 1-tile choke → 70% deaths. PASS.
+# Chain_mail represents plausible midgame gear; the choke forces 1-on-1.
+# This composition preserves the stronghold feel while allowing ~30% survival.
+#
+# Placement strategy:
+#   Grunts guard the choke opening, forcing the player to fight through them.
+#   Brute sits center-room — a tanky obstacle the player must deal with.
+#   Shaman hangs back in the NE corner, casting hexes from safety.
+#   Skirmisher flanks from the south — Chebyshev distance ~5 from choke
+#   for leap engagement when the player enters.
+monsters:
+  # ── Choke guards: 2 grunts near the single-tile opening at y=7 ──
+  - type: "orc_grunt"
+    count: 1
+    position: [10, 7]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc_grunt"
+    count: 1
+    position: [10, 8]
+    facing: "west"
+    state: "in_combat"
+
+  # ── Brute: center of stronghold, tanky roadblock ──
+  - type: "orc_brute"
+    count: 1
+    position: [14, 7]
+    facing: "west"
+    state: "in_combat"
+
+  # ── Shaman: NE corner, behind pillar cover, casting hex/chant ──
+  - type: "orc_shaman"
+    count: 1
+    position: [16, 3]
+    facing: "west"
+    state: "in_combat"
+
+  # ── Skirmisher: SE flank, Chebyshev ~5 from choke for leap ──
+  # From choke at (8,7): max(|13-8|, |11-7|) = max(5,4) = 5. In leap range (3-6).
+  - type: "orc_skirmisher"
+    count: 1
+    position: [13, 11]
+    facing: "west"
+    state: "in_combat"
+
+# Items — baseline healing plus emergent tactical tools on the ground
+# Healing potions: standard survival budget (inventory + ground pickup)
+# Blink scroll: enables repositioning past the wall or escaping surround
+# Root potion: throwable entangle to lock down brute or skirmisher
+items:
+  - type: "healing_potion"
+    count: 1
+    position: [5, 5]
+  - type: "blink_scroll"
+    count: 1
+    position: [5, 8]
+  - type: "root_potion"
+    count: 1
+    position: [4, 6]
+
+# Player spawn — approach zone, facing the single-tile choke.
+# The bot will walk east and meet enemies filing through the 1-tile gap at (8,7).
+# This naturally forces 1-on-1 engagement without requiring smart bot behavior.
+player:
+  position: [3, 7]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 4
+  equipment:
+    weapon: "longsword"
+    armor: "chain_mail"        # +4 AC (vs leather +2); represents midgame gear progression
+
+# Suite tags — identity suite (mechanic invariant probes)
+suites: ["identity"]

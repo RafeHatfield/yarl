@@ -73,7 +73,7 @@ monsters:
   # Skirmisher at (9,6) = distance 6 (max leap range, straight line)
   # state: "in_combat" ensures skirmisher sees player immediately
   # Strategy: Start at distance 6, skirmisher should attempt leap on turn 1 if not entangled
-  - type: "skirmisher"
+  - type: "orc_skirmisher"
     count: 1
     position: [9, 6]
     facing: "west"

@@ -1953,6 +1953,30 @@ class GameMap:
             list: New entities list for the floor
         """
         self.dungeon_level += 1
+
+        # Phase 23: Depth Boon — award one boon on first arrival at this depth.
+        # The try/except is intentional: a boon bug must not abort floor generation.
+        # In testing mode (is_testing_mode()) the exception is re-raised so tests fail loudly.
+        try:
+            from balance.depth_boons import apply_depth_boon_if_eligible, BOON_REGISTRY
+            awarded_boon_id = apply_depth_boon_if_eligible(player, self.dungeon_level)
+            if awarded_boon_id:
+                boon_def = BOON_REGISTRY.get(awarded_boon_id)
+                display_name = boon_def.display_name if boon_def else awarded_boon_id
+                message_log.add_message(
+                    MB.custom(
+                        f"The Heart pulses\u2026 You gain: {display_name}",
+                        (180, 140, 255),
+                    )
+                )
+        except Exception as _boon_exc:  # noqa: BLE001
+            from config.testing_config import is_testing_mode
+            if is_testing_mode():
+                raise
+            logger.warning(
+                f"Depth boon application failed at depth {self.dungeon_level}: {_boon_exc}"
+            )
+
         entities = [player]
 
         # Check for level template overrides that might change map dimensions

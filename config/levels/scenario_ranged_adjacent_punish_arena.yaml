@@ -48,13 +48,13 @@ rooms:
 
 monsters:
   # Adjacent melee enemy - will retaliate when shot
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [6, 5]   # Adjacent to player at [5, 5] - distance 1
     facing: "west"
     state: "aware"
   # Second adjacent enemy for more retaliation testing
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [5, 4]   # Adjacent north - distance 1
     facing: "south"

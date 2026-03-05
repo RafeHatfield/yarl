@@ -62,14 +62,14 @@ player:
 # Monster placements - 2 melee orcs that will approach
 monsters:
   # First orc - directly north
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [7, 6]
     facing: "south"
     state: "aware"
   
   # Second orc - flanking position
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 7]
     facing: "west"
@@ -81,7 +81,7 @@ items: []
 # Victory/defeat conditions
 victory_conditions:
   - type: "kill_all"
-    target: "orc"
+    target: "orc_grunt"
 
 defeat_conditions:
   - type: "player_death"

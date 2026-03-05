@@ -46,7 +46,7 @@ monsters:
   # Single skirmisher positioned at distance ~6 from player
   # Player at (3,6), skirmisher at (9,6) = distance 6
   # state: "in_combat" ensures skirmisher sees player
-  - type: "skirmisher"
+  - type: "orc_skirmisher"
     count: 1
     position: [9, 6]
     facing: "west"

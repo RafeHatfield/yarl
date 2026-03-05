@@ -62,22 +62,22 @@ rooms:
 monsters:
   # Multiple targets at optimal range (4-6 tiles) to maximize ranged attack opportunities
   # This increases chances of observing the 10% knockback proc
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 6]   # distance 4 from player at [5, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 4]  # distance ~5 from player
     facing: "southwest"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 8]  # distance ~5 from player
     facing: "northwest"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 6]  # distance 6 from player
     facing: "west"

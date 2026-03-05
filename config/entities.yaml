@@ -92,6 +92,13 @@ monsters:
           - item: "leather_armor"
             weight: 100
 
+  # Explicit baseline orc — identical to "orc" but bypasses variant resolution.
+  # Use orc_grunt in scenarios that need a deterministic plain orc.
+  # "orc" remains the worldgen family placeholder resolved by spawn_service.
+  orc_grunt:
+    name: "Orc"               # Display name matches base orc (this IS the plain orc)
+    extends: orc              # Inherits all orc stats, AI, equipment, tags
+
   # Elite orc variant using inheritance system
   # Phase 19: Orc Chieftain - Leader with Rally Cry and Sonic Bellow abilities
   orc_chieftain:
@@ -208,8 +215,11 @@ monsters:
   # Fast-moving pressure fighter that punishes ranged kiting
   # ═══════════════════════════════════════════════════════════
   
-  # Skirmisher - Mobile threat with leap ability and fast attacks
-  skirmisher:
+  # Orc Skirmisher - Mobile threat with leap ability and fast attacks
+  # Renamed from "skirmisher" → "orc_skirmisher" for naming consistency
+  # with orc_brute, orc_shaman, orc_veteran, orc_scout.
+  orc_skirmisher:
+    name: "Orc Skirmisher"
     stats:
       hp: 24                  # Moderate health (not a brute)
       power: 0                # No magical power

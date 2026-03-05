@@ -48,66 +48,66 @@ rooms:
 # Monster placements - 12 orcs in 3 waves
 monsters:
   # Wave 1 - Initial contact (2 orcs, close range)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 12]
     facing: "east"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [14, 12]
     facing: "west"
     state: "aware"
   
   # Wave 2 - Surrounding pressure (4 orcs, cardinal positions)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 10]
     facing: "east"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [14, 10]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 14]
     facing: "east"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [14, 14]
     facing: "west"
     state: "aware"
   
   # Wave 3 - Full overwhelm (6 orcs, tight surround)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 7]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [12, 7]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 7]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 17]
     facing: "north"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [12, 17]
     facing: "north"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 17]
     facing: "north"

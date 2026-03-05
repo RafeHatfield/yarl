@@ -48,17 +48,17 @@ monsters:
   
   # Group of 3 basic orcs - will be rallied by chieftain
   # Positioned to allow chieftain to hang back
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 5]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 7]
     facing: "west"

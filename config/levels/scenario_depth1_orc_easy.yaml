@@ -31,12 +31,12 @@ rooms:
     walls: "enclosed"
 
 monsters:
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [7, 5]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [7, 4]
     facing: "south"

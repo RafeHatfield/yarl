@@ -44,17 +44,17 @@ rooms:
 monsters:
   # Three orcs - they'll try to approach, getting entangled by root potions
   # state: "in_combat" ensures they move toward player even without FOV
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 4]
     facing: "west"
     state: "in_combat"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 5]
     facing: "west"
     state: "in_combat"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 6]
     facing: "west"

@@ -6,7 +6,8 @@
         difficulty-collect difficulty-graphs difficulty-dashboard difficulty-all \
         balance-suite balance-suite-fast balance-suite-update-baseline balance-suite-update-baseline-fast \
         hazards-suite hazards-suite-fast identity-suite all-suites \
-        dist-build dist-clean dist-rebuild dist-run dist-check
+        dist-build dist-clean dist-rebuild dist-run dist-check \
+        depth-pressure-data
 
 # Use python3 (or whatever python is active if in virtualenv)
 PYTHON := $(shell which python3 2>/dev/null || which python 2>/dev/null || echo python3)
@@ -46,6 +47,10 @@ help:
 	@echo "  make bot         - Single bot run (watch the bot play)"
 	@echo "  make bot-smoke   - Quick smoke test (10 runs, 500 turns, 3 floors)"
 	@echo "  make soak        - Extended soak test (200 runs, 5000 turns, 10 floors)"
+	@echo ""
+	@echo "Depth Pressure Analysis (Phase 22.4):"
+	@echo "  make depth-pressure-data        - Collect depth 1-6 pressure data + generate report"
+	@echo "  make depth-pressure-data DEPTH_PRESSURE_RUNS=20  - Fewer runs (faster)"
 	@echo ""
 	@echo "Distribution:"
 	@echo "  make dist-build   - Build distributable package (requires PyInstaller)"
@@ -810,3 +815,24 @@ dist-run:
 		echo "❌ Executable not found in $(DIST_DIR)"; \
 		exit 1; \
 	fi
+
+# --------------------------------------------------------------------
+# Depth Pressure Data Collection (Phase 22.4)
+# --------------------------------------------------------------------
+
+# Configuration (override on command line)
+DEPTH_PRESSURE_RUNS    ?= 50
+DEPTH_PRESSURE_SEED    ?= 1337
+
+# Collect real depth pressure data for depths 1–6 and produce a Markdown
+# + CSV report.  Output lands in reports/depth_pressure/<timestamp>/.
+#
+# Examples:
+#   make depth-pressure-data
+#   make depth-pressure-data DEPTH_PRESSURE_RUNS=20
+#   make depth-pressure-data DEPTH_PRESSURE_SEED=42
+depth-pressure-data:
+	@echo "Running depth pressure data collection ($(DEPTH_PRESSURE_RUNS) runs/scenario, seed=$(DEPTH_PRESSURE_SEED))..."
+	$(PYTHON) tools/collect_depth_pressure_data.py \
+	  --runs $(DEPTH_PRESSURE_RUNS) \
+	  --seed-base $(DEPTH_PRESSURE_SEED)

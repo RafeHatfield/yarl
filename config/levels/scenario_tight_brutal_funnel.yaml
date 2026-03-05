@@ -57,41 +57,41 @@ rooms:
 # Monster placements - 7 orcs total
 monsters:
   # Frontline - room entrance (3 orcs)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 4]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 5]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 6]
     facing: "west"
     state: "aware"
   
   # Deep room - surround formation (3 orcs)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 4]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 5]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 6]
     facing: "west"
     state: "aware"
   
   # Backspawn - prevents infinite retreat (1 orc)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [1, 5]
     facing: "east"

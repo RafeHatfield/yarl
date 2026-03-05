@@ -50,18 +50,18 @@ rooms:
 
 monsters:
   # Optimal range targets (distance 4-6 from player at [5, 6])
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [9, 6]   # distance 4 - optimal range
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 6]  # distance 6 - optimal range
     facing: "west"
     state: "aware"
   # Far range target (distance 7-8 from player)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [13, 6]  # distance 8 - extreme range (25% damage)
     facing: "west"

@@ -111,6 +111,9 @@ class RunMetrics:
     skirmisher_adjacent_turns: int = 0
     skirmisher_fast_attacks_triggered: int = 0
     skirmisher_leap_denied_entangled: int = 0  # Phase 22.3.1: Explicit entangle prevention metric
+    # Phase 22.4: Pressure model damage counters (reporting-only)
+    player_damage_dealt: int = 0
+    monster_damage_dealt: int = 0
     # Phase 20D.1: Entangle metrics (Root Potion)
     entangle_applications: int = 0
     entangle_moves_blocked: int = 0
@@ -170,7 +173,9 @@ class RunMetrics:
     # Terminal state overwrite attempts (diagnostic metric for harness observability)
     terminal_overwrite_attempts: int = 0
     terminal_overwrite_by_target: Dict[str, int] = field(default_factory=dict)
-    
+    # Phase 23: Depth Boons — ordered list of boon IDs applied during this run
+    boons_applied: List[str] = field(default_factory=list)
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         result = {
@@ -298,11 +303,16 @@ class RunMetrics:
             result['ranged_adjacent_retaliations_triggered'] = self.ranged_adjacent_retaliations_triggered
         if hasattr(self, 'ranged_knockback_procs'):
             result['ranged_knockback_procs'] = self.ranged_knockback_procs
+        # Phase 22.4: Pressure model damage counters
+        result['player_damage_dealt'] = self.player_damage_dealt
+        result['monster_damage_dealt'] = self.monster_damage_dealt
         # Terminal state overwrite metrics (diagnostic)
         if hasattr(self, 'terminal_overwrite_attempts'):
             result['terminal_overwrite_attempts'] = self.terminal_overwrite_attempts
         if hasattr(self, 'terminal_overwrite_by_target'):
             result['terminal_overwrite_by_target'] = dict(self.terminal_overwrite_by_target)
+        # Phase 23: Depth Boons — always present (empty list if no boons)
+        result['boons_applied'] = list(self.boons_applied)
         return result
 
 
@@ -437,10 +447,18 @@ class AggregatedMetrics:
     total_skirmisher_adjacent_turns: int = 0
     total_skirmisher_fast_attacks_triggered: int = 0
     total_skirmisher_leap_denied_entangled: int = 0  # Phase 22.3.1: Explicit entangle prevention
+    # Phase 22.4: Pressure model damage counters (reporting-only)
+    total_player_damage_dealt: int = 0
+    total_monster_damage_dealt: int = 0
     # Terminal state overwrite attempts (diagnostic metric for harness observability)
     total_terminal_overwrite_attempts: int = 0
     total_terminal_overwrite_by_target: Dict[str, int] = field(default_factory=dict)
-    
+    # Phase 23: per-run details list — each entry is RunMetrics.to_dict() for that run.
+    # Allows downstream tools (ecosystem_sanity export, analysis scripts) to see
+    # boons_applied and other per-run fields that are lost in aggregation.
+    # Not included in to_dict() unless the list is non-empty (backwards compat).
+    run_details: List[Dict[str, Any]] = field(default_factory=list)
+
     def get_oath_summary(self) -> Dict[str, Any]:
         """Get Oath Identity summary for reporting.
         
@@ -587,6 +605,9 @@ class AggregatedMetrics:
             'total_skirmisher_adjacent_turns': self.total_skirmisher_adjacent_turns,
             'total_skirmisher_fast_attacks_triggered': self.total_skirmisher_fast_attacks_triggered,
             'total_skirmisher_leap_denied_entangled': self.total_skirmisher_leap_denied_entangled,
+            # Phase 22.4: Pressure model damage counters
+            'total_player_damage_dealt': self.total_player_damage_dealt,
+            'total_monster_damage_dealt': self.total_monster_damage_dealt,
             # Terminal state overwrite metrics (diagnostic)
             'total_terminal_overwrite_attempts': self.total_terminal_overwrite_attempts,
             'total_terminal_overwrite_by_target': dict(self.total_terminal_overwrite_by_target),
@@ -596,7 +617,14 @@ class AggregatedMetrics:
         oath_summary = self.get_oath_summary()
         if oath_summary:
             result['oath_summary'] = oath_summary
-        
+
+        # Phase 23: Include per-run details if populated.
+        # Each entry is RunMetrics.to_dict() and contains boons_applied, damage counters, etc.
+        # Only written when run_details is non-empty to preserve JSON shape for runs
+        # that pre-date Phase 23.
+        if self.run_details:
+            result['run_details'] = self.run_details
+
         return result
 
 
@@ -1195,19 +1223,28 @@ def run_scenario_once(
     scenario,
     bot_policy: BotPolicy,
     turn_limit: int,
+    *,
+    disable_depth_boons: bool = False,
+    inject_boons: list[str] | None = None,
 ) -> RunMetrics:
     """Run a scenario once and collect metrics.
-    
+
     This function:
     1. Initializes a minimal game state for the scenario
     2. Runs the game loop until turn_limit or termination
     3. Collects and returns metrics
-    
+
     Args:
         scenario: ScenarioDefinition from the registry
         bot_policy: BotPolicy for player control
         turn_limit: Maximum turns to run
-        
+        disable_depth_boons: When True, sets player.statistics.disable_depth_boons=True
+            immediately after player creation (before the game loop starts). The YAML
+            scenario definition is never mutated. Used for A/B depth pressure analysis.
+        inject_boons: When provided, applies each boon ID to the player after creation
+            and sets disable_depth_boons=True (auto boons suppressed). Unknown IDs raise
+            ValueError immediately (fail loudly). Used for A/B ON variant injection.
+
     Returns:
         RunMetrics with collected data
     """
@@ -1227,7 +1264,8 @@ def run_scenario_once(
         kills_by_faction=defaultdict(int),
         kills_by_source=defaultdict(int),
     )
-    
+    game_state = None  # Phase 23: initialised here so boon capture below is safe
+
     try:
         with scoped_metrics_collector(metrics):
             constants = get_constants()
@@ -1235,6 +1273,24 @@ def run_scenario_once(
                 constants["start_level"] = scenario.depth
 
             map_result = build_scenario_map(scenario)
+
+            # Phase 23 A/B: override boon-disable flag post-creation.
+            # Player statistics exist at this point; YAML is never mutated.
+            if disable_depth_boons or inject_boons:
+                _ab_stats = getattr(map_result.player, 'statistics', None)
+                if _ab_stats is not None:
+                    _ab_stats.disable_depth_boons = True
+
+            # Phase 23 A/B: inject deterministic boon budget for ON variant.
+            # apply_boon raises ValueError for unknown IDs — no try/except here.
+            if inject_boons:
+                from balance.depth_boons import apply_boon
+                _inj_stats = getattr(map_result.player, 'statistics', None)
+                for _boon_id in inject_boons:
+                    apply_boon(map_result.player, _boon_id)
+                    if _inj_stats is not None:
+                        _inj_stats.boons_applied.append(_boon_id)
+
             validate_scenario_instance(scenario, map_result.game_map, map_result.player, map_result.entities)
 
             game_state = _create_game_state_from_map(map_result, constants)
@@ -1277,7 +1333,7 @@ def run_scenario_once(
 
             _count_dead_entities(game_state, metrics)
 
-    except (ScenarioBuildError, ScenarioInvariantError) as e:
+    except (ScenarioBuildError, ScenarioInvariantError, ValueError) as e:
         logger.error(f"Scenario setup failed: {e}")
         raise
     except Exception as e:
@@ -1288,7 +1344,14 @@ def run_scenario_once(
     # Convert defaultdict to regular dict for serialization
     metrics.kills_by_faction = dict(metrics.kills_by_faction)
     metrics.kills_by_source = dict(metrics.kills_by_source)
-    
+
+    # Phase 23: Capture boon state from player Statistics for export
+    _player = getattr(game_state, 'player', None)
+    if _player is not None:
+        _stats = getattr(_player, 'statistics', None)
+        if _stats is not None:
+            metrics.boons_applied = list(_stats.boons_applied)
+
     logger.info(f"Scenario run complete: turns={metrics.turns_taken}, "
                 f"player_died={metrics.player_died}")
     
@@ -1301,16 +1364,23 @@ def run_scenario_many(
     runs: int,
     turn_limit: int,
     seed_base: Optional[int] = None,
+    *,
+    disable_depth_boons: bool = False,
+    inject_boons: list[str] | None = None,
 ) -> AggregatedMetrics:
     """Run a scenario multiple times and aggregate metrics.
-    
+
     Args:
         scenario: ScenarioDefinition from the registry
         bot_policy: BotPolicy for player control
         runs: Number of times to run the scenario
         turn_limit: Maximum turns per run
         seed_base: Base seed for deterministic runs (or None for non-deterministic)
-        
+        disable_depth_boons: When True, passes disable_depth_boons=True to every
+            run_scenario_once() call. Used for A/B depth pressure analysis.
+        inject_boons: When provided, passes inject_boons to every run_scenario_once()
+            call. Used for A/B ON variant injection.
+
     Returns:
         AggregatedMetrics with combined data from all runs
     """
@@ -1335,7 +1405,11 @@ def run_scenario_many(
             logger.debug(f"Run {run_num}: seed={run_seed}")
         
         # Run the scenario
-        run_metrics = run_scenario_once(scenario, bot_policy, turn_limit)
+        run_metrics = run_scenario_once(
+            scenario, bot_policy, turn_limit,
+            disable_depth_boons=disable_depth_boons,
+            inject_boons=inject_boons,
+        )
         all_runs.append(run_metrics)
     
     # Aggregate results
@@ -1609,6 +1683,13 @@ def run_scenario_many(
         total_skirmisher_fast_attacks_triggered += getattr(run, "skirmisher_fast_attacks_triggered", 0)
         total_skirmisher_leap_denied_entangled += getattr(run, "skirmisher_leap_denied_entangled", 0)
 
+    # Phase 22.4: Aggregate pressure model damage counters
+    total_player_damage_dealt = 0
+    total_monster_damage_dealt = 0
+    for run in all_runs:
+        total_player_damage_dealt += getattr(run, "player_damage_dealt", 0)
+        total_monster_damage_dealt += getattr(run, "monster_damage_dealt", 0)
+
     # Terminal state overwrite metrics (diagnostic)
     total_terminal_overwrite_attempts = 0
     merged_terminal_overwrite_by_target: Dict[str, int] = {}
@@ -1728,11 +1809,17 @@ def run_scenario_many(
         total_skirmisher_adjacent_turns=total_skirmisher_adjacent_turns,
         total_skirmisher_fast_attacks_triggered=total_skirmisher_fast_attacks_triggered,
         total_skirmisher_leap_denied_entangled=total_skirmisher_leap_denied_entangled,
+        # Phase 22.4: Pressure model damage counters
+        total_player_damage_dealt=total_player_damage_dealt,
+        total_monster_damage_dealt=total_monster_damage_dealt,
         # Terminal state overwrite metrics (diagnostic)
         total_terminal_overwrite_attempts=total_terminal_overwrite_attempts,
         total_terminal_overwrite_by_target=merged_terminal_overwrite_by_target,
     )
     
+    # Phase 23: Attach per-run details (includes boons_applied per run)
+    aggregated.run_details = [r.to_dict() for r in all_runs]
+
     logger.info(f"Scenario runs complete: {runs} runs, "
                 f"avg_turns={aggregated.average_turns:.1f}, "
                 f"deaths={aggregated.player_deaths}")

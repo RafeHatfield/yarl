@@ -35,28 +35,28 @@ rooms:
 # Monster placements - identical to brutal baseline (only player gear differs)
 monsters:
   # Front-line trio (immediate threat)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 4]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 8]
     facing: "north"
     state: "aware"
   # Flanking support (slightly further, speed/positioning matters)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 5]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 7]
     facing: "west"

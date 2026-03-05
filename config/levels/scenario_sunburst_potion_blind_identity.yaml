@@ -44,12 +44,12 @@ monsters:
   # Two orcs positioned at optimal throw range (distance 4-5 from player)
   # Player at (2,5), orcs at (6,4) and (6,6) = distance 5
   # state: "in_combat" ensures they move toward player
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [6, 4]
     facing: "west"
     state: "in_combat"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [6, 6]
     facing: "west"

@@ -42,12 +42,12 @@ rooms:
 
 monsters:
   # Two orcs positioned in cone direction (east of player)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [6, 4]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [7, 5]
     facing: "west"
@@ -98,7 +98,6 @@ player:
 #   - dragon_fart_tiles_created: Should be >= 3 per cast (cone shape)
 #   - sleep_applications: Should be >= 1 per run (at least one orc hit)
 #   - poison_applications: May occur if monsters stand on hazards
-
 
 # Suite tags
 suites: ["identity"]

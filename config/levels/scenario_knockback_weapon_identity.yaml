@@ -38,17 +38,17 @@ rooms:
 
 monsters:
   # Weak orcs - lower power than player (delta <= -1 → 1-2 tile knockback)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [7, 3]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 3]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [6, 3]
     facing: "south"
@@ -88,7 +88,6 @@ player:
 #   - Only the shoved entity is staggered (not the blocker)
 #   - Wall impact: "X slams into the wall and is staggered!"
 #   - Entity collision: "X collides with Y and is staggered!"
-
 
 # Suite tags
 suites: ["identity"]

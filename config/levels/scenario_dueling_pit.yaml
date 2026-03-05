@@ -46,7 +46,7 @@ rooms:
 # Monster placements - single opponent per run
 monsters:
   # Single orc warrior for baseline dueling
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 6]
     facing: "west"

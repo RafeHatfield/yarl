@@ -43,60 +43,60 @@ rooms:
 # Monster placements - 10 orcs in 5 groups along the arena
 monsters:
   # Group 1 - Initial contact (x=6-7)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [6, 3]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [7, 6]
     facing: "west"
     state: "aware"
   
   # Group 2 (x=13-14)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [13, 2]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [14, 7]
     facing: "west"
     state: "aware"
   
   # Group 3 - Midpoint pressure (x=20-21)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [20, 3]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [21, 6]
     facing: "west"
     state: "aware"
   
   # Group 4 (x=27-28)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [27, 2]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [28, 7]
     facing: "west"
     state: "aware"
   
   # Group 5 - Final test (x=35-36)
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [35, 4]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [36, 5]
     facing: "west"

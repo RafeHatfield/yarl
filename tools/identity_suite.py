@@ -88,6 +88,23 @@ IDENTITY_SCENARIOS = [
     # =========================================================================
     {"id": "skirmisher_identity", "runs": 30, "turn_limit": 100},
     {"id": "skirmisher_vs_ranged_net_identity", "runs": 25, "turn_limit": 120},
+
+    # =========================================================================
+    # Phase 22.4: Midgame Pressure Probe (Canary)
+    # =========================================================================
+    {"id": "midgame_pressure_probe_orcs", "runs": 20, "turn_limit": 120},
+
+    # =========================================================================
+    # Phase 22.4: Depth Pressure Data Pack — Depth 6 Probe
+    # =========================================================================
+    # New scenario created for depth pressure data collection (no pre-existing
+    # depth-6 scenario existed). Open arena, loose expectations.
+    {"id": "depth6_orc_siege", "runs": 50, "turn_limit": 150},
+
+    # =========================================================================
+    # Phase 22.5: Emergent Mastery Probes
+    # =========================================================================
+    {"id": "orc_stronghold_probe", "runs": 20, "turn_limit": 140},
 ]
 
 

@@ -46,17 +46,17 @@ monsters:
   
   # Group of 3 basic orcs - provide frontline while shaman casts
   # Positioned to allow shaman to hang back
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 5]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [11, 7]
     facing: "west"
@@ -133,7 +133,6 @@ player:
 # - Chant is interruptible by ranged damage (metrics prove it)
 # - Hang-back AI keeps shaman at distance 4-7 most of the time
 # - Cooldowns prevent spam (hex=10 turns, chant=15 turns)
-
 
 # Suite tags
 suites: ["identity"]

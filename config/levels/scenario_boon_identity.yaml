@@ -1,0 +1,43 @@
+# Scenario: Boon Identity Probe
+# Phase 23: Depth Boons scaffold.
+#
+# Purpose:
+#   Verify that explicit boon application via scenario YAML lands correctly
+#   and that the boon state appears in the RunMetrics JSON export.
+#
+# Design:
+#   - No monsters — this is a pure pipeline sanity check.
+#   - fortitude_10 is applied explicitly; disable_depth_boons prevents any
+#     automatic depth-based boon from firing on top of it.
+#   - The observe_only bot just waits, so there is no combat noise.
+#   - Expected: player.fighter.base_max_hp == base + 10 after build;
+#              metrics.boons_applied == ["fortitude_10"] after run.
+
+scenario_id: boon_identity
+name: "Boon Identity Probe"
+description: "Grants fortitude_10 explicitly. Validates boon state in RunMetrics export."
+
+depth: 1
+
+defaults:
+  turn_limit: 5
+  player_bot: "observe_only"
+  allow_player_death: false
+  runs: 1
+
+rooms:
+  - id: "empty_arena"
+    type: "arena"
+    width: 8
+    height: 8
+
+monsters: []
+items: []
+
+player:
+  position: [2, 2]
+  equipment:
+    weapon: "dagger"
+    armor: "leather_armor"
+  boons: ["fortitude_10"]
+  disable_depth_boons: true

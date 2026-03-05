@@ -4,7 +4,7 @@ This component tracks comprehensive gameplay statistics including combat metrics
 exploration data, and run progression for display on death screen and achievements.
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Set
 from collections import defaultdict
 
 
@@ -30,6 +30,9 @@ class Statistics:
         turns_taken: Total turns elapsed
         gold_collected: Total gold collected (future feature)
         equipment_found: Dictionary tracking equipment discoveries
+        visited_depths: Set of dungeon depths already visited this run (Phase 23)
+        boons_applied: Ordered list of boon IDs received this run (Phase 23)
+        disable_depth_boons: When True, automatic depth boons will not fire (Phase 23)
     """
     
     def __init__(self, owner=None):
@@ -68,9 +71,19 @@ class Statistics:
         
         # Portal/wand statistics
         self.portals_used: int = 0  # Total portals created and used
-        
+
         # Consumable usage statistics
         self.potions_used: int = 0  # Total potions consumed (for soak metrics)
+
+        # Phase 23: Depth Boons scaffold
+        # visited_depths gates non-farmable boon grants (one per depth, first visit only)
+        self.visited_depths: Set[int] = set()
+        # boons_applied is an ordered log for export/analysis; it is the source of truth
+        # for "what boons does this run have" in the metrics pipeline
+        self.boons_applied: List[str] = []
+        # disable_depth_boons is set to True by scenario YAML (disable_depth_boons: true)
+        # to prevent automatic boon grants, allowing isolated effect testing
+        self.disable_depth_boons: bool = False
     
     def record_kill(self, monster_name: str) -> None:
         """Record a monster kill.
@@ -278,6 +291,10 @@ class Statistics:
             'items_picked_up': self.items_picked_up,
             'portals_used': self.portals_used,
             'potions_used': self.potions_used,
+            # Phase 23: Depth Boons
+            'visited_depths': sorted(list(self.visited_depths)),
+            'boons_applied': list(self.boons_applied),
+            'disable_depth_boons': self.disable_depth_boons,
         }
     
     @staticmethod
@@ -312,5 +329,9 @@ class Statistics:
         stats.items_picked_up = data.get('items_picked_up', 0)
         stats.portals_used = data.get('portals_used', 0)
         stats.potions_used = data.get('potions_used', 0)
+        # Phase 23: Depth Boons
+        stats.visited_depths = set(data.get('visited_depths', []))
+        stats.boons_applied = list(data.get('boons_applied', []))
+        stats.disable_depth_boons = bool(data.get('disable_depth_boons', False))
         return stats
 

@@ -233,10 +233,13 @@ def _create_player_entity(player_cfg: Optional[Dict[str, Any]]) -> Entity:
     player.components.add(ComponentType.SPEED_BONUS_TRACKER, speed_bonus_component)
 
     _apply_player_loadout(player, player_cfg or {})
-    
+
     # Phase 22.1: Apply Oath if specified in scenario config
     _apply_player_oath(player, player_cfg or {})
-    
+
+    # Phase 23: Apply explicit boons + disable_depth_boons flag from scenario config
+    _apply_player_boons(player, player_cfg or {})
+
     # Ensure HP starts at max after equipment adjustments
     if hasattr(player, "fighter"):
         player.fighter.hp = player.fighter.max_hp
@@ -290,6 +293,53 @@ def _apply_player_oath(player: Entity, player_cfg: Dict[str, Any]) -> None:
         logger.info(f"Applied {oath.name} to player for scenario")
     else:
         logger.warning(f"Unknown oath type '{oath_type}' in scenario config")
+
+
+def _apply_player_boons(player: Entity, player_cfg: Dict[str, Any]) -> None:
+    """Apply explicit boons and disable_depth_boons flag from scenario config.
+
+    Phase 23: Mirrors the _apply_player_oath pattern.
+
+    Scenario YAML schema (under ``player:``):
+        boons: ["fortitude_10", "accuracy_1"]   # applied at scenario start
+        disable_depth_boons: true               # prevents auto depth boons
+
+    If a boon_id is unknown, apply_boon raises ValueError.  We catch it here
+    and log a warning (same as the oath system treating unknown types gracefully)
+    so a YAML typo doesn't crash the entire scenario build.
+
+    Args:
+        player: The player entity (must have Statistics and Fighter components).
+        player_cfg: The ``player:`` block from the scenario YAML, or {}.
+    """
+    from balance.depth_boons import apply_boon
+
+    if not isinstance(player_cfg, dict):
+        return
+
+    stats = getattr(player, 'statistics', None)
+
+    # Set disable flag first so that if depth boons fire later they respect it.
+    disable_flag = bool(player_cfg.get('disable_depth_boons', False))
+    if disable_flag and stats is not None:
+        stats.disable_depth_boons = True
+
+    boon_list = player_cfg.get('boons', [])
+    if not isinstance(boon_list, list):
+        logger.warning(f"scenario player.boons must be a list, got {type(boon_list).__name__}")
+        return
+
+    for boon_id in boon_list:
+        try:
+            success = apply_boon(player, boon_id)
+        except ValueError as exc:
+            logger.warning(f"Unknown boon '{boon_id}' in scenario config — skipped ({exc})")
+            continue
+        if success and stats is not None:
+            stats.boons_applied.append(boon_id)
+            logger.info(f"Scenario boon applied: {boon_id}")
+        elif not success:
+            logger.warning(f"Boon '{boon_id}' could not be applied (no Fighter component)")
 
 
 def _apply_player_position(player: Entity, player_cfg: Optional[Dict[str, Any]], game_map: GameMap) -> None:

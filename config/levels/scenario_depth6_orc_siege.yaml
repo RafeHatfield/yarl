@@ -1,0 +1,93 @@
+# Scenario: Depth 6 Orc Siege Probe
+# Purpose: Diagnostic probe for depth 6 orc pressure data collection.
+#
+# Design Intent:
+#   Open-arena composition probe for the depth pressure data pack.
+#   Not a balance baseline — loose expectations to detect runaway scaling
+#   only. Depth 6 uses 1.25x HP / 1.12x to-hit / 1.05x damage (DEFAULT_CURVE).
+#
+#   Composition: 2 orc grunts + 1 orc brute + 1 orc skirmisher (4 enemies total).
+#   HP budget per run (scaled):
+#     orc_grunt:      ceil(28 * 1.25) = 35  x2 = 70
+#     orc_brute:      ceil(40 * 1.25) = 50  x1 = 50
+#     orc_skirmisher: ceil(24 * 1.25) = 30  x1 = 30
+#     TOTAL: 150 HP per run
+#
+#   At depth 6, increased to-hit and damage means substantially higher
+#   monster lethality than depth 4. Death rate is expected to be high.
+#   This probe is NOT intended to be bot-winnable most of the time.
+#
+#   Scenario is deterministic under seed_base=1337.
+
+metadata:
+  scenario_id: depth6_orc_siege
+  family: orc_siege
+  depth: 6
+
+scenario_id: depth6_orc_siege
+name: "Depth 6 – Orc Siege Probe"
+description: "Mixed orc pressure probe at depth 6 for depth curve data collection (2 grunts + brute + skirmisher)."
+
+depth: 6
+
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 50
+
+# Loose guardrails: detect near-total lock-out or degenerate scaling.
+# At depth 6 with 4 scaled enemies, high death rate is expected.
+expected:
+  min_player_kills: 30   # Player should kill at least some enemies (30 across 50 runs)
+  max_player_deaths: 49  # Only trip if literally every single run is a death
+
+rooms:
+  - id: "depth6_siege_arena"
+    type: "arena"
+    width: 14
+    height: 14
+    description: "Open arena for depth 6 siege probe — no choke geometry to avoid pathing brittleness"
+    walls: "enclosed"
+
+monsters:
+  - type: "orc_grunt"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc_grunt"
+    count: 1
+    position: [9, 9]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc_brute"
+    count: 1
+    position: [11, 7]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc_skirmisher"
+    count: 1
+    position: [9, 7]
+    facing: "west"
+    state: "in_combat"
+
+items:
+  - type: "healing_potion"
+    count: 2
+    position: [2, 2]
+  - type: "healing_potion"
+    count: 2
+    position: [2, 12]
+
+player:
+  position: [3, 7]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    weapon: "longsword"
+    armor: "leather_armor"
+
+suites: ["identity"]

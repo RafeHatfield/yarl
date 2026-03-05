@@ -35,22 +35,22 @@ rooms:
 
 # Monster placements - three orc warriors spread to avoid trivial surprise
 monsters:
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 4]
     facing: "south"
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 6]
     facing: "west"
     state: "aware"
-  - type: "orc"  # 16B tuning: add fourth orc to keep death rate in band
+  - type: "orc_grunt"  # 16B tuning: add fourth orc to keep death rate in band
     count: 1
     position: [9, 7]
     facing: "north"

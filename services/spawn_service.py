@@ -160,10 +160,94 @@ class SpawnService:
         """Select a monster type from the chance table."""
         if not monster_chances:
             return None
-        return choice_fn(monster_chances)
+        base_choice = choice_fn(monster_chances)
+        
+        # Phase 22.3.2: Resolve orc variants (skirmisher, brute, shaman)
+        # 
+        # IMPORTANT: Variant resolution ONLY applies to the generic "orc" ID.
+        # 
+        # Why generic "orc" resolves to variants:
+        #   - Worldgen uses "orc" as a faction placeholder that expands into
+        #     depth-appropriate composition (normal orcs, brutes, shamans, skirmishers)
+        #   - This creates encounter variety without hardcoding specific orc types
+        # 
+        # Why explicit IDs bypass this logic:
+        #   - Scenarios need deterministic spawns (e.g., "orc_skirmisher" must spawn exactly 1 skirmisher)
+        #   - Tests rely on exact monster types for validation
+        #   - Future faction variants (troll_berserker, zombie_plague, etc.) need the same pattern
+        #   - Explicit IDs (orc_grunt, orc_brute, orc_shaman, orc_skirmisher) preserve user intent
+        # 
+        # Rule: If ID is exactly "orc" → resolve to variant mix. Otherwise → spawn exact ID.
+        if base_choice == "orc":
+            return self._resolve_orc_variant()
+        
+        return base_choice
 
     def pick_item(self, item_chances: Dict[str, int], choice_fn=random_choice_from_dict) -> str | None:
         """Select an item type from the chance table."""
         if not item_chances:
             return None
         return choice_fn(item_chances)
+    
+    def _resolve_orc_variant(self) -> str:
+        """Resolve orc encounter composition with variant inclusion.
+        
+        Phase 22.3.2: Skirmisher integration into orc encounters.
+        
+        Design:
+        - At depth 3: ~5-10% of orcs become skirmishers
+        - At depth 4-5: ~10-15% become skirmishers
+        - At depth 6+: ~15-20% become skirmishers
+        - Very rare at depth 6+: ~2-5% chance of returning "orc_skirmisher" twice (handled by caller)
+        
+        Brutes and shamans also occasionally appear in mid-to-late depths.
+        
+        Returns:
+            Resolved monster type: "orc", "orc_brute", "orc_shaman", or "orc_skirmisher"
+        """
+        from random import random
+        
+        depth = self.depth
+        
+        # No skirmishers below depth 3
+        if depth < 3:
+            # Can still have brutes/shamans at depth 1-2 (rare)
+            if depth >= 2:
+                roll = random()
+                if roll < 0.05:  # 5% brute
+                    return "orc_brute"
+                elif roll < 0.08:  # 3% shaman
+                    return "orc_shaman"
+            return "orc"
+        
+        # Depth 3: 5-10% skirmisher
+        if depth == 3:
+            roll = random()
+            if roll < 0.075:  # 7.5% skirmisher (midpoint of 5-10%)
+                return "orc_skirmisher"
+            elif roll < 0.15:  # 7.5% brute
+                return "orc_brute"
+            elif roll < 0.22:  # 7% shaman
+                return "orc_shaman"
+            return "orc"
+        
+        # Depth 4-5: 10-15% skirmisher
+        if depth in [4, 5]:
+            roll = random()
+            if roll < 0.125:  # 12.5% skirmisher (midpoint of 10-15%)
+                return "orc_skirmisher"
+            elif roll < 0.225:  # 10% brute
+                return "orc_brute"
+            elif roll < 0.325:  # 10% shaman
+                return "orc_shaman"
+            return "orc"
+        
+        # Depth 6+: 15-20% skirmisher, with rare chance of "premium" encounters
+        roll = random()
+        if roll < 0.175:  # 17.5% skirmisher (midpoint of 15-20%)
+            return "orc_skirmisher"
+        elif roll < 0.275:  # 10% brute
+            return "orc_brute"
+        elif roll < 0.375:  # 10% shaman
+            return "orc_shaman"
+        return "orc"

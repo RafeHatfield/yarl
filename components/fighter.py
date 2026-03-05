@@ -1308,6 +1308,14 @@ class Fighter:
             # Apply damage (pass damage type for regeneration suppression)
             results.extend(target.require_component(ComponentType.FIGHTER).take_damage(damage, damage_type=weapon_damage_type))
             
+            # Phase 22.4: Record damage dealt for pressure model instrumentation
+            if collector:
+                attacker_ai = self.owner.get_component_optional(ComponentType.AI) if self.owner else None
+                if not attacker_ai:
+                    collector.record_player_damage(damage)
+                else:
+                    collector.record_monster_damage(damage)
+            
             # Phase 22.2: Track ranged damage metrics (service owns metric recording)
             if is_ranged_attack:
                 from services.ranged_combat_service import record_ranged_damage_metrics
@@ -2474,8 +2482,9 @@ class Fighter:
         effect_chance = getattr(ammo, 'ammo_effect_chance', 1.0)  # Phase 22.2.3
         
         # Phase 22.2.3: Roll for effect chance (deterministic via seeded RNG)
-        import random
-        if random.random() >= effect_chance:
+        # random_utils does not re-export the stdlib random() function; import directly.
+        from random import random
+        if random() >= effect_chance:
             # Effect didn't trigger
             return results
         
@@ -2510,6 +2519,7 @@ class Fighter:
         
         elif effect_type == 'entangled':
             # Phase 22.2.3: Net Arrow - apply entangled effect
+            # MB.custom(text, (r,g,b)) is the correct API — there is no MB.custom_color helper.
             from components.status_effects import EntangledEffect, StatusEffectManager
             from message_builder import MessageBuilder as MB
             

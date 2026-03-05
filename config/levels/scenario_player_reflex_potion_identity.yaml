@@ -37,11 +37,11 @@ rooms:
 
 monsters:
   # Reduced from 3 to 2 orcs to lower lethality
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 5]
     state: "aware"
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [8, 6]
     state: "aware"
@@ -62,7 +62,6 @@ player:
 # - Player starts with adrenaline_potion in inventory
 # - Simple bot uses potion on turn 1, then fights
 # - Verify bonus attacks are triggered while effect is active
-
 
 # Suite tags
 suites: ["identity"]

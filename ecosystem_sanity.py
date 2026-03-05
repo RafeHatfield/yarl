@@ -107,9 +107,11 @@ def run_scenario(
     fail_on_expected: bool,
     export_json: Optional[str],
     seed_base: Optional[int] = None,
+    disable_depth_boons: bool = False,
+    inject_boons: Optional[list] = None,
 ) -> int:
     """Run a scenario and display results.
-    
+
     Args:
         scenario_id: Scenario identifier
         runs: Number of runs to execute
@@ -119,7 +121,11 @@ def run_scenario(
         fail_on_expected: Exit non-zero if expected invariants fail
         export_json: Path to write JSON export (or None)
         seed_base: Base seed for deterministic runs (or None for non-deterministic)
-        
+        disable_depth_boons: When True, depth boons are suppressed for all runs.
+            Used for A/B depth pressure analysis (see --disable-depth-boons flag).
+        inject_boons: When provided, inject these boon IDs after player creation
+            and suppress auto depth boons. Used for A/B ON variant injection.
+
     Returns:
         Exit code (0 for success, 1 for error)
     """
@@ -166,7 +172,12 @@ def run_scenario(
         print()
     
     try:
-        metrics = run_scenario_many(scenario, policy, runs, turn_limit, seed_base=seed_base)
+        metrics = run_scenario_many(
+            scenario, policy, runs, turn_limit,
+            seed_base=seed_base,
+            disable_depth_boons=disable_depth_boons,
+            inject_boons=inject_boons,
+        )
     except ScenarioInvariantError as e:
         print(f"Scenario invariant failed: {e}")
         return 1
@@ -391,7 +402,30 @@ Examples:
         default=None,
         help='Base seed for deterministic runs (enables reproducible results)'
     )
-    
+    parser.add_argument(
+        '--disable-depth-boons',
+        action='store_true',
+        default=False,
+        help=(
+            'Disable automatic depth boons for this run. '
+            'Sets player.statistics.disable_depth_boons=True immediately after player '
+            'creation (before the game loop). The scenario YAML is never mutated. '
+            'Use for A/B depth pressure analysis. Has no effect on campaign gameplay.'
+        ),
+    )
+    parser.add_argument(
+        '--inject-boons',
+        type=str,
+        default=None,
+        metavar='BOONS',
+        help=(
+            'Comma-separated boon IDs to inject after player creation '
+            '(e.g. "fortitude_10,accuracy_1"). Implies --disable-depth-boons: '
+            'automatic depth boons are suppressed. Unknown IDs raise an error '
+            'immediately. Used for A/B depth pressure ON variant injection.'
+        ),
+    )
+
     args = parser.parse_args()
     
     # Setup logging
@@ -424,6 +458,10 @@ Examples:
         turn_limit = args.turn_limit if args.turn_limit is not None else default_turn_limit
         player_bot = args.player_bot if args.player_bot is not None else default_player_bot
         
+        inject_boons_list = (
+            [b.strip() for b in args.inject_boons.split(",") if b.strip()]
+            if args.inject_boons else None
+        )
         return run_scenario(
             scenario_id=args.scenario,
             runs=runs,
@@ -433,6 +471,8 @@ Examples:
             fail_on_expected=args.fail_on_expected,
             export_json=args.export_json,
             seed_base=args.seed_base,
+            disable_depth_boons=args.disable_depth_boons,
+            inject_boons=inject_boons_list,
         )
     
     # Should not reach here due to mutually exclusive group

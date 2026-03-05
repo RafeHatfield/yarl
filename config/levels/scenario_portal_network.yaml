@@ -24,7 +24,7 @@ player:
     weapon: "dagger"
 
 monsters:
-  - type: "orc"
+  - type: "orc_grunt"
     count: 1
     position: [10, 4]
 
