@@ -914,13 +914,12 @@ KNOWN_SCENARIO_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     "depth6_orc_siege": {
         "depth": 6,
-        # 2x orc_grunt + 1x orc_brute + 1x orc_skirmisher at depth 6 (1.25x HP scaling):
+        # Phase 24 tuning v3: 2x grunt + 1x skirmisher (3 enemies)
         # orc_grunt:      ceil(28 * 1.25) = 35  x2 = 70
-        # orc_brute:      ceil(40 * 1.25) = 50  x1 = 50
         # orc_skirmisher: ceil(24 * 1.25) = 30  x1 = 30
-        # Total: 150
-        "monster_hp_budget_per_run": 150.0,
-        "description": "2 grunts + 1 brute + 1 skirmisher at depth 6 (1.25x HP scaling)",
+        # Total: 100
+        "monster_hp_budget_per_run": 100.0,
+        "description": "2 grunts + 1 skirmisher at depth 6 (1.25x HP scaling)",
     },
 }
 

@@ -36,11 +36,12 @@ defaults:
   allow_player_death: true
   runs: 50
 
-# Loose guardrails: detect near-total lock-out or degenerate scaling.
-# At depth 6 with 4 scaled enemies, high death rate is expected.
+# Phase 24 tuning: replaced brute with grunt (same pattern as depth 4 fix).
+# Brute at 50 HP was creating grindy fights with H_PM=23 (target 10-13).
+# Target band: 35-55% death rate at depth 6.
 expected:
-  min_player_kills: 30   # Player should kill at least some enemies (30 across 50 runs)
-  max_player_deaths: 49  # Only trip if literally every single run is a death
+  min_player_kills: 30
+  max_player_deaths: 28  # Target band ceiling: 55% death rate
 
 rooms:
   - id: "depth6_siege_arena"
@@ -50,6 +51,11 @@ rooms:
     description: "Open arena for depth 6 siege probe — no choke geometry to avoid pathing brittleness"
     walls: "enclosed"
 
+# Phase 24 tuning iterations:
+#   v1 (original): 2 grunts + brute + skirmisher → 92% death (brute H_PM=23)
+#   v2: 3 grunts + skirmisher → 86% death (still too many enemies at depth 6 scaling)
+#   v3 (current): 2 grunts + skirmisher (3 total)
+# Composition: 2x grunt + 1x skirmisher (3 total)
 monsters:
   - type: "orc_grunt"
     count: 1
@@ -59,11 +65,6 @@ monsters:
   - type: "orc_grunt"
     count: 1
     position: [9, 9]
-    facing: "west"
-    state: "in_combat"
-  - type: "orc_brute"
-    count: 1
-    position: [11, 7]
     facing: "west"
     state: "in_combat"
   - type: "orc_skirmisher"
