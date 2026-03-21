@@ -1,0 +1,91 @@
+# Scenario: Depth 6 Orc Siege — Geared Variant
+# Purpose: Test depth 6 brute encounter with expected player gear.
+#
+# Design Intent:
+#   Reintroduces the brute at depth 6 with expected B2 gear (longsword +
+#   studded_leather_armor). Depth 6 is the start of Band 2, where the player
+#   should have meaningful gear upgrades.
+#
+#   Composition: 2x grunt, 1x brute, 1x skirmisher (4 total, original)
+#   Gear: longsword + studded_leather_armor (expected B2 gear at depth 6)
+#
+#   If Death% lands in 35-55% target band, the brute belongs at depth 6
+#   when the player has B2 gear.
+#
+# Scenario is deterministic under seed_base=1337.
+
+metadata:
+  scenario_id: depth6_orc_siege_geared
+  family: orc_siege
+  depth: 6
+
+scenario_id: depth6_orc_siege_geared
+name: "Depth 6 – Orc Siege Probe (Geared)"
+description: "Gear-aware depth 6 probe: 2 grunts + brute + skirmisher with expected B2 gear."
+
+depth: 6
+
+defaults:
+  turn_limit: 150
+  player_bot: "tactical_fighter"
+  allow_player_death: true
+  runs: 50
+
+# Target band for depth 6: 35-55% death rate
+expected:
+  min_player_kills: 30
+  max_player_deaths: 28
+
+rooms:
+  - id: "depth6_siege_arena"
+    type: "arena"
+    width: 14
+    height: 14
+    description: "Open arena for depth 6 siege probe"
+    walls: "enclosed"
+
+# Original composition restored (brute reintroduced)
+monsters:
+  - type: "orc_grunt"
+    count: 1
+    position: [9, 5]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc_grunt"
+    count: 1
+    position: [9, 9]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc_brute"
+    count: 1
+    position: [11, 7]
+    facing: "west"
+    state: "in_combat"
+  - type: "orc_skirmisher"
+    count: 1
+    position: [9, 7]
+    facing: "west"
+    state: "in_combat"
+
+items:
+  - type: "healing_potion"
+    count: 2
+    position: [2, 2]
+  - type: "healing_potion"
+    count: 2
+    position: [2, 12]
+
+# Expected depth 6 gear from balance/gear_expectations.py:
+#   Weapon: longsword (B2 weapon, available from depth 6)
+#   Armor: studded_leather_armor (B2 armor upgrade from leather)
+player:
+  position: [3, 7]
+  facing: "east"
+  inventory:
+    - type: "healing_potion"
+      count: 2
+  equipment:
+    weapon: "longsword"
+    armor: "studded_leather_armor"
+
+suites: ["balance"]

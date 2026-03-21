@@ -921,6 +921,29 @@ KNOWN_SCENARIO_CONFIGS: Dict[str, Dict[str, Any]] = {
         "monster_hp_budget_per_run": 100.0,
         "description": "2 grunts + 1 skirmisher at depth 6 (1.25x HP scaling)",
     },
+    # ----- Geared probes (Phase 24.5: brute reintroduced with expected gear) -----
+    "midgame_pressure_probe_orcs_geared": {
+        "depth": 4,
+        # Gear-aware: grunt + brute + skirmisher at depth 4 (1.08x HP)
+        # Player has expected B1 gear (shortsword + leather_armor)
+        # 1x orc_grunt:      ceil(28*1.08) = 31
+        # 1x orc_brute:      ceil(40*1.08) = 44
+        # 1x orc_skirmisher: ceil(24*1.08) = 26
+        # Total: 31 + 44 + 26 = 101
+        "monster_hp_budget_per_run": 101.0,
+        "description": "Geared probe: grunt+brute+skirmisher at depth 4 (shortsword+leather)",
+    },
+    "depth6_orc_siege_geared": {
+        "depth": 6,
+        # Gear-aware: 2x grunt + brute + skirmisher at depth 6 (1.25x HP)
+        # Player has expected B2 gear (longsword + studded_leather_armor)
+        # 2x orc_grunt:      ceil(28*1.25) = 35  x2 = 70
+        # 1x orc_brute:      ceil(40*1.25) = 50  x1 = 50
+        # 1x orc_skirmisher: ceil(24*1.25) = 30  x1 = 30
+        # Total: 70 + 50 + 30 = 150
+        "monster_hp_budget_per_run": 150.0,
+        "description": "Geared probe: 2 grunts+brute+skirmisher at depth 6 (longsword+studded)",
+    },
 }
 
 
