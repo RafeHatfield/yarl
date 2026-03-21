@@ -52,17 +52,15 @@ rooms:
     walls: "enclosed"
 
 # Monster placements - explicit orc IDs (NOT generic "orc")
-# Composition: 2x grunt, 1x skirmisher (3 total)
 # Phase 24 tuning iterations:
 #   v1 (original): grunt + brute + shaman + skirmisher → 56% death
 #   v2: grunt + brute + skirmisher (removed shaman) → 56% death (brute dominated kills)
-#   v3 (current): 2x grunt + skirmisher (replaced brute with grunt)
-#       Brute was responsible for 60%+ of monster-caused deaths due to 44 HP
-#       forcing prolonged engagement. Replacing with grunt reduces encounter
-#       HP budget and fight duration while keeping skirmisher composition variety.
+#   v3: 2x grunt + skirmisher → 12% death (below 15% floor)
+#   v4: 3x grunt + skirmisher → 52% death (skirmisher anti-kiting + 3 grunts too much)
+#   v5 (current): 3x grunt (no skirmisher) — pure melee, same pattern as depth 6 v4
+# Composition: 3x grunt (3 total)
 # state: "in_combat" ensures monsters are aware and engage immediately
 monsters:
-  # Two orc grunts (baseline melee)
   - type: "orc_grunt"
     count: 1
     position: [10, 6]
@@ -75,10 +73,7 @@ monsters:
     facing: "west"
     state: "in_combat"
 
-  # One orc skirmisher (leap + fast pressure)
-  # Positioned at Chebyshev distance ~7 from player (3,6) to enable leap
-  # Player at (3,6), skirmisher at (10,5) = distance 7
-  - type: "orc_skirmisher"
+  - type: "orc_grunt"
     count: 1
     position: [10, 5]
     facing: "west"

@@ -890,12 +890,10 @@ KNOWN_SCENARIO_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     "midgame_pressure_probe_orcs": {
         "depth": 4,
-        # Phase 24 tuning v3: 2x grunt + 1x skirmisher (scaling 1.08x HP):
-        # 2x orc_grunt:      ceil(28*1.08) = 31 each = 62
-        # 1x orc_skirmisher: ceil(24*1.08) = 26
-        # Total: 62 + 26 = 88
-        "monster_hp_budget_per_run": 88.0,
-        "description": "2 grunts + skirmisher at depth 4 (1.08x HP scaling)",
+        # Phase 24 tuning v5: 3x grunt (no skirmisher)
+        # 3x orc_grunt: ceil(28*1.08) = 31 each = 93
+        "monster_hp_budget_per_run": 93.0,
+        "description": "3 grunts at depth 4 (1.08x HP scaling)",
     },
     "depth4_plague": {
         "depth": 4,
@@ -914,12 +912,12 @@ KNOWN_SCENARIO_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     "depth6_orc_siege": {
         "depth": 6,
-        # Phase 24 tuning v3: 2x grunt + 1x skirmisher (3 enemies)
-        # orc_grunt:      ceil(28 * 1.25) = 35  x2 = 70
-        # orc_skirmisher: ceil(24 * 1.25) = 30  x1 = 30
-        # Total: 100
-        "monster_hp_budget_per_run": 100.0,
-        "description": "2 grunts + 1 skirmisher at depth 6 (1.25x HP scaling)",
+        # Phase 24 tuning v4: 3x grunt (no skirmisher)
+        # v2 (3 grunts + skirmisher) was 86%, v3 (2 grunts + skirmisher) was 8%
+        # Testing: 3 grunts without anti-kiting pressure
+        # orc_grunt: ceil(28 * 1.25) = 35  x3 = 105
+        "monster_hp_budget_per_run": 105.0,
+        "description": "3 grunts at depth 6 (1.25x HP scaling)",
     },
     # ----- Geared probes (Phase 24.5: brute reintroduced with expected gear) -----
     "midgame_pressure_probe_orcs_geared": {

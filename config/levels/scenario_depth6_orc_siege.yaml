@@ -53,9 +53,10 @@ rooms:
 
 # Phase 24 tuning iterations:
 #   v1 (original): 2 grunts + brute + skirmisher → 92% death (brute H_PM=23)
-#   v2: 3 grunts + skirmisher → 86% death (still too many enemies at depth 6 scaling)
-#   v3 (current): 2 grunts + skirmisher (3 total)
-# Composition: 2x grunt + 1x skirmisher (3 total)
+#   v2: 3 grunts + skirmisher → 86% death (skirmisher anti-kiting + 3 bodies = tipping point)
+#   v3: 2 grunts + skirmisher → 8% death (too easy)
+#   v4 (current): 3 grunts (no skirmisher) — more bodies, no special abilities
+# Composition: 3x grunt (3 total)
 monsters:
   - type: "orc_grunt"
     count: 1
@@ -67,7 +68,7 @@ monsters:
     position: [9, 9]
     facing: "west"
     state: "in_combat"
-  - type: "orc_skirmisher"
+  - type: "orc_grunt"
     count: 1
     position: [9, 7]
     facing: "west"
