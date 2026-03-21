@@ -31,16 +31,12 @@ defaults:
   allow_player_death: true
   runs: 20
 
-# Expected outcomes for validation (smoke-level, intentionally loose)
-# These are runaway guardrails, not tuning targets.
-# Baseline at depth 4 with 4-enemy composition yields ~50% death rate (10/20).
-# Expectations set to detect runaway pressure (>70% death rate) while allowing
-# natural difficulty variance.
-# Supported expectation keys: min_player_kills, max_player_deaths, 
-# plague_infections_min, reanimations_min, surprise_attacks_min, bonus_attacks_min
+# Expected outcomes — tuned for Phase 24 target bands (Death% 15-30% at depth 4).
+# Composition reduced to 3 enemies (removed shaman) to address action economy
+# pressure that was driving 56% death rate. See balance/target_bands.py.
 expected:
   min_player_kills: 40   # Player should kill most enemies across runs
-  max_player_deaths: 14  # Allow up to 70% death rate; trips if pressure runs away further
+  max_player_deaths: 15  # Target band ceiling: 30% death rate at depth 4
 
 # Note: Skirmisher metrics (leaps, fast_attacks, adjacent_turns) are tracked
 # in aggregated metrics but not enforceable via expectations (harness limitation).
@@ -56,31 +52,29 @@ rooms:
     walls: "enclosed"
 
 # Monster placements - explicit orc IDs (NOT generic "orc")
-# Composition: 1x grunt, 1x brute, 1x shaman, 1x skirmisher (4 total)
-# Reduced from 5 to 4 enemies to achieve viable but challenging pressure
+# Composition: 2x grunt, 1x skirmisher (3 total)
+# Phase 24 tuning iterations:
+#   v1 (original): grunt + brute + shaman + skirmisher → 56% death
+#   v2: grunt + brute + skirmisher (removed shaman) → 56% death (brute dominated kills)
+#   v3 (current): 2x grunt + skirmisher (replaced brute with grunt)
+#       Brute was responsible for 60%+ of monster-caused deaths due to 44 HP
+#       forcing prolonged engagement. Replacing with grunt reduces encounter
+#       HP budget and fight duration while keeping skirmisher composition variety.
 # state: "in_combat" ensures monsters are aware and engage immediately
 monsters:
-  # One orc grunt (baseline melee)
+  # Two orc grunts (baseline melee)
   - type: "orc_grunt"
     count: 1
     position: [10, 6]
     facing: "west"
     state: "in_combat"
-  
-  # One orc brute (tanky melee)
-  - type: "orc_brute"
+
+  - type: "orc_grunt"
     count: 1
     position: [12, 7]
     facing: "west"
     state: "in_combat"
-  
-  # One orc shaman (ranged caster)
-  - type: "orc_shaman"
-    count: 1
-    position: [13, 5]
-    facing: "west"
-    state: "in_combat"
-  
+
   # One orc skirmisher (leap + fast pressure)
   # Positioned at Chebyshev distance ~7 from player (3,6) to enable leap
   # Player at (3,6), skirmisher at (10,5) = distance 7

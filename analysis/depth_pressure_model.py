@@ -890,14 +890,12 @@ KNOWN_SCENARIO_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     "midgame_pressure_probe_orcs": {
         "depth": 4,
-        # Mixed pack at depth 4 (scaling 1.08x HP):
-        # 1x orc_grunt:      ceil(28*1.08) = 31
-        # 1x orc_brute:      ceil(40*1.08) = 44
-        # 1x orc_shaman:     ceil(24*1.08) = 26
+        # Phase 24 tuning v3: 2x grunt + 1x skirmisher (scaling 1.08x HP):
+        # 2x orc_grunt:      ceil(28*1.08) = 31 each = 62
         # 1x orc_skirmisher: ceil(24*1.08) = 26
-        # Total: 31 + 44 + 26 + 26 = 127
-        "monster_hp_budget_per_run": 127.0,
-        "description": "Mixed orc pack at depth 4 (1.08x HP scaling)",
+        # Total: 62 + 26 = 88
+        "monster_hp_budget_per_run": 88.0,
+        "description": "2 grunts + skirmisher at depth 4 (1.08x HP scaling)",
     },
     "depth4_plague": {
         "depth": 4,
