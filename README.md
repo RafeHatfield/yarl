@@ -11,8 +11,10 @@
 - YAML-driven content (monsters, loot, rooms) with guides for constants and room generation.
 
 ## Project Status
-- Active development; architecture refactors (TurnStateAdapter/GameCore) live on other branches. This branch focuses on documentation and hygiene.
-- Scenario harness + ecosystem sanity runs in CI to guard regressions.
+- Active development; currently in **Phase 24** (data-driven balance tuning).
+- ~3700+ automated tests; deterministic scenario harness with A/B testing.
+- Depth pressure pipeline for systematic balance measurement across depths 1-6.
+- See `ROADMAP.md` for current goals and known issues.
 
 ## Getting Started
 1. Install prerequisites: Python 3.12+, `pip`, and a C compiler for native deps.
@@ -69,14 +71,15 @@
 - See `HEADLESS_MODE.md` and `docs/BOT_SOAK_HARNESS.md` for details.
 
 ## Documentation Map
-- High-level docs: `DOCS_CLEANUP_CHECKLIST.md`, `ROADMAP.md`, `docs/README.md`.
-- Architecture reference: `ARCHITECTURE_OVERVIEW.md` (read-only in this branch), `docs/architecture/`.
-- Worldgen overview and harness: `docs/WORLDGEN_OVERVIEW.md`.
-- Combat metrics & scenarios: `docs/COMBAT_METRICS_GUIDE.md` and baseline JSONs.
-- Scenario harness + bots: `docs/BOT_SOAK_HARNESS.md`, `docs/BOT_PERSONAS.md`, `HEADLESS_MODE.md`.
-- YAML/config: `docs/YAML_CONSTANTS_GUIDE.md`, `docs/YAML_ROOM_GENERATION_SYSTEM.md`, `docs/balance/`.
-- Testing: `docs/testing/GOLDEN_PATH_IMPLEMENTATION.md`, `docs/testing/GOLDEN_PATH_QUICKSTART.md`.
-- Component and messaging guides: `docs/COMPONENT_TYPE_BEST_PRACTICES.md`, `docs/MESSAGE_BUILDER_GUIDE.md`, `docs/LOGGING.md`.
+- Roadmap and direction: `ROADMAP.md`, `docs/README.md`
+- Architecture reference: `ARCHITECTURE_OVERVIEW.md` (locked), `docs/architecture/`
+- Balance and tuning: `balance/`, `analysis/`, `docs/balance/`, `reports/depth_pressure/`
+- Design philosophy: `docs/DESIGN_PRINCIPLES.md`, `PLAYER_PAIN_POINTS.md`
+- Scenario harness + bots: `docs/BOT_SOAK_HARNESS.md`, `docs/BOT_PERSONAS.md`, `HEADLESS_MODE.md`
+- YAML/config: `docs/YAML_CONSTANTS_GUIDE.md`, `docs/YAML_ROOM_GENERATION_SYSTEM.md`
+- Testing: `docs/testing/`, `docs/CONTRIBUTING_AUTOGEN.md`
+- Worldgen: `docs/WORLDGEN_OVERVIEW.md`
+- Archives: `docs/archive/` (phase notes, fix summaries, release notes)
 
 ## Contributing
 - Branch from `main`, keep changes small, and run `pytest` + `make eco-ci` (or the relevant harnesses) before opening a PR.

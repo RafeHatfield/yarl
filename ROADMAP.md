@@ -1,40 +1,49 @@
-# Catacombs of YARL – Roadmap (Dec 2025)
+# Catacombs of YARL – Roadmap
 
-Scope: documentation refresh only; gameplay/architecture work continues on dedicated branches.
+Last updated: March 2026 (Phase 24 start)
+
+## Current Phase: 24 – Data-Driven Balance
+
+Phase 23 (depth boons, A/B pressure pipeline, curve visualization, gear probes) is complete. Phase 24 focuses on closing the loop: using harness data to systematically tune the difficulty curve.
+
+### Phase 24 Goals
+1. **Target bands** — codified per-depth targets for Death%, H_PM, H_MP in `balance/target_bands.py`
+2. **Enhanced reports** — target band overlay, pass/fail indicators, automated diagnosis in depth pressure reports
+3. **Balance dashboard** — read-only HTML dashboard for visualizing depth curves, deltas, and failing scenarios
+4. **Encounter tuning** — fix depth 4 orc spike (composition issue), assess depth 6 lethality
+5. **Item economy** — gear progression curves, loot distribution by depth
+
+### Known Balance Issues (from Phase 23 data)
+- **Depth 4 orcs**: 56% death rate with boons (target: 15-30%). Likely composition, not scaling.
+- **Depth 6 orcs**: 92% death rate with boons (target: 35-55%). Near-wipe; needs scaling adjustment or more boons/gear.
+- **Gear dominance**: weapon +1 eliminates all deaths at depth 3. Intentional but worth monitoring.
 
 ## Status Snapshot
-- In active development; core loop, ECS, and scenario harnesses are stable.
-- Scenario harness + `ecosystem_sanity.py` run in CI for regression/balance checks.
-- ETP budgets + loot/pity sanity harnesses exist (`etp_sanity.py`, `loot_sanity.py`).
-- Combat metrics + dueling pit/orc swarm scenarios are in place for speed/momentum tuning.
-- Bot soak harness + personas documented; headless mode works for automation.
-- Architecture refactors (TurnStateAdapter/GameCore) tracked elsewhere; see `ARCHITECTURE_OVERVIEW.md` (locked).
+- ~3700+ automated tests; fast suite (`pytest -m "not slow"`) is the default
+- Deterministic scenario harness with A/B boon testing and gear probes
+- Depth pressure pipeline: `tools/collect_depth_pressure_data.py` → `analysis/*.py` → `reports/`
+- Five balance-relevant scaling systems: DEFAULT_CURVE, ZOMBIE_CURVE, depth boons, gear, encounter composition
+- Bot soak harness with 5 personas for overnight stability
+- Claude Code integration with 5 specialized agents (planner, builder, tester, reviewer, analyst)
 
-## ✅ Delivered Foundations
-- Scenario harness coverage: plague arena, backstab training, dueling pit, orc swarm baselines, and related JSON baselines in repo.
-- Ecosystem sanity CI target to catch regressions across multiple scenarios.
-- ETP-based encounter budgeting with pity/loot sanity tooling for drops and pacing.
-- Combat metrics collectors + reporting for duels and swarm runs (supports speed/momentum tuning).
-- Bot soak/autoplay harness with documented personas for overnight stability checks.
-- Documentation set for YAML constants/templates and component best practices.
+## Completed Phases (Recent)
+- **Phase 23**: Depth boons, A/B pressure pipeline, curve visualization, gear probes
+- **Phase 22.4**: Identity suite, suite architecture refactor
+- **Phase 22.3**: Skirmisher enemy with leap + fast pressure
+- **Phase 22.2**: Ranged combat (quiver, net arrows)
+- **Phase 22.1**: Balance suite, oaths system
+- **Phase 20-21**: Corpse explosion, traps, hazards suite
+- **Phase 19**: Monster identity (Orc Chieftain, Necromancer, Lich, Wraith, Troll, Skeleton)
 
-## 🔜 Near-Term Focus (docs + alignment)
-- Keep this roadmap aligned with actual scenario harness coverage and CI targets.
-- Expand/check scenario docs: include portal stress, speed bonus, plague/backstab variants.
-- Surface how to run key harnesses from Makefile/CLI in README and guides.
-- Mark historical phase docs clearly and point contributors to current workflow.
-- Record balance checkpoints from ecosystem/loot/ETP runs as they land.
+Earlier phases (4-18) archived in `docs/archive/`.
 
-## 📌 Historical / Archived
-- Phase 4/5/portal development docs live under `docs/development/` and are historical snapshots.
-- Older phase/feature plans remain in `docs/planning/` and `archive/` for context only.
-- Traditional roguelike feature wishlists remain in `TRADITIONAL_ROGUELIKE_FEATURES.md` (reference, not a promise).
-
-## Where to Look Next
-- Architecture details: `ARCHITECTURE_OVERVIEW.md` (do not edit here).
-- Combat metrics and scenarios: `docs/COMBAT_METRICS_GUIDE.md`, dueling/orc swarm baselines in repo.
-- Scenario harness + CI usage: `ecosystem_sanity.py`, `docs/BOT_SOAK_HARNESS.md`, `HEADLESS_MODE.md`.
-- YAML/config references: `docs/YAML_CONSTANTS_GUIDE.md`, `docs/YAML_ROOM_GENERATION_SYSTEM.md`, `docs/balance/*`.
+## Where to Look
+- Architecture: `ARCHITECTURE_OVERVIEW.md` (locked reference)
+- Balance data: `reports/depth_pressure/`, `balance/`, `analysis/`
+- Scenario harness: `ecosystem_sanity.py`, `tools/collect_depth_pressure_data.py`
+- Design philosophy: `docs/DESIGN_PRINCIPLES.md`, `PLAYER_PAIN_POINTS.md`
+- Testing: `docs/testing/`, fast suite by default
+- Agent workflow: `.claude/agents/`, task files in `tasks/`
 
 ---
-Update cadence: adjust after major scenario/harness changes or balance passes. Keep DONE/TODO markers honest and tightly scoped to what is actually implemented.
+Update cadence: after major balance passes or phase completions.

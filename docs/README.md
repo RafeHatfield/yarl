@@ -1,35 +1,46 @@
 # YARL Documentation Hub
 
-This folder is the index for stable docs. Architecture refactors continue elsewhere; this hub focuses on current, reliable references.
+Index for stable docs. See `ROADMAP.md` for current phase and direction.
 
 ## Quick Navigation
-- Root overview: `README.md`
-- Roadmap (docs branch): `ROADMAP.md`
+- Project overview: `README.md`
+- Current roadmap: `ROADMAP.md` (Phase 24: Data-Driven Balance)
 - Architecture reference: `ARCHITECTURE_OVERVIEW.md` (locked)
-- Combat metrics & scenarios: `docs/COMBAT_METRICS_GUIDE.md`
-- Difficulty curve tooling: `reports/difficulty_dashboard.md` (generated) and `tools/difficulty_curve_visualizer.py` (supports family filters and speed-variant exclusion)
-- Scenario/bot harnesses: `docs/BOT_SOAK_HARNESS.md`, `HEADLESS_MODE.md`
-- YAML/config references: `docs/YAML_CONSTANTS_GUIDE.md`, `docs/YAML_ROOM_GENERATION_SYSTEM.md`, `docs/balance/`
-- Testing: `docs/testing/GOLDEN_PATH_IMPLEMENTATION.md`, `docs/testing/GOLDEN_PATH_QUICKSTART.md`
+- Design philosophy: `docs/DESIGN_PRINCIPLES.md`
+- Balance pipeline: `balance/`, `analysis/`, `tools/collect_depth_pressure_data.py`
+- Balance reports: `reports/depth_pressure/`
+- Scenario harness: `ecosystem_sanity.py`
+- Bot/soak harness: `docs/BOT_SOAK_HARNESS.md`, `HEADLESS_MODE.md`
+- YAML/config: `docs/YAML_CONSTANTS_GUIDE.md`, `docs/YAML_ROOM_GENERATION_SYSTEM.md`
+- Testing: `docs/testing/`
 
 ## Developer Maps
-- `docs/architecture/` – portal system, renderer/input abstraction, architecture notes.
-- `docs/balance/` – balance system overview, loot baselines, tuning cheat sheets.
-- `docs/guides/` – playtesting guidance and checklists.
-- `docs/reference/` – item and potion references.
-- `docs/testing/` – golden path strategy and quickstart.
-- `docs/development/` – historical phase documents (Phase4/Phase5/Portal). Treat as history; see `ROADMAP.md` for current plans.
-- `docs/planning/` – older planning notes (victory condition phases, dungeon/vault plans); archived for context.
+- `docs/architecture/` – portal system, renderer/input abstraction
+- `docs/balance/` – ETP system, loot baselines, tuning cheat sheet
+- `docs/guides/` – playtesting guidance and checklists
+- `docs/reference/` – item and potion references
+- `docs/testing/` – golden path strategy and quickstart, testing strategy
+- `docs/INVESTIGATIONS/` – historical investigation reports
+
+## Balance & Tuning (Phase 23+)
+- Depth pressure model: `DEPTH_PRESSURE_MODEL.md`
+- Depth boons: `DEPTH_BOONS_IMPLEMENTATION.md`
+- Gear probes: `EMERGENT_MASTERY_PROBES.md`
+- Player progression design: `PLAYER_PROGRESSION_DOCTRINE.md`
+- Target bands: `balance/target_bands.py` (Phase 24)
 
 ## Historical Archives
-- `docs/archive/` and `archive/` contain legacy plans, bug fixes, and release notes. Useful for archaeology; do not treat as current truth.
+- `docs/archive/` – phase implementation notes, fix summaries, release notes, legacy plans
+- `docs/development/` – Phase 4/5/portal session notes (historical)
+- `docs/planning/` – older planning notes (archived for context)
+
+## Agent Workflow
+- Agent definitions: `.claude/agents/` (planner, builder, tester, reviewer, analyst)
+- Task tracking: `tasks/`
+- Project memory: `.claude/projects/.../memory/`
 
 ## How to Add Docs
-- Put canonical, evergreen references in the root or relevant subfolder above.
-- If a doc is temporary or speculative, mark it clearly and plan to archive or delete it after use.
-- Keep terminology aligned with code (Scenario harness, Ecosystem sanity, ETP/loot, RunMetrics/AggregatedMetrics, etc.).
-
-## Pointers
-- For architecture questions, start at `ARCHITECTURE_OVERVIEW.md` (read-only here).
-- For scenario harness usage, see `ecosystem_sanity.py`, `etp_sanity.py`, `loot_sanity.py`, `docs/BOT_SOAK_HARNESS.md`, and `HEADLESS_MODE.md`.
-- For combat metrics and dueling/orc swarm scenarios (including new `orc_swarm_tight` and `zombie_horde` probes), see `docs/COMBAT_METRICS_GUIDE.md` and baseline JSONs in the repo.
+- Evergreen references go in root or relevant subfolder
+- Temporary or speculative docs: mark clearly, archive after use
+- Phase implementation notes: archive to `docs/archive/phase-notes/` when phase completes
+- Keep terminology aligned with code (scenario harness, ecosystem sanity, ETP, H_PM/H_MP, etc.)
