@@ -478,6 +478,33 @@ def _run_curve_ab(
         print(f"  OK: curve report → {out_dir / 'depth_pressure_curve.md'}")
 
 
+def _run_dashboard(out_dir: Path, repo_root: Path, dry_run: bool) -> None:
+    """Call analysis/generate_dashboard.py to produce dashboard.html."""
+    dash_script = repo_root / "analysis" / "generate_dashboard.py"
+    if not dash_script.exists():
+        print(
+            f"\nWARNING: Dashboard script not found at '{dash_script}'. "
+            "Skipping dashboard generation."
+        )
+        return
+
+    cmd = [sys.executable, str(dash_script), str(out_dir)]
+    print(f"\n{'=' * 70}")
+    print("  DASHBOARD GENERATION")
+    print(f"  COMMAND: {' '.join(cmd)}")
+    print(f"{'=' * 70}")
+
+    if dry_run:
+        print("  (dry run — skipped)")
+        return
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"  ERROR: Dashboard generation failed:\n{result.stderr}", file=sys.stderr)
+    else:
+        print(f"  OK: dashboard → {out_dir / 'dashboard.html'}")
+
+
 def _run_variant(
     out_dir: Path,
     runs: int,
@@ -716,6 +743,7 @@ def main() -> None:
         compare_md = out_dir / "depth_pressure_compare.md"
         _run_compare(on_csv, off_csv, compare_md, repo_root, args.dry_run)
         _run_curve_ab(on_csv, off_csv, out_dir, repo_root, args.dry_run)
+        _run_dashboard(out_dir, repo_root, args.dry_run)
 
         print(f"\n{'=' * 70}")
         print(f"DONE (A/B). Output directory: {out_dir}")
@@ -754,6 +782,7 @@ def main() -> None:
     if not args.no_report:
         _run_report(out_dir, repo_root, args.dry_run)
     _run_curve(out_dir, repo_root, args.dry_run)
+    _run_dashboard(out_dir, repo_root, args.dry_run)
 
     print(f"\n{'=' * 70}")
     print(f"DONE. Output directory: {out_dir}")
