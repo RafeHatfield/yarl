@@ -46,6 +46,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
+# Ensure repo root is on the path when called as a script
+_HERE = Path(__file__).resolve().parent
+_REPO = _HERE.parent
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -277,6 +283,28 @@ def generate_curve_md(
     lines.insert(spark_header_idx + 1, "|--------|---------------------|")
 
     # -------------------------------------------------------------------------
+    # Target Bands reference table
+    # -------------------------------------------------------------------------
+    try:
+        from balance.target_bands import TARGET_BANDS as _tb_ref
+    except ImportError:
+        _tb_ref = {}
+
+    if _tb_ref:
+        lines += ["", "---", "", "## Target Bands (from `balance/target_bands.py`)", ""]
+        lines.append("| Depth | Feel | Death% | H_PM | H_MP |")
+        lines.append("|-------|------|--------|------|------|")
+        for d in sorted(_tb_ref):
+            tb = _tb_ref[d]
+            dr_lo, dr_hi = tb.death_pct_range
+            lines.append(
+                f"| {d} | {tb.feel} | "
+                f"{dr_lo:.0f}–{dr_hi:.0f}% | "
+                f"{tb.h_pm_min:.0f}–{tb.h_pm_max:.0f} | "
+                f"{tb.h_mp_min:.0f}–{tb.h_mp_max:.0f} |"
+            )
+
+    # -------------------------------------------------------------------------
     # Legend
     # -------------------------------------------------------------------------
     lines += [
@@ -338,7 +366,35 @@ def generate_curve_png(
         depths, vals = zip(*pts)
         return list(depths), list(vals)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    # Load target bands for shading (graceful fallback if unavailable)
+    try:
+        from balance.target_bands import TARGET_BANDS
+    except ImportError:
+        TARGET_BANDS = {}
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 7), sharex=True)
+
+    # --- Target band shading ---
+    # Draw translucent green bands showing the acceptable range at each depth.
+    # Bands are drawn as rectangles spanning depth ± 0.5 (so they tile cleanly).
+    for d, tb in sorted(TARGET_BANDS.items()):
+        # H_PM target band on ax1
+        ax1.axhspan(
+            tb.h_pm_min, tb.h_pm_max,
+            xmin=0, xmax=1,  # Will be clipped by x-limits
+            alpha=0.0,  # Invisible full-span (we use individual rects below)
+        )
+        ax1.fill_between(
+            [d - 0.4, d + 0.4],
+            tb.h_pm_min, tb.h_pm_max,
+            color="green", alpha=0.12, linewidth=0,
+        )
+        # Death% target band on ax2
+        ax2.fill_between(
+            [d - 0.4, d + 0.4],
+            tb.death_rate_min, tb.death_rate_max,
+            color="green", alpha=0.12, linewidth=0,
+        )
 
     # H_PM subplot
     d_on, v_on = _extract_series(on_rows, "player_hits_to_kill", gear_probe=False)
@@ -358,7 +414,14 @@ def generate_curve_png(
             ax1.scatter(gd2, gv2, marker="x", color="darkorange", s=60, zorder=5, label="gear probe (OFF)")
     ax1.set_ylabel("H_PM")
     ax1.set_title("Player Hits-to-Kill Monster (H_PM) vs Depth")
-    ax1.legend(fontsize=8)
+    if TARGET_BANDS:
+        # Add a dummy patch for the legend
+        from matplotlib.patches import Patch
+        handles, labels = ax1.get_legend_handles_labels()
+        handles.append(Patch(facecolor="green", alpha=0.15, label="target band"))
+        ax1.legend(handles=handles, fontsize=8)
+    else:
+        ax1.legend(fontsize=8)
     ax1.grid(True, alpha=0.3)
 
     # Death% subplot
@@ -379,7 +442,12 @@ def generate_curve_png(
     ax2.set_xlabel("Depth")
     ax2.set_ylabel("Death%")
     ax2.set_title("Player Death Rate (Death%) vs Depth")
-    ax2.legend(fontsize=8)
+    if TARGET_BANDS:
+        handles2, labels2 = ax2.get_legend_handles_labels()
+        handles2.append(Patch(facecolor="green", alpha=0.15, label="target band"))
+        ax2.legend(handles=handles2, fontsize=8)
+    else:
+        ax2.legend(fontsize=8)
     ax2.grid(True, alpha=0.3)
 
     fig.tight_layout()
