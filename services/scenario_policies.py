@@ -431,6 +431,64 @@ class SilenceScrollUserPolicy:
         return TacticalFighterPolicy().choose_action(game_state)
 
 
+class ResourcefulFighterPolicy:
+    """Melee fighter that uses offensive scrolls before engaging.
+
+    Phase 24: Models a player who reads the room and uses consumables
+    before wading into melee. Uses any offensive scroll (fireball, lightning,
+    etc.) on the nearest enemy, then delegates to TacticalFighterPolicy.
+
+    This policy measures how much creative resource use changes survival
+    rates compared to pure melee (tactical_fighter). The delta between
+    the two tells us whether an encounter rewards preparation.
+
+    Behavior:
+    1. If player has an offensive scroll and any enemy exists: throw at nearest
+    2. Otherwise: delegate to TacticalFighterPolicy for melee combat
+
+    Usage: geared brute probes where we want to model resourceful play
+    """
+
+    # Scroll name fragments that indicate offensive scrolls
+    OFFENSIVE_SCROLL_NAMES = frozenset({
+        'fireball', 'lightning', 'earthquake',
+    })
+
+    def choose_action(self, game_state):
+        player = game_state.player
+        entities = game_state.entities or []
+
+        # Check inventory for offensive scrolls
+        inventory = player.get_component_optional(ComponentType.INVENTORY)
+        scroll_index = None
+        if inventory:
+            for i, item in enumerate(inventory.items):
+                name_lower = item.name.lower()
+                if 'scroll' in name_lower and any(
+                    s in name_lower for s in self.OFFENSIVE_SCROLL_NAMES
+                ):
+                    scroll_index = i
+                    break
+
+        # If we have an offensive scroll, use it
+        # Auto-targeting scrolls (lightning, fireball) find their own targets
+        # via the spell's use_function, so we use 'use_item' not 'throw_item'.
+        if scroll_index is not None:
+            # Verify there are enemies alive before using the scroll
+            enemies = [
+                e for e in entities
+                if e != player
+                and getattr(e, 'fighter', None)
+                and getattr(e.fighter, 'hp', 0) > 0
+                and getattr(e, 'ai', None) is not None
+            ]
+            if enemies:
+                return {'use_item': scroll_index}
+
+        # No scroll or no enemy - fight normally
+        return TacticalFighterPolicy().choose_action(game_state)
+
+
 # =============================================================================
 # Policy Factory
 # =============================================================================
@@ -475,7 +533,9 @@ def make_scenario_bot_policy(name: str):
         return SilenceScrollUserPolicy()
     if name_lower == "ranged_net_arrow":
         return HarnessRangedNetArrowPolicy()
-    
+    if name_lower == "resourceful_fighter":
+        return ResourcefulFighterPolicy()
+
     raise ValueError(f"Unknown scenario bot policy: {name}")
 
 
@@ -487,6 +547,7 @@ __all__ = [
     'SunburstPotionUserPolicy',
     'DisarmScrollUserPolicy',
     'SilenceScrollUserPolicy',
+    'ResourcefulFighterPolicy',
     'HarnessRangedNetArrowPolicy',
     'make_scenario_bot_policy',
 ]

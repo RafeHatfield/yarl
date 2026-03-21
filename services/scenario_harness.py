@@ -889,11 +889,19 @@ def _process_player_action(
                     'game_map': game_map,
                     'fov_map': game_state.fov_map
                 }
+                # Phase 24: Merge Item component's stored attributes (damage,
+                # maximum_range, radius, etc.) into kwargs so spell functions
+                # receive the parameters they need.
+                for attr in ('damage', 'maximum_range', 'radius', 'amount',
+                             'duration', 'defense_bonus', 'range', 'cone_width'):
+                    val = getattr(item_comp, attr, None)
+                    if val is not None:
+                        use_kwargs[attr] = val
                 # Call use function
                 # Note: most potion functions use item.owner if it exists
                 if hasattr(item_comp, 'owner'):
                     item_comp.owner = player
-                
+
                 results = item_comp.use_function(player, **use_kwargs)
                 # Handle results (mostly just messages)
                 from game_messages import Message

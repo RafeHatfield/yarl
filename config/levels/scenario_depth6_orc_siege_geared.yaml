@@ -27,7 +27,7 @@ depth: 6
 
 defaults:
   turn_limit: 150
-  player_bot: "tactical_fighter"
+  player_bot: "resourceful_fighter"
   allow_player_death: true
   runs: 50
 
@@ -78,11 +78,15 @@ items:
 # Expected depth 6 gear from balance/gear_expectations.py:
 #   Weapon: longsword (B2 weapon, available from depth 6)
 #   Armor: studded_leather_armor (B2 armor upgrade from leather)
+#   Scrolls: 2x fireball_scroll (B2 offensive scroll, weight 5.0)
+#   Bot policy: resourceful_fighter (uses scrolls before melee)
 player:
   position: [3, 7]
   facing: "east"
   inventory:
     - type: "healing_potion"
+      count: 2
+    - type: "fireball_scroll"
       count: 2
   equipment:
     weapon: "longsword"
