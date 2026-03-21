@@ -335,28 +335,35 @@ def depth_curve_to_dict(curve: Dict[int, DepthCurvePoint]) -> Dict[int, Dict[str
 #   - Damage scaling maintains the ratio: harder monsters are both tougher AND deadlier.
 #
 
+# Legacy target dicts retained for backward compatibility with existing callers.
+# Single source of truth is now balance.target_bands.TARGET_BANDS.
+# These are derived from the new per-depth targets for callers that
+# still reference the old 2-depth-band format.
+try:
+    from balance.target_bands import TARGET_BANDS as _TB, evaluate_metric
+except ImportError:
+    _TB = None
+    evaluate_metric = None
+
 TARGET_PLAYER_HITS_TO_KILL: Dict[str, Tuple[float, float]] = {
-    # depth_band: (min_target, max_target)
-    "1-2": (3.5, 4.5),   # Early game: quick kills, player learning
-    "3-4": (4.0, 5.0),   # Early-mid: slightly longer fights
-    "5-6": (4.5, 5.5),   # Midgame: tactical engagement required
-    "7-8": (5.0, 6.0),   # Late-mid: sustained pressure
-    "9+":  (6.0, 7.0),   # Endgame: monsters are serious threats
+    "1-2": (3.5, 4.5),
+    "3-4": (4.0, 5.0),
+    "5-6": (4.5, 5.5),
+    "7-8": (5.0, 6.0),
+    "9+":  (6.0, 7.0),
 }
 
 TARGET_MONSTER_HITS_TO_KILL: Dict[str, Tuple[float, float]] = {
-    # depth_band: (min_target, max_target)
-    # Lower values = more dangerous for player
-    "1-2": (10.0, 14.0),  # Early: forgiving, player can recover from mistakes
-    "3-4": (9.0, 12.0),   # Tightening: mistakes cost more
-    "5-6": (8.0, 10.0),   # Midgame: genuine threat, healing matters
-    "7-8": (7.0, 9.0),    # Late: every hit counts
-    "9+":  (6.0, 8.0),    # Endgame: lethal, retreat is valid
+    "1-2": (10.0, 14.0),
+    "3-4": (9.0, 12.0),
+    "5-6": (8.0, 10.0),
+    "7-8": (7.0, 9.0),
+    "9+":  (6.0, 8.0),
 }
 
 
 def get_target_band(depth: int) -> str:
-    """Map depth to target curve band key."""
+    """Map depth to legacy target curve band key."""
     if depth <= 2:
         return "1-2"
     elif depth <= 4:
@@ -374,34 +381,73 @@ def evaluate_against_targets(
 ) -> Dict[int, Dict[str, Any]]:
     """Compare observed curve against target ranges.
 
+    Uses per-depth target bands from balance.target_bands when available,
+    falling back to legacy 2-depth bands otherwise.
+
     Returns:
         {depth: {
-            'h_pm_observed': X, 'h_pm_target': (lo, hi), 'h_pm_status': 'OK'|'LOW'|'HIGH',
-            'h_mp_observed': Y, 'h_mp_target': (lo, hi), 'h_mp_status': 'OK'|'LOW'|'HIGH',
+            'h_pm_observed', 'h_pm_target', 'h_pm_status',
+            'h_mp_observed', 'h_mp_target', 'h_mp_status',
+            'death_rate_observed', 'death_rate_target', 'death_rate_status',
+            'feel', 'diagnosis',
         }}
     """
     results = {}
     for depth, point in sorted(curve.items()):
-        band = get_target_band(depth)
+        # Try per-depth targets first (new system)
+        tb = _TB.get(depth) if _TB else None
 
-        h_pm_lo, h_pm_hi = TARGET_PLAYER_HITS_TO_KILL[band]
-        h_mp_lo, h_mp_hi = TARGET_MONSTER_HITS_TO_KILL[band]
+        if tb is not None:
+            from balance.target_bands import diagnose, evaluate_depth
+            death_rate = point.player_death_rate if hasattr(point, 'player_death_rate') else (
+                point.total_deaths / point.total_runs if hasattr(point, 'total_deaths') else 0.0
+            )
+            ev = evaluate_depth(
+                depth,
+                observed_death_rate=death_rate,
+                observed_h_pm=point.avg_player_hits_to_kill,
+                observed_h_mp=point.avg_monster_hits_to_kill,
+            )
+            diag = diagnose(ev)
+            results[depth] = {
+                'h_pm_observed': ev['h_pm']['observed'],
+                'h_pm_target': ev['h_pm']['target'],
+                'h_pm_status': ev['h_pm']['status'],
+                'h_mp_observed': ev['h_mp']['observed'],
+                'h_mp_target': ev['h_mp']['target'],
+                'h_mp_status': ev['h_mp']['status'],
+                'death_rate_observed': ev['death_rate']['observed'],
+                'death_rate_target': ev['death_rate']['target'],
+                'death_rate_status': ev['death_rate']['status'],
+                'feel': ev['feel'],
+                'diagnosis': diag,
+            }
+        else:
+            # Fallback to legacy 2-depth bands (for depths 7+)
+            band = get_target_band(depth)
+            h_pm_lo, h_pm_hi = TARGET_PLAYER_HITS_TO_KILL[band]
+            h_mp_lo, h_mp_hi = TARGET_MONSTER_HITS_TO_KILL[band]
 
-        def _status(observed: float, lo: float, hi: float) -> str:
-            if observed < lo:
-                return "LOW"
-            elif observed > hi:
-                return "HIGH"
-            return "OK"
+            def _status(observed: float, lo: float, hi: float) -> str:
+                if observed < lo:
+                    return "LOW"
+                elif observed > hi:
+                    return "HIGH"
+                return "OK"
 
-        results[depth] = {
-            'h_pm_observed': round(point.avg_player_hits_to_kill, 2),
-            'h_pm_target': (h_pm_lo, h_pm_hi),
-            'h_pm_status': _status(point.avg_player_hits_to_kill, h_pm_lo, h_pm_hi),
-            'h_mp_observed': round(point.avg_monster_hits_to_kill, 2),
-            'h_mp_target': (h_mp_lo, h_mp_hi),
-            'h_mp_status': _status(point.avg_monster_hits_to_kill, h_mp_lo, h_mp_hi),
-        }
+            results[depth] = {
+                'h_pm_observed': round(point.avg_player_hits_to_kill, 2),
+                'h_pm_target': (h_pm_lo, h_pm_hi),
+                'h_pm_status': _status(point.avg_player_hits_to_kill, h_pm_lo, h_pm_hi),
+                'h_mp_observed': round(point.avg_monster_hits_to_kill, 2),
+                'h_mp_target': (h_mp_lo, h_mp_hi),
+                'h_mp_status': _status(point.avg_monster_hits_to_kill, h_mp_lo, h_mp_hi),
+                'death_rate_observed': None,
+                'death_rate_target': None,
+                'death_rate_status': None,
+                'feel': None,
+                'diagnosis': [],
+            }
     return results
 
 
@@ -557,33 +603,80 @@ def format_pressure_table(curve: Dict[int, DepthCurvePoint]) -> str:
 def format_target_comparison(evaluation: Dict[int, Dict[str, Any]]) -> str:
     """Format observed vs target comparison table.
 
+    Includes Death%, H_PM, H_MP with target ranges, status indicators,
+    design feel labels, and diagnostic recommendations.
+
     Returns:
         Multi-line string table
     """
     lines = []
-    lines.append("=" * 90)
+    lines.append("=" * 120)
     lines.append("TARGET CURVE COMPARISON")
-    lines.append("=" * 90)
-    lines.append(
-        f"{'Depth':>5}  "
-        f"{'H_PM Obs':>8}  {'H_PM Target':>14}  {'Status':>6}  "
-        f"{'H_MP Obs':>8}  {'H_MP Target':>14}  {'Status':>6}"
+    lines.append("=" * 120)
+
+    has_death_rate = any(
+        ev.get('death_rate_observed') is not None
+        for ev in evaluation.values()
     )
-    lines.append("-" * 90)
+
+    if has_death_rate:
+        lines.append(
+            f"{'Depth':>5}  {'Feel':<22}  "
+            f"{'Death%':>6}  {'Target':>11}  {'':>4}  "
+            f"{'H_PM':>6}  {'Target':>9}  {'':>4}  "
+            f"{'H_MP':>6}  {'Target':>9}  {'':>4}"
+        )
+    else:
+        lines.append(
+            f"{'Depth':>5}  "
+            f"{'H_PM Obs':>8}  {'H_PM Target':>14}  {'Status':>6}  "
+            f"{'H_MP Obs':>8}  {'H_MP Target':>14}  {'Status':>6}"
+        )
+    lines.append("-" * 120)
 
     for depth in sorted(evaluation.keys()):
         ev = evaluation[depth]
         h_pm_t = ev['h_pm_target']
         h_mp_t = ev['h_mp_target']
-        lines.append(
-            f"{depth:>5}  "
-            f"{ev['h_pm_observed']:>8.2f}  {h_pm_t[0]:>5.1f}–{h_pm_t[1]:<5.1f}   "
-            f"{ev['h_pm_status']:>6}  "
-            f"{ev['h_mp_observed']:>8.2f}  {h_mp_t[0]:>5.1f}–{h_mp_t[1]:<5.1f}   "
-            f"{ev['h_mp_status']:>6}"
-        )
 
-    lines.append("=" * 90)
+        if has_death_rate and ev.get('death_rate_observed') is not None:
+            dr = ev['death_rate_observed']
+            dr_t = ev['death_rate_target']
+            feel = ev.get('feel', '')
+            lines.append(
+                f"{depth:>5}  {feel:<22}  "
+                f"{dr:>5.0%}  {dr_t[0]:>4.0%}–{dr_t[1]:<4.0%}  "
+                f"{ev['death_rate_status']:>4}  "
+                f"{ev['h_pm_observed']:>6.2f}  {h_pm_t[0]:>3.0f}–{h_pm_t[1]:<3.0f}  "
+                f"{ev['h_pm_status']:>4}  "
+                f"{ev['h_mp_observed']:>6.2f}  {h_mp_t[0]:>3.0f}–{h_mp_t[1]:<3.0f}  "
+                f"{ev['h_mp_status']:>4}"
+            )
+        else:
+            lines.append(
+                f"{depth:>5}  "
+                f"{ev['h_pm_observed']:>8.2f}  {h_pm_t[0]:>5.1f}–{h_pm_t[1]:<5.1f}   "
+                f"{ev['h_pm_status']:>6}  "
+                f"{ev['h_mp_observed']:>8.2f}  {h_mp_t[0]:>5.1f}–{h_mp_t[1]:<5.1f}   "
+                f"{ev['h_mp_status']:>6}"
+            )
+
+    lines.append("=" * 120)
+
+    # Diagnosis section
+    all_diags = []
+    for depth in sorted(evaluation.keys()):
+        diags = evaluation[depth].get('diagnosis', [])
+        all_diags.extend(diags)
+
+    if all_diags:
+        lines.append("")
+        lines.append("DIAGNOSIS")
+        lines.append("-" * 60)
+        for d in all_diags:
+            lines.append(d)
+        lines.append("")
+
     return "\n".join(lines)
 
 
